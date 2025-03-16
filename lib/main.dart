@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:polkadot_dart/polkadot_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math';
 import 'dart:async';
-import 'dart:convert';
+import 'substrate_service.dart';
+import 'account_profile.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SubstrateService().initialize();
   runApp(ResonanceWalletApp());
 }
 
@@ -17,16 +19,116 @@ class ResonanceWalletApp extends StatelessWidget {
     return MaterialApp(
       title: 'Resonance Network Wallet',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        brightness: Brightness.light,
+        primaryColor: Color(0xFF6B46C1), // Deep purple
+        scaffoldBackgroundColor: Color(0xFF1A1A1A), // Dark background
+        cardColor: Color(0xFF2D2D2D), // Slightly lighter dark for cards
+        colorScheme: ColorScheme.dark(
+          primary: Color(0xFF6B46C1), // Deep purple
+          secondary: Color(0xFF9F7AEA), // Lighter purple
+          surface: Color(0xFF2D2D2D),
+          background: Color(0xFF1A1A1A),
+          error: Colors.red.shade400,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF2D2D2D),
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF6B46C1),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Color(0xFF9F7AEA),
+            side: BorderSide(color: Color(0xFF9F7AEA)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Color(0xFF9F7AEA),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF6B46C1)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+          ),
+          filled: true,
+          fillColor: Color(0xFF2D2D2D),
+        ),
       ),
       darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        brightness: Brightness.dark,
+        primaryColor: Color(0xFF6B46C1),
+        scaffoldBackgroundColor: Color(0xFF1A1A1A),
+        cardColor: Color(0xFF2D2D2D),
+        colorScheme: ColorScheme.dark(
+          primary: Color(0xFF6B46C1),
+          secondary: Color(0xFF9F7AEA),
+          surface: Color(0xFF2D2D2D),
+          background: Color(0xFF1A1A1A),
+          error: Colors.red.shade400,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF2D2D2D),
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF6B46C1),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Color(0xFF9F7AEA),
+            side: BorderSide(color: Color(0xFF9F7AEA)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Color(0xFF9F7AEA),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF6B46C1)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+          ),
+          filled: true,
+          fillColor: Color(0xFF2D2D2D),
+        ),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       home: WalletInitializer(),
     );
   }
@@ -85,16 +187,30 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue.shade800, Colors.blue.shade500],
+            colors: [Color(0xFF1A1A1A), Color(0xFF6B46C1).withOpacity(0.8)],
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.network(
-              'https://via.placeholder.com/150?text=REZ',
-              width: 150,
-              height: 150,
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF2D2D2D),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFF6B46C1).withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.account_balance_wallet,
+                size: 80,
+                color: Color(0xFF9F7AEA),
+              ),
             ),
             SizedBox(height: 30),
             Text(
@@ -122,7 +238,7 @@ class WelcomeScreen extends StatelessWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+                backgroundColor: Color(0xFF6B46C1),
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -133,7 +249,7 @@ class WelcomeScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade800,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -146,7 +262,7 @@ class WelcomeScreen extends StatelessWidget {
                 );
               },
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white),
+                side: BorderSide(color: Color(0xFF9F7AEA)),
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -157,7 +273,7 @@ class WelcomeScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Color(0xFF9F7AEA),
                 ),
               ),
             ),
@@ -193,19 +309,16 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
         throw Exception('Mnemonic must be 12 or 24 words');
       }
 
-      // This is a simplified implementation. In a real app, you'd use polkadot_dart
-      // to properly validate the mnemonic and generate the keys
-      final accountId = 'REZ' + DateTime.now().millisecondsSinceEpoch.toString().substring(0, 10);
+      final walletInfo = await SubstrateService().generateWalletFromSeed(mnemonic);
 
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', mnemonic);
-      await prefs.setString('account_id', accountId);
+      await prefs.setString('account_id', walletInfo.accountId);
+      await prefs.setString('public_key', walletInfo.publicKey);
+      await prefs.setString('private_key', walletInfo.privateKey);
 
-      // In a real app, you'd also need to securely store the private key
-
-      // Navigate to main wallet screen
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => WalletMain()),
@@ -279,6 +392,23 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                 ),
               ),
             Spacer(),
+            // Add test button for Alice's wallet
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  _mnemonicController.text = "bottom drive obey lake curtain smoke basket hold race lonely fit walk";
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Alice test wallet mnemonic loaded')),
+                  );
+                },
+                icon: Icon(Icons.bug_report),
+                label: Text('Load Test Wallet (Alice)'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Color(0xFF9F7AEA),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -304,6 +434,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   bool _hasSavedMnemonic = false;
   String _mnemonic = '';
   String _accountId = '';
+  WalletInfo? _walletInfo;
 
   @override
   void initState() {
@@ -317,31 +448,18 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     });
 
     try {
-      // In a real application, use polkadot_dart to generate a proper mnemonic
-      // This is just a placeholder implementation
-      final random = Random();
-      final wordList = [
-        'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-        'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-        'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
-        // ... more words would be here in a real implementation
-      ];
+      // Generate a proper mnemonic using the substrate service
+      final random = Random.secure();
+      final entropy = List<int>.generate(32, (i) => random.nextInt(256));
+      _mnemonic = entropy.map((e) => e.toRadixString(16).padLeft(2, '0')).join();
 
-      List<String> words = [];
-      for (int i = 0; i < 24; i++) {
-        words.add(wordList[random.nextInt(wordList.length)]);
-      }
-
-      final mnemonic = words.join(' ');
-      final accountId = 'REZ' + DateTime.now().millisecondsSinceEpoch.toString().substring(0, 10);
+      _walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
+      _accountId = _walletInfo!.accountId;
 
       setState(() {
-        _mnemonic = mnemonic;
-        _accountId = accountId;
         _isLoading = false;
       });
     } catch (e) {
-      // Handle errors
       print('Error generating mnemonic: $e');
       setState(() {
         _isLoading = false;
@@ -351,20 +469,19 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
   Future<void> _saveWalletAndContinue() async {
     try {
-      // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', _accountId);
+      await prefs.setString('public_key', _walletInfo!.publicKey);
+      await prefs.setString('private_key', _walletInfo!.privateKey);
 
-      // Navigate to main wallet screen
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => WalletMain()),
         (route) => false,
       );
     } catch (e) {
-      // Handle errors
       print('Error saving wallet: $e');
     }
   }
@@ -470,7 +587,6 @@ class _WalletMainState extends State<WalletMain> {
   void initState() {
     super.initState();
     _loadWalletData();
-    // In a real app, you would set up a subscription to blockchain events here
   }
 
   Future<void> _loadWalletData() async {
@@ -478,43 +594,12 @@ class _WalletMainState extends State<WalletMain> {
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id') ?? '';
 
-      // In a real app, you'd fetch actual balance from the blockchain using polkadot_dart
-      // This is just a placeholder implementation
-      final random = Random();
-      final balance = random.nextDouble() * 1000;
-
-      // Simulate loading some transactions
-      final transactions = [
-        Transaction(
-          id: 'tx1',
-          amount: random.nextDouble() * 100,
-          timestamp: DateTime.now().subtract(Duration(days: 1)),
-          type: random.nextBool() ? TransactionType.received : TransactionType.sent,
-          otherParty: 'REZ' + random.nextInt(100000).toString(),
-          status: TransactionStatus.confirmed,
-        ),
-        Transaction(
-          id: 'tx2',
-          amount: random.nextDouble() * 50,
-          timestamp: DateTime.now().subtract(Duration(days: 3)),
-          type: random.nextBool() ? TransactionType.received : TransactionType.sent,
-          otherParty: 'REZ' + random.nextInt(100000).toString(),
-          status: TransactionStatus.confirmed,
-        ),
-        Transaction(
-          id: 'tx3',
-          amount: random.nextDouble() * 25,
-          timestamp: DateTime.now().subtract(Duration(days: 5)),
-          type: random.nextBool() ? TransactionType.received : TransactionType.sent,
-          otherParty: 'REZ' + random.nextInt(100000).toString(),
-          status: TransactionStatus.confirmed,
-        ),
-      ];
+      // Fetch actual balance from the blockchain
+      final balance = await SubstrateService().queryBalance(accountId);
 
       setState(() {
         _accountId = accountId;
         _balance = balance;
-        _recentTransactions = transactions;
         _isLoading = false;
       });
     } catch (e) {
@@ -533,15 +618,30 @@ class _WalletMainState extends State<WalletMain> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Color(0xFF9F7AEA)),
             onPressed: _loadWalletData,
+          ),
+          IconButton(
+            icon: Icon(Icons.person, color: Color(0xFF9F7AEA)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AccountProfilePage(accountId: _accountId),
+                ),
+              );
+            },
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B46C1)),
+            ))
           : RefreshIndicator(
               onRefresh: _loadWalletData,
+              color: Color(0xFF6B46C1),
               child: SingleChildScrollView(
                 physics: AlwaysScrollableScrollPhysics(),
                 child: Padding(
@@ -551,102 +651,122 @@ class _WalletMainState extends State<WalletMain> {
                     children: [
                       // Account Card
                       Card(
-                        elevation: 4,
+                        elevation: 8,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: Colors.blue.shade800,
-                                    child: Text(
-                                      'REZ',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Resonance Network',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          _accountId,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20),
-                              Text(
-                                'Your Balance',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '${_balance.toStringAsFixed(4)} REZ',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        _showReceiveDialog(context);
-                                      },
-                                      icon: Icon(Icons.qr_code),
-                                      label: Text('Receive'),
-                                      style: OutlinedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF2D2D2D),
+                                Color(0xFF6B46C1).withOpacity(0.3),
+                              ],
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFF6B46C1).withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.account_balance_wallet,
+                                        color: Color(0xFF9F7AEA),
+                                        size: 24,
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => SendScreen(),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Resonance Network',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
-                                        );
-                                      },
-                                      icon: Icon(Icons.send),
-                                      label: Text('Send'),
-                                      style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                          Text(
+                                            _accountId,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ),
                                     ),
+                                  ],
+                                ),
+                                SizedBox(height: 20),
+                                Text(
+                                  'Your Balance',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '${_balance.toStringAsFixed(4)} REZ',
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF9F7AEA),
+                                  ),
+                                ),
+                                SizedBox(height: 20),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          _showReceiveDialog(context);
+                                        },
+                                        icon: Icon(Icons.qr_code),
+                                        label: Text('Receive'),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => SendScreen(),
+                                            ),
+                                          );
+                                        },
+                                        icon: Icon(Icons.send),
+                                        label: Text('Send'),
+                                        style: ElevatedButton.styleFrom(
+                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -656,6 +776,7 @@ class _WalletMainState extends State<WalletMain> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       SizedBox(height: 8),
@@ -668,7 +789,7 @@ class _WalletMainState extends State<WalletMain> {
                                     Icon(
                                       Icons.hourglass_empty,
                                       size: 48,
-                                      color: Colors.grey,
+                                      color: Color(0xFF9F7AEA).withOpacity(0.5),
                                     ),
                                     SizedBox(height: 16),
                                     Text(
@@ -791,9 +912,16 @@ class TransactionListItem extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isReceived ? Colors.green.shade100 : Colors.red.shade100,
+        leading: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isReceived ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
           child: Icon(
             isReceived ? Icons.arrow_downward : Icons.arrow_upward,
             color: isReceived ? Colors.green : Colors.red,
@@ -801,18 +929,21 @@ class TransactionListItem extends StatelessWidget {
         ),
         title: Text(
           isReceived ? 'Received REZ' : 'Sent REZ',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '${transaction.timestamp.day}/${transaction.timestamp.month}/${transaction.timestamp.year} ${transaction.timestamp.hour}:${transaction.timestamp.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
               transaction.otherParty,
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: Colors.grey),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -991,12 +1122,23 @@ class _SendScreenState extends State<SendScreen> {
         return;
       }
 
-      // In a real app, you'd submit the transaction to the blockchain
-      // This is a placeholder implementation
-      await Future.delayed(Duration(seconds: 2));
+      // Get the sender's seed phrase
+      final prefs = await SharedPreferences.getInstance();
+      final senderSeed = prefs.getString('mnemonic');
+
+      if (senderSeed == null) {
+        throw Exception('Wallet data not found');
+      }
+
+      // Submit the transaction
+      final hash = await SubstrateService().balanceTransfer(
+        senderSeed,
+        recipient,
+        amount,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Transaction submitted successfully')),
+        SnackBar(content: Text('Transaction submitted successfully: $hash')),
       );
 
       Navigator.pop(context);
