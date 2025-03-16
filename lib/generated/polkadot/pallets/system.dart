@@ -337,7 +337,7 @@ class Queries {
     if (bytes != null) {
       return _digest.decodeValue(bytes);
     }
-    return _i7.Digest(logs: []); /* Default */
+    return const _i7.Digest(logs: []); /* Default */
   }
 
   /// Events deposited for the current block.

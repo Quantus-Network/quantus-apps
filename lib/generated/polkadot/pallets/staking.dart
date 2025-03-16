@@ -946,7 +946,7 @@ class Queries {
     if (bytes != null) {
       return _erasRewardPoints.decodeValue(bytes);
     }
-    return _i13.EraRewardPoints(
+    return const _i13.EraRewardPoints(
       total: 0,
       individual: [],
     ); /* Default */
@@ -1750,7 +1750,7 @@ class Txs {
   /// - Contains one read.
   /// - Writes are limited to the `origin` account key.
   _i23.Staking chill() {
-    return _i23.Staking(_i24.Chill());
+    return const _i23.Staking(_i24.Chill());
   }
 
   /// (Re-)set the payment target for a controller.
@@ -1784,7 +1784,7 @@ class Txs {
   /// - Contains a limited number of reads.
   /// - Writes are limited to the `origin` account key.
   _i23.Staking setController() {
-    return _i23.Staking(_i24.SetController());
+    return const _i23.Staking(_i24.SetController());
   }
 
   /// Sets the ideal number of validators.
@@ -1833,7 +1833,7 @@ class Txs {
   /// - No arguments.
   /// - Weight: O(1)
   _i23.Staking forceNoEras() {
-    return _i23.Staking(_i24.ForceNoEras());
+    return const _i23.Staking(_i24.ForceNoEras());
   }
 
   /// Force there to be a new era at the end of the next session. After this, it will be
@@ -1851,7 +1851,7 @@ class Txs {
   /// - No arguments.
   /// - Weight: O(1)
   _i23.Staking forceNewEra() {
-    return _i23.Staking(_i24.ForceNewEra());
+    return const _i23.Staking(_i24.ForceNewEra());
   }
 
   /// Set the validators who cannot be slashed (if any).
@@ -1890,7 +1890,7 @@ class Txs {
   /// If this is called just before a new era is triggered, the election process may not
   /// have enough blocks to get a result.
   _i23.Staking forceNewEraAlways() {
-    return _i23.Staking(_i24.ForceNewEraAlways());
+    return const _i23.Staking(_i24.ForceNewEraAlways());
   }
 
   /// Cancel enactment of a deferred slash.

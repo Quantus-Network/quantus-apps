@@ -34,7 +34,7 @@ class $ChildBountyStatus {
   const $ChildBountyStatus();
 
   Added added() {
-    return Added();
+    return const Added();
   }
 
   CuratorProposed curatorProposed({required _i3.AccountId32 curator}) {

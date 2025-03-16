@@ -32,7 +32,7 @@ class $Progress {
   const $Progress();
 
   ToStart toStart() {
-    return ToStart();
+    return const ToStart();
   }
 
   LastKey lastKey(List<int> value0) {
@@ -40,7 +40,7 @@ class $Progress {
   }
 
   Complete complete() {
-    return Complete();
+    return const Complete();
   }
 }
 

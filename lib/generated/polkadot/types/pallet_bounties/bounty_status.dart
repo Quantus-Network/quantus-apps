@@ -34,15 +34,15 @@ class $BountyStatus {
   const $BountyStatus();
 
   Proposed proposed() {
-    return Proposed();
+    return const Proposed();
   }
 
   Approved approved() {
-    return Approved();
+    return const Approved();
   }
 
   Funded funded() {
-    return Funded();
+    return const Funded();
   }
 
   CuratorProposed curatorProposed({required _i3.AccountId32 curator}) {

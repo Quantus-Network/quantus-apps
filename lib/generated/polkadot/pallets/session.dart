@@ -274,6 +274,6 @@ class Txs {
   /// - `O(1)` in number of key types. Actual cost depends on the number of length of
   ///  `T::Keys::key_ids()` which is fixed.
   _i9.Session purgeKeys() {
-    return _i9.Session(_i10.PurgeKeys());
+    return const _i9.Session(_i10.PurgeKeys());
   }
 }

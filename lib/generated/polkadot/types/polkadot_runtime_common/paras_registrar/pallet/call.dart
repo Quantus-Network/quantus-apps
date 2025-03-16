@@ -86,7 +86,7 @@ class $Call {
   }
 
   Reserve reserve() {
-    return Reserve();
+    return const Reserve();
   }
 
   AddLock addLock({required _i3.Id para}) {

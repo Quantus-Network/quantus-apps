@@ -367,7 +367,7 @@ class Queries {
     if (bytes != null) {
       return _pastCodeMeta.decodeValue(bytes);
     }
-    return _i9.ParaPastCodeMeta(
+    return const _i9.ParaPastCodeMeta(
       upgradeTimes: [],
       lastPruned: null,
     ); /* Default */

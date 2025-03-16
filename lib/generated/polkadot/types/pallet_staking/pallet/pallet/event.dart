@@ -90,7 +90,7 @@ class $Event {
   }
 
   StakersElected stakersElected() {
-    return StakersElected();
+    return const StakersElected();
   }
 
   Bonded bonded({
@@ -134,7 +134,7 @@ class $Event {
   }
 
   StakingElectionFailed stakingElectionFailed() {
-    return StakingElectionFailed();
+    return const StakingElectionFailed();
   }
 
   Chilled chilled({required _i3.AccountId32 stash}) {

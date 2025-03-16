@@ -32,11 +32,11 @@ class $Call {
   const $Call();
 
   RegisterFastUnstake registerFastUnstake() {
-    return RegisterFastUnstake();
+    return const RegisterFastUnstake();
   }
 
   Deregister deregister() {
-    return Deregister();
+    return const Deregister();
   }
 
   Control control({required int erasToCheck}) {

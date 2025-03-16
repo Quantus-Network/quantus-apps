@@ -1,0 +1,16 @@
+[package]
+name = "wallet_native"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+path = "src/mod.rs"
+
+[dependencies]
+flutter_rust_bridge = "1"
+# Local path (development)
+dilithium_crytps = { path = "../../backbone/dilithium_crypto" }
+# GitLab repository (production)
+# dilithium_crytps = { git = "https://gitlab.com/resonance-network/backbone.git", branch = "main", package = "dilithium-crypto" }
+anyhow = "1.0" 

@@ -60,7 +60,7 @@ class $Event {
   }
 
   ElectionFailed electionFailed() {
-    return ElectionFailed();
+    return const ElectionFailed();
   }
 
   Rewarded rewarded({

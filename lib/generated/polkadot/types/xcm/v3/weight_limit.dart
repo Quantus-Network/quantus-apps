@@ -33,7 +33,7 @@ class $WeightLimit {
   const $WeightLimit();
 
   Unlimited unlimited() {
-    return Unlimited();
+    return const Unlimited();
   }
 
   Limited limited(_i3.Weight value0) {

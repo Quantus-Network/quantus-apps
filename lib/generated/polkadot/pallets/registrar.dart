@@ -235,7 +235,7 @@ class Txs {
   /// The `Reserved` event is emitted in case of success, which provides the ID reserved for
   /// use.
   _i6.Registrar reserve() {
-    return _i6.Registrar(_i9.Reserve());
+    return const _i6.Registrar(_i9.Reserve());
   }
 
   /// Add a manager lock from a para. This will prevent the manager of a

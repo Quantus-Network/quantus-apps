@@ -33,87 +33,87 @@ class $Error {
   const $Error();
 
   Overflow overflow() {
-    return Overflow();
+    return const Overflow();
   }
 
   Unimplemented unimplemented() {
-    return Unimplemented();
+    return const Unimplemented();
   }
 
   UntrustedReserveLocation untrustedReserveLocation() {
-    return UntrustedReserveLocation();
+    return const UntrustedReserveLocation();
   }
 
   UntrustedTeleportLocation untrustedTeleportLocation() {
-    return UntrustedTeleportLocation();
+    return const UntrustedTeleportLocation();
   }
 
   LocationFull locationFull() {
-    return LocationFull();
+    return const LocationFull();
   }
 
   LocationNotInvertible locationNotInvertible() {
-    return LocationNotInvertible();
+    return const LocationNotInvertible();
   }
 
   BadOrigin badOrigin() {
-    return BadOrigin();
+    return const BadOrigin();
   }
 
   InvalidLocation invalidLocation() {
-    return InvalidLocation();
+    return const InvalidLocation();
   }
 
   AssetNotFound assetNotFound() {
-    return AssetNotFound();
+    return const AssetNotFound();
   }
 
   FailedToTransactAsset failedToTransactAsset() {
-    return FailedToTransactAsset();
+    return const FailedToTransactAsset();
   }
 
   NotWithdrawable notWithdrawable() {
-    return NotWithdrawable();
+    return const NotWithdrawable();
   }
 
   LocationCannotHold locationCannotHold() {
-    return LocationCannotHold();
+    return const LocationCannotHold();
   }
 
   ExceedsMaxMessageSize exceedsMaxMessageSize() {
-    return ExceedsMaxMessageSize();
+    return const ExceedsMaxMessageSize();
   }
 
   DestinationUnsupported destinationUnsupported() {
-    return DestinationUnsupported();
+    return const DestinationUnsupported();
   }
 
   Transport transport() {
-    return Transport();
+    return const Transport();
   }
 
   Unroutable unroutable() {
-    return Unroutable();
+    return const Unroutable();
   }
 
   UnknownClaim unknownClaim() {
-    return UnknownClaim();
+    return const UnknownClaim();
   }
 
   FailedToDecode failedToDecode() {
-    return FailedToDecode();
+    return const FailedToDecode();
   }
 
   MaxWeightInvalid maxWeightInvalid() {
-    return MaxWeightInvalid();
+    return const MaxWeightInvalid();
   }
 
   NotHoldingFees notHoldingFees() {
-    return NotHoldingFees();
+    return const NotHoldingFees();
   }
 
   TooExpensive tooExpensive() {
-    return TooExpensive();
+    return const TooExpensive();
   }
 
   Trap trap(BigInt value0) {
@@ -121,59 +121,59 @@ class $Error {
   }
 
   ExpectationFalse expectationFalse() {
-    return ExpectationFalse();
+    return const ExpectationFalse();
   }
 
   PalletNotFound palletNotFound() {
-    return PalletNotFound();
+    return const PalletNotFound();
   }
 
   NameMismatch nameMismatch() {
-    return NameMismatch();
+    return const NameMismatch();
   }
 
   VersionIncompatible versionIncompatible() {
-    return VersionIncompatible();
+    return const VersionIncompatible();
   }
 
   HoldingWouldOverflow holdingWouldOverflow() {
-    return HoldingWouldOverflow();
+    return const HoldingWouldOverflow();
   }
 
   ExportError exportError() {
-    return ExportError();
+    return const ExportError();
   }
 
   ReanchorFailed reanchorFailed() {
-    return ReanchorFailed();
+    return const ReanchorFailed();
   }
 
   NoDeal noDeal() {
-    return NoDeal();
+    return const NoDeal();
   }
 
   FeesNotMet feesNotMet() {
-    return FeesNotMet();
+    return const FeesNotMet();
   }
 
   LockError lockError() {
-    return LockError();
+    return const LockError();
   }
 
   NoPermission noPermission() {
-    return NoPermission();
+    return const NoPermission();
   }
 
   Unanchored unanchored() {
-    return Unanchored();
+    return const Unanchored();
   }
 
   NotDepositable notDepositable() {
-    return NotDepositable();
+    return const NotDepositable();
   }
 
   UnhandledXcmVersion unhandledXcmVersion() {
-    return UnhandledXcmVersion();
+    return const UnhandledXcmVersion();
   }
 
   WeightLimitReached weightLimitReached(_i3.Weight value0) {
@@ -181,15 +181,15 @@ class $Error {
   }
 
   Barrier barrier() {
-    return Barrier();
+    return const Barrier();
   }
 
   WeightNotComputable weightNotComputable() {
-    return WeightNotComputable();
+    return const WeightNotComputable();
   }
 
   ExceedsStackLimit exceedsStackLimit() {
-    return ExceedsStackLimit();
+    return const ExceedsStackLimit();
   }
 }
 

@@ -130,7 +130,7 @@ class $Instruction {
   }
 
   ClearOrigin clearOrigin() {
-    return ClearOrigin();
+    return const ClearOrigin();
   }
 
   DescendOrigin descendOrigin(_i9.Junctions value0) {
@@ -234,7 +234,7 @@ class $Instruction {
   }
 
   RefundSurplus refundSurplus() {
-    return RefundSurplus();
+    return const RefundSurplus();
   }
 
   SetErrorHandler setErrorHandler(_i6.Xcm value0) {
@@ -246,7 +246,7 @@ class $Instruction {
   }
 
   ClearError clearError() {
-    return ClearError();
+    return const ClearError();
   }
 
   ClaimAsset claimAsset({
@@ -274,7 +274,7 @@ class $Instruction {
   }
 
   UnsubscribeVersion unsubscribeVersion() {
-    return UnsubscribeVersion();
+    return const UnsubscribeVersion();
   }
 }
 

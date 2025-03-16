@@ -36,7 +36,7 @@ class $ValidDisputeStatementKind {
   const $ValidDisputeStatementKind();
 
   Explicit explicit() {
-    return Explicit();
+    return const Explicit();
   }
 
   BackingSeconded backingSeconded(_i3.H256 value0) {
@@ -48,7 +48,7 @@ class $ValidDisputeStatementKind {
   }
 
   ApprovalChecking approvalChecking() {
-    return ApprovalChecking();
+    return const ApprovalChecking();
   }
 
   ApprovalCheckingMultipleCandidates approvalCheckingMultipleCandidates(

@@ -33,11 +33,11 @@ class $Phase {
   const $Phase();
 
   Off off() {
-    return Off();
+    return const Off();
   }
 
   Signed signed() {
-    return Signed();
+    return const Signed();
   }
 
   Unsigned unsigned(_i3.Tuple2<bool, int> value0) {
@@ -45,7 +45,7 @@ class $Phase {
   }
 
   Emergency emergency() {
-    return Emergency();
+    return const Emergency();
   }
 }
 
