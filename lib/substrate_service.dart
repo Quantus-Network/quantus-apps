@@ -1,39 +1,33 @@
 import 'dart:typed_data';
-import 'package:convert/convert.dart';
 import 'package:polkadart/apis/apis.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
-import 'package:polkadart_scale_codec/polkadart_scale_codec.dart' as scale_codec;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ss58/ss58.dart' hide Registry;
+import 'dart:math';
+import 'package:hex/hex.dart';
+
+import 'generated/resonance/types/pallet_balances/pallet/call.dart';
+import 'generated/resonance/resonance.dart';
+import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:ss58/ss58.dart';
+import 'package:hex/hex.dart';
 
 class WalletInfo {
   final KeyPair keyPair;
-  final String address;
-  final String publicKey;
-  final String privateKey;
   final String accountId;
+  final String? mnemonic;
 
   WalletInfo({
     required this.keyPair,
-    required this.address,
-    required this.publicKey,
-    required this.privateKey,
     required this.accountId,
+    this.mnemonic,
   });
 
-  factory WalletInfo.fromKeyPair(KeyPair keyPair) {
-    final publicKeyHex = hex.encode(keyPair.publicKey.bytes);
-    // For sr25519, we don't expose the private key directly for security
-    // Instead, we store a placeholder or empty value
-    final privateKeyHex = '';
-
+  factory WalletInfo.fromKeyPair(KeyPair keyPair, {String? mnemonic}) {
     return WalletInfo(
       keyPair: keyPair,
-      address: keyPair.address,
-      publicKey: publicKeyHex,
-      privateKey: privateKeyHex,
       accountId: keyPair.address,
+      mnemonic: mnemonic,
     );
   }
 }
@@ -56,8 +50,29 @@ class SubstrateService {
     _systemApi = SystemApi(_provider);
   }
 
+  Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
+    try {
+      // For development accounts like //Alice, we use fromUri
+      final wallet = await KeyPair.sr25519.fromUri(path);
+
+      print('Generated wallet from derivation path:');
+      print('Path: $path');
+      print('Address: ${wallet.address}');
+
+      return WalletInfo.fromKeyPair(wallet);
+    } catch (e) {
+      throw Exception('Failed to generate wallet from derivation path: $e');
+    }
+  }
+
   Future<WalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
+      // Check if it's a development account path
+      if (seedPhrase.startsWith('//')) {
+        return generateWalletFromDerivationPath(seedPhrase);
+      }
+
+      // Regular mnemonic handling
       final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
       return WalletInfo.fromKeyPair(wallet);
     } catch (e) {
@@ -100,23 +115,20 @@ class SubstrateService {
       // Convert amount to chain format (considering decimals)
       final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
 
-      // Create the destination address
-      final destPubkey = Address.decode(targetAddress).pubkey;
+      final dest = targetAddress;
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
+      print('Destination: $dest');
+
+      // Encode call
+      final resonanceApi = Resonance(_provider);
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
+      final transferCall = runtimeCall.encode();
+
+      // // Create the destination address bytes
+      // final destBytes = hex.decode(targetAddress.replaceAll('0x', ''));
 
       // Get metadata for encoding
       final metadata = await _stateApi.getMetadata();
-
-      // Create the call data
-      final transferCall = Uint8List.fromList([
-        // Module index for Balances (you'll need to get this from your chain's metadata)
-        0x04,
-        // Call index for transfer (you'll need to get this from your chain's metadata)
-        0x00,
-        // Encode the destination address
-        ...destPubkey,
-        // Encode the amount using simple byte representation
-        ...rawAmount.toRadixString(16).padLeft(32, '0').split('').map((e) => int.parse(e, radix: 16)).toList(),
-      ]);
 
       // Create and sign the payload
       final payloadToSign = SigningPayload(
@@ -156,5 +168,21 @@ class SubstrateService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+  }
+
+  Future<WalletInfo> generateNewWallet() async {
+    try {
+      // Generate a new keypair with mnemonic
+      final wallet = await KeyPair.sr25519.generate();
+
+      print('Generated new wallet:');
+      print('Address: ${wallet.address}');
+      print('Public key: ${hex.encode(wallet.publicKey.bytes)}');
+      print('Mnemonic available: ${wallet.mnemonic != null}');
+
+      return WalletInfo.fromKeyPair(wallet, mnemonic: wallet.mnemonic);
+    } catch (e) {
+      throw Exception('Failed to generate new wallet: $e');
+    }
   }
 }

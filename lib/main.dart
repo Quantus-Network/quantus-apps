@@ -301,23 +301,27 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
     });
 
     try {
-      final mnemonic = _mnemonicController.text.trim();
+      final input = _mnemonicController.text.trim();
 
-      // Validate mnemonic
-      final wordCount = mnemonic.split(' ').length;
-      if (wordCount != 12 && wordCount != 24) {
-        throw Exception('Mnemonic must be 12 or 24 words');
+      // Check if it's a derivation path
+      if (input.startsWith('//')) {
+        // No validation needed for derivation paths
+        print('Using derivation path: $input');
+      } else {
+        // Validate mnemonic
+        final words = input.split(' ').where((word) => word.isNotEmpty).toList();
+        if (words.length != 12 && words.length != 24) {
+          throw Exception('Mnemonic must be 12 or 24 words');
+        }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeed(mnemonic);
+      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
 
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', mnemonic);
+      await prefs.setString('mnemonic', input);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('public_key', walletInfo.publicKey);
-      await prefs.setString('private_key', walletInfo.privateKey);
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -341,83 +345,93 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
       appBar: AppBar(
         title: Text('Import Wallet'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter your 12 or 24 word mnemonic phrase',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter your 12 or 24 word mnemonic phrase',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _mnemonicController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Enter your mnemonic phrase...',
+              SizedBox(height: 16),
+              TextField(
+                controller: _mnemonicController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter your mnemonic phrase...',
+                ),
+                maxLines: 4,
               ),
-              maxLines: 4,
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Enter all words separated by spaces',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.paste),
+                    onPressed: () async {
+                      final data = await Clipboard.getData('text/plain');
+                      if (data != null && data.text != null) {
+                        _mnemonicController.text = data.text!;
+                      }
+                    },
+                    tooltip: 'Paste',
+                  ),
+                ],
+              ),
+              if (_errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    'Enter all words separated by spaces',
-                    style: TextStyle(color: Colors.grey),
+                    _errorMessage,
+                    style: TextStyle(color: Colors.red),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.paste),
-                  onPressed: () async {
-                    final data = await Clipboard.getData('text/plain');
-                    if (data != null && data.text != null) {
-                      _mnemonicController.text = data.text!;
-                    }
-                  },
-                  tooltip: 'Paste',
-                ),
-              ],
-            ),
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  _errorMessage,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            Spacer(),
-            // Add test button for Alice's wallet
-            Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  _mnemonicController.text = "bottom drive obey lake curtain smoke basket hold race lonely fit walk";
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Alice test wallet mnemonic loaded')),
-                  );
-                },
-                icon: Icon(Icons.bug_report),
-                label: Text('Load Test Wallet (Alice)'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Color(0xFF9F7AEA),
+              Spacer(),
+              SafeArea(
+                minimum: EdgeInsets.only(bottom: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Add test button for Alice's wallet
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          _mnemonicController.text = "//Alice";
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Alice development account loaded')),
+                          );
+                        },
+                        icon: Icon(Icons.bug_report),
+                        label: Text('Load Test Account (Alice)'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Color(0xFF9F7AEA),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _importWallet,
+                        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Import Wallet'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _importWallet,
-                child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Import Wallet'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -448,12 +462,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     });
 
     try {
-      // Generate a proper mnemonic using the substrate service
-      final random = Random.secure();
-      final entropy = List<int>.generate(32, (i) => random.nextInt(256));
-      _mnemonic = entropy.map((e) => e.toRadixString(16).padLeft(2, '0')).join();
-
-      _walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
+      // Generate a new wallet using the substrate service
+      _walletInfo = await SubstrateService().generateNewWallet();
+      _mnemonic = _walletInfo!.mnemonic ?? '';
       _accountId = _walletInfo!.accountId;
 
       setState(() {
@@ -473,8 +484,6 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', _accountId);
-      await prefs.setString('public_key', _walletInfo!.publicKey);
-      await prefs.setString('private_key', _walletInfo!.privateKey);
 
       Navigator.pushAndRemoveUntil(
         context,
