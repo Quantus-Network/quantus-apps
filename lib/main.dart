@@ -815,6 +815,13 @@ class _WalletMainState extends State<WalletMain> {
                                         label: Text('Receive'),
                                         style: OutlinedButton.styleFrom(
                                           padding: EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          side: BorderSide(
+                                            color: Color(0xFF9F7AEA),
+                                            width: 1.5,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -831,9 +838,6 @@ class _WalletMainState extends State<WalletMain> {
                                         },
                                         icon: Icon(Icons.send),
                                         label: Text('Send'),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(vertical: 12),
-                                        ),
                                       ),
                                     ),
                                   ],
@@ -844,12 +848,15 @@ class _WalletMainState extends State<WalletMain> {
                         ),
                       ),
                       SizedBox(height: 24),
-                      Text(
-                        'Recent Transactions',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: Text(
+                          'Recent Transactions',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       SizedBox(height: 8),
