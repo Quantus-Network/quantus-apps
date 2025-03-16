@@ -1,16 +1,14 @@
 import 'dart:typed_data';
-import 'package:polkadart/apis/apis.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
-import 'package:hex/hex.dart';
+import 'package:bip39/bip39.dart' as bip39;
+import 'package:convert/convert.dart' as convert;
 
-import 'generated/resonance/types/pallet_balances/pallet/call.dart';
 import 'generated/resonance/resonance.dart';
 import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
-import 'package:hex/hex.dart';
 
 class WalletInfo {
   final KeyPair keyPair;
@@ -82,12 +80,22 @@ class SubstrateService {
 
   Future<double> queryBalance(String address) async {
     try {
-      final result = await _provider.send('system_account', [address]);
-      final data = result.result as Map<String, dynamic>;
-      final free = BigInt.parse(data['data']['free'].toString());
-      // Convert balance to REZ (adjust decimals according to your chain's configuration)
+      // Create Resonance API instance
+      final resonanceApi = Resonance(_provider);
+
+      // Convert address to AccountId32
+      final accountId = Address.decode(address).pubkey;
+
+      // Query account info using the balances pallet
+      final accountData = await resonanceApi.query.balances.account(accountId);
+
+      // Get the free balance
+      final free = accountData.free;
+
+      // Convert balance to REZ (12 decimals)
       return free.toDouble() / BigInt.from(10).pow(12).toDouble();
     } catch (e) {
+      print('Error querying balance: $e');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -159,7 +167,7 @@ class SubstrateService {
 
       // Submit the extrinsic
       final hash = await _authorApi.submitExtrinsic(extrinsic);
-      return hex.encode(hash);
+      return convert.hex.encode(hash);
     } catch (e) {
       throw Exception('Failed to transfer balance: $e');
     }
@@ -170,17 +178,29 @@ class SubstrateService {
     await prefs.clear();
   }
 
-  Future<WalletInfo> generateNewWallet() async {
+  Future<String> generateMnemonic() async {
     try {
-      // Generate a new keypair with mnemonic
-      final wallet = await KeyPair.sr25519.generate();
+      // Generate a random entropy
+      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      // Convert entropy to a hexadecimal string
+      final entropyHex = convert.hex.encode(entropy);
+      // Generate mnemonic from entropy
+      final mnemonic = bip39.entropyToMnemonic(entropyHex);
+      return mnemonic;
+    } catch (e) {
+      throw Exception('Failed to generate mnemonic: $e');
+    }
+  }
+
+  Future<WalletInfo> generateNewWallet(String mnemonic) async {
+    try {
+      // Create a wallet from the mnemonic
+      final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
 
       print('Generated new wallet:');
       print('Address: ${wallet.address}');
-      print('Public key: ${hex.encode(wallet.publicKey.bytes)}');
-      print('Mnemonic available: ${wallet.mnemonic != null}');
 
-      return WalletInfo.fromKeyPair(wallet, mnemonic: wallet.mnemonic);
+      return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
     } catch (e) {
       throw Exception('Failed to generate new wallet: $e');
     }

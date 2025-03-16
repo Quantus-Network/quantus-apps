@@ -444,11 +444,9 @@ class CreateWalletScreen extends StatefulWidget {
 }
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
-  bool _isLoading = true;
-  bool _hasSavedMnemonic = false;
   String _mnemonic = '';
-  String _accountId = '';
-  WalletInfo? _walletInfo;
+  bool _isLoading = false;
+  bool _hasSavedMnemonic = false;
 
   @override
   void initState() {
@@ -462,10 +460,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     });
 
     try {
-      // Generate a new wallet using the substrate service
-      _walletInfo = await SubstrateService().generateNewWallet();
-      _mnemonic = _walletInfo!.mnemonic ?? '';
-      _accountId = _walletInfo!.accountId;
+      _mnemonic = await SubstrateService().generateMnemonic();
+      final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
+      print('Generated wallet address: ${walletInfo.accountId}');
 
       setState(() {
         _isLoading = false;
@@ -480,10 +477,13 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
   Future<void> _saveWalletAndContinue() async {
     try {
+      final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
+
+      // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
-      await prefs.setString('account_id', _accountId);
+      await prefs.setString('account_id', walletInfo.accountId);
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -492,6 +492,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       );
     } catch (e) {
       print('Error saving wallet: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving wallet: $e')),
+      );
     }
   }
 
@@ -503,79 +506,129 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your Recovery Phrase',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Write down these 24 words in order and keep them in a safe place. This is the only way to recover your wallet if you lose access.',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  SizedBox(height: 24),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Text(
-                      _mnemonic,
-                      style: TextStyle(fontSize: 16, height: 1.5),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: _mnemonic));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Recovery phrase copied to clipboard')),
-                        );
-                      },
-                      icon: Icon(Icons.copy),
-                      label: Text('Copy to Clipboard'),
-                    ),
-                  ),
-                  SizedBox(height: 32),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _hasSavedMnemonic,
-                        onChanged: (value) {
-                          setState(() {
-                            _hasSavedMnemonic = value ?? false;
-                          });
-                        },
-                      ),
-                      Expanded(
-                        child: Text(
-                          'I have written down my recovery phrase and stored it securely',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your Recovery Phrase',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _hasSavedMnemonic ? _saveWalletAndContinue : null,
-                      child: Text('Continue'),
+                        SizedBox(height: 8),
+                        Text(
+                          'Write down these words in order and keep them in a safe place. This is the only way to recover your wallet if you lose access.',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Color(0xFF6B46C1).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _mnemonic,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  height: 1.5,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Center(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: _mnemonic));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Recovery phrase copied to clipboard')),
+                                    );
+                                  },
+                                  icon: Icon(Icons.copy),
+                                  label: Text('Copy to Clipboard'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: Colors.red),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Never share your recovery phrase with anyone. Store it securely offline.',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _hasSavedMnemonic,
+                              onChanged: (value) {
+                                setState(() {
+                                  _hasSavedMnemonic = value ?? false;
+                                });
+                              },
+                            ),
+                            Expanded(
+                              child: Text(
+                                'I have written down my recovery phrase and stored it securely',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _hasSavedMnemonic ? _saveWalletAndContinue : null,
+                            child: Text('Continue'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
