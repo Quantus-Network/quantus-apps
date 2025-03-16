@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math';
 import 'dart:async';
+import 'package:intl/intl.dart';
 import 'substrate_service.dart';
 import 'account_profile.dart';
 
@@ -644,6 +645,7 @@ class _WalletMainState extends State<WalletMain> {
   double _balance = 0.0;
   List<Transaction> _recentTransactions = [];
   bool _isLoading = true;
+  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   @override
   void initState() {
@@ -670,6 +672,30 @@ class _WalletMainState extends State<WalletMain> {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildBalanceDisplay() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Balance',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          '${_numberFormat.format(_balance)} REZ',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF9F7AEA),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -775,22 +801,7 @@ class _WalletMainState extends State<WalletMain> {
                                   ],
                                 ),
                                 SizedBox(height: 20),
-                                Text(
-                                  'Your Balance',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  '${_balance.toStringAsFixed(4)} REZ',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF9F7AEA),
-                                  ),
-                                ),
+                                _buildBalanceDisplay(),
                                 SizedBox(height: 20),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -868,7 +879,8 @@ class _WalletMainState extends State<WalletMain> {
                               itemCount: _recentTransactions.length,
                               itemBuilder: (context, index) {
                                 final tx = _recentTransactions[index];
-                                return TransactionListItem(transaction: tx);
+                                return TransactionListItem(
+                                    transaction: tx, isReceived: tx.type == TransactionType.received);
                               },
                             ),
                     ],
@@ -962,71 +974,54 @@ class _WalletMainState extends State<WalletMain> {
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
+  final bool isReceived;
+  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
-  const TransactionListItem({
-    Key? key,
+  TransactionListItem({
     required this.transaction,
-  }) : super(key: key);
+    required this.isReceived,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isReceived = transaction.type == TransactionType.received;
-
-    return Card(
-      margin: EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return ListTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isReceived ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isReceived ? Icons.arrow_downward : Icons.arrow_upward,
+          color: isReceived ? Colors.green : Colors.red,
+        ),
       ),
-      child: ListTile(
-        leading: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isReceived ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-            shape: BoxShape.circle,
+      title: Text(
+        isReceived ? 'Received' : 'Sent',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(
+        transaction.otherParty,
+        style: TextStyle(fontSize: 12),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${isReceived ? '+' : '-'}${_numberFormat.format(transaction.amount)} REZ',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isReceived ? Colors.green : Colors.red,
+            ),
           ),
-          child: Icon(
-            isReceived ? Icons.arrow_downward : Icons.arrow_upward,
-            color: isReceived ? Colors.green : Colors.red,
+          Text(
+            transaction.status.name,
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
-        ),
-        title: Text(
-          isReceived ? 'Received REZ' : 'Sent REZ',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${transaction.timestamp.day}/${transaction.timestamp.month}/${transaction.timestamp.year} ${transaction.timestamp.hour}:${transaction.timestamp.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            Text(
-              transaction.otherParty,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${isReceived ? '+' : '-'}${transaction.amount.toStringAsFixed(4)} REZ',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isReceived ? Colors.green : Colors.red,
-              ),
-            ),
-            Text(
-              transaction.status.name,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -1045,6 +1040,7 @@ class _SendScreenState extends State<SendScreen> {
   List<String> _recentRecipients = [];
   String? _recipientName;
   double _maxBalance = 0;
+  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   @override
   void initState() {
@@ -1223,152 +1219,154 @@ class _SendScreenState extends State<SendScreen> {
       ),
       body: _isLoading && _recentRecipients.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Recipient',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  TextField(
-                    controller: _recipientController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Enter recipient address',
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.paste),
-                        onPressed: () async {
-                          final data = await Clipboard.getData('text/plain');
-                          if (data != null && data.text != null) {
-                            _recipientController.text = data.text!;
-                            _lookupIdentity();
-                          }
-                        },
-                      ),
-                    ),
-                    onChanged: (value) {
-                      _lookupIdentity();
-                    },
-                  ),
-                  if (_recipientName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Card(
-                        color: Colors.blue.shade50,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.person, color: Colors.blue),
-                              SizedBox(width: 8),
-                              Text(
-                                _recipientName!,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  SizedBox(height: 16),
-                  if (_recentRecipients.isNotEmpty) ...[
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Recent Recipients',
+                      'Recipient',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _recentRecipients.map((recipient) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ActionChip(
-                              avatar: CircleAvatar(
-                                backgroundColor: Colors.blue.shade100,
-                                child: Text(
-                                  recipient.substring(3, 4),
+                    TextField(
+                      controller: _recipientController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Enter recipient address',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.paste),
+                          onPressed: () async {
+                            final data = await Clipboard.getData('text/plain');
+                            if (data != null && data.text != null) {
+                              _recipientController.text = data.text!;
+                              _lookupIdentity();
+                            }
+                          },
+                        ),
+                      ),
+                      onChanged: (value) {
+                        _lookupIdentity();
+                      },
+                    ),
+                    if (_recipientName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Card(
+                          color: Colors.blue.shade50,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.person, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text(
+                                  _recipientName!,
                                   style: TextStyle(
-                                    color: Colors.blue.shade800,
-                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                              label: Text(
-                                '...${recipient.substring(recipient.length - 6)}',
-                              ),
-                              onPressed: () {
-                                _recipientController.text = recipient;
-                                _lookupIdentity();
-                              },
+                              ],
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ),
                       ),
-                    ),
                     SizedBox(height: 16),
-                  ],
-                  Text(
-                    'Amount',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  TextField(
-                    controller: _amountController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Enter amount to send',
-                      suffix: Text('REZ'),
-                    ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          _amountController.text = _maxBalance.toStringAsFixed(4);
-                        },
-                        child: Text('Max'),
-                      ),
+                    if (_recentRecipients.isNotEmpty) ...[
                       Text(
-                        'Available: ${_maxBalance.toStringAsFixed(4)} REZ',
-                        style: TextStyle(color: Colors.grey),
+                        'Recent Recipients',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
+                      SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _recentRecipients.map((recipient) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ActionChip(
+                                avatar: CircleAvatar(
+                                  backgroundColor: Colors.blue.shade100,
+                                  child: Text(
+                                    recipient.substring(3, 4),
+                                    style: TextStyle(
+                                      color: Colors.blue.shade800,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                label: Text(
+                                  '...${recipient.substring(recipient.length - 6)}',
+                                ),
+                                onPressed: () {
+                                  _recipientController.text = recipient;
+                                  _lookupIdentity();
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      SizedBox(height: 16),
                     ],
-                  ),
-                  if (_errorMessage.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        _errorMessage,
-                        style: TextStyle(color: Colors.red),
+                    Text(
+                      'Amount',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
-                  Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _sendTransaction,
-                      child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Send REZ'),
+                    SizedBox(height: 8),
+                    TextField(
+                      controller: _amountController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Enter amount to send',
+                        suffix: Text('REZ'),
+                      ),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
-                  ),
-                ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            _amountController.text = _maxBalance.toStringAsFixed(4);
+                          },
+                          child: Text('Max'),
+                        ),
+                        Text(
+                          'Available: ${_numberFormat.format(_maxBalance)} REZ',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    if (_errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          _errorMessage,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _sendTransaction,
+                        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Send REZ'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
     );
