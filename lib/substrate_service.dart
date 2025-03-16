@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
+import 'package:resonance_network_wallet/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
@@ -83,14 +84,19 @@ class SubstrateService {
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider);
 
-      // Convert address to AccountId32
-      final accountId = Address.decode(address).pubkey;
+      print('queryBalance Address: $address');
 
-      // Query account info using the balances pallet
-      final accountData = await resonanceApi.query.balances.account(accountId);
+      // Account from SS58 address
+      final account = Address.decode(address);
+
+      print('Account pubkey: ${account.pubkey}');
+
+      // Retrieve Account Balance
+      final accountInfo = await resonanceApi.query.system.account(account.pubkey);
+      print('Balance: ${accountInfo.data.free}');
 
       // Get the free balance
-      final free = accountData.free;
+      final free = accountInfo.data.free;
 
       // Convert balance to REZ (12 decimals)
       return free.toDouble() / BigInt.from(10).pow(12).toDouble();
