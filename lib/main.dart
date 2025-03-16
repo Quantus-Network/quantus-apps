@@ -1061,28 +1061,28 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadBalance();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadBalance() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // In a real app, you'd load recent recipients from storage
-      // and fetch the user's balance from the blockchain
-      // This is a placeholder implementation
-      final random = Random();
-      final recentRecipients = [
-        'REZ' + random.nextInt(100000).toString(),
-        'REZ' + random.nextInt(100000).toString(),
-        'REZ' + random.nextInt(100000).toString(),
-      ];
+      // Get the current account ID
+      final prefs = await SharedPreferences.getInstance();
+      final accountId = prefs.getString('account_id');
+
+      if (accountId == null) {
+        throw Exception('Wallet not found');
+      }
+
+      // Fetch actual balance from the blockchain
+      final balance = await SubstrateService().queryBalance(accountId);
 
       setState(() {
-        _recentRecipients = recentRecipients;
-        _maxBalance = random.nextDouble() * 1000;
+        _maxBalance = balance;
         _isLoading = false;
       });
     } catch (e) {
@@ -1232,8 +1232,14 @@ class _SendScreenState extends State<SendScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Send REZ'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _loadBalance,
+          ),
+        ],
       ),
-      body: _isLoading && _recentRecipients.isEmpty
+      body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SafeArea(
               child: Padding(
@@ -1291,47 +1297,7 @@ class _SendScreenState extends State<SendScreen> {
                           ),
                         ),
                       ),
-                    SizedBox(height: 16),
-                    if (_recentRecipients.isNotEmpty) ...[
-                      Text(
-                        'Recent Recipients',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _recentRecipients.map((recipient) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ActionChip(
-                                avatar: CircleAvatar(
-                                  backgroundColor: Colors.blue.shade100,
-                                  child: Text(
-                                    recipient.substring(3, 4),
-                                    style: TextStyle(
-                                      color: Colors.blue.shade800,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                label: Text(
-                                  '...${recipient.substring(recipient.length - 6)}',
-                                ),
-                                onPressed: () {
-                                  _recipientController.text = recipient;
-                                  _lookupIdentity();
-                                },
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                    ],
+                    SizedBox(height: 24),
                     Text(
                       'Amount',
                       style: TextStyle(
@@ -1349,20 +1315,39 @@ class _SendScreenState extends State<SendScreen> {
                       ),
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            _amountController.text = _maxBalance.toStringAsFixed(4);
-                          },
-                          child: Text('Max'),
-                        ),
-                        Text(
-                          'Available: ${_numberFormat.format(_maxBalance)} REZ',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Available Balance:',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '${_numberFormat.format(_maxBalance)} REZ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF9F7AEA),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () {
+                                  _amountController.text = _maxBalance.toStringAsFixed(4);
+                                },
+                                child: Text('MAX'),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  minimumSize: Size(0, 0),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     if (_errorMessage.isNotEmpty)
                       Padding(
@@ -1378,7 +1363,16 @@ class _SendScreenState extends State<SendScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _sendTransaction,
-                        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Send REZ'),
+                        child: _isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text('Send REZ'),
                       ),
                     ),
                   ],
