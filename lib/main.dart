@@ -362,9 +362,24 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
               SizedBox(height: 16),
               TextField(
                 controller: _mnemonicController,
+                style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Color(0xFF2D2D2D),
                   hintText: 'Enter your mnemonic phrase...',
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
                 maxLines: 4,
               ),
@@ -1257,11 +1272,26 @@ class _SendScreenState extends State<SendScreen> {
                     SizedBox(height: 8),
                     TextField(
                       controller: _recipientController,
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFF2D2D2D),
                         hintText: 'Enter recipient address',
+                        hintStyle: TextStyle(color: Colors.grey),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.paste),
+                          icon: Icon(Icons.paste, color: Color(0xFF9F7AEA)),
                           onPressed: () async {
                             final data = await Clipboard.getData('text/plain');
                             if (data != null && data.text != null) {
@@ -1275,21 +1305,56 @@ class _SendScreenState extends State<SendScreen> {
                         _lookupIdentity();
                       },
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () async {
+                            try {
+                              final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                              _recipientController.text = bobWallet.accountId;
+                              _lookupIdentity();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Bob development account loaded')),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error loading Bob account: $e')),
+                              );
+                            }
+                          },
+                          icon: Icon(Icons.bug_report, size: 16),
+                          label: Text('Use Bob (Test)'),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size(0, 0),
+                            foregroundColor: Color(0xFF9F7AEA),
+                          ),
+                        ),
+                      ],
+                    ),
                     if (_recipientName != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Card(
-                          color: Colors.blue.shade50,
+                          color: Color(0xFF2D2D2D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Color(0xFF6B46C1).withOpacity(0.3),
+                            ),
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               children: [
-                                Icon(Icons.person, color: Colors.blue),
+                                Icon(Icons.person, color: Color(0xFF9F7AEA)),
                                 SizedBox(width: 8),
                                 Text(
                                   _recipientName!,
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ],
@@ -1308,10 +1373,25 @@ class _SendScreenState extends State<SendScreen> {
                     SizedBox(height: 8),
                     TextField(
                       controller: _amountController,
+                      style: TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Color(0xFF2D2D2D),
                         hintText: 'Enter amount to send',
-                        suffix: Text('REZ'),
+                        hintStyle: TextStyle(color: Colors.grey),
+                        suffix: Text('REZ', style: TextStyle(color: Colors.grey)),
                       ),
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
                     ),
