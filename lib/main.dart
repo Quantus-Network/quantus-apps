@@ -836,8 +836,17 @@ class _WalletMainState extends State<WalletMain> {
                                             ),
                                           );
                                         },
-                                        icon: Icon(Icons.send),
+                                        icon: Icon(Icons.send, color: Colors.white, size: 20),
                                         label: Text('Send'),
+                                        style: ElevatedButton.styleFrom(
+                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                          backgroundColor: Color(0xFF6B46C1),
+                                          foregroundColor: Colors.white,
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
