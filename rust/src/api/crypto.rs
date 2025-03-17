@@ -1,19 +1,21 @@
 use rusty_crystals_dilithium::*;
 use bip39::{Language, Mnemonic};
-// use poseidon_resonance::PoseidonHasher;
-// use sp_core::Hasher;
+use poseidon_resonance::PoseidonHasher;
+use sp_core::Hasher;
+use sp_core::crypto::{AccountId32, Ss58Codec};
 #[flutter_rust_bridge::frb(sync)] // Synchronous mode for simplicity of the demo
 pub struct Keypair {
     pub public_key: Vec<u8>,
     pub secret_key: Vec<u8>,
 }
 
+/// Convert public key to accountId32 in ss58check format
 #[flutter_rust_bridge::frb(sync)]
 pub fn to_account_id(obj: &Keypair) -> String {
-    // let hashed = <PoseidonHasher as Hasher>::hash(obj.public_key.as_slice());
-    let hashed = obj.public_key.as_slice();
-    let account = hex::encode(hashed);
-    account
+    let hashed = <PoseidonHasher as Hasher>::hash(obj.public_key.as_slice());
+    let account = AccountId32::from(hashed.0);
+    let result = account.to_ss58check();
+    result
  }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -32,11 +34,6 @@ pub fn generate_keypair(mnemonic_str: String) -> Keypair {
     let seed: [u8; 64] = mnemonic.to_seed_normalized(None.unwrap_or(""));
 
     generate_keypair_from_seed(seed.to_vec())
-    // let keypair = ml_dsa_87::Keypair::generate(Some(&seed));
-    // return Keypair {
-    //     public_key: keypair.public.to_bytes().to_vec(),
-    //     secret_key: keypair.secret.to_bytes().to_vec(),
-    // };
 }
 
 #[flutter_rust_bridge::frb(sync)]
