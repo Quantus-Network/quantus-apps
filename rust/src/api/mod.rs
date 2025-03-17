@@ -1,4 +1,3 @@
-pub mod simple;
 pub mod hdwallet;
 
 // This is the entry point for the Flutter Rust bridge

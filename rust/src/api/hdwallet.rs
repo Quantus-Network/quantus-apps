@@ -6,12 +6,18 @@ pub struct KeyPair {
     pub private_key: Vec<u8>,
 }
 
+impl KeyPair {
+    pub fn into_account(&self) -> String {
+        unimplemented!("Will implement with dilithium crate")
+    }
+}
+
 pub struct Signature {
     pub data: Vec<u8>,
 }
 
 // API functions that will be called from Flutter
-pub fn generate_keypair() -> Result<KeyPair> {
+pub fn generate_keypair(mnemonic: String) -> Result<KeyPair> {
     // TODO: Implement with your dilithium crate
     unimplemented!("Will implement with dilithium crate")
 }
