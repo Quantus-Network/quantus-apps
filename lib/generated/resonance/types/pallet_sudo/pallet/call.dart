@@ -64,7 +64,7 @@ class $Call {
   }
 
   RemoveKey removeKey() {
-    return RemoveKey();
+    return const RemoveKey();
   }
 }
 

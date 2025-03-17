@@ -34,79 +34,79 @@ class $Error {
   const $Error();
 
   PoolNotFound poolNotFound() {
-    return PoolNotFound();
+    return const PoolNotFound();
   }
 
   PoolMemberNotFound poolMemberNotFound() {
-    return PoolMemberNotFound();
+    return const PoolMemberNotFound();
   }
 
   RewardPoolNotFound rewardPoolNotFound() {
-    return RewardPoolNotFound();
+    return const RewardPoolNotFound();
   }
 
   SubPoolsNotFound subPoolsNotFound() {
-    return SubPoolsNotFound();
+    return const SubPoolsNotFound();
   }
 
   AccountBelongsToOtherPool accountBelongsToOtherPool() {
-    return AccountBelongsToOtherPool();
+    return const AccountBelongsToOtherPool();
   }
 
   FullyUnbonding fullyUnbonding() {
-    return FullyUnbonding();
+    return const FullyUnbonding();
   }
 
   MaxUnbondingLimit maxUnbondingLimit() {
-    return MaxUnbondingLimit();
+    return const MaxUnbondingLimit();
   }
 
   CannotWithdrawAny cannotWithdrawAny() {
-    return CannotWithdrawAny();
+    return const CannotWithdrawAny();
   }
 
   MinimumBondNotMet minimumBondNotMet() {
-    return MinimumBondNotMet();
+    return const MinimumBondNotMet();
   }
 
   OverflowRisk overflowRisk() {
-    return OverflowRisk();
+    return const OverflowRisk();
   }
 
   NotDestroying notDestroying() {
-    return NotDestroying();
+    return const NotDestroying();
   }
 
   NotNominator notNominator() {
-    return NotNominator();
+    return const NotNominator();
   }
 
   NotKickerOrDestroying notKickerOrDestroying() {
-    return NotKickerOrDestroying();
+    return const NotKickerOrDestroying();
   }
 
   NotOpen notOpen() {
-    return NotOpen();
+    return const NotOpen();
   }
 
   MaxPools maxPools() {
-    return MaxPools();
+    return const MaxPools();
   }
 
   MaxPoolMembers maxPoolMembers() {
-    return MaxPoolMembers();
+    return const MaxPoolMembers();
   }
 
   CanNotChangeState canNotChangeState() {
-    return CanNotChangeState();
+    return const CanNotChangeState();
   }
 
   DoesNotHavePermission doesNotHavePermission() {
-    return DoesNotHavePermission();
+    return const DoesNotHavePermission();
   }
 
   MetadataExceedsMaxLen metadataExceedsMaxLen() {
-    return MetadataExceedsMaxLen();
+    return const MetadataExceedsMaxLen();
   }
 
   Defensive defensive(_i3.DefensiveError value0) {
@@ -115,75 +115,75 @@ class $Error {
 
   PartialUnbondNotAllowedPermissionlessly
       partialUnbondNotAllowedPermissionlessly() {
-    return PartialUnbondNotAllowedPermissionlessly();
+    return const PartialUnbondNotAllowedPermissionlessly();
   }
 
   MaxCommissionRestricted maxCommissionRestricted() {
-    return MaxCommissionRestricted();
+    return const MaxCommissionRestricted();
   }
 
   CommissionExceedsMaximum commissionExceedsMaximum() {
-    return CommissionExceedsMaximum();
+    return const CommissionExceedsMaximum();
   }
 
   CommissionExceedsGlobalMaximum commissionExceedsGlobalMaximum() {
-    return CommissionExceedsGlobalMaximum();
+    return const CommissionExceedsGlobalMaximum();
   }
 
   CommissionChangeThrottled commissionChangeThrottled() {
-    return CommissionChangeThrottled();
+    return const CommissionChangeThrottled();
   }
 
   CommissionChangeRateNotAllowed commissionChangeRateNotAllowed() {
-    return CommissionChangeRateNotAllowed();
+    return const CommissionChangeRateNotAllowed();
   }
 
   NoPendingCommission noPendingCommission() {
-    return NoPendingCommission();
+    return const NoPendingCommission();
   }
 
   NoCommissionCurrentSet noCommissionCurrentSet() {
-    return NoCommissionCurrentSet();
+    return const NoCommissionCurrentSet();
   }
 
   PoolIdInUse poolIdInUse() {
-    return PoolIdInUse();
+    return const PoolIdInUse();
   }
 
   InvalidPoolId invalidPoolId() {
-    return InvalidPoolId();
+    return const InvalidPoolId();
   }
 
   BondExtraRestricted bondExtraRestricted() {
-    return BondExtraRestricted();
+    return const BondExtraRestricted();
   }
 
   NothingToAdjust nothingToAdjust() {
-    return NothingToAdjust();
+    return const NothingToAdjust();
   }
 
   NothingToSlash nothingToSlash() {
-    return NothingToSlash();
+    return const NothingToSlash();
   }
 
   SlashTooLow slashTooLow() {
-    return SlashTooLow();
+    return const SlashTooLow();
   }
 
   AlreadyMigrated alreadyMigrated() {
-    return AlreadyMigrated();
+    return const AlreadyMigrated();
   }
 
   NotMigrated notMigrated() {
-    return NotMigrated();
+    return const NotMigrated();
   }
 
   NotSupported notSupported() {
-    return NotSupported();
+    return const NotSupported();
   }
 
   Restricted restricted() {
-    return Restricted();
+    return const Restricted();
   }
 }
 

@@ -75,7 +75,7 @@ class $Call {
   }
 
   Chill chill() {
-    return Chill();
+    return const Chill();
   }
 
   SetPayee setPayee({required _i3.RewardDestination payee}) {
@@ -83,7 +83,7 @@ class $Call {
   }
 
   SetController setController() {
-    return SetController();
+    return const SetController();
   }
 
   SetValidatorCount setValidatorCount({required BigInt new_}) {
@@ -99,11 +99,11 @@ class $Call {
   }
 
   ForceNoEras forceNoEras() {
-    return ForceNoEras();
+    return const ForceNoEras();
   }
 
   ForceNewEra forceNewEra() {
-    return ForceNewEra();
+    return const ForceNewEra();
   }
 
   SetInvulnerables setInvulnerables(
@@ -122,7 +122,7 @@ class $Call {
   }
 
   ForceNewEraAlways forceNewEraAlways() {
-    return ForceNewEraAlways();
+    return const ForceNewEraAlways();
   }
 
   CancelDeferredSlash cancelDeferredSlash({

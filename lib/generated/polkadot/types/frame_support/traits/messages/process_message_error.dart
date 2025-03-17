@@ -33,15 +33,15 @@ class $ProcessMessageError {
   const $ProcessMessageError();
 
   BadFormat badFormat() {
-    return BadFormat();
+    return const BadFormat();
   }
 
   Corrupt corrupt() {
-    return Corrupt();
+    return const Corrupt();
   }
 
   Unsupported unsupported() {
-    return Unsupported();
+    return const Unsupported();
   }
 
   Overweight overweight(_i3.Weight value0) {
@@ -49,11 +49,11 @@ class $ProcessMessageError {
   }
 
   Yield yield() {
-    return Yield();
+    return const Yield();
   }
 
   StackLimitReached stackLimitReached() {
-    return StackLimitReached();
+    return const StackLimitReached();
   }
 }
 

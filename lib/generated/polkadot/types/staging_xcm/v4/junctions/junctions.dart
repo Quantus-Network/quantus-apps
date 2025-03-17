@@ -34,7 +34,7 @@ class $Junctions {
   const $Junctions();
 
   Here here() {
-    return Here();
+    return const Here();
   }
 
   X1 x1(List<_i3.Junction> value0) {

@@ -34,15 +34,15 @@ class $RewardDestination {
   const $RewardDestination();
 
   Staked staked() {
-    return Staked();
+    return const Staked();
   }
 
   Stash stash() {
-    return Stash();
+    return const Stash();
   }
 
   Controller controller() {
-    return Controller();
+    return const Controller();
   }
 
   Account account(_i3.AccountId32 value0) {
@@ -50,7 +50,7 @@ class $RewardDestination {
   }
 
   None none() {
-    return None();
+    return const None();
   }
 }
 

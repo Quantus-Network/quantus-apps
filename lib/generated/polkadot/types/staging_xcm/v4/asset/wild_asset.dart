@@ -35,7 +35,7 @@ class $WildAsset {
   const $WildAsset();
 
   All all() {
-    return All();
+    return const All();
   }
 
   AllOf allOf({

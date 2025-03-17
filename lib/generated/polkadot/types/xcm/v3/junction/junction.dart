@@ -88,7 +88,7 @@ class $Junction {
   }
 
   OnlyChild onlyChild() {
-    return OnlyChild();
+    return const OnlyChild();
   }
 
   Plurality plurality({

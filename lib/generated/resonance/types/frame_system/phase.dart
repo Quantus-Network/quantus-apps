@@ -35,11 +35,11 @@ class $Phase {
   }
 
   Finalization finalization() {
-    return Finalization();
+    return const Finalization();
   }
 
   Initialization initialization() {
-    return Initialization();
+    return const Initialization();
   }
 }
 

@@ -33,15 +33,15 @@ class $TransferType {
   const $TransferType();
 
   Teleport teleport() {
-    return Teleport();
+    return const Teleport();
   }
 
   LocalReserve localReserve() {
-    return LocalReserve();
+    return const LocalReserve();
   }
 
   DestinationReserve destinationReserve() {
-    return DestinationReserve();
+    return const DestinationReserve();
   }
 
   RemoteReserve remoteReserve(_i3.VersionedLocation value0) {

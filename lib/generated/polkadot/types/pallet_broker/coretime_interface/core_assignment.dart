@@ -31,11 +31,11 @@ class $CoreAssignment {
   const $CoreAssignment();
 
   Idle idle() {
-    return Idle();
+    return const Idle();
   }
 
   Pool pool() {
-    return Pool();
+    return const Pool();
   }
 
   Task task(int value0) {

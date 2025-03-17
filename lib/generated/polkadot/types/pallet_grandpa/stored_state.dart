@@ -31,7 +31,7 @@ class $StoredState {
   const $StoredState();
 
   Live live() {
-    return Live();
+    return const Live();
   }
 
   PendingPause pendingPause({
@@ -45,7 +45,7 @@ class $StoredState {
   }
 
   Paused paused() {
-    return Paused();
+    return const Paused();
   }
 
   PendingResume pendingResume({

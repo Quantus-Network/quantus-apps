@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
-import 'package:resonance_network_wallet/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart' as convert;
 
 import 'generated/resonance/resonance.dart';
-import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:ss58/ss58.dart';
 
 class WalletInfo {
@@ -40,7 +40,8 @@ class SubstrateService {
   late final StateApi _stateApi;
   late final AuthorApi _authorApi;
   late final SystemApi _systemApi;
-  static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  static const String _rpcEndpoint =
+      'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
   Future<void> initialize() async {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
@@ -92,7 +93,8 @@ class SubstrateService {
       print('Account pubkey: ${account.pubkey}');
 
       // Retrieve Account Balance
-      final accountInfo = await resonanceApi.query.system.account(account.pubkey);
+      final accountInfo =
+          await resonanceApi.query.system.account(account.pubkey);
       print('Balance: ${accountInfo.data.free}');
 
       // Get the free balance
@@ -106,7 +108,8 @@ class SubstrateService {
     }
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransfer(
+      String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
@@ -119,23 +122,30 @@ class SubstrateService {
       final block = await _provider.send('chain_getBlock', []);
       final blockNumber = int.parse(block.result['block']['header']['number']);
 
-      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+      final blockHash = (await _provider.send('chain_getBlockHash', []))
+          .result
+          .replaceAll('0x', '');
+      final genesisHash = (await _provider.send('chain_getBlockHash', [0]))
+          .result
+          .replaceAll('0x', '');
 
       // Get the next nonce for the sender
-      final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.address]);
+      final nonceResult = await _provider
+          .send('system_accountNextIndex', [senderWallet.address]);
       final nonce = int.parse(nonceResult.result.toString());
 
       // Convert amount to chain format (considering decimals)
       final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
 
       final dest = targetAddress;
-      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
+      final multiDest =
+          const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
       print('Destination: $dest');
 
       // Encode call
       final resonanceApi = Resonance(_provider);
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
+      final runtimeCall = resonanceApi.tx.balances
+          .transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
       final transferCall = runtimeCall.encode();
 
       // // Create the destination address bytes
@@ -187,7 +197,8 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final entropy =
+          List<int>.generate(32, (i) => Random.secure().nextInt(256));
       // Convert entropy to a hexadecimal string
       final entropyHex = convert.hex.encode(entropy);
       // Generate mnemonic from entropy

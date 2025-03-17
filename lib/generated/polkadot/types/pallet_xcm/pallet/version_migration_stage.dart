@@ -32,11 +32,11 @@ class $VersionMigrationStage {
   const $VersionMigrationStage();
 
   MigrateSupportedVersion migrateSupportedVersion() {
-    return MigrateSupportedVersion();
+    return const MigrateSupportedVersion();
   }
 
   MigrateVersionNotifiers migrateVersionNotifiers() {
-    return MigrateVersionNotifiers();
+    return const MigrateVersionNotifiers();
   }
 
   NotifyCurrentTargets notifyCurrentTargets(List<int>? value0) {
@@ -44,7 +44,7 @@ class $VersionMigrationStage {
   }
 
   MigrateAndNotifyOldTargets migrateAndNotifyOldTargets() {
-    return MigrateAndNotifyOldTargets();
+    return const MigrateAndNotifyOldTargets();
   }
 }
 

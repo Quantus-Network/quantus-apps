@@ -44,15 +44,15 @@ class $Event {
   }
 
   BatchCompleted batchCompleted() {
-    return BatchCompleted();
+    return const BatchCompleted();
   }
 
   BatchCompletedWithErrors batchCompletedWithErrors() {
-    return BatchCompletedWithErrors();
+    return const BatchCompletedWithErrors();
   }
 
   ItemCompleted itemCompleted() {
-    return ItemCompleted();
+    return const ItemCompleted();
   }
 
   ItemFailed itemFailed({required _i3.DispatchError error}) {

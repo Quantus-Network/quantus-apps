@@ -35,7 +35,7 @@ class $BondExtra {
   }
 
   Rewards rewards() {
-    return Rewards();
+    return const Rewards();
   }
 }
 
