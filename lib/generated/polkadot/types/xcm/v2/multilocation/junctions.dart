@@ -33,7 +33,7 @@ class $Junctions {
   const $Junctions();
 
   Here here() {
-    return const Here();
+    return Here();
   }
 
   X1 x1(_i3.Junction value0) {

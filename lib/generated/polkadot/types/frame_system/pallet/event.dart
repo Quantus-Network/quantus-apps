@@ -52,7 +52,7 @@ class $Event {
   }
 
   CodeUpdated codeUpdated() {
-    return const CodeUpdated();
+    return CodeUpdated();
   }
 
   NewAccount newAccount({required _i5.AccountId32 account}) {

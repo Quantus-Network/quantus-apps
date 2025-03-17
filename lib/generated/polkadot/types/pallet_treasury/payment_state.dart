@@ -31,7 +31,7 @@ class $PaymentState {
   const $PaymentState();
 
   Pending pending() {
-    return const Pending();
+    return Pending();
   }
 
   Attempted attempted({required BigInt id}) {
@@ -39,7 +39,7 @@ class $PaymentState {
   }
 
   Failed failed() {
-    return const Failed();
+    return Failed();
   }
 }
 

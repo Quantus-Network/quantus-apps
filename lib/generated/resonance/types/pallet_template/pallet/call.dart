@@ -47,7 +47,7 @@ class $Call {
   }
 
   CauseError causeError() {
-    return const CauseError();
+    return CauseError();
   }
 }
 

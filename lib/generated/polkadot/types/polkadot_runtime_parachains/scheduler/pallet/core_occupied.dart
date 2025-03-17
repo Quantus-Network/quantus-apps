@@ -33,7 +33,7 @@ class $CoreOccupied {
   const $CoreOccupied();
 
   Free free() {
-    return const Free();
+    return Free();
   }
 
   Paras paras(_i3.ParasEntry value0) {

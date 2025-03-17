@@ -361,7 +361,7 @@ class Queries {
     if (bytes != null) {
       return _epochStart.decodeValue(bytes);
     }
-    return const _i8.Tuple2<int, int>(
+    return _i8.Tuple2<int, int>(
       0,
       0,
     ); /* Default */

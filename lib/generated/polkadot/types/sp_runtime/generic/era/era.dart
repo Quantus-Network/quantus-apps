@@ -31,7 +31,7 @@ class $Era {
   const $Era();
 
   Immortal immortal() {
-    return const Immortal();
+    return Immortal();
   }
 
   Mortal1 mortal1(int value0) {

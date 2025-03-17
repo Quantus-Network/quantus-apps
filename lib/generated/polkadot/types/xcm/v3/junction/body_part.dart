@@ -31,7 +31,7 @@ class $BodyPart {
   const $BodyPart();
 
   Voice voice() {
-    return const Voice();
+    return Voice();
   }
 
   Members members({required BigInt count}) {

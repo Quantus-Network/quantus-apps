@@ -32,7 +32,7 @@ class $BodyId {
   const $BodyId();
 
   Unit unit() {
-    return const Unit();
+    return Unit();
   }
 
   Named named(List<int> value0) {
@@ -44,31 +44,31 @@ class $BodyId {
   }
 
   Executive executive() {
-    return const Executive();
+    return Executive();
   }
 
   Technical technical() {
-    return const Technical();
+    return Technical();
   }
 
   Legislative legislative() {
-    return const Legislative();
+    return Legislative();
   }
 
   Judicial judicial() {
-    return const Judicial();
+    return Judicial();
   }
 
   Defense defense() {
-    return const Defense();
+    return Defense();
   }
 
   Administration administration() {
-    return const Administration();
+    return Administration();
   }
 
   Treasury treasury() {
-    return const Treasury();
+    return Treasury();
   }
 }
 

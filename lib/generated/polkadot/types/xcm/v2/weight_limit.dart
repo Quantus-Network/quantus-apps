@@ -31,7 +31,7 @@ class $WeightLimit {
   const $WeightLimit();
 
   Unlimited unlimited() {
-    return const Unlimited();
+    return Unlimited();
   }
 
   Limited limited(BigInt value0) {

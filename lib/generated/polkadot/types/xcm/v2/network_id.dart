@@ -32,7 +32,7 @@ class $NetworkId {
   const $NetworkId();
 
   Any any() {
-    return const Any();
+    return Any();
   }
 
   Named named(List<int> value0) {
@@ -40,11 +40,11 @@ class $NetworkId {
   }
 
   Polkadot polkadot() {
-    return const Polkadot();
+    return Polkadot();
   }
 
   Kusama kusama() {
-    return const Kusama();
+    return Kusama();
   }
 }
 

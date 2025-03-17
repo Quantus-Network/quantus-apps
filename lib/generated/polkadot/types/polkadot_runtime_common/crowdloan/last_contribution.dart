@@ -31,7 +31,7 @@ class $LastContribution {
   const $LastContribution();
 
   Never never() {
-    return const Never();
+    return Never();
   }
 
   PreEnding preEnding(int value0) {

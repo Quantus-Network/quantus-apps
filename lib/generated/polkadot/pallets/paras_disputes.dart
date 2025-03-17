@@ -220,6 +220,6 @@ class Txs {
   const Txs();
 
   _i8.ParasDisputes forceUnfreeze() {
-    return const _i8.ParasDisputes(_i9.Call.forceUnfreeze);
+    return _i8.ParasDisputes(_i9.Call.forceUnfreeze);
   }
 }

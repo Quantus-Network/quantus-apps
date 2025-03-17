@@ -34,7 +34,7 @@ class $ConfigOp {
   const $ConfigOp();
 
   Noop noop() {
-    return const Noop();
+    return Noop();
   }
 
   Set set(_i3.AccountId32 value0) {
@@ -42,7 +42,7 @@ class $ConfigOp {
   }
 
   Remove remove() {
-    return const Remove();
+    return Remove();
   }
 }
 

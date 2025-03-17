@@ -233,91 +233,91 @@ class Queries {
 class Extrinsics {
   Extrinsics();
 
-  final _i2.Txs system = const _i2.Txs();
+  final _i2.Txs system = _i2.Txs();
 
-  final _i3.Txs scheduler = const _i3.Txs();
+  final _i3.Txs scheduler = _i3.Txs();
 
-  final _i4.Txs preimage = const _i4.Txs();
+  final _i4.Txs preimage = _i4.Txs();
 
-  final _i5.Txs babe = const _i5.Txs();
+  final _i5.Txs babe = _i5.Txs();
 
-  final _i6.Txs timestamp = const _i6.Txs();
+  final _i6.Txs timestamp = _i6.Txs();
 
-  final _i7.Txs indices = const _i7.Txs();
+  final _i7.Txs indices = _i7.Txs();
 
-  final _i8.Txs balances = const _i8.Txs();
+  final _i8.Txs balances = _i8.Txs();
 
-  final _i11.Txs staking = const _i11.Txs();
+  final _i11.Txs staking = _i11.Txs();
 
-  final _i14.Txs session = const _i14.Txs();
+  final _i14.Txs session = _i14.Txs();
 
-  final _i15.Txs grandpa = const _i15.Txs();
+  final _i15.Txs grandpa = _i15.Txs();
 
-  final _i17.Txs treasury = const _i17.Txs();
+  final _i17.Txs treasury = _i17.Txs();
 
-  final _i18.Txs convictionVoting = const _i18.Txs();
+  final _i18.Txs convictionVoting = _i18.Txs();
 
-  final _i19.Txs referenda = const _i19.Txs();
+  final _i19.Txs referenda = _i19.Txs();
 
-  final _i20.Txs whitelist = const _i20.Txs();
+  final _i20.Txs whitelist = _i20.Txs();
 
-  final _i21.Txs claims = const _i21.Txs();
+  final _i21.Txs claims = _i21.Txs();
 
-  final _i22.Txs vesting = const _i22.Txs();
+  final _i22.Txs vesting = _i22.Txs();
 
-  final _i57.Txs utility = const _i57.Txs();
+  final _i57.Txs utility = _i57.Txs();
 
-  final _i23.Txs proxy = const _i23.Txs();
+  final _i23.Txs proxy = _i23.Txs();
 
-  final _i24.Txs multisig = const _i24.Txs();
+  final _i24.Txs multisig = _i24.Txs();
 
-  final _i25.Txs bounties = const _i25.Txs();
+  final _i25.Txs bounties = _i25.Txs();
 
-  final _i26.Txs childBounties = const _i26.Txs();
+  final _i26.Txs childBounties = _i26.Txs();
 
-  final _i27.Txs electionProviderMultiPhase = const _i27.Txs();
+  final _i27.Txs electionProviderMultiPhase = _i27.Txs();
 
-  final _i28.Txs voterList = const _i28.Txs();
+  final _i28.Txs voterList = _i28.Txs();
 
-  final _i29.Txs nominationPools = const _i29.Txs();
+  final _i29.Txs nominationPools = _i29.Txs();
 
-  final _i30.Txs fastUnstake = const _i30.Txs();
+  final _i30.Txs fastUnstake = _i30.Txs();
 
-  final _i32.Txs configuration = const _i32.Txs();
+  final _i32.Txs configuration = _i32.Txs();
 
-  final _i35.Txs paraInherent = const _i35.Txs();
+  final _i35.Txs paraInherent = _i35.Txs();
 
-  final _i37.Txs paras = const _i37.Txs();
+  final _i37.Txs paras = _i37.Txs();
 
-  final _i38.Txs initializer = const _i38.Txs();
+  final _i38.Txs initializer = _i38.Txs();
 
-  final _i40.Txs hrmp = const _i40.Txs();
+  final _i40.Txs hrmp = _i40.Txs();
 
-  final _i42.Txs parasDisputes = const _i42.Txs();
+  final _i42.Txs parasDisputes = _i42.Txs();
 
-  final _i43.Txs parasSlashing = const _i43.Txs();
+  final _i43.Txs parasSlashing = _i43.Txs();
 
-  final _i44.Txs onDemand = const _i44.Txs();
+  final _i44.Txs onDemand = _i44.Txs();
 
-  final _i46.Txs registrar = const _i46.Txs();
+  final _i46.Txs registrar = _i46.Txs();
 
-  final _i47.Txs slots = const _i47.Txs();
+  final _i47.Txs slots = _i47.Txs();
 
-  final _i48.Txs auctions = const _i48.Txs();
+  final _i48.Txs auctions = _i48.Txs();
 
-  final _i49.Txs crowdloan = const _i49.Txs();
+  final _i49.Txs crowdloan = _i49.Txs();
 
-  final _i58.Txs coretime = const _i58.Txs();
+  final _i58.Txs coretime = _i58.Txs();
 
-  final _i50.Txs stateTrieMigration = const _i50.Txs();
+  final _i50.Txs stateTrieMigration = _i50.Txs();
 
-  final _i51.Txs xcmPallet = const _i51.Txs();
+  final _i51.Txs xcmPallet = _i51.Txs();
 
-  final _i52.Txs messageQueue = const _i52.Txs();
+  final _i52.Txs messageQueue = _i52.Txs();
 
-  final _i53.Txs assetRate = const _i53.Txs();
+  final _i53.Txs assetRate = _i53.Txs();
 
-  final _i54.Txs beefy = const _i54.Txs();
+  final _i54.Txs beefy = _i54.Txs();
 }
 
 class Constants {

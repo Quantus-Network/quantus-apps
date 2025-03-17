@@ -66,7 +66,7 @@ class $DigestItem {
   }
 
   RuntimeEnvironmentUpdated runtimeEnvironmentUpdated() {
-    return const RuntimeEnvironmentUpdated();
+    return RuntimeEnvironmentUpdated();
   }
 }
 

@@ -74,7 +74,7 @@ class $Call {
   }
 
   RemoveProxies removeProxies() {
-    return const RemoveProxies();
+    return RemoveProxies();
   }
 
   CreatePure createPure({

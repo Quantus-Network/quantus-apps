@@ -70,7 +70,7 @@ class $ExecutorParam {
   }
 
   WasmExtBulkMemory wasmExtBulkMemory() {
-    return const WasmExtBulkMemory();
+    return WasmExtBulkMemory();
   }
 }
 

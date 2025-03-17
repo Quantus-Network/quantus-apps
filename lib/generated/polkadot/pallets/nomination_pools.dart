@@ -719,7 +719,7 @@ class Txs {
   ///
   /// See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
   _i12.NominationPools claimPayout() {
-    return const _i12.NominationPools(_i13.ClaimPayout());
+    return _i12.NominationPools(_i13.ClaimPayout());
   }
 
   /// Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It

@@ -41,11 +41,11 @@ class $Event {
   }
 
   Paused paused() {
-    return const Paused();
+    return Paused();
   }
 
   Resumed resumed() {
-    return const Resumed();
+    return Resumed();
   }
 }
 

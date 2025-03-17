@@ -68,6 +68,6 @@ class Txs {
   /// - If incrementing the value in storage causes an arithmetic overflow
   ///  ([`Error::StorageOverflow`])
   _i5.Template causeError() {
-    return const _i5.Template(_i6.CauseError());
+    return _i5.Template(_i6.CauseError());
   }
 }

@@ -31,87 +31,87 @@ class $Error {
   const $Error();
 
   Overflow overflow() {
-    return const Overflow();
+    return Overflow();
   }
 
   Unimplemented unimplemented() {
-    return const Unimplemented();
+    return Unimplemented();
   }
 
   UntrustedReserveLocation untrustedReserveLocation() {
-    return const UntrustedReserveLocation();
+    return UntrustedReserveLocation();
   }
 
   UntrustedTeleportLocation untrustedTeleportLocation() {
-    return const UntrustedTeleportLocation();
+    return UntrustedTeleportLocation();
   }
 
   MultiLocationFull multiLocationFull() {
-    return const MultiLocationFull();
+    return MultiLocationFull();
   }
 
   MultiLocationNotInvertible multiLocationNotInvertible() {
-    return const MultiLocationNotInvertible();
+    return MultiLocationNotInvertible();
   }
 
   BadOrigin badOrigin() {
-    return const BadOrigin();
+    return BadOrigin();
   }
 
   InvalidLocation invalidLocation() {
-    return const InvalidLocation();
+    return InvalidLocation();
   }
 
   AssetNotFound assetNotFound() {
-    return const AssetNotFound();
+    return AssetNotFound();
   }
 
   FailedToTransactAsset failedToTransactAsset() {
-    return const FailedToTransactAsset();
+    return FailedToTransactAsset();
   }
 
   NotWithdrawable notWithdrawable() {
-    return const NotWithdrawable();
+    return NotWithdrawable();
   }
 
   LocationCannotHold locationCannotHold() {
-    return const LocationCannotHold();
+    return LocationCannotHold();
   }
 
   ExceedsMaxMessageSize exceedsMaxMessageSize() {
-    return const ExceedsMaxMessageSize();
+    return ExceedsMaxMessageSize();
   }
 
   DestinationUnsupported destinationUnsupported() {
-    return const DestinationUnsupported();
+    return DestinationUnsupported();
   }
 
   Transport transport() {
-    return const Transport();
+    return Transport();
   }
 
   Unroutable unroutable() {
-    return const Unroutable();
+    return Unroutable();
   }
 
   UnknownClaim unknownClaim() {
-    return const UnknownClaim();
+    return UnknownClaim();
   }
 
   FailedToDecode failedToDecode() {
-    return const FailedToDecode();
+    return FailedToDecode();
   }
 
   MaxWeightInvalid maxWeightInvalid() {
-    return const MaxWeightInvalid();
+    return MaxWeightInvalid();
   }
 
   NotHoldingFees notHoldingFees() {
-    return const NotHoldingFees();
+    return NotHoldingFees();
   }
 
   TooExpensive tooExpensive() {
-    return const TooExpensive();
+    return TooExpensive();
   }
 
   Trap trap(BigInt value0) {
@@ -119,7 +119,7 @@ class $Error {
   }
 
   UnhandledXcmVersion unhandledXcmVersion() {
-    return const UnhandledXcmVersion();
+    return UnhandledXcmVersion();
   }
 
   WeightLimitReached weightLimitReached(BigInt value0) {
@@ -127,11 +127,11 @@ class $Error {
   }
 
   Barrier barrier() {
-    return const Barrier();
+    return Barrier();
   }
 
   WeightNotComputable weightNotComputable() {
-    return const WeightNotComputable();
+    return WeightNotComputable();
   }
 }
 

@@ -1,14 +1,14 @@
+import 'dart:typed_data';
 import 'package:polkadart/polkadart.dart';
-import 'package:polkadart/scale_codec.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
+import 'package:resonance_network_wallet/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart' as convert;
 
 import 'generated/resonance/resonance.dart';
-import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
-    as multi_address;
+import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
 
 class WalletInfo {
@@ -40,8 +40,7 @@ class SubstrateService {
   late final StateApi _stateApi;
   late final AuthorApi _authorApi;
   late final SystemApi _systemApi;
-  static const String _rpcEndpoint =
-      'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
   Future<void> initialize() async {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
@@ -93,8 +92,7 @@ class SubstrateService {
       print('Account pubkey: ${account.pubkey}');
 
       // Retrieve Account Balance
-      final accountInfo =
-          await resonanceApi.query.system.account(account.pubkey);
+      final accountInfo = await resonanceApi.query.system.account(account.pubkey);
       print('Balance: ${accountInfo.data.free}');
 
       // Get the free balance
@@ -108,62 +106,75 @@ class SubstrateService {
     }
   }
 
-  Future<String> balanceTransfer(
-      String mnemonic, String targetAddress, double amount) async {
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, double amount) async {
     try {
-      final polkadot = Resonance(_provider);
+      // Get the sender's wallet
+      final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
 
-      final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
-      print('Sender\' wallet: ${wallet.address}');
+      // Get necessary info for the transaction
+      final runtimeVersion = await _stateApi.getRuntimeVersion();
+      final specVersion = runtimeVersion.specVersion;
+      final transactionVersion = runtimeVersion.transactionVersion;
 
-      // Get information necessary to build a proper extrinsic
-      final runtimeVersion = await polkadot.rpc.state.getRuntimeVersion();
-      final currentBlockNumber = (await polkadot.query.system.number()) - 1;
-      final currentBlockHash =
-          await polkadot.query.system.blockHash(currentBlockNumber);
-      final genesisHash = await polkadot.query.system.blockHash(0);
-      final nonce = await polkadot.rpc.system.accountNextIndex(wallet.address);
+      final block = await _provider.send('chain_getBlock', []);
+      final blockNumber = int.parse(block.result['block']['header']['number']);
 
-      // Make the encoded call
-      final multiAddress =
-          const multi_address.$MultiAddress().id(wallet.publicKey.bytes);
-      final transferCall = polkadot.tx.balances
-          .transferKeepAlive(dest: multiAddress, value: BigInt.one);
-      final encodedCall = transferCall.encode();
+      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
 
-      // Make the payload
-      final payload = SigningPayload(
-              method: encodedCall,
-              specVersion: runtimeVersion.specVersion,
-              transactionVersion: runtimeVersion.transactionVersion,
-              genesisHash: encodeHex(genesisHash),
-              blockHash: encodeHex(currentBlockHash),
-              blockNumber: currentBlockNumber,
-              eraPeriod: 64,
-              nonce: nonce,
-              tip: 0)
-          .encode(polkadot.registry);
+      // Get the next nonce for the sender
+      final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.address]);
+      final nonce = int.parse(nonceResult.result.toString());
 
-      // Sign the payload and build the final extrinsic
-      final signature = wallet.sign(payload);
-      final extrinsic = ExtrinsicPayload(
-        signer: wallet.bytes(),
-        method: encodedCall,
-        signature: signature,
+      // Convert amount to chain format (considering decimals)
+      final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
+
+      final dest = targetAddress;
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
+      print('Destination: $dest');
+
+      // Encode call
+      final resonanceApi = Resonance(_provider);
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
+      final transferCall = runtimeCall.encode();
+
+      // // Create the destination address bytes
+      // final destBytes = hex.decode(targetAddress.replaceAll('0x', ''));
+
+      // Get metadata for encoding
+      final metadata = await _stateApi.getMetadata();
+
+      // Create and sign the payload
+      final payloadToSign = SigningPayload(
+        method: transferCall,
+        specVersion: specVersion,
+        transactionVersion: transactionVersion,
+        genesisHash: genesisHash,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
         eraPeriod: 64,
-        blockNumber: currentBlockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(polkadot.registry, SignatureType.sr25519);
+      );
 
-      // Send the extrinsic to the blockchain
-      final author = AuthorApi(_provider);
-      await author.submitAndWatchExtrinsic(extrinsic, (data) {
-        print('data: $data');
-      });
-      return 'OK';
+      final payload = payloadToSign.encode(metadata);
+      final signature = senderWallet.sign(payload);
+
+      // Create the extrinsic
+      final extrinsic = ExtrinsicPayload(
+        signer: Uint8List.fromList(senderWallet.publicKey.bytes),
+        method: transferCall,
+        signature: signature,
+        eraPeriod: 64,
+        blockNumber: blockNumber,
+        nonce: nonce,
+        tip: 0,
+      ).encode(metadata, SignatureType.sr25519);
+
+      // Submit the extrinsic
+      final hash = await _authorApi.submitExtrinsic(extrinsic);
+      return convert.hex.encode(hash);
     } catch (e) {
-      print(e);
       throw Exception('Failed to transfer balance: $e');
     }
   }
@@ -176,8 +187,7 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy =
-          List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
       // Convert entropy to a hexadecimal string
       final entropyHex = convert.hex.encode(entropy);
       // Generate mnemonic from entropy

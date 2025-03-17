@@ -33,7 +33,7 @@ class $ConfigOp {
   const $ConfigOp();
 
   Noop noop() {
-    return const Noop();
+    return Noop();
   }
 
   Set set(_i3.Percent value0) {
@@ -41,7 +41,7 @@ class $ConfigOp {
   }
 
   Remove remove() {
-    return const Remove();
+    return Remove();
   }
 }
 

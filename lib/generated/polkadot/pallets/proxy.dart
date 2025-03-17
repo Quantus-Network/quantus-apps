@@ -181,7 +181,7 @@ class Txs {
   /// WARNING: This may be called on accounts created by `pure`, however if done, then
   /// the unreserved fees will be inaccessible. **All access to this account will be lost.**
   _i9.Proxy removeProxies() {
-    return const _i9.Proxy(_i12.RemoveProxies());
+    return _i9.Proxy(_i12.RemoveProxies());
   }
 
   /// Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and

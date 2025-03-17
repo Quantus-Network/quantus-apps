@@ -37,15 +37,15 @@ class $DispatchError {
   const $DispatchError();
 
   Other other() {
-    return const Other();
+    return Other();
   }
 
   CannotLookup cannotLookup() {
-    return const CannotLookup();
+    return CannotLookup();
   }
 
   BadOrigin badOrigin() {
-    return const BadOrigin();
+    return BadOrigin();
   }
 
   Module module(_i3.ModuleError value0) {
@@ -53,15 +53,15 @@ class $DispatchError {
   }
 
   ConsumerRemaining consumerRemaining() {
-    return const ConsumerRemaining();
+    return ConsumerRemaining();
   }
 
   NoProviders noProviders() {
-    return const NoProviders();
+    return NoProviders();
   }
 
   TooManyConsumers tooManyConsumers() {
-    return const TooManyConsumers();
+    return TooManyConsumers();
   }
 
   Token token(_i4.TokenError value0) {
@@ -77,19 +77,19 @@ class $DispatchError {
   }
 
   Exhausted exhausted() {
-    return const Exhausted();
+    return Exhausted();
   }
 
   Corruption corruption() {
-    return const Corruption();
+    return Corruption();
   }
 
   Unavailable unavailable() {
-    return const Unavailable();
+    return Unavailable();
   }
 
   RootNotAllowed rootNotAllowed() {
-    return const RootNotAllowed();
+    return RootNotAllowed();
   }
 
   Trie trie(_i7.TrieError value0) {
