@@ -1496,7 +1496,7 @@
 //
 
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/src/rust/api/simple.dart';
+import 'package:resonance_network_wallet/src/rust/api/crypto.dart';
 import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
 
 Future<void> main() async {
@@ -1509,12 +1509,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keypair = generateKeypair(mnemonic: '//Alice');
+    final accountId = toAccountId(obj: keypair);
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),
         body: Center(
-          child: Text(
-              'Action: Call Rust `greet("Tom")`\nResult: `${greet(name: "Tom")}`'),
+          child: Text('Action: Call Rust gen key\nResult: $accountId'),
         ),
       ),
     );

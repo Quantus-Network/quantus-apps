@@ -6,6 +6,7 @@
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
+import 'api/crypto.dart';
 import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -24,6 +25,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  Keypair dco_decode_box_autoadd_keypair(dynamic raw);
+
+  @protected
+  Keypair dco_decode_keypair(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
@@ -34,6 +41,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  Keypair sse_decode_box_autoadd_keypair(SseDeserializer deserializer);
+
+  @protected
+  Keypair sse_decode_keypair(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
@@ -52,6 +65,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_keypair(Keypair self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_strict(
