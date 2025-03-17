@@ -1509,8 +1509,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keypair = generateKeypair(mnemonic: '//Alice');
+    final keypair = crystalAlice();
     final accountId = toAccountId(obj: keypair);
+
+    print("alice: ${keypair.publicKey}");
+    print("bob: ${crystalBob().publicKey}");
+    print("charlie: ${crystalCharlie().publicKey}");
+
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),

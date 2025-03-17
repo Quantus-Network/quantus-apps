@@ -11,8 +11,17 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 String toAccountId({required Keypair obj}) =>
     RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
-Keypair generateKeypair({required String mnemonic}) =>
-    RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonic: mnemonic);
+Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
+    .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
+
+Keypair generateKeypairFromSeed({required List<int> seed}) =>
+    RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
+
+Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
+
+Keypair crystalBob() => RustLib.instance.api.crateApiCryptoCrystalBob();
+
+Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 
 class Keypair {
   final Uint8List publicKey;
