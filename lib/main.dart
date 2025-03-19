@@ -24,7 +24,7 @@ enum Mode {
   dilithium,
 }
 
-const mode = Mode.schorr;
+const mode = Mode.dilithium;
 
 class ResonanceWalletApp extends StatelessWidget {
   @override
@@ -686,10 +686,9 @@ class WalletMain extends StatefulWidget {
 
 class _WalletMainState extends State<WalletMain> {
   String _accountId = '';
-  double _balance = 0.0;
+  BigInt _balance = BigInt.zero;
   List<Transaction> _recentTransactions = [];
   bool _isLoading = true;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   @override
   void initState() {
@@ -731,7 +730,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         SizedBox(height: 4),
         Text(
-          '${_numberFormat.format(_balance)} REZ',
+          '${SubstrateService().formatBalance(_balance)} REZ',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -1035,7 +1034,6 @@ class _WalletMainState extends State<WalletMain> {
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   TransactionListItem({
     required this.transaction,
@@ -1071,7 +1069,7 @@ class TransactionListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${isReceived ? '+' : '-'}${_numberFormat.format(transaction.amount)} REZ',
+            '${isReceived ? '+' : '-'}${SubstrateService().formatBalance(transaction.amount)} REZ',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isReceived ? Colors.green : Colors.red,
@@ -1099,8 +1097,7 @@ class _SendScreenState extends State<SendScreen> {
   String _errorMessage = '';
   List<String> _recentRecipients = [];
   String? _recipientName;
-  double _maxBalance = 0;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
+  BigInt _maxBalance = BigInt.from(0);
 
   @override
   void initState() {
@@ -1172,7 +1169,7 @@ class _SendScreenState extends State<SendScreen> {
         throw Exception('Please enter a valid amount');
       }
 
-      if (amount > _maxBalance) {
+      if (BigInt.from(amount) > _maxBalance) {
         throw Exception('Insufficient balance');
       }
 
@@ -1251,7 +1248,7 @@ class _SendScreenState extends State<SendScreen> {
       // Submit the transaction
       String hash;
       if (mode == Mode.dilithium) {
-        hash = await SubstrateService().balanceTransfer(
+        hash = await SubstrateService().balanceTransfer2(
           senderSeed,
           recipient,
           amount,
@@ -1455,7 +1452,7 @@ class _SendScreenState extends State<SendScreen> {
                           Row(
                             children: [
                               Text(
-                                '${_numberFormat.format(_maxBalance)} REZ',
+                                '${SubstrateService().formatBalance(_maxBalance)} REZ',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF9F7AEA),
@@ -1464,7 +1461,7 @@ class _SendScreenState extends State<SendScreen> {
                               SizedBox(width: 8),
                               TextButton(
                                 onPressed: () {
-                                  _amountController.text = _maxBalance.toStringAsFixed(4);
+                                  _amountController.text = _maxBalance.toString();
                                 },
                                 child: Text('MAX'),
                                 style: TextButton.styleFrom(
@@ -1524,7 +1521,7 @@ enum TransactionStatus {
 
 class Transaction {
   final String id;
-  final double amount;
+  final BigInt amount;
   final DateTime timestamp;
   final TransactionType type;
   final String otherParty;
