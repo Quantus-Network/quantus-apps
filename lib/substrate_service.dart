@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
-import 'package:resonance_network_wallet/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
@@ -11,7 +10,7 @@ import 'generated/resonance/resonance.dart';
 import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
-import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
+import 'extrinsic_payload.dart';
 
 class WalletInfo {
   final KeyPair keyPair;
@@ -89,6 +88,22 @@ class SubstrateService {
     _systemApi = SystemApi(_provider);
   }
 
+  String formatBalance(BigInt balance) {
+    return balance.toString();
+
+    // final _numberFormat = NumberFormat("#,##0.000000000000", "en_US");
+    // Convert to decimal string considering 12 decimal places
+    // final decimal = balance.toString().padLeft(13, '0');
+    // final integerPart = decimal.substring(0, decimal.length - 12);
+    // final fractionalPart = decimal.substring(decimal.length - 12);
+
+    // // Format with commas for thousands
+    // final formattedInteger = _numberFormat.format(int.parse(integerPart));
+
+    // // Combine with fractional part
+    // return '$formattedInteger.$fractionalPart';
+  }
+
   Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
     try {
       // For development accounts like //Alice, we use fromUri
@@ -143,7 +158,7 @@ class SubstrateService {
     }
   }
 
-  Future<double> queryBalance(String address) async {
+  Future<BigInt> queryBalance(String address) async {
     try {
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider);
@@ -153,17 +168,15 @@ class SubstrateService {
       // Account from SS58 address
       final account = Address.decode(address);
 
-      print('Account pubkey: ${account.pubkey}');
+      // print('Account pubkey: ${account.pubkey}');
 
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
+
       print('Balance: ${accountInfo.data.free}');
 
       // Get the free balance
-      final free = accountInfo.data.free;
-
-      // Convert balance to REZ (12 decimals)
-      return free.toDouble() / BigInt.from(10).pow(12).toDouble();
+      return accountInfo.data.free;
     } catch (e) {
       print('Error querying balance: $e');
       throw Exception('Failed to query balance: $e');
@@ -177,15 +190,18 @@ class SubstrateService {
     return result;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, double amount) async {
+  Future<void> _printBalance(String prefix, String address) async {
+    final balance = await queryBalance(address);
+    print('$prefix Balance for $address: ${balance.toString()}');
+  }
+
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
       print("creating key with $senderSeed");
       print("sending to $targetAddress");
       print("amount $amount");
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-
-      print('sender\' wallet: ${senderWallet.ss58Address}');
 
       final resonanceApi = Resonance(_provider);
 
@@ -197,9 +213,8 @@ class SubstrateService {
       final nonce = await resonanceApi.rpc.system.accountNextIndex(senderWallet.ss58Address);
 
       // Make the encoded call
-      final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
       final multiAddress = const multi_address.$MultiAddress().id(senderWallet.addressBytes);
-      final transferCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiAddress, value: rawAmount);
+      final transferCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiAddress, value: amount);
       final encodedCall = transferCall.encode();
 
       // Make the payload
@@ -221,7 +236,7 @@ class SubstrateService {
 
       final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
-      final extrinsic = ExtrinsicPayload(
+      final extrinsic = ResonanceExtrinsicPayload(
         signer: senderWallet.addressBytes,
         method: encodedCall,
         signature: signatureWithPublicKeyBytes,
@@ -229,7 +244,7 @@ class SubstrateService {
         blockNumber: currentBlockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(resonanceApi.registry, SignatureType.resonance);
+      ).encode(resonanceApi.registry, SignatureType.sr25519);
 
       // Send the extrinsic to the blockchain
       final author = AuthorApi(_provider);
@@ -338,10 +353,107 @@ class SubstrateService {
   }
 
   // reference implementation - this works with sr25519 schnorr signatures
+  Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
+    try {
+      // Get the sender's wallet
+      print("creating key with $senderSeed");
+      print("sending to $targetAddress");
+      print("amount $amount");
+
+      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+
+      await _printBalance('before ', senderWallet.ss58Address);
+      await _printBalance('before ', targetAddress);
+
+      // Get necessary info for the transaction
+      final runtimeVersion = await _stateApi.getRuntimeVersion();
+      final specVersion = runtimeVersion.specVersion;
+      final transactionVersion = runtimeVersion.transactionVersion;
+
+      final block = await _provider.send('chain_getBlock', []);
+      final blockNumber = int.parse(block.result['block']['header']['number']);
+
+      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+
+      // Get the next nonce for the `sender`
+      final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      final nonce = int.parse(nonceResult.result.toString());
+
+      // Convert amount to chain format (considering decimals)
+      // TODO actually figure out the amount...
+      final rawAmount = BigInt.from(amount);
+
+      final dest = targetAddress;
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
+      print('Destination: $dest');
+
+      // Encode call
+      final resonanceApi = Resonance(_provider);
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: rawAmount);
+      final transferCall = runtimeCall.encode();
+
+      // Get metadata for encoding
+      final metadata = await _stateApi.getMetadata();
+
+      // Create and sign the payload
+      final payloadToSign = SigningPayload(
+        method: transferCall,
+        specVersion: specVersion,
+        transactionVersion: transactionVersion,
+        genesisHash: genesisHash,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
+        eraPeriod: 64,
+        nonce: nonce,
+        tip: 0,
+      );
+
+      final payload = payloadToSign.encode(resonanceApi.registry);
+
+      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
+
+      // final signature = senderWallet.sign(payload);
+
+      // Create the extrinsic
+      final extrinsic = ExtrinsicPayload(
+        signer: Uint8List.fromList(senderWallet.addressBytes),
+        method: transferCall,
+        signature: signatureWithPublicKeyBytes,
+        eraPeriod: 64,
+        blockNumber: blockNumber,
+        nonce: nonce,
+        tip: 0,
+      ).encode(resonanceApi.registry, SignatureType.resonance);
+
+      // Submit the extrinsic
+
+      await _authorApi.submitAndWatchExtrinsic(extrinsic, (data) async {
+        print('type: ${data.type}, value: ${data.value}');
+
+        await _printBalance('after ', senderWallet.ss58Address);
+        await _printBalance('after ', targetAddress);
+      });
+      return '0';
+
+      // final hash = await _authorApi.submitExtrinsic(extrinsic);
+      // return convert.hex.encode(0);
+    } catch (e, stackTrace) {
+      print('Failed to transfer balance: $e');
+      print('Failed to transfer balance: $stackTrace');
+      throw Exception('Failed to transfer balance: $e');
+    }
+  }
+
+  // reference implementation - this works with sr25519 schnorr signatures
   Future<String> balanceTransferSr25519(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
+
+      print('sender\' wallet: ${senderWallet.address}');
 
       // Get necessary info for the transaction
       final runtimeVersion = await _stateApi.getRuntimeVersion();
@@ -367,7 +479,7 @@ class SubstrateService {
 
       // Encode call
       final resonanceApi = Resonance(_provider);
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: rawAmount);
       final transferCall = runtimeCall.encode();
 
       // Get metadata for encoding
