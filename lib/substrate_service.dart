@@ -415,7 +415,7 @@ class SubstrateService {
       // final signature = senderWallet.sign(payload);
 
       // Create the extrinsic
-      final extrinsic = ExtrinsicPayload(
+      final extrinsic = ResonanceExtrinsicPayload(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: transferCall,
         signature: signatureWithPublicKeyBytes,
@@ -423,7 +423,7 @@ class SubstrateService {
         blockNumber: blockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(resonanceApi.registry, SignatureType.resonance);
+      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
 
       // Submit the extrinsic
 
