@@ -5,14 +5,26 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'substrate_service.dart';
+import 'package:resonance_network_wallet/substrate_service.dart';
 import 'account_profile.dart';
+
+import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/src/rust/api/crypto.dart';
+import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SubstrateService().initialize();
+  await RustLib.init();
   runApp(ResonanceWalletApp());
 }
+
+enum Mode {
+  schorr,
+  dilithium,
+}
+
+const mode = Mode.dilithium;
 
 class ResonanceWalletApp extends StatelessWidget {
   @override
@@ -316,14 +328,21 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
-
-      // Save wallet info
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', input);
-      await prefs.setString('account_id', walletInfo.accountId);
-
+      if (mode == Mode.dilithium) {
+        final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
+        // Save wallet info
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_wallet', true);
+        await prefs.setString('mnemonic', input);
+        await prefs.setString('account_id', walletInfo.accountId);
+      } else {
+        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+        // Save wallet info
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_wallet', true);
+        await prefs.setString('mnemonic', input);
+        await prefs.setString('account_id', walletInfo.accountId);
+      }
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => WalletMain()),
@@ -422,13 +441,20 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: () {
-                          _mnemonicController.text = "//Alice";
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Alice development account loaded')),
-                          );
+                          if (mode == Mode.schorr) {
+                            _mnemonicController.text = "//Alice";
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Alice development account loaded')),
+                            );
+                          } else {
+                            _mnemonicController.text = CRYSTAL_ALICE;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Crystal Alice development account loaded')),
+                            );
+                          }
                         },
                         icon: Icon(Icons.bug_report),
-                        label: Text('Load Test Account (Alice)'),
+                        label: Text('Load Test Account (Crystal Alice)'),
                         style: TextButton.styleFrom(
                           foregroundColor: Color(0xFF9F7AEA),
                         ),
@@ -495,6 +521,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     try {
       final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
 
+      if (mode == Mode.dilithium) {
+        throw Exception('Dilithium is not supported yet');
+      }
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
@@ -657,10 +686,9 @@ class WalletMain extends StatefulWidget {
 
 class _WalletMainState extends State<WalletMain> {
   String _accountId = '';
-  double _balance = 0.0;
+  BigInt _balance = BigInt.zero;
   List<Transaction> _recentTransactions = [];
   bool _isLoading = true;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   @override
   void initState() {
@@ -702,7 +730,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         SizedBox(height: 4),
         Text(
-          '${_numberFormat.format(_balance)} REZ',
+          '${SubstrateService().formatBalance(_balance)} REZ',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -1006,7 +1034,6 @@ class _WalletMainState extends State<WalletMain> {
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
 
   TransactionListItem({
     required this.transaction,
@@ -1042,7 +1069,7 @@ class TransactionListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${isReceived ? '+' : '-'}${_numberFormat.format(transaction.amount)} REZ',
+            '${isReceived ? '+' : '-'}${SubstrateService().formatBalance(transaction.amount)} REZ',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isReceived ? Colors.green : Colors.red,
@@ -1070,8 +1097,7 @@ class _SendScreenState extends State<SendScreen> {
   String _errorMessage = '';
   List<String> _recentRecipients = [];
   String? _recipientName;
-  double _maxBalance = 0;
-  final _numberFormat = NumberFormat("#,##0.0000", "en_US");
+  BigInt _maxBalance = BigInt.from(0);
 
   @override
   void initState() {
@@ -1143,7 +1169,7 @@ class _SendScreenState extends State<SendScreen> {
         throw Exception('Please enter a valid amount');
       }
 
-      if (amount > _maxBalance) {
+      if (BigInt.from(amount) > _maxBalance) {
         throw Exception('Insufficient balance');
       }
 
@@ -1220,11 +1246,20 @@ class _SendScreenState extends State<SendScreen> {
       }
 
       // Submit the transaction
-      final hash = await SubstrateService().balanceTransfer(
-        senderSeed,
-        recipient,
-        amount,
-      );
+      String hash;
+      if (mode == Mode.dilithium) {
+        hash = await SubstrateService().balanceTransfer2(
+          senderSeed,
+          recipient,
+          amount,
+        );
+      } else {
+        hash = await SubstrateService().balanceTransferSr25519(
+          senderSeed,
+          recipient,
+          amount,
+        );
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Transaction submitted successfully: $hash')),
@@ -1311,12 +1346,21 @@ class _SendScreenState extends State<SendScreen> {
                         TextButton.icon(
                           onPressed: () async {
                             try {
-                              final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
-                              _recipientController.text = bobWallet.accountId;
-                              _lookupIdentity();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Bob development account loaded')),
-                              );
+                              if (mode == Mode.dilithium) {
+                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(CRYSTAL_BOB);
+                                _recipientController.text = bobWallet.accountId;
+                                _lookupIdentity();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
+                                );
+                              } else {
+                                final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                                _recipientController.text = bobWallet.accountId;
+                                _lookupIdentity();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Bob development account loaded')),
+                                );
+                              }
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error loading Bob account: $e')),
@@ -1324,7 +1368,8 @@ class _SendScreenState extends State<SendScreen> {
                             }
                           },
                           icon: Icon(Icons.bug_report, size: 16),
-                          label: Text('Use Bob (Test)'),
+                          label: Text('Use Crystal Bob (Dilithium Test)'),
+                          // label: Text('Use Bob (Test)'),
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: Size(0, 0),
@@ -1407,7 +1452,7 @@ class _SendScreenState extends State<SendScreen> {
                           Row(
                             children: [
                               Text(
-                                '${_numberFormat.format(_maxBalance)} REZ',
+                                '${SubstrateService().formatBalance(_maxBalance)} REZ',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF9F7AEA),
@@ -1416,7 +1461,7 @@ class _SendScreenState extends State<SendScreen> {
                               SizedBox(width: 8),
                               TextButton(
                                 onPressed: () {
-                                  _amountController.text = _maxBalance.toStringAsFixed(4);
+                                  _amountController.text = _maxBalance.toString();
                                 },
                                 child: Text('MAX'),
                                 style: TextButton.styleFrom(
@@ -1476,7 +1521,7 @@ enum TransactionStatus {
 
 class Transaction {
   final String id;
-  final double amount;
+  final BigInt amount;
   final DateTime timestamp;
   final TransactionType type;
   final String otherParty;
@@ -1491,3 +1536,37 @@ class Transaction {
     required this.status,
   });
 }
+
+// test app for rust bindings below
+
+// import 'package:flutter/material.dart';
+// import 'package:resonance_network_wallet/src/rust/api/crypto.dart';
+// import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
+
+// Future<void> main() async {
+//   await RustLib.init();
+//   runApp(const MyApp());
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final keypair = crystalAlice();
+//     final accountId = toAccountId(obj: keypair);
+
+//     print("alice: ${keypair.publicKey}");
+//     print("bob: ${crystalBob().publicKey}");
+//     print("charlie: ${crystalCharlie().publicKey}");
+
+//     return MaterialApp(
+//       home: Scaffold(
+//         appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),
+//         body: Center(
+//           child: Text('Action: Call Rust gen key\nResult: $accountId'),
+//         ),
+//       ),
+//     );
+//   }
+// }

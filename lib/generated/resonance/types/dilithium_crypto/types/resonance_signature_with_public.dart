@@ -27,8 +27,7 @@ class ResonanceSignatureWithPublic {
   /// [u8; Self::TOTAL_LEN]
   final List<int> bytes;
 
-  static const $ResonanceSignatureWithPublicCodec codec =
-      $ResonanceSignatureWithPublicCodec();
+  static const $ResonanceSignatureWithPublicCodec codec = $ResonanceSignatureWithPublicCodec();
 
   _i4.Uint8List encode() {
     return codec.encode(this);
@@ -68,8 +67,7 @@ class ResonanceSignatureWithPublic {
       );
 }
 
-class $ResonanceSignatureWithPublicCodec
-    with _i1.Codec<ResonanceSignatureWithPublic> {
+class $ResonanceSignatureWithPublicCodec with _i1.Codec<ResonanceSignatureWithPublic> {
   const $ResonanceSignatureWithPublicCodec();
 
   @override
@@ -103,8 +101,7 @@ class $ResonanceSignatureWithPublicCodec
   @override
   int sizeHint(ResonanceSignatureWithPublic obj) {
     int size = 0;
-    size =
-        size + const _i2.WrappedSignatureBytesCodec().sizeHint(obj.signature);
+    size = size + const _i2.WrappedSignatureBytesCodec().sizeHint(obj.signature);
     size = size + const _i3.WrappedPublicBytesCodec().sizeHint(obj.public);
     size = size + const _i1.U8ArrayCodec(7219).sizeHint(obj.bytes);
     return size;

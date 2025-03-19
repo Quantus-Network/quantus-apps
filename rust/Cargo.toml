@@ -1,0 +1,18 @@
+[package]
+name = "rust_lib_resonance_network_wallet"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+bip39 = "2.1.0"
+flutter_rust_bridge = "=2.9.0"
+hex = "0.4.3"
+poseidon-resonance = { git = "https://github.com/Resonance-Network/poseidon-resonance" }
+rusty-crystals-dilithium = { git = "https://gitlab.com/resonance-network/rusty-crystals.git", package = "rusty-crystals-dilithium", default-features = false, features = ["no_std"] }
+sp-core = "35.0.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
