@@ -2,21 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'dart:math';
 import 'dart:async';
-import 'package:intl/intl.dart';
 import 'package:resonance_network_wallet/substrate_service.dart';
 import 'account_profile.dart';
 
-import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/src/rust/api/crypto.dart';
 import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SubstrateService().initialize();
   await RustLib.init();
-  runApp(ResonanceWalletApp());
+  runApp(const ResonanceWalletApp());
 }
 
 enum Mode {
@@ -27,28 +23,29 @@ enum Mode {
 const mode = Mode.dilithium;
 
 class ResonanceWalletApp extends StatelessWidget {
+  const ResonanceWalletApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Resonance Network Wallet',
       theme: ThemeData(
-        primaryColor: Color(0xFF6B46C1), // Deep purple
-        scaffoldBackgroundColor: Color(0xFF1A1A1A), // Dark background
-        cardColor: Color(0xFF2D2D2D), // Slightly lighter dark for cards
+        primaryColor: const Color(0xFF6B46C1), // Deep purple
+        scaffoldBackgroundColor: const Color(0xFF1A1A1A), // Dark background
+        cardColor: const Color(0xFF2D2D2D), // Slightly lighter dark for cards
         colorScheme: ColorScheme.dark(
-          primary: Color(0xFF6B46C1), // Deep purple
-          secondary: Color(0xFF9F7AEA), // Lighter purple
-          surface: Color(0xFF2D2D2D),
-          background: Color(0xFF1A1A1A),
+          primary: const Color(0xFF6B46C1), // Deep purple
+          secondary: const Color(0xFF9F7AEA), // Lighter purple
+          surface: const Color(0xFF2D2D2D),
           error: Colors.red.shade400,
         ),
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF2D2D2D),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF6B46C1),
+            backgroundColor: const Color(0xFF6B46C1),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -57,8 +54,8 @@ class ResonanceWalletApp extends StatelessWidget {
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: Color(0xFF9F7AEA),
-            side: BorderSide(color: Color(0xFF9F7AEA)),
+            foregroundColor: const Color(0xFF9F7AEA),
+            side: const BorderSide(color: Color(0xFF9F7AEA)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -66,44 +63,43 @@ class ResonanceWalletApp extends StatelessWidget {
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: Color(0xFF9F7AEA),
+            foregroundColor: const Color(0xFF9F7AEA),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF6B46C1)),
+            borderSide: const BorderSide(color: Color(0xFF6B46C1)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+            borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+            borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
           ),
           filled: true,
-          fillColor: Color(0xFF2D2D2D),
+          fillColor: const Color(0xFF2D2D2D),
         ),
       ),
       darkTheme: ThemeData(
-        primaryColor: Color(0xFF6B46C1),
-        scaffoldBackgroundColor: Color(0xFF1A1A1A),
-        cardColor: Color(0xFF2D2D2D),
+        primaryColor: const Color(0xFF6B46C1),
+        scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+        cardColor: const Color(0xFF2D2D2D),
         colorScheme: ColorScheme.dark(
-          primary: Color(0xFF6B46C1),
-          secondary: Color(0xFF9F7AEA),
-          surface: Color(0xFF2D2D2D),
-          background: Color(0xFF1A1A1A),
+          primary: const Color(0xFF6B46C1),
+          secondary: const Color(0xFF9F7AEA),
+          surface: const Color(0xFF2D2D2D),
           error: Colors.red.shade400,
         ),
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF2D2D2D),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF6B46C1),
+            backgroundColor: const Color(0xFF6B46C1),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -112,8 +108,8 @@ class ResonanceWalletApp extends StatelessWidget {
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: Color(0xFF9F7AEA),
-            side: BorderSide(color: Color(0xFF9F7AEA)),
+            foregroundColor: const Color(0xFF9F7AEA),
+            side: const BorderSide(color: Color(0xFF9F7AEA)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -121,33 +117,35 @@ class ResonanceWalletApp extends StatelessWidget {
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: Color(0xFF9F7AEA),
+            foregroundColor: const Color(0xFF9F7AEA),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF6B46C1)),
+            borderSide: const BorderSide(color: Color(0xFF6B46C1)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+            borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+            borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
           ),
           filled: true,
-          fillColor: Color(0xFF2D2D2D),
+          fillColor: const Color(0xFF2D2D2D),
         ),
       ),
       themeMode: ThemeMode.dark,
-      home: WalletInitializer(),
+      home: const WalletInitializer(),
     );
   }
 }
 
 class WalletInitializer extends StatefulWidget {
+  const WalletInitializer({super.key});
+
   @override
   _WalletInitializerState createState() => _WalletInitializerState();
 }
@@ -175,7 +173,7 @@ class _WalletInitializerState extends State<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -183,50 +181,52 @@ class _WalletInitializerState extends State<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return WalletMain();
+      return const WalletMain();
     } else {
-      return WelcomeScreen();
+      return const WelcomeScreen();
     }
   }
 }
 
 class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 30),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1A1A), Color(0xFF6B46C1).withOpacity(0.8)],
+            colors: [const Color(0xFF1A1A1A), const Color(0xFF6B46C1).withOpacity(0.8)],
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF2D2D2D),
+                color: const Color(0xFF2D2D2D),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFF6B46C1).withOpacity(0.3),
+                    color: const Color(0xFF6B46C1).withOpacity(0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
                 ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.account_balance_wallet,
                 size: 80,
                 color: Color(0xFF9F7AEA),
               ),
             ),
-            SizedBox(height: 30),
-            Text(
+            const SizedBox(height: 30),
+            const Text(
               'Resonance Network',
               style: TextStyle(
                 fontSize: 28,
@@ -234,30 +234,30 @@ class WelcomeScreen extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 10),
-            Text(
+            const SizedBox(height: 10),
+            const Text(
               'Welcome to your REZ wallet',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white70,
               ),
             ),
-            SizedBox(height: 60),
+            const SizedBox(height: 60),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CreateWalletScreen()),
+                  MaterialPageRoute(builder: (context) => const CreateWalletScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF6B46C1),
-                minimumSize: Size(double.infinity, 50),
+                backgroundColor: const Color(0xFF6B46C1),
+                minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Create New Wallet',
                 style: TextStyle(
                   fontSize: 16,
@@ -266,22 +266,22 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             OutlinedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ImportWalletScreen()),
+                  MaterialPageRoute(builder: (context) => const ImportWalletScreen()),
                 );
               },
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Color(0xFF9F7AEA)),
-                minimumSize: Size(double.infinity, 50),
+                side: const BorderSide(color: Color(0xFF9F7AEA)),
+                minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Import Existing Wallet',
                 style: TextStyle(
                   fontSize: 16,
@@ -298,6 +298,8 @@ class WelcomeScreen extends StatelessWidget {
 }
 
 class ImportWalletScreen extends StatefulWidget {
+  const ImportWalletScreen({super.key});
+
   @override
   _ImportWalletScreenState createState() => _ImportWalletScreenState();
 }
@@ -345,7 +347,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
       }
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => WalletMain()),
+        MaterialPageRoute(builder: (context) => const WalletMain()),
         (route) => false,
       );
     } catch (e) {
@@ -363,7 +365,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Import Wallet'),
+        title: const Text('Import Wallet'),
       ),
       body: SafeArea(
         child: Padding(
@@ -371,48 +373,48 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Enter your 12 or 24 word mnemonic phrase',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _mnemonicController,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                    borderSide: const BorderSide(color: Color(0xFF6B46C1)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                    borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                    borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Color(0xFF2D2D2D),
+                  fillColor: const Color(0xFF2D2D2D),
                   hintText: 'Enter your mnemonic phrase...',
-                  hintStyle: TextStyle(color: Colors.grey),
+                  hintStyle: const TextStyle(color: Colors.grey),
                 ),
                 maxLines: 4,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       'Enter all words separated by spaces',
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.paste),
+                    icon: const Icon(Icons.paste),
                     onPressed: () async {
                       final data = await Clipboard.getData('text/plain');
                       if (data != null && data.text != null) {
@@ -428,12 +430,12 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     _errorMessage,
-                    style: TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
-              Spacer(),
+              const Spacer(),
               SafeArea(
-                minimum: EdgeInsets.only(bottom: 16),
+                minimum: const EdgeInsets.only(bottom: 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -442,31 +444,31 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                       child: TextButton.icon(
                         onPressed: () {
                           if (mode == Mode.schorr) {
-                            _mnemonicController.text = "//Alice";
+                            _mnemonicController.text = '//Alice';
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Alice development account loaded')),
+                              const SnackBar(content: Text('Alice development account loaded')),
                             );
                           } else {
                             _mnemonicController.text = CRYSTAL_ALICE;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Crystal Alice development account loaded')),
+                              const SnackBar(content: Text('Crystal Alice development account loaded')),
                             );
                           }
                         },
-                        icon: Icon(Icons.bug_report),
-                        label: Text('Load Test Account (Crystal Alice)'),
+                        icon: const Icon(Icons.bug_report),
+                        label: const Text('Load Test Account (Crystal Alice)'),
                         style: TextButton.styleFrom(
-                          foregroundColor: Color(0xFF9F7AEA),
+                          foregroundColor: const Color(0xFF9F7AEA),
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _importWallet,
-                        child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text('Import Wallet'),
+                        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Import Wallet'),
                       ),
                     ),
                   ],
@@ -481,6 +483,8 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
 }
 
 class CreateWalletScreen extends StatefulWidget {
+  const CreateWalletScreen({super.key});
+
   @override
   _CreateWalletScreenState createState() => _CreateWalletScreenState();
 }
@@ -532,7 +536,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => WalletMain()),
+        MaterialPageRoute(builder: (context) => const WalletMain()),
         (route) => false,
       );
     } catch (e) {
@@ -547,42 +551,42 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create New Wallet'),
+        title: const Text('Create New Wallet'),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Your Recovery Phrase',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 8),
-                        Text(
+                        const SizedBox(height: 8),
+                        const Text(
                           'Write down these words in order and keep them in a safe place. This is the only way to recover your wallet if you lose access.',
                           style: TextStyle(
                             color: Colors.red,
                             fontSize: 14,
                           ),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         Container(
                           width: double.infinity,
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Color(0xFF6B46C1).withOpacity(0.3),
+                              color: const Color(0xFF6B46C1).withOpacity(0.3),
                             ),
                           ),
                           child: Column(
@@ -590,36 +594,36 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             children: [
                               Text(
                                 _mnemonic,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   height: 1.5,
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Center(
                                 child: OutlinedButton.icon(
                                   onPressed: () {
                                     Clipboard.setData(ClipboardData(text: _mnemonic));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Recovery phrase copied to clipboard')),
+                                      const SnackBar(content: Text('Recovery phrase copied to clipboard')),
                                     );
                                   },
-                                  icon: Icon(Icons.copy),
-                                  label: Text('Copy to Clipboard'),
+                                  icon: const Icon(Icons.copy),
+                                  label: const Text('Copy to Clipboard'),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         Container(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
+                          child: const Row(
                             children: [
                               Icon(Icons.warning_amber_rounded, color: Colors.red),
                               SizedBox(width: 12),
@@ -638,7 +642,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                 ),
                 SafeArea(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -652,7 +656,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                                 });
                               },
                             ),
-                            Expanded(
+                            const Expanded(
                               child: Text(
                                 'I have written down my recovery phrase and stored it securely',
                                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -660,13 +664,13 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
                             onPressed: _hasSavedMnemonic ? _saveWalletAndContinue : null,
-                            child: Text('Continue'),
+                            child: const Text('Continue'),
                           ),
                         ),
                       ],
@@ -680,6 +684,8 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 }
 
 class WalletMain extends StatefulWidget {
+  const WalletMain({super.key});
+
   @override
   _WalletMainState createState() => _WalletMainState();
 }
@@ -687,7 +693,7 @@ class WalletMain extends StatefulWidget {
 class _WalletMainState extends State<WalletMain> {
   String _accountId = '';
   BigInt _balance = BigInt.zero;
-  List<Transaction> _recentTransactions = [];
+  final List<Transaction> _recentTransactions = [];
   bool _isLoading = true;
 
   @override
@@ -721,17 +727,17 @@ class _WalletMainState extends State<WalletMain> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Your Balance',
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           '${SubstrateService().formatBalance(_balance)} REZ',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
             color: Color(0xFF9F7AEA),
@@ -745,15 +751,15 @@ class _WalletMainState extends State<WalletMain> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Resonance Wallet'),
+        title: const Text('Resonance Wallet'),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Color(0xFF9F7AEA)),
+            icon: const Icon(Icons.refresh, color: Color(0xFF9F7AEA)),
             onPressed: _loadWalletData,
           ),
           IconButton(
-            icon: Icon(Icons.person, color: Color(0xFF9F7AEA)),
+            icon: const Icon(Icons.person, color: Color(0xFF9F7AEA)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -766,15 +772,15 @@ class _WalletMainState extends State<WalletMain> {
         ],
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B46C1)),
             ))
           : RefreshIndicator(
               onRefresh: _loadWalletData,
-              color: Color(0xFF6B46C1),
+              color: const Color(0xFF6B46C1),
               child: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -793,8 +799,8 @@ class _WalletMainState extends State<WalletMain> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Color(0xFF2D2D2D),
-                                Color(0xFF6B46C1).withOpacity(0.3),
+                                const Color(0xFF2D2D2D),
+                                const Color(0xFF6B46C1).withOpacity(0.3),
                               ],
                             ),
                           ),
@@ -806,23 +812,23 @@ class _WalletMainState extends State<WalletMain> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(12),
+                                      padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Color(0xFF6B46C1).withOpacity(0.2),
+                                        color: const Color(0xFF6B46C1).withOpacity(0.2),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.account_balance_wallet,
                                         color: Color(0xFF9F7AEA),
                                         size: 24,
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
+                                          const Text(
                                             'Resonance Network',
                                             style: TextStyle(
                                               fontSize: 18,
@@ -832,7 +838,7 @@ class _WalletMainState extends State<WalletMain> {
                                           ),
                                           Text(
                                             _accountId,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey,
                                             ),
@@ -843,9 +849,9 @@ class _WalletMainState extends State<WalletMain> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 _buildBalanceDisplay(),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
@@ -854,36 +860,36 @@ class _WalletMainState extends State<WalletMain> {
                                         onPressed: () {
                                           _showReceiveDialog(context);
                                         },
-                                        icon: Icon(Icons.qr_code),
-                                        label: Text('Receive'),
+                                        icon: const Icon(Icons.qr_code),
+                                        label: const Text('Receive'),
                                         style: OutlinedButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(vertical: 12),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(12),
                                           ),
-                                          side: BorderSide(
+                                          side: const BorderSide(
                                             color: Color(0xFF9F7AEA),
                                             width: 1.5,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => SendScreen(),
+                                              builder: (context) => const SendScreen(),
                                             ),
                                           );
                                         },
-                                        icon: Icon(Icons.send, color: Colors.white, size: 20),
-                                        label: Text('Send'),
+                                        icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                                        label: const Text('Send'),
                                         style: ElevatedButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(vertical: 12),
-                                          backgroundColor: Color(0xFF6B46C1),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          backgroundColor: const Color(0xFF6B46C1),
                                           foregroundColor: Colors.white,
                                           elevation: 2,
                                           shape: RoundedRectangleBorder(
@@ -899,9 +905,9 @@ class _WalletMainState extends State<WalletMain> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      const SizedBox(height: 24),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.0),
                         child: Text(
                           'Recent Transactions',
                           style: TextStyle(
@@ -911,7 +917,7 @@ class _WalletMainState extends State<WalletMain> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       _recentTransactions.isEmpty
                           ? Center(
                               child: Padding(
@@ -921,10 +927,10 @@ class _WalletMainState extends State<WalletMain> {
                                     Icon(
                                       Icons.hourglass_empty,
                                       size: 48,
-                                      color: Color(0xFF9F7AEA).withOpacity(0.5),
+                                      color: const Color(0xFF9F7AEA).withOpacity(0.5),
                                     ),
-                                    SizedBox(height: 16),
-                                    Text(
+                                    const SizedBox(height: 16),
+                                    const Text(
                                       'No transactions yet',
                                       style: TextStyle(color: Colors.grey),
                                     ),
@@ -934,7 +940,7 @@ class _WalletMainState extends State<WalletMain> {
                             )
                           : ListView.builder(
                               shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: _recentTransactions.length,
                               itemBuilder: (context, index) {
                                 final tx = _recentTransactions[index];
@@ -955,7 +961,7 @@ class _WalletMainState extends State<WalletMain> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(
+          title: const Text(
             'Receive REZ',
             style: TextStyle(
               fontSize: 20,
@@ -963,7 +969,7 @@ class _WalletMainState extends State<WalletMain> {
             ),
           ),
           content: SingleChildScrollView(
-            child: Container(
+            child: SizedBox(
               width: 280,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -975,7 +981,7 @@ class _WalletMainState extends State<WalletMain> {
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       child: QrImageView(
                         data: _accountId,
                         version: QrVersions.auto,
@@ -983,35 +989,35 @@ class _WalletMainState extends State<WalletMain> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16),
-                  Text(
+                  const SizedBox(height: 16),
+                  const Text(
                     'Your wallet address',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _accountId,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: _accountId));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Address copied to clipboard')),
+                        const SnackBar(content: Text('Address copied to clipboard')),
                       );
                     },
-                    icon: Icon(Icons.copy),
-                    label: Text('Copy Address'),
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copy Address'),
                   ),
                 ],
               ),
@@ -1022,7 +1028,7 @@ class _WalletMainState extends State<WalletMain> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Close'),
+              child: const Text('Close'),
             ),
           ],
         );
@@ -1035,7 +1041,7 @@ class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
 
-  TransactionListItem({
+  const TransactionListItem({super.key, 
     required this.transaction,
     required this.isReceived,
   });
@@ -1044,7 +1050,7 @@ class TransactionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Container(
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isReceived ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
           shape: BoxShape.circle,
@@ -1056,11 +1062,11 @@ class TransactionListItem extends StatelessWidget {
       ),
       title: Text(
         isReceived ? 'Received' : 'Sent',
-        style: TextStyle(fontWeight: FontWeight.bold),
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
         transaction.otherParty,
-        style: TextStyle(fontSize: 12),
+        style: const TextStyle(fontSize: 12),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -1077,7 +1083,7 @@ class TransactionListItem extends StatelessWidget {
           ),
           Text(
             transaction.status.name,
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
@@ -1086,6 +1092,8 @@ class TransactionListItem extends StatelessWidget {
 }
 
 class SendScreen extends StatefulWidget {
+  const SendScreen({super.key});
+
   @override
   _SendScreenState createState() => _SendScreenState();
 }
@@ -1095,7 +1103,7 @@ class _SendScreenState extends State<SendScreen> {
   final TextEditingController _amountController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
-  List<String> _recentRecipients = [];
+  final List<String> _recentRecipients = [];
   String? _recipientName;
   BigInt _maxBalance = BigInt.from(0);
 
@@ -1177,31 +1185,31 @@ class _SendScreenState extends State<SendScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Confirm Transaction'),
+          title: const Text('Confirm Transaction'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('You are about to send:'),
-              SizedBox(height: 16),
+              const Text('You are about to send:'),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Text(
                     '$amount REZ',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 16),
-              Text('To:'),
-              SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text('To:'),
+              const SizedBox(height: 8),
               if (_recipientName != null)
                 Text(
                   _recipientName!,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               Text(
                 recipient,
@@ -1210,8 +1218,8 @@ class _SendScreenState extends State<SendScreen> {
                   color: Colors.grey.shade700,
                 ),
               ),
-              SizedBox(height: 16),
-              Text(
+              const SizedBox(height: 16),
+              const Text(
                 'Network fee: 0.001 REZ',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
@@ -1220,11 +1228,11 @@ class _SendScreenState extends State<SendScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Confirm'),
+              child: const Text('Confirm'),
             ),
           ],
         ),
@@ -1281,52 +1289,52 @@ class _SendScreenState extends State<SendScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Send REZ'),
+        title: const Text('Send REZ'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _loadBalance,
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Recipient',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _recipientController,
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Color(0xFF2D2D2D),
+                        fillColor: const Color(0xFF2D2D2D),
                         hintText: 'Enter recipient address',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(color: Colors.grey),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.paste, color: Color(0xFF9F7AEA)),
+                          icon: const Icon(Icons.paste, color: Color(0xFF9F7AEA)),
                           onPressed: () async {
                             final data = await Clipboard.getData('text/plain');
                             if (data != null && data.text != null) {
@@ -1351,14 +1359,14 @@ class _SendScreenState extends State<SendScreen> {
                                 _recipientController.text = bobWallet.accountId;
                                 _lookupIdentity();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
+                                  const SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
                                 );
                               } else {
-                                final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                                final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
                                 _recipientController.text = bobWallet.accountId;
                                 _lookupIdentity();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Bob development account loaded')),
+                                  const SnackBar(content: Text('Bob development account loaded')),
                                 );
                               }
                             } catch (e) {
@@ -1367,13 +1375,13 @@ class _SendScreenState extends State<SendScreen> {
                               );
                             }
                           },
-                          icon: Icon(Icons.bug_report, size: 16),
-                          label: Text('Use Crystal Bob (Dilithium Test)'),
+                          icon: const Icon(Icons.bug_report, size: 16),
+                          label: const Text('Use Crystal Bob (Dilithium Test)'),
                           // label: Text('Use Bob (Test)'),
                           style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: Size(0, 0),
-                            foregroundColor: Color(0xFF9F7AEA),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: const Size(0, 0),
+                            foregroundColor: const Color(0xFF9F7AEA),
                           ),
                         ),
                       ],
@@ -1382,22 +1390,22 @@ class _SendScreenState extends State<SendScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Card(
-                          color: Color(0xFF2D2D2D),
+                          color: const Color(0xFF2D2D2D),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: Color(0xFF6B46C1).withOpacity(0.3),
+                              color: const Color(0xFF6B46C1).withOpacity(0.3),
                             ),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               children: [
-                                Icon(Icons.person, color: Color(0xFF9F7AEA)),
-                                SizedBox(width: 8),
+                                const Icon(Icons.person, color: Color(0xFF9F7AEA)),
+                                const SizedBox(width: 8),
                                 Text(
                                   _recipientName!,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -1407,45 +1415,45 @@ class _SendScreenState extends State<SendScreen> {
                           ),
                         ),
                       ),
-                    SizedBox(height: 24),
-                    Text(
+                    const SizedBox(height: 24),
+                    const Text(
                       'Amount',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _amountController,
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF6B46C1)),
+                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF9F7AEA)),
+                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Color(0xFF2D2D2D),
+                        fillColor: const Color(0xFF2D2D2D),
                         hintText: 'Enter amount to send',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        suffix: Text('REZ', style: TextStyle(color: Colors.grey)),
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        suffix: const Text('REZ', style: TextStyle(color: Colors.grey)),
                       ),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Available Balance:',
                             style: TextStyle(color: Colors.grey),
                           ),
@@ -1453,21 +1461,21 @@ class _SendScreenState extends State<SendScreen> {
                             children: [
                               Text(
                                 '${SubstrateService().formatBalance(_maxBalance)} REZ',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF9F7AEA),
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               TextButton(
                                 onPressed: () {
                                   _amountController.text = _maxBalance.toString();
                                 },
-                                child: Text('MAX'),
                                 style: TextButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(horizontal: 8),
-                                  minimumSize: Size(0, 0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  minimumSize: const Size(0, 0),
                                 ),
+                                child: const Text('MAX'),
                               ),
                             ],
                           ),
@@ -1479,17 +1487,17 @@ class _SendScreenState extends State<SendScreen> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
                           _errorMessage,
-                          style: TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
-                    Spacer(),
+                    const Spacer(),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _sendTransaction,
                         child: _isLoading
-                            ? SizedBox(
+                            ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
@@ -1497,7 +1505,7 @@ class _SendScreenState extends State<SendScreen> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : Text('Send REZ'),
+                            : const Text('Send REZ'),
                       ),
                     ),
                   ],
