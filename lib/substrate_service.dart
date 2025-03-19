@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
@@ -194,9 +193,9 @@ class SubstrateService {
 
   Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
-      print("creating key with $senderSeed");
-      print("sending to $targetAddress");
-      print("amount $amount");
+      print('creating key with $senderSeed');
+      print('sending to $targetAddress');
+      print('amount $amount');
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
@@ -353,9 +352,9 @@ class SubstrateService {
   Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
-      print("creating key with $senderSeed");
-      print("sending to $targetAddress");
-      print("amount $amount");
+      print('creating key with $senderSeed');
+      print('sending to $targetAddress');
+      print('amount $amount');
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
