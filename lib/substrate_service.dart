@@ -162,9 +162,6 @@ class SubstrateService {
     try {
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider);
-
-      print('queryBalance Address: $address');
-
       // Account from SS58 address
       final account = Address.decode(address);
 
@@ -173,7 +170,7 @@ class SubstrateService {
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
 
-      print('Balance: ${accountInfo.data.free}');
+      // print('Balance for $address: ${accountInfo.data.free}');
 
       // Get the free balance
       return accountInfo.data.free;
