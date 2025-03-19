@@ -59,6 +59,16 @@ pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
 }
 
 #[flutter_rust_bridge::frb(sync)]
+pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
+    let signature = sign_message(keypair, message);
+    let mut result = Vec::with_capacity(signature.len() + keypair.public_key.len());
+    result.extend_from_slice(&signature);
+    result.extend_from_slice(&keypair.public_key);
+    result
+}
+
+
+#[flutter_rust_bridge::frb(sync)]
 pub fn verify_message(keypair: &Keypair, message: &[u8], signature: &[u8]) -> bool {
     let keypair = ml_dsa_87::Keypair{
         secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key),

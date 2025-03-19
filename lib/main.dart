@@ -5,7 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'substrate_service.dart';
+import 'package:resonance_network_wallet/substrate_service.dart';
 import 'account_profile.dart';
 
 import 'package:flutter/material.dart';
@@ -321,7 +321,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+      final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
 
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
@@ -427,13 +427,17 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: () {
-                          _mnemonicController.text = "//Alice";
+                          // _mnemonicController.text = "//Alice";
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(content: Text('Alice development account loaded')),
+                          // );
+                          _mnemonicController.text = CRYSTAL_ALICE;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Alice development account loaded')),
+                            SnackBar(content: Text('Crystal Alice development account loaded')),
                           );
                         },
                         icon: Icon(Icons.bug_report),
-                        label: Text('Load Test Account (Alice)'),
+                        label: Text('Load Test Account (Crystal Alice)'),
                         style: TextButton.styleFrom(
                           foregroundColor: Color(0xFF9F7AEA),
                         ),
@@ -1316,12 +1320,19 @@ class _SendScreenState extends State<SendScreen> {
                         TextButton.icon(
                           onPressed: () async {
                             try {
-                              final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                              final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(CRYSTAL_BOB);
                               _recipientController.text = bobWallet.accountId;
                               _lookupIdentity();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Bob development account loaded')),
+                                SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
                               );
+
+                              // final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                              // _recipientController.text = bobWallet.accountId;
+                              // _lookupIdentity();
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   SnackBar(content: Text('Bob development account loaded')),
+                              // );
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error loading Bob account: $e')),
@@ -1329,7 +1340,8 @@ class _SendScreenState extends State<SendScreen> {
                             }
                           },
                           icon: Icon(Icons.bug_report, size: 16),
-                          label: Text('Use Bob (Test)'),
+                          label: Text('Use Crystal Bob (Dilithium Test)'),
+                          // label: Text('Use Bob (Test)'),
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: Size(0, 0),

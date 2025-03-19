@@ -8,6 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `to_account_id`
 
+/// Convert public key to accountId32 in ss58check format
 String toAccountId({required Keypair obj}) =>
     RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
@@ -16,6 +17,17 @@ Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
+
+Uint8List signMessage({required Keypair keypair, required List<int> message}) =>
+    RustLib.instance.api
+        .crateApiCryptoSignMessage(keypair: keypair, message: message);
+
+bool verifyMessage(
+        {required Keypair keypair,
+        required List<int> message,
+        required List<int> signature}) =>
+    RustLib.instance.api.crateApiCryptoVerifyMessage(
+        keypair: keypair, message: message, signature: signature);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 
