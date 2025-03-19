@@ -244,7 +244,7 @@ class SubstrateService {
         blockNumber: currentBlockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(resonanceApi.registry, SignatureType.sr25519);
+      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
 
       // Send the extrinsic to the blockchain
       final author = AuthorApi(_provider);
