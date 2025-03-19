@@ -3,7 +3,7 @@ use bip39::{Language, Mnemonic};
 use poseidon_resonance::PoseidonHasher;
 use sp_core::Hasher;
 use sp_core::crypto::{AccountId32, Ss58Codec};
-#[flutter_rust_bridge::frb(sync)] // Synchronous mode for simplicity of the demo
+#[flutter_rust_bridge::frb(sync)] // Synchronous mode
 pub struct Keypair {
     pub public_key: Vec<u8>,
     pub secret_key: Vec<u8>,
