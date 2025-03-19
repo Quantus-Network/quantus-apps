@@ -185,96 +185,128 @@ class SubstrateService {
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
-      // create our keypair here instead.
-      // to change this to ml-dsa signing, really all we need to do is change the keypair type and the signature.
-      // the rest is the same
-      // ml-dsa signatures consist of public key + signature.
+      print('sender\' wallet: ${senderWallet.ss58Address}');
 
-      // Get necessary info for the transaction
-      final runtimeVersion = await _stateApi.getRuntimeVersion();
-      final specVersion = runtimeVersion.specVersion;
-      final transactionVersion = runtimeVersion.transactionVersion;
-
-      final block = await _provider.send('chain_getBlock', []);
-      final blockNumber = int.parse(block.result['block']['header']['number']);
-
-      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
-
-      // Get the next nonce for the sender
-      final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
-      final nonce = int.parse(nonceResult.result.toString());
-
-      // Convert amount to chain format (considering decimals)
-      final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
-
-      final dest = targetAddress;
-
-      // note: pubkey here is not a public key it's just the raw decoded address - decoding from ss58 to a bytes array
-      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).addressByes);
-      print('Destination: $dest');
-      print('Destination: $multiDest');
-
-      print('Encoded Destination: ${multiDest.encode()}');
-      print('Encoded Destination Length: ${multiDest.encode().length}');
-      print('Encoded Destination address bytes: ${Address.decode(dest).addressByes}');
-
-      // Encode call
       final resonanceApi = Resonance(_provider);
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
 
-      print(' Runtime Call: ${runtimeCall}');
+      // Get information necessary to build a proper extrinsic
+      final runtimeVersion = await resonanceApi.rpc.state.getRuntimeVersion();
+      final currentBlockNumber = (await resonanceApi.query.system.number()) - 1;
+      final currentBlockHash = await resonanceApi.query.system.blockHash(currentBlockNumber);
+      final genesisHash = await resonanceApi.query.system.blockHash(0);
+      final nonce = await resonanceApi.rpc.system.accountNextIndex(senderWallet.ss58Address);
 
-      final transferCall = runtimeCall.encode();
-      print('Encoded Runtime Call: ${runtimeCall.encode()}');
+      // Make the encoded call
+      final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
+      final multiAddress = const multi_address.$MultiAddress().id(senderWallet.addressBytes);
+      final transferCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiAddress, value: rawAmount);
+      final encodedCall = transferCall.encode();
 
-      // Get metadata for encoding
-      final metadata = await _stateApi.getMetadata();
+      // Make the payload
+      final payload = SigningPayload(
+              method: encodedCall,
+              specVersion: runtimeVersion.specVersion,
+              transactionVersion: runtimeVersion.transactionVersion,
+              genesisHash: convert.hex.encode(genesisHash),
+              blockHash: convert.hex.encode(currentBlockHash),
+              blockNumber: currentBlockNumber,
+              eraPeriod: 64,
+              nonce: nonce,
+              tip: 0)
+          .encode(resonanceApi.registry);
 
-      print('Metadata: ${metadata}');
-      // Create and sign the payload
-      final payloadToSign = SigningPayload(
-        method: transferCall,
-        specVersion: specVersion,
-        transactionVersion: transactionVersion,
-        genesisHash: genesisHash,
-        blockHash: blockHash,
-        blockNumber: blockNumber,
-        eraPeriod: 64,
-        nonce: nonce,
-        tip: 0,
-      );
-      print('Payload To Sign: ${payloadToSign}');
-
-      final payload = payloadToSign.encode(metadata);
-      print('Encoded payload length: ${payload.length}');
-
+      // Sign the payload and build the final extrinsic
+      //final signature = wallet.sign(payload);
       final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-
-      print('Signature length: ${signature.length}');
 
       final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
-      print("public bytes: ${senderWallet.publicKey.length}");
-      print("signature bytes: ${signature.length}");
-      print("signatureBytes: ${signatureWithPublicKeyBytes.length}");
-
-      // Create the extrinsic
       final extrinsic = ExtrinsicPayload(
-        // signer is the sender's address bytes - in our case it's the ss58 address decoded into raw bytes
-        // whereas in the ssr25519 implementation, it's the same as the public key.
         signer: senderWallet.addressBytes,
-        method: transferCall,
+        method: encodedCall,
         signature: signatureWithPublicKeyBytes,
         eraPeriod: 64,
-        blockNumber: blockNumber,
+        blockNumber: currentBlockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(metadata, SignatureType.sr25519);
+      ).encode(resonanceApi.registry, SignatureType.resonance);
 
-      // Submit the extrinsic
-      final hash = await _authorApi.submitExtrinsic(extrinsic);
+      // Send the extrinsic to the blockchain
+      final author = AuthorApi(_provider);
+      // await author.submitAndWatchExtrinsic(extrinsic, (data) {
+      //   print(data);
+      // });
+      final hash = await author.submitExtrinsic(extrinsic);
       return convert.hex.encode(hash);
+
+      // final dest = targetAddress;
+
+      // // note: pubkey here is not a public key it's just the raw decoded address - decoding from ss58 to a bytes array
+      // final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).addressByes);
+      // print('Destination: $dest');
+      // print('Destination: $multiDest');
+
+      // print('Encoded Destination: ${multiDest.encode()}');
+      // print('Encoded Destination Length: ${multiDest.encode().length}');
+      // print('Encoded Destination address bytes: ${Address.decode(dest).addressByes}');
+
+      // // Encode call
+      // final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
+
+      // print(' Runtime Call: ${runtimeCall}');
+
+      // final transferCall = runtimeCall.encode();
+      // print('Encoded Runtime Call: ${runtimeCall.encode()}');
+
+      // // Get metadata for encoding
+      // final metadata = await _stateApi.getMetadata();
+
+      // // print('Metadata: ${metadata.toJson()}');
+
+      // // Create and sign the payload
+      // final payloadToSign = SigningPayload(
+      //   method: transferCall,
+      //   specVersion: specVersion,
+      //   transactionVersion: transactionVersion,
+      //   genesisHash: genesisHash,
+      //   blockHash: blockHash,
+      //   blockNumber: blockNumber,
+      //   eraPeriod: 64,
+      //   nonce: nonce,
+      //   tip: 0,
+      // );
+      // print('Payload To Sign: ${payloadToSign}');
+
+      // final payload = payloadToSign.encode(payloadToSign);
+
+      // print('Encoded payload length: ${payload.length}');
+
+      // final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+
+      // print('Signature length: ${signature.length}');
+
+      // final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
+
+      // print("public bytes: ${senderWallet.publicKey.length}");
+      // print("signature bytes: ${signature.length}");
+      // print("signatureBytes: ${signatureWithPublicKeyBytes.length}");
+
+      // // Create the extrinsic
+      // final extrinsic = ExtrinsicPayload(
+      //   // signer is the sender's address bytes - in our case it's the ss58 address decoded into raw bytes
+      //   // whereas in the ssr25519 implementation, it's the same as the public key.
+      //   signer: senderWallet.addressBytes,
+      //   method: transferCall,
+      //   signature: signatureWithPublicKeyBytes,
+      //   eraPeriod: 64,
+      //   blockNumber: blockNumber,
+      //   nonce: nonce,
+      //   tip: 0,
+      // ).encode(metadata, SignatureType.sr25519);
+
+      // // Submit the extrinsic
+      // final hash = await _authorApi.submitExtrinsic(extrinsic);
+      // return convert.hex.encode(hash);
     } catch (e, stackTrace) {
       print('Dilithium Failed to transfer balance: $e');
       print('Dilithium Failed to transfer balance: $stackTrace');
@@ -354,7 +386,8 @@ class SubstrateService {
         tip: 0,
       );
 
-      final payload = payloadToSign.encode(metadata);
+      final payload = payloadToSign.encode(resonanceApi.registry);
+
       final signature = senderWallet.sign(payload);
 
       // Create the extrinsic
@@ -366,11 +399,17 @@ class SubstrateService {
         blockNumber: blockNumber,
         nonce: nonce,
         tip: 0,
-      ).encode(metadata, SignatureType.sr25519);
+      ).encode(resonanceApi.registry, SignatureType.sr25519);
 
       // Submit the extrinsic
-      final hash = await _authorApi.submitExtrinsic(extrinsic);
-      return convert.hex.encode(hash);
+
+      await _authorApi.submitAndWatchExtrinsic(extrinsic, (data) {
+        print('type: ${data.type}, value: ${data.value}');
+      });
+      return '0';
+
+      // final hash = await _authorApi.submitExtrinsic(extrinsic);
+      // return convert.hex.encode(0);
     } catch (e, stackTrace) {
       print('Failed to transfer balance: $e');
       print('Failed to transfer balance: $stackTrace');

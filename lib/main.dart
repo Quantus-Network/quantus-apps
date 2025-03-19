@@ -19,6 +19,13 @@ void main() async {
   runApp(ResonanceWalletApp());
 }
 
+enum Mode {
+  schorr,
+  dilithium,
+}
+
+const mode = Mode.schorr;
+
 class ResonanceWalletApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -321,14 +328,21 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
-
-      // Save wallet info
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', input);
-      await prefs.setString('account_id', walletInfo.accountId);
-
+      if (mode == Mode.dilithium) {
+        final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
+        // Save wallet info
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_wallet', true);
+        await prefs.setString('mnemonic', input);
+        await prefs.setString('account_id', walletInfo.accountId);
+      } else {
+        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+        // Save wallet info
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_wallet', true);
+        await prefs.setString('mnemonic', input);
+        await prefs.setString('account_id', walletInfo.accountId);
+      }
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => WalletMain()),
@@ -427,14 +441,17 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: () {
-                          // _mnemonicController.text = "//Alice";
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   SnackBar(content: Text('Alice development account loaded')),
-                          // );
-                          _mnemonicController.text = CRYSTAL_ALICE;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Crystal Alice development account loaded')),
-                          );
+                          if (mode == Mode.schorr) {
+                            _mnemonicController.text = "//Alice";
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Alice development account loaded')),
+                            );
+                          } else {
+                            _mnemonicController.text = CRYSTAL_ALICE;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Crystal Alice development account loaded')),
+                            );
+                          }
                         },
                         icon: Icon(Icons.bug_report),
                         label: Text('Load Test Account (Crystal Alice)'),
@@ -504,6 +521,9 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     try {
       final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
 
+      if (mode == Mode.dilithium) {
+        throw Exception('Dilithium is not supported yet');
+      }
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
@@ -1229,11 +1249,20 @@ class _SendScreenState extends State<SendScreen> {
       }
 
       // Submit the transaction
-      final hash = await SubstrateService().balanceTransfer(
-        senderSeed,
-        recipient,
-        amount,
-      );
+      String hash;
+      if (mode == Mode.dilithium) {
+        hash = await SubstrateService().balanceTransfer(
+          senderSeed,
+          recipient,
+          amount,
+        );
+      } else {
+        hash = await SubstrateService().balanceTransferSr25519(
+          senderSeed,
+          recipient,
+          amount,
+        );
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Transaction submitted successfully: $hash')),
@@ -1320,19 +1349,21 @@ class _SendScreenState extends State<SendScreen> {
                         TextButton.icon(
                           onPressed: () async {
                             try {
-                              final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(CRYSTAL_BOB);
-                              _recipientController.text = bobWallet.accountId;
-                              _lookupIdentity();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
-                              );
-
-                              // final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
-                              // _recipientController.text = bobWallet.accountId;
-                              // _lookupIdentity();
-                              // ScaffoldMessenger.of(context).showSnackBar(
-                              //   SnackBar(content: Text('Bob development account loaded')),
-                              // );
+                              if (mode == Mode.dilithium) {
+                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(CRYSTAL_BOB);
+                                _recipientController.text = bobWallet.accountId;
+                                _lookupIdentity();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
+                                );
+                              } else {
+                                final bobWallet = await SubstrateService().generateWalletFromSeed("//Bob");
+                                _recipientController.text = bobWallet.accountId;
+                                _lookupIdentity();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Bob development account loaded')),
+                                );
+                              }
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Error loading Bob account: $e')),
