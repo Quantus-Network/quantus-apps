@@ -264,7 +264,7 @@ class Constants {
 
   final int adjustmentPeriod = 10;
 
-  final BigInt dampeningFactor = BigInt.from(5);
+  final BigInt dampeningFactor = BigInt.from(8);
 
   final int blockTimeHistorySize = 60;
 }
