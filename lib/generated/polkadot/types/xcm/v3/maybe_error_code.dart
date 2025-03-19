@@ -32,7 +32,7 @@ class $MaybeErrorCode {
   const $MaybeErrorCode();
 
   Success success() {
-    return Success();
+    return const Success();
   }
 
   Error error(List<int> value0) {

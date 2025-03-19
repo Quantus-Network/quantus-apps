@@ -61,7 +61,7 @@ class $Call {
   }
 
   ClaimPayout claimPayout() {
-    return ClaimPayout();
+    return const ClaimPayout();
   }
 
   Unbond unbond({

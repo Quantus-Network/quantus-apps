@@ -46,23 +46,23 @@ class $NetworkId {
   }
 
   Polkadot polkadot() {
-    return Polkadot();
+    return const Polkadot();
   }
 
   Kusama kusama() {
-    return Kusama();
+    return const Kusama();
   }
 
   Westend westend() {
-    return Westend();
+    return const Westend();
   }
 
   Rococo rococo() {
-    return Rococo();
+    return const Rococo();
   }
 
   Wococo wococo() {
-    return Wococo();
+    return const Wococo();
   }
 
   Ethereum ethereum({required BigInt chainId}) {
@@ -70,15 +70,15 @@ class $NetworkId {
   }
 
   BitcoinCore bitcoinCore() {
-    return BitcoinCore();
+    return const BitcoinCore();
   }
 
   BitcoinCash bitcoinCash() {
-    return BitcoinCash();
+    return const BitcoinCash();
   }
 
   PolkadotBulletin polkadotBulletin() {
-    return PolkadotBulletin();
+    return const PolkadotBulletin();
   }
 }
 

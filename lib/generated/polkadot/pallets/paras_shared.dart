@@ -97,7 +97,7 @@ class Queries {
     if (bytes != null) {
       return _allowedRelayParents.decodeValue(bytes);
     }
-    return _i5.AllowedRelayParentsTracker(
+    return const _i5.AllowedRelayParentsTracker(
       buffer: [],
       latestNumber: 0,
     ); /* Default */

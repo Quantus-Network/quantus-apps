@@ -72,7 +72,7 @@ class Queries {
     if (bytes != null) {
       return _coreDescriptors.decodeValue(bytes);
     }
-    return _i6.CoreDescriptor(
+    return const _i6.CoreDescriptor(
       queue: null,
       currentWork: null,
     ); /* Default */

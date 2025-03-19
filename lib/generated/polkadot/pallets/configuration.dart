@@ -70,7 +70,7 @@ class Queries {
       hrmpMaxMessageNumPerCandidate: 0,
       validationUpgradeCooldown: 0,
       validationUpgradeDelay: 2,
-      asyncBackingParams: _i6.AsyncBackingParams(
+      asyncBackingParams: const _i6.AsyncBackingParams(
         maxCandidateDepth: 0,
         allowedAncestryLen: 0,
       ),
@@ -101,7 +101,7 @@ class Queries {
         _i7.Uint32List.fromList(const []).buffer,
       ),
       approvalVotingParams:
-          _i8.ApprovalVotingParams(maxApprovalCoalesceCount: 1),
+          const _i8.ApprovalVotingParams(maxApprovalCoalesceCount: 1),
       schedulerParams: _i9.SchedulerParams(
         groupRotationFrequency: 1,
         parasAvailabilityPeriod: 1,

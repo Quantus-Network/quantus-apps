@@ -133,7 +133,7 @@ class Queries {
     if (bytes != null) {
       return _currentPhase.decodeValue(bytes);
     }
-    return _i3.Off(); /* Default */
+    return const _i3.Off(); /* Default */
   }
 
   /// Current best solution, signed or unsigned, queued to be returned upon `elect`.

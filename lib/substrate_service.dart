@@ -7,7 +7,8 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart' as convert;
 
 import 'generated/resonance/resonance.dart';
-import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'extrinsic_payload.dart';
@@ -79,7 +80,8 @@ class SubstrateService {
   late final StateApi _stateApi;
   late final AuthorApi _authorApi;
   late final SystemApi _systemApi;
-  static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  static const String _rpcEndpoint =
+      'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
   Future<void> initialize() async {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
@@ -169,7 +171,6 @@ class SubstrateService {
 
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
-
       // print('Balance for $address: ${accountInfo.data.free}');
 
       // Get the free balance
@@ -460,8 +461,12 @@ class SubstrateService {
       final block = await _provider.send('chain_getBlock', []);
       final blockNumber = int.parse(block.result['block']['header']['number']);
 
-      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+      final blockHash = (await _provider.send('chain_getBlockHash', []))
+          .result
+          .replaceAll('0x', '');
+      final genesisHash = (await _provider.send('chain_getBlockHash', [0]))
+          .result
+          .replaceAll('0x', '');
 
       // Get the next nonce for the `sender`
       final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.address]);
@@ -471,7 +476,8 @@ class SubstrateService {
       final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
 
       final dest = targetAddress;
-      final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
+      final multiDest =
+          const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
       print('Destination: $dest');
 
       // Encode call
@@ -534,7 +540,8 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final entropy =
+          List<int>.generate(32, (i) => Random.secure().nextInt(256));
       // Convert entropy to a hexadecimal string
       final entropyHex = convert.hex.encode(entropy);
       // Generate mnemonic from entropy
