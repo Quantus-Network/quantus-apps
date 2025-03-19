@@ -25,6 +25,7 @@ dependencies:
 # dart pub run polkadart_cli:generate -v
   quiver: any
   convert: any
+  polkadart_cli: ^0.6.1
 
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
