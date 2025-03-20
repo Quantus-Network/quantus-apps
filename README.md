@@ -22,12 +22,12 @@ A mobile wallet application for the Resonance Network blockchain and its native 
 
 1. Clone this repository
 ```
-git clone https://github.com/yourusername/resonance-network-wallet.git
+git clone git@github.com:Resonance-Network/resonance-mobile-app.git
 ```
 
 2. Navigate to the project directory
 ```
-cd resonance-network-wallet
+cd resonance-mobile-app
 ```
 
 3. Install dependencies
