@@ -191,140 +191,6 @@ class SubstrateService {
     print('$prefix Balance for $address: ${balance.toString()}');
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
-    try {
-      print('creating key with $senderSeed');
-      print('sending to $targetAddress');
-      print('amount $amount');
-
-      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-
-      final resonanceApi = Resonance(_provider);
-
-      // Get information necessary to build a proper extrinsic
-      final runtimeVersion = await resonanceApi.rpc.state.getRuntimeVersion();
-      final currentBlockNumber = (await resonanceApi.query.system.number()) - 1;
-      final currentBlockHash = await resonanceApi.query.system.blockHash(currentBlockNumber);
-      final genesisHash = await resonanceApi.query.system.blockHash(0);
-      final nonce = await resonanceApi.rpc.system.accountNextIndex(senderWallet.ss58Address);
-
-      // Make the encoded call
-      final multiAddress = const multi_address.$MultiAddress().id(senderWallet.addressBytes);
-      final transferCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiAddress, value: amount);
-      final encodedCall = transferCall.encode();
-
-      // Make the payload
-      final payload = SigningPayload(
-              method: encodedCall,
-              specVersion: runtimeVersion.specVersion,
-              transactionVersion: runtimeVersion.transactionVersion,
-              genesisHash: convert.hex.encode(genesisHash),
-              blockHash: convert.hex.encode(currentBlockHash),
-              blockNumber: currentBlockNumber,
-              eraPeriod: 64,
-              nonce: nonce,
-              tip: 0)
-          .encode(resonanceApi.registry);
-
-      // Sign the payload and build the final extrinsic
-      //final signature = wallet.sign(payload);
-      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
-
-      final extrinsic = ResonanceExtrinsicPayload(
-        signer: senderWallet.addressBytes,
-        method: encodedCall,
-        signature: signatureWithPublicKeyBytes,
-        eraPeriod: 64,
-        blockNumber: currentBlockNumber,
-        nonce: nonce,
-        tip: 0,
-      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
-
-      // Send the extrinsic to the blockchain
-      final author = AuthorApi(_provider);
-      // await author.submitAndWatchExtrinsic(extrinsic, (data) {
-      //   print(data);
-      // });
-      final hash = await author.submitExtrinsic(extrinsic);
-      return convert.hex.encode(hash);
-
-      // final dest = targetAddress;
-
-      // // note: pubkey here is not a public key it's just the raw decoded address - decoding from ss58 to a bytes array
-      // final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).addressByes);
-      // print('Destination: $dest');
-      // print('Destination: $multiDest');
-
-      // print('Encoded Destination: ${multiDest.encode()}');
-      // print('Encoded Destination Length: ${multiDest.encode().length}');
-      // print('Encoded Destination address bytes: ${Address.decode(dest).addressByes}');
-
-      // // Encode call
-      // final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: BigInt.from(1000));
-
-      // print(' Runtime Call: ${runtimeCall}');
-
-      // final transferCall = runtimeCall.encode();
-      // print('Encoded Runtime Call: ${runtimeCall.encode()}');
-
-      // // Get metadata for encoding
-      // final metadata = await _stateApi.getMetadata();
-
-      // // print('Metadata: ${metadata.toJson()}');
-
-      // // Create and sign the payload
-      // final payloadToSign = SigningPayload(
-      //   method: transferCall,
-      //   specVersion: specVersion,
-      //   transactionVersion: transactionVersion,
-      //   genesisHash: genesisHash,
-      //   blockHash: blockHash,
-      //   blockNumber: blockNumber,
-      //   eraPeriod: 64,
-      //   nonce: nonce,
-      //   tip: 0,
-      // );
-      // print('Payload To Sign: ${payloadToSign}');
-
-      // final payload = payloadToSign.encode(payloadToSign);
-
-      // print('Encoded payload length: ${payload.length}');
-
-      // final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-
-      // print('Signature length: ${signature.length}');
-
-      // final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
-
-      // print("public bytes: ${senderWallet.publicKey.length}");
-      // print("signature bytes: ${signature.length}");
-      // print("signatureBytes: ${signatureWithPublicKeyBytes.length}");
-
-      // // Create the extrinsic
-      // final extrinsic = ExtrinsicPayload(
-      //   // signer is the sender's address bytes - in our case it's the ss58 address decoded into raw bytes
-      //   // whereas in the ssr25519 implementation, it's the same as the public key.
-      //   signer: senderWallet.addressBytes,
-      //   method: transferCall,
-      //   signature: signatureWithPublicKeyBytes,
-      //   eraPeriod: 64,
-      //   blockNumber: blockNumber,
-      //   nonce: nonce,
-      //   tip: 0,
-      // ).encode(metadata, SignatureType.sr25519);
-
-      // // Submit the extrinsic
-      // final hash = await _authorApi.submitExtrinsic(extrinsic);
-      // return convert.hex.encode(hash);
-    } catch (e, stackTrace) {
-      print('Dilithium Failed to transfer balance: $e');
-      print('Dilithium Failed to transfer balance: $stackTrace');
-      throw Exception('Dilithium Failed to transfer balance: $e');
-    }
-  }
-
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
@@ -382,7 +248,7 @@ class SubstrateService {
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
-      print('Destination: $dest');
+      debugPrint('Destination: $dest');
 
       // Encode call
       final resonanceApi = Resonance(_provider);
@@ -392,7 +258,8 @@ class SubstrateService {
       // Get metadata for encoding
       // Note metadata crashes because it limits all arrays to 256 bytes, we have > 7000
       // I think this is a bug in polkadart but we're not using the metadata anyway
-      // final metadata = await _stateApi.getMetadata();
+      final metadata = await _stateApi.getTypedMetadata();
+      debugPrint('Metadata: ${metadata.toJson()}');
 
       // Create and sign the payload
       final payloadToSign = SigningPayload(
