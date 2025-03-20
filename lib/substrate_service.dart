@@ -255,12 +255,6 @@ class SubstrateService {
       final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: rawAmount);
       final transferCall = runtimeCall.encode();
 
-      // Get metadata for encoding
-      // Note metadata crashes because it limits all arrays to 256 bytes, we have > 7000
-      // I think this is a bug in polkadart but we're not using the metadata anyway
-      final metadata = await _stateApi.getTypedMetadata();
-      debugPrint('Metadata: ${metadata.toJson()}');
-
       // Create and sign the payload
       final payloadToSign = SigningPayload(
         method: transferCall,
