@@ -10,7 +10,7 @@ import 'generated/resonance/resonance.dart';
 import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
-import 'extrinsic_payload.dart';
+import 'resonance_extrinsic_payload.dart';
 
 class WalletInfo {
   final KeyPair keyPair;
