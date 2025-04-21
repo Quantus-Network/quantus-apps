@@ -4,6 +4,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/account_profile.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resonance_network_wallet/main.dart';
 
