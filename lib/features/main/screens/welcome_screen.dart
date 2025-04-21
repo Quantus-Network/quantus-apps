@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/main.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
