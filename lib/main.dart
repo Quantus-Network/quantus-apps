@@ -468,7 +468,9 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _importWallet,
-                        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Import Wallet'),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Import Wallet'),
                       ),
                     ),
                   ],
@@ -1041,7 +1043,8 @@ class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
 
-  const TransactionListItem({super.key, 
+  const TransactionListItem({
+    super.key,
     required this.transaction,
     required this.isReceived,
   });
@@ -1103,7 +1106,6 @@ class _SendScreenState extends State<SendScreen> {
   final TextEditingController _amountController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
-  final List<String> _recentRecipients = [];
   String? _recipientName;
   BigInt _maxBalance = BigInt.from(0);
 
