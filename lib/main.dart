@@ -236,7 +236,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Welcome to your REZ wallet',
+              'Welcome to your RES wallet',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white70,
@@ -738,7 +738,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         const SizedBox(height: 4),
         Text(
-          '${SubstrateService().formatBalance(_balance)} REZ',
+          '${SubstrateService().formatBalance(_balance)} RES',
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -964,7 +964,7 @@ class _WalletMainState extends State<WalletMain> {
       builder: (context) {
         return AlertDialog(
           title: const Text(
-            'Receive REZ',
+            'Receive RES',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -1078,7 +1078,7 @@ class TransactionListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${isReceived ? '+' : '-'}${SubstrateService().formatBalance(transaction.amount)} REZ',
+            '${isReceived ? '+' : '-'}${SubstrateService().formatBalance(transaction.amount)} RES',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isReceived ? Colors.green : Colors.red,
@@ -1198,7 +1198,7 @@ class _SendScreenState extends State<SendScreen> {
               Row(
                 children: [
                   Text(
-                    '$amount REZ',
+                    '$amount RES',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -1223,7 +1223,7 @@ class _SendScreenState extends State<SendScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Network fee: 0.001 REZ',
+                'Network fee: 0.001 RES',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -1292,7 +1292,7 @@ class _SendScreenState extends State<SendScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Send REZ'),
+        title: const Text('Send RES'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -1447,7 +1447,7 @@ class _SendScreenState extends State<SendScreen> {
                         fillColor: const Color(0xFF2D2D2D),
                         hintText: 'Enter amount to send',
                         hintStyle: const TextStyle(color: Colors.grey),
-                        suffix: const Text('REZ', style: TextStyle(color: Colors.grey)),
+                        suffix: const Text('RES', style: TextStyle(color: Colors.grey)),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
@@ -1463,7 +1463,7 @@ class _SendScreenState extends State<SendScreen> {
                           Row(
                             children: [
                               Text(
-                                '${SubstrateService().formatBalance(_maxBalance)} REZ',
+                                '${SubstrateService().formatBalance(_maxBalance)} RES',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF9F7AEA),
@@ -1508,7 +1508,7 @@ class _SendScreenState extends State<SendScreen> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : const Text('Send REZ'),
+                            : const Text('Send RES'),
                       ),
                     ),
                   ],

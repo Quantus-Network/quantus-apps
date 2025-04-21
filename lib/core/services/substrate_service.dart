@@ -172,7 +172,6 @@ class SubstrateService {
       final resonanceApi = Resonance(_provider);
       // Account from SS58 address
       final account = Address.decode(address);
-      print('Decoded account: ${account.pubkey}');
 
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
