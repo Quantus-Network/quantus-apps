@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 
 class AccountProfilePage extends StatelessWidget {
   final String accountId;

@@ -6,11 +6,12 @@ import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart' as convert;
 
-import 'generated/resonance/resonance.dart';
-import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
+import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
-import 'resonance_extrinsic_payload.dart';
+import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
 
 class WalletInfo {
   final KeyPair keyPair;

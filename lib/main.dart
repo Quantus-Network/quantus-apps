@@ -4,7 +4,7 @@ import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:async';
-import 'package:resonance_network_wallet/substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'account_profile.dart';
 
 import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
