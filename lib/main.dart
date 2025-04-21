@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:async';
@@ -73,7 +74,7 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
+            borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -127,7 +128,7 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
+            borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -147,10 +148,10 @@ class WalletInitializer extends StatefulWidget {
   const WalletInitializer({super.key});
 
   @override
-  _WalletInitializerState createState() => _WalletInitializerState();
+  WalletInitializerState createState() => WalletInitializerState();
 }
 
-class _WalletInitializerState extends State<WalletInitializer> {
+class WalletInitializerState extends State<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
 
@@ -200,7 +201,7 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [const Color(0xFF1A1A1A), const Color(0xFF6B46C1).withOpacity(0.8)],
+            colors: [const Color(0xFF1A1A1A), const Color(0xFF6B46C1).useOpacity(0.8)],
           ),
         ),
         child: Column(
@@ -213,7 +214,7 @@ class WelcomeScreen extends StatelessWidget {
                 color: const Color(0xFF2D2D2D),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6B46C1).withOpacity(0.3),
+                    color: const Color(0xFF6B46C1).useOpacity(0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -301,10 +302,10 @@ class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
 
   @override
-  _ImportWalletScreenState createState() => _ImportWalletScreenState();
+  ImportWalletScreenState createState() => ImportWalletScreenState();
 }
 
-class _ImportWalletScreenState extends State<ImportWalletScreen> {
+class ImportWalletScreenState extends State<ImportWalletScreen> {
   final TextEditingController _mnemonicController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
@@ -321,7 +322,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
       // Check if it's a derivation path
       if (input.startsWith('//')) {
         // No validation needed for derivation paths
-        print('Using derivation path: $input');
+        debugPrint('Using derivation path: $input');
       } else {
         // Validate mnemonic
         final words = input.split(' ').where((word) => word.isNotEmpty).toList();
@@ -345,11 +346,13 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
         await prefs.setString('mnemonic', input);
         await prefs.setString('account_id', walletInfo.accountId);
       }
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const WalletMain()),
-        (route) => false,
-      );
+      if (context.mounted && mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WalletMain()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -390,7 +393,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
+                    borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -449,7 +452,7 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                               const SnackBar(content: Text('Alice development account loaded')),
                             );
                           } else {
-                            _mnemonicController.text = CRYSTAL_ALICE;
+                            _mnemonicController.text = crystalAlice;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Crystal Alice development account loaded')),
                             );
@@ -488,10 +491,10 @@ class CreateWalletScreen extends StatefulWidget {
   const CreateWalletScreen({super.key});
 
   @override
-  _CreateWalletScreenState createState() => _CreateWalletScreenState();
+  CreateWalletScreenState createState() => CreateWalletScreenState();
 }
 
-class _CreateWalletScreenState extends State<CreateWalletScreen> {
+class CreateWalletScreenState extends State<CreateWalletScreen> {
   String _mnemonic = '';
   bool _isLoading = false;
   bool _hasSavedMnemonic = false;
@@ -510,13 +513,13 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     try {
       _mnemonic = await SubstrateService().generateMnemonic();
       final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
-      print('Generated wallet address: ${walletInfo.accountId}');
+      debugPrint('Generated wallet address: ${walletInfo.accountId}');
 
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error generating mnemonic: $e');
+      debugPrint('Error generating mnemonic: $e');
       setState(() {
         _isLoading = false;
       });
@@ -536,16 +539,20 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', walletInfo.accountId);
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const WalletMain()),
-        (route) => false,
-      );
+      if (context.mounted && mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WalletMain()),
+          (route) => false,
+        );
+      }
     } catch (e) {
-      print('Error saving wallet: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving wallet: $e')),
-      );
+      debugPrint('Error saving wallet: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving wallet: $e')),
+        );
+      }
     }
   }
 
@@ -588,7 +595,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF6B46C1).withOpacity(0.3),
+                              color: const Color(0xFF6B46C1).useOpacity(0.3),
                             ),
                           ),
                           child: Column(
@@ -622,7 +629,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.useOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Row(
@@ -689,10 +696,10 @@ class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
 
   @override
-  _WalletMainState createState() => _WalletMainState();
+  WalletMainState createState() => WalletMainState();
 }
 
-class _WalletMainState extends State<WalletMain> {
+class WalletMainState extends State<WalletMain> {
   String _accountId = '';
   BigInt _balance = BigInt.zero;
   final List<Transaction> _recentTransactions = [];
@@ -718,7 +725,7 @@ class _WalletMainState extends State<WalletMain> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading wallet data: $e');
+      debugPrint('Error loading wallet data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -802,7 +809,7 @@ class _WalletMainState extends State<WalletMain> {
                               end: Alignment.bottomRight,
                               colors: [
                                 const Color(0xFF2D2D2D),
-                                const Color(0xFF6B46C1).withOpacity(0.3),
+                                const Color(0xFF6B46C1).useOpacity(0.3),
                               ],
                             ),
                           ),
@@ -816,7 +823,7 @@ class _WalletMainState extends State<WalletMain> {
                                     Container(
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF6B46C1).withOpacity(0.2),
+                                        color: const Color(0xFF6B46C1).useOpacity(0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -929,7 +936,7 @@ class _WalletMainState extends State<WalletMain> {
                                     Icon(
                                       Icons.hourglass_empty,
                                       size: 48,
-                                      color: const Color(0xFF9F7AEA).withOpacity(0.5),
+                                      color: const Color(0xFF9F7AEA).useOpacity(0.5),
                                     ),
                                     const SizedBox(height: 16),
                                     const Text(
@@ -1055,7 +1062,7 @@ class TransactionListItem extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isReceived ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+          color: isReceived ? Colors.green.useOpacity(0.2) : Colors.red.useOpacity(0.2),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -1098,10 +1105,10 @@ class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
 
   @override
-  _SendScreenState createState() => _SendScreenState();
+  SendScreenState createState() => SendScreenState();
 }
 
-class _SendScreenState extends State<SendScreen> {
+class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   bool _isLoading = false;
@@ -1271,11 +1278,12 @@ class _SendScreenState extends State<SendScreen> {
         );
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Transaction submitted successfully: $hash')),
-      );
-
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Transaction submitted successfully: $hash')),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -1324,7 +1332,7 @@ class _SendScreenState extends State<SendScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -1357,24 +1365,30 @@ class _SendScreenState extends State<SendScreen> {
                           onPressed: () async {
                             try {
                               if (mode == Mode.dilithium) {
-                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(CRYSTAL_BOB);
+                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(crystalBob);
                                 _recipientController.text = bobWallet.accountId;
                                 _lookupIdentity();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('$CRYSTAL_BOB development account loaded')),
-                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('$crystalBob development account loaded')),
+                                  );
+                                }
                               } else {
                                 final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
                                 _recipientController.text = bobWallet.accountId;
                                 _lookupIdentity();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Bob development account loaded')),
-                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Bob development account loaded')),
+                                  );
+                                }
                               }
                             } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error loading Bob account: $e')),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error loading Bob account: $e')),
+                                );
+                              }
                             }
                           },
                           icon: const Icon(Icons.bug_report, size: 16),
@@ -1396,7 +1410,7 @@ class _SendScreenState extends State<SendScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: const Color(0xFF6B46C1).withOpacity(0.3),
+                              color: const Color(0xFF6B46C1).useOpacity(0.3),
                             ),
                           ),
                           child: Padding(
@@ -1435,7 +1449,7 @@ class _SendScreenState extends State<SendScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).withOpacity(0.5)),
+                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -1566,9 +1580,9 @@ class Transaction {
 //     final keypair = crystalAlice();
 //     final accountId = toAccountId(obj: keypair);
 
-//     print("alice: ${keypair.publicKey}");
-//     print("bob: ${crystalBob().publicKey}");
-//     print("charlie: ${crystalCharlie().publicKey}");
+//     debugPrint("alice: ${keypair.publicKey}");
+//     debugPrint("bob: ${crystalBob().publicKey}");
+//     debugPrint("charlie: ${crystalCharlie().publicKey}");
 
 //     return MaterialApp(
 //       home: Scaffold(
