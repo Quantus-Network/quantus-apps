@@ -52,9 +52,9 @@ class DilithiumWalletInfo {
   }
 }
 
-const CRYSTAL_ALICE = '//Crystal Alice';
-const CRYSTAL_BOB = '//Crystal Bob';
-const CRYSTAL_CHARLIE = '//Crystal Charlie';
+const crystalAlice = '//Crystal Alice';
+const crystalBob = '//Crystal Bob';
+const crystalCharlie = '//Crystal Charlie';
 
 extension on Address {
   // making an alias here because pubkey is not a public key it's just the raw decoded address - decoding from ss58 to a bytes array
@@ -78,6 +78,7 @@ class SubstrateService {
   late final Provider _provider;
   late final StateApi _stateApi;
   late final AuthorApi _authorApi;
+  // ignore: unused_field
   late final SystemApi _systemApi;
   static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
@@ -195,13 +196,13 @@ class SubstrateService {
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
       switch (senderSeed) {
-        case CRYSTAL_ALICE:
+        case crystalAlice:
           senderWallet = crypto.crystalAlice();
           break;
-        case CRYSTAL_BOB:
+        case crystalBob:
           senderWallet = crypto.crystalBob();
           break;
-        case CRYSTAL_CHARLIE:
+        case crystalCharlie:
           senderWallet = crypto.crystalCharlie();
           break;
         default:
