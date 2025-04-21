@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'substrate_service.dart';
 
 class AccountProfilePage extends StatelessWidget {
   final String accountId;
@@ -33,7 +34,7 @@ class AccountProfilePage extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       const Color(0xFF2D2D2D),
-                      const Color(0xFF6B46C1).withOpacity(0.3),
+                      const Color(0xFF6B46C1).useOpacity(0.3),
                     ],
                   ),
                 ),
@@ -46,7 +47,7 @@ class AccountProfilePage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6B46C1).withOpacity(0.2),
+                            color: const Color(0xFF6B46C1).useOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -157,7 +158,9 @@ class AccountProfilePage extends StatelessWidget {
 
                   if (confirmed == true) {
                     await SubstrateService().logout();
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                    }
                   }
                 },
               ),

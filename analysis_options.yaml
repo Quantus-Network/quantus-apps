@@ -13,6 +13,7 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "lib/generated/**"
   errors:
     missing_required_param: error
     missing_return: error

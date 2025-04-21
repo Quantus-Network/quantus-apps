@@ -6,11 +6,11 @@ import 'dart:math';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:convert/convert.dart' as convert;
 
-import '../../generated/resonance/resonance.dart';
-import '../../generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'generated/resonance/resonance.dart';
+import 'generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
-import '../../resonance_extrinsic_payload.dart';
+import 'resonance_extrinsic_payload.dart';
 
 class WalletInfo {
   final KeyPair keyPair;
@@ -52,9 +52,9 @@ class DilithiumWalletInfo {
   }
 }
 
-const CRYSTAL_ALICE = '//Crystal Alice';
-const CRYSTAL_BOB = '//Crystal Bob';
-const CRYSTAL_CHARLIE = '//Crystal Charlie';
+const crystalAlice = '//Crystal Alice';
+const crystalBob = '//Crystal Bob';
+const crystalCharlie = '//Crystal Charlie';
 
 extension on Address {
   // making an alias here because pubkey is not a public key it's just the raw decoded address - decoding from ss58 to a bytes array
@@ -78,21 +78,15 @@ class SubstrateService {
   late final Provider _provider;
   late final StateApi _stateApi;
   late final AuthorApi _authorApi;
+  // ignore: unused_field
   late final SystemApi _systemApi;
   static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
   Future<void> initialize() async {
-    print('Initializing SubstrateService...');
-    try {
-      _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-      _stateApi = StateApi(_provider);
-      _authorApi = AuthorApi(_provider);
-      _systemApi = SystemApi(_provider);
-      print('SubstrateService initialized successfully');
-    } catch (e) {
-      print('Error initializing SubstrateService: $e');
-      rethrow;
-    }
+    _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
+    _stateApi = StateApi(_provider);
+    _authorApi = AuthorApi(_provider);
+    _systemApi = SystemApi(_provider);
   }
 
   String formatBalance(BigInt balance) {
@@ -116,9 +110,9 @@ class SubstrateService {
       // For development accounts like //Alice, we use fromUri
       final wallet = await KeyPair.sr25519.fromUri(path);
 
-      print('Generated wallet from derivation path:');
-      print('Path: $path');
-      print('Address: ${wallet.address}');
+      debugPrint('Generated wallet from derivation path:');
+      debugPrint('Path: $path');
+      debugPrint('Address: ${wallet.address}');
 
       return WalletInfo.fromKeyPair(wallet);
     } catch (e) {
@@ -166,22 +160,22 @@ class SubstrateService {
   }
 
   Future<BigInt> queryBalance(String address) async {
-    print('Querying balance for address: $address');
     try {
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider);
       // Account from SS58 address
       final account = Address.decode(address);
 
+      // debugPrint('Account pubkey: ${account.pubkey}');
+
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
-      print('Balance for $address: ${accountInfo.data.free}');
+      // debugPrint('Balance for $address: ${accountInfo.data.free}');
 
       // Get the free balance
       return accountInfo.data.free;
-    } catch (e, stackTrace) {
-      print('Error querying balance: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
+      debugPrint('Error querying balance: $e');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -195,34 +189,26 @@ class SubstrateService {
 
   Future<void> _printBalance(String prefix, String address) async {
     final balance = await queryBalance(address);
-    print('$prefix Balance for $address: ${balance.toString()}');
+    debugPrint('$prefix Balance for $address: ${balance.toString()}');
   }
 
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
-    print('Generating dilithium keypair from seed: $senderSeed');
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
-      print('Using development account path');
       switch (senderSeed) {
-        case CRYSTAL_ALICE:
-          print('Generating Crystal Alice keypair');
+        case crystalAlice:
           senderWallet = crypto.crystalAlice();
-          print('Crystal Alice public key: ${senderWallet.publicKey}');
-          print('Crystal Alice address: ${senderWallet.ss58Address}');
           break;
-        case CRYSTAL_BOB:
-          print('Generating Crystal Bob keypair');
+        case crystalBob:
           senderWallet = crypto.crystalBob();
           break;
-        case CRYSTAL_CHARLIE:
-          print('Generating Crystal Charlie keypair');
+        case crystalCharlie:
           senderWallet = crypto.crystalCharlie();
           break;
         default:
           throw Exception('Invalid sender seed: $senderSeed');
       }
     } else {
-      print('Using regular mnemonic');
       // Get the sender's wallet
       senderWallet = crypto.generateKeypair(mnemonicStr: senderSeed);
     }
@@ -233,9 +219,9 @@ class SubstrateService {
   Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
-      print('creating key with $senderSeed');
-      print('sending to $targetAddress');
-      print('amount $amount');
+      debugPrint('creating key with $senderSeed');
+      debugPrint('sending to $targetAddress');
+      debugPrint('amount $amount');
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
@@ -305,7 +291,7 @@ class SubstrateService {
       // Submit the extrinsic
 
       await _authorApi.submitAndWatchExtrinsic(extrinsic, (data) async {
-        print('type: ${data.type}, value: ${data.value}');
+        debugPrint('type: ${data.type}, value: ${data.value}');
 
         await _printBalance('after ', senderWallet.ss58Address);
         await _printBalance('after ', targetAddress);
@@ -315,7 +301,7 @@ class SubstrateService {
       // final hash = await _authorApi.submitExtrinsic(extrinsic);
       // return convert.hex.encode(0);
     } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
+      debugPrint('Failed to transfer balance: $e');
       debugPrint('Failed to transfer balance: $stackTrace');
 
       throw Exception('Failed to transfer balance: $e');
@@ -328,7 +314,7 @@ class SubstrateService {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
 
-      print('sender\' wallet: ${senderWallet.address}');
+      debugPrint('sender\' wallet: ${senderWallet.address}');
 
       // Get necessary info for the transaction
       final runtimeVersion = await _stateApi.getRuntimeVersion();
@@ -350,7 +336,7 @@ class SubstrateService {
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
-      print('Destination: $dest');
+      debugPrint('Destination: $dest');
 
       // Encode call
       final resonanceApi = Resonance(_provider);
@@ -391,15 +377,15 @@ class SubstrateService {
       // Submit the extrinsic
 
       await _authorApi.submitAndWatchExtrinsic(extrinsic, (data) {
-        print('type: ${data.type}, value: ${data.value}');
+        debugPrint('type: ${data.type}, value: ${data.value}');
       });
       return '0';
 
       // final hash = await _authorApi.submitExtrinsic(extrinsic);
       // return convert.hex.encode(0);
     } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
+      debugPrint('Failed to transfer balance: $e');
+      debugPrint('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }
@@ -428,8 +414,8 @@ class SubstrateService {
       // Create a wallet from the mnemonic
       final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
 
-      print('Generated new wallet:');
-      print('Address: ${wallet.address}');
+      debugPrint('Generated new wallet:');
+      debugPrint('Address: ${wallet.address}');
 
       return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
     } catch (e) {
