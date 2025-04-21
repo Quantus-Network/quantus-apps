@@ -22,6 +22,11 @@ Uint8List signMessage({required Keypair keypair, required List<int> message}) =>
     RustLib.instance.api
         .crateApiCryptoSignMessage(keypair: keypair, message: message);
 
+Uint8List signMessageWithPubkey(
+        {required Keypair keypair, required List<int> message}) =>
+    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
+        keypair: keypair, message: message);
+
 bool verifyMessage(
         {required Keypair keypair,
         required List<int> message,

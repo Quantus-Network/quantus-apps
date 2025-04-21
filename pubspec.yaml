@@ -27,6 +27,7 @@ dependencies:
   convert: any
   polkadart_cli: ^0.6.1
 
+  polkadart_keyring: any
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints

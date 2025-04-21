@@ -46,6 +46,13 @@ class Queries {
     valueCodec: _i2.U64Codec.codec,
   );
 
+  final _i1.StorageValue<BigInt> _totalDifficulty =
+      const _i1.StorageValue<BigInt>(
+    prefix: 'QPoW',
+    storage: 'TotalDifficulty',
+    valueCodec: _i2.U128Codec.codec,
+  );
+
   final _i1.StorageValue<int> _blocksInPeriod = const _i1.StorageValue<int>(
     prefix: 'QPoW',
     storage: 'BlocksInPeriod',
@@ -135,6 +142,18 @@ class Queries {
     return BigInt.zero; /* Default */
   }
 
+  _i3.Future<BigInt> totalDifficulty({_i1.BlockHash? at}) async {
+    final hashedKey = _totalDifficulty.hashedKey();
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _totalDifficulty.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
+  }
+
   _i3.Future<int> blocksInPeriod({_i1.BlockHash? at}) async {
     final hashedKey = _blocksInPeriod.hashedKey();
     final bytes = await __api.getStorage(
@@ -216,6 +235,12 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `totalDifficulty`.
+  _i4.Uint8List totalDifficultyKey() {
+    final hashedKey = _totalDifficulty.hashedKey();
+    return hashedKey;
+  }
+
   /// Returns the storage key for `blocksInPeriod`.
   _i4.Uint8List blocksInPeriodKey() {
     final hashedKey = _blocksInPeriod.hashedKey();
@@ -267,4 +292,6 @@ class Constants {
   final BigInt dampeningFactor = BigInt.from(8);
 
   final int blockTimeHistorySize = 60;
+
+  final int maxReorgDepth = 10;
 }

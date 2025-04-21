@@ -21,8 +21,7 @@ pub fn to_account_id(obj: &Keypair) -> String {
 #[flutter_rust_bridge::frb(sync)]
 impl Keypair {
     fn to_account_id(&self) -> String {
-        let public_key = hex::encode(&self.public_key);
-        public_key
+        to_account_id(self)
     }
 }
 

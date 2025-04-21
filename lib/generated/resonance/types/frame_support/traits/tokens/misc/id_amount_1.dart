@@ -28,7 +28,7 @@ class IdAmount {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': null,
+        'id': id.toJson(),
         'amount': amount,
       };
 
@@ -55,7 +55,7 @@ class $IdAmountCodec with _i1.Codec<IdAmount> {
     IdAmount obj,
     _i1.Output output,
   ) {
-    _i1.NullCodec.codec.encodeTo(
+    _i2.RuntimeHoldReason.codec.encodeTo(
       obj.id,
       output,
     );
@@ -68,7 +68,7 @@ class $IdAmountCodec with _i1.Codec<IdAmount> {
   @override
   IdAmount decode(_i1.Input input) {
     return IdAmount(
-      id: _i1.NullCodec.codec.decode(input),
+      id: _i2.RuntimeHoldReason.codec.decode(input),
       amount: _i1.U128Codec.codec.decode(input),
     );
   }
@@ -76,7 +76,7 @@ class $IdAmountCodec with _i1.Codec<IdAmount> {
   @override
   int sizeHint(IdAmount obj) {
     int size = 0;
-    size = size + const _i2.RuntimeHoldReasonCodec().sizeHint(obj.id);
+    size = size + _i2.RuntimeHoldReason.codec.sizeHint(obj.id);
     size = size + _i1.U128Codec.codec.sizeHint(obj.amount);
     return size;
   }

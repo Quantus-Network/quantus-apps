@@ -5,11 +5,17 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
 import '../pallet_balances/pallet/event.dart' as _i4;
-import '../pallet_qpow/pallet/event.dart' as _i8;
+import '../pallet_conviction_voting/pallet/event.dart' as _i15;
+import '../pallet_mining_rewards/pallet/event.dart' as _i9;
+import '../pallet_preimage/pallet/event.dart' as _i11;
+import '../pallet_qpow/pallet/event.dart' as _i7;
+import '../pallet_referenda/pallet/event.dart' as _i14;
+import '../pallet_scheduler/pallet/event.dart' as _i12;
 import '../pallet_sudo/pallet/event.dart' as _i6;
-import '../pallet_template/pallet/event.dart' as _i7;
 import '../pallet_transaction_payment/pallet/event.dart' as _i5;
-import '../pallet_wormhole/pallet/event.dart' as _i9;
+import '../pallet_utility/pallet/event.dart' as _i13;
+import '../pallet_vesting/pallet/event.dart' as _i10;
+import '../pallet_wormhole/pallet/event.dart' as _i8;
 
 abstract class RuntimeEvent {
   const RuntimeEvent();
@@ -54,16 +60,40 @@ class $RuntimeEvent {
     return Sudo(value0);
   }
 
-  Template template(_i7.Event value0) {
-    return Template(value0);
-  }
-
-  QPoW qPoW(_i8.Event value0) {
+  QPoW qPoW(_i7.Event value0) {
     return QPoW(value0);
   }
 
-  Wormhole wormhole(_i9.Event value0) {
+  Wormhole wormhole(_i8.Event value0) {
     return Wormhole(value0);
+  }
+
+  MiningRewards miningRewards(_i9.Event value0) {
+    return MiningRewards(value0);
+  }
+
+  Vesting vesting(_i10.Event value0) {
+    return Vesting(value0);
+  }
+
+  Preimage preimage(_i11.Event value0) {
+    return Preimage(value0);
+  }
+
+  Scheduler scheduler(_i12.Event value0) {
+    return Scheduler(value0);
+  }
+
+  Utility utility(_i13.Event value0) {
+    return Utility(value0);
+  }
+
+  Referenda referenda(_i14.Event value0) {
+    return Referenda(value0);
+  }
+
+  ConvictionVoting convictionVoting(_i15.Event value0) {
+    return ConvictionVoting(value0);
   }
 }
 
@@ -83,11 +113,23 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case 4:
         return Sudo._decode(input);
       case 5:
-        return Template._decode(input);
-      case 6:
         return QPoW._decode(input);
-      case 7:
+      case 6:
         return Wormhole._decode(input);
+      case 7:
+        return MiningRewards._decode(input);
+      case 8:
+        return Vesting._decode(input);
+      case 9:
+        return Preimage._decode(input);
+      case 10:
+        return Scheduler._decode(input);
+      case 11:
+        return Utility._decode(input);
+      case 12:
+        return Referenda._decode(input);
+      case 13:
+        return ConvictionVoting._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
     }
@@ -111,14 +153,32 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case Sudo:
         (value as Sudo).encodeTo(output);
         break;
-      case Template:
-        (value as Template).encodeTo(output);
-        break;
       case QPoW:
         (value as QPoW).encodeTo(output);
         break;
       case Wormhole:
         (value as Wormhole).encodeTo(output);
+        break;
+      case MiningRewards:
+        (value as MiningRewards).encodeTo(output);
+        break;
+      case Vesting:
+        (value as Vesting).encodeTo(output);
+        break;
+      case Preimage:
+        (value as Preimage).encodeTo(output);
+        break;
+      case Scheduler:
+        (value as Scheduler).encodeTo(output);
+        break;
+      case Utility:
+        (value as Utility).encodeTo(output);
+        break;
+      case Referenda:
+        (value as Referenda).encodeTo(output);
+        break;
+      case ConvictionVoting:
+        (value as ConvictionVoting).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -137,12 +197,24 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as TransactionPayment)._sizeHint();
       case Sudo:
         return (value as Sudo)._sizeHint();
-      case Template:
-        return (value as Template)._sizeHint();
       case QPoW:
         return (value as QPoW)._sizeHint();
       case Wormhole:
         return (value as Wormhole)._sizeHint();
+      case MiningRewards:
+        return (value as MiningRewards)._sizeHint();
+      case Vesting:
+        return (value as Vesting)._sizeHint();
+      case Preimage:
+        return (value as Preimage)._sizeHint();
+      case Scheduler:
+        return (value as Scheduler)._sizeHint();
+      case Utility:
+        return (value as Utility)._sizeHint();
+      case Referenda:
+        return (value as Referenda)._sizeHint();
+      case ConvictionVoting:
+        return (value as ConvictionVoting)._sizeHint();
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -320,19 +392,19 @@ class Sudo extends RuntimeEvent {
   int get hashCode => value0.hashCode;
 }
 
-class Template extends RuntimeEvent {
-  const Template(this.value0);
+class QPoW extends RuntimeEvent {
+  const QPoW(this.value0);
 
-  factory Template._decode(_i1.Input input) {
-    return Template(_i7.Event.codec.decode(input));
+  factory QPoW._decode(_i1.Input input) {
+    return QPoW(_i7.Event.codec.decode(input));
   }
 
-  /// pallet_template::Event<Runtime>
+  /// pallet_qpow::Event<Runtime>
   final _i7.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Template': value0.toJson()};
+      {'QPoW': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -357,25 +429,25 @@ class Template extends RuntimeEvent {
         this,
         other,
       ) ||
-      other is Template && other.value0 == value0;
+      other is QPoW && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
 }
 
-class QPoW extends RuntimeEvent {
-  const QPoW(this.value0);
+class Wormhole extends RuntimeEvent {
+  const Wormhole(this.value0);
 
-  factory QPoW._decode(_i1.Input input) {
-    return QPoW(_i8.Event.codec.decode(input));
+  factory Wormhole._decode(_i1.Input input) {
+    return Wormhole(_i8.Event.codec.decode(input));
   }
 
-  /// pallet_qpow::Event<Runtime>
+  /// pallet_wormhole::Event<Runtime>
   final _i8.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'QPoW': value0.toJson()};
+  Map<String, Map<String, Map<String, BigInt>>> toJson() =>
+      {'Wormhole': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -400,25 +472,25 @@ class QPoW extends RuntimeEvent {
         this,
         other,
       ) ||
-      other is QPoW && other.value0 == value0;
+      other is Wormhole && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
 }
 
-class Wormhole extends RuntimeEvent {
-  const Wormhole(this.value0);
+class MiningRewards extends RuntimeEvent {
+  const MiningRewards(this.value0);
 
-  factory Wormhole._decode(_i1.Input input) {
-    return Wormhole(_i9.Event.codec.decode(input));
+  factory MiningRewards._decode(_i1.Input input) {
+    return MiningRewards(_i9.Event.codec.decode(input));
   }
 
-  /// pallet_wormhole::Event<Runtime>
+  /// pallet_mining_rewards::Event<Runtime>
   final _i9.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, BigInt>>> toJson() =>
-      {'Wormhole': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MiningRewards': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -443,7 +515,264 @@ class Wormhole extends RuntimeEvent {
         this,
         other,
       ) ||
-      other is Wormhole && other.value0 == value0;
+      other is MiningRewards && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Vesting extends RuntimeEvent {
+  const Vesting(this.value0);
+
+  factory Vesting._decode(_i1.Input input) {
+    return Vesting(_i10.Event.codec.decode(input));
+  }
+
+  /// pallet_vesting::Event<Runtime>
+  final _i10.Event value0;
+
+  @override
+  Map<String, Map<String, List<dynamic>>> toJson() =>
+      {'Vesting': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i10.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      8,
+      output,
+    );
+    _i10.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Vesting && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Preimage extends RuntimeEvent {
+  const Preimage(this.value0);
+
+  factory Preimage._decode(_i1.Input input) {
+    return Preimage(_i11.Event.codec.decode(input));
+  }
+
+  /// pallet_preimage::Event<Runtime>
+  final _i11.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, List<int>>>> toJson() =>
+      {'Preimage': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i11.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i11.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Preimage && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Scheduler extends RuntimeEvent {
+  const Scheduler(this.value0);
+
+  factory Scheduler._decode(_i1.Input input) {
+    return Scheduler(_i12.Event.codec.decode(input));
+  }
+
+  /// pallet_scheduler::Event<Runtime>
+  final _i12.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Scheduler': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i12.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      10,
+      output,
+    );
+    _i12.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Scheduler && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Utility extends RuntimeEvent {
+  const Utility(this.value0);
+
+  factory Utility._decode(_i1.Input input) {
+    return Utility(_i13.Event.codec.decode(input));
+  }
+
+  /// pallet_utility::Event
+  final _i13.Event value0;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {'Utility': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i13.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      11,
+      output,
+    );
+    _i13.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Utility && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Referenda extends RuntimeEvent {
+  const Referenda(this.value0);
+
+  factory Referenda._decode(_i1.Input input) {
+    return Referenda(_i14.Event.codec.decode(input));
+  }
+
+  /// pallet_referenda::Event<Runtime>
+  final _i14.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Referenda': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i14.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      12,
+      output,
+    );
+    _i14.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Referenda && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class ConvictionVoting extends RuntimeEvent {
+  const ConvictionVoting(this.value0);
+
+  factory ConvictionVoting._decode(_i1.Input input) {
+    return ConvictionVoting(_i15.Event.codec.decode(input));
+  }
+
+  /// pallet_conviction_voting::Event<Runtime>
+  final _i15.Event value0;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() =>
+      {'ConvictionVoting': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i15.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      13,
+      output,
+    );
+    _i15.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ConvictionVoting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

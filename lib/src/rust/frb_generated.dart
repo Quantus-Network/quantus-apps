@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.9.0';
 
   @override
-  int get rustContentHash => -1618346163;
+  int get rustContentHash => 600193706;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -98,6 +98,9 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiSimpleInitApp();
 
   Uint8List crateApiCryptoSignMessage(
+      {required Keypair keypair, required List<int> message});
+
+  Uint8List crateApiCryptoSignMessageWithPubkey(
       {required Keypair keypair, required List<int> message});
 
   String crateApiCryptoToAccountId({required Keypair obj});
@@ -326,12 +329,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Uint8List crateApiCryptoSignMessageWithPubkey(
+      {required Keypair keypair, required List<int> message}) {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_box_autoadd_keypair(keypair, serializer);
+        sse_encode_list_prim_u_8_loose(message, serializer);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_list_prim_u_8_strict,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
+      argValues: [keypair, message],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiCryptoSignMessageWithPubkeyConstMeta =>
+      const TaskConstMeta(
+        debugName: 'sign_message_with_pubkey',
+        argNames: ['keypair', 'message'],
+      );
+
+  @override
   String crateApiCryptoToAccountId({required Keypair obj}) {
     return handler.executeSync(SyncTask(
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_box_autoadd_keypair(obj, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_String,
@@ -359,7 +388,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_box_autoadd_keypair(keypair, serializer);
         sse_encode_list_prim_u_8_loose(message, serializer);
         sse_encode_list_prim_u_8_loose(signature, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_bool,
