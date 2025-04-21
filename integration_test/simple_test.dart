@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/main.dart';
+import 'package:resonance_network_wallet/features/main/screens/app.dart';
 import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
 import 'package:integration_test/integration_test.dart';
 

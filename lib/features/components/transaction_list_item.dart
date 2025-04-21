@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'package:resonance_network_wallet/core/models/transaction_model.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/main.dart';
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
