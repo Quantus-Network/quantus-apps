@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 
 class AccountProfilePage extends StatelessWidget {
   final String accountId;
@@ -87,8 +87,7 @@ class AccountProfilePage extends StatelessWidget {
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: accountId));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Address copied to clipboard')),
+                          const SnackBar(content: Text('Address copied to clipboard')),
                         );
                       },
                       icon: const Icon(Icons.copy),
@@ -158,8 +157,7 @@ class AccountProfilePage extends StatelessWidget {
 
                   if (confirmed == true) {
                     await SubstrateService().logout();
-                    Navigator.of(context)
-                        .pushNamedAndRemoveUntil('/', (route) => false);
+                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                   }
                 },
               ),

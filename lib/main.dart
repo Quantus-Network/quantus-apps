@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:async';
-import 'package:resonance_network_wallet/substrate_service.dart';
 import 'account_profile.dart';
 
 import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
@@ -468,7 +468,9 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _importWallet,
-                        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Import Wallet'),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Import Wallet'),
                       ),
                     ),
                   ],
@@ -1041,7 +1043,8 @@ class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
 
-  const TransactionListItem({super.key, 
+  const TransactionListItem({
+    super.key,
     required this.transaction,
     required this.isReceived,
   });
