@@ -82,10 +82,17 @@ class SubstrateService {
   static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
 
   Future<void> initialize() async {
-    _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-    _stateApi = StateApi(_provider);
-    _authorApi = AuthorApi(_provider);
-    _systemApi = SystemApi(_provider);
+    print('Initializing SubstrateService...');
+    try {
+      _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
+      _stateApi = StateApi(_provider);
+      _authorApi = AuthorApi(_provider);
+      _systemApi = SystemApi(_provider);
+      print('SubstrateService initialized successfully');
+    } catch (e) {
+      print('Error initializing SubstrateService: $e');
+      rethrow;
+    }
   }
 
   String formatBalance(BigInt balance) {
@@ -159,22 +166,23 @@ class SubstrateService {
   }
 
   Future<BigInt> queryBalance(String address) async {
+    print('Querying balance for address: $address');
     try {
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider);
       // Account from SS58 address
       final account = Address.decode(address);
-
-      // print('Account pubkey: ${account.pubkey}');
+      print('Decoded account: ${account.pubkey}');
 
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(account.pubkey);
-      // print('Balance for $address: ${accountInfo.data.free}');
+      print('Balance for $address: ${accountInfo.data.free}');
 
       // Get the free balance
       return accountInfo.data.free;
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error querying balance: $e');
+      print('Stack trace: $stackTrace');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -192,22 +200,30 @@ class SubstrateService {
   }
 
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
+    print('Generating dilithium keypair from seed: $senderSeed');
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
+      print('Using development account path');
       switch (senderSeed) {
         case CRYSTAL_ALICE:
+          print('Generating Crystal Alice keypair');
           senderWallet = crypto.crystalAlice();
+          print('Crystal Alice public key: ${senderWallet.publicKey}');
+          print('Crystal Alice address: ${senderWallet.ss58Address}');
           break;
         case CRYSTAL_BOB:
+          print('Generating Crystal Bob keypair');
           senderWallet = crypto.crystalBob();
           break;
         case CRYSTAL_CHARLIE:
+          print('Generating Crystal Charlie keypair');
           senderWallet = crypto.crystalCharlie();
           break;
         default:
           throw Exception('Invalid sender seed: $senderSeed');
       }
     } else {
+      print('Using regular mnemonic');
       // Get the sender's wallet
       senderWallet = crypto.generateKeypair(mnemonicStr: senderSeed);
     }

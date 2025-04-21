@@ -12,11 +12,10 @@ class AppTheme {
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       cardColor: cardColor,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: primaryColor,
         secondary: secondaryColor,
         surface: cardColor,
-        background: backgroundColor,
         error: errorColor,
       ),
       appBarTheme: const AppBarTheme(

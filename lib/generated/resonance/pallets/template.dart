@@ -5,8 +5,6 @@ import 'dart:typed_data' as _i4;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/pallet_template/pallet/call.dart' as _i6;
-import '../types/resonance_runtime/runtime_call.dart' as _i5;
 
 class Queries {
   const Queries(this.__api);
@@ -50,9 +48,9 @@ class Txs {
   ///
   /// It checks that the _origin_ for this call is _Signed_ and returns a dispatch
   /// error if it isn't. Learn more about origins here: <https://docs.substrate.io/build/origins/>
-  _i5.Template doSomething({required int something}) {
-    return _i5.Template(_i6.DoSomething(something: something));
-  }
+  // _i5.Template doSomething({required int something}) {
+  //   return _i5.Template(_i6.DoSomething(something: something));
+  // }
 
   /// An example dispatchable that may throw a custom error.
   ///
@@ -67,7 +65,7 @@ class Txs {
   /// - If no value has been set ([`Error::NoneValue`])
   /// - If incrementing the value in storage causes an arithmetic overflow
   ///  ([`Error::StorageOverflow`])
-  _i5.Template causeError() {
-    return const _i5.Template(_i6.CauseError());
-  }
+  // _i5.Template causeError() {
+  //   return const _i5.Template(_i6.CauseError());
+  // }
 }
