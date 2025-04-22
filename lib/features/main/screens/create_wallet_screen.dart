@@ -1,46 +1,9 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:human_checksum/human_checksum.dart';
 import 'package:resonance_network_wallet/features/main/screens/manual_backup_screen.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
-
-// --- Top-level functions for compute ---
-
-// Helper to ensure RustLib is initialized in the isolate
-Future<void> _ensureRustInitialized() async {
-  // Needs error handling if init can fail
-  await RustLib.init();
-}
-// TODO remove this - this doesn't take long
-
-Future<String> _generateMnemonicIsolate(dynamic _) async {
-  await _ensureRustInitialized();
-  // Note: Instantiating SubstrateService here might be problematic
-  // if it depends on main isolate state. Let's try it first.
-  return await SubstrateService().generateMnemonic();
-}
-// TODO remove this - this doesn't take long
-
-Future<DilithiumWalletInfo> _generateWalletFromSeedIsolate(String mnemonic) async {
-  await _ensureRustInitialized();
-  return await SubstrateService().generateWalletFromSeed(mnemonic);
-}
-
-// TODO use our service for this
-Future<List<String>> _generateChecksumIsolate(Map<String, dynamic> params) async {
-  // Checksum might not need Rust init, but good practice if unsure
-  // await _ensureRustInitialized();
-  final List<String> wordList = params['wordList'] as List<String>;
-  final String accountId = params['accountId'] as String;
-  // HumanChecksum itself is likely pure Dart and safe
-  HumanChecksum humanChecksum = HumanChecksum(wordList);
-  // addressToChecksum might be pure Dart, or might call Rust - assume pure Dart for now
-  return humanChecksum.addressToChecksum(accountId);
-}
-// --- End Top-level functions ---
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class CreateWalletScreen extends StatefulWidget {
   const CreateWalletScreen({super.key});
@@ -51,7 +14,6 @@ class CreateWalletScreen extends StatefulWidget {
 
 class _CreateWalletScreenState extends State<CreateWalletScreen> {
   String _walletName = 'Loading...';
-  List<String> _wordList = [];
   String? _error;
   String? _mnemonic;
   DilithiumWalletInfo? _walletInfo;
@@ -65,41 +27,29 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
   Future<void> _initializeWallet() async {
     try {
-      // Load word list (usually fast)
-      final String wordListContent = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
-      _wordList = wordListContent.split('\n').where((word) => word.isNotEmpty).toList();
+      _mnemonic = await SubstrateService().generateMnemonic();
+      if (_mnemonic == null || _mnemonic!.isEmpty) throw Exception('Mnemonic generation failed');
 
-      if (_wordList.isEmpty) {
-        throw Exception('Word list is empty');
-      }
-
-      // Generate mnemonic and wallet IN ISOLATE
-      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
-      if (_mnemonic == null) throw Exception('Mnemonic generation failed');
-
-      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      _walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic!);
       if (_walletInfo == null) throw Exception('Wallet generation failed');
 
-      // Generate checksum IN ISOLATE
-      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
-      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
+      _walletName = await HumanReadableChecksumService().getHumanReadableName(_walletInfo!.accountId);
+      if (_walletName.isEmpty) throw Exception('Checksum generation failed');
 
-      // Update state ONLY if mounted and successful
       if (mounted) {
-        setState(() {
-          _walletName = words.join('-');
-        });
+        setState(() {});
       }
 
       debugPrint('Initialization successful');
       debugPrint('Generated mnemonic: $_mnemonic');
-      debugPrint('Generated wallet info: ${_walletInfo!.accountId} ${_walletInfo!.keypair.publicKey}');
-      debugPrint('Generated words: $words');
+      debugPrint('Generated wallet info: ${_walletInfo!.accountId}');
+      debugPrint('Generated wallet name: $_walletName');
     } catch (e) {
       debugPrint('Initialization failed: $e');
       if (mounted) {
         setState(() {
           _error = 'Failed to initialize wallet: $e';
+          _walletName = 'Error';
         });
       }
     }
@@ -111,25 +61,26 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
     setState(() {
       _error = null;
       _walletName = 'Regenerating...';
+      _mnemonic = null;
+      _walletInfo = null;
     });
 
     try {
-      // Re-run the generation logic IN ISOLATE
-      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
-      if (_mnemonic == null) throw Exception('Mnemonic regeneration failed');
+      _mnemonic = await SubstrateService().generateMnemonic();
+      if (_mnemonic == null || _mnemonic!.isEmpty) throw Exception('Mnemonic regeneration failed');
 
-      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      _walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic!);
       if (_walletInfo == null) throw Exception('Wallet regeneration failed');
 
-      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
-      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
+      final newWalletName = await HumanReadableChecksumService().getHumanReadableName(_walletInfo!.accountId);
+      if (newWalletName.isEmpty) throw Exception('Checksum regeneration failed');
 
       if (mounted) {
         setState(() {
-          _walletName = words.join('-');
+          _walletName = newWalletName;
         });
       }
-      debugPrint('Regeneration successful $_mnemonic');
+      debugPrint('Regeneration successful: $_mnemonic, $_walletName');
     } catch (e) {
       debugPrint('Regeneration failed: $e');
       if (mounted) {
@@ -159,14 +110,15 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
             child: FutureBuilder<void>(
               future: _initializationFuture,
               builder: (context, snapshot) {
-                bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+                bool isLoading = snapshot.connectionState == ConnectionState.waiting ||
+                    _walletName == 'Loading...' ||
+                    _walletName == 'Regenerating...';
                 bool hasError = _error != null;
-                bool showContent = snapshot.connectionState == ConnectionState.done && !hasError;
+                bool showContent = snapshot.connectionState == ConnectionState.done && !isLoading && !hasError;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button and title
                     Row(
                       children: [
                         IconButton(
@@ -184,10 +136,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 40),
-
-                    // Wallet name section
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -200,10 +149,8 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-
                         const SizedBox(height: 16),
-
-                        if (isLoading)
+                        if (isLoading && _walletName != 'Regenerating...')
                           const Column(
                             children: [
                               CircularProgressIndicator(color: Colors.white),
@@ -240,30 +187,34 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             children: [
                               Text(
                                 _walletName,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: _walletName == 'Error' ? Colors.red : Colors.white,
                                   fontSize: 20,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Your unique wallet identifier',
-                                style: TextStyle(
-                                  color: Color(0x99FFFFFF),
-                                  fontSize: 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
+                              if (_walletName != 'Regenerating...' && _walletName != 'Error') ...[
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Your unique wallet identifier',
+                                  style: TextStyle(
+                                    color: Color(0x99FFFFFF),
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
-
                         const SizedBox(height: 16),
-
-                        // Regenerate button
-                        if (showContent && _walletName != 'Regenerating...')
+                        if (_walletName == 'Regenerating...')
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                          )
+                        else if (showContent || hasError)
                           GestureDetector(
                             onTap: _regenerateWalletName,
                             child: const Row(
@@ -283,15 +234,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                               ],
                             ),
                           ),
-                        if (_walletName == 'Regenerating...')
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8.0),
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
-                          ),
-
                         const SizedBox(height: 16),
-
-                        // Description
                         const Text(
                           'An easy way to recognise your wallets\nRefresh to autogenerate a new name',
                           textAlign: TextAlign.center,
@@ -304,13 +247,10 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         ),
                       ],
                     ),
-
                     const Spacer(),
-
-                    // Continue button
                     if (showContent)
                       Container(
-                        width: 343,
+                        width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: ShapeDecoration(
                           gradient: const LinearGradient(
@@ -324,18 +264,12 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            if (_mnemonic != null && _walletInfo != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ManualBackupScreen(initialMnemonic: _mnemonic!),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Wallet data not ready yet.')),
-                              );
-                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ManualBackupScreen(initialMnemonic: _mnemonic!),
+                              ),
+                            );
                           },
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -354,8 +288,34 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             ],
                           ),
                         ),
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ShapeDecoration(
+                          color: Colors.grey.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 18,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-
                     const SizedBox(height: 34),
                   ],
                 );
