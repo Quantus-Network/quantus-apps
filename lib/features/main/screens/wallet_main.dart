@@ -248,7 +248,7 @@ class _WalletMainState extends State<WalletMain> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AccountProfilePage(accountId: _accountId!),
+                                      builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
                                     ),
                                   );
                                 }

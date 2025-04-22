@@ -1,173 +1,335 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class AccountProfilePage extends StatelessWidget {
-  final String accountId;
+class AccountInfo {
+  final String name;
+  final String address;
+  final String balance;
+
+  AccountInfo({required this.name, required this.address, required this.balance});
+}
+
+class AccountProfilePage extends StatefulWidget {
+  final String currentAccountId;
 
   const AccountProfilePage({
     super.key,
-    required this.accountId,
+    required this.currentAccountId,
   });
+
+  @override
+  State<AccountProfilePage> createState() => _AccountProfilePageState();
+}
+
+class _AccountProfilePageState extends State<AccountProfilePage> {
+  AccountInfo? _account;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountData();
+  }
+
+  Future<void> _loadAccountData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accountId = prefs.getString('account_id');
+      final walletName = prefs.getString('wallet_name') ?? '';
+
+      if (accountId == null) {
+        throw Exception('No account found');
+      }
+
+      final balance = await SubstrateService().queryBalance(accountId);
+      final formattedBalance = SubstrateService().formatBalance(balance);
+
+      setState(() {
+        _account = AccountInfo(
+          name: walletName,
+          address: accountId,
+          balance: formattedBalance,
+        );
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading account data: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _createNewWallet() {
+    print("Create New Wallet tapped");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Create New Wallet action not implemented yet.')),
+    );
+  }
+
+  void _logoutAndClearData() async {
+    print("Log Out tapped");
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2D2D2D),
+        title: const Text('Confirm Logout', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to log out? This will delete all local wallet data. Make sure you have backed up your recovery phrase.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF9F7AEA))),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Log Out & Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await SubstrateService().logout();
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }
+      } catch (e) {
+        print("Error during logout: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Logout failed: ${e.toString()}')),
+          );
+        }
+      }
+    }
+  }
+
+  void _copyAddress(String address) {
+    Clipboard.setData(ClipboardData(text: address));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Address copied to clipboard')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0E0E0E),
       appBar: AppBar(
-        title: const Text('Account Profile'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Your Accounts',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF2D2D2D),
-                      const Color(0xFF6B46C1).useOpacity(0.3),
-                    ],
-                  ),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/BG_00 1.png'),
+            fit: BoxFit.cover,
+            opacity: 0.54,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                if (_isLoading)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  )
+                else if (_account == null)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'No account found',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6B46C1).useOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Color(0xFF9F7AEA),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Your Address',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                accountId,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildAccountItem(_account!, true),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: accountId));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Address copied to clipboard')),
-                        );
-                      },
-                      icon: const Icon(Icons.copy),
-                      label: const Text('Copy Address'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B46C1),
-                        minimumSize: const Size(double.infinity, 48),
+                  ),
+                const SizedBox(height: 24),
+                _buildActionButton(
+                  text: 'Create New Wallet',
+                  onPressed: _createNewWallet,
+                  isOutlined: true,
+                ),
+                const SizedBox(height: 16),
+                _buildActionButton(
+                  text: 'Log Out & Clear Data',
+                  onPressed: _logoutAndClearData,
+                  isOutlined: false,
+                  backgroundColor: const Color(0xFFE6E6E6),
+                  textColor: const Color(0xFF0E0E0E),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountItem(AccountInfo account, bool isActive) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: ShapeDecoration(
+        color: Colors.black.withOpacity(166 / 255.0),
+        shape: RoundedRectangleBorder(
+          side: isActive ? const BorderSide(width: 1, color: Colors.white) : BorderSide.none,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            'assets/account_list_icon.svg',
+            width: 21,
+            height: 32,
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  account.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        account.address,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(153 / 255.0),
+                          fontSize: 10,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w300,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    InkWell(
+                      onTap: () => _copyAddress(account.address),
+                      child: const Icon(
+                        Icons.content_copy,
+                        color: Colors.white70,
+                        size: 14,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Security',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ListTile(
-                leading: const Icon(
-                  Icons.logout,
-                  color: Colors.red,
-                ),
-                title: const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: account.balance,
+                        style: const TextStyle(
+                          color: Color(0xFFE6E6E6),
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' RES',
+                        style: TextStyle(
+                          color: Color(0xFFE6E6E6),
+                          fontSize: 10,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                subtitle: const Text(
-                  'Clear wallet data and start fresh',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                onTap: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Confirm Logout'),
-                      content: const Text(
-                        'Are you sure you want to log out? This will delete all local wallet data. Make sure you have backed up your recovery phrase.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          child: const Text('Log Out'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true) {
-                    await SubstrateService().logout();
-                    if (context.mounted) {
-                      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                    }
-                  }
-                },
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String text,
+    required VoidCallback onPressed,
+    required bool isOutlined,
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
+    final ButtonStyle style = isOutlined
+        ? OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFE6E6E6),
+            side: const BorderSide(width: 1, color: Color(0xFFE6E6E6)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            minimumSize: const Size(double.infinity, 50),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
+            ),
+          )
+        : ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor ?? const Color(0xFFE6E6E6),
+            foregroundColor: textColor ?? const Color(0xFF0E0E0E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            minimumSize: const Size(double.infinity, 50),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
+            ),
+          );
+
+    return SizedBox(
+      width: double.infinity,
+      child: isOutlined
+          ? OutlinedButton(onPressed: onPressed, style: style, child: Text(text))
+          : ElevatedButton(onPressed: onPressed, style: style, child: Text(text)),
     );
   }
 }

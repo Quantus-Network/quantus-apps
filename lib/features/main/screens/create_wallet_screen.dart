@@ -73,10 +73,10 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
       // Generate mnemonic and wallet IN ISOLATE
       _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
-      if (_mnemonic == null) throw Exception("Mnemonic generation failed");
+      if (_mnemonic == null) throw Exception('Mnemonic generation failed');
 
       _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
-      if (_walletInfo == null) throw Exception("Wallet generation failed");
+      if (_walletInfo == null) throw Exception('Wallet generation failed');
 
       // Generate checksum IN ISOLATE
       final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
@@ -108,16 +108,16 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
 
     setState(() {
       _error = null;
-      _walletName = "Regenerating...";
+      _walletName = 'Regenerating...';
     });
 
     try {
       // Re-run the generation logic IN ISOLATE
       _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
-      if (_mnemonic == null) throw Exception("Mnemonic regeneration failed");
+      if (_mnemonic == null) throw Exception('Mnemonic regeneration failed');
 
       _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
-      if (_walletInfo == null) throw Exception("Wallet regeneration failed");
+      if (_walletInfo == null) throw Exception('Wallet regeneration failed');
 
       final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
       final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
@@ -133,7 +133,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
       if (mounted) {
         setState(() {
           _error = 'Failed to regenerate: $e';
-          _walletName = "Error";
+          _walletName = 'Error';
         });
       }
     }
@@ -261,7 +261,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         const SizedBox(height: 16),
 
                         // Regenerate button
-                        if (showContent && _walletName != "Regenerating...")
+                        if (showContent && _walletName != 'Regenerating...')
                           GestureDetector(
                             onTap: _regenerateWalletName,
                             child: const Row(
@@ -281,7 +281,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                               ],
                             ),
                           ),
-                        if (_walletName == "Regenerating...")
+                        if (_walletName == 'Regenerating...')
                           const Padding(
                             padding: EdgeInsets.only(top: 8.0),
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
