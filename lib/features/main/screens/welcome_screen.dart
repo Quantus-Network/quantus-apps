@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_screen.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_check_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -102,7 +103,7 @@ class WelcomeScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const CreateWalletScreen()),
+                            MaterialPageRoute(builder: (context) => const CreateWalletCheckPhraseScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -142,7 +143,7 @@ class WelcomeScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          backgroundColor: Colors.black.withOpacity(0.25),
+                          backgroundColor: Colors.black.useOpacity(0.25),
                         ),
                         child: const Text(
                           'Import Your Wallet',

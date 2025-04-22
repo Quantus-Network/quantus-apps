@@ -3,8 +3,7 @@ import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
-import 'package:bip39/bip39.dart' as bip39;
-import 'package:convert/convert.dart' as convert;
+import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 
 import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
 import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
@@ -400,11 +399,10 @@ class SubstrateService {
     try {
       // Generate a random entropy
       final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
-      // Convert entropy to a hexadecimal string
-      final entropyHex = convert.hex.encode(entropy);
       // Generate mnemonic from entropy
-      final mnemonic = bip39.entropyToMnemonic(entropyHex);
-      return mnemonic;
+      final mnemonic = Mnemonic(entropy, Language.english);
+
+      return mnemonic.sentence;
     } catch (e) {
       throw Exception('Failed to generate mnemonic: $e');
     }
