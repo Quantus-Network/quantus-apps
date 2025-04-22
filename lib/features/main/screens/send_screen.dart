@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
-import 'dart:developer';
-import 'dart:isolate';
-import 'package:human_checksum/human_checksum.dart';
-import 'package:flutter/rendering.dart';
+import 'dart:ui';
 
 String formatAmount(BigInt amount) {
   return amount.toString();
@@ -727,6 +723,63 @@ class SendConfirmationOverlay extends StatelessWidget {
                       ],
                     ),
                   ],
+                ),
+                const SizedBox(height: 28),
+                // Network fee and confirm button
+                Container(
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Network fee',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${fee.toString()} RES',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 23),
+                      GestureDetector(
+                        onTap: onConfirm,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: ShapeDecoration(
+                            color: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                          child: const Text(
+                            'Confirm',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF0E0E0E),
+                              fontSize: 18,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 50),
+                    ],
+                  ),
                 ),
               ],
             ),
