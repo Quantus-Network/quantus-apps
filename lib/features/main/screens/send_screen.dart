@@ -11,64 +11,8 @@ import 'dart:developer';
 import 'dart:isolate';
 import 'package:human_checksum/human_checksum.dart';
 
-// Function to run in isolate
-Future<String> _getWalletNameInIsolate(String address) async {
-  debugPrint('Starting isolate for address: $address');
-  final receivePort = ReceivePort();
-
-  // Load word list in main thread
-  final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
-  final words = wordList.split('\n').where((word) => word.isNotEmpty).toList();
-  debugPrint('Loaded word list with ${words.length} words');
-
-  if (words.length != 2048) {
-    debugPrint('Word list length mismatch. Expected 2048, got ${words.length}');
-    return '';
-  }
-
-  await Isolate.spawn(_isolateEntry, [receivePort.sendPort, words]);
-  final sendPort = await receivePort.first as SendPort;
-  debugPrint('Got sendPort from isolate');
-
-  final responsePort = ReceivePort();
-  sendPort.send([address, responsePort.sendPort]);
-  debugPrint('Sent address to isolate');
-  final result = await responsePort.first as String;
-  debugPrint('Got result from isolate: $result');
-  responsePort.close();
-  return result;
-}
-
-void _isolateEntry(List<dynamic> args) async {
-  final mainSendPort = args[0] as SendPort;
-  final words = args[1] as List<String>;
-
-  debugPrint('Isolate started with word list length: ${words.length}');
-  final receivePort = ReceivePort();
-  mainSendPort.send(receivePort.sendPort);
-  debugPrint('Sent sendPort to main isolate');
-
-  await for (final message in receivePort) {
-    final address = message[0] as String;
-    final replyTo = message[1] as SendPort;
-    debugPrint('Isolate received address: $address');
-
-    try {
-      if (words.length != 2048) {
-        debugPrint('Word list length mismatch in isolate. Expected 2048, got ${words.length}');
-        replyTo.send('');
-        continue;
-      }
-
-      final humanChecksum = HumanChecksum(words);
-      final result = humanChecksum.addressToChecksum(address).join('-');
-      debugPrint('Got wallet name in isolate: $result');
-      replyTo.send(result);
-    } catch (e) {
-      debugPrint('Error in isolate: $e');
-      replyTo.send('');
-    }
-  }
+String formatAmount(BigInt amount) {
+  return amount.toString();
 }
 
 class SendScreen extends StatefulWidget {
@@ -80,10 +24,15 @@ class SendScreen extends StatefulWidget {
 
 class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
   BigInt _maxBalance = BigInt.from(0);
+  BigInt _fee = BigInt.from(10); // TODO: get from SubstrateService
   bool _hasAddressError = false;
+  bool _hasAmountError = false;
+  BigInt _amount = BigInt.from(0);
   String _savedAddressesLabel = '';
   Timer? _debounce;
+  static const int _networkFee = 10;
 
   @override
   void initState() {
@@ -94,6 +43,7 @@ class SendScreenState extends State<SendScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -111,6 +61,13 @@ class SendScreenState extends State<SendScreen> {
     setState(() {});
 
     try {
+      // Dev mode: Set fixed balance of 1000
+      setState(() {
+        _maxBalance = BigInt.from(1000);
+      });
+
+      // Comment out the actual balance loading for now
+      /*
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
 
@@ -123,6 +80,7 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _maxBalance = balance;
       });
+      */
     } catch (e) {
       debugPrint('Error loading balance: $e');
       setState(() {});
@@ -164,6 +122,35 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _savedAddressesLabel = '';
       });
+    }
+  }
+
+  void _validateAmount(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _hasAmountError = false;
+      });
+      return;
+    }
+
+    try {
+      final amount = BigInt.parse(value);
+      setState(() {
+        _hasAmountError = amount + _fee > _maxBalance;
+        _amount = amount;
+      });
+    } catch (e) {
+      setState(() {
+        _hasAmountError = true;
+      });
+    }
+  }
+
+  void _setMaxAmount() {
+    final maxAmount = _maxBalance - BigInt.from(_networkFee);
+    if (maxAmount > BigInt.zero) {
+      _amountController.text = maxAmount.toString();
+      _validateAmount(maxAmount.toString());
     }
   }
 
@@ -330,33 +317,64 @@ class SendScreenState extends State<SendScreen> {
                     ),
                   ),
                 ),
-                // Amount display
+                // Amount input
                 Expanded(
                   child: Center(
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '0',
-                            style: TextStyle(
-                              color: Colors.white.useOpacity(0.5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IntrinsicWidth(
+                          child: TextField(
+                            controller: _amountController,
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontSize: 40,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          const TextSpan(
-                            text: ' RES',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w600,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: _hasAmountError
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                                    )
+                                  : InputBorder.none,
+                              focusedBorder: _hasAmountError
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                                    )
+                                  : InputBorder.none,
+                              hintText: '0',
+                              hintStyle: TextStyle(
+                                color: Colors.white.useOpacity(0.5),
+                                fontSize: 40,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w600,
+                              ),
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              filled: true,
+                              fillColor: Colors.transparent,
                             ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                            ],
+                            onChanged: _validateAmount,
                           ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
+                        ),
+                        const Text(
+                          ' RES',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -383,13 +401,16 @@ class SendScreenState extends State<SendScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        child: const Text(
-                          'Max',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
+                        child: GestureDetector(
+                          onTap: _setMaxAmount,
+                          child: const Text(
+                            'Max',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
@@ -415,9 +436,9 @@ class SendScreenState extends State<SendScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const Text(
-                            '-',
-                            style: TextStyle(
+                          Text(
+                            '$_networkFee RES',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontFamily: 'Fira Code',
@@ -435,7 +456,12 @@ class SendScreenState extends State<SendScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Opacity(
-                    opacity: 0.3,
+                    opacity: _hasAddressError ||
+                            _hasAmountError ||
+                            _recipientController.text.isEmpty ||
+                            _amountController.text.isEmpty
+                        ? 0.3
+                        : 1.0,
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -445,10 +471,17 @@ class SendScreenState extends State<SendScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                       ),
-                      child: const Text(
-                        'Enter Address',
+                      child: Text(
+                        (_hasAddressError || _recipientController.text.isEmpty)
+                            ? 'Enter Address'
+                            : (_hasAmountError ||
+                                    _amountController.text.isEmpty ||
+                                    _amountController.text == '0' ||
+                                    _amount == BigInt.from(0))
+                                ? 'Enter Amount'
+                                : 'Send ${formatAmount(_amount)} RES',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF0E0E0E),
                           fontSize: 18,
                           fontFamily: 'Fira Code',
