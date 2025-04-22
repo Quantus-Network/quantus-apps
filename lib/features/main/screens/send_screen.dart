@@ -217,200 +217,210 @@ class SendScreenState extends State<SendScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Recipient',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _recipientController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF2D2D2D),
-                        hintText: 'Enter recipient address',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.paste, color: Color(0xFF9F7AEA)),
-                          onPressed: () async {
-                            final data = await Clipboard.getData('text/plain');
-                            if (data != null && data.text != null) {
-                              _recipientController.text = data.text!;
-                              _lookupIdentity();
-                            }
-                          },
-                        ),
-                      ),
-                      onChanged: (value) {
-                        _lookupIdentity();
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () async {
-                            try {
-                              if (mode == Mode.dilithium) {
-                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(crystalBob);
-                                _recipientController.text = bobWallet.accountId;
-                                _lookupIdentity();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('$crystalBob development account loaded')),
-                                  );
-                                }
-                              } else {
-                                final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
-                                _recipientController.text = bobWallet.accountId;
-                                _lookupIdentity();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Bob development account loaded')),
-                                  );
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error loading Bob account: $e')),
-                                );
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.bug_report, size: 16),
-                          label: const Text('Use Crystal Bob (Dilithium Test)'),
-                          // label: Text('Use Bob (Test)'),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(0, 0),
-                            foregroundColor: const Color(0xFF9F7AEA),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_recipientName != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Card(
-                          color: const Color(0xFF2D2D2D),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: const Color(0xFF6B46C1).useOpacity(0.3),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Recipient',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _recipientController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: const BorderSide(color: Color(0xFF6B46C1)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFF2D2D2D),
+                                hintText: 'Enter recipient address',
+                                hintStyle: const TextStyle(color: Colors.grey),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.paste, color: Color(0xFF9F7AEA)),
+                                  onPressed: () async {
+                                    final data = await Clipboard.getData('text/plain');
+                                    if (data != null && data.text != null) {
+                                      _recipientController.text = data.text!;
+                                      _lookupIdentity();
+                                    }
+                                  },
+                                ),
+                              ),
+                              onChanged: (value) {
+                                _lookupIdentity();
+                              },
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                const Icon(Icons.person, color: Color(0xFF9F7AEA)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _recipientName!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    try {
+                                      if (mode == Mode.dilithium) {
+                                        final bobWallet =
+                                            await SubstrateService().generateWalletFromSeedDilithium(crystalBob);
+                                        _recipientController.text = bobWallet.accountId;
+                                        _lookupIdentity();
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('$crystalBob development account loaded')),
+                                          );
+                                        }
+                                      } else {
+                                        final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
+                                        _recipientController.text = bobWallet.accountId;
+                                        _lookupIdentity();
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Bob development account loaded')),
+                                          );
+                                        }
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error loading Bob account: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.bug_report, size: 16),
+                                  label: const Text('Use Crystal Bob (Dilithium Test)'),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    minimumSize: const Size(0, 0),
+                                    foregroundColor: const Color(0xFF9F7AEA),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Amount',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _amountController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF2D2D2D),
-                        hintText: 'Enter amount to send',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        suffix: const Text('REZ', style: TextStyle(color: Colors.grey)),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Available Balance:',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                '${SubstrateService().formatBalance(_maxBalance)} REZ',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF9F7AEA),
+                            if (_recipientName != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Card(
+                                  color: const Color(0xFF2D2D2D),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: const Color(0xFF6B46C1).useOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.person, color: Color(0xFF9F7AEA)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _recipientName!,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              TextButton(
-                                onPressed: () {
-                                  _amountController.text = _maxBalance.toString();
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  minimumSize: const Size(0, 0),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Amount',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _amountController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: const BorderSide(color: Color(0xFF6B46C1)),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Text('MAX'),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFF2D2D2D),
+                                hintText: 'Enter amount to send',
+                                hintStyle: const TextStyle(color: Colors.grey),
+                                suffix: const Text('REZ', style: TextStyle(color: Colors.grey)),
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_errorMessage.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Available Balance:',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                  Flexible(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            '${SubstrateService().formatBalance(_maxBalance)} REZ',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF9F7AEA),
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        TextButton(
+                                          onPressed: () {
+                                            _amountController.text = _maxBalance.toString();
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                            minimumSize: const Size(0, 0),
+                                          ),
+                                          child: const Text('MAX'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_errorMessage.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  _errorMessage,
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                    const Spacer(),
+                    ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
