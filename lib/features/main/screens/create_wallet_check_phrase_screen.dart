@@ -127,7 +127,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
           _walletName = words.join('-');
         });
       }
-      debugPrint('Regeneration successful');
+      debugPrint('Regeneration successful $_mnemonic');
     } catch (e) {
       debugPrint('Regeneration failed: $e');
       if (mounted) {
@@ -326,7 +326,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => CreateWalletScreen(/* Pass necessary data */),
+                                  builder: (context) => CreateWalletScreen(initialMnemonic: _mnemonic!),
                                 ),
                               );
                             } else {

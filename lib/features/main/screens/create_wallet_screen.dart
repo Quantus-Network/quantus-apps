@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
 class CreateWalletScreen extends StatefulWidget {
-  const CreateWalletScreen({super.key});
+  final String? initialMnemonic;
+
+  const CreateWalletScreen({super.key, this.initialMnemonic});
 
   @override
   CreateWalletScreenState createState() => CreateWalletScreenState();
@@ -21,7 +23,14 @@ class CreateWalletScreenState extends State<CreateWalletScreen> {
   @override
   void initState() {
     super.initState();
-    _generateMnemonic();
+    if (widget.initialMnemonic != null && widget.initialMnemonic!.isNotEmpty) {
+      setState(() {
+        _mnemonic = widget.initialMnemonic!;
+        _isLoading = false;
+      });
+    } else {
+      _generateMnemonic();
+    }
   }
 
   Future<void> _generateMnemonic() async {
