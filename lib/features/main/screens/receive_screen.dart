@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
 
@@ -74,10 +74,10 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   borderRadius: BorderRadius.circular(100),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const SizedBox(width: 10, height: 10),
+                  SizedBox(width: 10, height: 10),
                 ],
               ),
             ),
@@ -153,7 +153,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _accountId!.substring(0, 6) + '...' + _accountId!.substring(_accountId!.length - 5),
+                          '${_accountId!.substring(0, 6)}...${_accountId!.substring(_accountId!.length - 5)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -215,7 +215,7 @@ void showReceiveSheet(BuildContext context) {
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
       child: Container(
-        color: Colors.black.withOpacity(0.2),
+        color: Colors.black.useOpacity(0.2),
         child: const ReceiveSheet(),
       ),
     ),

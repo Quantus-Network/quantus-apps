@@ -42,18 +42,10 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 27),
 
                 // Logo
-                Container(
-                  // width: size.width * 1.0,
-                  // height: size.height * 0.20,
-                  // decoration: BoxDecoration(
-                  //   color: Colors.grey.useOpacity(0.1),
-                  //   borderRadius: BorderRadius.circular(12),
-                  // ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/RES logo main.svg',
-                      fit: BoxFit.contain,
-                    ),
+                Center(
+                  child: SvgPicture.asset(
+                    'assets/RES logo main.svg',
+                    fit: BoxFit.contain,
                   ),
                 ),
 
