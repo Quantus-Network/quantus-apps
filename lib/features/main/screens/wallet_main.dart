@@ -274,25 +274,38 @@ class _WalletMainState extends State<WalletMain> {
                           borderRadius: BorderRadius.circular(5),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: ShapeDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                            ),
+                            // decoration: ShapeDecoration(
+                            //   color: Colors.black.useOpacity(0.5),
+                            //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            // ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  walletData.walletName,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
+                                SvgPicture.asset(
+                                  'assets/active_dot.svg',
+                                  width: 13,
+                                  height: 13,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  decoration: ShapeDecoration(
+                                    color: Colors.black.useOpacity(0.5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                  ),
+                                  child: Text(
+                                    walletData.walletName,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Icon(Icons.content_copy, color: Colors.white70, size: 12),
+                                const Icon(Icons.expand_more, color: Colors.white70, size: 12),
                               ],
                             ),
                           ),
