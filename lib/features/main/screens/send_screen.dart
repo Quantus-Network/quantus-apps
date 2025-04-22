@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,8 +23,7 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _loadBalance() async {
-    setState(() {
-    });
+    setState(() {});
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -40,23 +40,19 @@ class SendScreenState extends State<SendScreen> {
       });
     } catch (e) {
       debugPrint('Error loading balance: $e');
-      setState(() {
-      });
+      setState(() {});
     }
   }
 
   Future<void> _lookupIdentity() async {
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
-      setState(() {
-      });
+      setState(() {});
       return;
     }
 
-    setState(() {
-    });
+    setState(() {});
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +166,16 @@ class SendScreenState extends State<SendScreen> {
                           children: [
                             _buildIconButton('assets/scan.svg'),
                             const SizedBox(width: 9),
-                            _buildIconButton('assets/Paste_icon.svg'),
+                            GestureDetector(
+                              onTap: () async {
+                                final data = await Clipboard.getData('text/plain');
+                                if (data != null && data.text != null) {
+                                  _recipientController.text = data.text!;
+                                  _lookupIdentity();
+                                }
+                              },
+                              child: _buildIconButton('assets/Paste_icon.svg'),
+                            ),
                           ],
                         ),
                       ],
