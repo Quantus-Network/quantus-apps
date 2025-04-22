@@ -1,9 +1,43 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:human_checksum/human_checksum.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_screen.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
+
+// --- Top-level functions for compute ---
+
+// Helper to ensure RustLib is initialized in the isolate
+Future<void> _ensureRustInitialized() async {
+  // Needs error handling if init can fail
+  await RustLib.init();
+}
+
+Future<String> _generateMnemonicIsolate(dynamic _) async {
+  await _ensureRustInitialized();
+  // Note: Instantiating SubstrateService here might be problematic
+  // if it depends on main isolate state. Let's try it first.
+  return await SubstrateService().generateMnemonic();
+}
+
+Future<DilithiumWalletInfo> _generateWalletFromSeedIsolate(String mnemonic) async {
+  await _ensureRustInitialized();
+  return await SubstrateService().generateWalletFromSeed(mnemonic);
+}
+
+Future<List<String>> _generateChecksumIsolate(Map<String, dynamic> params) async {
+  // Checksum might not need Rust init, but good practice if unsure
+  // await _ensureRustInitialized();
+  final List<String> wordList = params['wordList'] as List<String>;
+  final String accountId = params['accountId'] as String;
+  // HumanChecksum itself is likely pure Dart and safe
+  HumanChecksum humanChecksum = HumanChecksum(wordList);
+  // addressToChecksum might be pure Dart, or might call Rust - assume pure Dart for now
+  return humanChecksum.addressToChecksum(accountId);
+}
+// --- End Top-level functions ---
 
 class CreateWalletCheckPhraseScreen extends StatefulWidget {
   const CreateWalletCheckPhraseScreen({super.key});
@@ -29,6 +63,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
 
   Future<void> _initializeWallet() async {
     try {
+      // Load word list (usually fast)
       final String wordListContent = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
       _wordList = wordListContent.split('\n').where((word) => word.isNotEmpty).toList();
 
@@ -36,51 +71,72 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
         throw Exception('Word list is empty');
       }
 
-      await _generateNewMnemonic();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Failed to initialize wallet: $e';
-          _isLoading = false;
-        });
-      }
-    }
-  }
+      // Generate mnemonic and wallet IN ISOLATE
+      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
+      if (_mnemonic == null) throw Exception("Mnemonic generation failed");
 
-  Future<void> _generateNewMnemonic() async {
-    if (!mounted) return;
+      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      if (_walletInfo == null) throw Exception("Wallet generation failed");
 
-    try {
-      // Generate a new mnemonic using SubstrateService
-      _mnemonic = await SubstrateService().generateMnemonic();
-      _walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic!);
+      // Generate checksum IN ISOLATE
+      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
+      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
 
-      // Generate human-readable checksum
-      HumanChecksum humanChecksum = HumanChecksum(_wordList);
-      final words = humanChecksum.addressToChecksum(_walletInfo!.accountId);
-
+      // Update state ONLY if mounted and successful
       if (mounted) {
         setState(() {
           _walletName = words.join('-');
-          _isLoading = false;
         });
       }
 
+      debugPrint('Initialization successful');
       debugPrint('Generated mnemonic: $_mnemonic');
       debugPrint('Generated wallet info: ${_walletInfo!.accountId} ${_walletInfo!.keypair.publicKey}');
       debugPrint('Generated words: $words');
     } catch (e) {
+      debugPrint('Initialization failed: $e');
       if (mounted) {
         setState(() {
-          _error = 'Failed to generate mnemonic: $e';
-          _isLoading = false;
+          _error = 'Failed to initialize wallet: $e';
         });
       }
     }
   }
 
-  void _regenerateWalletName() {
-    _generateNewMnemonic();
+  Future<void> _regenerateWalletName() async {
+    if (!mounted) return;
+
+    setState(() {
+      _error = null;
+      _walletName = "Regenerating...";
+    });
+
+    try {
+      // Re-run the generation logic IN ISOLATE
+      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
+      if (_mnemonic == null) throw Exception("Mnemonic regeneration failed");
+
+      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      if (_walletInfo == null) throw Exception("Wallet regeneration failed");
+
+      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
+      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
+
+      if (mounted) {
+        setState(() {
+          _walletName = words.join('-');
+        });
+      }
+      debugPrint('Regeneration successful');
+    } catch (e) {
+      debugPrint('Regeneration failed: $e');
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to regenerate: $e';
+          _walletName = "Error";
+        });
+      }
+    }
   }
 
   @override
@@ -101,6 +157,10 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
             child: FutureBuilder<void>(
               future: _initializationFuture,
               builder: (context, snapshot) {
+                bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+                bool hasError = _error != null;
+                bool showContent = snapshot.connectionState == ConnectionState.done && !hasError;
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -141,7 +201,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
 
                         const SizedBox(height: 16),
 
-                        if (snapshot.connectionState == ConnectionState.waiting)
+                        if (isLoading)
                           Column(
                             children: [
                               const CircularProgressIndicator(color: Colors.white),
@@ -167,10 +227,11 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                               ),
                             ],
                           )
-                        else if (_error != null)
+                        else if (hasError)
                           Text(
                             _error!,
-                            style: const TextStyle(color: Colors.red),
+                            style: const TextStyle(color: Colors.red, fontSize: 16),
+                            textAlign: TextAlign.center,
                           )
                         else
                           Column(
@@ -200,7 +261,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                         const SizedBox(height: 16),
 
                         // Regenerate button
-                        if (snapshot.connectionState == ConnectionState.done && _error == null)
+                        if (showContent && _walletName != "Regenerating...")
                           GestureDetector(
                             onTap: _regenerateWalletName,
                             child: const Row(
@@ -219,6 +280,11 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                                 ),
                               ],
                             ),
+                          ),
+                        if (_walletName == "Regenerating...")
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
                           ),
 
                         const SizedBox(height: 16),
@@ -240,7 +306,7 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                     const Spacer(),
 
                     // Continue button
-                    if (snapshot.connectionState == ConnectionState.done && _error == null)
+                    if (showContent)
                       Container(
                         width: 343,
                         padding: const EdgeInsets.all(16),
@@ -256,10 +322,18 @@ class _CreateWalletCheckPhraseScreenState extends State<CreateWalletCheckPhraseS
                         ),
                         child: GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const CreateWalletScreen()),
-                            );
+                            if (_mnemonic != null && _walletInfo != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CreateWalletScreen(/* Pass necessary data */),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Wallet data not ready yet.')),
+                              );
+                            }
                           },
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
