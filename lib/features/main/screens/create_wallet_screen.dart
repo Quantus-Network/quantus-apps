@@ -183,30 +183,37 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             textAlign: TextAlign.center,
                           )
                         else
-                          Column(
-                            children: [
-                              Text(
-                                _walletName,
-                                style: TextStyle(
-                                  color: _walletName == 'Error' ? Colors.red : Colors.white,
-                                  fontSize: 20,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (_walletName != 'Regenerating...' && _walletName != 'Error') ...[
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Your unique wallet identifier',
+                          Container(
+                            width: MediaQuery.of(context).size.width - 32,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _walletName,
+                                  textAlign: TextAlign.center,
+                                  softWrap: true,
                                   style: TextStyle(
-                                    color: Color(0x99FFFFFF),
-                                    fontSize: 14,
+                                    color: _walletName == 'Error' ? Colors.red : Colors.white,
+                                    fontSize: 20,
                                     fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                if (_walletName != 'Regenerating...' && _walletName != 'Error') ...[
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Your unique wallet identifier',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Color(0x99FFFFFF),
+                                      fontSize: 14,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         const SizedBox(height: 16),
                         if (_walletName == 'Regenerating...')
