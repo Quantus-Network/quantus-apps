@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
@@ -262,24 +261,13 @@ class SendScreenState extends State<SendScreen> {
                                 TextButton.icon(
                                   onPressed: () async {
                                     try {
-                                      if (mode == Mode.dilithium) {
-                                        final bobWallet = await SubstrateService().generateWalletFromSeed(crystalBob);
-                                        _recipientController.text = bobWallet.accountId;
-                                        _lookupIdentity();
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('$crystalBob development account loaded')),
-                                          );
-                                        }
-                                      } else {
-                                        final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
-                                        _recipientController.text = bobWallet.accountId;
-                                        _lookupIdentity();
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Bob development account loaded')),
-                                          );
-                                        }
+                                      final bobWallet = await SubstrateService().generateWalletFromSeed(crystalBob);
+                                      _recipientController.text = bobWallet.accountId;
+                                      _lookupIdentity();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('$crystalBob development account loaded')),
+                                        );
                                       }
                                     } catch (e) {
                                       if (context.mounted) {

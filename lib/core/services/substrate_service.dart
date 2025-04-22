@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:human_checksum/human_checksum.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
 
 import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
 import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
@@ -16,18 +19,20 @@ class DilithiumWalletInfo {
   final crypto.Keypair keypair;
   final String accountId;
   final String? mnemonic;
-
+  final String walletName;
   DilithiumWalletInfo({
     required this.keypair,
     required this.accountId,
     this.mnemonic,
+    required this.walletName,
   });
 
-  factory DilithiumWalletInfo.fromKeyPair(crypto.Keypair keypair, {String? mnemonic}) {
+  factory DilithiumWalletInfo.fromKeyPair(crypto.Keypair keypair, {required String walletName, String? mnemonic}) {
     return DilithiumWalletInfo(
       keypair: keypair,
       accountId: keypair.ss58Address,
       mnemonic: mnemonic,
+      walletName: walletName,
     );
   }
 }
@@ -61,6 +66,23 @@ class SubstrateService {
   // ignore: unused_field
   late final SystemApi _systemApi;
   static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  late final HumanChecksum _humanChecksum;
+  bool _humanChecksumInitialized = false;
+
+  Future<HumanChecksum> get humanChecksum async {
+    if (!_humanChecksumInitialized) {
+      final wordList = await _loadWordList();
+      _humanChecksum = HumanChecksum(wordList);
+      _humanChecksumInitialized = true;
+    }
+    return _humanChecksum;
+  }
+
+  Future<List<String>> _loadWordList() async {
+    // Load the word list from the asset file
+    final wordListString = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+    return wordListString.split('\n');
+  }
 
   Future<void> initialize() async {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
@@ -73,10 +95,15 @@ class SubstrateService {
     return balance.toString();
   }
 
+  Future<String> walletName(String accountId) async {
+    return (await humanChecksum).addressToChecksum(accountId).join('-');
+  }
+
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      return DilithiumWalletInfo.fromKeyPair(keypair);
+      final name = await walletName(keypair.ss58Address);
+      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: name);
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }
@@ -231,7 +258,7 @@ class SubstrateService {
   }
 
   // reference implementation - this works with sr25519 schnorr signatures
-  Future<String> balanceTransferSr25519_deprecated(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransferSr25519Deprecated(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);

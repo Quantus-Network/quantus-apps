@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:resonance_network_wallet/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
@@ -39,21 +38,14 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      if (mode == Mode.dilithium) {
-        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
-        // Save wallet info
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('has_wallet', true);
-        await prefs.setString('mnemonic', input);
-        await prefs.setString('account_id', walletInfo.accountId);
-      } else {
-        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
-        // Save wallet info
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('has_wallet', true);
-        await prefs.setString('mnemonic', input);
-        await prefs.setString('account_id', walletInfo.accountId);
-      }
+      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+      // Save wallet info
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_wallet', true);
+      await prefs.setString('mnemonic', input);
+      await prefs.setString('account_id', walletInfo.accountId);
+      await prefs.setString('wallet_name', await SubstrateService().walletName(walletInfo.accountId));
+
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -154,17 +146,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: () {
-                          if (mode == Mode.schorr) {
-                            _mnemonicController.text = '//Alice';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Alice development account loaded')),
-                            );
-                          } else {
-                            _mnemonicController.text = crystalAlice;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Crystal Alice development account loaded')),
-                            );
-                          }
+                          _mnemonicController.text = crystalAlice;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Crystal Alice development account loaded')),
+                          );
                         },
                         icon: const Icon(Icons.bug_report),
                         label: const Text('Load Test Account (Crystal Alice)'),

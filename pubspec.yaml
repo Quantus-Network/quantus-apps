@@ -52,6 +52,13 @@ flutter:
   assets:
     - assets/
     - assets/text/crypto_checksum_bip39.txt
+    - assets/send_icon.png
+    - assets/send_icon.svg
+    - assets/receive_icon.png
+    - assets/receive_icon.svg
+    - assets/swap_icon.svg
+    - assets/scan.svg
+    - assets/main_wallet_title_logo.svg
 
   fonts:
     - family: Fira Code
