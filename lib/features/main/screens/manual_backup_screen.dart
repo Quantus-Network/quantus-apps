@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,7 +62,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', walletInfo.walletName!);
+      await prefs.setString('wallet_name', walletInfo.walletName);
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -150,7 +151,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                           'Write down and save your seed phrase in a secure location. This is the only way to recover your wallet',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(153 / 255.0), // Alpha 153
+                            color: Colors.white.useOpacity(153 / 255.0), // Alpha 153
                             fontSize: 14,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w500,
@@ -170,8 +171,8 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                             width: double.infinity, // Stretch to padding
                             padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9), // Adjusted padding
                             decoration: ShapeDecoration(
-                              // color: Colors.black.withOpacity(178 / 255.0), // Alpha 178
-                              color: Colors.black.withOpacity(0.7), // Adjusted for better visibility
+                              // color: Colors.black.useOpacity(178 / 255.0), // Alpha 178
+                              color: Colors.black.useOpacity(0.7), // Adjusted for better visibility
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             ),
                             child: Wrap(
@@ -195,14 +196,14 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                                 const SnackBar(content: Text('Recovery phrase copied to clipboard')),
                               );
                             },
-                            child: Opacity(
+                            child: const Opacity(
                               opacity: 0.8,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.copy, color: Colors.white, size: 24), // Use actual icon
-                                  const SizedBox(width: 8),
-                                  const Text(
+                                  Icon(Icons.copy, color: Colors.white, size: 24), // Use actual icon
+                                  SizedBox(width: 8),
+                                  Text(
                                     'Copy to Clipboard',
                                     style: TextStyle(
                                       color: Colors.white,
@@ -244,9 +245,8 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                                     },
                               // Custom styling for checked state
                               activeColor: const Color(0xFF8AF9A8), // Green background when checked
-                              checkColor: const Color(0xFF8AF9A8), // Make checkmark same color to fill the box
-                              side: MaterialStateBorderSide.resolveWith((states) {
-                                // Keep white border in all states (checked, unchecked, disabled etc.)
+                              checkColor: const Color(0xFF8AF9A8),
+                              side: WidgetStateBorderSide.resolveWith((states) {
                                 return const BorderSide(width: 1, color: Colors.white);
                               }),
                               shape: RoundedRectangleBorder(
@@ -279,7 +279,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                           onPressed: canContinue ? _saveWalletAndContinue : null,
                           style: ElevatedButton.styleFrom(
                             // Disabled color slightly transparent white
-                            disabledBackgroundColor: Colors.white.withOpacity(61 / 255.0),
+                            disabledBackgroundColor: Colors.white.useOpacity(61 / 255.0),
                             backgroundColor: const Color(0xFF0CE6ED), // Primary color for enabled
                             padding: const EdgeInsets.all(16),
                             shape: RoundedRectangleBorder(
@@ -321,8 +321,8 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            // color: Colors.white.withOpacity(38 / 255.0), // Alpha 38
-            color: Colors.white.withOpacity(0.15), // Adjusted
+            // color: Colors.white.useOpacity(38 / 255.0), // Alpha 38
+            color: Colors.white.useOpacity(0.15), // Adjusted
           ),
           borderRadius: BorderRadius.circular(8),
         ),

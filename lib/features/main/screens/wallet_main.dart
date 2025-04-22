@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/account_profile.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/models/transaction_model.dart';
-import 'package:resonance_network_wallet/core/models/transaction_type.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -43,24 +39,17 @@ class _WalletMainState extends State<WalletMain> {
       final accountId = prefs.getString('account_id');
 
       if (accountId == null || accountId.isEmpty) {
-        print("Error: No account ID found in SharedPreferences");
-        throw Exception("Account ID not found");
+        debugPrint('Error: No account ID found in SharedPreferences');
+        throw Exception('Account ID not found');
       }
       _accountId = accountId;
       final walletName = prefs.getString('wallet_name') ?? 'Grain-Flash-Something';
       final balance = await _substrateService.queryBalance(accountId);
       return WalletData(accountId: accountId, walletName: walletName, balance: balance);
     } catch (e) {
-      print("Error loading wallet data: $e");
+      debugPrint('Error loading wallet data: $e');
       throw Exception('Failed to load wallet data: $e');
     }
-  }
-
-  String _truncateAddress(String address, {int prefixLength = 6, int suffixLength = 6}) {
-    if (address.length <= prefixLength + suffixLength + 3) {
-      return address;
-    }
-    return '${address.substring(0, prefixLength)}...${address.substring(address.length - suffixLength)}';
   }
 
   Widget _buildActionButton({
@@ -70,9 +59,9 @@ class _WalletMainState extends State<WalletMain> {
     required VoidCallback onPressed,
     bool disabled = false,
   }) {
-    final color = disabled ? Colors.white.withOpacity(0.5) : Colors.white;
-    final bgColor = Colors.black.withOpacity(166 / 255.0);
-    final effectiveBorderColor = disabled ? borderColor.withOpacity(0.5) : borderColor;
+    final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
+    final bgColor = Colors.black.useOpacity(166 / 255.0);
+    final effectiveBorderColor = disabled ? borderColor.useOpacity(0.5) : borderColor;
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
@@ -380,7 +369,7 @@ class _WalletMainState extends State<WalletMain> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
                         decoration: ShapeDecoration(
-                          color: Colors.black.withOpacity(64 / 255.0),
+                          color: Colors.black.useOpacity(64 / 255.0),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         ),
                         child: Column(

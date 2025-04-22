@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,7 +57,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading account data: $e');
+      debugPrint('Error loading account data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -64,14 +65,14 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   }
 
   void _createNewWallet() {
-    print("Create New Wallet tapped");
+    debugPrint('Create New Wallet tapped');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Create New Wallet action not implemented yet.')),
     );
   }
 
   void _logoutAndClearData() async {
-    print("Log Out tapped");
+    debugPrint('Log Out tapped');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -105,7 +106,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       } catch (e) {
-        print("Error during logout: $e");
+        debugPrint('Error during logout: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Logout failed: ${e.toString()}')),
@@ -207,7 +208,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: ShapeDecoration(
-        color: Colors.black.withOpacity(166 / 255.0),
+        color: Colors.black.useOpacity(166 / 255.0),
         shape: RoundedRectangleBorder(
           side: isActive ? const BorderSide(width: 1, color: Colors.white) : BorderSide.none,
           borderRadius: BorderRadius.circular(5),
@@ -242,7 +243,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                       child: Text(
                         account.address,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(153 / 255.0),
+                          color: Colors.white.useOpacity(153 / 255.0),
                           fontSize: 10,
                           fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w300,
