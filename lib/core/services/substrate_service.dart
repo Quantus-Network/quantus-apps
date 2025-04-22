@@ -138,7 +138,7 @@ class SubstrateService {
     return senderWallet;
   }
 
-  Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       debugPrint('creating key with $senderSeed');

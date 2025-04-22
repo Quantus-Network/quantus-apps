@@ -168,7 +168,7 @@ class SendScreenState extends State<SendScreen> {
 
       // Submit the transaction
       String hash;
-      hash = await SubstrateService().balanceTransfer2(
+      hash = await SubstrateService().balanceTransfer(
         senderSeed,
         recipient,
         amount,
