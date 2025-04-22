@@ -14,6 +14,7 @@ Future<void> _ensureRustInitialized() async {
   // Needs error handling if init can fail
   await RustLib.init();
 }
+// TODO remove this - this doesn't take long
 
 Future<String> _generateMnemonicIsolate(dynamic _) async {
   await _ensureRustInitialized();
@@ -21,12 +22,14 @@ Future<String> _generateMnemonicIsolate(dynamic _) async {
   // if it depends on main isolate state. Let's try it first.
   return await SubstrateService().generateMnemonic();
 }
+// TODO remove this - this doesn't take long
 
 Future<DilithiumWalletInfo> _generateWalletFromSeedIsolate(String mnemonic) async {
   await _ensureRustInitialized();
   return await SubstrateService().generateWalletFromSeed(mnemonic);
 }
 
+// TODO use our service for this
 Future<List<String>> _generateChecksumIsolate(Map<String, dynamic> params) async {
   // Checksum might not need Rust init, but good practice if unsure
   // await _ensureRustInitialized();

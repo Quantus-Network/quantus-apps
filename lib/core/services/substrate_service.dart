@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/mu
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
@@ -97,17 +98,10 @@ class SubstrateService {
     return balance.toString();
   }
 
-  Future<String> getWalletName(String accountId) async {
-    debugPrint('getWalletName: $accountId');
-    final humanChecksum = await this.humanChecksum;
-    final result = humanChecksum.addressToChecksum(accountId).join('-');
-    return result;
-  }
-
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      final name = await getWalletName(keypair.ss58Address);
+      final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
       return DilithiumWalletInfo.fromKeyPair(keypair, walletName: name);
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');

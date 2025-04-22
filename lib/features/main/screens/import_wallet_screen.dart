@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -44,7 +45,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', input);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', await SubstrateService().getWalletName(walletInfo.accountId));
+      await prefs.setString(
+          'wallet_name', await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId));
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
