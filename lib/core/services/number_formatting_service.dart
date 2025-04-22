@@ -1,5 +1,6 @@
-import 'package:intl/intl.dart';
-import 'package:decimal/decimal.dart'; // Using decimal package for precision
+import 'package:intl/intl.dart'; // Keep for potential future use (grouping)
+import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart'; // For debugPrint
 
 class NumberFormattingService {
   static const int decimals = 12;
@@ -15,27 +16,25 @@ class NumberFormattingService {
       return '0';
     }
 
-    // Use Decimal for precise division
-    final decimalBalance = Decimal.fromBigInt(balance) / scaleFactorDecimal;
+    // Perform division with Decimal
+    final rationalBalance = Decimal.fromBigInt(balance) / scaleFactorDecimal;
 
-    // Format using NumberFormat
-    // Adjust pattern based on maxDecimals to avoid trailing zeros unless necessary
-    final formatter = NumberFormat(
-      '#,##0.${'#' * maxDecimals}', // Use '#' for optional decimals
-      'en_US',
-    );
+    // Convert Rational to Decimal *without* premature scaling
+    final decimalBalance = rationalBalance.toDecimal();
 
-    // Ensure at least one '0' if result is < 1 (e.g., 0.5)
-    String formatted = formatter.format(decimalBalance.toDouble());
+    // Now use toStringAsFixed on the resulting Decimal
+    String formatted = decimalBalance.toStringAsFixed(maxDecimals);
 
-    // Remove trailing unnecessary decimal points/zeros if maxDecimals > 0
-     if (formatted.contains('.') && maxDecimals > 0) {
-       formatted = formatted.replaceAll(RegExp(r'0+$'), ''); // Remove trailing zeros
-       if (formatted.endsWith('.')) {
+    // Simple manual trim of trailing zeros and decimal point if necessary
+    if (formatted.contains('.')) {
+      formatted = formatted.replaceAll(RegExp(r'0+$'), ''); // Remove trailing zeros
+      if (formatted.endsWith('.')) {
         formatted = formatted.substring(0, formatted.length - 1); // Remove trailing decimal point
-       }
-     }
+      }
+    }
 
+    // Optional: Add grouping separators for the integer part if needed in the future
+    // using NumberFormat on the integer part before combining.
 
     return formatted;
   }
@@ -50,15 +49,18 @@ class NumberFormattingService {
     }
 
     try {
-      // Use Decimal for precision
       final decimalAmount = Decimal.parse(formattedAmount);
-      // Scale up
+      // Check if input precision exceeds chain precision
+      if (decimalAmount.scale > decimals) {
+        // Option 1: Truncate (like toBigInt does)
+        // Option 2: Throw an error - let's stick with truncation for now
+        debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
+      }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
-      // Convert to BigInt (truncates any sub-unit dust)
-      return rawDecimalAmount.toBigInt();
+      return rawDecimalAmount.toBigInt(); // toBigInt truncates
     } catch (e) {
-      // Handle parsing errors (invalid format)
-      print('Error parsing amount '$formattedAmount': $e');
+      // Correct debugPrint usage
+      debugPrint('Error parsing amount $formattedAmount: $e');
       return null;
     }
   }
