@@ -1,9 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:async';
+import 'dart:developer';
+import 'dart:isolate';
+import 'package:human_checksum/human_checksum.dart';
+
+// Function to run in isolate
+Future<String> _getWalletNameInIsolate(String address) async {
+  debugPrint('Starting isolate for address: $address');
+  final receivePort = ReceivePort();
+
+  // Load word list in main thread
+  final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+  final words = wordList.split('\n').where((word) => word.isNotEmpty).toList();
+  debugPrint('Loaded word list with ${words.length} words');
+
+  if (words.length != 2048) {
+    debugPrint('Word list length mismatch. Expected 2048, got ${words.length}');
+    return '';
+  }
+
+  await Isolate.spawn(_isolateEntry, [receivePort.sendPort, words]);
+  final sendPort = await receivePort.first as SendPort;
+  debugPrint('Got sendPort from isolate');
+
+  final responsePort = ReceivePort();
+  sendPort.send([address, responsePort.sendPort]);
+  debugPrint('Sent address to isolate');
+  final result = await responsePort.first as String;
+  debugPrint('Got result from isolate: $result');
+  responsePort.close();
+  return result;
+}
+
+void _isolateEntry(List<dynamic> args) async {
+  final mainSendPort = args[0] as SendPort;
+  final words = args[1] as List<String>;
+
+  debugPrint('Isolate started with word list length: ${words.length}');
+  final receivePort = ReceivePort();
+  mainSendPort.send(receivePort.sendPort);
+  debugPrint('Sent sendPort to main isolate');
+
+  await for (final message in receivePort) {
+    final address = message[0] as String;
+    final replyTo = message[1] as SendPort;
+    debugPrint('Isolate received address: $address');
+
+    try {
+      if (words.length != 2048) {
+        debugPrint('Word list length mismatch in isolate. Expected 2048, got ${words.length}');
+        replyTo.send('');
+        continue;
+      }
+
+      final humanChecksum = HumanChecksum(words);
+      final result = humanChecksum.addressToChecksum(address).join('-');
+      debugPrint('Got wallet name in isolate: $result');
+      replyTo.send(result);
+    } catch (e) {
+      debugPrint('Error in isolate: $e');
+      replyTo.send('');
+    }
+  }
+}
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -17,11 +83,18 @@ class SendScreenState extends State<SendScreen> {
   BigInt _maxBalance = BigInt.from(0);
   bool _hasAddressError = false;
   String _savedAddressesLabel = '';
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _loadBalance();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   bool _isValidSS58Address(String address) {
@@ -72,8 +145,12 @@ class SendScreenState extends State<SendScreen> {
       });
 
       if (isValid) {
-        final humanReadableName = await SubstrateService().walletName(recipient);
-        debugPrint('humanReadableName: $humanReadableName');
+        final stopwatch = Stopwatch()..start();
+        debugPrint('Starting wallet name lookup for: $recipient');
+        final humanReadableName = await HumanReadableChecksumService().getHumanReadableName(recipient);
+        stopwatch.stop();
+        debugPrint('Wallet name lookup took: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('Final humanReadableName: $humanReadableName');
         setState(() {
           _savedAddressesLabel = humanReadableName;
         });
@@ -81,10 +158,6 @@ class SendScreenState extends State<SendScreen> {
         setState(() {
           _savedAddressesLabel = '';
         });
-        _recipientController.selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: _recipientController.text.length,
-        );
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
@@ -209,7 +282,11 @@ class SendScreenState extends State<SendScreen> {
                                     setState(() {
                                       _hasAddressError = false;
                                     });
-                                    _lookupIdentity();
+
+                                    if (_debounce?.isActive ?? false) _debounce?.cancel();
+                                    _debounce = Timer(const Duration(milliseconds: 300), () {
+                                      _lookupIdentity();
+                                    });
                                   },
                                 ),
                               ),
@@ -244,8 +321,8 @@ class SendScreenState extends State<SendScreen> {
                     child: Text(
                       _savedAddressesLabel,
                       style: TextStyle(
-                        color: Colors.white.useOpacity(0.5),
-                        fontSize: 12,
+                        color: Colors.white.useOpacity(0.8),
+                        fontSize: 13,
                         fontFamily: 'Fira Code',
                         fontWeight: FontWeight.w500,
                         decoration: TextDecoration.underline,

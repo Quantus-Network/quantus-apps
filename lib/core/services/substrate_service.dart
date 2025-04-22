@@ -71,6 +71,7 @@ class SubstrateService {
 
   Future<HumanChecksum> get humanChecksum async {
     if (!_humanChecksumInitialized) {
+      debugPrint('loading word list');
       final wordList = await _loadWordList();
       _humanChecksum = HumanChecksum(wordList);
       _humanChecksumInitialized = true;
@@ -96,14 +97,17 @@ class SubstrateService {
     return balance.toString();
   }
 
-  Future<String> walletName(String accountId) async {
-    return (await humanChecksum).addressToChecksum(accountId).join('-');
+  Future<String> getWalletName(String accountId) async {
+    debugPrint('getWalletName: $accountId');
+    final humanChecksum = await this.humanChecksum;
+    final result = humanChecksum.addressToChecksum(accountId).join('-');
+    return result;
   }
 
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      final name = await walletName(keypair.ss58Address);
+      final name = await getWalletName(keypair.ss58Address);
       return DilithiumWalletInfo.fromKeyPair(keypair, walletName: name);
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
