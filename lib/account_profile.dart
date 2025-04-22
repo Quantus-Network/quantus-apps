@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 class AccountInfo {
   final String name;
@@ -28,6 +29,7 @@ class AccountProfilePage extends StatefulWidget {
 class _AccountProfilePageState extends State<AccountProfilePage> {
   AccountInfo? _account;
   bool _isLoading = true;
+  final NumberFormattingService _formattingService = NumberFormattingService();
 
   @override
   void initState() {
@@ -36,6 +38,9 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   }
 
   Future<void> _loadAccountData() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
@@ -46,7 +51,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       }
 
       final balance = await SubstrateService().queryBalance(accountId);
-      final formattedBalance = SubstrateService().formatBalance(balance);
+      final formattedBalance = _formattingService.formatBalance(balance);
 
       setState(() {
         _account = AccountInfo(

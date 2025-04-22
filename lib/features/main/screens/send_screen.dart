@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/send_progress_ove
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 String formatAmount(BigInt amount) {
   return amount.toString();
@@ -22,14 +23,14 @@ class SendScreen extends StatefulWidget {
 class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  BigInt _maxBalance = BigInt.from(0);
-  BigInt _fee = BigInt.from(10); // TODO: get from SubstrateService
+  final NumberFormattingService _formattingService = NumberFormattingService();
+  BigInt _maxBalance = BigInt.zero;
+  static final BigInt _networkFee = BigInt.from(10) * NumberFormattingService.scaleFactorBigInt;
+  BigInt _amount = BigInt.zero;
   bool _hasAddressError = false;
   bool _hasAmountError = false;
-  BigInt _amount = BigInt.from(0);
   String _savedAddressesLabel = '';
   Timer? _debounce;
-  static const int _networkFee = 10;
 
   @override
   void initState() {
@@ -41,12 +42,12 @@ class SendScreenState extends State<SendScreen> {
   void dispose() {
     _debounce?.cancel();
     _amountController.dispose();
+    _recipientController.dispose();
     super.dispose();
   }
 
   bool _isValidSS58Address(String address) {
     try {
-      // Use SubstrateService to validate the address
       return SubstrateService().isValidSS58Address(address);
     } catch (e) {
       debugPrint('Error validating address: $e');
@@ -58,13 +59,6 @@ class SendScreenState extends State<SendScreen> {
     setState(() {});
 
     try {
-      // Dev mode: Set fixed balance of 1000
-      // setState(() {
-      //   _maxBalance = BigInt.from(1000);
-      // });
-
-      // Comment out the actual balance loading for now
-
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
 
@@ -88,6 +82,7 @@ class SendScreenState extends State<SendScreen> {
     if (recipient.isEmpty) {
       setState(() {
         _savedAddressesLabel = '';
+        _hasAddressError = false;
       });
       return;
     }
@@ -117,6 +112,7 @@ class SendScreenState extends State<SendScreen> {
       debugPrint('Error in identity lookup: $e');
       setState(() {
         _savedAddressesLabel = '';
+        _hasAddressError = true;
       });
     }
   }
@@ -124,42 +120,51 @@ class SendScreenState extends State<SendScreen> {
   void _validateAmount(String value) {
     if (value.isEmpty) {
       setState(() {
+        _amount = BigInt.zero;
         _hasAmountError = false;
       });
       return;
     }
 
-    try {
-      final amount = BigInt.parse(value);
+    final parsedAmount = _formattingService.parseAmount(value);
+
+    if (parsedAmount == null) {
       setState(() {
-        _hasAmountError = amount + _fee > _maxBalance;
-        _amount = amount;
-      });
-    } catch (e) {
-      setState(() {
+        _amount = BigInt.zero;
         _hasAmountError = true;
+      });
+    } else {
+      setState(() {
+        _amount = parsedAmount;
+        _hasAmountError = _amount <= BigInt.zero || (_amount + _networkFee) > _maxBalance;
       });
     }
   }
 
   void _setMaxAmount() {
-    final maxAmount = _maxBalance - BigInt.from(_networkFee);
-    if (maxAmount > BigInt.zero) {
-      _amountController.text = maxAmount.toString();
-      _validateAmount(maxAmount.toString());
+    final maxSendableAmount = _maxBalance - _networkFee;
+    if (maxSendableAmount > BigInt.zero) {
+      final formattedMax = _formattingService.formatBalance(maxSendableAmount);
+      _amountController.text = formattedMax;
+      _validateAmount(formattedMax);
+    } else {
+      _amountController.text = '0';
+      _validateAmount('0');
     }
   }
 
   void _showSendConfirmation() {
+    debugPrint('Showing confirmation for amount (BigInt): $_amount');
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => SendConfirmationOverlay(
-        amount: _amount.toString(),
+        amount: _amount,
         recipientName: _savedAddressesLabel,
         recipientAddress: _recipientController.text,
-        fee: _fee,
+        fee: _networkFee,
         onClose: () => Navigator.pop(context),
       ),
     );
@@ -172,20 +177,17 @@ class SendScreenState extends State<SendScreen> {
         backgroundColor: const Color(0xFF0E0E0E),
         body: Stack(
           children: [
-            // Background image with opacity
             Positioned.fill(
               child: Opacity(
                 opacity: 0.54,
                 child: Image.asset(
-                  'assets/light-leak-effect-black-background 2.png',
+                  'assets/BG_00 1.png',
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            // Main content
             Column(
               children: [
-                // Header
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -211,7 +213,6 @@ class SendScreenState extends State<SendScreen> {
                     ],
                   ),
                 ),
-                // Recipient input
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Container(
@@ -249,13 +250,13 @@ class SendScreenState extends State<SendScreen> {
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     enabledBorder: _hasAddressError
-                                        ? const OutlineInputBorder(
-                                            borderSide: BorderSide(color: Colors.red, width: 1),
+                                        ? OutlineInputBorder(
+                                            borderSide: const BorderSide(color: Colors.red, width: 1),
                                           )
                                         : InputBorder.none,
                                     focusedBorder: _hasAddressError
-                                        ? const OutlineInputBorder(
-                                            borderSide: BorderSide(color: Colors.red, width: 1),
+                                        ? OutlineInputBorder(
+                                            borderSide: const BorderSide(color: Colors.red, width: 1),
                                           )
                                         : InputBorder.none,
                                     hintText: 'RES Name or address',
@@ -277,10 +278,6 @@ class SendScreenState extends State<SendScreen> {
                                   keyboardType: TextInputType.text,
                                   textCapitalization: TextCapitalization.none,
                                   onChanged: (value) {
-                                    setState(() {
-                                      _hasAddressError = false;
-                                    });
-
                                     if (_debounce?.isActive ?? false) _debounce?.cancel();
                                     _debounce = Timer(const Duration(milliseconds: 300), () {
                                       _lookupIdentity();
@@ -311,7 +308,6 @@ class SendScreenState extends State<SendScreen> {
                     ),
                   ),
                 ),
-                // Saved addresses
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
@@ -328,7 +324,6 @@ class SendScreenState extends State<SendScreen> {
                     ),
                   ),
                 ),
-                // Amount input
                 Expanded(
                   child: Center(
                     child: Row(
@@ -348,13 +343,15 @@ class SendScreenState extends State<SendScreen> {
                             decoration: InputDecoration(
                               border: InputBorder.none,
                               enabledBorder: _hasAmountError
-                                  ? const OutlineInputBorder(
-                                      borderSide: BorderSide(color: Colors.red, width: 1),
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                                      borderRadius: BorderRadius.circular(5),
                                     )
                                   : InputBorder.none,
                               focusedBorder: _hasAmountError
-                                  ? const OutlineInputBorder(
-                                      borderSide: BorderSide(color: Colors.red, width: 1),
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                      borderRadius: BorderRadius.circular(5),
                                     )
                                   : InputBorder.none,
                               hintText: '0',
@@ -371,7 +368,7 @@ class SendScreenState extends State<SendScreen> {
                             ),
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                             ],
                             onChanged: _validateAmount,
                           ),
@@ -389,14 +386,13 @@ class SendScreenState extends State<SendScreen> {
                     ),
                   ),
                 ),
-                // Available balance and max button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Available: ${SubstrateService().formatBalance(_maxBalance)}',
+                        'Available: ${_formattingService.formatBalance(_maxBalance)}',
                         style: const TextStyle(
                           color: Color(0xFF16CECE),
                           fontSize: 14,
@@ -429,7 +425,6 @@ class SendScreenState extends State<SendScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Network fee
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -447,9 +442,9 @@ class SendScreenState extends State<SendScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const Text(
-                            '$_networkFee RES',
-                            style: TextStyle(
+                          Text(
+                            '${_formattingService.formatBalance(_networkFee)} RES',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontFamily: 'Fira Code',
@@ -463,25 +458,20 @@ class SendScreenState extends State<SendScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Send button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GestureDetector(
                     onTap: (_hasAddressError ||
                             _hasAmountError ||
                             _recipientController.text.isEmpty ||
-                            _amountController.text.isEmpty ||
-                            _amountController.text == '0' ||
-                            _amount == BigInt.from(0))
+                            _amount <= BigInt.zero)
                         ? null
                         : _showSendConfirmation,
                     child: Opacity(
-                      opacity: _hasAddressError ||
+                      opacity: (_hasAddressError ||
                               _hasAmountError ||
                               _recipientController.text.isEmpty ||
-                              _amountController.text.isEmpty ||
-                              _amountController.text == '0' ||
-                              _amount == BigInt.from(0)
+                              _amount <= BigInt.zero)
                           ? 0.3
                           : 1.0,
                       child: Container(
@@ -496,12 +486,9 @@ class SendScreenState extends State<SendScreen> {
                         child: Text(
                           (_hasAddressError || _recipientController.text.isEmpty)
                               ? 'Enter Address'
-                              : (_hasAmountError ||
-                                      _amountController.text.isEmpty ||
-                                      _amountController.text == '0' ||
-                                      _amount == BigInt.from(0))
+                              : (_hasAmountError || _amount <= BigInt.zero)
                                   ? 'Enter Amount'
-                                  : 'Send ${formatAmount(_amount)} RES',
+                                  : 'Send ${_formattingService.formatBalance(_amount)} RES',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Color(0xFF0E0E0E),

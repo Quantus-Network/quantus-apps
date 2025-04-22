@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:human_checksum/human_checksum.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
@@ -94,10 +95,6 @@ class SubstrateService {
     _systemApi = SystemApi(_provider);
   }
 
-  String formatBalance(BigInt balance) {
-    return balance.toString();
-  }
-
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
@@ -164,12 +161,13 @@ class SubstrateService {
     return senderWallet;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
       // Get the sender's wallet
       debugPrint('creating key with $senderSeed');
       debugPrint('sending to $targetAddress');
-      debugPrint('amount $amount');
+      debugPrint('amount (BigInt): $amount'); // Log BigInt amount
+      debugPrint('amount (RES formatted): ${NumberFormattingService().formatBalance(amount)}'); // Log RES amount
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
@@ -191,9 +189,8 @@ class SubstrateService {
       final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
       final nonce = int.parse(nonceResult.result.toString());
 
-      // Convert amount to chain format (considering decimals)
-      // TODO actually figure out the amount...
-      final rawAmount = BigInt.from(amount);
+      // Use the passed BigInt amount directly
+      final BigInt rawAmount = amount;
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);

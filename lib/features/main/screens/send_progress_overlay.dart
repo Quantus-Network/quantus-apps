@@ -6,11 +6,12 @@ import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
 class SendConfirmationOverlay extends StatefulWidget {
-  final String amount;
+  final BigInt amount;
   final String recipientName;
   final String recipientAddress;
   final VoidCallback onClose;
@@ -33,6 +34,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   SendOverlayState _currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
+  final NumberFormattingService _formattingService = NumberFormattingService();
 
   Future<void> _confirmSend() async {
     if (_isSending) return;
@@ -51,17 +53,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         throw Exception('Sender mnemonic not found. Please re-import your wallet.');
       }
 
-      final amountDouble = double.tryParse(widget.amount);
-      if (amountDouble == null) {
-        throw Exception('Invalid amount format.');
-      }
-
       debugPrint('Attempting balance transfer...');
       debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
       debugPrint('  Recipient: ${widget.recipientAddress}');
-      debugPrint('  Amount: $amountDouble');
+      debugPrint('  Amount (BigInt): ${widget.amount}');
 
-      await SubstrateService().balanceTransfer(senderSeed, widget.recipientAddress, amountDouble);
+      await SubstrateService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
 
       debugPrint('Balance transfer successful.');
 
@@ -84,6 +81,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   }
 
   Widget _buildConfirmState(BuildContext context) {
+    final formattedAmount = _formattingService.formatBalance(widget.amount);
+    final formattedFee = _formattingService.formatBalance(widget.fee);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +161,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: widget.amount,
+                        text: formattedAmount,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -251,7 +251,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     ),
                   ),
                   Text(
-                    '${widget.fee.toString()} RES',
+                    '$formattedFee RES',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -362,6 +362,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   }
 
   Widget _buildCompleteState(BuildContext context) {
+    final formattedAmount = _formattingService.formatBalance(widget.amount);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -433,7 +435,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '${widget.amount} RES ',
+                            text: '$formattedAmount RES ',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
