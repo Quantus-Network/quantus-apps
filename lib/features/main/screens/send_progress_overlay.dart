@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -29,22 +31,56 @@ class SendConfirmationOverlay extends StatefulWidget {
 
 class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   SendOverlayState _currentState = SendOverlayState.confirm;
+  String? _errorMessage;
+  bool _isSending = false;
 
-  void _confirmSend() {
+  Future<void> _confirmSend() async {
+    if (_isSending) return;
+
     setState(() {
+      _isSending = true;
       _currentState = SendOverlayState.progress;
+      _errorMessage = null;
     });
-    // TODO: Implement actual send transaction logic here
-    // After transaction completes (or fails), update state to complete
-    // For now, simulate a delay and move to complete
 
-    Future.delayed(const Duration(seconds: 3), () {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final senderSeed = prefs.getString('mnemonic');
+
+      if (senderSeed == null || senderSeed.isEmpty) {
+        throw Exception('Sender mnemonic not found. Please re-import your wallet.');
+      }
+
+      final amountDouble = double.tryParse(widget.amount);
+      if (amountDouble == null) {
+        throw Exception('Invalid amount format.');
+      }
+
+      debugPrint('Attempting balance transfer...');
+      debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
+      debugPrint('  Recipient: ${widget.recipientAddress}');
+      debugPrint('  Amount: $amountDouble');
+
+      await SubstrateService().balanceTransfer(senderSeed, widget.recipientAddress, amountDouble);
+
+      debugPrint('Balance transfer successful.');
+
       if (mounted) {
         setState(() {
           _currentState = SendOverlayState.complete;
+          _isSending = false;
         });
       }
-    });
+    } catch (e) {
+      debugPrint('Balance transfer failed: $e');
+      if (mounted) {
+        setState(() {
+          _currentState = SendOverlayState.confirm;
+          _errorMessage = 'Transfer failed: ${e.toString()}';
+          _isSending = false;
+        });
+      }
+    }
   }
 
   Widget _buildConfirmState(BuildContext context) {
@@ -52,7 +88,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Close button
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
@@ -75,7 +110,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           ),
         ),
         const SizedBox(height: 28),
-        // SEND title
         Row(
           children: [
             Container(
@@ -104,7 +138,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           ],
         ),
         const SizedBox(height: 28),
-        // Amount and recipient info
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -189,8 +222,18 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ),
           ],
         ),
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+            child: Center(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: 'Fira Code'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
         const SizedBox(height: 28),
-        // Network fee and confirm button
         SizedBox(
           width: double.infinity,
           child: Column(
@@ -220,24 +263,27 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               ),
               const SizedBox(height: 23),
               GestureDetector(
-                onTap: _confirmSend,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: ShapeDecoration(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                onTap: _isSending ? null : _confirmSend,
+                child: Opacity(
+                  opacity: _isSending ? 0.5 : 1.0,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: ShapeDecoration(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Confirm',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFF0E0E0E),
-                      fontSize: 18,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
+                    child: const Text(
+                      'Confirm',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF0E0E0E),
+                        fontSize: 18,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
@@ -256,7 +302,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Close button (optional, maybe disable closing during progress?)
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
@@ -264,7 +309,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               GestureDetector(
-                onTap: widget.onClose, // Or null if closing not allowed
+                onTap: widget.onClose,
                 child: Container(
                   width: 24,
                   height: 24,
@@ -288,11 +333,10 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               Positioned(
                 top: 0,
                 child: SizedBox(
-                  width: 80, // Adjusted size for the icon
+                  width: 80,
                   height: 80,
                   child: SvgPicture.asset(
                     'assets/send_icon.svg',
-                    // Consider adding animation or progress indicator here
                   ),
                 ),
               ),
@@ -312,7 +356,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ],
           ),
         ),
-        const SizedBox(height: 91), // Adjust spacing as needed
+        const SizedBox(height: 91),
       ],
     );
   }
@@ -322,7 +366,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Close button (optional, can keep or remove for complete state)
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
@@ -330,7 +373,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               GestureDetector(
-                onTap: widget.onClose, // Close button still just closes the modal
+                onTap: widget.onClose,
                 child: Container(
                   width: 24,
                   height: 24,
@@ -344,7 +387,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ],
           ),
         ),
-        const SizedBox(height: 91 - 24), // Adjust top spacing
+        const SizedBox(height: 91 - 24),
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -356,7 +399,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 80, // Match progress icon size
+                    width: 80,
                     height: 80,
                     child: SvgPicture.asset('assets/send_icon.svg'),
                   ),
@@ -401,7 +444,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                           TextSpan(
                             text: 'was successfully sent to ',
                             style: TextStyle(
-                              color: Colors.white.useOpacity(0.5), // Adjusted opacity
+                              color: Colors.white.useOpacity(0.5),
                               fontSize: 12,
                               fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w500,
@@ -432,7 +475,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                         'View Transaction',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF16CECE), // other-blue
+                          color: Color(0xFF16CECE),
                           fontSize: 12,
                           fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w500,
@@ -447,8 +490,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ),
           ],
         ),
-        const SizedBox(height: 46), // Spacing before Done button
-        // Done Button
+        const SizedBox(height: 46),
         GestureDetector(
           onTap: () {
             Navigator.pushAndRemoveUntil(
@@ -478,7 +520,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ),
           ),
         ),
-        const SizedBox(height: 50), // Match bottom spacing from confirm state
+        const SizedBox(height: 50),
       ],
     );
   }
@@ -500,7 +542,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
     return SafeArea(
       child: Stack(
-        alignment: Alignment.center, // Center content for progress/complete
+        alignment: Alignment.center,
         children: [
           Positioned.fill(
             child: BackdropFilter(
