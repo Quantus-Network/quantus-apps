@@ -61,6 +61,7 @@ flutter:
     - assets/scan.svg
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
+    - assets/RES icon.svg
 
   fonts:
     - family: Fira Code

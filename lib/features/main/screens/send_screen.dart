@@ -10,6 +10,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:isolate';
 import 'package:human_checksum/human_checksum.dart';
+import 'package:flutter/rendering.dart';
 
 String formatAmount(BigInt amount) {
   return amount.toString();
@@ -62,12 +63,12 @@ class SendScreenState extends State<SendScreen> {
 
     try {
       // Dev mode: Set fixed balance of 1000
-      setState(() {
-        _maxBalance = BigInt.from(1000);
-      });
+      // setState(() {
+      //   _maxBalance = BigInt.from(1000);
+      // });
 
       // Comment out the actual balance loading for now
-      /*
+
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
 
@@ -80,7 +81,6 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _maxBalance = balance;
       });
-      */
     } catch (e) {
       debugPrint('Error loading balance: $e');
       setState(() {});
@@ -152,6 +152,25 @@ class SendScreenState extends State<SendScreen> {
       _amountController.text = maxAmount.toString();
       _validateAmount(maxAmount.toString());
     }
+  }
+
+  void _showSendConfirmation() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => SendConfirmationOverlay(
+        amount: _amount.toString(),
+        recipientName: _savedAddressesLabel,
+        recipientAddress: _recipientController.text,
+        fee: _fee,
+        onConfirm: () {
+          // TODO: Implement send transaction
+          Navigator.pop(context);
+        },
+        onClose: () => Navigator.pop(context),
+      ),
+    );
   }
 
   @override
@@ -455,37 +474,49 @@ class SendScreenState extends State<SendScreen> {
                 // Send button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Opacity(
-                    opacity: _hasAddressError ||
+                  child: GestureDetector(
+                    onTap: (_hasAddressError ||
                             _hasAmountError ||
                             _recipientController.text.isEmpty ||
-                            _amountController.text.isEmpty
-                        ? 0.3
-                        : 1.0,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: ShapeDecoration(
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
+                            _amountController.text.isEmpty ||
+                            _amountController.text == '0' ||
+                            _amount == BigInt.from(0))
+                        ? null
+                        : _showSendConfirmation,
+                    child: Opacity(
+                      opacity: _hasAddressError ||
+                              _hasAmountError ||
+                              _recipientController.text.isEmpty ||
+                              _amountController.text.isEmpty ||
+                              _amountController.text == '0' ||
+                              _amount == BigInt.from(0)
+                          ? 0.3
+                          : 1.0,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        (_hasAddressError || _recipientController.text.isEmpty)
-                            ? 'Enter Address'
-                            : (_hasAmountError ||
-                                    _amountController.text.isEmpty ||
-                                    _amountController.text == '0' ||
-                                    _amount == BigInt.from(0))
-                                ? 'Enter Amount'
-                                : 'Send ${formatAmount(_amount)} RES',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF0E0E0E),
-                          fontSize: 18,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
+                        child: Text(
+                          (_hasAddressError || _recipientController.text.isEmpty)
+                              ? 'Enter Address'
+                              : (_hasAmountError ||
+                                      _amountController.text.isEmpty ||
+                                      _amountController.text == '0' ||
+                                      _amount == BigInt.from(0))
+                                  ? 'Enter Amount'
+                                  : 'Send ${formatAmount(_amount)} RES',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF0E0E0E),
+                            fontSize: 18,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -513,6 +544,194 @@ class SendScreenState extends State<SendScreen> {
         assetPath,
         width: 17,
         height: 17,
+      ),
+    );
+  }
+}
+
+class SendConfirmationOverlay extends StatelessWidget {
+  final String amount;
+  final String recipientName;
+  final String recipientAddress;
+  final VoidCallback onConfirm;
+  final VoidCallback onClose;
+  final BigInt fee;
+
+  const SendConfirmationOverlay({
+    required this.amount,
+    required this.recipientName,
+    required this.recipientAddress,
+    required this.onConfirm,
+    required this.onClose,
+    required this.fee,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Container(
+                color: Colors.black.withOpacity(0.3),
+              ),
+            ),
+          ),
+          Container(
+            width: MediaQuery.of(context).size.width,
+            padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+            decoration: ShapeDecoration(
+              color: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Close button
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(7),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: onClose,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const ShapeDecoration(
+                            color: Colors.white,
+                            shape: OvalBorder(),
+                          ),
+                          child: const Icon(Icons.close, color: Colors.black, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                // SEND title
+                Row(
+                  children: [
+                    Container(
+                      width: 49,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: SvgPicture.asset(
+                        'assets/send_icon.svg',
+                        width: 24,
+                        height: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    const Text(
+                      'SEND',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                // Amount and recipient info
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 25,
+                          height: 25,
+                          decoration: const ShapeDecoration(
+                            color: Colors.white,
+                            shape: OvalBorder(),
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/RES icon.svg',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 13),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: amount,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: ' RES',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 13),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'To:',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        SizedBox(
+                          width: 252,
+                          child: Text(
+                            recipientName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          recipientAddress,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 10,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
