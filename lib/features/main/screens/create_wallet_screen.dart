@@ -1,344 +1,365 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:resonance_network_wallet/main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:human_checksum/human_checksum.dart';
+import 'package:resonance_network_wallet/features/main/screens/manual_backup_screen.dart';
+import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
 
-class CreateWalletScreen extends StatefulWidget {
-  final String? initialMnemonic;
+// --- Top-level functions for compute ---
 
-  const CreateWalletScreen({super.key, this.initialMnemonic});
-
-  @override
-  CreateWalletScreenState createState() => CreateWalletScreenState();
+// Helper to ensure RustLib is initialized in the isolate
+Future<void> _ensureRustInitialized() async {
+  // Needs error handling if init can fail
+  await RustLib.init();
 }
 
-class CreateWalletScreenState extends State<CreateWalletScreen> {
-  String _mnemonic = '';
-  bool _isLoading = false;
-  bool _hasSavedMnemonic = false;
+Future<String> _generateMnemonicIsolate(dynamic _) async {
+  await _ensureRustInitialized();
+  // Note: Instantiating SubstrateService here might be problematic
+  // if it depends on main isolate state. Let's try it first.
+  return await SubstrateService().generateMnemonic();
+}
+
+Future<DilithiumWalletInfo> _generateWalletFromSeedIsolate(String mnemonic) async {
+  await _ensureRustInitialized();
+  return await SubstrateService().generateWalletFromSeed(mnemonic);
+}
+
+Future<List<String>> _generateChecksumIsolate(Map<String, dynamic> params) async {
+  // Checksum might not need Rust init, but good practice if unsure
+  // await _ensureRustInitialized();
+  final List<String> wordList = params['wordList'] as List<String>;
+  final String accountId = params['accountId'] as String;
+  // HumanChecksum itself is likely pure Dart and safe
+  HumanChecksum humanChecksum = HumanChecksum(wordList);
+  // addressToChecksum might be pure Dart, or might call Rust - assume pure Dart for now
+  return humanChecksum.addressToChecksum(accountId);
+}
+// --- End Top-level functions ---
+
+class CreateWalletScreen extends StatefulWidget {
+  const CreateWalletScreen({super.key});
+
+  @override
+  State<CreateWalletScreen> createState() => _CreateWalletScreenState();
+}
+
+class _CreateWalletScreenState extends State<CreateWalletScreen> {
+  String _walletName = 'Loading...';
+  List<String> _wordList = [];
+  bool _isLoading = true;
+  String? _error;
+  String? _mnemonic;
+  DilithiumWalletInfo? _walletInfo;
+  late final Future<void> _initializationFuture;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialMnemonic != null && widget.initialMnemonic!.isNotEmpty) {
-      setState(() {
-        _mnemonic = widget.initialMnemonic!;
-        _isLoading = false;
-      });
-    } else {
-      _generateMnemonic();
+    _initializationFuture = _initializeWallet();
+  }
+
+  Future<void> _initializeWallet() async {
+    try {
+      // Load word list (usually fast)
+      final String wordListContent = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+      _wordList = wordListContent.split('\n').where((word) => word.isNotEmpty).toList();
+
+      if (_wordList.isEmpty) {
+        throw Exception('Word list is empty');
+      }
+
+      // Generate mnemonic and wallet IN ISOLATE
+      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
+      if (_mnemonic == null) throw Exception("Mnemonic generation failed");
+
+      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      if (_walletInfo == null) throw Exception("Wallet generation failed");
+
+      // Generate checksum IN ISOLATE
+      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
+      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
+
+      // Update state ONLY if mounted and successful
+      if (mounted) {
+        setState(() {
+          _walletName = words.join('-');
+        });
+      }
+
+      debugPrint('Initialization successful');
+      debugPrint('Generated mnemonic: $_mnemonic');
+      debugPrint('Generated wallet info: ${_walletInfo!.accountId} ${_walletInfo!.keypair.publicKey}');
+      debugPrint('Generated words: $words');
+    } catch (e) {
+      debugPrint('Initialization failed: $e');
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to initialize wallet: $e';
+        });
+      }
     }
   }
 
-  Future<void> _generateMnemonic() async {
+  Future<void> _regenerateWalletName() async {
+    if (!mounted) return;
+
     setState(() {
-      _isLoading = true;
+      _error = null;
+      _walletName = "Regenerating...";
     });
 
     try {
-      _mnemonic = await SubstrateService().generateMnemonic();
-      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-      debugPrint('Generated wallet address: ${walletInfo.accountId}');
+      // Re-run the generation logic IN ISOLATE
+      _mnemonic = await compute(_generateMnemonicIsolate, 0); // Pass dummy arg
+      if (_mnemonic == null) throw Exception("Mnemonic regeneration failed");
 
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error generating mnemonic: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+      _walletInfo = await compute(_generateWalletFromSeedIsolate, _mnemonic!);
+      if (_walletInfo == null) throw Exception("Wallet regeneration failed");
 
-  Future<void> _saveWalletAndContinue() async {
-    try {
-      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
+      final checksumParams = {'wordList': _wordList, 'accountId': _walletInfo!.accountId};
+      final List<String> words = await compute(_generateChecksumIsolate, checksumParams);
 
-      if (mode == Mode.dilithium) {
-        throw Exception('Dilithium is not supported yet');
-      }
-      // Save wallet info
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', _mnemonic);
-      await prefs.setString('account_id', walletInfo.accountId);
-
-      if (context.mounted && mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const WalletMain()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      debugPrint('Error saving wallet: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving wallet: $e')),
-        );
+        setState(() {
+          _walletName = words.join('-');
+        });
+      }
+      debugPrint('Regeneration successful $_mnemonic');
+    } catch (e) {
+      debugPrint('Regeneration failed: $e');
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to regenerate: $e';
+          _walletName = "Error";
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Split the mnemonic string into a list of words
-    final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
-
-    // Determine button state
-    final bool canContinue = _hasSavedMnemonic && !_isLoading;
-
     return Scaffold(
-      // Use the background color from the design
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
-        // Apply the background image, assuming 'assets/BG_00 1.png' is correct
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/BG_00 1.png'), // Use asset image
+            image: AssetImage('assets/BG_00 1.png'),
             fit: BoxFit.cover,
-            opacity: 0.54, // Opacity from the design
+            opacity: 0.54,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Custom App Bar Row
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      // Go back to the previous screen (Check Phrase Screen)
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Text(
-                      'Create Wallet',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40), // Adjust spacing as needed
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: FutureBuilder<void>(
+              future: _initializationFuture,
+              builder: (context, snapshot) {
+                bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+                bool hasError = _error != null;
+                bool showContent = snapshot.connectionState == ConnectionState.done && !hasError;
 
-                // Main content area
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back button and title
+                    Row(
                       children: [
-                        // Title and Description
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
                         const Text(
-                          'Your Secret Recovery Phrase',
-                          textAlign: TextAlign.center,
+                          'Create Wallet',
                           style: TextStyle(
                             color: Colors.white,
+                            fontSize: 12,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Wallet name section
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Your Wallet Name',
+                          style: TextStyle(
+                            color: Color(0xFFE6E6E6),
                             fontSize: 18,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 13),
-                        Text(
-                          'Write down and save your seed phrase in a secure location. This is the only way to recover your wallet',
+
+                        const SizedBox(height: 16),
+
+                        if (isLoading)
+                          Column(
+                            children: [
+                              const CircularProgressIndicator(color: Colors.white),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Generating your unique wallet name...',
+                                style: TextStyle(
+                                  color: Color(0x99FFFFFF),
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Loading...',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          )
+                        else if (hasError)
+                          Text(
+                            _error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 16),
+                            textAlign: TextAlign.center,
+                          )
+                        else
+                          Column(
+                            children: [
+                              Text(
+                                _walletName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Your unique wallet identifier',
+                                style: TextStyle(
+                                  color: Color(0x99FFFFFF),
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        // Regenerate button
+                        if (showContent && _walletName != "Regenerating...")
+                          GestureDetector(
+                            onTap: _regenerateWalletName,
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.refresh, color: Colors.white, size: 24),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Regenerate',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (_walletName == "Regenerating...")
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        // Description
+                        const Text(
+                          'An easy way to recognise your wallets\nRefresh to autogenerate a new name',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(153 / 255.0), // Alpha 153
+                            color: Color(0x99FFFFFF),
                             fontSize: 14,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w500,
-                            height: 1.21, // Line height
                           ),
                         ),
-                        const SizedBox(height: 21),
-
-                        // Mnemonic Phrase Box
-                        if (_isLoading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 50.0),
-                            child: CircularProgressIndicator(color: Colors.white),
-                          )
-                        else
-                          Container(
-                            width: double.infinity, // Stretch to padding
-                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9), // Adjusted padding
-                            decoration: ShapeDecoration(
-                              // color: Colors.black.withOpacity(178 / 255.0), // Alpha 178
-                              color: Colors.black.withOpacity(0.7), // Adjusted for better visibility
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                            ),
-                            child: Wrap(
-                              alignment: WrapAlignment.center,
-                              runAlignment: WrapAlignment.start,
-                              spacing: 9.0, // Horizontal spacing
-                              runSpacing: 10.0, // Vertical spacing
-                              children: List.generate(words.length, (index) {
-                                return _buildMnemonicWord(index + 1, words[index]);
-                              }),
-                            ),
-                          ),
-                        const SizedBox(height: 21),
-
-                        // Copy Button
-                        if (!_isLoading)
-                          GestureDetector(
-                            onTap: () {
-                              Clipboard.setData(ClipboardData(text: _mnemonic));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Recovery phrase copied to clipboard')),
-                              );
-                            },
-                            child: Opacity(
-                              opacity: 0.8,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.copy, color: Colors.white, size: 24), // Use actual icon
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Copy to Clipboard',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 20), // Add space before checkbox
                       ],
                     ),
-                  ),
-                ),
 
-                // Bottom Section (Checkbox and Continue Button)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0), // Padding below button
-                  child: Column(
-                    children: [
-                      // Checkbox Row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 24, // Keep size consistent
-                            height: 24,
-                            child: Checkbox(
-                              value: _hasSavedMnemonic,
-                              onChanged: _isLoading
-                                  ? null
-                                  : (value) {
-                                      setState(() {
-                                        _hasSavedMnemonic = value ?? false;
-                                      });
-                                    },
-                              // Custom styling for checked state
-                              activeColor: const Color(0xFF8AF9A8), // Green background when checked
-                              checkColor: const Color(0xFF8AF9A8), // Make checkmark same color to fill the box
-                              side: MaterialStateBorderSide.resolveWith((states) {
-                                // Keep white border in all states (checked, unchecked, disabled etc.)
-                                return const BorderSide(width: 1, color: Colors.white);
-                              }),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'I have copied and stored my seed phrase',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 17), // Spacing from design
+                    const Spacer(),
 
-                      // Continue Button
-                      SizedBox(
-                        width: double.infinity, // Stretch button
-                        child: ElevatedButton(
-                          // Use the condition determined earlier
-                          onPressed: canContinue ? _saveWalletAndContinue : null,
-                          style: ElevatedButton.styleFrom(
-                            // Disabled color slightly transparent white
-                            disabledBackgroundColor: Colors.white.withOpacity(61 / 255.0),
-                            backgroundColor: const Color(0xFF0CE6ED), // Primary color for enabled
-                            padding: const EdgeInsets.all(16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            // Use gradient if needed, but solid color is simpler
-                            // foregroundColor: const Color(0xFF0E0E0E), // Text color
+                    // Continue button
+                    if (showContent)
+                      Container(
+                        width: 343,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ShapeDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment(0.50, 0.00),
+                            end: Alignment(0.50, 1.00),
+                            colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
                           ),
-                          child: const Text(
-                            'Continue',
-                            style: TextStyle(
-                              color: Color(0xFF0E0E0E),
-                              fontSize: 18,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_mnemonic != null && _walletInfo != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ManualBackupScreen(initialMnemonic: _mnemonic!),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Wallet data not ready yet.')),
+                              );
+                            }
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Continue',
+                                style: TextStyle(
+                                  color: Color(0xFF0E0E0E),
+                                  fontSize: 18,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+
+                    const SizedBox(height: 34),
+                  ],
+                );
+              },
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // Helper widget to build each mnemonic word container
-  Widget _buildMnemonicWord(int index, String word) {
-    return Container(
-      // Calculate width dynamically or use a fixed suitable width
-      // width: 105, // Avoid fixed widths if possible
-      constraints: const BoxConstraints(minWidth: 100), // Ensure minimum width
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: ShapeDecoration(
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            // color: Colors.white.withOpacity(38 / 255.0), // Alpha 38
-            color: Colors.white.withOpacity(0.15), // Adjusted
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: Text(
-        '$index. $word',
-        textAlign: TextAlign.center, // Center text within the box
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
         ),
       ),
     );
