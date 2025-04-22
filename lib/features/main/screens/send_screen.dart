@@ -250,13 +250,13 @@ class SendScreenState extends State<SendScreen> {
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
                                     enabledBorder: _hasAddressError
-                                        ? OutlineInputBorder(
-                                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.red, width: 1),
                                           )
                                         : InputBorder.none,
                                     focusedBorder: _hasAddressError
-                                        ? OutlineInputBorder(
-                                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.red, width: 1),
                                           )
                                         : InputBorder.none,
                                     hintText: 'RES Name or address',

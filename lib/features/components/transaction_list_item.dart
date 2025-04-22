@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/models/transaction_model.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
@@ -42,7 +42,7 @@ class TransactionListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${isReceived ? '+' : '-'}${SubstrateService().formatBalance(transaction.amount)} REZ',
+            '${isReceived ? '+' : '-'}${NumberFormattingService().formatBalance(transaction.amount)} REZ',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isReceived ? Colors.green : Colors.red,

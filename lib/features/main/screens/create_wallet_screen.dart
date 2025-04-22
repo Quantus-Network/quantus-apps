@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/manual_backup_screen.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
@@ -183,7 +183,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                             textAlign: TextAlign.center,
                           )
                         else
-                          Container(
+                          SizedBox(
                             width: MediaQuery.of(context).size.width - 32,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -301,7 +301,7 @@ class _CreateWalletScreenState extends State<CreateWalletScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: ShapeDecoration(
-                          color: Colors.grey.withOpacity(0.5),
+                          color: Colors.grey.useOpacity(0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
                           ),
