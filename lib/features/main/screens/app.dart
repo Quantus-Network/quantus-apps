@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 
 class ResonanceWalletApp extends StatelessWidget {
   const ResonanceWalletApp({super.key});
@@ -15,7 +14,6 @@ class ResonanceWalletApp extends StatelessWidget {
       routes: {
         '/': (context) => const WalletInitializer(),
         '/send': (context) => const SendScreen(),
-        '/receive': (context) => const ReceiveScreen(),
       },
       theme: ThemeData(
         primaryColor: const Color(0xFF6B46C1), // Deep purple

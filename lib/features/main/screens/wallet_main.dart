@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 
 class WalletData {
   final String accountId;
@@ -344,7 +345,7 @@ class _WalletMainState extends State<WalletMain> {
                           label: 'RECEIVE',
                           borderColor: const Color(0xFFB258F1),
                           onPressed: () {
-                            Navigator.pushNamed(context, '/receive');
+                            showReceiveSheet(context);
                           },
                         ),
                         _buildActionButton(
