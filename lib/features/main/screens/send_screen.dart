@@ -15,11 +15,22 @@ class SendScreen extends StatefulWidget {
 class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   BigInt _maxBalance = BigInt.from(0);
+  bool _hasAddressError = false;
 
   @override
   void initState() {
     super.initState();
     _loadBalance();
+  }
+
+  bool _isValidSS58Address(String address) {
+    try {
+      // Use SubstrateService to validate the address
+      return SubstrateService().isValidSS58Address(address);
+    } catch (e) {
+      debugPrint('Error validating address: $e');
+      return false;
+    }
   }
 
   Future<void> _loadBalance() async {
@@ -47,11 +58,26 @@ class SendScreenState extends State<SendScreen> {
   Future<void> _lookupIdentity() async {
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
-      setState(() {});
       return;
     }
 
-    setState(() {});
+    try {
+      // Here we would normally query the chain for identity
+      // For now, we just validate the address
+      final isValid = _isValidSS58Address(recipient);
+      setState(() {
+        _hasAddressError = !isValid;
+      });
+
+      if (!isValid) {
+        _recipientController.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: _recipientController.text.length,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error in identity lookup: $e');
+    }
   }
 
   @override
@@ -134,8 +160,16 @@ class SendScreenState extends State<SendScreen> {
                                   ),
                                   decoration: InputDecoration(
                                     border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
+                                    enabledBorder: _hasAddressError
+                                        ? OutlineInputBorder(
+                                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                                          )
+                                        : InputBorder.none,
+                                    focusedBorder: _hasAddressError
+                                        ? OutlineInputBorder(
+                                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                                          )
+                                        : InputBorder.none,
                                     hintText: 'RES Name or address',
                                     hintStyle: TextStyle(
                                       color: Colors.white.useOpacity(0.3),
@@ -155,7 +189,9 @@ class SendScreenState extends State<SendScreen> {
                                   keyboardType: TextInputType.text,
                                   textCapitalization: TextCapitalization.none,
                                   onChanged: (value) {
-                                    _lookupIdentity();
+                                    setState(() {
+                                      _hasAddressError = false;
+                                    });
                                   },
                                 ),
                               ),

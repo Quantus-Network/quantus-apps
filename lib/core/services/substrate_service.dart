@@ -356,4 +356,13 @@ class SubstrateService {
       throw Exception('Failed to generate mnemonic: $e');
     }
   }
+
+  bool isValidSS58Address(String address) {
+    try {
+      Address.decode(address);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
