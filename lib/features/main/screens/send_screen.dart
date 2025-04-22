@@ -168,19 +168,11 @@ class SendScreenState extends State<SendScreen> {
 
       // Submit the transaction
       String hash;
-      if (mode == Mode.dilithium) {
-        hash = await SubstrateService().balanceTransfer2(
-          senderSeed,
-          recipient,
-          amount,
-        );
-      } else {
-        hash = await SubstrateService().balanceTransferSr25519(
-          senderSeed,
-          recipient,
-          amount,
-        );
-      }
+      hash = await SubstrateService().balanceTransfer2(
+        senderSeed,
+        recipient,
+        amount,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

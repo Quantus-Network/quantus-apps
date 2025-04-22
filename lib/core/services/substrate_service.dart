@@ -12,26 +12,6 @@ import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
 
-// class WalletInfo {
-//   final KeyPair keyPair;
-//   final String accountId;
-//   final String? mnemonic;
-
-//   WalletInfo({
-//     required this.keyPair,
-//     required this.accountId,
-//     this.mnemonic,
-//   });
-
-//   factory WalletInfo.fromKeyPair(KeyPair keyPair, {String? mnemonic}) {
-//     return WalletInfo(
-//       keyPair: keyPair,
-//       accountId: keyPair.address,
-//       mnemonic: mnemonic,
-//     );
-//   }
-// }
-
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
   final String accountId;
@@ -91,49 +71,7 @@ class SubstrateService {
 
   String formatBalance(BigInt balance) {
     return balance.toString();
-
-    // final _numberFormat = NumberFormat("#,##0.000000000000", "en_US");
-    // Convert to decimal string considering 12 decimal places
-    // final decimal = balance.toString().padLeft(13, '0');
-    // final integerPart = decimal.substring(0, decimal.length - 12);
-    // final fractionalPart = decimal.substring(decimal.length - 12);
-
-    // // Format with commas for thousands
-    // final formattedInteger = _numberFormat.format(int.parse(integerPart));
-
-    // // Combine with fractional part
-    // return '$formattedInteger.$fractionalPart';
   }
-
-  // Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
-  //   try {
-  //     // For development accounts like //Alice, we use fromUri
-  //     final wallet = await KeyPair.sr25519.fromUri(path);
-
-  //     debugPrint('Generated wallet from derivation path:');
-  //     debugPrint('Path: $path');
-  //     debugPrint('Address: ${wallet.address}');
-
-  //     return WalletInfo.fromKeyPair(wallet);
-  //   } catch (e) {
-  //     throw Exception('Failed to generate wallet from derivation path: $e');
-  //   }
-  // }
-
-  // Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
-  //   try {
-  //     // Check if it's a development account path
-  //     if (seedPhrase.startsWith('//')) {
-  //       return generateWalletFromDerivationPath(seedPhrase);
-  //     }
-
-  //     // Regular mnemonic handling
-  //     final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-  //     return WalletInfo.fromKeyPair(wallet);
-  //   } catch (e) {
-  //     throw Exception('Failed to generate wallet: $e');
-  //   }
-  // }
 
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
@@ -143,21 +81,6 @@ class SubstrateService {
       throw Exception('Failed to generate wallet: $e');
     }
   }
-
-  // Future<WalletInfo> generateWalletFromSeedssr25519(String seedPhrase) async {
-  //   try {
-  //     // Check if it's a development account path
-  //     if (seedPhrase.startsWith('//')) {
-  //       return generateWalletFromDerivationPath(seedPhrase);
-  //     }
-
-  //     // Regular mnemonic handling
-  //     final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-  //     return WalletInfo.fromKeyPair(wallet);
-  //   } catch (e) {
-  //     throw Exception('Failed to generate wallet: $e');
-  //   }
-  // }
 
   Future<BigInt> queryBalance(String address) async {
     try {
@@ -215,7 +138,6 @@ class SubstrateService {
     return senderWallet;
   }
 
-  // reference implementation - this works with sr25519 schnorr signatures
   Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
@@ -309,7 +231,7 @@ class SubstrateService {
   }
 
   // reference implementation - this works with sr25519 schnorr signatures
-  Future<String> balanceTransferSr25519(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransferSr25519_deprecated(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
@@ -407,18 +329,4 @@ class SubstrateService {
       throw Exception('Failed to generate mnemonic: $e');
     }
   }
-
-  // Future<WalletInfo> generateNewWallet(String mnemonic) async {
-  //   try {
-  //     // Create a wallet from the mnemonic
-  //     final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
-
-  //     debugPrint('Generated new wallet:');
-  //     debugPrint('Address: ${wallet.address}');
-
-  //     return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
-  //   } catch (e) {
-  //     throw Exception('Failed to generate new wallet: $e');
-  //   }
-  // }
 }

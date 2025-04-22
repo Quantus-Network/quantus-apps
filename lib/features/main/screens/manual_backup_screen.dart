@@ -58,9 +58,6 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
     try {
       final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
 
-      if (mode == Mode.dilithium) {
-        throw Exception('Dilithium is not supported yet');
-      }
       // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
