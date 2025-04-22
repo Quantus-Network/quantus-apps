@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -69,25 +70,44 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             left: 0,
             right: 0,
             top: MediaQuery.of(context).size.height * 0.15, // Adjust positioning as needed
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Resonance Network',
+                const Text(
+                  'Welcome to',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFFE6E6E6),
-                    fontSize: 24,
+                    fontSize: 20,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 27), // Spacing from Figma
+                Center(
+                  child: SvgPicture.asset(
+                    'assets/RES logo main.svg',
+                    height: 150.0, // Set specific height
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 27), // Spacing from Figma
+                const Text(
+                  'The Quantum-Secure Network',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFE6E6E6),
+                    fontSize: 21,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Quantum Security For All',
+                const SizedBox(height: 27), // Spacing from Figma
+                const Text(
+                  'Create a new wallet or import an existing one to get started',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0x99E6E6E6),
+                    color: Color(0xFFE6E6E6),
                     fontSize: 16,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400,
