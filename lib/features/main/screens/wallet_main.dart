@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 class WalletData {
   final String accountId;
@@ -24,6 +25,7 @@ class WalletMain extends StatefulWidget {
 
 class _WalletMainState extends State<WalletMain> {
   final SubstrateService _substrateService = SubstrateService();
+  final NumberFormattingService _formattingService = NumberFormattingService();
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
@@ -287,6 +289,7 @@ class _WalletMainState extends State<WalletMain> {
                                     child: Text(
                                       walletData.walletName,
                                       textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
@@ -307,7 +310,7 @@ class _WalletMainState extends State<WalletMain> {
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: _substrateService.formatBalance(walletData.balance),
+                                text: _formattingService.formatBalance(walletData.balance),
                                 style: const TextStyle(
                                   color: Color(0xFFE6E6E6),
                                   fontSize: 40,
