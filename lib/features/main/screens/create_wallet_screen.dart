@@ -86,136 +86,261 @@ class CreateWalletScreenState extends State<CreateWalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Split the mnemonic string into a list of words
+    final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
+
+    // Determine button state
+    final bool canContinue = _hasSavedMnemonic && !_isLoading;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Wallet'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      // Use the background color from the design
+      backgroundColor: const Color(0xFF0E0E0E),
+      body: Container(
+        // Apply the background image, assuming 'assets/BG_00 1.png' is correct
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/BG_00 1.png'), // Use asset image
+            fit: BoxFit.cover,
+            opacity: 0.54, // Opacity from the design
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Custom App Bar Row
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      // Go back to the previous screen (Check Phrase Screen)
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Text(
+                      'Create Wallet',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40), // Adjust spacing as needed
+
+                // Main content area
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Title and Description
                         const Text(
-                          'Your Recovery Phrase',
+                          'Your Secret Recovery Phrase',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Write down these words in order and keep them in a safe place. This is the only way to recover your wallet if you lose access.',
+                        const SizedBox(height: 13),
+                        Text(
+                          'Write down and save your seed phrase in a secure location. This is the only way to recover your wallet',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.red,
+                            color: Colors.white.withOpacity(153 / 255.0), // Alpha 153
                             fontSize: 14,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                            height: 1.21, // Line height
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF6B46C1).useOpacity(0.3),
+                        const SizedBox(height: 21),
+
+                        // Mnemonic Phrase Box
+                        if (_isLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 50.0),
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        else
+                          Container(
+                            width: double.infinity, // Stretch to padding
+                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9), // Adjusted padding
+                            decoration: ShapeDecoration(
+                              // color: Colors.black.withOpacity(178 / 255.0), // Alpha 178
+                              color: Colors.black.withOpacity(0.7), // Adjusted for better visibility
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            ),
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              runAlignment: WrapAlignment.start,
+                              spacing: 9.0, // Horizontal spacing
+                              runSpacing: 10.0, // Vertical spacing
+                              children: List.generate(words.length, (index) {
+                                return _buildMnemonicWord(index + 1, words[index]);
+                              }),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _mnemonic,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  height: 1.5,
-                                  letterSpacing: 0.5,
-                                ),
+                        const SizedBox(height: 21),
+
+                        // Copy Button
+                        if (!_isLoading)
+                          GestureDetector(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: _mnemonic));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Recovery phrase copied to clipboard')),
+                              );
+                            },
+                            child: Opacity(
+                              opacity: 0.8,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.copy, color: Colors.white, size: 24), // Use actual icon
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Copy to Clipboard',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 16),
-                              Center(
-                                child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: _mnemonic));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Recovery phrase copied to clipboard')),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.copy),
-                                  label: const Text('Copy to Clipboard'),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.useOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.warning_amber_rounded, color: Colors.red),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Never share your recovery phrase with anyone. Store it securely offline.',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SizedBox(height: 20), // Add space before checkbox
                       ],
                     ),
                   ),
                 ),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Checkbox(
+
+                // Bottom Section (Checkbox and Continue Button)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0), // Padding below button
+                  child: Column(
+                    children: [
+                      // Checkbox Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 24, // Keep size consistent
+                            height: 24,
+                            child: Checkbox(
                               value: _hasSavedMnemonic,
-                              onChanged: (value) {
-                                setState(() {
-                                  _hasSavedMnemonic = value ?? false;
-                                });
-                              },
+                              onChanged: _isLoading
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _hasSavedMnemonic = value ?? false;
+                                      });
+                                    },
+                              // Custom styling for checked state
+                              activeColor: const Color(0xFF8AF9A8), // Green background when checked
+                              checkColor: const Color(0xFF8AF9A8), // Make checkmark same color to fill the box
+                              side: MaterialStateBorderSide.resolveWith((states) {
+                                // Keep white border in all states (checked, unchecked, disabled etc.)
+                                return const BorderSide(width: 1, color: Colors.white);
+                              }),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            const Expanded(
-                              child: Text(
-                                'I have written down my recovery phrase and stored it securely',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'I have copied and stored my seed phrase',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _hasSavedMnemonic ? _saveWalletAndContinue : null,
-                            child: const Text('Continue'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 17), // Spacing from design
+
+                      // Continue Button
+                      SizedBox(
+                        width: double.infinity, // Stretch button
+                        child: ElevatedButton(
+                          // Use the condition determined earlier
+                          onPressed: canContinue ? _saveWalletAndContinue : null,
+                          style: ElevatedButton.styleFrom(
+                            // Disabled color slightly transparent white
+                            disabledBackgroundColor: Colors.white.withOpacity(61 / 255.0),
+                            backgroundColor: const Color(0xFF0CE6ED), // Primary color for enabled
+                            padding: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            // Use gradient if needed, but solid color is simpler
+                            // foregroundColor: const Color(0xFF0E0E0E), // Text color
+                          ),
+                          child: const Text(
+                            'Continue',
+                            style: TextStyle(
+                              color: Color(0xFF0E0E0E),
+                              fontSize: 18,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper widget to build each mnemonic word container
+  Widget _buildMnemonicWord(int index, String word) {
+    return Container(
+      // Calculate width dynamically or use a fixed suitable width
+      // width: 105, // Avoid fixed widths if possible
+      constraints: const BoxConstraints(minWidth: 100), // Ensure minimum width
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: ShapeDecoration(
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            width: 1,
+            // color: Colors.white.withOpacity(38 / 255.0), // Alpha 38
+            color: Colors.white.withOpacity(0.15), // Adjusted
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(
+        '$index. $word',
+        textAlign: TextAlign.center, // Center text within the box
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontFamily: 'Fira Code',
+          fontWeight: FontWeight.w400,
+        ),
+      ),
     );
   }
 }
