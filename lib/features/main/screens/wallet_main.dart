@@ -29,7 +29,7 @@ class _WalletMainState extends State<WalletMain> {
   final SubstrateService _substrateService = SubstrateService();
 
   Future<WalletData?>? _walletDataFuture;
-  String? _displayedAccountId;
+  String? _accountId;
 
   @override
   void initState() {
@@ -46,7 +46,7 @@ class _WalletMainState extends State<WalletMain> {
         print("Error: No account ID found in SharedPreferences");
         throw Exception("Account ID not found");
       }
-      _displayedAccountId = accountId;
+      _accountId = accountId;
       final walletName = prefs.getString('wallet_name') ?? 'Grain-Flash-Something';
       final balance = await _substrateService.queryBalance(accountId);
       return WalletData(accountId: accountId, walletName: walletName, balance: balance);
@@ -193,7 +193,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         const SizedBox(height: 14),
         Divider(
-          color: Colors.white.withOpacity(38 / 255.0),
+          color: Colors.white.useOpacity(38 / 255.0),
           height: 1,
         ),
         const SizedBox(height: 14),
@@ -242,8 +242,17 @@ class _WalletMainState extends State<WalletMain> {
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.settings, color: Colors.white, size: 24),
-                              onPressed: () {},
+                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                              onPressed: () {
+                                if (_accountId != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AccountProfilePage(accountId: _accountId!),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         )
@@ -255,8 +264,8 @@ class _WalletMainState extends State<WalletMain> {
                       children: [
                         InkWell(
                           onTap: () {
-                            if (_displayedAccountId != null) {
-                              Clipboard.setData(ClipboardData(text: _displayedAccountId!));
+                            if (_accountId != null) {
+                              Clipboard.setData(ClipboardData(text: _accountId!));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Account ID copied to clipboard')),
                               );
@@ -324,13 +333,17 @@ class _WalletMainState extends State<WalletMain> {
                           iconWidget: SvgPicture.asset('assets/send_icon.svg'),
                           label: 'SEND',
                           borderColor: const Color(0xFF0AD4F6),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/send');
+                          },
                         ),
                         _buildActionButton(
                           iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
                           label: 'RECEIVE',
                           borderColor: const Color(0xFFB258F1),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/receive');
+                          },
                         ),
                         _buildActionButton(
                           iconWidget: const Icon(Icons.swap_horiz),
