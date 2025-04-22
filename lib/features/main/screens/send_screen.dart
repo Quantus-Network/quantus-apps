@@ -16,6 +16,7 @@ class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   BigInt _maxBalance = BigInt.from(0);
   bool _hasAddressError = false;
+  String _savedAddressesLabel = '';
 
   @override
   void initState() {
@@ -58,18 +59,28 @@ class SendScreenState extends State<SendScreen> {
   Future<void> _lookupIdentity() async {
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
+      setState(() {
+        _savedAddressesLabel = '';
+      });
       return;
     }
 
     try {
-      // Here we would normally query the chain for identity
-      // For now, we just validate the address
       final isValid = _isValidSS58Address(recipient);
       setState(() {
         _hasAddressError = !isValid;
       });
 
-      if (!isValid) {
+      if (isValid) {
+        final humanReadableName = await SubstrateService().walletName(recipient);
+        debugPrint('humanReadableName: $humanReadableName');
+        setState(() {
+          _savedAddressesLabel = humanReadableName;
+        });
+      } else {
+        setState(() {
+          _savedAddressesLabel = '';
+        });
         _recipientController.selection = TextSelection(
           baseOffset: 0,
           extentOffset: _recipientController.text.length,
@@ -77,6 +88,9 @@ class SendScreenState extends State<SendScreen> {
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
+      setState(() {
+        _savedAddressesLabel = '';
+      });
     }
   }
 
@@ -105,10 +119,13 @@ class SendScreenState extends State<SendScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      SvgPicture.asset(
-                        'assets/back_icon.svg',
-                        width: 24,
-                        height: 24,
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       const Text(
@@ -192,6 +209,7 @@ class SendScreenState extends State<SendScreen> {
                                     setState(() {
                                       _hasAddressError = false;
                                     });
+                                    _lookupIdentity();
                                   },
                                 ),
                               ),
@@ -224,7 +242,7 @@ class SendScreenState extends State<SendScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 16),
                     child: Text(
-                      'Saved Addresses',
+                      _savedAddressesLabel,
                       style: TextStyle(
                         color: Colors.white.useOpacity(0.5),
                         fontSize: 12,
@@ -331,7 +349,7 @@ class SendScreenState extends State<SendScreen> {
                           ),
                         ],
                       ),
-                      _buildIconButton('assets/info_icon.svg'),
+                      _buildIconButton('assets/settings_icon.svg'),
                     ],
                   ),
                 ),

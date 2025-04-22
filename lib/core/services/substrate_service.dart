@@ -80,8 +80,9 @@ class SubstrateService {
 
   Future<List<String>> _loadWordList() async {
     // Load the word list from the asset file
-    final wordListString = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
-    return wordListString.split('\n');
+    final String wordListContent = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+    final wordList = wordListContent.split('\n').where((word) => word.isNotEmpty).toList();
+    return wordList;
   }
 
   Future<void> initialize() async {
