@@ -40,7 +40,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       }
 
       if (mode == Mode.dilithium) {
-        final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
+        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
         // Save wallet info
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_wallet', true);

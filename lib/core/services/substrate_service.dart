@@ -12,25 +12,25 @@ import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
 
-class WalletInfo {
-  final KeyPair keyPair;
-  final String accountId;
-  final String? mnemonic;
+// class WalletInfo {
+//   final KeyPair keyPair;
+//   final String accountId;
+//   final String? mnemonic;
 
-  WalletInfo({
-    required this.keyPair,
-    required this.accountId,
-    this.mnemonic,
-  });
+//   WalletInfo({
+//     required this.keyPair,
+//     required this.accountId,
+//     this.mnemonic,
+//   });
 
-  factory WalletInfo.fromKeyPair(KeyPair keyPair, {String? mnemonic}) {
-    return WalletInfo(
-      keyPair: keyPair,
-      accountId: keyPair.address,
-      mnemonic: mnemonic,
-    );
-  }
-}
+//   factory WalletInfo.fromKeyPair(KeyPair keyPair, {String? mnemonic}) {
+//     return WalletInfo(
+//       keyPair: keyPair,
+//       accountId: keyPair.address,
+//       mnemonic: mnemonic,
+//     );
+//   }
+// }
 
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
@@ -105,37 +105,37 @@ class SubstrateService {
     // return '$formattedInteger.$fractionalPart';
   }
 
-  Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
-    try {
-      // For development accounts like //Alice, we use fromUri
-      final wallet = await KeyPair.sr25519.fromUri(path);
+  // Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
+  //   try {
+  //     // For development accounts like //Alice, we use fromUri
+  //     final wallet = await KeyPair.sr25519.fromUri(path);
 
-      debugPrint('Generated wallet from derivation path:');
-      debugPrint('Path: $path');
-      debugPrint('Address: ${wallet.address}');
+  //     debugPrint('Generated wallet from derivation path:');
+  //     debugPrint('Path: $path');
+  //     debugPrint('Address: ${wallet.address}');
 
-      return WalletInfo.fromKeyPair(wallet);
-    } catch (e) {
-      throw Exception('Failed to generate wallet from derivation path: $e');
-    }
-  }
+  //     return WalletInfo.fromKeyPair(wallet);
+  //   } catch (e) {
+  //     throw Exception('Failed to generate wallet from derivation path: $e');
+  //   }
+  // }
 
-  Future<WalletInfo> generateWalletFromSeed(String seedPhrase) async {
-    try {
-      // Check if it's a development account path
-      if (seedPhrase.startsWith('//')) {
-        return generateWalletFromDerivationPath(seedPhrase);
-      }
+  // Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
+  //   try {
+  //     // Check if it's a development account path
+  //     if (seedPhrase.startsWith('//')) {
+  //       return generateWalletFromDerivationPath(seedPhrase);
+  //     }
 
-      // Regular mnemonic handling
-      final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-      return WalletInfo.fromKeyPair(wallet);
-    } catch (e) {
-      throw Exception('Failed to generate wallet: $e');
-    }
-  }
+  //     // Regular mnemonic handling
+  //     final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
+  //     return WalletInfo.fromKeyPair(wallet);
+  //   } catch (e) {
+  //     throw Exception('Failed to generate wallet: $e');
+  //   }
+  // }
 
-  Future<DilithiumWalletInfo> generateWalletFromSeedDilithium(String seedPhrase) async {
+  Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
       return DilithiumWalletInfo.fromKeyPair(keypair);
@@ -144,20 +144,20 @@ class SubstrateService {
     }
   }
 
-  Future<WalletInfo> generateWalletFromSeedssr25519(String seedPhrase) async {
-    try {
-      // Check if it's a development account path
-      if (seedPhrase.startsWith('//')) {
-        return generateWalletFromDerivationPath(seedPhrase);
-      }
+  // Future<WalletInfo> generateWalletFromSeedssr25519(String seedPhrase) async {
+  //   try {
+  //     // Check if it's a development account path
+  //     if (seedPhrase.startsWith('//')) {
+  //       return generateWalletFromDerivationPath(seedPhrase);
+  //     }
 
-      // Regular mnemonic handling
-      final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-      return WalletInfo.fromKeyPair(wallet);
-    } catch (e) {
-      throw Exception('Failed to generate wallet: $e');
-    }
-  }
+  //     // Regular mnemonic handling
+  //     final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
+  //     return WalletInfo.fromKeyPair(wallet);
+  //   } catch (e) {
+  //     throw Exception('Failed to generate wallet: $e');
+  //   }
+  // }
 
   Future<BigInt> queryBalance(String address) async {
     try {
@@ -408,17 +408,17 @@ class SubstrateService {
     }
   }
 
-  Future<WalletInfo> generateNewWallet(String mnemonic) async {
-    try {
-      // Create a wallet from the mnemonic
-      final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
+  // Future<WalletInfo> generateNewWallet(String mnemonic) async {
+  //   try {
+  //     // Create a wallet from the mnemonic
+  //     final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
 
-      debugPrint('Generated new wallet:');
-      debugPrint('Address: ${wallet.address}');
+  //     debugPrint('Generated new wallet:');
+  //     debugPrint('Address: ${wallet.address}');
 
-      return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
-    } catch (e) {
-      throw Exception('Failed to generate new wallet: $e');
-    }
-  }
+  //     return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
+  //   } catch (e) {
+  //     throw Exception('Failed to generate new wallet: $e');
+  //   }
+  // }
 }

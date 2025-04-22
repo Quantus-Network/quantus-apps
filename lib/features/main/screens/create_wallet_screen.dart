@@ -31,7 +31,7 @@ class CreateWalletScreenState extends State<CreateWalletScreen> {
 
     try {
       _mnemonic = await SubstrateService().generateMnemonic();
-      final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
+      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
       debugPrint('Generated wallet address: ${walletInfo.accountId}');
 
       setState(() {
@@ -47,7 +47,7 @@ class CreateWalletScreenState extends State<CreateWalletScreen> {
 
   Future<void> _saveWalletAndContinue() async {
     try {
-      final walletInfo = await SubstrateService().generateNewWallet(_mnemonic);
+      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
 
       if (mode == Mode.dilithium) {
         throw Exception('Dilithium is not supported yet');

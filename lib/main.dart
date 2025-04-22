@@ -17,4 +17,3 @@ enum Mode {
 }
 
 const mode = Mode.dilithium;
-

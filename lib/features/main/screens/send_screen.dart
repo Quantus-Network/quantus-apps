@@ -271,8 +271,7 @@ class SendScreenState extends State<SendScreen> {
                                   onPressed: () async {
                                     try {
                                       if (mode == Mode.dilithium) {
-                                        final bobWallet =
-                                            await SubstrateService().generateWalletFromSeedDilithium(crystalBob);
+                                        final bobWallet = await SubstrateService().generateWalletFromSeed(crystalBob);
                                         _recipientController.text = bobWallet.accountId;
                                         _lookupIdentity();
                                         if (context.mounted) {

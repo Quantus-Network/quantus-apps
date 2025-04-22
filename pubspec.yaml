@@ -51,6 +51,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/text/crypto_checksum_bip39.txt
 
   fonts:
     - family: Fira Code
