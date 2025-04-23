@@ -88,11 +88,7 @@ class _WalletMainState extends State<WalletMain> {
       }
     }
 
-    if (balance == null) {
-      throw Exception('Failed to retrieve balance even after potential retry.');
-    }
-
-    return WalletData(accountId: accountId!, walletName: walletName!, balance: balance);
+    return WalletData(accountId: accountId, walletName: walletName!, balance: balance);
   }
 
   Widget _buildActionButton({

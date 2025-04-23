@@ -1,7 +1,7 @@
 class AppConstants {
   static const String appName = 'Resonance Network Wallet';
-  static const String rpcEndpoint = 'ws://127.0.0.1:9944';
-  // static const String rpcEndpoint = 'wss://a.i.res.fm:443';
+  // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
+  static const String rpcEndpoint = 'wss://a.t.res.fm:443';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';
