@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io'; // Import for SocketException
+import 'dart:async'; // Import for Future.timeout / TimeoutException
 import 'package:resonance_network_wallet/account_profile.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
@@ -7,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 
 class WalletData {
   final String accountId;
@@ -33,26 +36,63 @@ class _WalletMainState extends State<WalletMain> {
   @override
   void initState() {
     super.initState();
-    _walletDataFuture = _loadWalletData();
+    _loadWalletDataAndSetFuture();
   }
 
-  Future<WalletData?> _loadWalletData() async {
+  void _loadWalletDataAndSetFuture() {
+    setState(() {
+      _walletDataFuture = _loadWalletDataInternal();
+    });
+  }
+
+  Future<WalletData?> _loadWalletDataInternal() async {
+    String? accountId;
+    String? walletName;
+    BigInt? balance;
+    const Duration networkTimeout = Duration(seconds: 15);
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      final accountId = prefs.getString('account_id');
+      accountId = prefs.getString('account_id');
+      walletName = prefs.getString('wallet_name') ?? 'Name Unknown';
 
       if (accountId == null || accountId.isEmpty) {
-        debugPrint('Error: No account ID found in SharedPreferences');
         throw Exception('Account ID not found');
       }
       _accountId = accountId;
-      final walletName = prefs.getString('wallet_name') ?? 'Grain-Flash-Something';
-      final balance = await _substrateService.queryBalance(accountId);
-      return WalletData(accountId: accountId, walletName: walletName, balance: balance);
+
+      debugPrint('Attempting initial balance query for $accountId...');
+      balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
+      debugPrint('Initial balance query successful.');
     } catch (e) {
-      debugPrint('Error loading wallet data: $e');
-      throw Exception('Failed to load wallet data: $e');
+      debugPrint('Initial load/query failed: $e');
+
+      bool isConnectionError = e is SocketException ||
+          e is TimeoutException ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('WebSocket');
+
+      if (isConnectionError && accountId != null) {
+        debugPrint('Connection error detected. Attempting reconnect and retry...');
+        try {
+          await _substrateService.reconnect();
+          balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
+          debugPrint('Balance query successful after reconnect.');
+        } catch (retryError) {
+          debugPrint('Retry failed after reconnect: $retryError');
+          throw Exception('Failed to load wallet data after retry: $retryError');
+        }
+      } else {
+        debugPrint('Error was not connection-related or accountId is null. Rethrowing.');
+        throw Exception('Failed to load wallet data: $e');
+      }
     }
+
+    if (balance == null) {
+      throw Exception('Failed to retrieve balance even after potential retry.');
+    }
+
+    return WalletData(accountId: accountId!, walletName: walletName!, balance: balance);
   }
 
   Widget _buildActionButton({
@@ -193,6 +233,26 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
+  Future<void> _logout() async {
+    try {
+      await _substrateService.logout();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error during logout: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logout failed: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -215,11 +275,58 @@ class _WalletMainState extends State<WalletMain> {
                   return const Center(child: CircularProgressIndicator(color: Colors.white));
                 }
                 if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                  return const Center(
-                    child: Text(
-                      'Error loading wallet data.',
-                      style: TextStyle(color: Colors.red),
-                    ),
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                                const SizedBox(height: 20),
+                                const Text(
+                                  'Failed to Connect',
+                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Could not load wallet data. Please check your network connection and try again.',
+                                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0, top: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildFullWidthActionButton(
+                              label: 'Retry',
+                              onTap: _loadWalletDataAndSetFuture,
+                              gradient: const LinearGradient(
+                                begin: Alignment(0.50, 0.00),
+                                end: Alignment(0.50, 1.00),
+                                colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            _buildFullWidthActionButton(
+                              label: 'Logout',
+                              onTap: _logout,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              textColor: Colors.white.withOpacity(0.8),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 }
 
@@ -266,10 +373,6 @@ class _WalletMainState extends State<WalletMain> {
                           borderRadius: BorderRadius.circular(5),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            // decoration: ShapeDecoration(
-                            //   color: Colors.black.useOpacity(0.5),
-                            //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                            // ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -426,6 +529,38 @@ class _WalletMainState extends State<WalletMain> {
                   ],
                 );
               },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullWidthActionButton({
+    required String label,
+    required VoidCallback onTap,
+    Gradient? gradient,
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: ShapeDecoration(
+          gradient: gradient,
+          color: backgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: textColor ?? const Color(0xFF0E0E0E),
+              fontSize: 18,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

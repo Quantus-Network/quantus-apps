@@ -63,11 +63,10 @@ class SubstrateService {
   factory SubstrateService() => _instance;
   SubstrateService._internal();
 
-  late final Provider _provider;
-  late final StateApi _stateApi;
-  late final AuthorApi _authorApi;
-  // ignore: unused_field
-  late final SystemApi _systemApi;
+  late Provider _provider;
+  late StateApi _stateApi;
+  late AuthorApi _authorApi;
+  late SystemApi _systemApi;
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   late final HumanChecksum _humanChecksum;
   bool _humanChecksumInitialized = false;
@@ -94,6 +93,38 @@ class SubstrateService {
     _stateApi = StateApi(_provider);
     _authorApi = AuthorApi(_provider);
     _systemApi = SystemApi(_provider);
+    // Optional: Initial connect attempt (consider error handling here or defer to first use)
+    // try {
+    //   await _provider.connect().timeout(const Duration(seconds: 15));
+    // } catch (e) { ... }
+  }
+
+  Future<void> reconnect() async {
+    debugPrint('Attempting to recreate and reconnect Substrate provider...');
+    const Duration networkTimeout = Duration(seconds: 15);
+    try {
+      // Create a new Provider instance
+      debugPrint('Creating new Provider instance...');
+      _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
+
+      // Re-initialize APIs with the new provider
+      debugPrint('Re-initializing State/Author/System APIs...');
+      _stateApi = StateApi(_provider);
+      _authorApi = AuthorApi(_provider);
+      _systemApi = SystemApi(_provider);
+
+      // Attempt to connect the new provider with timeout
+      debugPrint('Connecting new provider...');
+      await _provider.connect().timeout(networkTimeout);
+      debugPrint('New provider connected successfully.');
+    } catch (e) {
+      debugPrint('Failed to recreate/reconnect provider: $e');
+      if (e is TimeoutException) {
+        throw Exception('Failed to reconnect to the network: Connection timed out.');
+      } else {
+        throw Exception('Failed to reconnect to the network: $e');
+      }
+    }
   }
 
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
