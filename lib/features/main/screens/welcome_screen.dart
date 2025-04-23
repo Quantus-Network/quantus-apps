@@ -73,17 +73,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Welcome to',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFE6E6E6),
-                    fontSize: 20,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 27), // Spacing from Figma
+                const SizedBox(height: 60), // Spacing from Figma
                 Center(
                   child: SvgPicture.asset(
                     'assets/res_logo_main.svg',
@@ -103,16 +93,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 27), // Spacing from Figma
-                const Text(
-                  'Create a new wallet or import an existing one to get started',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFE6E6E6),
-                    fontSize: 16,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
               ],
             ),
           ),
