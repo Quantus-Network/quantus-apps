@@ -126,7 +126,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 40), // Adjust spacing as needed
+                const SizedBox(height: 24), // Adjust spacing as needed
 
                 // Main content area
                 Expanded(
@@ -208,7 +208,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                                     'Copy to Clipboard',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -217,7 +217,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 20), // Add space before checkbox
+                        const SizedBox(height: 35), // Increased space before checkbox from 20 to 35
                       ],
                     ),
                   ),
@@ -262,7 +262,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                               'I have copied and stored my seed phrase',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
                               ),
