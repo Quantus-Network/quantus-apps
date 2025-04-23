@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/main.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
+import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:async';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+
+String formatAmount(BigInt amount) {
+  return amount.toString();
+}
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -15,10 +23,14 @@ class SendScreen extends StatefulWidget {
 class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  bool _isLoading = false;
-  String _errorMessage = '';
-  String? _recipientName;
-  BigInt _maxBalance = BigInt.from(0);
+  final NumberFormattingService _formattingService = NumberFormattingService();
+  BigInt _maxBalance = BigInt.zero;
+  static final BigInt _networkFee = BigInt.from(10) * NumberFormattingService.scaleFactorBigInt;
+  BigInt _amount = BigInt.zero;
+  bool _hasAddressError = false;
+  bool _hasAmountError = false;
+  String _savedAddressesLabel = '';
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -26,13 +38,27 @@ class SendScreenState extends State<SendScreen> {
     _loadBalance();
   }
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _amountController.dispose();
+    _recipientController.dispose();
+    super.dispose();
+  }
+
+  bool _isValidSS58Address(String address) {
+    try {
+      return SubstrateService().isValidSS58Address(address);
+    } catch (e) {
+      debugPrint('Error validating address: $e');
+      return false;
+    }
+  }
+
   Future<void> _loadBalance() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() {});
 
     try {
-      // Get the current account ID
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
 
@@ -40,18 +66,14 @@ class SendScreenState extends State<SendScreen> {
         throw Exception('Wallet not found');
       }
 
-      // Fetch actual balance from the blockchain
       final balance = await SubstrateService().queryBalance(accountId);
 
       setState(() {
         _maxBalance = balance;
-        _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      debugPrint('Error loading balance: $e');
+      setState(() {});
     }
   }
 
@@ -59,379 +81,449 @@ class SendScreenState extends State<SendScreen> {
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
       setState(() {
-        _recipientName = null;
+        _savedAddressesLabel = '';
+        _hasAddressError = false;
       });
       return;
     }
 
-    // In a real app, you'd query the identity pallet on the blockchain
-    // This is a placeholder implementation
-    setState(() {
-      _recipientName = recipient.length > 5 ? 'User ${recipient.substring(3, 7)}' : null;
-    });
-  }
-
-  Future<void> _sendTransaction() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-
     try {
-      final recipient = _recipientController.text.trim();
-      final amountText = _amountController.text.trim();
+      final isValid = _isValidSS58Address(recipient);
+      setState(() {
+        _hasAddressError = !isValid;
+      });
 
-      if (recipient.isEmpty) {
-        throw Exception('Please enter a recipient address');
-      }
-
-      final amount = double.tryParse(amountText);
-      if (amount == null || amount <= 0) {
-        throw Exception('Please enter a valid amount');
-      }
-
-      if (BigInt.from(amount) > _maxBalance) {
-        throw Exception('Insufficient balance');
-      }
-
-      // Show confirmation dialog
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Confirm Transaction'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('You are about to send:'),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    '$amount REZ',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text('To:'),
-              const SizedBox(height: 8),
-              if (_recipientName != null)
-                Text(
-                  _recipientName!,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              Text(
-                recipient,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Network fee: 0.001 REZ',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed != true) {
+      if (isValid) {
+        final stopwatch = Stopwatch()..start();
+        debugPrint('Starting wallet name lookup for: $recipient');
+        final humanReadableName = await HumanReadableChecksumService().getHumanReadableName(recipient);
+        stopwatch.stop();
+        debugPrint('Wallet name lookup took: ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('Final humanReadableName: $humanReadableName');
         setState(() {
-          _isLoading = false;
+          _savedAddressesLabel = humanReadableName;
         });
-        return;
-      }
-
-      // Get the sender's seed phrase
-      final prefs = await SharedPreferences.getInstance();
-      final senderSeed = prefs.getString('mnemonic');
-
-      if (senderSeed == null) {
-        throw Exception('Wallet data not found');
-      }
-
-      // Submit the transaction
-      String hash;
-      if (mode == Mode.dilithium) {
-        hash = await SubstrateService().balanceTransfer2(
-          senderSeed,
-          recipient,
-          amount,
-        );
       } else {
-        hash = await SubstrateService().balanceTransferSr25519(
-          senderSeed,
-          recipient,
-          amount,
-        );
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Transaction submitted successfully: $hash')),
-        );
-        Navigator.pop(context);
+        setState(() {
+          _savedAddressesLabel = '';
+        });
       }
     } catch (e) {
+      debugPrint('Error in identity lookup: $e');
       setState(() {
-        _errorMessage = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _savedAddressesLabel = '';
+        _hasAddressError = true;
       });
     }
   }
 
+  void _validateAmount(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _amount = BigInt.zero;
+        _hasAmountError = false;
+      });
+      return;
+    }
+
+    final parsedAmount = _formattingService.parseAmount(value);
+
+    if (parsedAmount == null) {
+      setState(() {
+        _amount = BigInt.zero;
+        _hasAmountError = true;
+      });
+    } else {
+      setState(() {
+        _amount = parsedAmount;
+        _hasAmountError = _amount <= BigInt.zero || (_amount + _networkFee) > _maxBalance;
+      });
+    }
+  }
+
+  void _setMaxAmount() {
+    final maxSendableAmount = _maxBalance - _networkFee;
+    if (maxSendableAmount > BigInt.zero) {
+      final formattedMax = _formattingService.formatBalance(maxSendableAmount);
+      _amountController.text = formattedMax;
+      _validateAmount(formattedMax);
+    } else {
+      _amountController.text = '0';
+      _validateAmount('0');
+    }
+  }
+
+  void _showSendConfirmation() {
+    debugPrint('Showing confirmation for amount (BigInt): $_amount');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => SendConfirmationOverlay(
+        amount: _amount,
+        recipientName: _savedAddressesLabel,
+        recipientAddress: _recipientController.text,
+        fee: _networkFee,
+        onClose: () => Navigator.pop(context),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Send REZ'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadBalance,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Recipient',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _recipientController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF2D2D2D),
-                        hintText: 'Enter recipient address',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.paste, color: Color(0xFF9F7AEA)),
-                          onPressed: () async {
-                            final data = await Clipboard.getData('text/plain');
-                            if (data != null && data.text != null) {
-                              _recipientController.text = data.text!;
-                              _lookupIdentity();
-                            }
-                          },
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0E0E0E),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.54,
+                child: Image.asset(
+                  'assets/BG_00 1.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
-                      onChanged: (value) {
-                        _lookupIdentity();
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Send',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton.icon(
-                          onPressed: () async {
-                            try {
-                              if (mode == Mode.dilithium) {
-                                final bobWallet = await SubstrateService().generateWalletFromSeedDilithium(crystalBob);
-                                _recipientController.text = bobWallet.accountId;
-                                _lookupIdentity();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('$crystalBob development account loaded')),
-                                  );
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Text(
+                                'To:',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Container(
+                                width: 1,
+                                height: 17,
+                                color: Colors.white,
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  controller: _recipientController,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: _hasAddressError
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.red, width: 1),
+                                          )
+                                        : InputBorder.none,
+                                    focusedBorder: _hasAddressError
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.red, width: 1),
+                                          )
+                                        : InputBorder.none,
+                                    hintText: 'RES Name or address',
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.useOpacity(0.3),
+                                      fontSize: 14,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w300,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    filled: true,
+                                    fillColor: Colors.transparent,
+                                  ),
+                                  autocorrect: false,
+                                  enableSuggestions: false,
+                                  enableInteractiveSelection: true,
+                                  keyboardType: TextInputType.text,
+                                  textCapitalization: TextCapitalization.none,
+                                  onChanged: (value) {
+                                    if (_debounce?.isActive ?? false) _debounce?.cancel();
+                                    _debounce = Timer(const Duration(milliseconds: 300), () {
+                                      _lookupIdentity();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            _buildIconButton('assets/scan.svg'),
+                            const SizedBox(width: 9),
+                            GestureDetector(
+                              onTap: () async {
+                                final data = await Clipboard.getData('text/plain');
+                                if (data != null && data.text != null) {
+                                  _recipientController.text = data.text!;
+                                  _lookupIdentity();
                                 }
-                              } else {
-                                final bobWallet = await SubstrateService().generateWalletFromSeed('//Bob');
-                                _recipientController.text = bobWallet.accountId;
-                                _lookupIdentity();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Bob development account loaded')),
-                                  );
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error loading Bob account: $e')),
-                                );
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.bug_report, size: 16),
-                          label: const Text('Use Crystal Bob (Dilithium Test)'),
-                          // label: Text('Use Bob (Test)'),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(0, 0),
-                            foregroundColor: const Color(0xFF9F7AEA),
+                              },
+                              child: _buildIconButton('assets/Paste_icon.svg'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Text(
+                      _savedAddressesLabel,
+                      style: TextStyle(
+                        color: Colors.white.useOpacity(0.8),
+                        fontSize: 13,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IntrinsicWidth(
+                          child: TextField(
+                            controller: _amountController,
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              enabledBorder: _hasAmountError
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                                      borderRadius: BorderRadius.circular(5),
+                                    )
+                                  : InputBorder.none,
+                              focusedBorder: _hasAmountError
+                                  ? OutlineInputBorder(
+                                      borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                      borderRadius: BorderRadius.circular(5),
+                                    )
+                                  : InputBorder.none,
+                              hintText: '0',
+                              hintStyle: TextStyle(
+                                color: Colors.white.useOpacity(0.5),
+                                fontSize: 40,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w600,
+                              ),
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              filled: true,
+                              fillColor: Colors.transparent,
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                            ],
+                            onChanged: _validateAmount,
+                          ),
+                        ),
+                        const Text(
+                          ' RES',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                    if (_recipientName != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Card(
-                          color: const Color(0xFF2D2D2D),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Available: ${_formattingService.formatBalance(_maxBalance)}',
+                        style: const TextStyle(
+                          color: Color(0xFF16CECE),
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: ShapeDecoration(
+                          color: Colors.white.useOpacity(0.15),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: const Color(0xFF6B46C1).useOpacity(0.3),
-                            ),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.person, color: Color(0xFF9F7AEA)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _recipientName!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
+                        ),
+                        child: GestureDetector(
+                          onTap: _setMaxAmount,
+                          child: const Text(
+                            'Max',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                       ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Amount',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _amountController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF6B46C1)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF2D2D2D),
-                        hintText: 'Enter amount to send',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        suffix: const Text('REZ', style: TextStyle(color: Colors.grey)),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Available Balance:',
-                            style: TextStyle(color: Colors.grey),
+                          Text(
+                            'Network fee',
+                            style: TextStyle(
+                              color: Colors.white.useOpacity(0.6),
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                '${SubstrateService().formatBalance(_maxBalance)} REZ',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF9F7AEA),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              TextButton(
-                                onPressed: () {
-                                  _amountController.text = _maxBalance.toString();
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  minimumSize: const Size(0, 0),
-                                ),
-                                child: const Text('MAX'),
-                              ),
-                            ],
+                          Text(
+                            '${_formattingService.formatBalance(_networkFee)} RES',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    if (_errorMessage.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
+                      _buildIconButton('assets/settings_icon.svg'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GestureDetector(
+                    onTap: (_hasAddressError ||
+                            _hasAmountError ||
+                            _recipientController.text.isEmpty ||
+                            _amount <= BigInt.zero)
+                        ? null
+                        : _showSendConfirmation,
+                    child: Opacity(
+                      opacity: (_hasAddressError ||
+                              _hasAmountError ||
+                              _recipientController.text.isEmpty ||
+                              _amount <= BigInt.zero)
+                          ? 0.3
+                          : 1.0,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
                         child: Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
+                          (_hasAddressError || _recipientController.text.isEmpty)
+                              ? 'Enter Address'
+                              : (_hasAmountError || _amount <= BigInt.zero)
+                                  ? 'Enter Amount'
+                                  : 'Send ${_formattingService.formatBalance(_amount)} RES',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF0E0E0E),
+                            fontSize: 18,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    const Spacer(),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _sendTransaction,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text('Send REZ'),
-                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconButton(String assetPath) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(
+        color: Colors.white.useOpacity(0.15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      child: SvgPicture.asset(
+        assetPath,
+        width: 17,
+        height: 17,
+      ),
     );
   }
 }

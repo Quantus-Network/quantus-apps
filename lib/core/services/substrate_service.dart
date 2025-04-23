@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:human_checksum/human_checksum.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
-import 'package:bip39/bip39.dart' as bip39;
-import 'package:convert/convert.dart' as convert;
+import 'package:bip39_mnemonic/bip39_mnemonic.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
 
 import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
 import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
@@ -12,43 +15,26 @@ import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/mu
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
-
-class WalletInfo {
-  final KeyPair keyPair;
-  final String accountId;
-  final String? mnemonic;
-
-  WalletInfo({
-    required this.keyPair,
-    required this.accountId,
-    this.mnemonic,
-  });
-
-  factory WalletInfo.fromKeyPair(KeyPair keyPair, {String? mnemonic}) {
-    return WalletInfo(
-      keyPair: keyPair,
-      accountId: keyPair.address,
-      mnemonic: mnemonic,
-    );
-  }
-}
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
   final String accountId;
   final String? mnemonic;
-
+  final String walletName;
   DilithiumWalletInfo({
     required this.keypair,
     required this.accountId,
     this.mnemonic,
+    required this.walletName,
   });
 
-  factory DilithiumWalletInfo.fromKeyPair(crypto.Keypair keypair, {String? mnemonic}) {
+  factory DilithiumWalletInfo.fromKeyPair(crypto.Keypair keypair, {required String walletName, String? mnemonic}) {
     return DilithiumWalletInfo(
       keypair: keypair,
       accountId: keypair.ss58Address,
       mnemonic: mnemonic,
+      walletName: walletName,
     );
   }
 }
@@ -82,6 +68,25 @@ class SubstrateService {
   // ignore: unused_field
   late final SystemApi _systemApi;
   static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  late final HumanChecksum _humanChecksum;
+  bool _humanChecksumInitialized = false;
+
+  Future<HumanChecksum> get humanChecksum async {
+    if (!_humanChecksumInitialized) {
+      debugPrint('loading word list');
+      final wordList = await _loadWordList();
+      _humanChecksum = HumanChecksum(wordList);
+      _humanChecksumInitialized = true;
+    }
+    return _humanChecksum;
+  }
+
+  Future<List<String>> _loadWordList() async {
+    // Load the word list from the asset file
+    final String wordListContent = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+    final wordList = wordListContent.split('\n').where((word) => word.isNotEmpty).toList();
+    return wordList;
+  }
 
   Future<void> initialize() async {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
@@ -90,71 +95,11 @@ class SubstrateService {
     _systemApi = SystemApi(_provider);
   }
 
-  String formatBalance(BigInt balance) {
-    return balance.toString();
-
-    // final _numberFormat = NumberFormat("#,##0.000000000000", "en_US");
-    // Convert to decimal string considering 12 decimal places
-    // final decimal = balance.toString().padLeft(13, '0');
-    // final integerPart = decimal.substring(0, decimal.length - 12);
-    // final fractionalPart = decimal.substring(decimal.length - 12);
-
-    // // Format with commas for thousands
-    // final formattedInteger = _numberFormat.format(int.parse(integerPart));
-
-    // // Combine with fractional part
-    // return '$formattedInteger.$fractionalPart';
-  }
-
-  Future<WalletInfo> generateWalletFromDerivationPath(String path) async {
-    try {
-      // For development accounts like //Alice, we use fromUri
-      final wallet = await KeyPair.sr25519.fromUri(path);
-
-      debugPrint('Generated wallet from derivation path:');
-      debugPrint('Path: $path');
-      debugPrint('Address: ${wallet.address}');
-
-      return WalletInfo.fromKeyPair(wallet);
-    } catch (e) {
-      throw Exception('Failed to generate wallet from derivation path: $e');
-    }
-  }
-
-  Future<WalletInfo> generateWalletFromSeed(String seedPhrase) async {
-    try {
-      // Check if it's a development account path
-      if (seedPhrase.startsWith('//')) {
-        return generateWalletFromDerivationPath(seedPhrase);
-      }
-
-      // Regular mnemonic handling
-      final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-      return WalletInfo.fromKeyPair(wallet);
-    } catch (e) {
-      throw Exception('Failed to generate wallet: $e');
-    }
-  }
-
-  Future<DilithiumWalletInfo> generateWalletFromSeedDilithium(String seedPhrase) async {
+  Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      return DilithiumWalletInfo.fromKeyPair(keypair);
-    } catch (e) {
-      throw Exception('Failed to generate wallet: $e');
-    }
-  }
-
-  Future<WalletInfo> generateWalletFromSeedssr25519(String seedPhrase) async {
-    try {
-      // Check if it's a development account path
-      if (seedPhrase.startsWith('//')) {
-        return generateWalletFromDerivationPath(seedPhrase);
-      }
-
-      // Regular mnemonic handling
-      final wallet = await KeyPair.sr25519.fromMnemonic(seedPhrase);
-      return WalletInfo.fromKeyPair(wallet);
+      final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
+      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: name);
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }
@@ -216,13 +161,13 @@ class SubstrateService {
     return senderWallet;
   }
 
-  // reference implementation - this works with sr25519 schnorr signatures
-  Future<String> balanceTransfer2(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
       // Get the sender's wallet
       debugPrint('creating key with $senderSeed');
       debugPrint('sending to $targetAddress');
-      debugPrint('amount $amount');
+      debugPrint('amount (BigInt): $amount'); // Log BigInt amount
+      debugPrint('amount (RES formatted): ${NumberFormattingService().formatBalance(amount)}'); // Log RES amount
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
@@ -244,9 +189,8 @@ class SubstrateService {
       final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
       final nonce = int.parse(nonceResult.result.toString());
 
-      // Convert amount to chain format (considering decimals)
-      // TODO actually figure out the amount...
-      final rawAmount = BigInt.from(amount);
+      // Use the passed BigInt amount directly
+      final BigInt rawAmount = amount;
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
@@ -310,7 +254,7 @@ class SubstrateService {
   }
 
   // reference implementation - this works with sr25519 schnorr signatures
-  Future<String> balanceTransferSr25519(String senderSeed, String targetAddress, double amount) async {
+  Future<String> balanceTransferSr25519Deprecated(String senderSeed, String targetAddress, double amount) async {
     try {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
@@ -400,27 +344,21 @@ class SubstrateService {
     try {
       // Generate a random entropy
       final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
-      // Convert entropy to a hexadecimal string
-      final entropyHex = convert.hex.encode(entropy);
       // Generate mnemonic from entropy
-      final mnemonic = bip39.entropyToMnemonic(entropyHex);
-      return mnemonic;
+      final mnemonic = Mnemonic(entropy, Language.english);
+
+      return mnemonic.sentence;
     } catch (e) {
       throw Exception('Failed to generate mnemonic: $e');
     }
   }
 
-  Future<WalletInfo> generateNewWallet(String mnemonic) async {
+  bool isValidSS58Address(String address) {
     try {
-      // Create a wallet from the mnemonic
-      final wallet = await KeyPair.sr25519.fromMnemonic(mnemonic);
-
-      debugPrint('Generated new wallet:');
-      debugPrint('Address: ${wallet.address}');
-
-      return WalletInfo.fromKeyPair(wallet, mnemonic: mnemonic);
+      Address.decode(address);
+      return true;
     } catch (e) {
-      throw Exception('Failed to generate new wallet: $e');
+      return false;
     }
   }
 }

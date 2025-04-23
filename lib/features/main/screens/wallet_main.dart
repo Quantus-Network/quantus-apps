@@ -1,75 +1,194 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/account_profile.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/models/transaction_model.dart';
-import 'package:resonance_network_wallet/core/models/transaction_type.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+
+class WalletData {
+  final String accountId;
+  final String walletName;
+  final BigInt balance;
+
+  WalletData({required this.accountId, required this.walletName, required this.balance});
+}
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
 
   @override
-  WalletMainState createState() => WalletMainState();
+  State<WalletMain> createState() => _WalletMainState();
 }
 
-class WalletMainState extends State<WalletMain> {
-  String _accountId = '';
-  BigInt _balance = BigInt.zero;
-  final List<Transaction> _recentTransactions = [];
-  bool _isLoading = true;
+class _WalletMainState extends State<WalletMain> {
+  final SubstrateService _substrateService = SubstrateService();
+  final NumberFormattingService _formattingService = NumberFormattingService();
+
+  Future<WalletData?>? _walletDataFuture;
+  String? _accountId;
 
   @override
   void initState() {
     super.initState();
-    _loadWalletData();
+    _walletDataFuture = _loadWalletData();
   }
 
-  Future<void> _loadWalletData() async {
+  Future<WalletData?> _loadWalletData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final accountId = prefs.getString('account_id') ?? '';
+      final accountId = prefs.getString('account_id');
 
-      // Fetch actual balance from the blockchain
-      final balance = await SubstrateService().queryBalance(accountId);
-
-      setState(() {
-        _accountId = accountId;
-        _balance = balance;
-        _isLoading = false;
-      });
+      if (accountId == null || accountId.isEmpty) {
+        debugPrint('Error: No account ID found in SharedPreferences');
+        throw Exception('Account ID not found');
+      }
+      _accountId = accountId;
+      final walletName = prefs.getString('wallet_name') ?? 'Grain-Flash-Something';
+      final balance = await _substrateService.queryBalance(accountId);
+      return WalletData(accountId: accountId, walletName: walletName, balance: balance);
     } catch (e) {
       debugPrint('Error loading wallet data: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      throw Exception('Failed to load wallet data: $e');
     }
   }
 
-  Widget _buildBalanceDisplay() {
+  Widget _buildActionButton({
+    required Widget iconWidget,
+    required String label,
+    required Color borderColor,
+    required VoidCallback onPressed,
+    bool disabled = false,
+  }) {
+    final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
+    final bgColor = Colors.black.useOpacity(166 / 255.0);
+    final effectiveBorderColor = disabled ? borderColor.useOpacity(0.5) : borderColor;
+
+    Widget finalIconWidget = iconWidget;
+    if (iconWidget is SvgPicture) {
+      finalIconWidget = SvgPicture.asset(
+        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
+        width: 20,
+        height: 20,
+      );
+    } else if (iconWidget is Icon) {
+      finalIconWidget = Icon(
+        iconWidget.icon,
+        color: color,
+        size: 20,
+      );
+    } else if (iconWidget is Image) {
+      finalIconWidget = SizedBox(
+        width: 20,
+        height: 20,
+        child: iconWidget,
+      );
+    }
+
+    return Opacity(
+      opacity: disabled ? 0.7 : 1.0,
+      child: InkWell(
+        onTap: disabled ? null : onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          width: 65,
+          height: 56,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: ShapeDecoration(
+            color: bgColor,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 1, color: effectiveBorderColor),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              finalIconWidget,
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem({
+    required String type,
+    required String amount,
+    required String details,
+    required IconData icon,
+    required Color typeColor,
+  }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Your Balance',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: typeColor, size: 20),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$type ',
+                          style: TextStyle(
+                            color: typeColor,
+                            fontSize: 14,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        TextSpan(
+                          text: amount,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    details,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          '${SubstrateService().formatBalance(_balance)} REZ',
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF9F7AEA),
-          ),
+        const SizedBox(height: 14),
+        Divider(
+          color: Colors.white.useOpacity(38 / 255.0),
+          height: 1,
         ),
+        const SizedBox(height: 14),
       ],
     );
   }
@@ -77,289 +196,240 @@ class WalletMainState extends State<WalletMain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resonance Wallet'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF9F7AEA)),
-            onPressed: _loadWalletData,
+      backgroundColor: const Color(0xFF0E0E0E),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/BG_00 1.png'),
+            fit: BoxFit.cover,
+            opacity: 0.54,
           ),
-          IconButton(
-            icon: const Icon(Icons.person, color: Color(0xFF9F7AEA)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AccountProfilePage(accountId: _accountId),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B46C1)),
-            ))
-          : RefreshIndicator(
-              onRefresh: _loadWalletData,
-              color: const Color(0xFF6B46C1),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Account Card
-                      Card(
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF2D2D2D),
-                                const Color(0xFF6B46C1).useOpacity(0.3),
-                              ],
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF6B46C1).useOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.account_balance_wallet,
-                                        color: Color(0xFF9F7AEA),
-                                        size: 24,
-                                      ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: FutureBuilder<WalletData?>(
+              future: _walletDataFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.white));
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  return const Center(
+                    child: Text(
+                      'Error loading wallet data.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                final walletData = snapshot.data!;
+
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SvgPicture.asset('assets/main_wallet_title_logo.svg', height: 40),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                              onPressed: () {
+                                if (_accountId != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            'Resonance Network',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          Text(
-                                            _accountId,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                _buildBalanceDisplay(),
-                                const SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          _showReceiveDialog(context);
-                                        },
-                                        icon: const Icon(Icons.qr_code),
-                                        label: const Text('Receive'),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          side: const BorderSide(
-                                            color: Color(0xFF9F7AEA),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => const SendScreen(),
-                                            ),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                                        label: const Text('Send'),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          backgroundColor: const Color(0xFF6B46C1),
-                                          foregroundColor: Colors.white,
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(
-                          'Recent Transactions',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _recentTransactions.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(32.0),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.hourglass_empty,
-                                      size: 48,
-                                      color: const Color(0xFF9F7AEA).useOpacity(0.5),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'No transactions yet',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _recentTransactions.length,
-                              itemBuilder: (context, index) {
-                                final tx = _recentTransactions[index];
-                                return TransactionListItem(
-                                    transaction: tx, isReceived: tx.type == TransactionType.received);
+                                  );
+                                }
                               },
                             ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-    );
-  }
-
-  void _showReceiveDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Receive REZ',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: 280,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
+                          ],
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            if (_accountId != null) {
+                              Clipboard.setData(ClipboardData(text: _accountId!));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Account ID copied to clipboard')),
+                              );
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(5),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            // decoration: ShapeDecoration(
+                            //   color: Colors.black.useOpacity(0.5),
+                            //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            // ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/active_dot.svg',
+                                  width: 13,
+                                  height: 13,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                    decoration: ShapeDecoration(
+                                      color: Colors.black.useOpacity(0.5),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                    ),
+                                    child: Text(
+                                      walletData.walletName,
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 7),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: _formattingService.formatBalance(walletData.balance),
+                                style: const TextStyle(
+                                  color: Color(0xFFE6E6E6),
+                                  fontSize: 40,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: ' RES',
+                                style: TextStyle(
+                                  color: Color(0xFFE6E6E6),
+                                  fontSize: 20,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildActionButton(
+                          iconWidget: SvgPicture.asset('assets/send_icon.svg'),
+                          label: 'SEND',
+                          borderColor: const Color(0xFF0AD4F6),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/send');
+                          },
+                        ),
+                        _buildActionButton(
+                          iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                          label: 'RECEIVE',
+                          borderColor: const Color(0xFFB258F1),
+                          onPressed: () {
+                            showReceiveSheet(context);
+                          },
+                        ),
+                        _buildActionButton(
+                          iconWidget: const Icon(Icons.swap_horiz),
+                          label: 'SWAP',
+                          borderColor: const Color(0xFF0AD4F6),
+                          onPressed: () {},
+                          disabled: true,
+                        ),
+                        _buildActionButton(
+                          iconWidget: const Icon(Icons.sync_alt),
+                          label: 'BRIDGE',
+                          borderColor: const Color(0xFF0AD4F6),
+                          onPressed: () {},
+                          disabled: true,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: ShapeDecoration(
+                          color: Colors.black.useOpacity(64 / 255.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Recent Transactions',
+                              style: TextStyle(
+                                color: Color(0xFFE6E6E6),
+                                fontSize: 14,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Expanded(
+                              child: ListView(
+                                children: [
+                                  _buildTransactionItem(
+                                    type: 'Sent',
+                                    amount: '-13.082 RES',
+                                    details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
+                                    icon: Icons.arrow_upward,
+                                    typeColor: const Color(0xFF16CECE),
+                                  ),
+                                  _buildTransactionItem(
+                                    type: 'Received',
+                                    amount: '13.2345 RES',
+                                    details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
+                                    icon: Icons.arrow_downward,
+                                    typeColor: const Color(0xFFB259F2),
+                                  ),
+                                  _buildTransactionItem(
+                                    type: 'Sent',
+                                    amount: '-309.9866 RES',
+                                    details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
+                                    icon: Icons.arrow_upward,
+                                    typeColor: const Color(0xFF16CECE),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      padding: const EdgeInsets.all(8),
-                      child: QrImageView(
-                        data: _accountId,
-                        version: QrVersions.auto,
-                        backgroundColor: Colors.white,
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Your wallet address',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _accountId,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _accountId));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Address copied to clipboard')),
-                      );
-                    },
-                    icon: const Icon(Icons.copy),
-                    label: const Text('Copy Address'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
+                    const SizedBox(height: 16),
+                  ],
+                );
               },
-              child: const Text('Close'),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ),
     );
   }
 }

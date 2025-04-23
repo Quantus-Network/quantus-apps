@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:resonance_network_wallet/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
@@ -39,21 +38,14 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      if (mode == Mode.dilithium) {
-        final walletInfo = await SubstrateService().generateWalletFromSeedDilithium(input);
-        // Save wallet info
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('has_wallet', true);
-        await prefs.setString('mnemonic', input);
-        await prefs.setString('account_id', walletInfo.accountId);
-      } else {
-        final walletInfo = await SubstrateService().generateWalletFromSeed(input);
-        // Save wallet info
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('has_wallet', true);
-        await prefs.setString('mnemonic', input);
-        await prefs.setString('account_id', walletInfo.accountId);
-      }
+      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+      // Save wallet info
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_wallet', true);
+      await prefs.setString('mnemonic', input);
+      await prefs.setString('account_id', walletInfo.accountId);
+      await prefs.setString('wallet_name', walletInfo.walletName);
+
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -66,130 +58,201 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         _errorMessage = e.toString();
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Import Wallet'),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Enter your 12 or 24 word mnemonic phrase',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+      backgroundColor: const Color(0xFF0E0E0E),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.54,
+              child: Image.asset(
+                'assets/BG_00 1.png', // Assuming this is the correct background
+                fit: BoxFit.cover,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _mnemonicController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Color(0xFF6B46C1)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Color(0xFF9F7AEA)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFF2D2D2D),
-                  hintText: 'Enter your mnemonic phrase...',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                ),
-                maxLines: 4,
-              ),
-              const SizedBox(height: 8),
-              Row(
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'Enter all words separated by spaces',
-                      style: TextStyle(color: Colors.grey),
+                  const SizedBox(height: 84), // Adjust top padding to match design (128 - 44 for status bar assumption)
+                  const Text(
+                    'Import Wallet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.paste),
-                    onPressed: () async {
-                      final data = await Clipboard.getData('text/plain');
-                      if (data != null && data.text != null) {
-                        _mnemonicController.text = data.text!;
-                      }
-                    },
-                    tooltip: 'Paste',
+                  const SizedBox(height: 13),
+                  Text(
+                    'Restore an existing wallet with your 12 or 24 word recovery phrase',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.useOpacity(0.6), // alpha: 153 -> 0.6
+                      fontSize: 14,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
+                      height: 1.21,
+                    ),
                   ),
-                ],
-              ),
-              if (_errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              const Spacer(),
-              SafeArea(
-                minimum: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Add test button for Alice's wallet
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: () {
-                          if (mode == Mode.schorr) {
-                            _mnemonicController.text = '//Alice';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Alice development account loaded')),
-                            );
-                          } else {
-                            _mnemonicController.text = crystalAlice;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Crystal Alice development account loaded')),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.bug_report),
-                        label: const Text('Load Test Account (Crystal Alice)'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF9F7AEA),
+                  const SizedBox(height: 21),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _mnemonicController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
+                          ),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black.useOpacity(0.5), // Darker background for field
+                            contentPadding: const EdgeInsets.all(13),
+                            border: OutlineInputBorder(
+                              // Default border (e.g., when error)
+                              borderSide: const BorderSide(color: Color(0xFF9F7AEA), width: 1),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                width: 1,
+                                color: const Color(0xFF9F7AEA).useOpacity(0.8), // Purple border
+                              ),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Color(0xFF9F7AEA), width: 1.5),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            hintText: 'Type in or paste your recovery phrase. Separate words with spaces',
+                            hintStyle: TextStyle(
+                              color: Colors.white.useOpacity(0.5), // alpha: 128 -> 0.5
+                              fontSize: 13,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          maxLines: null, // Allows unlimited lines
+                          minLines: 6, // Set a minimum height (adjust as needed)
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.done,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _importWallet,
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Import Wallet'),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.paste, color: Colors.white70),
+                        onPressed: () async {
+                          final data = await Clipboard.getData('text/plain');
+                          if (data != null && data.text != null) {
+                            _mnemonicController.text = data.text!;
+                          }
+                        },
+                        tooltip: 'Paste',
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        unselectedWidgetColor: Colors.white70,
+                      ),
+                      child: CheckboxListTile(
+                        title: const Text(
+                          'Import Crystal Alice test account',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontFamily: 'Fira Code',
+                          ),
+                        ),
+                        value: _mnemonicController.text == crystalAlice,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              _mnemonicController.text = crystalAlice;
+                              _errorMessage = '';
+                            } else {
+                              if (_mnemonicController.text == crystalAlice) {
+                                _mnemonicController.clear();
+                              }
+                            }
+                          });
+                        },
+                        activeColor: const Color(0xFF9F7AEA),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  if (_errorMessage.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  const SizedBox(height: 100),
+                  GestureDetector(
+                    onTap: _isLoading ? null : _importWallet,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: ShapeDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment(0.50, 0.00),
+                          end: Alignment(0.50, 1.00),
+                          colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
+                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      ),
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(color: Color(0xFF0E0E0E)),
+                              )
+                            : const Text(
+                                'Import Wallet',
+                                style: TextStyle(
+                                  color: Color(0xFF0E0E0E),
+                                  fontSize: 18,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

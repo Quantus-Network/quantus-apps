@@ -10,11 +10,3 @@ void main() async {
   await RustLib.init();
   runApp(const ResonanceWalletApp());
 }
-
-enum Mode {
-  schorr,
-  dilithium,
-}
-
-const mode = Mode.dilithium;
-
