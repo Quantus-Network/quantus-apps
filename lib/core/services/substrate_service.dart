@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:human_checksum/human_checksum.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
+import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
@@ -67,7 +68,7 @@ class SubstrateService {
   late final AuthorApi _authorApi;
   // ignore: unused_field
   late final SystemApi _systemApi;
-  static const String _rpcEndpoint = 'ws://127.0.0.1:9944'; // Replace with actual endpoint
+  static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   late final HumanChecksum _humanChecksum;
   bool _humanChecksumInitialized = false;
 

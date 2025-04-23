@@ -18,7 +18,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   void initState() {
     super.initState();
     // Initialize the controller
-    _controller = VideoPlayerController.asset('assets/intro_bg-2.mp4')
+    _controller = VideoPlayerController.asset('assets/intro_bg_video.mp4')
       ..initialize().then((_) {
         // Ensure the first frame is shown after the video is initialized
         // and immediately play and loop

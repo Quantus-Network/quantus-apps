@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Resonance Network blockchain.
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -41,7 +41,7 @@ polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints
       polkadot: wss://rpc.polkadot.io
-      resonance: ws://127.0.0.1:9944
+      resonance: wss://a.i.res.fm:443
 
 dev_dependencies:
   flutter_test:
@@ -65,7 +65,7 @@ flutter:
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
     - assets/res_icon.svg
-    - assets/intro_bg-2.mp4
+    - assets/intro_bg_video.mp4
 
   fonts:
     - family: Fira Code
