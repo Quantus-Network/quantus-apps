@@ -171,15 +171,16 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                             width: double.infinity, // Stretch to padding
                             padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9), // Adjusted padding
                             decoration: ShapeDecoration(
-                              // color: Colors.black.useOpacity(178 / 255.0), // Alpha 178
                               color: Colors.black.useOpacity(0.7), // Adjusted for better visibility
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             ),
-                            child: Wrap(
-                              alignment: WrapAlignment.center,
-                              runAlignment: WrapAlignment.start,
-                              spacing: 9.0, // Horizontal spacing
-                              runSpacing: 10.0, // Vertical spacing
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              shrinkWrap: true, // Important inside SingleChildScrollView
+                              physics: const NeverScrollableScrollPhysics(), // Disable grid scrolling
+                              mainAxisSpacing: 10.0, // Vertical spacing between rows
+                              crossAxisSpacing: 9.0, // Horizontal spacing between columns
+                              childAspectRatio: (105 / 38), // Approximate aspect ratio based on design (width/height)
                               children: List.generate(words.length, (index) {
                                 return _buildMnemonicWord(index + 1, words[index]);
                               }),
@@ -313,26 +314,24 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
   // Helper widget to build each mnemonic word container
   Widget _buildMnemonicWord(int index, String word) {
     return Container(
-      // Calculate width dynamically or use a fixed suitable width
-      // width: 105, // Avoid fixed widths if possible
-      constraints: const BoxConstraints(minWidth: 100), // Ensure minimum width
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      // Remove fixed width, GridView handles width allocation
+      // constraints: const BoxConstraints(minWidth: 100),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6), // Reduced horizontal padding from 12 to 8
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            // color: Colors.white.useOpacity(38 / 255.0), // Alpha 38
             color: Colors.white.useOpacity(0.15), // Adjusted
           ),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Text(
-        '$index. $word',
+        '$index.$word', // Removed space after the dot
         textAlign: TextAlign.center, // Center text within the box
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 13,
+          fontSize: 12,
           fontFamily: 'Fira Code',
           fontWeight: FontWeight.w400,
         ),
