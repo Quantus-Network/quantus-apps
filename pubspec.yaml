@@ -35,6 +35,7 @@ dependencies:
   quiver: any
   convert: any
   polkadart_cli: ^0.6.1
+  flutter_launcher_icons: ^0.14.3
 
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
