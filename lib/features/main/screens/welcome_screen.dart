@@ -18,7 +18,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   void initState() {
     super.initState();
     // Initialize the controller
-    _controller = VideoPlayerController.asset('assets/Intro_bg-2.mp4')
+    _controller = VideoPlayerController.asset('assets/intro_bg-2.mp4')
       ..initialize().then((_) {
         // Ensure the first frame is shown after the video is initialized
         // and immediately play and loop
@@ -60,7 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       // Placeholder while video loads
                       color: const Color(0xFF0E0E0E),
                       // Optionally, show the static image as placeholder:
-                      // child: Image.asset('assets/BG_00 1.png', fit: BoxFit.cover),
+                      // child: Image.asset('assets/bg_001.png', fit: BoxFit.cover),
                     ),
             ),
           ),
@@ -86,7 +86,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 const SizedBox(height: 27), // Spacing from Figma
                 Center(
                   child: SvgPicture.asset(
-                    'assets/RES logo main.svg',
+                    'assets/res_logo_main.svg',
                     height: 150.0, // Set specific height
                     fit: BoxFit.contain,
                   ),

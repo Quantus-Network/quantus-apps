@@ -93,10 +93,10 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
       // Use the background color from the design
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
-        // Apply the background image, assuming 'assets/BG_00 1.png' is correct
+        // Apply the background image, assuming 'assets/bg_001.png' is correct
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/BG_00 1.png'), // Use asset image
+            image: AssetImage('assets/bg_001.png'), // Use asset image
             fit: BoxFit.cover,
             opacity: 0.54, // Opacity from the design
           ),

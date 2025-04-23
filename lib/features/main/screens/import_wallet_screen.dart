@@ -76,7 +76,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
             child: Opacity(
               opacity: 0.54,
               child: Image.asset(
-                'assets/BG_00 1.png', // Assuming this is the correct background
+                'assets/bg_001.png', // Assuming this is the correct background
                 fit: BoxFit.cover,
               ),
             ),

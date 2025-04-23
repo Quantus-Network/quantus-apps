@@ -200,7 +200,7 @@ class _WalletMainState extends State<WalletMain> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/BG_00 1.png'),
+            image: AssetImage('assets/bg_001.png'),
             fit: BoxFit.cover,
             opacity: 0.54,
           ),

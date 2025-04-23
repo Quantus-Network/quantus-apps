@@ -181,7 +181,7 @@ class SendScreenState extends State<SendScreen> {
               child: Opacity(
                 opacity: 0.54,
                 child: Image.asset(
-                  'assets/BG_00 1.png',
+                  'assets/bg_001.png',
                   fit: BoxFit.cover,
                 ),
               ),
@@ -300,7 +300,7 @@ class SendScreenState extends State<SendScreen> {
                                   _lookupIdentity();
                                 }
                               },
-                              child: _buildIconButton('assets/Paste_icon.svg'),
+                              child: _buildIconButton('assets/paste_icon.svg'),
                             ),
                           ],
                         ),

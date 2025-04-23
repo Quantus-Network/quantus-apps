@@ -53,7 +53,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/BG_00 1.png
+    - assets/bg_001.png
     - assets/text/crypto_checksum_bip39.txt
     - assets/send_icon.png
     - assets/send_icon.svg
@@ -63,8 +63,8 @@ flutter:
     - assets/scan.svg
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
-    - assets/RES icon.svg
-    - assets/Intro_bg-2.mp4
+    - assets/res_icon.svg
+    - assets/intro_bg-2.mp4
 
   fonts:
     - family: Fira Code

@@ -152,7 +152,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                   ),
                   child: Center(
                     child: SvgPicture.asset(
-                      'assets/RES icon.svg',
+                      'assets/res_icon.svg',
                     ),
                   ),
                 ),
