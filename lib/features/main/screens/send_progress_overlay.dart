@@ -333,10 +333,10 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               Positioned(
                 top: 0,
                 child: SizedBox(
-                  width: 80,
-                  height: 80,
+                  width: 85,
+                  height: 85,
                   child: SvgPicture.asset(
-                    'assets/send_icon.svg',
+                    'assets/res_icon.svg',
                   ),
                 ),
               ),
@@ -401,9 +401,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: SvgPicture.asset('assets/send_icon.svg'),
+                    width: 85,
+                    height: 85,
+                    child: SvgPicture.asset('assets/res_icon.svg'),
                   ),
                   const SizedBox(height: 17),
                   const SizedBox(
