@@ -328,201 +328,213 @@ class _WalletMainState extends State<WalletMain> {
 
                 final walletData = snapshot.data!;
 
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SvgPicture.asset('assets/main_wallet_title_logo.svg', height: 40),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
-                              onPressed: () {
-                                if (_accountId != null) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 40),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            if (_accountId != null) {
-                              Clipboard.setData(ClipboardData(text: _accountId!));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Account ID copied to clipboard')),
-                              );
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(5),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/active_dot.svg',
-                                  width: 13,
-                                  height: 13,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                    decoration: ShapeDecoration(
-                                      color: Colors.black.useOpacity(0.5),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                    ),
-                                    child: Text(
-                                      walletData.walletName,
-                                      textAlign: TextAlign.center,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w400,
+                return RefreshIndicator(
+                  onRefresh: _loadWalletDataInternal,
+                  color: const Color(0xFF0CE6ED), // Match your app's accent color
+                  backgroundColor: Colors.black,
+                  child: ListView(
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even when content fits screen
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SvgPicture.asset('assets/main_wallet_title_logo.svg', height: 40),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                                    onPressed: () {
+                                      if (_accountId != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  if (_accountId != null) {
+                                    Clipboard.setData(ClipboardData(text: _accountId!));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Account ID copied to clipboard')),
+                                    );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(5),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SvgPicture.asset(
+                                        'assets/active_dot.svg',
+                                        width: 13,
+                                        height: 13,
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                          decoration: ShapeDecoration(
+                                            color: Colors.black.useOpacity(0.5),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                          ),
+                                          child: Text(
+                                            walletData.walletName,
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontFamily: 'Fira Code',
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.expand_more, color: Colors.white70, size: 12),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 7),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _formattingService.formatBalance(walletData.balance),
-                                style: const TextStyle(
-                                  color: Color(0xFFE6E6E6),
-                                  fontSize: 40,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w600,
-                                ),
                               ),
-                              const TextSpan(
-                                text: ' RES',
-                                style: TextStyle(
-                                  color: Color(0xFFE6E6E6),
-                                  fontSize: 20,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(height: 7),
+                              Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: _formattingService.formatBalance(walletData.balance),
+                                      style: const TextStyle(
+                                        color: Color(0xFFE6E6E6),
+                                        fontSize: 40,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const TextSpan(
+                                      text: ' RES',
+                                      style: TextStyle(
+                                        color: Color(0xFFE6E6E6),
+                                        fontSize: 20,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildActionButton(
-                          iconWidget: SvgPicture.asset('assets/send_icon.svg'),
-                          label: 'SEND',
-                          borderColor: const Color(0xFF0AD4F6),
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/send');
-                          },
-                        ),
-                        _buildActionButton(
-                          iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
-                          label: 'RECEIVE',
-                          borderColor: const Color(0xFFB258F1),
-                          onPressed: () {
-                            showReceiveSheet(context);
-                          },
-                        ),
-                        _buildActionButton(
-                          iconWidget: const Icon(Icons.swap_horiz),
-                          label: 'SWAP',
-                          borderColor: const Color(0xFF0AD4F6),
-                          onPressed: () {},
-                          disabled: true,
-                        ),
-                        _buildActionButton(
-                          iconWidget: const Icon(Icons.sync_alt),
-                          label: 'BRIDGE',
-                          borderColor: const Color(0xFF0AD4F6),
-                          onPressed: () {},
-                          disabled: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: ShapeDecoration(
-                          color: Colors.black.useOpacity(64 / 255.0),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Recent Transactions',
-                              style: TextStyle(
-                                color: Color(0xFFE6E6E6),
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
+                          const SizedBox(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildActionButton(
+                                iconWidget: SvgPicture.asset('assets/send_icon.svg'),
+                                label: 'SEND',
+                                borderColor: const Color(0xFF0AD4F6),
+                                onPressed: () {
+                                  Navigator.pushNamed(context, '/send');
+                                },
                               ),
-                            ),
-                            const SizedBox(height: 18),
-                            Expanded(
-                              child: ListView(
-                                children: [
-                                  _buildTransactionItem(
-                                    type: 'Sent',
-                                    amount: '-13.082 RES',
-                                    details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
-                                    icon: Icons.arrow_upward,
-                                    typeColor: const Color(0xFF16CECE),
-                                  ),
-                                  _buildTransactionItem(
-                                    type: 'Received',
-                                    amount: '13.2345 RES',
-                                    details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
-                                    icon: Icons.arrow_downward,
-                                    typeColor: const Color(0xFFB259F2),
-                                  ),
-                                  _buildTransactionItem(
-                                    type: 'Sent',
-                                    amount: '-309.9866 RES',
-                                    details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
-                                    icon: Icons.arrow_upward,
-                                    typeColor: const Color(0xFF16CECE),
-                                  ),
-                                ],
+                              _buildActionButton(
+                                iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                                label: 'RECEIVE',
+                                borderColor: const Color(0xFFB258F1),
+                                onPressed: () {
+                                  showReceiveSheet(context);
+                                },
                               ),
+                              _buildActionButton(
+                                iconWidget: const Icon(Icons.swap_horiz),
+                                label: 'SWAP',
+                                borderColor: const Color(0xFF0AD4F6),
+                                onPressed: () {},
+                                disabled: true,
+                              ),
+                              _buildActionButton(
+                                iconWidget: const Icon(Icons.sync_alt),
+                                label: 'BRIDGE',
+                                borderColor: const Color(0xFF0AD4F6),
+                                onPressed: () {},
+                                disabled: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: ShapeDecoration(
+                              color: Colors.black.useOpacity(64 / 255.0),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             ),
-                          ],
-                        ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Recent Transactions',
+                                  style: TextStyle(
+                                    color: Color(0xFFE6E6E6),
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                SizedBox(
+                                  height: 300, // Fixed height for transactions list
+                                  child: ListView(
+                                    physics:
+                                        const NeverScrollableScrollPhysics(), // Disable scrolling for inner ListView
+                                    children: [
+                                      _buildTransactionItem(
+                                        type: 'Sent',
+                                        amount: '-13.082 RES',
+                                        details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
+                                        icon: Icons.arrow_upward,
+                                        typeColor: const Color(0xFF16CECE),
+                                      ),
+                                      _buildTransactionItem(
+                                        type: 'Received',
+                                        amount: '13.2345 RES',
+                                        details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
+                                        icon: Icons.arrow_downward,
+                                        typeColor: const Color(0xFFB259F2),
+                                      ),
+                                      _buildTransactionItem(
+                                        type: 'Sent',
+                                        amount: '-309.9866 RES',
+                                        details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
+                                        icon: Icons.arrow_upward,
+                                        typeColor: const Color(0xFF16CECE),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                    ],
+                  ),
                 );
               },
             ),
