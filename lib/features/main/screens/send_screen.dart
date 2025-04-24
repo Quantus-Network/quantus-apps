@@ -190,21 +190,21 @@ class SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0E0E0E),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.54,
-                child: Image.asset(
-                  'assets/bg_001.png',
-                  fit: BoxFit.cover,
-                ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0E0E0E),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.54,
+              child: Image.asset(
+                'assets/bg_001.png',
+                fit: BoxFit.cover,
               ),
             ),
-            Column(
+          ),
+          SafeArea(
+            child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -525,8 +525,8 @@ class SendScreenState extends State<SendScreen> {
                 const SizedBox(height: 24),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
