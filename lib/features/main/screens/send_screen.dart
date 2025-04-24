@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
@@ -170,6 +171,23 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
+  Future<void> _scanQRCode() async {
+    final scannedAddress = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const QRScannerScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (scannedAddress != null && mounted) {
+      setState(() {
+        _recipientController.text = scannedAddress;
+        _lookupIdentity(); // Trigger address validation and name lookup
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -290,7 +308,10 @@ class SendScreenState extends State<SendScreen> {
                         ),
                         Row(
                           children: [
-                            _buildIconButton('assets/scan.svg'),
+                            GestureDetector(
+                              onTap: _scanQRCode,
+                              child: _buildIconButton('assets/scan.svg'),
+                            ),
                             const SizedBox(width: 9),
                             GestureDetector(
                               onTap: () async {

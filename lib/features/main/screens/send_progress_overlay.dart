@@ -120,7 +120,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 borderRadius: BorderRadius.circular(5),
               ),
               child: SvgPicture.asset(
-                'assets/send_icon.svg',
+                'assets/send_icon_1.svg',
                 width: 24,
                 height: 24,
               ),

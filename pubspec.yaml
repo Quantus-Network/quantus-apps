@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Resonance Network blockchain.
 publish_to: 'none'
 
-version: 1.0.0+7
+version: 1.0.0+8
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -29,6 +29,7 @@ dependencies:
     git:
       url: https://github.com/Resonance-Network/human-checkphrase.git
       path: dart
+  mobile_scanner: ^3.5.6  # QR code scanning
 
 # Generate Polkadart bindings
 # dart pub run polkadart_cli:generate -v
@@ -57,7 +58,7 @@ flutter:
     - assets/bg_001.png
     - assets/text/crypto_checksum_bip39.txt
     - assets/send_icon.png
-    - assets/send_icon.svg
+    - assets/send_icon_1.svg
     - assets/receive_icon.png
     - assets/receive_icon.svg
     - assets/swap_icon.svg

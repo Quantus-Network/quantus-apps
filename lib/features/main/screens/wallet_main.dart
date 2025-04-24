@@ -329,7 +329,10 @@ class _WalletMainState extends State<WalletMain> {
                 final walletData = snapshot.data!;
 
                 return RefreshIndicator(
-                  onRefresh: _loadWalletDataInternal,
+                  onRefresh: () async {
+                    _loadWalletDataAndSetFuture();
+                    await _walletDataFuture;
+                  },
                   color: const Color(0xFF0CE6ED), // Match your app's accent color
                   backgroundColor: Colors.black,
                   child: ListView(
@@ -445,7 +448,7 @@ class _WalletMainState extends State<WalletMain> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               _buildActionButton(
-                                iconWidget: SvgPicture.asset('assets/send_icon.svg'),
+                                iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
                                 label: 'SEND',
                                 borderColor: const Color(0xFF0AD4F6),
                                 onPressed: () {

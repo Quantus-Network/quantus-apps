@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Camera permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Notifications permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Resonance Wallet"
         android:name="${applicationName}"
