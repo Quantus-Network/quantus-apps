@@ -172,15 +172,27 @@ class _WalletMainState extends State<WalletMain> {
     required String type,
     required String amount,
     required String details,
-    required IconData icon,
+    required Widget iconWidget,
     required Color typeColor,
   }) {
+    Widget finalIconWidget = iconWidget;
+    if (iconWidget is SvgPicture) {
+      finalIconWidget = SvgPicture.asset(
+        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
+        colorFilter: ColorFilter.mode(typeColor, BlendMode.srcIn),
+        width: 20,
+        height: 20,
+      );
+    } else if (iconWidget is Icon) {
+      finalIconWidget = Icon(iconWidget.icon, color: typeColor, size: 20);
+    }
+
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: typeColor, size: 20),
+            finalIconWidget,
             const SizedBox(width: 11),
             Expanded(
               child: Column(
@@ -534,21 +546,21 @@ class _WalletMainState extends State<WalletMain> {
                                         type: 'Sent',
                                         amount: '-13.082 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
-                                        icon: Icons.arrow_upward,
+                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
                                         typeColor: const Color(0xFF16CECE),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Received',
                                         amount: '13.2345 ${AppConstants.tokenSymbol}',
                                         details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
-                                        icon: Icons.arrow_downward,
+                                        iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
                                         typeColor: const Color(0xFFB259F2),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Sent',
                                         amount: '-309.9866 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
-                                        icon: Icons.arrow_upward,
+                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
                                         typeColor: const Color(0xFF16CECE),
                                       ),
                                     ],
