@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class AccountInfo {
   final String name;
@@ -31,10 +32,13 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   AccountInfo? _account;
   bool _isLoading = true;
   final NumberFormattingService _formattingService = NumberFormattingService();
+  final SubstrateService _substrateService = SubstrateService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
   @override
   void initState() {
     super.initState();
+    _checksumService.initialize();
     _loadAccountData();
   }
 
@@ -315,15 +319,54 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  account.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                FutureBuilder<String?>(
+                  future: _checksumService.getHumanReadableName(account.address),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(
+                          height: 14,
+                          child: Row(children: [
+                            SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54)),
+                          ]));
+                    } else if (snapshot.hasError) {
+                      debugPrint('Error fetching identity name for ${account.address}: ${snapshot.error}');
+                      return Text(
+                        account.name,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    } else if (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty) {
+                      return Text(
+                        snapshot.data!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    } else {
+                      return Text(
+                        account.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 4),
                 Row(

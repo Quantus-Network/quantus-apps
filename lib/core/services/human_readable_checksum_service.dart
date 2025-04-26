@@ -12,6 +12,7 @@ class HumanReadableChecksumService {
   List<String>? _cachedWordList;
   Isolate? _isolate;
   SendPort? _isolateSendPort;
+  final _checkPhraseCache = <String, String>{};
 
   Future<void> initialize() async {
     if (_cachedWordList != null) return;
@@ -31,6 +32,10 @@ class HumanReadableChecksumService {
   }
 
   Future<String> getHumanReadableName(String address) async {
+    if (_checkPhraseCache.containsKey(address)) {
+      return _checkPhraseCache[address]!;
+    }
+
     if (_cachedWordList == null) {
       await initialize();
     }
@@ -39,6 +44,7 @@ class HumanReadableChecksumService {
     _isolateSendPort!.send([address, responsePort.sendPort]);
     final result = await responsePort.first as String;
     responsePort.close();
+    _checkPhraseCache[address] = result;
     return result;
   }
 
