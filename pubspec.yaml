@@ -55,6 +55,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/light_leak_effect_background.jpg
     - assets/bg_001.png
     - assets/text/crypto_checksum_bip39.txt
     - assets/send_icon.png

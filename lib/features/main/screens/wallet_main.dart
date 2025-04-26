@@ -262,14 +262,14 @@ class _WalletMainState extends State<WalletMain> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/bg_001.png'),
+            image: AssetImage('assets/light_leak_effect_background.jpg'),
             fit: BoxFit.cover,
             opacity: 0.54,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: FutureBuilder<WalletData?>(
               future: _walletDataFuture,
               builder: (context, snapshot) {
