@@ -177,41 +177,41 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      unselectedWidgetColor: Colors.white70,
-                    ),
-                    child: CheckboxListTile(
-                      title: const Text(
-                        'Import Crystal Alice test account',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontFamily: 'Fira Code',
-                        ),
-                      ),
-                      value: _mnemonicController.text == crystalAlice,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            _mnemonicController.text = crystalAlice;
-                            _errorMessage = '';
-                          } else {
-                            if (_mnemonicController.text == crystalAlice) {
-                              _mnemonicController.clear();
-                            }
-                          }
-                        });
-                      },
-                      activeColor: const Color(0xFF9F7AEA),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
+                //   child: Theme(
+                //     data: Theme.of(context).copyWith(
+                //       unselectedWidgetColor: Colors.white70,
+                //     ),
+                //     // child: CheckboxListTile(
+                //     //   title: const Text(
+                //     //     'Import Crystal Alice test account',
+                //     //     style: TextStyle(
+                //     //       color: Colors.white70,
+                //     //       fontSize: 13,
+                //     //       fontFamily: 'Fira Code',
+                //     //     ),
+                //     //   ),
+                //     //   value: _mnemonicController.text == crystalAlice,
+                //     //   onChanged: (bool? value) {
+                //     //     setState(() {
+                //     //       if (value == true) {
+                //     //         _mnemonicController.text = crystalAlice;
+                //     //         _errorMessage = '';
+                //     //       } else {
+                //     //         if (_mnemonicController.text == crystalAlice) {
+                //     //           _mnemonicController.clear();
+                //     //         }
+                //     //       }
+                //     //     });
+                //     //   },
+                //     //   activeColor: const Color(0xFF9F7AEA),
+                //     //   controlAffinity: ListTileControlAffinity.leading,
+                //     //   contentPadding: EdgeInsets.zero,
+                //     //   dense: true,
+                //     // ),
+                //   ),
+                // ),
                 if (_errorMessage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), // Added bottom padding
