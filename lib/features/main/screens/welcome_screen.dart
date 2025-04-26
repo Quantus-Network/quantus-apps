@@ -75,10 +75,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               children: [
                 const SizedBox(height: 60), // Spacing from Figma
                 Center(
-                  child: SvgPicture.asset(
-                    'assets/res_logo_main.svg',
-                    height: 150.0, // Set specific height
-                    fit: BoxFit.contain,
+                  child: Column(
+                    // Wrap in Column to add text below
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/res_icon.svg', // Changed from res_logo_main.svg
+                        height: 130.0, // Adjust height for the icon
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(height: 15), // Space between icon and text
+                      const Text(
+                        'QUANTUS',
+                        style: TextStyle(
+                          color: Color(0xFFE6E6E6),
+                          fontSize: 48, // Adjust font size as needed
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w100, // Match button weight
+                          letterSpacing: 3.0, // Added letter spacing
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 27), // Spacing from Figma
