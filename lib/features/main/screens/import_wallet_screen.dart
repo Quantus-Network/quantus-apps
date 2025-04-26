@@ -72,7 +72,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/bg_001.png'), // Assuming this is the correct background
+            image: AssetImage('assets/light_leak_effect_background.jpg'), // Assuming this is the correct background
             fit: BoxFit.cover,
             opacity: 0.54,
           ),

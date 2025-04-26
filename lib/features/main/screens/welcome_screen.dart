@@ -60,7 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       // Placeholder while video loads
                       color: const Color(0xFF0E0E0E),
                       // Optionally, show the static image as placeholder:
-                      // child: Image.asset('assets/bg_001.png', fit: BoxFit.cover),
+                      // child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
                     ),
             ),
           ),

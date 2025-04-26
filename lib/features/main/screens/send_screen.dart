@@ -193,7 +193,7 @@ class SendScreenState extends State<SendScreen> {
             child: Opacity(
               opacity: 0.54,
               child: Image.asset(
-                'assets/bg_001.png',
+                'assets/light_leak_effect_background.jpg',
                 fit: BoxFit.cover,
               ),
             ),
