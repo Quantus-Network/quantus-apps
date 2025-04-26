@@ -44,7 +44,6 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', input);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', walletInfo.walletName);
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(

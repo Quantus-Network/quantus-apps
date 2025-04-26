@@ -48,14 +48,12 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?> _loadWalletDataInternal() async {
     String? accountId;
-    String? walletName;
     BigInt? balance;
     const Duration networkTimeout = Duration(seconds: 15);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       accountId = prefs.getString('account_id');
-      walletName = prefs.getString('wallet_name') ?? 'Name Unknown';
 
       if (accountId == null || accountId.isEmpty) {
         throw Exception('Account ID not found');
@@ -89,7 +87,7 @@ class _WalletMainState extends State<WalletMain> {
       }
     }
 
-    return WalletData(accountId: accountId, walletName: walletName!, balance: balance);
+    return WalletData(accountId: accountId, walletName: '', balance: balance);
   }
 
   // Helper to format the address (now just returns the full address)

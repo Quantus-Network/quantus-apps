@@ -4,7 +4,6 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class ManualBackupScreen extends StatefulWidget {
   const ManualBackupScreen({super.key});
@@ -65,17 +64,14 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
 
     try {
       final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-      if (walletInfo == null) throw Exception('Wallet info generation failed.');
 
       // final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
       // if (walletName.isEmpty) throw Exception('Checksum generation failed');
-      final walletName = "";
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', walletName);
 
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(

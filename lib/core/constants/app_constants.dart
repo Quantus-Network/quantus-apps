@@ -14,5 +14,4 @@ class AppConstants {
   static const String hasWalletKey = 'has_wallet';
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
-  static const String walletNameKey = 'wallet_name';
 }

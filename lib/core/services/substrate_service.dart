@@ -16,7 +16,6 @@ import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/mu
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
-import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
@@ -66,7 +65,6 @@ class SubstrateService {
   late Provider _provider;
   late StateApi _stateApi;
   late AuthorApi _authorApi;
-  late SystemApi _systemApi;
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   late final HumanChecksum _humanChecksum;
   bool _humanChecksumInitialized = false;
@@ -92,7 +90,6 @@ class SubstrateService {
     _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
     _stateApi = StateApi(_provider);
     _authorApi = AuthorApi(_provider);
-    _systemApi = SystemApi(_provider);
     // Optional: Initial connect attempt (consider error handling here or defer to first use)
     // try {
     //   await _provider.connect().timeout(const Duration(seconds: 15));
@@ -111,7 +108,6 @@ class SubstrateService {
       debugPrint('Re-initializing State/Author/System APIs...');
       _stateApi = StateApi(_provider);
       _authorApi = AuthorApi(_provider);
-      _systemApi = SystemApi(_provider);
 
       // Attempt to connect the new provider with timeout
       debugPrint('Connecting new provider...');
@@ -131,7 +127,7 @@ class SubstrateService {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
       // final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
-      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: "");
+      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: '');
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }

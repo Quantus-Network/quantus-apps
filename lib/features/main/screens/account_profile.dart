@@ -32,7 +32,6 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   AccountInfo? _account;
   bool _isLoading = true;
   final NumberFormattingService _formattingService = NumberFormattingService();
-  final SubstrateService _substrateService = SubstrateService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
   @override
@@ -49,7 +48,6 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
-      final walletName = prefs.getString('wallet_name') ?? '';
 
       if (accountId == null) {
         throw Exception('No account found');
@@ -60,7 +58,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
 
       setState(() {
         _account = AccountInfo(
-          name: walletName,
+          name: '',
           address: accountId,
           balance: formattedBalance,
         );
