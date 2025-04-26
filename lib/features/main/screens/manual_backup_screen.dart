@@ -63,10 +63,6 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
       if (walletInfo == null) throw Exception('Wallet info generation failed.');
