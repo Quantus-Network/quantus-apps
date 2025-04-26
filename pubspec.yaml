@@ -72,6 +72,7 @@ flutter:
     - assets/active_dot.png
     - assets/send_line.svg
     - assets/receive_line.svg
+    - assets/bridge_icon.svg
 
   fonts:
     - family: Fira Code

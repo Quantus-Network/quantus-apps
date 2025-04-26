@@ -488,14 +488,14 @@ class _WalletMainState extends State<WalletMain> {
                                 },
                               ),
                               _buildActionButton(
-                                iconWidget: const Icon(Icons.swap_horiz),
+                                iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
                                 label: 'SWAP',
                                 borderColor: const Color(0xFF0AD4F6),
                                 onPressed: () {},
                                 disabled: true,
                               ),
                               _buildActionButton(
-                                iconWidget: const Icon(Icons.sync_alt),
+                                iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
                                 label: 'BRIDGE',
                                 borderColor: const Color(0xFF0AD4F6),
                                 onPressed: () {},
