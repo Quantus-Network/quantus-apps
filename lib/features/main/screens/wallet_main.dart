@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io'; // Import for SocketException
 import 'dart:async'; // Import for Future.timeout / TimeoutException
-import 'package:resonance_network_wallet/account_profile.dart';
+import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
