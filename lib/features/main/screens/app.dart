@@ -9,7 +9,7 @@ class ResonanceWalletApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Resonance Network Wallet',
+      title: 'Quantus Wallet',
       initialRoute: '/',
       routes: {
         '/': (context) => const WalletInitializer(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -281,7 +282,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                         ),
                       ),
                       const TextSpan(
-                        text: ' RES',
+                        text: ' ${AppConstants.tokenSymbol}',
                         style: TextStyle(
                           color: Color(0xFFE6E6E6),
                           fontSize: 10,

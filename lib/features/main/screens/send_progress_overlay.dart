@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -170,7 +171,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                         ),
                       ),
                       const TextSpan(
-                        text: ' RES',
+                        text: ' ${AppConstants.tokenSymbol}',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -251,7 +252,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     ),
                   ),
                   Text(
-                    '$formattedFee RES',
+                    '$formattedFee ${AppConstants.tokenSymbol}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -435,7 +436,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '$formattedAmount RES ',
+                            text: '$formattedAmount ${AppConstants.tokenSymbol} ',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

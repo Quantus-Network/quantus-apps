@@ -130,8 +130,8 @@ class SubstrateService {
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
-      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: name);
+      // final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
+      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: "");
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }
@@ -199,7 +199,8 @@ class SubstrateService {
       debugPrint('creating key with $senderSeed');
       debugPrint('sending to $targetAddress');
       debugPrint('amount (BigInt): $amount'); // Log BigInt amount
-      debugPrint('amount (RES formatted): ${NumberFormattingService().formatBalance(amount)}'); // Log RES amount
+      debugPrint(
+          'amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}'); // Log amount
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 

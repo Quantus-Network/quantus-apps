@@ -67,8 +67,9 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
       final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
       if (walletInfo == null) throw Exception('Wallet info generation failed.');
 
-      final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
-      if (walletName.isEmpty) throw Exception('Checksum generation failed');
+      // final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
+      // if (walletName.isEmpty) throw Exception('Checksum generation failed');
+      final walletName = "";
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);

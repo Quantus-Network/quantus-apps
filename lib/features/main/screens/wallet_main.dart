@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:io'; // Import for SocketException
 import 'dart:async'; // Import for Future.timeout / TimeoutException
 import 'package:resonance_network_wallet/account_profile.dart';
+import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -436,7 +437,7 @@ class _WalletMainState extends State<WalletMain> {
                                       ),
                                     ),
                                     const TextSpan(
-                                      text: ' RES',
+                                      text: ' ${AppConstants.tokenSymbol}',
                                       style: TextStyle(
                                         color: Color(0xFFE6E6E6),
                                         fontSize: 20,
@@ -515,21 +516,21 @@ class _WalletMainState extends State<WalletMain> {
                                     children: [
                                       _buildTransactionItem(
                                         type: 'Sent',
-                                        amount: '-13.082 RES',
+                                        amount: '-13.082 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
                                         icon: Icons.arrow_upward,
                                         typeColor: const Color(0xFF16CECE),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Received',
-                                        amount: '13.2345 RES',
+                                        amount: '13.2345 ${AppConstants.tokenSymbol}',
                                         details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
                                         icon: Icons.arrow_downward,
                                         typeColor: const Color(0xFFB259F2),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Sent',
-                                        amount: '-309.9866 RES',
+                                        amount: '-309.9866 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
                                         icon: Icons.arrow_upward,
                                         typeColor: const Color(0xFF16CECE),
