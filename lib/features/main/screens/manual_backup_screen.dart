@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class ManualBackupScreen extends StatefulWidget {
   const ManualBackupScreen({super.key});
@@ -55,8 +56,10 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
     if (_mnemonic.isEmpty) {
       debugPrint('Cannot save wallet, mnemonic is empty.');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Recovery phrase not generated.')),
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Recovery phrase not generated.',
         );
       }
       return;
@@ -83,8 +86,10 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
     } catch (e) {
       debugPrint('Error saving wallet: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving wallet: $e')),
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Error saving wallet: $e',
         );
       }
     } finally {
@@ -213,8 +218,10 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                           GestureDetector(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: _mnemonic));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Recovery phrase copied to clipboard')),
+                              showTopSnackBar(
+                                context,
+                                title: 'Copied!',
+                                message: 'Recovery phrase copied to clipboard',
                               );
                             },
                             child: const Opacity(

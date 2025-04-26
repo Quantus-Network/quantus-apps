@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class WalletData {
   final String accountId;
@@ -258,8 +259,11 @@ class _WalletMainState extends State<WalletMain> {
     } catch (e) {
       debugPrint('Error during logout: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logout failed: ${e.toString()}')),
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Logout failed: ${e.toString()}',
+          icon: buildErrorIcon(),
         );
       }
     }
@@ -406,8 +410,10 @@ class _WalletMainState extends State<WalletMain> {
                                 onTap: () {
                                   if (_accountId != null) {
                                     Clipboard.setData(ClipboardData(text: _accountId!));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Account ID copied to clipboard')),
+                                    showTopSnackBar(
+                                      context,
+                                      title: 'Copied!',
+                                      message: 'Account ID copied to clipboard',
                                     );
                                   }
                                 },

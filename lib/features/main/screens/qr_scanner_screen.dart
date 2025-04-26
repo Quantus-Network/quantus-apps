@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -102,7 +103,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               'Position the QR code within the frame',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.useOpacity(0.8),
                 fontSize: 16,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w400,

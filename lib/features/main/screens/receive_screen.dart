@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});
@@ -48,8 +49,10 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   void _copyAddress() {
     if (_accountId != null) {
       Clipboard.setData(ClipboardData(text: _accountId!));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Address copied to clipboard')),
+      showTopSnackBar(
+        context,
+        title: 'Copied!',
+        message: 'Address copied to clipboard',
       );
     }
   }

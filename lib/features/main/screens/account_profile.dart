@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class AccountInfo {
   final String name;
@@ -74,8 +75,10 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
 
   void _createNewWallet() {
     debugPrint('Create New Wallet tapped');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Create New Wallet action not implemented yet.')),
+    showTopSnackBar(
+      context,
+      title: 'Info',
+      message: 'Create New Wallet action not implemented yet.',
     );
   }
 
@@ -144,8 +147,11 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                     } catch (e) {
                       debugPrint('Error during logout: $e');
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Logout failed: ${e.toString()}')),
+                        showTopSnackBar(
+                          context,
+                          title: 'Error',
+                          message: 'Logout failed: ${e.toString()}',
+                          icon: buildErrorIcon(),
                         );
                       }
                     }
@@ -209,8 +215,10 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
 
   void _copyAddress(String address) {
     Clipboard.setData(ClipboardData(text: address));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Address copied to clipboard')),
+    showTopSnackBar(
+      context,
+      title: 'Copied!',
+      message: 'Address copied to clipboard',
     );
   }
 
