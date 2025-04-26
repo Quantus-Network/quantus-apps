@@ -91,6 +91,11 @@ class _WalletMainState extends State<WalletMain> {
     return WalletData(accountId: accountId, walletName: walletName!, balance: balance);
   }
 
+  // Helper to format the address (now just returns the full address)
+  String _formatAddress(String address) {
+    return address; // Return the full address, let Text widget handle overflow
+  }
+
   Widget _buildActionButton({
     required Widget iconWidget,
     required String label,
@@ -327,6 +332,8 @@ class _WalletMainState extends State<WalletMain> {
                 }
 
                 final walletData = snapshot.data!;
+                // Use the full address
+                final displayAddress = _formatAddress(walletData.accountId);
 
                 return RefreshIndicator(
                   onRefresh: () async {
@@ -383,10 +390,10 @@ class _WalletMainState extends State<WalletMain> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      SvgPicture.asset(
-                                        'assets/active_dot.svg',
-                                        width: 13,
-                                        height: 13,
+                                      Image.asset(
+                                        'assets/active_dot.png',
+                                        width: 20,
+                                        height: 20,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -397,7 +404,7 @@ class _WalletMainState extends State<WalletMain> {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                           ),
                                           child: Text(
-                                            walletData.walletName,
+                                            displayAddress,
                                             textAlign: TextAlign.center,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(

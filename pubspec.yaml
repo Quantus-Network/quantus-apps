@@ -68,6 +68,9 @@ flutter:
     - assets/res_icon.svg
     - assets/intro_bg_video.mp4
     - assets/paste_icon.svg
+    - assets/active_dot.png
+    - assets/send_line.svg
+    - assets/receive_line.svg
 
   fonts:
     - family: Fira Code
