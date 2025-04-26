@@ -4,11 +4,10 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 
 class ManualBackupScreen extends StatefulWidget {
-  final String? initialMnemonic;
-
-  const ManualBackupScreen({super.key, this.initialMnemonic});
+  const ManualBackupScreen({super.key});
 
   @override
   ManualBackupScreenState createState() => ManualBackupScreenState();
@@ -16,55 +15,72 @@ class ManualBackupScreen extends StatefulWidget {
 
 class ManualBackupScreenState extends State<ManualBackupScreen> {
   String _mnemonic = '';
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _hasSavedMnemonic = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialMnemonic != null && widget.initialMnemonic!.isNotEmpty) {
-      setState(() {
-        _mnemonic = widget.initialMnemonic!;
-        _isLoading = false;
-      });
-    } else {
-      _generateMnemonic();
-    }
+    _generateMnemonic();
   }
 
   Future<void> _generateMnemonic() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      _mnemonic = await SubstrateService().generateMnemonic();
+      if (_mnemonic.isEmpty) throw Exception('Mnemonic generation returned empty.');
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error generating mnemonic: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Failed to generate recovery phrase: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _saveWalletAndContinue() async {
+    if (_mnemonic.isEmpty) {
+      debugPrint('Cannot save wallet, mnemonic is empty.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Recovery phrase not generated.')),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      _mnemonic = await SubstrateService().generateMnemonic();
       final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-      debugPrint('Generated wallet address: ${walletInfo.accountId}');
+      if (walletInfo == null) throw Exception('Wallet info generation failed.');
 
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error generating mnemonic: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+      final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
+      if (walletName.isEmpty) throw Exception('Checksum generation failed');
 
-  Future<void> _saveWalletAndContinue() async {
-    try {
-      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-
-      // Save wallet info
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', _mnemonic);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', walletInfo.walletName);
+      await prefs.setString('wallet_name', walletName);
 
-      if (context.mounted && mounted) {
+      if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const WalletMain()),
@@ -78,27 +94,29 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
           SnackBar(content: Text('Error saving wallet: $e')),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Split the mnemonic string into a list of words
     final words = _mnemonic.isNotEmpty ? _mnemonic.split(' ') : [];
 
-    // Determine button state
-    final bool canContinue = _hasSavedMnemonic && !_isLoading;
+    final bool canContinue = _hasSavedMnemonic && !_isLoading && _error == null;
 
     return Scaffold(
-      // Use the background color from the design
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
-        // Apply the background image, assuming 'assets/bg_001.png' is correct
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/bg_001.png'), // Use asset image
+            image: AssetImage('assets/bg_001.png'),
             fit: BoxFit.cover,
-            opacity: 0.54, // Opacity from the design
+            opacity: 0.54,
           ),
         ),
         child: SafeArea(
@@ -107,12 +125,10 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Custom App Bar Row
                 Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      // Go back to the previous screen (Check Phrase Screen)
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Text(
@@ -126,16 +142,13 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24), // Adjust spacing as needed
-
-                // Main content area
+                const SizedBox(height: 24),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Title and Description
                         const Text(
                           'Your Secret Recovery Phrase',
                           textAlign: TextAlign.center,
@@ -151,45 +164,59 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                           'Write down and save your seed phrase in a secure location. This is the only way to recover your wallet',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.useOpacity(153 / 255.0), // Alpha 153
+                            color: Colors.white.useOpacity(153 / 255.0),
                             fontSize: 14,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w500,
-                            height: 1.21, // Line height
+                            height: 1.21,
                           ),
                         ),
                         const SizedBox(height: 21),
-
-                        // Mnemonic Phrase Box
                         if (_isLoading)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 50.0),
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child: Column(
+                              children: [
+                                CircularProgressIndicator(color: Colors.white),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Generating secure phrase...',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 50.0, horizontal: 20),
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                              textAlign: TextAlign.center,
+                            ),
                           )
                         else
                           Container(
-                            width: double.infinity, // Stretch to padding
-                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9), // Adjusted padding
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9),
                             decoration: ShapeDecoration(
-                              color: Colors.black.useOpacity(0.7), // Adjusted for better visibility
+                              color: Colors.black.useOpacity(0.7),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             ),
                             child: GridView.count(
                               crossAxisCount: 3,
-                              shrinkWrap: true, // Important inside SingleChildScrollView
-                              physics: const NeverScrollableScrollPhysics(), // Disable grid scrolling
-                              mainAxisSpacing: 10.0, // Vertical spacing between rows
-                              crossAxisSpacing: 9.0, // Horizontal spacing between columns
-                              childAspectRatio: (105 / 38), // Approximate aspect ratio based on design (width/height)
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              mainAxisSpacing: 10.0,
+                              crossAxisSpacing: 9.0,
+                              childAspectRatio: (105 / 38),
                               children: List.generate(words.length, (index) {
                                 return _buildMnemonicWord(index + 1, words[index]);
                               }),
                             ),
                           ),
                         const SizedBox(height: 21),
-
-                        // Copy Button
-                        if (!_isLoading)
+                        if (!_isLoading && _error == null)
                           GestureDetector(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: _mnemonic));
@@ -202,7 +229,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.copy, color: Colors.white, size: 24), // Use actual icon
+                                  Icon(Icons.copy, color: Colors.white, size: 24),
                                   SizedBox(width: 8),
                                   Text(
                                     'Copy to Clipboard',
@@ -217,23 +244,20 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 35), // Increased space before checkbox from 20 to 35
+                        const SizedBox(height: 35),
                       ],
                     ),
                   ),
                 ),
-
-                // Bottom Section (Checkbox and Continue Button)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0), // Padding below button
+                  padding: const EdgeInsets.only(bottom: 16.0),
                   child: Column(
                     children: [
-                      // Checkbox Row
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           SizedBox(
-                            width: 24, // Keep size consistent
+                            width: 24,
                             height: 24,
                             child: Checkbox(
                               value: _hasSavedMnemonic,
@@ -244,8 +268,7 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                                         _hasSavedMnemonic = value ?? false;
                                       });
                                     },
-                              // Custom styling for checked state
-                              activeColor: const Color(0xFF8AF9A8), // Green background when checked
+                              activeColor: const Color(0xFF8AF9A8),
                               checkColor: const Color(0xFF8AF9A8),
                               side: WidgetStateBorderSide.resolveWith((states) {
                                 return const BorderSide(width: 1, color: Colors.white);
@@ -270,34 +293,34 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 17), // Spacing from design
-
-                      // Continue Button
+                      const SizedBox(height: 17),
                       SizedBox(
-                        width: double.infinity, // Stretch button
+                        width: double.infinity,
                         child: ElevatedButton(
-                          // Use the condition determined earlier
-                          onPressed: canContinue ? _saveWalletAndContinue : null,
                           style: ElevatedButton.styleFrom(
-                            // Disabled color slightly transparent white
-                            disabledBackgroundColor: Colors.white.useOpacity(61 / 255.0),
-                            backgroundColor: const Color(0xFF0CE6ED), // Primary color for enabled
-                            padding: const EdgeInsets.all(16),
+                            foregroundColor: canContinue ? const Color(0xFF0E0E0E) : Colors.grey[700],
+                            backgroundColor: canContinue ? const Color(0xFFE6E6E6) : Colors.grey[400],
+                            minimumSize: const Size(double.infinity, 50),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            // Use gradient if needed, but solid color is simpler
-                            // foregroundColor: const Color(0xFF0E0E0E), // Text color
-                          ),
-                          child: const Text(
-                            'Continue',
-                            style: TextStyle(
-                              color: Color(0xFF0E0E0E),
-                              fontSize: 18,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
+                              borderRadius: BorderRadius.circular(5.0),
                             ),
                           ),
+                          onPressed: canContinue ? _saveWalletAndContinue : null,
+                          child: _isLoading && !_hasSavedMnemonic
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
+                              : const Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    color: Color(0xFF0E0E0E),
+                                    fontSize: 18,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -311,24 +334,21 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
     );
   }
 
-  // Helper widget to build each mnemonic word container
   Widget _buildMnemonicWord(int index, String word) {
     return Container(
-      // Remove fixed width, GridView handles width allocation
-      // constraints: const BoxConstraints(minWidth: 100),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6), // Reduced horizontal padding from 12 to 8
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            color: Colors.white.useOpacity(0.15), // Adjusted
+            color: Colors.white.useOpacity(0.15),
           ),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Text(
-        '$index.$word', // Removed space after the dot
-        textAlign: TextAlign.center, // Center text within the box
+        '$index.$word',
+        textAlign: TextAlign.center,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
