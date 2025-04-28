@@ -21,7 +21,7 @@ dependencies:
   bip39_mnemonic: ^3.0.9
   # bip39: ^1.0.6
   intl: ^0.20.2
-  flutter_svg: ^2.0.9
+  flutter_svg: ^2.1.0
   rust_lib_resonance_network_wallet:
     path: rust_builder
   flutter_rust_bridge: 2.9.0
@@ -30,6 +30,8 @@ dependencies:
       url: https://github.com/Resonance-Network/human-checkphrase.git
       path: dart
   mobile_scanner: ^3.5.6  # QR code scanning
+  flutter_native_splash: ^2.4.6
+  cupertino_icons: ^1.0.6
 
 # Generate Polkadart bindings
 # dart pub run polkadart_cli:generate -v
@@ -86,4 +88,26 @@ flutter:
         - asset: assets/fonts/FiraCode-SemiBold.ttf
           weight: 600
         - asset: assets/fonts/FiraCode-Bold.ttf
-          weight: 700 
+          weight: 700
+
+# Add flutter_native_splash configuration section
+flutter_native_splash:
+  # Replace color with background_image
+  # color: "#0E0E0E" 
+  background_image: "assets/light_leak_effect_background.jpg"
+  # image: assets/logo.png # You can still add a logo on top if desired
+
+  # Optional: Configure Android 12 splash screen specific settings
+  android_12:
+    # Replace color with background_image
+    # color: "#0E0E0E"
+    background_image: "assets/light_leak_effect_background.jpg"
+    # image: assets/logo.png
+
+  # Optional: Set color for status bar and navigation bar (Android)
+  # color_dark: "#0E0E0E"
+  # status_bar_color_dark: "#0E0E0E" # Match status bar to background
+  # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
+
+  # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
+  # ios_content_mode: "dark" 
