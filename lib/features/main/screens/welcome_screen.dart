@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/manual_backup_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -137,7 +137,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ManualBackupScreen()),
+                        MaterialPageRoute(builder: (context) => const CreateWalletAndBackupScreen()),
                       );
                     },
                     child: const Text(

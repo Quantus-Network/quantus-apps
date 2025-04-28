@@ -7,14 +7,14 @@ import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
 
-class ManualBackupScreen extends StatefulWidget {
-  const ManualBackupScreen({super.key});
+class CreateWalletAndBackupScreen extends StatefulWidget {
+  const CreateWalletAndBackupScreen({super.key});
 
   @override
-  ManualBackupScreenState createState() => ManualBackupScreenState();
+  CreateWalletAndBackupScreenState createState() => CreateWalletAndBackupScreenState();
 }
 
-class ManualBackupScreenState extends State<ManualBackupScreen> {
+class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen> {
   String _mnemonic = '';
   bool _isLoading = true;
   bool _hasSavedMnemonic = false;
