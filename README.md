@@ -1,6 +1,6 @@
-# Resonance Network Wallet
+# Quantus Wallet
 
-A mobile wallet application for the Resonance Network blockchain and its native RES cryptocurrency.
+A mobile wallet application for the Quantus blockchain and its native QNT cryptocurrency.
 
 ## Features
 
@@ -8,8 +8,8 @@ A mobile wallet application for the Resonance Network blockchain and its native 
 - **Create Wallet**: Generates a 24-word recovery phrase for a new wallet
 - **Import Wallet**: Restore access using a 12 or 24-word recovery phrase
 - **Main Wallet Screen**: View balance and recent transactions
-- **Send RES**: Send cryptocurrency to other accounts
-- **Receive RES**: Display QR code with your wallet address
+- **Send**: Send cryptocurrency to other accounts
+- **Receive**: Display QR code with your wallet address
 - **Identity Support**: Display human-readable names for accounts when available
 
 ## Getting Started

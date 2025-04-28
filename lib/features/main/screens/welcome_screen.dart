@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -60,7 +60,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       // Placeholder while video loads
                       color: const Color(0xFF0E0E0E),
                       // Optionally, show the static image as placeholder:
-                      // child: Image.asset('assets/bg_001.png', fit: BoxFit.cover),
+                      // child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
                     ),
             ),
           ),
@@ -75,21 +75,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               children: [
                 const SizedBox(height: 60), // Spacing from Figma
                 Center(
-                  child: SvgPicture.asset(
-                    'assets/res_logo_main.svg',
-                    height: 150.0, // Set specific height
-                    fit: BoxFit.contain,
+                  child: Column(
+                    // Wrap in Column to add text below
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/quantus_logo.svg', // Changed from res_logo_main.svg
+                        height: 130.0, // Adjust height for the icon
+                        fit: BoxFit.contain,
+                      ),
+                      // const SizedBox(height: 15), // Space between icon and text
+                      // const Text(
+                      //   'QUANTUS',
+                      //   style: TextStyle(
+                      //     color: Color(0xFFE6E6E6),
+                      //     fontSize: 48, // Adjust font size as needed
+                      //     fontFamily: 'Fira Code',
+                      //     fontWeight: FontWeight.w100, // Match button weight
+                      //     letterSpacing: 3.0, // Added letter spacing
+                      //   ),
+                      // ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 27), // Spacing from Figma
-                const Text(
-                  'The Quantum-Secure Network',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFE6E6E6),
-                    fontSize: 21,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                const SizedBox(height: 80),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Quantum safe\n from the ground up',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFE6E6E6),
+                      fontSize: 21,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 27), // Spacing from Figma
@@ -117,7 +137,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CreateWalletScreen()),
+                        MaterialPageRoute(builder: (context) => const CreateWalletAndBackupScreen()),
                       );
                     },
                     child: const Text(

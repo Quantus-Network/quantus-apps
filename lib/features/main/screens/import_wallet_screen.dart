@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -44,7 +45,6 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       await prefs.setBool('has_wallet', true);
       await prefs.setString('mnemonic', input);
       await prefs.setString('account_id', walletInfo.accountId);
-      await prefs.setString('wallet_name', walletInfo.walletName);
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -73,7 +73,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/bg_001.png'), // Assuming this is the correct background
+            image: AssetImage('assets/light_leak_effect_background.jpg'), // Assuming this is the correct background
             fit: BoxFit.cover,
             opacity: 0.54,
           ),
@@ -178,41 +178,41 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      unselectedWidgetColor: Colors.white70,
-                    ),
-                    child: CheckboxListTile(
-                      title: const Text(
-                        'Import Crystal Alice test account',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontFamily: 'Fira Code',
-                        ),
-                      ),
-                      value: _mnemonicController.text == crystalAlice,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            _mnemonicController.text = crystalAlice;
-                            _errorMessage = '';
-                          } else {
-                            if (_mnemonicController.text == crystalAlice) {
-                              _mnemonicController.clear();
-                            }
-                          }
-                        });
-                      },
-                      activeColor: const Color(0xFF9F7AEA),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.only(top: 12.0, bottom: 8.0),
+                //   child: Theme(
+                //     data: Theme.of(context).copyWith(
+                //       unselectedWidgetColor: Colors.white70,
+                //     ),
+                //     // child: CheckboxListTile(
+                //     //   title: const Text(
+                //     //     'Import Crystal Alice test account',
+                //     //     style: TextStyle(
+                //     //       color: Colors.white70,
+                //     //       fontSize: 13,
+                //     //       fontFamily: 'Fira Code',
+                //     //     ),
+                //     //   ),
+                //     //   value: _mnemonicController.text == crystalAlice,
+                //     //   onChanged: (bool? value) {
+                //     //     setState(() {
+                //     //       if (value == true) {
+                //     //         _mnemonicController.text = crystalAlice;
+                //     //         _errorMessage = '';
+                //     //       } else {
+                //     //         if (_mnemonicController.text == crystalAlice) {
+                //     //           _mnemonicController.clear();
+                //     //         }
+                //     //       }
+                //     //     });
+                //     //   },
+                //     //   activeColor: const Color(0xFF9F7AEA),
+                //     //   controlAffinity: ListTileControlAffinity.leading,
+                //     //   contentPadding: EdgeInsets.zero,
+                //     //   dense: true,
+                //     // ),
+                //   ),
+                // ),
                 if (_errorMessage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), // Added bottom padding
@@ -223,37 +223,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ),
                 const Spacer(), // Add Spacer to push the button down
-                GestureDetector(
-                  onTap: _isLoading ? null : _importWallet,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: ShapeDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment(0.50, 0.00),
-                        end: Alignment(0.50, 1.00),
-                        colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(color: Color(0xFF0E0E0E)),
-                            )
-                          : const Text(
-                              'Import Wallet',
-                              style: TextStyle(
-                                color: Color(0xFF0E0E0E),
-                                fontSize: 18,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                    ),
-                  ),
+                GradientActionButton(
+                  label: 'Import Wallet',
+                  onPressed: _importWallet,
+                  isLoading: _isLoading,
                 ),
                 const SizedBox(height: 24), // Consistent bottom padding like CreateWalletScreen
               ],

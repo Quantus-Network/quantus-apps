@@ -1,8 +1,8 @@
 name: resonance_network_wallet
-description: A Flutter wallet for the Resonance Network blockchain.
+description: A Flutter wallet for the Quantus blockchain.
 publish_to: 'none'
 
-version: 1.0.0+9
+version: 1.0.0+11
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -21,7 +21,7 @@ dependencies:
   bip39_mnemonic: ^3.0.9
   # bip39: ^1.0.6
   intl: ^0.20.2
-  flutter_svg: ^2.0.9
+  flutter_svg: ^2.1.0
   rust_lib_resonance_network_wallet:
     path: rust_builder
   flutter_rust_bridge: 2.9.0
@@ -30,6 +30,8 @@ dependencies:
       url: https://github.com/Resonance-Network/human-checkphrase.git
       path: dart
   mobile_scanner: ^3.5.6  # QR code scanning
+  flutter_native_splash: ^2.4.6
+  cupertino_icons: ^1.0.6
 
 # Generate Polkadart bindings
 # dart pub run polkadart_cli:generate -v
@@ -37,6 +39,7 @@ dependencies:
   convert: any
   polkadart_cli: ^0.6.1
   flutter_launcher_icons: ^0.14.3
+  flash: ^3.1.1
 
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
@@ -55,7 +58,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/bg_001.png
+    - assets/light_leak_effect_background.jpg
     - assets/text/crypto_checksum_bip39.txt
     - assets/send_icon.png
     - assets/send_icon_1.svg
@@ -68,10 +71,18 @@ flutter:
     - assets/res_icon.svg
     - assets/intro_bg_video.mp4
     - assets/paste_icon.svg
+    - assets/active_dot.png
+    - assets/send_line.svg
+    - assets/receive_line.svg
+    - assets/bridge_icon.svg
+    - assets/quantus_logo.svg
+    - assets/quantus_logo_hz.svg
 
   fonts:
     - family: Fira Code
       fonts:
+        - asset: assets/fonts/FiraCode-Light.ttf
+          weight: 100
         - asset: assets/fonts/FiraCode-Regular.ttf
           weight: 400
         - asset: assets/fonts/FiraCode-Medium.ttf
@@ -79,4 +90,26 @@ flutter:
         - asset: assets/fonts/FiraCode-SemiBold.ttf
           weight: 600
         - asset: assets/fonts/FiraCode-Bold.ttf
-          weight: 700 
+          weight: 700
+
+# Add flutter_native_splash configuration section
+flutter_native_splash:
+  # Replace color with background_image
+  # color: "#0E0E0E" 
+  background_image: "assets/light_leak_effect_background.jpg"
+  # image: assets/logo.png # You can still add a logo on top if desired
+
+  # Optional: Configure Android 12 splash screen specific settings
+  android_12:
+    # Replace color with background_image
+    # color: "#0E0E0E"
+    background_image: "assets/light_leak_effect_background.jpg"
+    # image: assets/logo.png
+
+  # Optional: Set color for status bar and navigation bar (Android)
+  # color_dark: "#0E0E0E"
+  # status_bar_color_dark: "#0E0E0E" # Match status bar to background
+  # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
+
+  # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
+  # ios_content_mode: "dark" 

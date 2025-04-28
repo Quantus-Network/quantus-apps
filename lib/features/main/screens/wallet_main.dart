@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io'; // Import for SocketException
 import 'dart:async'; // Import for Future.timeout / TimeoutException
-import 'package:resonance_network_wallet/account_profile.dart';
+import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
+import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class WalletData {
   final String accountId;
@@ -47,14 +49,12 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?> _loadWalletDataInternal() async {
     String? accountId;
-    String? walletName;
     BigInt? balance;
     const Duration networkTimeout = Duration(seconds: 15);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       accountId = prefs.getString('account_id');
-      walletName = prefs.getString('wallet_name') ?? 'Name Unknown';
 
       if (accountId == null || accountId.isEmpty) {
         throw Exception('Account ID not found');
@@ -88,7 +88,12 @@ class _WalletMainState extends State<WalletMain> {
       }
     }
 
-    return WalletData(accountId: accountId, walletName: walletName!, balance: balance);
+    return WalletData(accountId: accountId, walletName: '', balance: balance);
+  }
+
+  // Helper to format the address (now just returns the full address)
+  String _formatAddress(String address) {
+    return address; // Return the full address, let Text widget handle overflow
   }
 
   Widget _buildActionButton({
@@ -166,15 +171,27 @@ class _WalletMainState extends State<WalletMain> {
     required String type,
     required String amount,
     required String details,
-    required IconData icon,
+    required Widget iconWidget,
     required Color typeColor,
   }) {
+    Widget finalIconWidget = iconWidget;
+    if (iconWidget is SvgPicture) {
+      finalIconWidget = SvgPicture.asset(
+        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
+        colorFilter: ColorFilter.mode(typeColor, BlendMode.srcIn),
+        width: 20,
+        height: 20,
+      );
+    } else if (iconWidget is Icon) {
+      finalIconWidget = Icon(iconWidget.icon, color: typeColor, size: 20);
+    }
+
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: typeColor, size: 20),
+            finalIconWidget,
             const SizedBox(width: 11),
             Expanded(
               child: Column(
@@ -242,8 +259,11 @@ class _WalletMainState extends State<WalletMain> {
     } catch (e) {
       debugPrint('Error during logout: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logout failed: ${e.toString()}')),
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Logout failed: ${e.toString()}',
+          icon: buildErrorIcon(),
         );
       }
     }
@@ -256,14 +276,14 @@ class _WalletMainState extends State<WalletMain> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/bg_001.png'),
+            image: AssetImage('assets/light_leak_effect_background.jpg'),
             fit: BoxFit.cover,
             opacity: 0.54,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: FutureBuilder<WalletData?>(
               future: _walletDataFuture,
               builder: (context, snapshot) {
@@ -327,6 +347,8 @@ class _WalletMainState extends State<WalletMain> {
                 }
 
                 final walletData = snapshot.data!;
+                // Use the full address
+                final displayAddress = _formatAddress(walletData.accountId);
 
                 return RefreshIndicator(
                   onRefresh: () async {
@@ -344,7 +366,7 @@ class _WalletMainState extends State<WalletMain> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              SvgPicture.asset('assets/main_wallet_title_logo.svg', height: 40),
+                              SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
                               Row(
                                 children: [
                                   IconButton(
@@ -372,8 +394,10 @@ class _WalletMainState extends State<WalletMain> {
                                 onTap: () {
                                   if (_accountId != null) {
                                     Clipboard.setData(ClipboardData(text: _accountId!));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Account ID copied to clipboard')),
+                                    showTopSnackBar(
+                                      context,
+                                      title: 'Copied!',
+                                      message: 'Account ID copied to clipboard',
                                     );
                                   }
                                 },
@@ -383,10 +407,10 @@ class _WalletMainState extends State<WalletMain> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      SvgPicture.asset(
-                                        'assets/active_dot.svg',
-                                        width: 13,
-                                        height: 13,
+                                      Image.asset(
+                                        'assets/active_dot.png',
+                                        width: 20,
+                                        height: 20,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -397,7 +421,7 @@ class _WalletMainState extends State<WalletMain> {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                           ),
                                           child: Text(
-                                            walletData.walletName,
+                                            displayAddress,
                                             textAlign: TextAlign.center,
                                             overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
@@ -429,7 +453,7 @@ class _WalletMainState extends State<WalletMain> {
                                       ),
                                     ),
                                     const TextSpan(
-                                      text: ' RES',
+                                      text: ' ${AppConstants.tokenSymbol}',
                                       style: TextStyle(
                                         color: Color(0xFFE6E6E6),
                                         fontSize: 20,
@@ -464,14 +488,14 @@ class _WalletMainState extends State<WalletMain> {
                                 },
                               ),
                               _buildActionButton(
-                                iconWidget: const Icon(Icons.swap_horiz),
+                                iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
                                 label: 'SWAP',
                                 borderColor: const Color(0xFF0AD4F6),
                                 onPressed: () {},
                                 disabled: true,
                               ),
                               _buildActionButton(
-                                iconWidget: const Icon(Icons.sync_alt),
+                                iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
                                 label: 'BRIDGE',
                                 borderColor: const Color(0xFF0AD4F6),
                                 onPressed: () {},
@@ -508,23 +532,23 @@ class _WalletMainState extends State<WalletMain> {
                                     children: [
                                       _buildTransactionItem(
                                         type: 'Sent',
-                                        amount: '-13.082 RES',
+                                        amount: '-13.082 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
-                                        icon: Icons.arrow_upward,
+                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
                                         typeColor: const Color(0xFF16CECE),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Received',
-                                        amount: '13.2345 RES',
+                                        amount: '13.2345 ${AppConstants.tokenSymbol}',
                                         details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
-                                        icon: Icons.arrow_downward,
+                                        iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
                                         typeColor: const Color(0xFFB259F2),
                                       ),
                                       _buildTransactionItem(
                                         type: 'Sent',
-                                        amount: '-309.9866 RES',
+                                        amount: '-309.9866 ${AppConstants.tokenSymbol}',
                                         details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
-                                        icon: Icons.arrow_upward,
+                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
                                         typeColor: const Color(0xFF16CECE),
                                       ),
                                     ],

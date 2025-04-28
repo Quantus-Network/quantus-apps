@@ -1,5 +1,7 @@
 class AppConstants {
-  static const String appName = 'Resonance Network Wallet';
+  static const String appName = 'Quantus Wallet';
+  static const String tokenSymbol = 'QNT';
+
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
   static const String rpcEndpoint = 'wss://a.t.res.fm:443';
 
@@ -12,5 +14,4 @@ class AppConstants {
   static const String hasWalletKey = 'has_wallet';
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
-  static const String walletNameKey = 'wallet_name';
 }

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
+import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});
@@ -15,11 +17,12 @@ class ReceiveSheet extends StatefulWidget {
 
 class _ReceiveSheetState extends State<ReceiveSheet> {
   String? _accountId;
-  String? _walletName;
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
   @override
   void initState() {
     super.initState();
+    _checksumService.initialize();
     _loadAccountData();
   }
 
@@ -27,7 +30,6 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getString('account_id');
-      final walletName = prefs.getString('wallet_name');
 
       if (accountId == null) {
         throw Exception('No account found');
@@ -35,18 +37,22 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
       setState(() {
         _accountId = accountId;
-        _walletName = walletName;
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
   void _copyAddress() {
     if (_accountId != null) {
       Clipboard.setData(ClipboardData(text: _accountId!));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Address copied to clipboard')),
+      showTopSnackBar(
+        context,
+        title: 'Copied!',
+        message: 'Address copied to clipboard',
       );
     }
   }
@@ -136,15 +142,48 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    _walletName ?? 'Unnamed Wallet',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                  FutureBuilder<String?>(
+                    future: _checksumService.getHumanReadableName(_accountId!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox(
+                            height: 14,
+                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54)),
+                              SizedBox(width: 8),
+                              Text('Loading name...', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                            ]));
+                      } else if (snapshot.hasError ||
+                          !snapshot.hasData ||
+                          snapshot.data == null ||
+                          snapshot.data!.isEmpty) {
+                        debugPrint('Error loading checksum name for ${_accountId}: ${snapshot.error}');
+                        return const Text(
+                          'Name not found',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        );
+                      } else {
+                        return Text(
+                          snapshot.data!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 8),
                   Opacity(
