@@ -100,7 +100,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 const SizedBox(height: 27), // Spacing from Figma
                 const Text(
-                  'The Quantum-Secure Network',
+                  'Quantum safe from the ground up',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFFE6E6E6),
