@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
+import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
 
 class ManualBackupScreen extends StatefulWidget {
   const ManualBackupScreen({super.key});
@@ -294,35 +295,37 @@ class ManualBackupScreenState extends State<ManualBackupScreen> {
                         ],
                       ),
                       const SizedBox(height: 17),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: canContinue ? const Color(0xFF0E0E0E) : Colors.grey[700],
-                            backgroundColor: canContinue ? const Color(0xFFE6E6E6) : Colors.grey[400],
-                            minimumSize: const Size(double.infinity, 50),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5.0),
+                      if (canContinue)
+                        GradientActionButton(
+                          label: 'Continue',
+                          onPressed: _saveWalletAndContinue,
+                          isLoading: _isLoading,
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.grey[700],
+                              backgroundColor: Colors.grey[400],
+                              minimumSize: const Size(double.infinity, 50),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                            ),
+                            onPressed: null,
+                            child: const Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Color(0xFF0E0E0E),
+                                fontSize: 18,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                          onPressed: canContinue ? _saveWalletAndContinue : null,
-                          child: _isLoading && !_hasSavedMnemonic
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54))
-                              : const Text(
-                                  'Continue',
-                                  style: TextStyle(
-                                    color: Color(0xFF0E0E0E),
-                                    fontSize: 18,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
                         ),
-                      ),
                     ],
                   ),
                 ),

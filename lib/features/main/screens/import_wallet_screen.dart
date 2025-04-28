@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -222,37 +223,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ),
                 const Spacer(), // Add Spacer to push the button down
-                GestureDetector(
-                  onTap: _isLoading ? null : _importWallet,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: ShapeDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment(0.50, 0.00),
-                        end: Alignment(0.50, 1.00),
-                        colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(color: Color(0xFF0E0E0E)),
-                            )
-                          : const Text(
-                              'Import Wallet',
-                              style: TextStyle(
-                                color: Color(0xFF0E0E0E),
-                                fontSize: 18,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                    ),
-                  ),
+                GradientActionButton(
+                  label: 'Import Wallet',
+                  onPressed: _importWallet,
+                  isLoading: _isLoading,
                 ),
                 const SizedBox(height: 24), // Consistent bottom padding like CreateWalletScreen
               ],
