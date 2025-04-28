@@ -98,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 80), // Increased from 60
+                const SizedBox(height: 80),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Text(

@@ -366,23 +366,7 @@ class _WalletMainState extends State<WalletMain> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset('assets/res_icon.svg', height: 40),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'QUANTUS',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w100,
-                                      letterSpacing: 2.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
                               Row(
                                 children: [
                                   IconButton(
