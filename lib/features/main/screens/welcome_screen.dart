@@ -80,33 +80,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.asset(
-                        'assets/res_icon.svg', // Changed from res_logo_main.svg
+                        'assets/quantus_logo.svg', // Changed from res_logo_main.svg
                         height: 130.0, // Adjust height for the icon
                         fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 15), // Space between icon and text
-                      const Text(
-                        'QUANTUS',
-                        style: TextStyle(
-                          color: Color(0xFFE6E6E6),
-                          fontSize: 48, // Adjust font size as needed
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w100, // Match button weight
-                          letterSpacing: 3.0, // Added letter spacing
-                        ),
-                      ),
+                      // const SizedBox(height: 15), // Space between icon and text
+                      // const Text(
+                      //   'QUANTUS',
+                      //   style: TextStyle(
+                      //     color: Color(0xFFE6E6E6),
+                      //     fontSize: 48, // Adjust font size as needed
+                      //     fontFamily: 'Fira Code',
+                      //     fontWeight: FontWeight.w100, // Match button weight
+                      //     letterSpacing: 3.0, // Added letter spacing
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 27), // Spacing from Figma
-                const Text(
-                  'Quantum safe from the ground up',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFE6E6E6),
-                    fontSize: 21,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
+                const SizedBox(height: 80), // Increased from 60
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Quantum safe\n from the ground up',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFE6E6E6),
+                      fontSize: 21,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 27), // Spacing from Figma

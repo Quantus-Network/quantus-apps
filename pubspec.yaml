@@ -75,6 +75,8 @@ flutter:
     - assets/send_line.svg
     - assets/receive_line.svg
     - assets/bridge_icon.svg
+    - assets/quantus_logo.svg
+    - assets/quantus_logo_hz.svg
 
   fonts:
     - family: Fira Code
