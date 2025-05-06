@@ -40,6 +40,7 @@ dependencies:
   polkadart_cli: ^0.6.1
   flutter_launcher_icons: ^0.14.3
   flash: ^3.1.1
+  flutter_secure_storage: ^9.2.4
 
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
