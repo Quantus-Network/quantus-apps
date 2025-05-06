@@ -160,7 +160,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           !snapshot.hasData ||
                           snapshot.data == null ||
                           snapshot.data!.isEmpty) {
-                        debugPrint('Error loading checksum name for ${_accountId}: ${snapshot.error}');
+                        debugPrint('Error loading checksum name for $_accountId: ${snapshot.error}');
                         return const Text(
                           'Name not found',
                           style: TextStyle(

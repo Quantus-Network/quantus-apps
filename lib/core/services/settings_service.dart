@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -63,6 +64,16 @@ class SettingsService {
 
   Future<String?> getMnemonic() async {
     await _ensureInitialized();
+
+    // TODO remove this at launch
+    if (_prefs.getString('mnemonic') != null) {
+      debugPrint('mnemonic found in prefs - transferring to secure storage');
+      final m = _prefs.getString('mnemonic')!;
+      await setMnemonic(m);
+      _prefs.remove('mnemonic');
+      return m;
+    }
+
     return await _secureStorage.read(key: 'mnemonic');
   }
 

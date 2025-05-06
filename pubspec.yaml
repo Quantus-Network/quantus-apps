@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: 'none'
 
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -41,6 +41,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.3
   flash: ^3.1.1
   flutter_secure_storage: ^9.2.4
+  crypto: ^3.0.6
 
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated

@@ -310,7 +310,7 @@ class _WalletMainState extends State<WalletMain> {
                                 const SizedBox(height: 10),
                                 Text(
                                   'Could not load wallet data. Please check your network connection and try again.',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                                  style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
@@ -336,8 +336,8 @@ class _WalletMainState extends State<WalletMain> {
                             _buildFullWidthActionButton(
                               label: 'Logout',
                               onTap: _logout,
-                              backgroundColor: Colors.white.withOpacity(0.2),
-                              textColor: Colors.white.withOpacity(0.8),
+                              backgroundColor: Colors.white.useOpacity(0.2),
+                              textColor: Colors.white.useOpacity(0.8),
                             ),
                           ],
                         ),

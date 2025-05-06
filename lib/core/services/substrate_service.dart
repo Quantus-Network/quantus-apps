@@ -4,11 +4,12 @@ import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
 import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
 import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
@@ -160,6 +161,12 @@ class SubstrateService {
     final result = Uint8List(signature.length + pubkey.length);
     result.setAll(0, signature);
     result.setAll(signature.length, pubkey);
+
+    // Calculate and print signature checksum
+    final signatureHash = sha256.convert(signature).bytes;
+    final signatureChecksum = base64.encode(signatureHash).substring(0, 8);
+    debugPrint('Signature checksum: $signatureChecksum');
+
     return result;
   }
 
@@ -194,7 +201,6 @@ class SubstrateService {
   Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
       // Get the sender's wallet
-      debugPrint('creating key with $senderSeed');
       debugPrint('sending to $targetAddress');
       debugPrint('amount (BigInt): $amount'); // Log BigInt amount
       debugPrint(
@@ -202,8 +208,8 @@ class SubstrateService {
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
-      await _printBalance('before ', senderWallet.ss58Address);
-      await _printBalance('before ', targetAddress);
+      await _printBalance('Sender before ', senderWallet.ss58Address);
+      await _printBalance('Target before ', targetAddress);
 
       // Get necessary info for the transaction
       final runtimeVersion = await _stateApi.getRuntimeVersion();
