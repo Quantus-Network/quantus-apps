@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
@@ -18,6 +18,7 @@ class ReceiveSheet extends StatefulWidget {
 class _ReceiveSheetState extends State<ReceiveSheet> {
   String? _accountId;
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -28,8 +29,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   Future<void> _loadAccountData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final accountId = prefs.getString('account_id');
+      final accountId = await _settingsService.getAccountId();
 
       if (accountId == null) {
         throw Exception('No account found');

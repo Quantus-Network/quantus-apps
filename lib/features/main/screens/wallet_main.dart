@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/features/main/screens/account_profile.d
 import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
@@ -31,6 +31,7 @@ class WalletMain extends StatefulWidget {
 class _WalletMainState extends State<WalletMain> {
   final SubstrateService _substrateService = SubstrateService();
   final NumberFormattingService _formattingService = NumberFormattingService();
+  final SettingsService _settingsService = SettingsService();
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
@@ -53,8 +54,7 @@ class _WalletMainState extends State<WalletMain> {
     const Duration networkTimeout = Duration(seconds: 15);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      accountId = prefs.getString('account_id');
+      accountId = await _settingsService.getAccountId();
 
       if (accountId == null || accountId.isEmpty) {
         throw Exception('Account ID not found');

@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
@@ -22,6 +22,7 @@ class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
+  final SettingsService _settingsService = SettingsService();
   BigInt _maxBalance = BigInt.zero;
   static final BigInt _networkFee = BigInt.from(10) * NumberFormattingService.scaleFactorBigInt;
   BigInt _amount = BigInt.zero;
@@ -57,8 +58,7 @@ class SendScreenState extends State<SendScreen> {
 
   Future<BigInt> _loadBalance() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final accountId = prefs.getString('account_id');
+      final accountId = await _settingsService.getAccountId();
 
       if (accountId == null) {
         throw Exception('Wallet not found');

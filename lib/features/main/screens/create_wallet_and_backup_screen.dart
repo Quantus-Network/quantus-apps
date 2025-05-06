@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
@@ -19,6 +19,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
   bool _isLoading = true;
   bool _hasSavedMnemonic = false;
   String? _error;
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -72,10 +73,9 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
       // final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
       // if (walletName.isEmpty) throw Exception('Checksum generation failed');
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', _mnemonic);
-      await prefs.setString('account_id', walletInfo.accountId);
+      await _settingsService.setHasWallet(true);
+      await _settingsService.setMnemonic(_mnemonic);
+      await _settingsService.setAccountId(walletInfo.accountId);
 
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
