@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 
 class WalletInitializer extends StatefulWidget {
   const WalletInitializer({super.key});
@@ -13,6 +13,7 @@ class WalletInitializer extends StatefulWidget {
 class WalletInitializerState extends State<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -21,8 +22,7 @@ class WalletInitializerState extends State<WalletInitializer> {
   }
 
   Future<void> _checkWalletExists() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasWallet = prefs.getBool('has_wallet') ?? false;
+    final hasWallet = await _settingsService.getHasWallet();
 
     setState(() {
       _walletExists = hasWallet;

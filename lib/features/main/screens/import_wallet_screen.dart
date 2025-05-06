@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/core/widgets/gradient_action_button.dart';
 
@@ -17,6 +17,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
   final TextEditingController _mnemonicController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
+  final SettingsService _settingsService = SettingsService();
 
   Future<void> _importWallet() async {
     setState(() {
@@ -41,10 +42,9 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
 
       final walletInfo = await SubstrateService().generateWalletFromSeed(input);
       // Save wallet info
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_wallet', true);
-      await prefs.setString('mnemonic', input);
-      await prefs.setString('account_id', walletInfo.accountId);
+      await _settingsService.setHasWallet(true);
+      await _settingsService.setMnemonic(input);
+      await _settingsService.setAccountId(walletInfo.accountId);
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(

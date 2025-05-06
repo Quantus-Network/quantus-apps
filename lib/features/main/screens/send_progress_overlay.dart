@@ -5,7 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
@@ -36,6 +36,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   String? _errorMessage;
   bool _isSending = false;
   final NumberFormattingService _formattingService = NumberFormattingService();
+  final SettingsService _settingsService = SettingsService();
 
   Future<void> _confirmSend() async {
     if (_isSending) return;
@@ -47,8 +48,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     });
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final senderSeed = prefs.getString('mnemonic');
+      final senderSeed = await _settingsService.getMnemonic();
 
       if (senderSeed == null || senderSeed.isEmpty) {
         throw Exception('Sender mnemonic not found. Please re-import your wallet.');

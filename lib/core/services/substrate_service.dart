@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/mu
 import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
 import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 
 class DilithiumWalletInfo {
   final crypto.Keypair keypair;
@@ -68,6 +69,7 @@ class SubstrateService {
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   late final HumanChecksum _humanChecksum;
   bool _humanChecksumInitialized = false;
+  final SettingsService _settingsService = SettingsService();
 
   Future<HumanChecksum> get humanChecksum async {
     if (!_humanChecksumInitialized) {
@@ -365,8 +367,7 @@ class SubstrateService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await _settingsService.clearAll();
   }
 
   Future<String> generateMnemonic() async {

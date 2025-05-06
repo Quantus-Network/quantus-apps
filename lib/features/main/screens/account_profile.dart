@@ -4,7 +4,7 @@ import 'package:resonance_network_wallet/core/constants/app_constants.dart';
 import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
 import 'package:resonance_network_wallet/core/services/substrate_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
@@ -34,6 +34,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   bool _isLoading = true;
   final NumberFormattingService _formattingService = NumberFormattingService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -47,8 +48,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       _isLoading = true;
     });
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final accountId = prefs.getString('account_id');
+      final accountId = await _settingsService.getAccountId();
 
       if (accountId == null) {
         throw Exception('No account found');
