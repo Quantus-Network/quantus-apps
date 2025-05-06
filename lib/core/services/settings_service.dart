@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
@@ -6,6 +7,7 @@ class SettingsService {
   SettingsService._internal();
 
   late SharedPreferences _prefs;
+  final _secureStorage = const FlutterSecureStorage();
   bool _initialized = false;
 
   Future<void> initialize() async {
@@ -31,7 +33,7 @@ class SettingsService {
     await _prefs.remove('account_id');
   }
 
-  // Wallet Settings
+  // Wallet Name Settings
   Future<void> setWalletName(String name) async {
     await _ensureInitialized();
     await _prefs.setString('wallet_name', name);
@@ -53,26 +55,27 @@ class SettingsService {
     return _prefs.getBool('has_wallet') ?? false;
   }
 
-  // Mnemonic Settings
+  // Mnemonic Settings - Using secure storage
   Future<void> setMnemonic(String mnemonic) async {
     await _ensureInitialized();
-    await _prefs.setString('mnemonic', mnemonic);
+    await _secureStorage.write(key: 'mnemonic', value: mnemonic);
   }
 
   Future<String?> getMnemonic() async {
     await _ensureInitialized();
-    return _prefs.getString('mnemonic');
+    return await _secureStorage.read(key: 'mnemonic');
   }
 
   Future<void> clearMnemonic() async {
     await _ensureInitialized();
-    await _prefs.remove('mnemonic');
+    await _secureStorage.delete(key: 'mnemonic');
   }
 
   // Clear all settings
   Future<void> clearAll() async {
     await _ensureInitialized();
     await _prefs.clear();
+    await _secureStorage.deleteAll();
   }
 
   // Helper method to ensure initialization
