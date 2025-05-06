@@ -70,7 +70,7 @@ class SettingsService {
       debugPrint('mnemonic found in prefs - transferring to secure storage');
       final m = _prefs.getString('mnemonic')!;
       await setMnemonic(m);
-      _prefs.remove('mnemonic');
+      await _prefs.remove('mnemonic');
       return m;
     }
 
