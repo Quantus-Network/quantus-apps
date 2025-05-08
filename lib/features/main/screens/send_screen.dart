@@ -24,7 +24,8 @@ class SendScreenState extends State<SendScreen> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
   BigInt _maxBalance = BigInt.zero;
-  static final BigInt _networkFee = BigInt.from(10) * NumberFormattingService.scaleFactorBigInt;
+  BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
+  bool _isFetchingFee = false;
   BigInt _amount = BigInt.zero;
   bool _hasAddressError = false;
   bool _hasAmountError = false;
@@ -37,6 +38,9 @@ class SendScreenState extends State<SendScreen> {
   void initState() {
     super.initState();
     _balanceFuture = _loadBalance();
+    // Listen for changes in recipient and amount to update fee
+    _recipientController.addListener(_debounceFetchFee);
+    _amountController.addListener(_debounceFetchFee);
   }
 
   @override
@@ -118,6 +122,7 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = false;
+        _networkFee = BigInt.zero; // Clear fee if amount is empty
       });
       return;
     }
@@ -128,12 +133,65 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = true;
+        _networkFee = BigInt.zero; // Clear fee on invalid amount
       });
     } else {
       setState(() {
         _amount = parsedAmount;
-        _hasAmountError = _amount <= BigInt.zero || (_amount + _networkFee) > _maxBalance;
+        // Simplified check; full check including fee happens after fetching fee
+        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance; // Basic validation
       });
+      _debounceFetchFee(); // Trigger fee fetch after amount validation
+    }
+  }
+
+  void _debounceFetchFee() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _fetchNetworkFee();
+    });
+  }
+
+  Future<void> _fetchNetworkFee() async {
+    final recipient = _recipientController.text.trim();
+    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero) {
+      setState(() {
+        _networkFee = BigInt.zero; // Reset fee if address is invalid or amount is zero
+        _isFetchingFee = false;
+        // Re-validate amount based on potentially zero fee
+        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
+      });
+      return;
+    }
+
+    setState(() {
+      _isFetchingFee = true;
+    });
+
+    try {
+      final senderAccountId = await _settingsService.getAccountId();
+      if (senderAccountId == null) {
+        throw Exception('Sender account not found');
+      }
+      // Use a reasonable dummy amount for initial fee estimation if amount is zero
+      // Or better, only fetch fee when amount is non-zero and address is valid
+      final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, _amount);
+
+      setState(() {
+        _networkFee = estimatedFee;
+        _isFetchingFee = false;
+        // Re-validate amount now that we have the fee
+        _hasAmountError = (_amount + _networkFee) > _maxBalance;
+      });
+    } catch (e) {
+      debugPrint('Error fetching network fee: $e');
+      setState(() {
+        _networkFee = BigInt.zero; // Reset fee on error
+        _isFetchingFee = false;
+        // Re-validate amount based on zero fee due to error
+        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
+      });
+      // Optionally show a snackbar or visual indicator of fee fetch failure
     }
   }
 
@@ -481,14 +539,27 @@ class SendScreenState extends State<SendScreen> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                Text(
-                                  '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (_isFetchingFee)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 8.0),
+                                        child: SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -503,14 +574,16 @@ class SendScreenState extends State<SendScreen> {
                           onTap: (_hasAddressError ||
                                   _hasAmountError ||
                                   _recipientController.text.isEmpty ||
-                                  _amount <= BigInt.zero)
+                                  _amount <= BigInt.zero ||
+                                  _isFetchingFee)
                               ? null
                               : _showSendConfirmation,
                           child: Opacity(
                             opacity: (_hasAddressError ||
                                     _hasAmountError ||
                                     _recipientController.text.isEmpty ||
-                                    _amount <= BigInt.zero)
+                                    _amount <= BigInt.zero ||
+                                    _isFetchingFee)
                                 ? 0.3
                                 : 1.0,
                             child: Container(
