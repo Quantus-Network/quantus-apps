@@ -155,25 +155,22 @@ class SendScreenState extends State<SendScreen> {
 
   Future<void> _fetchNetworkFee() async {
     final recipient = _recipientController.text.trim();
-    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero) {
+    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero || (_networkFee > BigInt.zero)) {
       setState(() {
-        _networkFee = BigInt.zero;
+        _networkFee = _networkFee;
         _isFetchingFee = false;
-        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
+        _hasAmountError = _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
       });
       return;
     }
-
-    setState(() {
-      _isFetchingFee = true;
-    });
 
     try {
       final senderAccountId = await _settingsService.getAccountId();
       if (senderAccountId == null) {
         throw Exception('Sender account not found');
       }
-      final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, _amount);
+      final dummyAmountForFee = BigInt.from(1) * NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
+      final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, dummyAmountForFee);
 
       setState(() {
         _networkFee = estimatedFee;
@@ -596,9 +593,11 @@ class SendScreenState extends State<SendScreen> {
                               child: Text(
                                 (_hasAddressError || _recipientController.text.isEmpty)
                                     ? 'Enter Address'
-                                    : (_hasAmountError || _amount <= BigInt.zero)
+                                    : (_amount <= BigInt.zero)
                                         ? 'Enter Amount'
-                                        : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
+                                        : _hasAmountError
+                                            ? 'Insufficient Balance'
+                                            : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: Color(0xFF0E0E0E),
