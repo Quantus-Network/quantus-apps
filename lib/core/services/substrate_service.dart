@@ -133,12 +133,7 @@ class SubstrateService {
 
       // Retrieve sender's mnemonic and generate keypair
       // Assuming senderAddress corresponds to the current wallet's account ID
-      final settingsService = SettingsService();
-      final senderSeed = await settingsService.getMnemonic();
-      if (senderSeed == null || senderSeed.isEmpty) {
-        throw Exception('Sender mnemonic not found for fee estimation.');
-      }
-      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+      crypto.Keypair senderWallet = await _getUserWallet();
 
       // Get necessary info for the transaction (similar to balanceTransfer)
       final runtimeVersion = await _stateApi.getRuntimeVersion();
@@ -195,43 +190,28 @@ class SubstrateService {
       final result =
           await _provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]); // null for block hash
 
-      // --- Debugging Prints ---
-      print('RPC call completed. Full RpcResponse object:');
-      print(result);
-
-      if (result.result == null) {
-        print('ERROR: result.result is null. Cannot extract partialFee.');
-        // Maybe there is an error field in the response?
-        if (result.error != null) {
-          print('RPC Error details:');
-          print(result.error);
-        } else {
-          print('No specific error field found in the RPC response.');
-        }
-        throw Exception('RPC did not return a valid result.');
-      }
-
-      print('RPC result.result is NOT null. Type:');
-      print(result.result.runtimeType);
-
-      if (result.result is Map) {
-        print('RPC result.result keys:');
-        print((result.result as Map).keys);
-      } else {
-        print('RPC result.result is not a Map.');
-      }
-      // ----------------------
-
       // Parse the result to get the partialFee
       // The result structure is typically {'partialFee': '...'} for this RPC
       final partialFeeString = result.result['partialFee'] as String;
       final partialFee = BigInt.parse(partialFeeString);
+
+      print('partialFee: $partialFee');
 
       return partialFee;
     } catch (e) {
       print('Error estimating fee: $e');
       throw Exception('Failed to estimate network fee: $e');
     }
+  }
+
+  Future<crypto.Keypair> _getUserWallet() async {
+    final settingsService = SettingsService();
+    final senderSeed = await settingsService.getMnemonic();
+    if (senderSeed == null || senderSeed.isEmpty) {
+      throw Exception('Sender mnemonic not found for fee estimation.');
+    }
+    crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+    return senderWallet;
   }
 
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
