@@ -126,6 +126,94 @@ class SubstrateService {
     }
   }
 
+  Future<BigInt> getFee(String senderAddress, String recipientAddress, BigInt amount) async {
+    try {
+      final resonanceApi = Resonance(_provider);
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(recipientAddress).pubkey);
+
+      // Retrieve sender's mnemonic and generate keypair
+      // Assuming senderAddress corresponds to the current wallet's account ID
+      crypto.Keypair senderWallet = await _getUserWallet();
+
+      // Get necessary info for the transaction (similar to balanceTransfer)
+      final runtimeVersion = await _stateApi.getRuntimeVersion();
+      final specVersion = runtimeVersion.specVersion;
+      final transactionVersion = runtimeVersion.transactionVersion;
+
+      final block = await _provider.send('chain_getBlock', []);
+      final blockNumber = int.parse(block.result['block']['header']['number']);
+
+      final blockHash = (await _provider.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+      final genesisHash = (await _provider.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+
+      // Get the next nonce for the sender
+      final nonceResult = await _provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      final nonce = int.parse(nonceResult.result.toString());
+
+      // Create the call for fee estimation
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
+      final transferCall = runtimeCall.encode();
+
+      // Create and sign a dummy payload for fee estimation
+      final payloadToSign = SigningPayload(
+        method: transferCall,
+        specVersion: specVersion,
+        transactionVersion: transactionVersion,
+        genesisHash: genesisHash,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
+        eraPeriod: 64, // Use a reasonable era period
+        nonce: nonce,
+        tip: 0, // Assuming no tip for fee estimation
+      );
+
+      final payload = payloadToSign.encode(resonanceApi.registry);
+      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+
+      // Construct the signed extrinsic payload (Resonance specific)
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey); // Reuse helper
+
+      final signedExtrinsic = ResonanceExtrinsicPayload(
+        signer: Uint8List.fromList(senderWallet.addressBytes), // Use signer address bytes
+        method: transferCall, // The encoded call method
+        signature: signatureWithPublicKeyBytes, // The signature
+        eraPeriod: 64, // Must match SigningPayload
+        blockNumber: blockNumber, // Must match SigningPayload
+        nonce: nonce, // Must match SigningPayload
+        tip: 0, // Must match SigningPayload
+      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+
+      // Convert encoded signed extrinsic to hex string
+      final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
+
+      // Use provider.send to call the payment_queryInfo RPC with the signed extrinsic
+      final result =
+          await _provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]); // null for block hash
+
+      // Parse the result to get the partialFee
+      // The result structure is typically {'partialFee': '...'} for this RPC
+      final partialFeeString = result.result['partialFee'] as String;
+      final partialFee = BigInt.parse(partialFeeString);
+
+      print('partialFee: $partialFee');
+
+      return partialFee;
+    } catch (e) {
+      print('Error estimating fee: $e');
+      throw Exception('Failed to estimate network fee: $e');
+    }
+  }
+
+  Future<crypto.Keypair> _getUserWallet() async {
+    final settingsService = SettingsService();
+    final senderSeed = await settingsService.getMnemonic();
+    if (senderSeed == null || senderSeed.isEmpty) {
+      throw Exception('Sender mnemonic not found for fee estimation.');
+    }
+    crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+    return senderWallet;
+  }
+
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
@@ -396,5 +484,10 @@ class SubstrateService {
     } catch (e) {
       return false;
     }
+  }
+
+  // Helper function to convert bytes to hex string
+  String bytesToHex(Uint8List bytes) {
+    return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   }
 }
