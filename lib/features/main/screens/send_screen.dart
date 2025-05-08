@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -122,7 +123,7 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = false;
-        _networkFee = BigInt.zero; // Clear fee if amount is empty
+        _networkFee = BigInt.zero;
       });
       return;
     }
@@ -133,7 +134,7 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = true;
-        _networkFee = BigInt.zero; // Clear fee on invalid amount
+        _networkFee = BigInt.zero;
       });
     } else {
       setState(() {
@@ -156,9 +157,8 @@ class SendScreenState extends State<SendScreen> {
     final recipient = _recipientController.text.trim();
     if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero) {
       setState(() {
-        _networkFee = BigInt.zero; // Reset fee if address is invalid or amount is zero
+        _networkFee = BigInt.zero;
         _isFetchingFee = false;
-        // Re-validate amount based on potentially zero fee
         _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
       });
       return;
@@ -173,25 +173,23 @@ class SendScreenState extends State<SendScreen> {
       if (senderAccountId == null) {
         throw Exception('Sender account not found');
       }
-      // Use a reasonable dummy amount for initial fee estimation if amount is zero
-      // Or better, only fetch fee when amount is non-zero and address is valid
       final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, _amount);
 
       setState(() {
         _networkFee = estimatedFee;
         _isFetchingFee = false;
-        // Re-validate amount now that we have the fee
         _hasAmountError = (_amount + _networkFee) > _maxBalance;
       });
     } catch (e) {
       debugPrint('Error fetching network fee: $e');
       setState(() {
-        _networkFee = BigInt.zero; // Reset fee on error
+        _networkFee = BigInt.zero;
         _isFetchingFee = false;
-        // Re-validate amount based on zero fee due to error
         _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
       });
-      // Optionally show a snackbar or visual indicator of fee fetch failure
+      if (mounted) {
+        showTopSnackBar(context, title: 'Error', message: 'Error fetching network fee: ${e.toString()}');
+      }
     }
   }
 
