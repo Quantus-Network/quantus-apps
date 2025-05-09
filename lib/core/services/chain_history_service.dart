@@ -51,10 +51,10 @@ class ChainHistoryService {
 
   // GraphQL query to fetch transfers for a specific account
   final String _transfersQuery = r'''
-query MyQuery($accountId: String!) {
+query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
   accounts(where: {id_eq: $accountId}) {
     id
-    transfersTo(orderBy: timestamp_DESC) {
+    transfersTo(orderBy: timestamp_DESC, limit: $limit, offset: $offset) {
       id
       from {
         id
@@ -68,7 +68,7 @@ query MyQuery($accountId: String!) {
       extrinsicHash
       blockNumber
     }
-    transfersFrom(orderBy: timestamp_DESC) {
+    transfersFrom(orderBy: timestamp_DESC, limit: $limit, offset: $offset) {
       id
       from {
         id
@@ -88,15 +88,21 @@ query MyQuery($accountId: String!) {
   ''';
 
   // Method to fetch transfers using http
-  Future<List<Transfer>> fetchTransfers({required String accountId}) async {
+  Future<List<Transfer>> fetchTransfers({
+    required String accountId,
+    int limit = 10,
+    int offset = 0,
+  }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-    print('fetchTransfers for account: $accountId from $uri');
+    print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _transfersQuery,
       'variables': <String, dynamic>{
         'accountId': accountId,
+        'limit': limit,
+        'offset': offset,
       },
     };
 

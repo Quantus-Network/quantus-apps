@@ -42,10 +42,30 @@ class _WalletMainState extends State<WalletMain> {
   bool _isHistoryLoading = true;
   String? _historyError;
 
+  // Pagination state
+  int _currentPage = 0;
+  bool _hasMoreTransactions = true;
+  bool _isLoadingMore = false;
+  static const int _transactionsPerPage = 10;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _loadWalletDataAndSetFuture();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreTransactions();
+    }
   }
 
   void _loadWalletDataAndSetFuture() {
@@ -100,19 +120,59 @@ class _WalletMainState extends State<WalletMain> {
     return WalletData(accountId: accountId, walletName: '', balance: balance);
   }
 
+  Future<void> _loadMoreTransactions() async {
+    if (!_hasMoreTransactions || _isLoadingMore || _isHistoryLoading) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final newTransfers = await _chainHistoryService.fetchTransfers(
+        accountId: _accountId!,
+        limit: _transactionsPerPage,
+        offset: _currentPage * _transactionsPerPage,
+      );
+
+      setState(() {
+        if (newTransfers.isEmpty) {
+          _hasMoreTransactions = false;
+        } else {
+          _transfers.addAll(newTransfers);
+          _currentPage++;
+        }
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingMore = false;
+        _historyError = 'Failed to load more transactions.';
+      });
+    }
+  }
+
   Future<void> _fetchTransactionHistory() async {
     print('fetchTransactionHistory: $_accountId');
-    if (_accountId == null) return; // Ensure accountId is available
+    if (_accountId == null) return;
 
     setState(() {
       _isHistoryLoading = true;
       _historyError = null;
+      _currentPage = 0;
+      _hasMoreTransactions = true;
+      _transfers = [];
     });
 
     try {
-      final fetchedTransfers = await _chainHistoryService.fetchTransfers(accountId: _accountId!);
+      final fetchedTransfers = await _chainHistoryService.fetchTransfers(
+        accountId: _accountId!,
+        limit: _transactionsPerPage,
+        offset: 0,
+      );
+
       setState(() {
         _transfers = fetchedTransfers;
+        _hasMoreTransactions = fetchedTransfers.length == _transactionsPerPage;
         _isHistoryLoading = false;
       });
       print('fetchedTransfers: ${_transfers.length}');
@@ -122,7 +182,6 @@ class _WalletMainState extends State<WalletMain> {
         _historyError = 'Failed to load transaction history.';
         _isHistoryLoading = false;
       });
-      // Optionally show a snackbar or other UI indication for the error
     }
   }
 
@@ -310,15 +369,45 @@ class _WalletMainState extends State<WalletMain> {
 
   Widget _buildHistorySection() {
     if (_isHistoryLoading) {
-      return const Center(child: CircularProgressIndicator());
-    } else if (_historyError != null) {
-      return Center(child: Text(_historyError!, style: const TextStyle(color: Colors.redAccent)));
-    } else if (_transfers.isEmpty) {
-      return const Center(child: Text('No transactions found.', style: TextStyle(color: Colors.white70)));
-    } else {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: _transfers.map((transfer) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
+        ),
+      );
+    }
+
+    if (_historyError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _historyError!,
+              style: const TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: _fetchTransactionHistory,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_transfers.isEmpty) {
+      return const Center(
+        child: Text(
+          'No transactions yet',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        ..._transfers.map((transfer) {
           final isSend = transfer.from == _accountId;
           final type = isSend ? 'Sent' : 'Received';
           final details = isSend ? 'to ${_formatAddress(transfer.to)}' : 'from ${_formatAddress(transfer.from)}';
@@ -334,8 +423,26 @@ class _WalletMainState extends State<WalletMain> {
             rawTimestamp: transfer.timestamp,
           );
         }).toList(),
-      );
-    }
+        if (_isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
+              ),
+            ),
+          ),
+        if (!_hasMoreTransactions && _transfers.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No more transactions',
+              style: TextStyle(color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _logout() async {
@@ -449,6 +556,7 @@ class _WalletMainState extends State<WalletMain> {
                   color: const Color(0xFF0CE6ED),
                   backgroundColor: Colors.black,
                   child: CustomScrollView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverToBoxAdapter(
