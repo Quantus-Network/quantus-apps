@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/core/services/number_formatting_service
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 import 'package:resonance_network_wallet/core/services/chain_history_service.dart';
+import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 
 class WalletData {
   final String accountId;
@@ -37,6 +38,9 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
+  List<Transfer> _transfers = [];
+  bool _isHistoryLoading = true;
+  String? _historyError;
 
   @override
   void initState() {
@@ -67,13 +71,8 @@ class _WalletMainState extends State<WalletMain> {
       balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
       print('Initial balance query successful.');
 
-      // Fetch and print transaction history
-      try {
-        final transfers = await _chainHistoryService.fetchTransfers(accountId: _accountId!);
-        print('Fetched transfers: $transfers');
-      } catch (historyError) {
-        print('Error fetching history: $historyError');
-      }
+      // Fetch transaction history after successful wallet data load
+      await _fetchTransactionHistory();
     } catch (e) {
       print('Initial load/query failed: $e');
 
@@ -99,6 +98,32 @@ class _WalletMainState extends State<WalletMain> {
     }
 
     return WalletData(accountId: accountId, walletName: '', balance: balance);
+  }
+
+  Future<void> _fetchTransactionHistory() async {
+    print('fetchTransactionHistory: $_accountId');
+    if (_accountId == null) return; // Ensure accountId is available
+
+    setState(() {
+      _isHistoryLoading = true;
+      _historyError = null;
+    });
+
+    try {
+      final fetchedTransfers = await _chainHistoryService.fetchTransfers(accountId: _accountId!);
+      setState(() {
+        _transfers = fetchedTransfers;
+        _isHistoryLoading = false;
+      });
+      print('fetchedTransfers: ${_transfers.length}');
+    } catch (e) {
+      print('Error fetching transaction history: $e');
+      setState(() {
+        _historyError = 'Failed to load transaction history.';
+        _isHistoryLoading = false;
+      });
+      // Optionally show a snackbar or other UI indication for the error
+    }
   }
 
   // Helper to format the address (now just returns the full address)
@@ -256,6 +281,75 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
+  Widget _buildHistorySection() {
+    if (_isHistoryLoading) {
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (_historyError != null) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Text(
+            _historyError!,
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+        ),
+      );
+    } else if (_transfers.isEmpty) {
+      return const SliverFillRemaining(
+        child: Center(
+          child: Text(
+            'No transactions found.',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    } else {
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final transfer = _transfers[index];
+            // Determine if it's a 'Send' or 'Receive' transaction based on accountId
+            final isSend = transfer.from == _accountId;
+            final type = isSend ? 'Send' : 'Receive';
+            final details = isSend ? 'To: ${_formatAddress(transfer.to)}' : 'From: ${_formatAddress(transfer.from)}';
+            // Assuming AppConstants.decimals is available and formatAmount exists in NumberFormattingService
+            final amountDisplay =
+                '${isSend ? '-' : '+'}${_formattingService.formatBalance(BigInt.parse(transfer.amount))} ${AppConstants.tokenSymbol}';
+            final typeColor = isSend ? Colors.orangeAccent : Colors.greenAccent; // Example colors
+            final iconWidget =
+                isSend ? const Icon(Icons.arrow_upward) : const Icon(Icons.arrow_downward); // Example icons
+
+            // Add a timestamp or block number to details if desired
+            // Assuming transfer.timestamp is a valid ISO 8601 string
+            try {
+              final timestamp = DateTime.parse(transfer.timestamp).toLocal().toString(); // Basic parsing
+              final itemDetails = '$details\n$timestamp'; // Combine details and timestamp
+              return _buildTransactionItem(
+                type: type,
+                amount: amountDisplay,
+                details: itemDetails,
+                iconWidget: iconWidget,
+                typeColor: typeColor,
+              );
+            } catch (e) {
+              print('Error parsing timestamp ${transfer.timestamp}: $e');
+              final itemDetails = '$details\nInvalid Timestamp'; // Show error if parsing fails
+              return _buildTransactionItem(
+                type: type,
+                amount: amountDisplay,
+                details: itemDetails,
+                iconWidget: iconWidget,
+                typeColor: typeColor,
+              );
+            }
+          },
+          childCount: _transfers.length,
+        ),
+      );
+    }
+  }
+
   Future<void> _logout() async {
     try {
       await _substrateService.logout();
@@ -367,209 +461,182 @@ class _WalletMainState extends State<WalletMain> {
                   },
                   color: const Color(0xFF0CE6ED), // Match your app's accent color
                   backgroundColor: Colors.black,
-                  child: ListView(
+                  child: CustomScrollView(
                     physics:
                         const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even when content fits screen
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
-                                    onPressed: () {
-                                      if (_accountId != null) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  if (_accountId != null) {
-                                    Clipboard.setData(ClipboardData(text: _accountId!));
-                                    showTopSnackBar(
-                                      context,
-                                      title: 'Copied!',
-                                      message: 'Account ID copied to clipboard',
-                                    );
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(5),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Image.asset(
-                                        'assets/active_dot.png',
-                                        width: 20,
-                                        height: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                          decoration: ShapeDecoration(
-                                            color: Colors.black.useOpacity(0.5),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                          ),
-                                          child: Text(
-                                            displayAddress,
-                                            textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontFamily: 'Fira Code',
-                                              fontWeight: FontWeight.w400,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                                      onPressed: () {
+                                        if (_accountId != null) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                            const SizedBox(height: 40),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    if (_accountId != null) {
+                                      Clipboard.setData(ClipboardData(text: _accountId!));
+                                      showTopSnackBar(
+                                        context,
+                                        title: 'Copied!',
+                                        message: 'Account ID copied to clipboard',
+                                      );
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Image.asset(
+                                          'assets/active_dot.png',
+                                          width: 20,
+                                          height: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                            decoration: ShapeDecoration(
+                                              color: Colors.black.useOpacity(0.5),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                            ),
+                                            child: Text(
+                                              displayAddress,
+                                              textAlign: TextAlign.center,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontFamily: 'Fira Code',
+                                                fontWeight: FontWeight.w400,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(Icons.expand_more, color: Colors.white70, size: 12),
-                                    ],
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 7),
-                              Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: _formattingService.formatBalance(walletData.balance),
-                                      style: const TextStyle(
-                                        color: Color(0xFFE6E6E6),
-                                        fontSize: 40,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const TextSpan(
-                                      text: ' ${AppConstants.tokenSymbol}',
-                                      style: TextStyle(
-                                        color: Color(0xFFE6E6E6),
-                                        fontSize: 20,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _buildActionButton(
-                                iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
-                                label: 'SEND',
-                                borderColor: const Color(0xFF0AD4F6),
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/send');
-                                },
-                              ),
-                              _buildActionButton(
-                                iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
-                                label: 'RECEIVE',
-                                borderColor: const Color(0xFFB258F1),
-                                onPressed: () {
-                                  showReceiveSheet(context);
-                                },
-                              ),
-                              _buildActionButton(
-                                iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
-                                label: 'SWAP',
-                                borderColor: const Color(0xFF0AD4F6),
-                                onPressed: () {},
-                                disabled: true,
-                              ),
-                              _buildActionButton(
-                                iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
-                                label: 'BRIDGE',
-                                borderColor: const Color(0xFF0AD4F6),
-                                onPressed: () {},
-                                disabled: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(10),
-                            decoration: ShapeDecoration(
-                              color: Colors.black.useOpacity(64 / 255.0),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Recent Transactions',
-                                  style: TextStyle(
-                                    color: Color(0xFFE6E6E6),
-                                    fontSize: 14,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                SizedBox(
-                                  height: 300, // Fixed height for transactions list
-                                  child: ListView(
-                                    physics:
-                                        const NeverScrollableScrollPhysics(), // Disable scrolling for inner ListView
+                                const SizedBox(height: 7),
+                                Text.rich(
+                                  TextSpan(
                                     children: [
-                                      _buildTransactionItem(
-                                        type: 'Sent',
-                                        amount: '-13.082 ${AppConstants.tokenSymbol}',
-                                        details: 'to 0xc344...fe82 | 01-04-2025  09:45:21',
-                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
-                                        typeColor: const Color(0xFF16CECE),
+                                      TextSpan(
+                                        text: _formattingService.formatBalance(walletData.balance),
+                                        style: const TextStyle(
+                                          color: Color(0xFFE6E6E6),
+                                          fontSize: 40,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                      _buildTransactionItem(
-                                        type: 'Received',
-                                        amount: '13.2345 ${AppConstants.tokenSymbol}',
-                                        details: 'from 0xc344...fe82 | 24-12-2024  16:23:04',
-                                        iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
-                                        typeColor: const Color(0xFFB259F2),
-                                      ),
-                                      _buildTransactionItem(
-                                        type: 'Sent',
-                                        amount: '-309.9866 ${AppConstants.tokenSymbol}',
-                                        details: 'to 0xc344...fe82 | 13-11-2024  02:12:33',
-                                        iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
-                                        typeColor: const Color(0xFF16CECE),
+                                      const TextSpan(
+                                        text: ' ${AppConstants.tokenSymbol}',
+                                        style: TextStyle(
+                                          color: Color(0xFFE6E6E6),
+                                          fontSize: 20,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ],
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
+                            const SizedBox(height: 30),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildActionButton(
+                                  iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
+                                  label: 'SEND',
+                                  borderColor: const Color(0xFF0AD4F6),
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/send');
+                                  },
+                                ),
+                                _buildActionButton(
+                                  iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                                  label: 'RECEIVE',
+                                  borderColor: const Color(0xFFB258F1),
+                                  onPressed: () {
+                                    showReceiveSheet(context);
+                                  },
+                                ),
+                                _buildActionButton(
+                                  iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
+                                  label: 'SWAP',
+                                  borderColor: const Color(0xFF0AD4F6),
+                                  onPressed: () {},
+                                  disabled: true,
+                                ),
+                                _buildActionButton(
+                                  iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
+                                  label: 'BRIDGE',
+                                  borderColor: const Color(0xFF0AD4F6),
+                                  onPressed: () {},
+                                  disabled: true,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(10),
+                              decoration: ShapeDecoration(
+                                color: Colors.black.useOpacity(64 / 255.0),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Recent Transactions',
+                                    style: TextStyle(
+                                      color: Color(0xFFE6E6E6),
+                                      fontSize: 14,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 18),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
+                      _buildHistorySection(),
                     ],
                   ),
                 );
