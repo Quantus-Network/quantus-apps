@@ -302,29 +302,30 @@ class SubstrateService {
 
   Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
     try {
+      // Ensure provider is connected before proceeding
+      if (_provider == null) {
+        await initialize();
+      }
+
       // Get the sender's wallet
       debugPrint('sending to $targetAddress');
-      debugPrint('amount (BigInt): $amount'); // Log BigInt amount
-      debugPrint(
-          'amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}'); // Log amount
+      debugPrint('amount (BigInt): $amount');
+      debugPrint('amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}');
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
       await _printBalance('Sender before ', senderWallet.ss58Address);
       await _printBalance('Target before ', targetAddress);
 
-      // Get necessary info for the transaction
+      // Get all necessary info for the transaction in one go to minimize timing issues
       final runtimeVersion = await _stateApi!.getRuntimeVersion();
       final specVersion = runtimeVersion.specVersion;
       final transactionVersion = runtimeVersion.transactionVersion;
 
       final block = await _provider!.send('chain_getBlock', []);
       final blockNumber = int.parse(block.result['block']['header']['number']);
-
       final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
       final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
-
-      // Get the next nonce for the `sender`
       final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
       final nonce = int.parse(nonceResult.result.toString());
 
@@ -354,15 +355,11 @@ class SubstrateService {
       );
 
       final payload = payloadToSign.encode(resonanceApi.registry);
-
       final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-
       final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
-      // final signature = senderWallet.sign(payload);
-
       // Create the extrinsic
-      final extrinsic = ResonanceExtrinsicPayload(
+      var extrinsic = ResonanceExtrinsicPayload(
         signer: Uint8List.fromList(senderWallet.addressBytes),
         method: transferCall,
         signature: signatureWithPublicKeyBytes,
@@ -372,22 +369,63 @@ class SubstrateService {
         tip: 0,
       ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
 
-      // Submit the extrinsic
+      // Add retry logic for submission
+      int retryCount = 0;
+      const maxRetries = 3;
 
-      await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
-        debugPrint('type: ${data.type}, value: ${data.value}');
+      while (retryCount < maxRetries) {
+        try {
+          await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
+            debugPrint('type: ${data.type}, value: ${data.value}');
+            await _printBalance('after ', senderWallet.ss58Address);
+            await _printBalance('after ', targetAddress);
+          });
+          return '0';
+        } catch (e) {
+          retryCount++;
+          if (retryCount >= maxRetries) rethrow;
+          // Wait a bit before retrying
+          await Future.delayed(Duration(milliseconds: 500 * retryCount));
+          // Refresh block info for retry
+          final newBlock = await _provider!.send('chain_getBlock', []);
+          final newBlockNumber = int.parse(newBlock.result['block']['header']['number']);
+          final newBlockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+          final newNonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+          final newNonce = int.parse(newNonceResult.result.toString());
 
-        await _printBalance('after ', senderWallet.ss58Address);
-        await _printBalance('after ', targetAddress);
-      });
+          // Recreate payload with new block info
+          final newPayloadToSign = SigningPayload(
+            method: transferCall,
+            specVersion: specVersion,
+            transactionVersion: transactionVersion,
+            genesisHash: genesisHash,
+            blockHash: newBlockHash,
+            blockNumber: newBlockNumber,
+            eraPeriod: 64,
+            nonce: newNonce,
+            tip: 0,
+          );
+
+          final newPayload = newPayloadToSign.encode(resonanceApi.registry);
+          final newSignature = crypto.signMessage(keypair: senderWallet, message: newPayload);
+          final newSignatureWithPublicKeyBytes = _combineSignatureAndPubkey(newSignature, senderWallet.publicKey);
+
+          extrinsic = ResonanceExtrinsicPayload(
+            signer: Uint8List.fromList(senderWallet.addressBytes),
+            method: transferCall,
+            signature: newSignatureWithPublicKeyBytes,
+            eraPeriod: 64,
+            blockNumber: newBlockNumber,
+            nonce: newNonce,
+            tip: 0,
+          ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+        }
+      }
+
       return '0';
-
-      // final hash = await _authorApi.submitExtrinsic(extrinsic);
-      // return convert.hex.encode(0);
     } catch (e, stackTrace) {
       debugPrint('Failed to transfer balance: $e');
       debugPrint('Failed to transfer balance: $stackTrace');
-
       throw Exception('Failed to transfer balance: $e');
     }
   }
