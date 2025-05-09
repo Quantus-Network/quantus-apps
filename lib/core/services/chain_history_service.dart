@@ -54,7 +54,7 @@ class ChainHistoryService {
 query MyQuery($accountId: String!) {
   accounts(where: {id_eq: $accountId}) {
     id
-    transfersTo {
+    transfersTo(orderBy: timestamp_DESC) {
       id
       from {
         id
@@ -68,7 +68,7 @@ query MyQuery($accountId: String!) {
       extrinsicHash
       blockNumber
     }
-    transfersFrom {
+    transfersFrom(orderBy: timestamp_DESC) {
       id
       from {
         id
