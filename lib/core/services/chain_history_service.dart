@@ -89,13 +89,8 @@ query MyQuery($accountId: String!) {
 
   // Method to fetch transfers using http
   Future<List<Transfer>> fetchTransfers({required String accountId}) async {
-    if (_graphQlEndpoint.isEmpty) {
-      throw Exception('GraphQL endpoint not configured in ChainHistoryService.');
-    }
-
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-
-    print('uri: $uri');
+    print('fetchTransfers for account: $accountId from $uri');
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
@@ -115,8 +110,8 @@ query MyQuery($accountId: String!) {
       );
 
       // Print raw response for debugging
-      print('Raw GraphQL response status: ${response.statusCode}');
-      print('Raw GraphQL response body: ${response.body}');
+      // print('Raw GraphQL response status: ${response.statusCode}');
+      // print('Raw GraphQL response body: ${response.body}');
 
       if (response.statusCode != 200) {
         // Handle non-200 status codes
