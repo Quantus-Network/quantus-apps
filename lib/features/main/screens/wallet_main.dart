@@ -208,44 +208,71 @@ class _WalletMainState extends State<WalletMain> {
     required String details,
     required Widget iconWidget,
     required Color typeColor,
+    required String rawTimestamp,
   }) {
-    Widget finalIconWidget = iconWidget;
-    if (iconWidget is SvgPicture) {
-      finalIconWidget = SvgPicture.asset(
-        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
-        colorFilter: ColorFilter.mode(typeColor, BlendMode.srcIn),
-        width: 20,
-        height: 20,
-      );
-    } else if (iconWidget is Icon) {
-      finalIconWidget = Icon(iconWidget.icon, color: typeColor, size: 20);
+    final String iconAsset;
+    final Color effectiveTypeColor;
+    if (type == 'Sent') {
+      iconAsset = 'assets/send_icon_1.svg';
+      effectiveTypeColor = const Color(0xFF16CECE);
+    } else {
+      iconAsset = 'assets/receive_icon.svg';
+      effectiveTypeColor = const Color(0xFFB259F2);
+    }
+
+    String formattedTimestamp = 'Invalid Timestamp';
+    try {
+      final dateTime = DateTime.parse(rawTimestamp).toLocal();
+      final day = dateTime.day.toString().padLeft(2, '0');
+      final month = dateTime.month.toString().padLeft(2, '0');
+      final year = dateTime.year;
+      final hour = dateTime.hour.toString().padLeft(2, '0');
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      final second = dateTime.second.toString().padLeft(2, '0');
+      formattedTimestamp = '$day-$month-$year $hour:$minute:$second';
+    } catch (e) {
+      print('Error formatting timestamp $rawTimestamp: $e');
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            finalIconWidget,
+            SizedBox(
+              width: 21,
+              height: 17,
+              child: SvgPicture.asset(
+                iconAsset,
+                colorFilter: ColorFilter.mode(effectiveTypeColor, BlendMode.srcIn),
+              ),
+            ),
             const SizedBox(width: 11),
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text.rich(
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: '$type ',
+                          text: type,
                           style: TextStyle(
-                            color: typeColor,
+                            color: effectiveTypeColor,
                             fontSize: 14,
                             fontFamily: 'Fira Code',
                             fontWeight: FontWeight.w400,
                           ),
                         ),
                         TextSpan(
-                          text: amount,
+                          text: ' ' + amount,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -258,7 +285,7 @@ class _WalletMainState extends State<WalletMain> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    details,
+                    '${details} | $formattedTimestamp',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -309,40 +336,20 @@ class _WalletMainState extends State<WalletMain> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final transfer = _transfers[index];
-            // Determine if it's a 'Send' or 'Receive' transaction based on accountId
             final isSend = transfer.from == _accountId;
-            final type = isSend ? 'Send' : 'Receive';
-            final details = isSend ? 'To: ${_formatAddress(transfer.to)}' : 'From: ${_formatAddress(transfer.from)}';
-            // Assuming AppConstants.decimals is available and formatAmount exists in NumberFormattingService
+            final type = isSend ? 'Sent' : 'Received';
+            final details = isSend ? 'to ${_formatAddress(transfer.to)}' : 'from ${_formatAddress(transfer.from)}';
             final amountDisplay =
                 '${isSend ? '-' : '+'}${_formattingService.formatBalance(BigInt.parse(transfer.amount))} ${AppConstants.tokenSymbol}';
-            final typeColor = isSend ? Colors.orangeAccent : Colors.greenAccent; // Example colors
-            final iconWidget =
-                isSend ? const Icon(Icons.arrow_upward) : const Icon(Icons.arrow_downward); // Example icons
 
-            // Add a timestamp or block number to details if desired
-            // Assuming transfer.timestamp is a valid ISO 8601 string
-            try {
-              final timestamp = DateTime.parse(transfer.timestamp).toLocal().toString(); // Basic parsing
-              final itemDetails = '$details\n$timestamp'; // Combine details and timestamp
-              return _buildTransactionItem(
-                type: type,
-                amount: amountDisplay,
-                details: itemDetails,
-                iconWidget: iconWidget,
-                typeColor: typeColor,
-              );
-            } catch (e) {
-              print('Error parsing timestamp ${transfer.timestamp}: $e');
-              final itemDetails = '$details\nInvalid Timestamp'; // Show error if parsing fails
-              return _buildTransactionItem(
-                type: type,
-                amount: amountDisplay,
-                details: itemDetails,
-                iconWidget: iconWidget,
-                typeColor: typeColor,
-              );
-            }
+            return _buildTransactionItem(
+              type: type,
+              amount: amountDisplay,
+              details: details,
+              iconWidget: Container(),
+              typeColor: Colors.transparent,
+              rawTimestamp: transfer.timestamp,
+            );
           },
           childCount: _transfers.length,
         ),
@@ -613,7 +620,7 @@ class _WalletMainState extends State<WalletMain> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(10),
                               decoration: ShapeDecoration(
-                                color: Colors.black.useOpacity(64 / 255.0),
+                                color: Colors.black.withAlpha(64),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                               ),
                               child: const Column(
