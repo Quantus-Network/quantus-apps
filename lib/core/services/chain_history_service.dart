@@ -159,7 +159,7 @@ query MyQuery($accountId: String!) {
       }).toList();
 
       // You might want to sort transfers by timestamp here if needed
-      // transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       return transfers;
     } catch (e) {
