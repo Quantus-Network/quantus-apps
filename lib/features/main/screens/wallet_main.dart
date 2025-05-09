@@ -310,49 +310,30 @@ class _WalletMainState extends State<WalletMain> {
 
   Widget _buildHistorySection() {
     if (_isHistoryLoading) {
-      return const SliverFillRemaining(
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Center(child: CircularProgressIndicator());
     } else if (_historyError != null) {
-      return SliverFillRemaining(
-        child: Center(
-          child: Text(
-            _historyError!,
-            style: const TextStyle(color: Colors.redAccent),
-          ),
-        ),
-      );
+      return Center(child: Text(_historyError!, style: const TextStyle(color: Colors.redAccent)));
     } else if (_transfers.isEmpty) {
-      return const SliverFillRemaining(
-        child: Center(
-          child: Text(
-            'No transactions found.',
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
-      );
+      return const Center(child: Text('No transactions found.', style: TextStyle(color: Colors.white70)));
     } else {
-      return SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final transfer = _transfers[index];
-            final isSend = transfer.from == _accountId;
-            final type = isSend ? 'Sent' : 'Received';
-            final details = isSend ? 'to ${_formatAddress(transfer.to)}' : 'from ${_formatAddress(transfer.from)}';
-            final amountDisplay =
-                '${isSend ? '-' : '+'}${_formattingService.formatBalance(BigInt.parse(transfer.amount))} ${AppConstants.tokenSymbol}';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _transfers.map((transfer) {
+          final isSend = transfer.from == _accountId;
+          final type = isSend ? 'Sent' : 'Received';
+          final details = isSend ? 'to ${_formatAddress(transfer.to)}' : 'from ${_formatAddress(transfer.from)}';
+          final amountDisplay =
+              '${isSend ? '-' : '+'}${_formattingService.formatBalance(BigInt.parse(transfer.amount))} ${AppConstants.tokenSymbol}';
 
-            return _buildTransactionItem(
-              type: type,
-              amount: amountDisplay,
-              details: details,
-              iconWidget: Container(),
-              typeColor: Colors.transparent,
-              rawTimestamp: transfer.timestamp,
-            );
-          },
-          childCount: _transfers.length,
-        ),
+          return _buildTransactionItem(
+            type: type,
+            amount: amountDisplay,
+            details: details,
+            iconWidget: Container(),
+            typeColor: Colors.transparent,
+            rawTimestamp: transfer.timestamp,
+          );
+        }).toList(),
       );
     }
   }
@@ -458,7 +439,6 @@ class _WalletMainState extends State<WalletMain> {
                 }
 
                 final walletData = snapshot.data!;
-                // Use the full address
                 final displayAddress = _formatAddress(walletData.accountId);
 
                 return RefreshIndicator(
@@ -466,11 +446,10 @@ class _WalletMainState extends State<WalletMain> {
                     _loadWalletDataAndSetFuture();
                     await _walletDataFuture;
                   },
-                  color: const Color(0xFF0CE6ED), // Match your app's accent color
+                  color: const Color(0xFF0CE6ED),
                   backgroundColor: Colors.black,
                   child: CustomScrollView(
-                    physics:
-                        const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even when content fits screen
+                    physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverToBoxAdapter(
                         child: Column(
@@ -479,23 +458,19 @@ class _WalletMainState extends State<WalletMain> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
-                                      onPressed: () {
-                                        if (_accountId != null) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                )
+                                IconButton(
+                                  icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                                  onPressed: () {
+                                    if (_accountId != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
                               ],
                             ),
                             const SizedBox(height: 40),
@@ -616,34 +591,34 @@ class _WalletMainState extends State<WalletMain> {
                               ],
                             ),
                             const SizedBox(height: 30),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(10),
-                              decoration: ShapeDecoration(
-                                color: Colors.black.withAlpha(64),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                              ),
-                              child: const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Recent Transactions',
-                                    style: TextStyle(
-                                      color: Color(0xFFE6E6E6),
-                                      fontSize: 14,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 18),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                           ],
                         ),
                       ),
-                      _buildHistorySection(),
+                      SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: ShapeDecoration(
+                            color: Colors.black.withAlpha(64),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Recent Transactions',
+                                style: TextStyle(
+                                  color: Color(0xFFE6E6E6),
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              _buildHistorySection(),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 );
