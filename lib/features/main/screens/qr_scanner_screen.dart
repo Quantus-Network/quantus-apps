@@ -11,6 +11,7 @@ class QRScannerScreen extends StatefulWidget {
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
   final MobileScannerController controller = MobileScannerController();
+  bool _hasScanned = false; // Add flag to track if we've already scanned
 
   @override
   void dispose() {
@@ -74,10 +75,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           MobileScanner(
             controller: controller,
             onDetect: (capture) {
+              if (_hasScanned) return; // Skip if we've already scanned
+
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
                 if (barcode.rawValue != null) {
-                  // Return the scanned value to the previous screen
+                  _hasScanned = true; // Set flag before popping
+                  print('Popping QR scanner with: ${barcode.rawValue}');
                   Navigator.pop(context, barcode.rawValue);
                   break;
                 }

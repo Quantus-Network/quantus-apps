@@ -78,9 +78,12 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _lookupIdentity() async {
+    if (!mounted) return; // Add early return if not mounted
+
     print("lookupIdentity");
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
+      if (!mounted) return; // Check mounted before setState
       setState(() {
         _savedAddressesLabel = '';
         _hasAddressError = false;
@@ -90,27 +93,28 @@ class SendScreenState extends State<SendScreen> {
 
     try {
       final isValid = _isValidSS58Address(recipient);
+      if (!mounted) return; // Check mounted before setState
       setState(() {
         _hasAddressError = !isValid;
       });
 
       if (isValid) {
-        final stopwatch = Stopwatch()..start();
         print('Starting wallet name lookup for: $recipient');
         final humanReadableName = await HumanReadableChecksumService().getHumanReadableName(recipient);
-        stopwatch.stop();
-        debugPrint('Wallet name lookup took: ${stopwatch.elapsedMilliseconds}ms');
-        debugPrint('Final humanReadableName: $humanReadableName');
+        print('Final humanReadableName: $humanReadableName');
+        if (!mounted) return; // Check mounted before setState
         setState(() {
           _savedAddressesLabel = humanReadableName;
         });
       } else {
+        if (!mounted) return; // Check mounted before setState
         setState(() {
           _savedAddressesLabel = '';
         });
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
+      if (!mounted) return; // Check mounted before setState
       setState(() {
         _savedAddressesLabel = '';
         _hasAddressError = true;
@@ -220,6 +224,7 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _scanQRCode() async {
+    print('Scanning QR code');
     final scannedAddress = await Navigator.push<String>(
       context,
       MaterialPageRoute(
@@ -229,10 +234,12 @@ class SendScreenState extends State<SendScreen> {
     );
 
     if (scannedAddress != null && mounted) {
-      setState(() {
-        _recipientController.text = scannedAddress;
-        _lookupIdentity(); // Trigger address validation and name lookup
-      });
+      _recipientController.text = scannedAddress;
+      // Add a small delay to ensure the text controller has updated
+      // await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) {
+        _lookupIdentity();
+      }
     }
   }
 
