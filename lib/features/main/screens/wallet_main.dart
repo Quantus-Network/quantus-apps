@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
+import 'package:resonance_network_wallet/core/services/chain_history_service.dart';
 
 class WalletData {
   final String accountId;
@@ -32,6 +33,7 @@ class _WalletMainState extends State<WalletMain> {
   final SubstrateService _substrateService = SubstrateService();
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
+  final ChainHistoryService _chainHistoryService = ChainHistoryService();
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
@@ -61,11 +63,19 @@ class _WalletMainState extends State<WalletMain> {
       }
       _accountId = accountId;
 
-      debugPrint('Attempting initial balance query for $accountId...');
+      print('Attempting initial balance query for $accountId...');
       balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-      debugPrint('Initial balance query successful.');
+      print('Initial balance query successful.');
+
+      // Fetch and print transaction history
+      try {
+        final transfers = await _chainHistoryService.fetchTransfers(accountId: _accountId!);
+        print('Fetched transfers: $transfers');
+      } catch (historyError) {
+        print('Error fetching history: $historyError');
+      }
     } catch (e) {
-      debugPrint('Initial load/query failed: $e');
+      print('Initial load/query failed: $e');
 
       bool isConnectionError = e is SocketException ||
           e is TimeoutException ||
@@ -73,17 +83,17 @@ class _WalletMainState extends State<WalletMain> {
           e.toString().contains('WebSocket');
 
       if (isConnectionError && accountId != null) {
-        debugPrint('Connection error detected. Attempting reconnect and retry...');
+        print('Connection error detected. Attempting reconnect and retry...');
         try {
           await _substrateService.reconnect();
           balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-          debugPrint('Balance query successful after reconnect.');
+          print('Balance query successful after reconnect.');
         } catch (retryError) {
-          debugPrint('Retry failed after reconnect: $retryError');
+          print('Retry failed after reconnect: $retryError');
           throw Exception('Failed to load wallet data after retry: $retryError');
         }
       } else {
-        debugPrint('Error was not connection-related or accountId is null. Rethrowing.');
+        print('Error was not connection-related or accountId is null. Rethrowing.');
         throw Exception('Failed to load wallet data: $e');
       }
     }
@@ -257,7 +267,7 @@ class _WalletMainState extends State<WalletMain> {
         );
       }
     } catch (e) {
-      debugPrint('Error during logout: $e');
+      print('Error during logout: $e');
       if (mounted) {
         showTopSnackBar(
           context,
