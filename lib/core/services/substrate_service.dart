@@ -98,13 +98,13 @@ class SubstrateService {
       }
     } catch (e) {
       _connectionStatusController.add(ConnectionStatus.error);
-      debugPrint('Initial connection failed: $e');
+      print('Initial connection failed: $e');
       // Optionally rethrow or handle based on app's startup requirements
     }
   }
 
   Future<void> reconnect() async {
-    debugPrint('Attempting to recreate and reconnect Substrate provider...');
+    print('Attempting to recreate and reconnect Substrate provider...');
     const Duration networkTimeout = Duration(seconds: 15);
 
     // Dispose of the old provider instance if it exists
@@ -123,10 +123,10 @@ class SubstrateService {
       _connectionStatusController.add(ConnectionStatus.connecting);
       await _provider!.connect().timeout(networkTimeout);
       _connectionStatusController.add(ConnectionStatus.connected);
-      debugPrint('New provider connected successfully during reconnect.');
+      print('New provider connected successfully during reconnect.');
     } catch (e) {
       _connectionStatusController.add(ConnectionStatus.disconnected); // Or error
-      debugPrint('Failed to recreate/reconnect provider: $e');
+      print('Failed to recreate/reconnect provider: $e');
       if (e is TimeoutException) {
         throw Exception('Failed to reconnect to the network: Connection timed out.');
       } else {
@@ -254,7 +254,7 @@ class SubstrateService {
       if (e.toString().contains('WebSocketChannelException') || e is SocketException || e is TimeoutException) {
         _connectionStatusController.add(ConnectionStatus.disconnected);
       }
-      debugPrint('Error querying balance: $e');
+      print('Error querying balance: $e');
       throw Exception('Failed to query balance: $e');
     }
   }
@@ -267,14 +267,14 @@ class SubstrateService {
     // Calculate and print signature checksum
     final signatureHash = sha256.convert(signature).bytes;
     final signatureChecksum = base64.encode(signatureHash).substring(0, 8);
-    debugPrint('Signature checksum: $signatureChecksum');
+    print('Signature checksum: $signatureChecksum');
 
     return result;
   }
 
   Future<void> _printBalance(String prefix, String address) async {
     final balance = await queryBalance(address);
-    debugPrint('$prefix Balance for $address: ${balance.toString()}');
+    print('$prefix Balance for $address: ${balance.toString()}');
   }
 
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
@@ -308,9 +308,9 @@ class SubstrateService {
       }
 
       // Get the sender's wallet
-      debugPrint('sending to $targetAddress');
-      debugPrint('amount (BigInt): $amount');
-      debugPrint('amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}');
+      print('sending to $targetAddress');
+      print('amount (BigInt): $amount');
+      print('amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}');
 
       crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
 
@@ -334,7 +334,7 @@ class SubstrateService {
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
-      debugPrint('Destination: $dest');
+      print('Destination: $dest');
 
       // Encode call
       final resonanceApi = Resonance(_provider!);
@@ -376,7 +376,7 @@ class SubstrateService {
       while (retryCount < maxRetries) {
         try {
           await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
-            debugPrint('type: ${data.type}, value: ${data.value}');
+            print('type: ${data.type}, value: ${data.value}');
             await _printBalance('after ', senderWallet.ss58Address);
             await _printBalance('after ', targetAddress);
           });
@@ -424,8 +424,8 @@ class SubstrateService {
 
       return '0';
     } catch (e, stackTrace) {
-      debugPrint('Failed to transfer balance: $e');
-      debugPrint('Failed to transfer balance: $stackTrace');
+      print('Failed to transfer balance: $e');
+      print('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }
@@ -436,7 +436,7 @@ class SubstrateService {
       // Get the sender's wallet
       final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
 
-      debugPrint('sender\' wallet: ${senderWallet.address}');
+      print('sender\' wallet: ${senderWallet.address}');
 
       // Get necessary info for the transaction
       final runtimeVersion = await _stateApi!.getRuntimeVersion();
@@ -458,7 +458,7 @@ class SubstrateService {
 
       final dest = targetAddress;
       final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
-      debugPrint('Destination: $dest');
+      print('Destination: $dest');
 
       // Encode call
       final resonanceApi = Resonance(_provider!);
@@ -499,15 +499,15 @@ class SubstrateService {
       // Submit the extrinsic
 
       await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) {
-        debugPrint('type: ${data.type}, value: ${data.value}');
+        print('type: ${data.type}, value: ${data.value}');
       });
       return '0';
 
       // final hash = await _authorApi.submitExtrinsic(extrinsic);
       // return convert.hex.encode(0);
     } catch (e, stackTrace) {
-      debugPrint('Failed to transfer balance: $e');
-      debugPrint('Failed to transfer balance: $stackTrace');
+      print('Failed to transfer balance: $e');
+      print('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
   }
