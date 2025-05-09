@@ -138,8 +138,20 @@ class _WalletMainState extends State<WalletMain> {
         if (newTransfers.isEmpty) {
           _hasMoreTransactions = false;
         } else {
-          _transfers.addAll(newTransfers);
-          _currentPage++;
+          // Create a Set of existing transaction IDs to prevent duplicates
+          final existingIds = _transfers.map((t) => t.id).toSet();
+
+          // Only add transactions that don't already exist
+          final uniqueNewTransfers = newTransfers.where((t) => !existingIds.contains(t.id)).toList();
+
+          if (uniqueNewTransfers.isNotEmpty) {
+            _transfers.addAll(uniqueNewTransfers);
+            // Sort by timestamp in descending order
+            _transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+            _currentPage++;
+          } else {
+            _hasMoreTransactions = false;
+          }
         }
         _isLoadingMore = false;
       });
@@ -172,6 +184,8 @@ class _WalletMainState extends State<WalletMain> {
 
       setState(() {
         _transfers = fetchedTransfers;
+        // Sort by timestamp in descending order
+        _transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
         _hasMoreTransactions = fetchedTransfers.length == _transactionsPerPage;
         _isHistoryLoading = false;
       });
