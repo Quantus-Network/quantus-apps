@@ -13,45 +13,96 @@ class HumanReadableChecksumService {
   Isolate? _isolate;
   SendPort? _isolateSendPort;
   final _checkPhraseCache = <String, String>{};
+  Completer<void>? _isolateReadyCompleter;
 
   Future<void> initialize() async {
-    if (_cachedWordList != null) return;
-
-    // Load word list in main thread
-    final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
-    _cachedWordList = wordList.split('\n').where((word) => word.isNotEmpty).toList();
-
-    if (_cachedWordList!.length != 2048) {
-      throw Exception('Word list must contain exactly 2048 words');
+    if (_cachedWordList != null && _isolateSendPort != null && (_isolateReadyCompleter?.isCompleted ?? false)) {
+      return;
     }
 
-    // Start the isolate
-    final receivePort = ReceivePort();
-    await Isolate.spawn(_isolateEntry, [receivePort.sendPort, _cachedWordList]);
-    _isolateSendPort = await receivePort.first as SendPort;
+    if (_isolateReadyCompleter != null && !_isolateReadyCompleter!.isCompleted) {
+      await _isolateReadyCompleter!.future;
+      return;
+    }
+
+    _isolateReadyCompleter = Completer<void>();
+
+    try {
+      if (_cachedWordList == null) {
+        final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+        _cachedWordList = wordList.split('\n').where((word) => word.isNotEmpty).toList();
+
+        if (_cachedWordList!.length != 2048) {
+          _isolateReadyCompleter!.completeError(Exception('Word list must contain exactly 2048 words'));
+          throw Exception('Word list must contain exactly 2048 words');
+        }
+      }
+
+      if (_isolateSendPort == null) {
+        final receivePort = ReceivePort();
+        _isolate = await Isolate.spawn(_isolateEntry, [receivePort.sendPort, _cachedWordList!]);
+        _isolateSendPort = await receivePort.first as SendPort;
+      }
+
+      _isolateReadyCompleter!.complete();
+    } catch (e, s) {
+      debugPrint('Error during checksum isolate initialization: $e');
+      debugPrint('Initialization error stack: $s');
+      if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
+        _isolateReadyCompleter!.completeError(e);
+      }
+      _isolate?.kill();
+      _isolate = null;
+      _isolateSendPort = null;
+      _cachedWordList = null;
+      rethrow;
+    }
   }
 
   Future<String> getHumanReadableName(String address) async {
-    if (_checkPhraseCache.containsKey(address)) {
-      return _checkPhraseCache[address]!;
-    }
+    try {
+      if (_checkPhraseCache.containsKey(address)) {
+        return _checkPhraseCache[address]!;
+      }
 
-    if (_cachedWordList == null) {
-      await initialize();
-    }
+      if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
+        await initialize();
+      }
 
-    final responsePort = ReceivePort();
-    _isolateSendPort!.send([address, responsePort.sendPort]);
-    final result = await responsePort.first as String;
-    responsePort.close();
-    _checkPhraseCache[address] = result;
-    return result;
+      if (_isolateSendPort == null) {
+        debugPrint('Error: _isolateSendPort is null after successful initialization wait.');
+        return '';
+      }
+
+      final responsePort = ReceivePort();
+      _isolateSendPort!.send([address, responsePort.sendPort]);
+      final result = await responsePort.first as String?;
+      responsePort.close();
+
+      final finalResult = result ?? '';
+
+      _checkPhraseCache[address] = finalResult;
+      return finalResult;
+    } catch (e, s) {
+      debugPrint('Error in getHumanReadableName for address $address: $e');
+      debugPrint('Lookup error stack: $s');
+      _checkPhraseCache.remove(address);
+      return '';
+    }
   }
 
   void dispose() {
-    _isolate?.kill();
+    debugPrint('Disposing HumanReadableChecksumService...');
+    _isolate?.kill(priority: Isolate.immediate);
     _isolate = null;
     _isolateSendPort = null;
+    _cachedWordList = null;
+    _checkPhraseCache.clear();
+    if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
+      _isolateReadyCompleter?.completeError('HumanReadableChecksumService disposed');
+    }
+    _isolateReadyCompleter = null;
+    debugPrint('HumanReadableChecksumService disposed.');
   }
 }
 
@@ -70,9 +121,11 @@ void _isolateEntry(List<dynamic> args) async {
       final humanChecksum = HumanChecksum(words);
       final result = humanChecksum.addressToChecksum(address).join('-');
       replyTo.send(result);
-    } catch (e) {
-      debugPrint('Error in checksum isolate: $e');
+    } catch (e, s) {
+      debugPrint('Error in checksum isolate processing address $address: $e');
+      debugPrint('Isolate error stack: $s');
       replyTo.send('');
     }
   }
+  debugPrint('Checksum isolate message stream closed.');
 }
