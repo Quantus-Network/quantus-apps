@@ -43,6 +43,34 @@ class Transfer {
   }
 }
 
+class TransferList {
+  final List<Transfer> transfers;
+  final bool hasMore;
+  final int nextOffset;
+
+  TransferList({
+    required this.transfers,
+    required this.hasMore,
+    required this.nextOffset,
+  });
+}
+
+class TransferResult {
+  final List<Transfer> combinedTransfers;
+  final bool hasMoreTo;
+  final bool hasMoreFrom;
+  final int nextToOffset;
+  final int nextFromOffset;
+
+  TransferResult({
+    required this.combinedTransfers,
+    required this.hasMoreTo,
+    required this.hasMoreFrom,
+    required this.nextToOffset,
+    required this.nextFromOffset,
+  });
+}
+
 class ChainHistoryService {
   final String _graphQlEndpoint = AppConstants.graphQlEndpoint;
 
@@ -51,10 +79,10 @@ class ChainHistoryService {
 
   // GraphQL query to fetch transfers for a specific account
   final String _transfersQuery = r'''
-query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
+query MyQuery($accountId: String!, $limit: Int!, $toOffset: Int!, $fromOffset: Int!) {
   accounts(where: {id_eq: $accountId}) {
     id
-    transfersTo(orderBy: timestamp_DESC, limit: $limit, offset: $offset) {
+    transfersTo(orderBy: timestamp_DESC, limit: $limit, offset: $toOffset) {
       id
       from {
         id
@@ -68,7 +96,7 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
       extrinsicHash
       blockNumber
     }
-    transfersFrom(orderBy: timestamp_DESC, limit: $limit, offset: $offset) {
+    transfersFrom(orderBy: timestamp_DESC, limit: $limit, offset: $fromOffset) {
       id
       from {
         id
@@ -84,17 +112,18 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
     }
   }
 }
-
   ''';
 
   // Method to fetch transfers using http
-  Future<List<Transfer>> fetchTransfers({
+  Future<TransferResult> fetchTransfers({
     required String accountId,
     int limit = 10,
-    int offset = 0,
+    int toOffset = 0,
+    int fromOffset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-    print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
+    print(
+        'fetchTransfers for account: $accountId from $uri (limit: $limit, toOffset: $toOffset, fromOffset: $fromOffset)');
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
@@ -102,7 +131,8 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
       'variables': <String, dynamic>{
         'accountId': accountId,
         'limit': limit,
-        'offset': offset,
+        'toOffset': toOffset,
+        'fromOffset': fromOffset,
       },
     };
 
@@ -115,25 +145,17 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
         body: jsonEncode(requestBody),
       );
 
-      // Print raw response for debugging
-      // print('Raw GraphQL response status: ${response.statusCode}');
-      // print('Raw GraphQL response body: ${response.body}');
-
       if (response.statusCode != 200) {
-        // Handle non-200 status codes
         throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
-      // Parse the JSON response
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      // Check for GraphQL errors in the response body
       if (responseBody['errors'] != null) {
         print('GraphQL errors in response: ${responseBody['errors']}');
         throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
       }
 
-      // Extract and parse the data
       final Map<String, dynamic>? data = responseBody['data'];
       if (data == null) {
         throw Exception('GraphQL response data is null.');
@@ -142,36 +164,68 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
       final List<dynamic>? accounts = data['accounts'];
 
       if (accounts == null || accounts.isEmpty) {
-        return []; // Return empty list if no accounts found
+        return TransferResult(
+          combinedTransfers: [],
+          hasMoreTo: false,
+          hasMoreFrom: false,
+          nextToOffset: toOffset,
+          nextFromOffset: fromOffset,
+        );
       }
 
-      // Assuming the query returns exactly one account for the given ID
       final Map<String, dynamic> accountData = accounts.first;
 
       final List<dynamic>? transfersTo = accountData['transfersTo'];
       final List<dynamic>? transfersFrom = accountData['transfersFrom'];
 
-      final List<dynamic> allTransfersData = [];
-      if (transfersTo != null) {
-        allTransfersData.addAll(transfersTo);
-      }
-      if (transfersFrom != null) {
-        allTransfersData.addAll(transfersFrom);
-      }
-
-      // Map the raw transfer data to Transfer objects
-      final List<Transfer> transfers = allTransfersData.map((transferJson) {
+      // Process transfersTo
+      final List<Transfer> toTransfers = (transfersTo ?? []).map((transferJson) {
         return Transfer.fromJson(transferJson as Map<String, dynamic>);
       }).toList();
 
-      // You might want to sort transfers by timestamp here if needed
-      transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      // Process transfersFrom
+      final List<Transfer> fromTransfers = (transfersFrom ?? []).map((transferJson) {
+        return Transfer.fromJson(transferJson as Map<String, dynamic>);
+      }).toList();
 
-      return transfers;
+      // Combine all transfers
+      final List<Transfer> newTransfers = [...toTransfers, ...fromTransfers];
+
+      // Sort by timestamp in descending order
+      newTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      // Take only the requested number of transfers
+      final combinedTransfers = newTransfers.take(limit).toList();
+
+      // Count the number of transfers included in the limited list.
+      int numberOfToTransfers = 0;
+      int numberOfFromTransfers = 0;
+      for (Transfer t in combinedTransfers) {
+        if (t.from == accountId) {
+          numberOfFromTransfers++;
+        } else {
+          numberOfToTransfers++;
+        }
+      }
+      // print('numberOfToTransfers: $numberOfToTransfers');
+      // print('numberOfFromTransfers: $numberOfFromTransfers');
+      // print('all loaded to: $numberOfToTransfers');
+      // print('numberOfFromTransfers: $numberOfFromTransfers');
+      // print('limit: ${limit}');
+
+      // Note This is a little tricky because we have 2 lists that get combined into one with the same limit
+      // So we need to keep track of has more and offsets for each list, and combine them with the wild
+      // logic below - AI trap, AI can't figure this out.
+      return TransferResult(
+        combinedTransfers: combinedTransfers,
+        hasMoreTo: toTransfers.length == limit || numberOfToTransfers < toTransfers.length,
+        hasMoreFrom: fromTransfers.length == limit || numberOfFromTransfers < fromTransfers.length,
+        nextToOffset: toOffset + numberOfToTransfers,
+        nextFromOffset: fromOffset + numberOfFromTransfers,
+      );
     } catch (e) {
-      // Handle any exceptions during the HTTP request or JSON parsing
       print('Error fetching transfers via http: $e');
-      throw e; // Re-throw the caught exception
+      throw e;
     }
   }
 

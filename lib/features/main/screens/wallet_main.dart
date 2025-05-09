@@ -43,8 +43,10 @@ class _WalletMainState extends State<WalletMain> {
   String? _historyError;
 
   // Pagination state
-  int _currentPage = 0;
-  bool _hasMoreTransactions = true;
+  int _toOffset = 0;
+  int _fromOffset = 0;
+  bool _hasMoreTo = true;
+  bool _hasMoreFrom = true;
   bool _isLoadingMore = false;
   static const int _transactionsPerPage = 10;
   final ScrollController _scrollController = ScrollController();
@@ -121,38 +123,26 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Future<void> _loadMoreTransactions() async {
-    if (!_hasMoreTransactions || _isLoadingMore || _isHistoryLoading) return;
+    if ((!_hasMoreTo && !_hasMoreFrom) || _isLoadingMore || _isHistoryLoading) return;
 
     setState(() {
       _isLoadingMore = true;
     });
 
     try {
-      final newTransfers = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchTransfers(
         accountId: _accountId!,
         limit: _transactionsPerPage,
-        offset: _currentPage * _transactionsPerPage,
+        toOffset: _toOffset,
+        fromOffset: _fromOffset,
       );
 
       setState(() {
-        if (newTransfers.isEmpty) {
-          _hasMoreTransactions = false;
-        } else {
-          // Create a Set of existing transaction IDs to prevent duplicates
-          final existingIds = _transfers.map((t) => t.id).toSet();
-
-          // Only add transactions that don't already exist
-          final uniqueNewTransfers = newTransfers.where((t) => !existingIds.contains(t.id)).toList();
-
-          if (uniqueNewTransfers.isNotEmpty) {
-            _transfers.addAll(uniqueNewTransfers);
-            // Sort by timestamp in descending order
-            _transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-            _currentPage++;
-          } else {
-            _hasMoreTransactions = false;
-          }
-        }
+        _transfers = [..._transfers, ...result.combinedTransfers];
+        _hasMoreTo = result.hasMoreTo;
+        _hasMoreFrom = result.hasMoreFrom;
+        _toOffset = result.nextToOffset;
+        _fromOffset = result.nextFromOffset;
         _isLoadingMore = false;
       });
     } catch (e) {
@@ -170,23 +160,27 @@ class _WalletMainState extends State<WalletMain> {
     setState(() {
       _isHistoryLoading = true;
       _historyError = null;
-      _currentPage = 0;
-      _hasMoreTransactions = true;
+      _toOffset = 0;
+      _fromOffset = 0;
+      _hasMoreTo = true;
+      _hasMoreFrom = true;
       _transfers = [];
     });
 
     try {
-      final fetchedTransfers = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchTransfers(
         accountId: _accountId!,
         limit: _transactionsPerPage,
-        offset: 0,
+        toOffset: 0,
+        fromOffset: 0,
       );
 
       setState(() {
-        _transfers = fetchedTransfers;
-        // Sort by timestamp in descending order
-        _transfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        _hasMoreTransactions = fetchedTransfers.length == _transactionsPerPage;
+        _transfers = result.combinedTransfers;
+        _hasMoreTo = result.hasMoreTo;
+        _hasMoreFrom = result.hasMoreFrom;
+        _toOffset = result.nextToOffset;
+        _fromOffset = result.nextFromOffset;
         _isHistoryLoading = false;
       });
       print('fetchedTransfers: ${_transfers.length}');
@@ -446,7 +440,7 @@ class _WalletMainState extends State<WalletMain> {
               ),
             ),
           ),
-        if (!_hasMoreTransactions && _transfers.isNotEmpty)
+        if (!_hasMoreTo && !_hasMoreFrom && _transfers.isNotEmpty)
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
