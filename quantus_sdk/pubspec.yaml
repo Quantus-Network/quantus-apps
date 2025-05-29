@@ -1,0 +1,14 @@
+name: quantus_sdk
+description: Shared Quantus Dart + Rust bindings and services
+version: 0.1.0
+repository: https://github.com/Quantus-Network/resonance-mobile-app
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.25.0

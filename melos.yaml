@@ -1,0 +1,5 @@
+name: quantus_workspace
+packages:
+  - mobile-app
+  - app
+  - quantus_sdk

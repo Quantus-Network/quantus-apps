@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_empty_else
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_final_fields
+    - prefer_single_quotes
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/generated/**"
+  errors:
+    avoid_print: ignore # print is the most reliable way to debug the app
+    missing_required_param: error
+    missing_return: error
+    must_be_immutable: error 
