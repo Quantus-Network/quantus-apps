@@ -229,11 +229,17 @@ class SubstrateService {
   Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
     try {
       crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      // final name = await HumanReadableChecksumService().getHumanReadableName(keypair.ss58Address);
       return DilithiumWalletInfo.fromKeyPair(keypair, walletName: '');
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }
+  }
+
+  // Fetch balance of current user
+  Future<BigInt> queryUserBalance() async {
+    final keyPair = await _getUserWallet();
+    final balance = await queryBalance(keyPair.ss58Address);
+    return balance;
   }
 
   Future<BigInt> queryBalance(String address) async {

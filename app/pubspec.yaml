@@ -9,5 +9,29 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.4.0
+  path: ^1.9.1
   quantus_sdk:
     path: ../quantus_sdk
+  flutter_secure_storage: ^9.0.0
+  flutter_localizations:
+    sdk: flutter
+  flutter_rust_bridge: any
+  shared_preferences: any
+  provider: any
+  another_flushbar: any
+  go_router: any
+  flutter_hooks: any
+  hooks_riverpod: any
+  decimal: any
+  permission_handler: any
+  image_picker: any
+  logger: any
+  path_provider: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  integration_test:
+    sdk: flutter

@@ -34,7 +34,7 @@ packages:
     source: hosted
     version: "2.0.1"
   bip39_mnemonic:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: bip39_mnemonic
       sha256: e36c1f1fecd938d433b8f7a1e74d5bc721e16816b59dbac5b31307f079d3b3bc
@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "1.19.1"
   convert:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: convert
       sha256: b30acd5944035672bc15c6b7a8b47d773e41e2f17de064350988c5d02adb1c68
@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "3.1.2"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
       sha256: "1e445881f28f22d6140f181e07737b22f1e099a5e1ff94b0af2f9e4a463f4855"
@@ -178,7 +178,7 @@ packages:
     source: hosted
     version: "3.1.1"
   flutter:
-    dependency: transitive
+    dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
@@ -283,7 +283,7 @@ packages:
     source: hosted
     version: "2.6.0"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "2c11f3f94c687ee9bad77c171151672986360b2b001d109814ee7140b2cf261b"
@@ -513,7 +513,7 @@ packages:
     source: hosted
     version: "5.0.3"
   quiver:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: quiver
       sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
@@ -637,7 +637,7 @@ packages:
     source: hosted
     version: "0.6.1"
   ss58:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ss58
       sha256: ad12bcdc909e73648aba52754b1eab81880bd2cbc4fc6cbaa02695affe49201d

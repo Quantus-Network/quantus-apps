@@ -6,4 +6,4 @@ packages:
 
 ide:
   intellij:
-    enabled: falserm
+    enabled: false
