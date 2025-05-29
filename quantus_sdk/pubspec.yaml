@@ -23,7 +23,8 @@ dependencies:
   http: ^1.4.0
 
   quiver: any
-  flutter: any
+  flutter:
+    sdk: flutter
   bip39_mnemonic: any
   crypto: any
   ss58: any
