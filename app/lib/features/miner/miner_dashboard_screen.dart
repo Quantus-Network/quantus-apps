@@ -73,7 +73,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     // This could involve fetching from the node via quantus_sdk or a Prometheus endpoint.
     await Future.delayed(const Duration(seconds: 1)); // Placeholder delay
     setState(() {
-      _miningStats = 'Hashrate: 1.2 TH/s\\nShares: 1000\\nLast Reward: 0.01 REZ'; // Simulated stats
+      _miningStats = 'Hashrate: 1.2 TH/s\\nShares: 1000\\nLast Reward: 0.01 QUAN'; // Simulated stats
     });
   }
 

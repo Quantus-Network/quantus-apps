@@ -41,7 +41,7 @@ class TransactionListItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${isReceived ? '+' : '-'}${NumberFormattingService().formatBalance(transaction.amount)} REZ',
+            '${isReceived ? '+' : '-'}${NumberFormattingService().formatBalance(transaction.amount)} QUAN',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isReceived ? Colors.green : Colors.red,
