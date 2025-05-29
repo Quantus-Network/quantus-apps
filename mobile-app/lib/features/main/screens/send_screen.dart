@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/core/constants/app_constants.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
-import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
-import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -79,8 +73,6 @@ class SendScreenState extends State<SendScreen> {
 
   Future<void> _lookupIdentity() async {
     if (!mounted) return; // Add early return if not mounted
-
-    print("lookupIdentity");
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
       if (!mounted) return; // Check mounted before setState

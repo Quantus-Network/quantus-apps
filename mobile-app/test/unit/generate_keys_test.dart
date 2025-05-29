@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/src/rust/api/crypto.dart';
-import 'package:resonance_network_wallet/src/rust/frb_generated.dart';
-import 'package:flutter/widgets.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -67,12 +65,12 @@ void main() {
       const mnemonic1 =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
-      const known_account_id = '5H72qHthhaHuwybTUZDi9gtVqGbitcYPxUgbid8BLdZyiiMM';
+      const knownAccountId = '5H72qHthhaHuwybTUZDi9gtVqGbitcYPxUgbid8BLdZyiiMM';
 
       final keypair = generateKeypair(mnemonicStr: mnemonic1);
       final accountId = toAccountId(obj: keypair);
 
-      expect(accountId, known_account_id);
+      expect(accountId, knownAccountId);
     });
   });
 }

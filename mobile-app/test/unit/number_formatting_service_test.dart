@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 void main() {
   group('NumberFormattingService', () {

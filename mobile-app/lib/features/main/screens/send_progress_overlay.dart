@@ -2,12 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:resonance_network_wallet/core/constants/app_constants.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 

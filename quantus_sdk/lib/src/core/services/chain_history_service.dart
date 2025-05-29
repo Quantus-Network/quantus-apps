@@ -1,4 +1,4 @@
-import 'package:resonance_network_wallet/core/constants/app_constants.dart';
+import '../constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
@@ -225,7 +225,7 @@ query MyQuery($accountId: String!, $limit: Int!, $toOffset: Int!, $fromOffset: I
       );
     } catch (e) {
       print('Error fetching transfers via http: $e');
-      throw e;
+      rethrow;
     }
   }
 

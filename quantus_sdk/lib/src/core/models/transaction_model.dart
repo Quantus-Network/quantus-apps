@@ -1,5 +1,5 @@
-import 'package:resonance_network_wallet/core/models/transaction_status.dart';
-import 'package:resonance_network_wallet/core/models/transaction_type.dart';
+import 'transaction_status.dart';
+import 'transaction_type.dart';
 
 class Transaction {
   final String id;

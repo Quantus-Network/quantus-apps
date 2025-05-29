@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart_keyring/polkadart_keyring.dart';
-import 'package:resonance_network_wallet/core/constants/app_constants.dart';
-import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
+import '../constants/app_constants.dart';
+import 'number_formatting_service.dart';
 import 'dart:math';
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'dart:async';
@@ -10,13 +10,12 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'dart:io';
 
-import 'package:resonance_network_wallet/generated/resonance/resonance.dart';
-import 'package:resonance_network_wallet/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
-    as multi_address;
+import 'package:quantus_sdk/generated/resonance/resonance.dart';
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:ss58/ss58.dart';
-import 'package:resonance_network_wallet/src/rust/api/crypto.dart' as crypto;
-import 'package:resonance_network_wallet/resonance_extrinsic_payload.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
+import 'settings_service.dart';
 
 enum ConnectionStatus { connecting, connected, disconnected, error }
 
@@ -65,9 +64,9 @@ class SubstrateService {
   factory SubstrateService() => _instance;
   SubstrateService._internal();
 
-  Provider? _provider = null;
-  StateApi? _stateApi = null;
-  AuthorApi? _authorApi = null;
+  Provider? _provider;
+  StateApi? _stateApi;
+  AuthorApi? _authorApi;
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   final SettingsService _settingsService = SettingsService();
 

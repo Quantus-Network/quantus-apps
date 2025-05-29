@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:io'; // Import for SocketException
-import 'dart:async'; // Import for Future.timeout / TimeoutException
+import 'dart:io';
+import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
-import 'package:resonance_network_wallet/core/constants/app_constants.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/services/substrate_service.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/core/services/number_formatting_service.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
-import 'package:resonance_network_wallet/core/services/chain_history_service.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 
 class WalletData {
   final String accountId;
@@ -339,7 +332,7 @@ class _WalletMainState extends State<WalletMain> {
                           ),
                         ),
                         TextSpan(
-                          text: ' ' + amount,
+                          text: ' $amount',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -352,7 +345,7 @@ class _WalletMainState extends State<WalletMain> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    '${details} | $formattedTimestamp',
+                    '$details | $formattedTimestamp',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -430,7 +423,7 @@ class _WalletMainState extends State<WalletMain> {
             typeColor: Colors.transparent,
             rawTimestamp: transfer.timestamp,
           );
-        }).toList(),
+        }),
         if (_isLoadingMore)
           const Padding(
             padding: EdgeInsets.all(16.0),

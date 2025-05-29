@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
-import 'package:resonance_network_wallet/core/services/human_readable_checksum_service.dart';
-import 'package:resonance_network_wallet/core/helpers/snackbar_helper.dart';
 
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});

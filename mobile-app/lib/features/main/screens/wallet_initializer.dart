@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:resonance_network_wallet/core/services/settings_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class WalletInitializer extends StatefulWidget {
   const WalletInitializer({super.key});

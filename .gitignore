@@ -1,3 +1,4 @@
 /build
 /.dart_tool
 .DS_Store
+/quantus_sdk/native/rust/target

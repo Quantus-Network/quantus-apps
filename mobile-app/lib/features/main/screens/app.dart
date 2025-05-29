@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 

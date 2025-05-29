@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/core/extensions/color_extensions.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFF6B46C1);
