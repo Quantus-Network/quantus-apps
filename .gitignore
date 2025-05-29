@@ -122,5 +122,3 @@ app.*.symbols
 /android/app/.cxx
 /.dart_tool
 /mobile-app/android/app
-/quantus_sdk/.dart_tool
-quantus_sdk/.flutter-plugins-dependencies

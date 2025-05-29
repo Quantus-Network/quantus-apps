@@ -248,13 +248,14 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: Colors.grey[850], // Dark background for the mnemonic
+              border: Border.all(color: Colors.grey[700]!),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: SelectableText(
+            child: Text(
               _generatedMnemonic,
+              style: const TextStyle(fontSize: 18, color: Colors.white), // Light text color
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
           const SizedBox(height: 16),

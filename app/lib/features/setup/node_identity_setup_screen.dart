@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io';
+import 'package:quantus_miner/src/services/binary_manager.dart';
 
 class NodeIdentitySetupScreen extends StatefulWidget {
   const NodeIdentitySetupScreen({Key? key}) : super(key: key);
@@ -18,32 +20,57 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
     _checkNodeIdentity();
   }
 
-  Future<void> _checkNodeIdentity() async {
-    // TODO: Implement actual node identity check logic
-    // This will likely involve interacting with the running node via quantus_sdk.
-    await Future.delayed(const Duration(seconds: 2)); // Placeholder delay
-
-    setState(() {
-      // _isIdentitySet = result of the check;
-      _isIdentitySet = false; // Simulate identity not set initially
-      _isLoading = false;
-    });
+  Future<String> _getNodeIdentityPath() async {
+    final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+    return '$quantusHome/node_key.p2p';
   }
 
-  void _setNodeIdentity() {
-    // TODO: Implement node identity setting logic
-    // This will involve sending a command to the node via quantus_sdk.
-    print('Set Node Identity button pressed');
-    // For now, let's just simulate setting success after a delay
+  Future<void> _checkNodeIdentity() async {
     setState(() {
       _isLoading = true;
     });
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() {
-        _isIdentitySet = true; // Simulate success
-        _isLoading = false;
-      });
+    try {
+      final identityPath = await _getNodeIdentityPath();
+      final identityFile = File(identityPath);
+      final exists = await identityFile.exists();
+      if (mounted) {
+        setState(() {
+          _isIdentitySet = exists;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking node identity: $e');
+      if (mounted) {
+        setState(() {
+          _isIdentitySet = false;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _setNodeIdentity() async {
+    setState(() {
+      _isLoading = true;
     });
+    try {
+      final identityPath = await _getNodeIdentityPath();
+      final identityFile = File(identityPath);
+      await identityFile.create(recursive: true);
+      await identityFile.writeAsString('dummy_node_key_content_for_testing');
+
+      print('Node identity file simulated at: $identityPath');
+
+      _checkNodeIdentity();
+    } catch (e) {
+      print('Error setting node identity (simulation): $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
