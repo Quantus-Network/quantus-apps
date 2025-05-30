@@ -90,7 +90,7 @@ class $Event {
   }
 
   StakersElected stakersElected() {
-    return const StakersElected();
+    return StakersElected();
   }
 
   Bonded bonded({
@@ -134,7 +134,7 @@ class $Event {
   }
 
   StakingElectionFailed stakingElectionFailed() {
-    return const StakingElectionFailed();
+    return StakingElectionFailed();
   }
 
   Chilled chilled({required _i3.AccountId32 stash}) {
@@ -144,10 +144,14 @@ class $Event {
   PayoutStarted payoutStarted({
     required int eraIndex,
     required _i3.AccountId32 validatorStash,
+    required int page,
+    int? next,
   }) {
     return PayoutStarted(
       eraIndex: eraIndex,
       validatorStash: validatorStash,
+      page: page,
+      next: next,
     );
   }
 
@@ -1081,17 +1085,21 @@ class Chilled extends Event {
   int get hashCode => stash.hashCode;
 }
 
-/// The stakers' rewards are getting paid.
+/// A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
 class PayoutStarted extends Event {
   const PayoutStarted({
     required this.eraIndex,
     required this.validatorStash,
+    required this.page,
+    this.next,
   });
 
   factory PayoutStarted._decode(_i1.Input input) {
     return PayoutStarted(
       eraIndex: _i1.U32Codec.codec.decode(input),
       validatorStash: const _i1.U8ArrayCodec(32).decode(input),
+      page: _i1.U32Codec.codec.decode(input),
+      next: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
     );
   }
 
@@ -1101,11 +1109,19 @@ class PayoutStarted extends Event {
   /// T::AccountId
   final _i3.AccountId32 validatorStash;
 
+  /// Page
+  final int page;
+
+  /// Option<Page>
+  final int? next;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'PayoutStarted': {
           'eraIndex': eraIndex,
           'validatorStash': validatorStash.toList(),
+          'page': page,
+          'next': next,
         }
       };
 
@@ -1113,6 +1129,8 @@ class PayoutStarted extends Event {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(eraIndex);
     size = size + const _i3.AccountId32Codec().sizeHint(validatorStash);
+    size = size + _i1.U32Codec.codec.sizeHint(page);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(next);
     return size;
   }
 
@@ -1129,6 +1147,14 @@ class PayoutStarted extends Event {
       validatorStash,
       output,
     );
+    _i1.U32Codec.codec.encodeTo(
+      page,
+      output,
+    );
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
+      next,
+      output,
+    );
   }
 
   @override
@@ -1142,12 +1168,16 @@ class PayoutStarted extends Event {
           _i8.listsEqual(
             other.validatorStash,
             validatorStash,
-          );
+          ) &&
+          other.page == page &&
+          other.next == next;
 
   @override
   int get hashCode => Object.hash(
         eraIndex,
         validatorStash,
+        page,
+        next,
       );
 }
 

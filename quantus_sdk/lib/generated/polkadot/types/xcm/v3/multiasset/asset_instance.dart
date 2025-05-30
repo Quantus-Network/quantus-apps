@@ -32,7 +32,7 @@ class $AssetInstance {
   const $AssetInstance();
 
   Undefined undefined() {
-    return const Undefined();
+    return Undefined();
   }
 
   Index index(BigInt value0) {

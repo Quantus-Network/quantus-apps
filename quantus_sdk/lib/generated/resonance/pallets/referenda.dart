@@ -7,9 +7,9 @@ import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/frame_support/traits/preimages/bounded.dart' as _i10;
 import '../types/frame_support/traits/schedule/dispatch_time.dart' as _i11;
-import '../types/pallet_referenda/pallet/call.dart' as _i12;
+import '../types/pallet_referenda/pallet/call_1.dart' as _i12;
 import '../types/pallet_referenda/types/curve.dart' as _i14;
-import '../types/pallet_referenda/types/referendum_info.dart' as _i3;
+import '../types/pallet_referenda/types/referendum_info_1.dart' as _i3;
 import '../types/pallet_referenda/types/track_info.dart' as _i13;
 import '../types/primitive_types/h256.dart' as _i5;
 import '../types/resonance_runtime/origin_caller.dart' as _i9;
@@ -343,35 +343,13 @@ class Constants {
     _i4.Tuple2<int, _i13.TrackInfo>(
       0,
       _i13.TrackInfo(
-        name: 'root',
-        maxDeciding: 1,
-        decisionDeposit: BigInt.from(10000000000000),
-        preparePeriod: 86400,
-        decisionPeriod: 1209600,
-        confirmPeriod: 86400,
-        minEnactmentPeriod: 86400,
-        minApproval: const _i14.LinearDecreasing(
-          length: 1000000000,
-          floor: 500000000,
-          ceil: 1000000000,
-        ),
-        minSupport: const _i14.LinearDecreasing(
-          length: 1000000000,
-          floor: 100000000,
-          ceil: 500000000,
-        ),
-      ),
-    ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
-      1,
-      _i13.TrackInfo(
         name: 'signed',
         maxDeciding: 5,
-        decisionDeposit: BigInt.from(5000000000000),
+        decisionDeposit: BigInt.from(500000000000000),
         preparePeriod: 43200,
         decisionPeriod: 604800,
         confirmPeriod: 43200,
-        minEnactmentPeriod: 43200,
+        minEnactmentPeriod: 86400,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 550000000,
@@ -385,11 +363,11 @@ class Constants {
       ),
     ),
     _i4.Tuple2<int, _i13.TrackInfo>(
-      2,
+      1,
       _i13.TrackInfo(
         name: 'signaling',
         maxDeciding: 20,
-        decisionDeposit: BigInt.from(1000000000000),
+        decisionDeposit: BigInt.from(100000000000000),
         preparePeriod: 21600,
         decisionPeriod: 432000,
         confirmPeriod: 10800,

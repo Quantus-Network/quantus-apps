@@ -673,9 +673,8 @@ class Queries {
 class Txs {
   const Txs();
 
-  /// Stake funds with a pool. The amount to bond is delegated (or transferred based on
-  /// [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-  /// increases the pool's bond.
+  /// Stake funds with a pool. The amount to bond is transferred from the member to the pool
+  /// account and immediately increases the pools bond.
   ///
   /// The method of transferring the amount to the pool account is determined by
   /// [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -719,7 +718,7 @@ class Txs {
   ///
   /// See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
   _i12.NominationPools claimPayout() {
-    return const _i12.NominationPools(_i13.ClaimPayout());
+    return _i12.NominationPools(_i13.ClaimPayout());
   }
 
   /// Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It

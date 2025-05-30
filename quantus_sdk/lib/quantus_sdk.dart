@@ -1,7 +1,6 @@
 library;
 
 export 'src/core/services/substrate_service.dart';
-export 'src/rust/frb_generated.dart';
 export 'src/core/extensions/color_extensions.dart';
 export 'src/core/services/settings_service.dart';
 export 'src/core/constants/app_constants.dart';
@@ -15,3 +14,14 @@ export 'src/core/widgets/gradient_action_button.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead TODO...
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
+
+import 'src/rust/frb_generated.dart';
+
+class QuantusSdk {
+  /// Initialise the SDK (loads Rust FFI, etc).
+  static Future<void> init() async {
+    print('initializing rust bindings..');
+    await RustLib.init();
+    print('rust bindings initialized');
+  }
+}

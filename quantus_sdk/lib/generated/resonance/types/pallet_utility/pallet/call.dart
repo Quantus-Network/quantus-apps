@@ -186,7 +186,8 @@ class Batch extends Call {
   final List<_i3.RuntimeCall> calls;
 
   @override
-  Map<String, Map<String, List<Map<String, dynamic>>>> toJson() => {
+  Map<String, Map<String, List<Map<String, Map<String, dynamic>>>>> toJson() =>
+      {
         'batch': {'calls': calls.map((value) => value.toJson()).toList()}
       };
 

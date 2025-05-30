@@ -337,7 +337,7 @@ class Queries {
     if (bytes != null) {
       return _digest.decodeValue(bytes);
     }
-    return const _i7.Digest(logs: []); /* Default */
+    return _i7.Digest(logs: []); /* Default */
   }
 
   /// Events deposited for the current block.
@@ -792,7 +792,7 @@ class Constants {
     specName: 'polkadot',
     implName: 'parity-polkadot',
     authoringVersion: 0,
-    specVersion: 1004001,
+    specVersion: 1005001,
     implVersion: 0,
     apis: [
       _i19.Tuple2<List<int>, int>(
@@ -910,7 +910,7 @@ class Constants {
           109,
           61,
         ],
-        11,
+        12,
       ),
       _i19.Tuple2<List<int>, int>(
         <int>[
@@ -1066,7 +1066,7 @@ class Constants {
           235,
           146,
         ],
-        1,
+        2,
       ),
       _i19.Tuple2<List<int>, int>(
         <int>[
@@ -1096,7 +1096,7 @@ class Constants {
       ),
     ],
     transactionVersion: 26,
-    stateVersion: 1,
+    systemVersion: 1,
   );
 
   /// The designated SS58 prefix of this chain.

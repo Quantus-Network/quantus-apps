@@ -52,7 +52,7 @@ class Queries {
     return null; /* Nullable */
   }
 
-  /// Buffered session changes along with the block number at which they should be applied.
+  /// Buffered session changes.
   ///
   /// Typically this will be empty or one element long. Apart from that this item never hits
   /// the storage.

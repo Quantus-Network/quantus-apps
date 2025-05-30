@@ -64,7 +64,7 @@ class $Event {
   }
 
   InternalError internalError() {
-    return const InternalError();
+    return InternalError();
   }
 }
 

@@ -35,7 +35,7 @@ class $Call {
   const $Call();
 
   Vest vest() {
-    return const Vest();
+    return Vest();
   }
 
   VestOther vestOther({required _i3.MultiAddress target}) {

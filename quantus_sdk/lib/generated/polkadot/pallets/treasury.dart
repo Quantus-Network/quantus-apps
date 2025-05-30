@@ -62,6 +62,15 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
+  final _i1.StorageValue<int> _lastSpendPeriod = const _i1.StorageValue<int>(
+    prefix: 'Treasury',
+    storage: 'LastSpendPeriod',
+    valueCodec: _i2.U32Codec.codec,
+  );
+
+  /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+  /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+  ///
   /// Number of proposals that have been made.
   _i5.Future<int> proposalCount({_i1.BlockHash? at}) async {
     final hashedKey = _proposalCount.hashedKey();
@@ -75,6 +84,9 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+  /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+  ///
   /// Proposals that have been made.
   _i5.Future<_i3.Proposal?> proposals(
     int key1, {
@@ -104,6 +116,9 @@ class Queries {
     return BigInt.zero; /* Default */
   }
 
+  /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+  /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+  ///
   /// Proposal indices that have been approved but not yet awarded.
   _i5.Future<List<int>> approvals({_i1.BlockHash? at}) async {
     final hashedKey = _approvals.hashedKey();
@@ -150,6 +165,19 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The blocknumber for the last triggered spend period.
+  _i5.Future<int?> lastSpendPeriod({_i1.BlockHash? at}) async {
+    final hashedKey = _lastSpendPeriod.hashedKey();
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _lastSpendPeriod.decodeValue(bytes);
+    }
+    return null; /* Nullable */
+  }
+
   /// Returns the storage key for `proposalCount`.
   _i6.Uint8List proposalCountKey() {
     final hashedKey = _proposalCount.hashedKey();
@@ -183,6 +211,12 @@ class Queries {
   /// Returns the storage key for `spends`.
   _i6.Uint8List spendsKey(int key1) {
     final hashedKey = _spends.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
+  /// Returns the storage key for `lastSpendPeriod`.
+  _i6.Uint8List lastSpendPeriodKey() {
+    final hashedKey = _lastSpendPeriod.hashedKey();
     return hashedKey;
   }
 
@@ -382,11 +416,14 @@ class Constants {
     121,
   ];
 
+  /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+  /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+  ///
   /// The maximum number of approvals that can wait in the spending queue.
   ///
   /// NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
   final int maxApprovals = 100;
 
   /// The period during which an approved treasury spend has to be claimed.
-  final int payoutPeriod = 432000;
+  final int payoutPeriod = 1296000;
 }

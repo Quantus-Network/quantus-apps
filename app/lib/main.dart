@@ -15,17 +15,20 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   const storage = FlutterSecureStorage();
   final currentRoute = state.uri.toString();
 
+  print('initialRedirect');
+
   // Check 1: Node Installed
   bool isNodeInstalled = false;
   try {
-    final nodeBinaryPath = await BinaryManager.getNodeBinaryFilePath();
-    isNodeInstalled = await File(nodeBinaryPath).exists();
+    isNodeInstalled = await BinaryManager.hasBinary();
+    print('isNodeInstalled: $isNodeInstalled');
   } catch (e) {
     print('Error checking node installation status: $e');
     isNodeInstalled = false;
   }
 
   if (!isNodeInstalled) {
+    print('node not installed, going to node setup');
     return (currentRoute == '/node_setup') ? null : '/node_setup';
   }
 
@@ -88,8 +91,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
   try {
     await SubstrateService().initialize(); // Initialize SubstrateService
-    await RustLib.init(); // Initialize the Rust library
-    print('SubstrateService and RustLib initialized successfully.');
+    await QuantusSdk.init();
+    print('SubstrateService and QuantusSdk initialized successfully.');
   } catch (e) {
     print('Error initializing SDK: $e');
     // Depending on the app, you might want to show an error UI or prevent app startup

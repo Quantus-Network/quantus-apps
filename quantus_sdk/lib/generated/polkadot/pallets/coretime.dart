@@ -4,8 +4,8 @@ import '../types/polkadot_runtime/runtime_call.dart' as _i1;
 import '../types/polkadot_runtime_parachains/assigner_coretime/parts_of57600.dart'
     as _i5;
 import '../types/polkadot_runtime_parachains/coretime/pallet/call.dart' as _i2;
-import '../types/staging_xcm/v4/junction/junction.dart' as _i7;
-import '../types/staging_xcm/v4/junctions/junctions.dart' as _i6;
+import '../types/staging_xcm/v5/junction/junction.dart' as _i7;
+import '../types/staging_xcm/v5/junctions/junctions.dart' as _i6;
 import '../types/tuples.dart' as _i3;
 
 class Txs {

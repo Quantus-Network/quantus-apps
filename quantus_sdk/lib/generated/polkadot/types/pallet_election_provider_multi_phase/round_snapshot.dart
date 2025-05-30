@@ -17,7 +17,7 @@ class RoundSnapshot {
     return codec.decode(input);
   }
 
-  /// Vec<DataProvider>
+  /// Vec<VoterType>
   final List<_i2.Tuple3<_i3.AccountId32, BigInt, List<_i3.AccountId32>>> voters;
 
   /// Vec<AccountId>

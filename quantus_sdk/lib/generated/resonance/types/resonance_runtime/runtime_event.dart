@@ -5,11 +5,16 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
 import '../pallet_balances/pallet/event.dart' as _i4;
-import '../pallet_conviction_voting/pallet/event.dart' as _i15;
+import '../pallet_conviction_voting/pallet/event.dart' as _i16;
+import '../pallet_faucet/pallet/event.dart' as _i19;
+import '../pallet_merkle_airdrop/pallet/event.dart' as _i20;
 import '../pallet_mining_rewards/pallet/event.dart' as _i9;
 import '../pallet_preimage/pallet/event.dart' as _i11;
 import '../pallet_qpow/pallet/event.dart' as _i7;
-import '../pallet_referenda/pallet/event.dart' as _i14;
+import '../pallet_ranked_collective/pallet/event.dart' as _i17;
+import '../pallet_referenda/pallet/event_1.dart' as _i14;
+import '../pallet_referenda/pallet/event_2.dart' as _i18;
+import '../pallet_reversible_transfers/pallet/event.dart' as _i15;
 import '../pallet_scheduler/pallet/event.dart' as _i12;
 import '../pallet_sudo/pallet/event.dart' as _i6;
 import '../pallet_transaction_payment/pallet/event.dart' as _i5;
@@ -92,8 +97,28 @@ class $RuntimeEvent {
     return Referenda(value0);
   }
 
-  ConvictionVoting convictionVoting(_i15.Event value0) {
+  ReversibleTransfers reversibleTransfers(_i15.Event value0) {
+    return ReversibleTransfers(value0);
+  }
+
+  ConvictionVoting convictionVoting(_i16.Event value0) {
     return ConvictionVoting(value0);
+  }
+
+  TechCollective techCollective(_i17.Event value0) {
+    return TechCollective(value0);
+  }
+
+  TechReferenda techReferenda(_i18.Event value0) {
+    return TechReferenda(value0);
+  }
+
+  Faucet faucet(_i19.Event value0) {
+    return Faucet(value0);
+  }
+
+  MerkleAirdrop merkleAirdrop(_i20.Event value0) {
+    return MerkleAirdrop(value0);
   }
 }
 
@@ -129,7 +154,17 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case 12:
         return Referenda._decode(input);
       case 13:
+        return ReversibleTransfers._decode(input);
+      case 14:
         return ConvictionVoting._decode(input);
+      case 15:
+        return TechCollective._decode(input);
+      case 16:
+        return TechReferenda._decode(input);
+      case 17:
+        return Faucet._decode(input);
+      case 18:
+        return MerkleAirdrop._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
     }
@@ -177,8 +212,23 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case Referenda:
         (value as Referenda).encodeTo(output);
         break;
+      case ReversibleTransfers:
+        (value as ReversibleTransfers).encodeTo(output);
+        break;
       case ConvictionVoting:
         (value as ConvictionVoting).encodeTo(output);
+        break;
+      case TechCollective:
+        (value as TechCollective).encodeTo(output);
+        break;
+      case TechReferenda:
+        (value as TechReferenda).encodeTo(output);
+        break;
+      case Faucet:
+        (value as Faucet).encodeTo(output);
+        break;
+      case MerkleAirdrop:
+        (value as MerkleAirdrop).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -213,8 +263,18 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as Utility)._sizeHint();
       case Referenda:
         return (value as Referenda)._sizeHint();
+      case ReversibleTransfers:
+        return (value as ReversibleTransfers)._sizeHint();
       case ConvictionVoting:
         return (value as ConvictionVoting)._sizeHint();
+      case TechCollective:
+        return (value as TechCollective)._sizeHint();
+      case TechReferenda:
+        return (value as TechReferenda)._sizeHint();
+      case Faucet:
+        return (value as Faucet)._sizeHint();
+      case MerkleAirdrop:
+        return (value as MerkleAirdrop)._sizeHint();
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -735,19 +795,19 @@ class Referenda extends RuntimeEvent {
   int get hashCode => value0.hashCode;
 }
 
-class ConvictionVoting extends RuntimeEvent {
-  const ConvictionVoting(this.value0);
+class ReversibleTransfers extends RuntimeEvent {
+  const ReversibleTransfers(this.value0);
 
-  factory ConvictionVoting._decode(_i1.Input input) {
-    return ConvictionVoting(_i15.Event.codec.decode(input));
+  factory ReversibleTransfers._decode(_i1.Input input) {
+    return ReversibleTransfers(_i15.Event.codec.decode(input));
   }
 
-  /// pallet_conviction_voting::Event<Runtime>
+  /// pallet_reversible_transfers::Event<Runtime>
   final _i15.Event value0;
 
   @override
-  Map<String, Map<String, dynamic>> toJson() =>
-      {'ConvictionVoting': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'ReversibleTransfers': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -772,7 +832,222 @@ class ConvictionVoting extends RuntimeEvent {
         this,
         other,
       ) ||
+      other is ReversibleTransfers && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class ConvictionVoting extends RuntimeEvent {
+  const ConvictionVoting(this.value0);
+
+  factory ConvictionVoting._decode(_i1.Input input) {
+    return ConvictionVoting(_i16.Event.codec.decode(input));
+  }
+
+  /// pallet_conviction_voting::Event<Runtime>
+  final _i16.Event value0;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() =>
+      {'ConvictionVoting': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i16.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i16.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
       other is ConvictionVoting && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class TechCollective extends RuntimeEvent {
+  const TechCollective(this.value0);
+
+  factory TechCollective._decode(_i1.Input input) {
+    return TechCollective(_i17.Event.codec.decode(input));
+  }
+
+  /// pallet_ranked_collective::Event<Runtime>
+  final _i17.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechCollective': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i17.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      15,
+      output,
+    );
+    _i17.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechCollective && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class TechReferenda extends RuntimeEvent {
+  const TechReferenda(this.value0);
+
+  factory TechReferenda._decode(_i1.Input input) {
+    return TechReferenda(_i18.Event.codec.decode(input));
+  }
+
+  /// pallet_referenda::Event<Runtime, pallet_referenda::Instance1>
+  final _i18.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechReferenda': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i18.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      16,
+      output,
+    );
+    _i18.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechReferenda && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Faucet extends RuntimeEvent {
+  const Faucet(this.value0);
+
+  factory Faucet._decode(_i1.Input input) {
+    return Faucet(_i19.Event.codec.decode(input));
+  }
+
+  /// pallet_faucet::Event<Runtime>
+  final _i19.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Faucet': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i19.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      17,
+      output,
+    );
+    _i19.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Faucet && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class MerkleAirdrop extends RuntimeEvent {
+  const MerkleAirdrop(this.value0);
+
+  factory MerkleAirdrop._decode(_i1.Input input) {
+    return MerkleAirdrop(_i20.Event.codec.decode(input));
+  }
+
+  /// pallet_merkle_airdrop::Event<Runtime>
+  final _i20.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MerkleAirdrop': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i20.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      18,
+      output,
+    );
+    _i20.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MerkleAirdrop && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

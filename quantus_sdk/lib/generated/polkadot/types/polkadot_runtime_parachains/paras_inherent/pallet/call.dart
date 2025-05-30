@@ -3,7 +3,7 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../../../polkadot_primitives/v8/inherent_data.dart' as _i3;
+import '../../../polkadot_primitives/vstaging/inherent_data.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
 abstract class Call {

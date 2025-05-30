@@ -7,9 +7,9 @@ import 'package:quiver/collection.dart' as _i8;
 import '../../../polkadot_parachain_primitives/primitives/head_data.dart'
     as _i4;
 import '../../../polkadot_parachain_primitives/primitives/id.dart' as _i7;
-import '../../../polkadot_primitives/v8/candidate_receipt.dart' as _i3;
 import '../../../polkadot_primitives/v8/core_index.dart' as _i5;
 import '../../../polkadot_primitives/v8/group_index.dart' as _i6;
+import '../../../polkadot_primitives/vstaging/candidate_receipt_v2.dart' as _i3;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -40,7 +40,7 @@ class $Event {
   const $Event();
 
   CandidateBacked candidateBacked(
-    _i3.CandidateReceipt value0,
+    _i3.CandidateReceiptV2 value0,
     _i4.HeadData value1,
     _i5.CoreIndex value2,
     _i6.GroupIndex value3,
@@ -54,7 +54,7 @@ class $Event {
   }
 
   CandidateIncluded candidateIncluded(
-    _i3.CandidateReceipt value0,
+    _i3.CandidateReceiptV2 value0,
     _i4.HeadData value1,
     _i5.CoreIndex value2,
     _i6.GroupIndex value3,
@@ -68,7 +68,7 @@ class $Event {
   }
 
   CandidateTimedOut candidateTimedOut(
-    _i3.CandidateReceipt value0,
+    _i3.CandidateReceiptV2 value0,
     _i4.HeadData value1,
     _i5.CoreIndex value2,
   ) {
@@ -163,7 +163,7 @@ class CandidateBacked extends Event {
 
   factory CandidateBacked._decode(_i1.Input input) {
     return CandidateBacked(
-      _i3.CandidateReceipt.codec.decode(input),
+      _i3.CandidateReceiptV2.codec.decode(input),
       _i1.U8SequenceCodec.codec.decode(input),
       _i1.U32Codec.codec.decode(input),
       _i1.U32Codec.codec.decode(input),
@@ -171,7 +171,7 @@ class CandidateBacked extends Event {
   }
 
   /// CandidateReceipt<T::Hash>
-  final _i3.CandidateReceipt value0;
+  final _i3.CandidateReceiptV2 value0;
 
   /// HeadData
   final _i4.HeadData value1;
@@ -194,7 +194,7 @@ class CandidateBacked extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i3.CandidateReceipt.codec.sizeHint(value0);
+    size = size + _i3.CandidateReceiptV2.codec.sizeHint(value0);
     size = size + const _i4.HeadDataCodec().sizeHint(value1);
     size = size + const _i5.CoreIndexCodec().sizeHint(value2);
     size = size + const _i6.GroupIndexCodec().sizeHint(value3);
@@ -206,7 +206,7 @@ class CandidateBacked extends Event {
       0,
       output,
     );
-    _i3.CandidateReceipt.codec.encodeTo(
+    _i3.CandidateReceiptV2.codec.encodeTo(
       value0,
       output,
     );
@@ -259,7 +259,7 @@ class CandidateIncluded extends Event {
 
   factory CandidateIncluded._decode(_i1.Input input) {
     return CandidateIncluded(
-      _i3.CandidateReceipt.codec.decode(input),
+      _i3.CandidateReceiptV2.codec.decode(input),
       _i1.U8SequenceCodec.codec.decode(input),
       _i1.U32Codec.codec.decode(input),
       _i1.U32Codec.codec.decode(input),
@@ -267,7 +267,7 @@ class CandidateIncluded extends Event {
   }
 
   /// CandidateReceipt<T::Hash>
-  final _i3.CandidateReceipt value0;
+  final _i3.CandidateReceiptV2 value0;
 
   /// HeadData
   final _i4.HeadData value1;
@@ -290,7 +290,7 @@ class CandidateIncluded extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i3.CandidateReceipt.codec.sizeHint(value0);
+    size = size + _i3.CandidateReceiptV2.codec.sizeHint(value0);
     size = size + const _i4.HeadDataCodec().sizeHint(value1);
     size = size + const _i5.CoreIndexCodec().sizeHint(value2);
     size = size + const _i6.GroupIndexCodec().sizeHint(value3);
@@ -302,7 +302,7 @@ class CandidateIncluded extends Event {
       1,
       output,
     );
-    _i3.CandidateReceipt.codec.encodeTo(
+    _i3.CandidateReceiptV2.codec.encodeTo(
       value0,
       output,
     );
@@ -354,14 +354,14 @@ class CandidateTimedOut extends Event {
 
   factory CandidateTimedOut._decode(_i1.Input input) {
     return CandidateTimedOut(
-      _i3.CandidateReceipt.codec.decode(input),
+      _i3.CandidateReceiptV2.codec.decode(input),
       _i1.U8SequenceCodec.codec.decode(input),
       _i1.U32Codec.codec.decode(input),
     );
   }
 
   /// CandidateReceipt<T::Hash>
-  final _i3.CandidateReceipt value0;
+  final _i3.CandidateReceiptV2 value0;
 
   /// HeadData
   final _i4.HeadData value1;
@@ -380,7 +380,7 @@ class CandidateTimedOut extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i3.CandidateReceipt.codec.sizeHint(value0);
+    size = size + _i3.CandidateReceiptV2.codec.sizeHint(value0);
     size = size + const _i4.HeadDataCodec().sizeHint(value1);
     size = size + const _i5.CoreIndexCodec().sizeHint(value2);
     return size;
@@ -391,7 +391,7 @@ class CandidateTimedOut extends Event {
       2,
       output,
     );
-    _i3.CandidateReceipt.codec.encodeTo(
+    _i3.CandidateReceiptV2.codec.encodeTo(
       value0,
       output,
     );

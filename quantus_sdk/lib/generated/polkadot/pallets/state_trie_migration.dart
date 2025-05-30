@@ -51,7 +51,7 @@ class Queries {
     if (bytes != null) {
       return _migrationProcess.decodeValue(bytes);
     }
-    return const _i2.MigrationTask(
+    return _i2.MigrationTask(
       progressTop: _i6.ToStart(),
       progressChild: _i6.ToStart(),
       size: 0,

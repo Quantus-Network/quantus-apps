@@ -508,7 +508,7 @@ class ClaimAttest extends Call {
 /// Attest to a statement, needed to finalize the claims process.
 ///
 /// WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
-/// `SignedExtension`.
+/// `TransactionExtension`.
 ///
 /// Unsigned Validation:
 /// A call to attest is deemed valid if the sender has a `Preclaim` registered

@@ -89,6 +89,6 @@ class Txs {
   ///
   /// **This cannot be un-done.**
   _i5.Sudo removeKey() {
-    return const _i5.Sudo(_i6.RemoveKey());
+    return _i5.Sudo(_i6.RemoveKey());
   }
 }

@@ -39,7 +39,7 @@ class $Response {
   const $Response();
 
   Null null_() {
-    return const Null();
+    return Null();
   }
 
   Assets assets(_i3.Assets value0) {

@@ -35,7 +35,7 @@ class $CommissionClaimPermission {
   const $CommissionClaimPermission();
 
   Permissionless permissionless() {
-    return const Permissionless();
+    return Permissionless();
   }
 
   Account account(_i3.AccountId32 value0) {

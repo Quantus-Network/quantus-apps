@@ -5,7 +5,7 @@ import 'dart:typed_data' as _i7;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/b_tree_set.dart' as _i5;
+import '../types/b_tree_set_2.dart' as _i5;
 import '../types/polkadot_core_primitives/candidate_hash.dart' as _i3;
 import '../types/polkadot_primitives/v8/dispute_state.dart' as _i4;
 import '../types/polkadot_runtime/runtime_call.dart' as _i8;
@@ -220,6 +220,6 @@ class Txs {
   const Txs();
 
   _i8.ParasDisputes forceUnfreeze() {
-    return const _i8.ParasDisputes(_i9.Call.forceUnfreeze);
+    return _i8.ParasDisputes(_i9.Call.forceUnfreeze);
   }
 }

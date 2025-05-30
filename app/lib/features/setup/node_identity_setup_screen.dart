@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class NodeIdentitySetupScreen extends StatefulWidget {
   const NodeIdentitySetupScreen({Key? key}) : super(key: key);
@@ -114,7 +115,7 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.person_search, color: Colors.orange, size: 80),
+        SvgPicture.asset('assets/quantus_icon.svg', width: 80, height: 80),
         const SizedBox(height: 16),
         const Text(
           'Node Identity not set.',

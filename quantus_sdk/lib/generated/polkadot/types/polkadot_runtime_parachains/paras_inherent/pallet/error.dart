@@ -12,15 +12,12 @@ enum Error {
   /// the parent.
   invalidParentHeader('InvalidParentHeader', 1),
 
-  /// The data given to the inherent will result in an overweight block.
-  inherentOverweight('InherentOverweight', 2),
-
-  /// A candidate was filtered during inherent execution. This should have only been done
+  /// Inherent data was filtered during execution. This should have only been done
   /// during creation.
-  candidatesFilteredDuringExecution('CandidatesFilteredDuringExecution', 3),
+  inherentDataFilteredDuringExecution('InherentDataFilteredDuringExecution', 2),
 
   /// Too many candidates supplied.
-  unscheduledCandidate('UnscheduledCandidate', 4);
+  unscheduledCandidate('UnscheduledCandidate', 3);
 
   const Error(
     this.variantName,
@@ -55,10 +52,8 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 1:
         return Error.invalidParentHeader;
       case 2:
-        return Error.inherentOverweight;
+        return Error.inherentDataFilteredDuringExecution;
       case 3:
-        return Error.candidatesFilteredDuringExecution;
-      case 4:
         return Error.unscheduledCandidate;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

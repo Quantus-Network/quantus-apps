@@ -5,9 +5,9 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../../polkadot_core_primitives/candidate_hash.dart' as _i3;
 import '../../polkadot_primitives/v8/candidate_commitments.dart' as _i5;
-import '../../polkadot_primitives/v8/candidate_descriptor.dart' as _i4;
 import '../../polkadot_primitives/v8/core_index.dart' as _i2;
 import '../../polkadot_primitives/v8/group_index.dart' as _i6;
+import '../../polkadot_primitives/vstaging/candidate_descriptor_v2.dart' as _i4;
 
 class CandidatePendingAvailability {
   const CandidatePendingAvailability({
@@ -33,7 +33,7 @@ class CandidatePendingAvailability {
   final _i3.CandidateHash hash;
 
   /// CandidateDescriptor<H>
-  final _i4.CandidateDescriptor descriptor;
+  final _i4.CandidateDescriptorV2 descriptor;
 
   /// CandidateCommitments
   final _i5.CandidateCommitments commitments;
@@ -120,7 +120,7 @@ class $CandidatePendingAvailabilityCodec
       obj.hash,
       output,
     );
-    _i4.CandidateDescriptor.codec.encodeTo(
+    _i4.CandidateDescriptorV2.codec.encodeTo(
       obj.descriptor,
       output,
     );
@@ -161,7 +161,7 @@ class $CandidatePendingAvailabilityCodec
     return CandidatePendingAvailability(
       core: _i1.U32Codec.codec.decode(input),
       hash: const _i1.U8ArrayCodec(32).decode(input),
-      descriptor: _i4.CandidateDescriptor.codec.decode(input),
+      descriptor: _i4.CandidateDescriptorV2.codec.decode(input),
       commitments: _i5.CandidateCommitments.codec.decode(input),
       availabilityVotes: const _i1.BitSequenceCodec(
         _i1.BitStore.U8,
@@ -182,7 +182,7 @@ class $CandidatePendingAvailabilityCodec
     int size = 0;
     size = size + const _i2.CoreIndexCodec().sizeHint(obj.core);
     size = size + const _i3.CandidateHashCodec().sizeHint(obj.hash);
-    size = size + _i4.CandidateDescriptor.codec.sizeHint(obj.descriptor);
+    size = size + _i4.CandidateDescriptorV2.codec.sizeHint(obj.descriptor);
     size = size + _i5.CandidateCommitments.codec.sizeHint(obj.commitments);
     size = size +
         const _i1.BitSequenceCodec(

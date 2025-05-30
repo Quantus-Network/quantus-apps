@@ -34,7 +34,7 @@ class $RawOrigin {
   const $RawOrigin();
 
   Root root() {
-    return const Root();
+    return Root();
   }
 
   Signed signed(_i3.AccountId32 value0) {
@@ -42,7 +42,7 @@ class $RawOrigin {
   }
 
   None none() {
-    return const None();
+    return None();
   }
 }
 

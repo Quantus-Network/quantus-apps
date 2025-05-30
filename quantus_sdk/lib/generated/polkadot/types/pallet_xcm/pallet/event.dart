@@ -6,14 +6,14 @@ import 'package:quiver/collection.dart' as _i14;
 
 import '../../primitive_types/h256.dart' as _i8;
 import '../../sp_weights/weight_v2/weight.dart' as _i7;
-import '../../staging_xcm/v4/asset/asset.dart' as _i15;
-import '../../staging_xcm/v4/asset/assets.dart' as _i10;
-import '../../staging_xcm/v4/instruction_1.dart' as _i13;
-import '../../staging_xcm/v4/location/location.dart' as _i4;
-import '../../staging_xcm/v4/response.dart' as _i6;
-import '../../staging_xcm/v4/traits/outcome.dart' as _i3;
-import '../../staging_xcm/v4/xcm_1.dart' as _i5;
-import '../../xcm/v3/traits/error.dart' as _i11;
+import '../../staging_xcm/v5/asset/asset.dart' as _i15;
+import '../../staging_xcm/v5/asset/assets.dart' as _i10;
+import '../../staging_xcm/v5/instruction_1.dart' as _i13;
+import '../../staging_xcm/v5/location/location.dart' as _i4;
+import '../../staging_xcm/v5/response.dart' as _i6;
+import '../../staging_xcm/v5/traits/outcome.dart' as _i3;
+import '../../staging_xcm/v5/xcm_1.dart' as _i5;
+import '../../xcm/v5/traits/error.dart' as _i11;
 import '../../xcm/versioned_assets.dart' as _i9;
 import '../../xcm/versioned_location.dart' as _i12;
 

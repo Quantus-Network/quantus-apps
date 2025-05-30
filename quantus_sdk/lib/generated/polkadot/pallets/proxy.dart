@@ -8,8 +8,8 @@ import 'package:polkadart/scale_codec.dart' as _i5;
 import '../types/pallet_proxy/announcement.dart' as _i6;
 import '../types/pallet_proxy/pallet/call.dart' as _i12;
 import '../types/pallet_proxy/proxy_definition.dart' as _i4;
-import '../types/polkadot_runtime/proxy_type.dart' as _i11;
 import '../types/polkadot_runtime/runtime_call.dart' as _i9;
+import '../types/polkadot_runtime_constants/proxy/proxy_type.dart' as _i11;
 import '../types/primitive_types/h256.dart' as _i13;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i10;
@@ -181,7 +181,7 @@ class Txs {
   /// WARNING: This may be called on accounts created by `pure`, however if done, then
   /// the unreserved fees will be inaccessible. **All access to this account will be lost.**
   _i9.Proxy removeProxies() {
-    return const _i9.Proxy(_i12.RemoveProxies());
+    return _i9.Proxy(_i12.RemoveProxies());
   }
 
   /// Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and

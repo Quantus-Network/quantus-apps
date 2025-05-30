@@ -100,11 +100,7 @@ enum Error {
   notEnoughFunds('NotEnoughFunds', 29),
 
   /// Operation not allowed for virtual stakers.
-  virtualStakerNotAllowed('VirtualStakerNotAllowed', 30),
-
-  /// Account is restricted from participation in staking. This may happen if the account is
-  /// staking in another way already, such as via pool.
-  restricted('Restricted', 31);
+  virtualStakerNotAllowed('VirtualStakerNotAllowed', 30);
 
   const Error(
     this.variantName,
@@ -196,8 +192,6 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.notEnoughFunds;
       case 30:
         return Error.virtualStakerNotAllowed;
-      case 31:
-        return Error.restricted;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

@@ -170,7 +170,7 @@ class Txs {
   ///
   /// Some events from the staking and currency system might be emitted.
   _i7.FastUnstake registerFastUnstake() {
-    return const _i7.FastUnstake(_i8.RegisterFastUnstake());
+    return _i7.FastUnstake(_i8.RegisterFastUnstake());
   }
 
   /// Deregister oneself from the fast-unstake.
@@ -192,7 +192,7 @@ class Txs {
   ///
   /// Some events from the staking and currency system might be emitted.
   _i7.FastUnstake deregister() {
-    return const _i7.FastUnstake(_i8.Deregister());
+    return _i7.FastUnstake(_i8.Deregister());
   }
 
   /// Control the operation of this pallet.

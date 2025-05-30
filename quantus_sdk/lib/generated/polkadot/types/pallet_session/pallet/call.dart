@@ -45,7 +45,7 @@ class $Call {
   }
 
   PurgeKeys purgeKeys() {
-    return const PurgeKeys();
+    return PurgeKeys();
   }
 }
 

@@ -6,7 +6,6 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../frame_support/dispatch/raw_origin.dart' as _i3;
 import '../pallet_xcm/pallet/origin.dart' as _i6;
 import '../polkadot_runtime_parachains/origin/pallet/origin.dart' as _i5;
-import '../sp_core/void.dart' as _i7;
 import 'governance/origins/pallet_custom_origins/origin.dart' as _i4;
 
 abstract class OriginCaller {
@@ -51,10 +50,6 @@ class $OriginCaller {
   XcmPallet xcmPallet(_i6.Origin value0) {
     return XcmPallet(value0);
   }
-
-  Void void_(_i7.Void value0) {
-    return Void(value0);
-  }
 }
 
 class $OriginCallerCodec with _i1.Codec<OriginCaller> {
@@ -72,8 +67,6 @@ class $OriginCallerCodec with _i1.Codec<OriginCaller> {
         return ParachainsOrigin._decode(input);
       case 99:
         return XcmPallet._decode(input);
-      case 4:
-        return Void._decode(input);
       default:
         throw Exception('OriginCaller: Invalid variant index: "$index"');
     }
@@ -97,9 +90,6 @@ class $OriginCallerCodec with _i1.Codec<OriginCaller> {
       case XcmPallet:
         (value as XcmPallet).encodeTo(output);
         break;
-      case Void:
-        (value as Void).encodeTo(output);
-        break;
       default:
         throw Exception(
             'OriginCaller: Unsupported "$value" of type "${value.runtimeType}"');
@@ -117,8 +107,6 @@ class $OriginCallerCodec with _i1.Codec<OriginCaller> {
         return (value as ParachainsOrigin)._sizeHint();
       case XcmPallet:
         return (value as XcmPallet)._sizeHint();
-      case Void:
-        return (value as Void)._sizeHint();
       default:
         throw Exception(
             'OriginCaller: Unsupported "$value" of type "${value.runtimeType}"');
@@ -291,49 +279,6 @@ class XcmPallet extends OriginCaller {
         other,
       ) ||
       other is XcmPallet && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class Void extends OriginCaller {
-  const Void(this.value0);
-
-  factory Void._decode(_i1.Input input) {
-    return Void(_i1.NullCodec.codec.decode(input));
-  }
-
-  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::
-  ///__private::Void
-  final _i7.Void value0;
-
-  @override
-  Map<String, dynamic> toJson() => {'Void': null};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i7.VoidCodec().sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.NullCodec.codec.encodeTo(
-      value0,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Void && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

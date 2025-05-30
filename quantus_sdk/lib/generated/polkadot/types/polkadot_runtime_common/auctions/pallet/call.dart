@@ -58,7 +58,7 @@ class $Call {
   }
 
   CancelAuction cancelAuction() {
-    return const CancelAuction();
+    return CancelAuction();
   }
 }
 

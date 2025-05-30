@@ -337,7 +337,7 @@ class Queries {
     if (bytes != null) {
       return _digest.decodeValue(bytes);
     }
-    return const _i7.Digest(logs: []); /* Default */
+    return _i7.Digest(logs: []); /* Default */
   }
 
   /// Events deposited for the current block.
@@ -883,6 +883,19 @@ class Constants {
           48,
           6,
           19,
+        ],
+        1,
+      ),
+      _i19.Tuple2<List<int>, int>(
+        <int>[
+          219,
+          178,
+          61,
+          46,
+          252,
+          153,
+          111,
+          122,
         ],
         1,
       ),

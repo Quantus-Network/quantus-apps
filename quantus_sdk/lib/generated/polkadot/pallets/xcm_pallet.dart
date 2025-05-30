@@ -13,8 +13,8 @@ import '../types/polkadot_runtime/runtime_call.dart' as _i15;
 import '../types/primitive_types/h256.dart' as _i4;
 import '../types/sp_core/crypto/account_id32.dart' as _i9;
 import '../types/sp_weights/weight_v2/weight.dart' as _i7;
-import '../types/staging_xcm/v4/location/location.dart' as _i20;
-import '../types/staging_xcm/v4/xcm_1.dart' as _i12;
+import '../types/staging_xcm/v5/location/location.dart' as _i20;
+import '../types/staging_xcm/v5/xcm_1.dart' as _i12;
 import '../types/staging_xcm_executor/traits/asset_transfer/transfer_type.dart'
     as _i22;
 import '../types/tuples.dart' as _i6;

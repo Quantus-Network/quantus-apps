@@ -50,7 +50,7 @@ class $Event {
   }
 
   KeyRemoved keyRemoved() {
-    return const KeyRemoved();
+    return KeyRemoved();
   }
 
   SudoAsDone sudoAsDone(

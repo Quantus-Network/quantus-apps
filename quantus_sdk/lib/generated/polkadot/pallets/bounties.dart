@@ -293,6 +293,29 @@ class Txs {
       remark: remark,
     ));
   }
+
+  /// Approve bountry and propose a curator simultaneously.
+  /// This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
+  ///
+  /// May only be called from `T::SpendOrigin`.
+  ///
+  /// - `bounty_id`: Bounty ID to approve.
+  /// - `curator`: The curator account whom will manage this bounty.
+  /// - `fee`: The curator fee.
+  ///
+  /// ## Complexity
+  /// - O(1).
+  _i6.Bounties approveBountyWithCurator({
+    required BigInt bountyId,
+    required _i8.MultiAddress curator,
+    required BigInt fee,
+  }) {
+    return _i6.Bounties(_i7.ApproveBountyWithCurator(
+      bountyId: bountyId,
+      curator: curator,
+      fee: fee,
+    ));
+  }
 }
 
 class Constants {

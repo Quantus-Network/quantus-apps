@@ -6,6 +6,8 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../../staging_xcm/v3/multilocation/multi_location.dart' as _i3;
 import '../../staging_xcm/v4/asset/asset_id.dart' as _i6;
 import '../../staging_xcm/v4/location/location.dart' as _i5;
+import '../../staging_xcm/v5/asset/asset_id.dart' as _i8;
+import '../../staging_xcm/v5/location/location.dart' as _i7;
 import '../../xcm/v3/multiasset/asset_id.dart' as _i4;
 
 abstract class VersionedLocatableAsset {
@@ -55,6 +57,16 @@ class $VersionedLocatableAsset {
       assetId: assetId,
     );
   }
+
+  V5 v5({
+    required _i7.Location location,
+    required _i8.AssetId assetId,
+  }) {
+    return V5(
+      location: location,
+      assetId: assetId,
+    );
+  }
 }
 
 class $VersionedLocatableAssetCodec with _i1.Codec<VersionedLocatableAsset> {
@@ -68,6 +80,8 @@ class $VersionedLocatableAssetCodec with _i1.Codec<VersionedLocatableAsset> {
         return V3._decode(input);
       case 4:
         return V4._decode(input);
+      case 5:
+        return V5._decode(input);
       default:
         throw Exception(
             'VersionedLocatableAsset: Invalid variant index: "$index"');
@@ -86,6 +100,9 @@ class $VersionedLocatableAssetCodec with _i1.Codec<VersionedLocatableAsset> {
       case V4:
         (value as V4).encodeTo(output);
         break;
+      case V5:
+        (value as V5).encodeTo(output);
+        break;
       default:
         throw Exception(
             'VersionedLocatableAsset: Unsupported "$value" of type "${value.runtimeType}"');
@@ -99,6 +116,8 @@ class $VersionedLocatableAssetCodec with _i1.Codec<VersionedLocatableAsset> {
         return (value as V3)._sizeHint();
       case V4:
         return (value as V4)._sizeHint();
+      case V5:
+        return (value as V5)._sizeHint();
       default:
         throw Exception(
             'VersionedLocatableAsset: Unsupported "$value" of type "${value.runtimeType}"');
@@ -226,6 +245,70 @@ class V4 extends VersionedLocatableAsset {
         other,
       ) ||
       other is V4 && other.location == location && other.assetId == assetId;
+
+  @override
+  int get hashCode => Object.hash(
+        location,
+        assetId,
+      );
+}
+
+class V5 extends VersionedLocatableAsset {
+  const V5({
+    required this.location,
+    required this.assetId,
+  });
+
+  factory V5._decode(_i1.Input input) {
+    return V5(
+      location: _i7.Location.codec.decode(input),
+      assetId: _i7.Location.codec.decode(input),
+    );
+  }
+
+  /// xcm::v5::Location
+  final _i7.Location location;
+
+  /// xcm::v5::AssetId
+  final _i8.AssetId assetId;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {
+        'V5': {
+          'location': location.toJson(),
+          'assetId': assetId.toJson(),
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i7.Location.codec.sizeHint(location);
+    size = size + const _i8.AssetIdCodec().sizeHint(assetId);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      5,
+      output,
+    );
+    _i7.Location.codec.encodeTo(
+      location,
+      output,
+    );
+    _i7.Location.codec.encodeTo(
+      assetId,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is V5 && other.location == location && other.assetId == assetId;
 
   @override
   int get hashCode => Object.hash(

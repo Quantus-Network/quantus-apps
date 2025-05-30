@@ -70,7 +70,7 @@ class Queries {
       hrmpMaxMessageNumPerCandidate: 0,
       validationUpgradeCooldown: 0,
       validationUpgradeDelay: 2,
-      asyncBackingParams: const _i6.AsyncBackingParams(
+      asyncBackingParams: _i6.AsyncBackingParams(
         maxCandidateDepth: 0,
         allowedAncestryLen: 0,
       ),
@@ -101,7 +101,7 @@ class Queries {
         _i7.Uint32List.fromList(const []).buffer,
       ),
       approvalVotingParams:
-          const _i8.ApprovalVotingParams(maxApprovalCoalesceCount: 1),
+          _i8.ApprovalVotingParams(maxApprovalCoalesceCount: 1),
       schedulerParams: _i9.SchedulerParams(
         groupRotationFrequency: 1,
         parasAvailabilityPeriod: 1,
@@ -210,11 +210,6 @@ class Txs {
   /// this, if you really know what you are doing!
   _i10.Configuration setCoretimeCores({required int new_}) {
     return _i10.Configuration(_i11.SetCoretimeCores(new_: new_));
-  }
-
-  /// Set the max number of times a claim may timeout on a core before it is abandoned
-  _i10.Configuration setMaxAvailabilityTimeouts({required int new_}) {
-    return _i10.Configuration(_i11.SetMaxAvailabilityTimeouts(new_: new_));
   }
 
   /// Set the parachain validator-group rotation frequency
@@ -407,11 +402,6 @@ class Txs {
       {required _i13.Perbill new_}) {
     return _i10.Configuration(
         _i11.SetOnDemandTargetQueueUtilization(new_: new_));
-  }
-
-  /// Set the on demand (parathreads) ttl in the claimqueue.
-  _i10.Configuration setOnDemandTtl({required int new_}) {
-    return _i10.Configuration(_i11.SetOnDemandTtl(new_: new_));
   }
 
   /// Set the minimum backing votes threshold.
