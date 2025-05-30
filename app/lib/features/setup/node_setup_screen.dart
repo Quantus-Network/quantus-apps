@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'dart:io';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class NodeSetupScreen extends StatefulWidget {
   const NodeSetupScreen({Key? key}) : super(key: key);
@@ -24,16 +26,16 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       _isLoading = true;
     });
     try {
-      // This checks if the binary exists and attempts to download if not.
-      await BinaryManager.ensureNodeBinary();
-      // If successful, the binary is installed or was already there.
+      // Only check if the binary file exists, do not trigger download.
+      final String binaryPath = await BinaryManager.getNodeBinaryFilePath();
+      final bool installed = await File(binaryPath).exists();
       setState(() {
-        _isNodeInstalled = true;
+        _isNodeInstalled = installed;
         _isLoading = false;
       });
     } catch (e) {
-      // If an error occurs (like the network issue), assume not installed or check failed.
-      print('Error checking/ensuring node binary: $e');
+      // If an error occurs, assume not installed or check failed.
+      print('Error checking node binary: $e');
       setState(() {
         _isNodeInstalled = false;
         _isLoading = false;
@@ -49,7 +51,15 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
     try {
       // Trigger the installation/download process via BinaryManager
       await BinaryManager.ensureNodeBinary();
-      // If successful, check installation status again
+      // If successful, update installation status
+      // We directly set _isNodeInstalled to true here, assuming ensureNodeBinary succeeds.
+      // And then refresh the state by calling _checkNodeInstallation to be sure.
+      setState(() {
+        _isNodeInstalled = true;
+      });
+      // To be absolutely sure and refresh UI correctly, re-check.
+      // This might be slightly redundant if ensureNodeBinary is guaranteed to throw on failure,
+      // but ensures the UI reflects the true state.
       await _checkNodeInstallation();
     } catch (e) {
       print('Error during node installation: $e');
@@ -102,7 +112,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.warning, color: Colors.orange, size: 80),
+        SvgPicture.asset('assets/quantus_icon.svg', width: 80, height: 80),
         const SizedBox(height: 16),
         const Text(
           'Node not found.',

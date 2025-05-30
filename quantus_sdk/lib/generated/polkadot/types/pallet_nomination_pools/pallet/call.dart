@@ -61,7 +61,7 @@ class $Call {
   }
 
   ClaimPayout claimPayout() {
-    return const ClaimPayout();
+    return ClaimPayout();
   }
 
   Unbond unbond({
@@ -487,9 +487,8 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Stake funds with a pool. The amount to bond is delegated (or transferred based on
-/// [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-/// increases the pool's bond.
+/// Stake funds with a pool. The amount to bond is transferred from the member to the pool
+/// account and immediately increases the pools bond.
 ///
 /// The method of transferring the amount to the pool account is determined by
 /// [`adapter::StakeStrategyType`]. If the pool is configured to use

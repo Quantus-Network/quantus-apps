@@ -5,8 +5,9 @@ import 'dart:typed_data' as _i5;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/polkadot_primitives/v8/inherent_data.dart' as _i7;
-import '../types/polkadot_primitives/v8/scraped_on_chain_votes.dart' as _i3;
+import '../types/polkadot_primitives/vstaging/inherent_data.dart' as _i7;
+import '../types/polkadot_primitives/vstaging/scraped_on_chain_votes.dart'
+    as _i3;
 import '../types/polkadot_runtime/runtime_call.dart' as _i6;
 import '../types/polkadot_runtime_parachains/paras_inherent/pallet/call.dart'
     as _i8;

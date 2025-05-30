@@ -34,79 +34,79 @@ class $Error {
   const $Error();
 
   PoolNotFound poolNotFound() {
-    return const PoolNotFound();
+    return PoolNotFound();
   }
 
   PoolMemberNotFound poolMemberNotFound() {
-    return const PoolMemberNotFound();
+    return PoolMemberNotFound();
   }
 
   RewardPoolNotFound rewardPoolNotFound() {
-    return const RewardPoolNotFound();
+    return RewardPoolNotFound();
   }
 
   SubPoolsNotFound subPoolsNotFound() {
-    return const SubPoolsNotFound();
+    return SubPoolsNotFound();
   }
 
   AccountBelongsToOtherPool accountBelongsToOtherPool() {
-    return const AccountBelongsToOtherPool();
+    return AccountBelongsToOtherPool();
   }
 
   FullyUnbonding fullyUnbonding() {
-    return const FullyUnbonding();
+    return FullyUnbonding();
   }
 
   MaxUnbondingLimit maxUnbondingLimit() {
-    return const MaxUnbondingLimit();
+    return MaxUnbondingLimit();
   }
 
   CannotWithdrawAny cannotWithdrawAny() {
-    return const CannotWithdrawAny();
+    return CannotWithdrawAny();
   }
 
   MinimumBondNotMet minimumBondNotMet() {
-    return const MinimumBondNotMet();
+    return MinimumBondNotMet();
   }
 
   OverflowRisk overflowRisk() {
-    return const OverflowRisk();
+    return OverflowRisk();
   }
 
   NotDestroying notDestroying() {
-    return const NotDestroying();
+    return NotDestroying();
   }
 
   NotNominator notNominator() {
-    return const NotNominator();
+    return NotNominator();
   }
 
   NotKickerOrDestroying notKickerOrDestroying() {
-    return const NotKickerOrDestroying();
+    return NotKickerOrDestroying();
   }
 
   NotOpen notOpen() {
-    return const NotOpen();
+    return NotOpen();
   }
 
   MaxPools maxPools() {
-    return const MaxPools();
+    return MaxPools();
   }
 
   MaxPoolMembers maxPoolMembers() {
-    return const MaxPoolMembers();
+    return MaxPoolMembers();
   }
 
   CanNotChangeState canNotChangeState() {
-    return const CanNotChangeState();
+    return CanNotChangeState();
   }
 
   DoesNotHavePermission doesNotHavePermission() {
-    return const DoesNotHavePermission();
+    return DoesNotHavePermission();
   }
 
   MetadataExceedsMaxLen metadataExceedsMaxLen() {
-    return const MetadataExceedsMaxLen();
+    return MetadataExceedsMaxLen();
   }
 
   Defensive defensive(_i3.DefensiveError value0) {
@@ -115,75 +115,67 @@ class $Error {
 
   PartialUnbondNotAllowedPermissionlessly
       partialUnbondNotAllowedPermissionlessly() {
-    return const PartialUnbondNotAllowedPermissionlessly();
+    return PartialUnbondNotAllowedPermissionlessly();
   }
 
   MaxCommissionRestricted maxCommissionRestricted() {
-    return const MaxCommissionRestricted();
+    return MaxCommissionRestricted();
   }
 
   CommissionExceedsMaximum commissionExceedsMaximum() {
-    return const CommissionExceedsMaximum();
+    return CommissionExceedsMaximum();
   }
 
   CommissionExceedsGlobalMaximum commissionExceedsGlobalMaximum() {
-    return const CommissionExceedsGlobalMaximum();
+    return CommissionExceedsGlobalMaximum();
   }
 
   CommissionChangeThrottled commissionChangeThrottled() {
-    return const CommissionChangeThrottled();
+    return CommissionChangeThrottled();
   }
 
   CommissionChangeRateNotAllowed commissionChangeRateNotAllowed() {
-    return const CommissionChangeRateNotAllowed();
+    return CommissionChangeRateNotAllowed();
   }
 
   NoPendingCommission noPendingCommission() {
-    return const NoPendingCommission();
+    return NoPendingCommission();
   }
 
   NoCommissionCurrentSet noCommissionCurrentSet() {
-    return const NoCommissionCurrentSet();
+    return NoCommissionCurrentSet();
   }
 
   PoolIdInUse poolIdInUse() {
-    return const PoolIdInUse();
+    return PoolIdInUse();
   }
 
   InvalidPoolId invalidPoolId() {
-    return const InvalidPoolId();
+    return InvalidPoolId();
   }
 
   BondExtraRestricted bondExtraRestricted() {
-    return const BondExtraRestricted();
+    return BondExtraRestricted();
   }
 
   NothingToAdjust nothingToAdjust() {
-    return const NothingToAdjust();
+    return NothingToAdjust();
   }
 
   NothingToSlash nothingToSlash() {
-    return const NothingToSlash();
-  }
-
-  SlashTooLow slashTooLow() {
-    return const SlashTooLow();
+    return NothingToSlash();
   }
 
   AlreadyMigrated alreadyMigrated() {
-    return const AlreadyMigrated();
+    return AlreadyMigrated();
   }
 
   NotMigrated notMigrated() {
-    return const NotMigrated();
+    return NotMigrated();
   }
 
   NotSupported notSupported() {
-    return const NotSupported();
-  }
-
-  Restricted restricted() {
-    return const Restricted();
+    return NotSupported();
   }
 }
 
@@ -261,15 +253,11 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 32:
         return const NothingToSlash();
       case 33:
-        return const SlashTooLow();
-      case 34:
         return const AlreadyMigrated();
-      case 35:
+      case 34:
         return const NotMigrated();
-      case 36:
+      case 35:
         return const NotSupported();
-      case 37:
-        return const Restricted();
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }
@@ -380,9 +368,6 @@ class $ErrorCodec with _i1.Codec<Error> {
       case NothingToSlash:
         (value as NothingToSlash).encodeTo(output);
         break;
-      case SlashTooLow:
-        (value as SlashTooLow).encodeTo(output);
-        break;
       case AlreadyMigrated:
         (value as AlreadyMigrated).encodeTo(output);
         break;
@@ -391,9 +376,6 @@ class $ErrorCodec with _i1.Codec<Error> {
         break;
       case NotSupported:
         (value as NotSupported).encodeTo(output);
-        break;
-      case Restricted:
-        (value as Restricted).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -470,15 +452,11 @@ class $ErrorCodec with _i1.Codec<Error> {
         return 1;
       case NothingToSlash:
         return 1;
-      case SlashTooLow:
-        return 1;
       case AlreadyMigrated:
         return 1;
       case NotMigrated:
         return 1;
       case NotSupported:
-        return 1;
-      case Restricted:
         return 1;
       default:
         throw Exception(
@@ -1212,27 +1190,6 @@ class NothingToSlash extends Error {
   int get hashCode => runtimeType.hashCode;
 }
 
-/// The slash amount is too low to be applied.
-class SlashTooLow extends Error {
-  const SlashTooLow();
-
-  @override
-  Map<String, dynamic> toJson() => {'SlashTooLow': null};
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      33,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) => other is SlashTooLow;
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-}
-
 /// The pool or member delegation has already migrated to delegate stake.
 class AlreadyMigrated extends Error {
   const AlreadyMigrated();
@@ -1242,7 +1199,7 @@ class AlreadyMigrated extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      34,
+      33,
       output,
     );
   }
@@ -1263,7 +1220,7 @@ class NotMigrated extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      35,
+      34,
       output,
     );
   }
@@ -1275,7 +1232,8 @@ class NotMigrated extends Error {
   int get hashCode => runtimeType.hashCode;
 }
 
-/// This call is not allowed in the current state of the pallet.
+/// This call is not allowed in the current state of the pallet or an unspecific error
+/// occurred.
 class NotSupported extends Error {
   const NotSupported();
 
@@ -1284,35 +1242,13 @@ class NotSupported extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      36,
+      35,
       output,
     );
   }
 
   @override
   bool operator ==(Object other) => other is NotSupported;
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-}
-
-/// Account is restricted from participation in pools. This may happen if the account is
-/// staking in another way already.
-class Restricted extends Error {
-  const Restricted();
-
-  @override
-  Map<String, dynamic> toJson() => {'Restricted': null};
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      37,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) => other is Restricted;
 
   @override
   int get hashCode => runtimeType.hashCode;

@@ -2,7 +2,9 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i3;
+import 'package:quiver/collection.dart' as _i4;
+
+import '../../primitive_types/u512.dart' as _i3;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -36,15 +38,15 @@ class $Event {
     return ProofSubmitted(nonce: nonce);
   }
 
-  DifficultyAdjusted difficultyAdjusted({
-    required BigInt oldDifficulty,
-    required BigInt newDifficulty,
-    required BigInt medianBlockTime,
+  DistanceThresholdAdjusted distanceThresholdAdjusted({
+    required _i3.U512 oldDistanceThreshold,
+    required _i3.U512 newDistanceThreshold,
+    required BigInt observedBlockTime,
   }) {
-    return DifficultyAdjusted(
-      oldDifficulty: oldDifficulty,
-      newDifficulty: newDifficulty,
-      medianBlockTime: medianBlockTime,
+    return DistanceThresholdAdjusted(
+      oldDistanceThreshold: oldDistanceThreshold,
+      newDistanceThreshold: newDistanceThreshold,
+      observedBlockTime: observedBlockTime,
     );
   }
 }
@@ -59,7 +61,7 @@ class $EventCodec with _i1.Codec<Event> {
       case 0:
         return ProofSubmitted._decode(input);
       case 1:
-        return DifficultyAdjusted._decode(input);
+        return DistanceThresholdAdjusted._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -74,8 +76,8 @@ class $EventCodec with _i1.Codec<Event> {
       case ProofSubmitted:
         (value as ProofSubmitted).encodeTo(output);
         break;
-      case DifficultyAdjusted:
-        (value as DifficultyAdjusted).encodeTo(output);
+      case DistanceThresholdAdjusted:
+        (value as DistanceThresholdAdjusted).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -88,8 +90,8 @@ class $EventCodec with _i1.Codec<Event> {
     switch (value.runtimeType) {
       case ProofSubmitted:
         return (value as ProofSubmitted)._sizeHint();
-      case DifficultyAdjusted:
-        return (value as DifficultyAdjusted)._sizeHint();
+      case DistanceThresholdAdjusted:
+        return (value as DistanceThresholdAdjusted)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -136,7 +138,7 @@ class ProofSubmitted extends Event {
         other,
       ) ||
       other is ProofSubmitted &&
-          _i3.listsEqual(
+          _i4.listsEqual(
             other.nonce,
             nonce,
           );
@@ -145,44 +147,44 @@ class ProofSubmitted extends Event {
   int get hashCode => nonce.hashCode;
 }
 
-class DifficultyAdjusted extends Event {
-  const DifficultyAdjusted({
-    required this.oldDifficulty,
-    required this.newDifficulty,
-    required this.medianBlockTime,
+class DistanceThresholdAdjusted extends Event {
+  const DistanceThresholdAdjusted({
+    required this.oldDistanceThreshold,
+    required this.newDistanceThreshold,
+    required this.observedBlockTime,
   });
 
-  factory DifficultyAdjusted._decode(_i1.Input input) {
-    return DifficultyAdjusted(
-      oldDifficulty: _i1.U64Codec.codec.decode(input),
-      newDifficulty: _i1.U64Codec.codec.decode(input),
-      medianBlockTime: _i1.U64Codec.codec.decode(input),
+  factory DistanceThresholdAdjusted._decode(_i1.Input input) {
+    return DistanceThresholdAdjusted(
+      oldDistanceThreshold: const _i1.U64ArrayCodec(8).decode(input),
+      newDistanceThreshold: const _i1.U64ArrayCodec(8).decode(input),
+      observedBlockTime: _i1.U64Codec.codec.decode(input),
     );
   }
 
-  /// u64
-  final BigInt oldDifficulty;
+  /// U512
+  final _i3.U512 oldDistanceThreshold;
+
+  /// U512
+  final _i3.U512 newDistanceThreshold;
 
   /// u64
-  final BigInt newDifficulty;
-
-  /// u64
-  final BigInt medianBlockTime;
+  final BigInt observedBlockTime;
 
   @override
-  Map<String, Map<String, BigInt>> toJson() => {
-        'DifficultyAdjusted': {
-          'oldDifficulty': oldDifficulty,
-          'newDifficulty': newDifficulty,
-          'medianBlockTime': medianBlockTime,
+  Map<String, Map<String, dynamic>> toJson() => {
+        'DistanceThresholdAdjusted': {
+          'oldDistanceThreshold': oldDistanceThreshold.toList(),
+          'newDistanceThreshold': newDistanceThreshold.toList(),
+          'observedBlockTime': observedBlockTime,
         }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U64Codec.codec.sizeHint(oldDifficulty);
-    size = size + _i1.U64Codec.codec.sizeHint(newDifficulty);
-    size = size + _i1.U64Codec.codec.sizeHint(medianBlockTime);
+    size = size + const _i3.U512Codec().sizeHint(oldDistanceThreshold);
+    size = size + const _i3.U512Codec().sizeHint(newDistanceThreshold);
+    size = size + _i1.U64Codec.codec.sizeHint(observedBlockTime);
     return size;
   }
 
@@ -191,16 +193,16 @@ class DifficultyAdjusted extends Event {
       1,
       output,
     );
-    _i1.U64Codec.codec.encodeTo(
-      oldDifficulty,
+    const _i1.U64ArrayCodec(8).encodeTo(
+      oldDistanceThreshold,
+      output,
+    );
+    const _i1.U64ArrayCodec(8).encodeTo(
+      newDistanceThreshold,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
-      newDifficulty,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      medianBlockTime,
+      observedBlockTime,
       output,
     );
   }
@@ -211,15 +213,21 @@ class DifficultyAdjusted extends Event {
         this,
         other,
       ) ||
-      other is DifficultyAdjusted &&
-          other.oldDifficulty == oldDifficulty &&
-          other.newDifficulty == newDifficulty &&
-          other.medianBlockTime == medianBlockTime;
+      other is DistanceThresholdAdjusted &&
+          _i4.listsEqual(
+            other.oldDistanceThreshold,
+            oldDistanceThreshold,
+          ) &&
+          _i4.listsEqual(
+            other.newDistanceThreshold,
+            newDistanceThreshold,
+          ) &&
+          other.observedBlockTime == observedBlockTime;
 
   @override
   int get hashCode => Object.hash(
-        oldDifficulty,
-        newDifficulty,
-        medianBlockTime,
+        oldDistanceThreshold,
+        newDistanceThreshold,
+        observedBlockTime,
       );
 }

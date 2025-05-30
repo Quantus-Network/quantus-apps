@@ -16,18 +16,18 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   flutter_localizations:
     sdk: flutter
-  flutter_rust_bridge: any
-  shared_preferences: any
-  provider: any
-  another_flushbar: any
-  go_router: any
-  flutter_hooks: any
-  hooks_riverpod: any
-  decimal: any
-  permission_handler: any
-  image_picker: any
-  logger: any
+  shared_preferences: ^2.5.2
+  provider: ^6.1.2
+  another_flushbar: ^1.10.2
+  go_router: ^14.1.0
+  flutter_hooks: ^0.20.0
+  hooks_riverpod: ^2.5.0
+  decimal: ^2.3.3
+  permission_handler: ^11.1.0
+  image_picker: ^1.1.2
+  logger: ^2.5.0
   path_provider: ^2.0.0
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +35,9 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   integration_test:
     sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/quantus_icon.svg
+  

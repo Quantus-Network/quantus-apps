@@ -64,7 +64,7 @@ class $Call {
   }
 
   RemoveKey removeKey() {
-    return const RemoveKey();
+    return RemoveKey();
   }
 }
 
@@ -149,7 +149,7 @@ class Sudo extends Call {
   final _i3.RuntimeCall call;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {
+  Map<String, Map<String, Map<String, Map<String, dynamic>>>> toJson() => {
         'sudo': {'call': call.toJson()}
       };
 

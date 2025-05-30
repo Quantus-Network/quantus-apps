@@ -1,20 +1,25 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i16;
+import 'dart:async' as _i21;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 
 import 'pallets/balances.dart' as _i4;
-import 'pallets/conviction_voting.dart' as _i14;
+import 'pallets/conviction_voting.dart' as _i15;
+import 'pallets/faucet.dart' as _i20;
+import 'pallets/merkle_airdrop.dart' as _i18;
 import 'pallets/mining_rewards.dart' as _i9;
 import 'pallets/preimage.dart' as _i11;
 import 'pallets/q_po_w.dart' as _i7;
 import 'pallets/referenda.dart' as _i13;
+import 'pallets/reversible_transfers.dart' as _i14;
 import 'pallets/scheduler.dart' as _i12;
 import 'pallets/sudo.dart' as _i6;
 import 'pallets/system.dart' as _i2;
+import 'pallets/tech_collective.dart' as _i16;
+import 'pallets/tech_referenda.dart' as _i17;
 import 'pallets/timestamp.dart' as _i3;
 import 'pallets/transaction_payment.dart' as _i5;
-import 'pallets/utility.dart' as _i15;
+import 'pallets/utility.dart' as _i19;
 import 'pallets/vesting.dart' as _i10;
 import 'pallets/wormhole.dart' as _i8;
 
@@ -32,7 +37,11 @@ class Queries {
         preimage = _i11.Queries(api),
         scheduler = _i12.Queries(api),
         referenda = _i13.Queries(api),
-        convictionVoting = _i14.Queries(api);
+        reversibleTransfers = _i14.Queries(api),
+        convictionVoting = _i15.Queries(api),
+        techCollective = _i16.Queries(api),
+        techReferenda = _i17.Queries(api),
+        merkleAirdrop = _i18.Queries(api);
 
   final _i2.Queries system;
 
@@ -58,33 +67,51 @@ class Queries {
 
   final _i13.Queries referenda;
 
-  final _i14.Queries convictionVoting;
+  final _i14.Queries reversibleTransfers;
+
+  final _i15.Queries convictionVoting;
+
+  final _i16.Queries techCollective;
+
+  final _i17.Queries techReferenda;
+
+  final _i18.Queries merkleAirdrop;
 }
 
 class Extrinsics {
   Extrinsics();
 
-  final _i2.Txs system = const _i2.Txs();
+  final _i2.Txs system = _i2.Txs();
 
-  final _i3.Txs timestamp = const _i3.Txs();
+  final _i3.Txs timestamp = _i3.Txs();
 
-  final _i4.Txs balances = const _i4.Txs();
+  final _i4.Txs balances = _i4.Txs();
 
-  final _i6.Txs sudo = const _i6.Txs();
+  final _i6.Txs sudo = _i6.Txs();
 
-  final _i8.Txs wormhole = const _i8.Txs();
+  final _i8.Txs wormhole = _i8.Txs();
 
-  final _i10.Txs vesting = const _i10.Txs();
+  final _i10.Txs vesting = _i10.Txs();
 
-  final _i11.Txs preimage = const _i11.Txs();
+  final _i11.Txs preimage = _i11.Txs();
 
-  final _i12.Txs scheduler = const _i12.Txs();
+  final _i12.Txs scheduler = _i12.Txs();
 
-  final _i15.Txs utility = const _i15.Txs();
+  final _i19.Txs utility = _i19.Txs();
 
-  final _i13.Txs referenda = const _i13.Txs();
+  final _i13.Txs referenda = _i13.Txs();
 
-  final _i14.Txs convictionVoting = const _i14.Txs();
+  final _i14.Txs reversibleTransfers = _i14.Txs();
+
+  final _i15.Txs convictionVoting = _i15.Txs();
+
+  final _i16.Txs techCollective = _i16.Txs();
+
+  final _i17.Txs techReferenda = _i17.Txs();
+
+  final _i20.Txs faucet = _i20.Txs();
+
+  final _i18.Txs merkleAirdrop = _i18.Txs();
 }
 
 class Constants {
@@ -104,11 +131,19 @@ class Constants {
 
   final _i12.Constants scheduler = _i12.Constants();
 
-  final _i15.Constants utility = _i15.Constants();
+  final _i19.Constants utility = _i19.Constants();
 
   final _i13.Constants referenda = _i13.Constants();
 
-  final _i14.Constants convictionVoting = _i14.Constants();
+  final _i14.Constants reversibleTransfers = _i14.Constants();
+
+  final _i15.Constants convictionVoting = _i15.Constants();
+
+  final _i17.Constants techReferenda = _i17.Constants();
+
+  final _i20.Constants faucet = _i20.Constants();
+
+  final _i18.Constants merkleAirdrop = _i18.Constants();
 }
 
 class Rpc {
@@ -184,11 +219,11 @@ class Resonance {
 
   final Registry registry;
 
-  _i16.Future connect() async {
+  _i21.Future connect() async {
     return await _provider.connect();
   }
 
-  _i16.Future disconnect() async {
+  _i21.Future disconnect() async {
     return await _provider.disconnect();
   }
 }

@@ -4,7 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../../sp_weights/weight_v2/weight.dart' as _i7;
-import '../../staging_xcm/v4/location/location.dart' as _i8;
+import '../../staging_xcm/v5/location/location.dart' as _i8;
 import '../../staging_xcm_executor/traits/asset_transfer/transfer_type.dart'
     as _i10;
 import '../../xcm/v3/weight_limit.dart' as _i9;

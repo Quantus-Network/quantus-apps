@@ -219,7 +219,7 @@ class Txs {
   ///
   /// Can only be called by Root origin.
   _i9.Auctions cancelAuction() {
-    return const _i9.Auctions(_i10.CancelAuction());
+    return _i9.Auctions(_i10.CancelAuction());
   }
 }
 

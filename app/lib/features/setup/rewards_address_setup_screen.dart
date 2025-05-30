@@ -3,6 +3,7 @@ import 'package:flutter/services.dart'; // Required for Clipboard
 import 'package:go_router/go_router.dart'; // Import go_router
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has wallet/address functions
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Will need this for secure storage
+import 'package:flutter_svg/flutter_svg.dart';
 
 enum RewardsAddressSetupStep {
   checking,
@@ -173,7 +174,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.account_balance_wallet_outlined, color: Colors.orange, size: 80),
+        SvgPicture.asset('assets/quantus_icon.svg', width: 80, height: 80),
         const SizedBox(height: 16),
         const Text(
           'Rewards Address not set.',

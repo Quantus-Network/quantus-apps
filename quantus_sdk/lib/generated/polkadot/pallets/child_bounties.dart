@@ -1,14 +1,15 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
-import 'dart:typed_data' as _i5;
+import 'dart:async' as _i5;
+import 'dart:typed_data' as _i6;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/pallet_child_bounties/child_bounty.dart' as _i3;
-import '../types/pallet_child_bounties/pallet/call.dart' as _i7;
-import '../types/polkadot_runtime/runtime_call.dart' as _i6;
-import '../types/sp_runtime/multiaddress/multi_address.dart' as _i8;
+import '../types/pallet_child_bounties/pallet/call.dart' as _i8;
+import '../types/polkadot_runtime/runtime_call.dart' as _i7;
+import '../types/sp_runtime/multiaddress/multi_address.dart' as _i9;
+import '../types/tuples_1.dart' as _i4;
 
 class Queries {
   const Queries(this.__api);
@@ -29,6 +30,14 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
+  final _i1.StorageMap<int, int> _parentTotalChildBounties =
+      const _i1.StorageMap<int, int>(
+    prefix: 'ChildBounties',
+    storage: 'ParentTotalChildBounties',
+    valueCodec: _i2.U32Codec.codec,
+    hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
+  );
+
   final _i1.StorageDoubleMap<int, int, _i3.ChildBounty> _childBounties =
       const _i1.StorageDoubleMap<int, int, _i3.ChildBounty>(
     prefix: 'ChildBounties',
@@ -38,11 +47,23 @@ class Queries {
     hasher2: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
-  final _i1.StorageMap<int, List<int>> _childBountyDescriptions =
-      const _i1.StorageMap<int, List<int>>(
+  final _i1.StorageDoubleMap<int, int, List<int>> _childBountyDescriptionsV1 =
+      const _i1.StorageDoubleMap<int, int, List<int>>(
     prefix: 'ChildBounties',
-    storage: 'ChildBountyDescriptions',
+    storage: 'ChildBountyDescriptionsV1',
     valueCodec: _i2.U8SequenceCodec.codec,
+    hasher1: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
+    hasher2: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
+  );
+
+  final _i1.StorageMap<int, _i4.Tuple2<int, int>> _v0ToV1ChildBountyIds =
+      const _i1.StorageMap<int, _i4.Tuple2<int, int>>(
+    prefix: 'ChildBounties',
+    storage: 'V0ToV1ChildBountyIds',
+    valueCodec: _i4.Tuple2Codec<int, int>(
+      _i2.U32Codec.codec,
+      _i2.U32Codec.codec,
+    ),
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
@@ -54,8 +75,9 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
-  /// Number of total child bounties.
-  _i4.Future<int> childBountyCount({_i1.BlockHash? at}) async {
+  /// DEPRECATED: Replaced with `ParentTotalChildBounties` storage item keeping dedicated counts
+  /// for each parent bounty. Number of total child bounties. Will be removed in May 2025.
+  _i5.Future<int> childBountyCount({_i1.BlockHash? at}) async {
     final hashedKey = _childBountyCount.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -67,9 +89,9 @@ class Queries {
     return 0; /* Default */
   }
 
-  /// Number of child bounties per parent bounty.
+  /// Number of active child bounties per parent bounty.
   /// Map of parent bounty index to number of child bounties.
-  _i4.Future<int> parentChildBounties(
+  _i5.Future<int> parentChildBounties(
     int key1, {
     _i1.BlockHash? at,
   }) async {
@@ -84,8 +106,24 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Number of total child bounties per parent bounty, including completed bounties.
+  _i5.Future<int> parentTotalChildBounties(
+    int key1, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKey = _parentTotalChildBounties.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _parentTotalChildBounties.decodeValue(bytes);
+    }
+    return 0; /* Default */
+  }
+
   /// Child bounties that have been added.
-  _i4.Future<_i3.ChildBounty?> childBounties(
+  _i5.Future<_i3.ChildBounty?> childBounties(
     int key1,
     int key2, {
     _i1.BlockHash? at,
@@ -104,24 +142,50 @@ class Queries {
     return null; /* Nullable */
   }
 
-  /// The description of each child-bounty.
-  _i4.Future<List<int>?> childBountyDescriptions(
-    int key1, {
+  /// The description of each child-bounty. Indexed by `(parent_id, child_id)`.
+  ///
+  /// This item replaces the `ChildBountyDescriptions` storage item from the V0 storage version.
+  _i5.Future<List<int>?> childBountyDescriptionsV1(
+    int key1,
+    int key2, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKey = _childBountyDescriptions.hashedKeyFor(key1);
+    final hashedKey = _childBountyDescriptionsV1.hashedKeyFor(
+      key1,
+      key2,
+    );
     final bytes = await __api.getStorage(
       hashedKey,
       at: at,
     );
     if (bytes != null) {
-      return _childBountyDescriptions.decodeValue(bytes);
+      return _childBountyDescriptionsV1.decodeValue(bytes);
+    }
+    return null; /* Nullable */
+  }
+
+  /// The mapping of the child bounty ids from storage version `V0` to the new `V1` version.
+  ///
+  /// The `V0` ids based on total child bounty count [`ChildBountyCount`]`. The `V1` version ids
+  /// based on the child bounty count per parent bounty [`ParentTotalChildBounties`].
+  /// The item intended solely for client convenience and not used in the pallet's core logic.
+  _i5.Future<_i4.Tuple2<int, int>?> v0ToV1ChildBountyIds(
+    int key1, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKey = _v0ToV1ChildBountyIds.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _v0ToV1ChildBountyIds.decodeValue(bytes);
     }
     return null; /* Nullable */
   }
 
   /// The cumulative child-bounty curator fee for each parent bounty.
-  _i4.Future<BigInt> childrenCuratorFees(
+  _i5.Future<BigInt> childrenCuratorFees(
     int key1, {
     _i1.BlockHash? at,
   }) async {
@@ -137,19 +201,25 @@ class Queries {
   }
 
   /// Returns the storage key for `childBountyCount`.
-  _i5.Uint8List childBountyCountKey() {
+  _i6.Uint8List childBountyCountKey() {
     final hashedKey = _childBountyCount.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `parentChildBounties`.
-  _i5.Uint8List parentChildBountiesKey(int key1) {
+  _i6.Uint8List parentChildBountiesKey(int key1) {
     final hashedKey = _parentChildBounties.hashedKeyFor(key1);
     return hashedKey;
   }
 
+  /// Returns the storage key for `parentTotalChildBounties`.
+  _i6.Uint8List parentTotalChildBountiesKey(int key1) {
+    final hashedKey = _parentTotalChildBounties.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
   /// Returns the storage key for `childBounties`.
-  _i5.Uint8List childBountiesKey(
+  _i6.Uint8List childBountiesKey(
     int key1,
     int key2,
   ) {
@@ -160,38 +230,62 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage key for `childBountyDescriptions`.
-  _i5.Uint8List childBountyDescriptionsKey(int key1) {
-    final hashedKey = _childBountyDescriptions.hashedKeyFor(key1);
+  /// Returns the storage key for `childBountyDescriptionsV1`.
+  _i6.Uint8List childBountyDescriptionsV1Key(
+    int key1,
+    int key2,
+  ) {
+    final hashedKey = _childBountyDescriptionsV1.hashedKeyFor(
+      key1,
+      key2,
+    );
+    return hashedKey;
+  }
+
+  /// Returns the storage key for `v0ToV1ChildBountyIds`.
+  _i6.Uint8List v0ToV1ChildBountyIdsKey(int key1) {
+    final hashedKey = _v0ToV1ChildBountyIds.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage key for `childrenCuratorFees`.
-  _i5.Uint8List childrenCuratorFeesKey(int key1) {
+  _i6.Uint8List childrenCuratorFeesKey(int key1) {
     final hashedKey = _childrenCuratorFees.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `parentChildBounties`.
-  _i5.Uint8List parentChildBountiesMapPrefix() {
+  _i6.Uint8List parentChildBountiesMapPrefix() {
     final hashedKey = _parentChildBounties.mapPrefix();
     return hashedKey;
   }
 
+  /// Returns the storage map key prefix for `parentTotalChildBounties`.
+  _i6.Uint8List parentTotalChildBountiesMapPrefix() {
+    final hashedKey = _parentTotalChildBounties.mapPrefix();
+    return hashedKey;
+  }
+
   /// Returns the storage map key prefix for `childBounties`.
-  _i5.Uint8List childBountiesMapPrefix(int key1) {
+  _i6.Uint8List childBountiesMapPrefix(int key1) {
     final hashedKey = _childBounties.mapPrefix(key1);
     return hashedKey;
   }
 
-  /// Returns the storage map key prefix for `childBountyDescriptions`.
-  _i5.Uint8List childBountyDescriptionsMapPrefix() {
-    final hashedKey = _childBountyDescriptions.mapPrefix();
+  /// Returns the storage map key prefix for `childBountyDescriptionsV1`.
+  _i6.Uint8List childBountyDescriptionsV1MapPrefix(int key1) {
+    final hashedKey = _childBountyDescriptionsV1.mapPrefix(key1);
+    return hashedKey;
+  }
+
+  /// Returns the storage map key prefix for `v0ToV1ChildBountyIds`.
+  _i6.Uint8List v0ToV1ChildBountyIdsMapPrefix() {
+    final hashedKey = _v0ToV1ChildBountyIds.mapPrefix();
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `childrenCuratorFees`.
-  _i5.Uint8List childrenCuratorFeesMapPrefix() {
+  _i6.Uint8List childrenCuratorFeesMapPrefix() {
     final hashedKey = _childrenCuratorFees.mapPrefix();
     return hashedKey;
   }
@@ -219,12 +313,12 @@ class Txs {
   /// - `parent_bounty_id`: Index of parent bounty for which child-bounty is being added.
   /// - `value`: Value for executing the proposal.
   /// - `description`: Text description for the child-bounty.
-  _i6.ChildBounties addChildBounty({
+  _i7.ChildBounties addChildBounty({
     required BigInt parentBountyId,
     required BigInt value,
     required List<int> description,
   }) {
-    return _i6.ChildBounties(_i7.AddChildBounty(
+    return _i7.ChildBounties(_i8.AddChildBounty(
       parentBountyId: parentBountyId,
       value: value,
       description: description,
@@ -246,13 +340,13 @@ class Txs {
   /// - `child_bounty_id`: Index of child bounty.
   /// - `curator`: Address of child-bounty curator.
   /// - `fee`: payment fee to child-bounty curator for execution.
-  _i6.ChildBounties proposeCurator({
+  _i7.ChildBounties proposeCurator({
     required BigInt parentBountyId,
     required BigInt childBountyId,
-    required _i8.MultiAddress curator,
+    required _i9.MultiAddress curator,
     required BigInt fee,
   }) {
-    return _i6.ChildBounties(_i7.ProposeCurator(
+    return _i7.ChildBounties(_i8.ProposeCurator(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
       curator: curator,
@@ -279,11 +373,11 @@ class Txs {
   ///
   /// - `parent_bounty_id`: Index of parent bounty.
   /// - `child_bounty_id`: Index of child bounty.
-  _i6.ChildBounties acceptCurator({
+  _i7.ChildBounties acceptCurator({
     required BigInt parentBountyId,
     required BigInt childBountyId,
   }) {
-    return _i6.ChildBounties(_i7.AcceptCurator(
+    return _i7.ChildBounties(_i8.AcceptCurator(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
     ));
@@ -323,11 +417,11 @@ class Txs {
   ///
   /// - `parent_bounty_id`: Index of parent bounty.
   /// - `child_bounty_id`: Index of child bounty.
-  _i6.ChildBounties unassignCurator({
+  _i7.ChildBounties unassignCurator({
     required BigInt parentBountyId,
     required BigInt childBountyId,
   }) {
-    return _i6.ChildBounties(_i7.UnassignCurator(
+    return _i7.ChildBounties(_i8.UnassignCurator(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
     ));
@@ -350,12 +444,12 @@ class Txs {
   /// - `parent_bounty_id`: Index of parent bounty.
   /// - `child_bounty_id`: Index of child bounty.
   /// - `beneficiary`: Beneficiary account.
-  _i6.ChildBounties awardChildBounty({
+  _i7.ChildBounties awardChildBounty({
     required BigInt parentBountyId,
     required BigInt childBountyId,
-    required _i8.MultiAddress beneficiary,
+    required _i9.MultiAddress beneficiary,
   }) {
-    return _i6.ChildBounties(_i7.AwardChildBounty(
+    return _i7.ChildBounties(_i8.AwardChildBounty(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
       beneficiary: beneficiary,
@@ -378,11 +472,11 @@ class Txs {
   ///
   /// - `parent_bounty_id`: Index of parent bounty.
   /// - `child_bounty_id`: Index of child bounty.
-  _i6.ChildBounties claimChildBounty({
+  _i7.ChildBounties claimChildBounty({
     required BigInt parentBountyId,
     required BigInt childBountyId,
   }) {
-    return _i6.ChildBounties(_i7.ClaimChildBounty(
+    return _i7.ChildBounties(_i8.ClaimChildBounty(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
     ));
@@ -410,11 +504,11 @@ class Txs {
   ///
   /// - `parent_bounty_id`: Index of parent bounty.
   /// - `child_bounty_id`: Index of child bounty.
-  _i6.ChildBounties closeChildBounty({
+  _i7.ChildBounties closeChildBounty({
     required BigInt parentBountyId,
     required BigInt childBountyId,
   }) {
-    return _i6.ChildBounties(_i7.CloseChildBounty(
+    return _i7.ChildBounties(_i8.CloseChildBounty(
       parentBountyId: parentBountyId,
       childBountyId: childBountyId,
     ));

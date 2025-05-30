@@ -59,7 +59,7 @@ class $Event {
   }
 
   AutoMigrationFinished autoMigrationFinished() {
-    return const AutoMigrationFinished();
+    return AutoMigrationFinished();
   }
 
   Halted halted({required _i5.Error error}) {

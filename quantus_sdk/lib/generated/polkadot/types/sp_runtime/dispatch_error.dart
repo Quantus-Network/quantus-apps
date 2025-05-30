@@ -5,6 +5,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../sp_arithmetic/arithmetic_error.dart' as _i5;
 import 'module_error.dart' as _i3;
+import 'proving_trie/trie_error.dart' as _i7;
 import 'token_error.dart' as _i4;
 import 'transactional_error.dart' as _i6;
 
@@ -36,15 +37,15 @@ class $DispatchError {
   const $DispatchError();
 
   Other other() {
-    return const Other();
+    return Other();
   }
 
   CannotLookup cannotLookup() {
-    return const CannotLookup();
+    return CannotLookup();
   }
 
   BadOrigin badOrigin() {
-    return const BadOrigin();
+    return BadOrigin();
   }
 
   Module module(_i3.ModuleError value0) {
@@ -52,15 +53,15 @@ class $DispatchError {
   }
 
   ConsumerRemaining consumerRemaining() {
-    return const ConsumerRemaining();
+    return ConsumerRemaining();
   }
 
   NoProviders noProviders() {
-    return const NoProviders();
+    return NoProviders();
   }
 
   TooManyConsumers tooManyConsumers() {
-    return const TooManyConsumers();
+    return TooManyConsumers();
   }
 
   Token token(_i4.TokenError value0) {
@@ -76,19 +77,23 @@ class $DispatchError {
   }
 
   Exhausted exhausted() {
-    return const Exhausted();
+    return Exhausted();
   }
 
   Corruption corruption() {
-    return const Corruption();
+    return Corruption();
   }
 
   Unavailable unavailable() {
-    return const Unavailable();
+    return Unavailable();
   }
 
   RootNotAllowed rootNotAllowed() {
-    return const RootNotAllowed();
+    return RootNotAllowed();
+  }
+
+  Trie trie(_i7.TrieError value0) {
+    return Trie(value0);
   }
 }
 
@@ -127,6 +132,8 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
         return const Unavailable();
       case 13:
         return const RootNotAllowed();
+      case 14:
+        return Trie._decode(input);
       default:
         throw Exception('DispatchError: Invalid variant index: "$index"');
     }
@@ -180,6 +187,9 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
       case RootNotAllowed:
         (value as RootNotAllowed).encodeTo(output);
         break;
+      case Trie:
+        (value as Trie).encodeTo(output);
+        break;
       default:
         throw Exception(
             'DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
@@ -217,6 +227,8 @@ class $DispatchErrorCodec with _i1.Codec<DispatchError> {
         return 1;
       case RootNotAllowed:
         return 1;
+      case Trie:
+        return (value as Trie)._sizeHint();
       default:
         throw Exception(
             'DispatchError: Unsupported "$value" of type "${value.runtimeType}"');
@@ -590,4 +602,46 @@ class RootNotAllowed extends DispatchError {
 
   @override
   int get hashCode => runtimeType.hashCode;
+}
+
+class Trie extends DispatchError {
+  const Trie(this.value0);
+
+  factory Trie._decode(_i1.Input input) {
+    return Trie(_i7.TrieError.codec.decode(input));
+  }
+
+  /// TrieError
+  final _i7.TrieError value0;
+
+  @override
+  Map<String, String> toJson() => {'Trie': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i7.TrieError.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i7.TrieError.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Trie && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
 }

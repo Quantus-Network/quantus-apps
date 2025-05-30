@@ -85,7 +85,7 @@ class Queries {
     if (bytes != null) {
       return _state.decodeValue(bytes);
     }
-    return const _i2.Live(); /* Default */
+    return _i2.Live(); /* Default */
   }
 
   /// Pending change: (signaled at, scheduled change).

@@ -6,15 +6,19 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../frame_system/pallet/call.dart' as _i3;
 import '../pallet_balances/pallet/call.dart' as _i5;
 import '../pallet_conviction_voting/pallet/call.dart' as _i14;
-import '../pallet_preimage/pallet/call.dart' as _i10;
-import '../pallet_qpow/pallet/call.dart' as _i7;
-import '../pallet_referenda/pallet/call.dart' as _i13;
-import '../pallet_scheduler/pallet/call.dart' as _i11;
+import '../pallet_faucet/pallet/call.dart' as _i17;
+import '../pallet_merkle_airdrop/pallet/call.dart' as _i18;
+import '../pallet_preimage/pallet/call.dart' as _i9;
+import '../pallet_ranked_collective/pallet/call.dart' as _i15;
+import '../pallet_referenda/pallet/call_1.dart' as _i12;
+import '../pallet_referenda/pallet/call_2.dart' as _i16;
+import '../pallet_reversible_transfers/pallet/call.dart' as _i13;
+import '../pallet_scheduler/pallet/call.dart' as _i10;
 import '../pallet_sudo/pallet/call.dart' as _i6;
 import '../pallet_timestamp/pallet/call.dart' as _i4;
-import '../pallet_utility/pallet/call.dart' as _i12;
-import '../pallet_vesting/pallet/call.dart' as _i9;
-import '../pallet_wormhole/pallet/call.dart' as _i8;
+import '../pallet_utility/pallet/call.dart' as _i11;
+import '../pallet_vesting/pallet/call.dart' as _i8;
+import '../pallet_wormhole/pallet/call.dart' as _i7;
 
 abstract class RuntimeCall {
   const RuntimeCall();
@@ -37,7 +41,7 @@ abstract class RuntimeCall {
     return codec.sizeHint(this);
   }
 
-  Map<String, dynamic> toJson();
+  Map<String, Map<String, dynamic>> toJson();
 }
 
 class $RuntimeCall {
@@ -59,36 +63,52 @@ class $RuntimeCall {
     return Sudo(value0);
   }
 
-  QPoW qPoW(_i7.Call value0) {
-    return QPoW(value0);
-  }
-
-  Wormhole wormhole(_i8.Call value0) {
+  Wormhole wormhole(_i7.Call value0) {
     return Wormhole(value0);
   }
 
-  Vesting vesting(_i9.Call value0) {
+  Vesting vesting(_i8.Call value0) {
     return Vesting(value0);
   }
 
-  Preimage preimage(_i10.Call value0) {
+  Preimage preimage(_i9.Call value0) {
     return Preimage(value0);
   }
 
-  Scheduler scheduler(_i11.Call value0) {
+  Scheduler scheduler(_i10.Call value0) {
     return Scheduler(value0);
   }
 
-  Utility utility(_i12.Call value0) {
+  Utility utility(_i11.Call value0) {
     return Utility(value0);
   }
 
-  Referenda referenda(_i13.Call value0) {
+  Referenda referenda(_i12.Call value0) {
     return Referenda(value0);
+  }
+
+  ReversibleTransfers reversibleTransfers(_i13.Call value0) {
+    return ReversibleTransfers(value0);
   }
 
   ConvictionVoting convictionVoting(_i14.Call value0) {
     return ConvictionVoting(value0);
+  }
+
+  TechCollective techCollective(_i15.Call value0) {
+    return TechCollective(value0);
+  }
+
+  TechReferenda techReferenda(_i16.Call value0) {
+    return TechReferenda(value0);
+  }
+
+  Faucet faucet(_i17.Call value0) {
+    return Faucet(value0);
+  }
+
+  MerkleAirdrop merkleAirdrop(_i18.Call value0) {
+    return MerkleAirdrop(value0);
   }
 }
 
@@ -107,8 +127,6 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return Balances._decode(input);
       case 4:
         return Sudo._decode(input);
-      case 5:
-        return QPoW._decode(input);
       case 6:
         return Wormhole._decode(input);
       case 8:
@@ -122,7 +140,17 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case 12:
         return Referenda._decode(input);
       case 13:
+        return ReversibleTransfers._decode(input);
+      case 14:
         return ConvictionVoting._decode(input);
+      case 15:
+        return TechCollective._decode(input);
+      case 16:
+        return TechReferenda._decode(input);
+      case 17:
+        return Faucet._decode(input);
+      case 18:
+        return MerkleAirdrop._decode(input);
       default:
         throw Exception('RuntimeCall: Invalid variant index: "$index"');
     }
@@ -146,9 +174,6 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case Sudo:
         (value as Sudo).encodeTo(output);
         break;
-      case QPoW:
-        (value as QPoW).encodeTo(output);
-        break;
       case Wormhole:
         (value as Wormhole).encodeTo(output);
         break;
@@ -167,8 +192,23 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case Referenda:
         (value as Referenda).encodeTo(output);
         break;
+      case ReversibleTransfers:
+        (value as ReversibleTransfers).encodeTo(output);
+        break;
       case ConvictionVoting:
         (value as ConvictionVoting).encodeTo(output);
+        break;
+      case TechCollective:
+        (value as TechCollective).encodeTo(output);
+        break;
+      case TechReferenda:
+        (value as TechReferenda).encodeTo(output);
+        break;
+      case Faucet:
+        (value as Faucet).encodeTo(output);
+        break;
+      case MerkleAirdrop:
+        (value as MerkleAirdrop).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -187,8 +227,6 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return (value as Balances)._sizeHint();
       case Sudo:
         return (value as Sudo)._sizeHint();
-      case QPoW:
-        return (value as QPoW)._sizeHint();
       case Wormhole:
         return (value as Wormhole)._sizeHint();
       case Vesting:
@@ -201,8 +239,18 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return (value as Utility)._sizeHint();
       case Referenda:
         return (value as Referenda)._sizeHint();
+      case ReversibleTransfers:
+        return (value as ReversibleTransfers)._sizeHint();
       case ConvictionVoting:
         return (value as ConvictionVoting)._sizeHint();
+      case TechCollective:
+        return (value as TechCollective)._sizeHint();
+      case TechReferenda:
+        return (value as TechReferenda)._sizeHint();
+      case Faucet:
+        return (value as Faucet)._sizeHint();
+      case MerkleAirdrop:
+        return (value as MerkleAirdrop)._sizeHint();
       default:
         throw Exception(
             'RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
@@ -385,59 +433,16 @@ class Sudo extends RuntimeCall {
   int get hashCode => value0.hashCode;
 }
 
-class QPoW extends RuntimeCall {
-  const QPoW(this.value0);
-
-  factory QPoW._decode(_i1.Input input) {
-    return QPoW(_i1.NullCodec.codec.decode(input));
-  }
-
-  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
-  ///::CallableCallFor<QPoW, Runtime>
-  final _i7.Call value0;
-
-  @override
-  Map<String, dynamic> toJson() => {'QPoW': null};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i7.CallCodec().sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.NullCodec.codec.encodeTo(
-      value0,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is QPoW && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
 class Wormhole extends RuntimeCall {
   const Wormhole(this.value0);
 
   factory Wormhole._decode(_i1.Input input) {
-    return Wormhole(_i8.Call.codec.decode(input));
+    return Wormhole(_i7.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Wormhole, Runtime>
-  final _i8.Call value0;
+  final _i7.Call value0;
 
   @override
   Map<String, Map<String, Map<String, List<int>>>> toJson() =>
@@ -445,7 +450,7 @@ class Wormhole extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i8.Call.codec.sizeHint(value0);
+    size = size + _i7.Call.codec.sizeHint(value0);
     return size;
   }
 
@@ -454,7 +459,7 @@ class Wormhole extends RuntimeCall {
       6,
       output,
     );
-    _i8.Call.codec.encodeTo(
+    _i7.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -476,12 +481,12 @@ class Vesting extends RuntimeCall {
   const Vesting(this.value0);
 
   factory Vesting._decode(_i1.Input input) {
-    return Vesting(_i9.Call.codec.decode(input));
+    return Vesting(_i8.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Vesting, Runtime>
-  final _i9.Call value0;
+  final _i8.Call value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -489,7 +494,7 @@ class Vesting extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i9.Call.codec.sizeHint(value0);
+    size = size + _i8.Call.codec.sizeHint(value0);
     return size;
   }
 
@@ -498,7 +503,7 @@ class Vesting extends RuntimeCall {
       8,
       output,
     );
-    _i9.Call.codec.encodeTo(
+    _i8.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -520,12 +525,12 @@ class Preimage extends RuntimeCall {
   const Preimage(this.value0);
 
   factory Preimage._decode(_i1.Input input) {
-    return Preimage(_i10.Call.codec.decode(input));
+    return Preimage(_i9.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Preimage, Runtime>
-  final _i10.Call value0;
+  final _i9.Call value0;
 
   @override
   Map<String, Map<String, Map<String, List<dynamic>>>> toJson() =>
@@ -533,7 +538,7 @@ class Preimage extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i10.Call.codec.sizeHint(value0);
+    size = size + _i9.Call.codec.sizeHint(value0);
     return size;
   }
 
@@ -542,7 +547,7 @@ class Preimage extends RuntimeCall {
       9,
       output,
     );
-    _i10.Call.codec.encodeTo(
+    _i9.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -564,12 +569,12 @@ class Scheduler extends RuntimeCall {
   const Scheduler(this.value0);
 
   factory Scheduler._decode(_i1.Input input) {
-    return Scheduler(_i11.Call.codec.decode(input));
+    return Scheduler(_i10.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Scheduler, Runtime>
-  final _i11.Call value0;
+  final _i10.Call value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -577,7 +582,7 @@ class Scheduler extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i11.Call.codec.sizeHint(value0);
+    size = size + _i10.Call.codec.sizeHint(value0);
     return size;
   }
 
@@ -586,7 +591,7 @@ class Scheduler extends RuntimeCall {
       10,
       output,
     );
-    _i11.Call.codec.encodeTo(
+    _i10.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -608,12 +613,12 @@ class Utility extends RuntimeCall {
   const Utility(this.value0);
 
   factory Utility._decode(_i1.Input input) {
-    return Utility(_i12.Call.codec.decode(input));
+    return Utility(_i11.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Utility, Runtime>
-  final _i12.Call value0;
+  final _i11.Call value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -621,7 +626,7 @@ class Utility extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i12.Call.codec.sizeHint(value0);
+    size = size + _i11.Call.codec.sizeHint(value0);
     return size;
   }
 
@@ -630,7 +635,7 @@ class Utility extends RuntimeCall {
       11,
       output,
     );
-    _i12.Call.codec.encodeTo(
+    _i11.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -652,16 +657,60 @@ class Referenda extends RuntimeCall {
   const Referenda(this.value0);
 
   factory Referenda._decode(_i1.Input input) {
-    return Referenda(_i13.Call.codec.decode(input));
+    return Referenda(_i12.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Referenda, Runtime>
-  final _i13.Call value0;
+  final _i12.Call value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
       {'Referenda': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i12.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      12,
+      output,
+    );
+    _i12.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Referenda && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class ReversibleTransfers extends RuntimeCall {
+  const ReversibleTransfers(this.value0);
+
+  factory ReversibleTransfers._decode(_i1.Input input) {
+    return ReversibleTransfers(_i13.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<ReversibleTransfers, Runtime>
+  final _i13.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'ReversibleTransfers': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -671,7 +720,7 @@ class Referenda extends RuntimeCall {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      12,
+      13,
       output,
     );
     _i13.Call.codec.encodeTo(
@@ -686,7 +735,7 @@ class Referenda extends RuntimeCall {
         this,
         other,
       ) ||
-      other is Referenda && other.value0 == value0;
+      other is ReversibleTransfers && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -715,7 +764,7 @@ class ConvictionVoting extends RuntimeCall {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      13,
+      14,
       output,
     );
     _i14.Call.codec.encodeTo(
@@ -731,6 +780,182 @@ class ConvictionVoting extends RuntimeCall {
         other,
       ) ||
       other is ConvictionVoting && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class TechCollective extends RuntimeCall {
+  const TechCollective(this.value0);
+
+  factory TechCollective._decode(_i1.Input input) {
+    return TechCollective(_i15.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<TechCollective, Runtime>
+  final _i15.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechCollective': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i15.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      15,
+      output,
+    );
+    _i15.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechCollective && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class TechReferenda extends RuntimeCall {
+  const TechReferenda(this.value0);
+
+  factory TechReferenda._decode(_i1.Input input) {
+    return TechReferenda(_i16.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<TechReferenda, Runtime>
+  final _i16.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechReferenda': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i16.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      16,
+      output,
+    );
+    _i16.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechReferenda && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Faucet extends RuntimeCall {
+  const Faucet(this.value0);
+
+  factory Faucet._decode(_i1.Input input) {
+    return Faucet(_i17.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<Faucet, Runtime>
+  final _i17.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Faucet': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i17.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      17,
+      output,
+    );
+    _i17.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Faucet && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class MerkleAirdrop extends RuntimeCall {
+  const MerkleAirdrop(this.value0);
+
+  factory MerkleAirdrop._decode(_i1.Input input) {
+    return MerkleAirdrop(_i18.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<MerkleAirdrop, Runtime>
+  final _i18.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MerkleAirdrop': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i18.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      18,
+      output,
+    );
+    _i18.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MerkleAirdrop && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

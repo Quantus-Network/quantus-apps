@@ -95,7 +95,7 @@ class Txs {
   /// ## Complexity
   /// - `O(1)`.
   _i8.Vesting vest() {
-    return const _i8.Vesting(_i9.Vest());
+    return _i8.Vesting(_i9.Vest());
   }
 
   /// Unlock any vested funds of a `target` account.

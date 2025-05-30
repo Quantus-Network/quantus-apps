@@ -95,6 +95,18 @@ class $Call {
       remark: remark,
     );
   }
+
+  ApproveBountyWithCurator approveBountyWithCurator({
+    required BigInt bountyId,
+    required _i3.MultiAddress curator,
+    required BigInt fee,
+  }) {
+    return ApproveBountyWithCurator(
+      bountyId: bountyId,
+      curator: curator,
+      fee: fee,
+    );
+  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -122,6 +134,8 @@ class $CallCodec with _i1.Codec<Call> {
         return CloseBounty._decode(input);
       case 8:
         return ExtendBountyExpiry._decode(input);
+      case 9:
+        return ApproveBountyWithCurator._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -160,6 +174,9 @@ class $CallCodec with _i1.Codec<Call> {
       case ExtendBountyExpiry:
         (value as ExtendBountyExpiry).encodeTo(output);
         break;
+      case ApproveBountyWithCurator:
+        (value as ApproveBountyWithCurator).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -187,6 +204,8 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as CloseBounty)._sizeHint();
       case ExtendBountyExpiry:
         return (value as ExtendBountyExpiry)._sizeHint();
+      case ApproveBountyWithCurator:
+        return (value as ApproveBountyWithCurator)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -780,5 +799,95 @@ class ExtendBountyExpiry extends Call {
   int get hashCode => Object.hash(
         bountyId,
         remark,
+      );
+}
+
+/// Approve bountry and propose a curator simultaneously.
+/// This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
+///
+/// May only be called from `T::SpendOrigin`.
+///
+/// - `bounty_id`: Bounty ID to approve.
+/// - `curator`: The curator account whom will manage this bounty.
+/// - `fee`: The curator fee.
+///
+/// ## Complexity
+/// - O(1).
+class ApproveBountyWithCurator extends Call {
+  const ApproveBountyWithCurator({
+    required this.bountyId,
+    required this.curator,
+    required this.fee,
+  });
+
+  factory ApproveBountyWithCurator._decode(_i1.Input input) {
+    return ApproveBountyWithCurator(
+      bountyId: _i1.CompactBigIntCodec.codec.decode(input),
+      curator: _i3.MultiAddress.codec.decode(input),
+      fee: _i1.CompactBigIntCodec.codec.decode(input),
+    );
+  }
+
+  /// BountyIndex
+  final BigInt bountyId;
+
+  /// AccountIdLookupOf<T>
+  final _i3.MultiAddress curator;
+
+  /// BalanceOf<T, I>
+  final BigInt fee;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'approve_bounty_with_curator': {
+          'bountyId': bountyId,
+          'curator': curator.toJson(),
+          'fee': fee,
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.CompactBigIntCodec.codec.sizeHint(bountyId);
+    size = size + _i3.MultiAddress.codec.sizeHint(curator);
+    size = size + _i1.CompactBigIntCodec.codec.sizeHint(fee);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i1.CompactBigIntCodec.codec.encodeTo(
+      bountyId,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      curator,
+      output,
+    );
+    _i1.CompactBigIntCodec.codec.encodeTo(
+      fee,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ApproveBountyWithCurator &&
+          other.bountyId == bountyId &&
+          other.curator == curator &&
+          other.fee == fee;
+
+  @override
+  int get hashCode => Object.hash(
+        bountyId,
+        curator,
+        fee,
       );
 }

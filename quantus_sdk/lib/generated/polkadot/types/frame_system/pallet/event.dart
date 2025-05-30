@@ -4,10 +4,10 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i7;
 
-import '../../frame_support/dispatch/dispatch_info.dart' as _i3;
 import '../../primitive_types/h256.dart' as _i6;
 import '../../sp_core/crypto/account_id32.dart' as _i5;
 import '../../sp_runtime/dispatch_error.dart' as _i4;
+import '../dispatch_event_info.dart' as _i3;
 
 /// Event for the System pallet.
 abstract class Event {
@@ -37,13 +37,14 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  ExtrinsicSuccess extrinsicSuccess({required _i3.DispatchInfo dispatchInfo}) {
+  ExtrinsicSuccess extrinsicSuccess(
+      {required _i3.DispatchEventInfo dispatchInfo}) {
     return ExtrinsicSuccess(dispatchInfo: dispatchInfo);
   }
 
   ExtrinsicFailed extrinsicFailed({
     required _i4.DispatchError dispatchError,
-    required _i3.DispatchInfo dispatchInfo,
+    required _i3.DispatchEventInfo dispatchInfo,
   }) {
     return ExtrinsicFailed(
       dispatchError: dispatchError,
@@ -52,7 +53,7 @@ class $Event {
   }
 
   CodeUpdated codeUpdated() {
-    return const CodeUpdated();
+    return CodeUpdated();
   }
 
   NewAccount newAccount({required _i5.AccountId32 account}) {
@@ -172,11 +173,12 @@ class ExtrinsicSuccess extends Event {
   const ExtrinsicSuccess({required this.dispatchInfo});
 
   factory ExtrinsicSuccess._decode(_i1.Input input) {
-    return ExtrinsicSuccess(dispatchInfo: _i3.DispatchInfo.codec.decode(input));
+    return ExtrinsicSuccess(
+        dispatchInfo: _i3.DispatchEventInfo.codec.decode(input));
   }
 
-  /// DispatchInfo
-  final _i3.DispatchInfo dispatchInfo;
+  /// DispatchEventInfo
+  final _i3.DispatchEventInfo dispatchInfo;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
@@ -185,7 +187,7 @@ class ExtrinsicSuccess extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i3.DispatchInfo.codec.sizeHint(dispatchInfo);
+    size = size + _i3.DispatchEventInfo.codec.sizeHint(dispatchInfo);
     return size;
   }
 
@@ -194,7 +196,7 @@ class ExtrinsicSuccess extends Event {
       0,
       output,
     );
-    _i3.DispatchInfo.codec.encodeTo(
+    _i3.DispatchEventInfo.codec.encodeTo(
       dispatchInfo,
       output,
     );
@@ -222,15 +224,15 @@ class ExtrinsicFailed extends Event {
   factory ExtrinsicFailed._decode(_i1.Input input) {
     return ExtrinsicFailed(
       dispatchError: _i4.DispatchError.codec.decode(input),
-      dispatchInfo: _i3.DispatchInfo.codec.decode(input),
+      dispatchInfo: _i3.DispatchEventInfo.codec.decode(input),
     );
   }
 
   /// DispatchError
   final _i4.DispatchError dispatchError;
 
-  /// DispatchInfo
-  final _i3.DispatchInfo dispatchInfo;
+  /// DispatchEventInfo
+  final _i3.DispatchEventInfo dispatchInfo;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
@@ -243,7 +245,7 @@ class ExtrinsicFailed extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i4.DispatchError.codec.sizeHint(dispatchError);
-    size = size + _i3.DispatchInfo.codec.sizeHint(dispatchInfo);
+    size = size + _i3.DispatchEventInfo.codec.sizeHint(dispatchInfo);
     return size;
   }
 
@@ -256,7 +258,7 @@ class ExtrinsicFailed extends Event {
       dispatchError,
       output,
     );
-    _i3.DispatchInfo.codec.encodeTo(
+    _i3.DispatchEventInfo.codec.encodeTo(
       dispatchInfo,
       output,
     );

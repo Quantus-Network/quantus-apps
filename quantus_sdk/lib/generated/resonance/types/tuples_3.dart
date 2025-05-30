@@ -1,8 +1,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-class Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
-  const Tuple9(
+class Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+  const Tuple10(
     this.value0,
     this.value1,
     this.value2,
@@ -12,6 +12,7 @@ class Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
     this.value6,
     this.value7,
     this.value8,
+    this.value9,
   );
 
   final T0 value0;
@@ -31,11 +32,13 @@ class Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
   final T7 value7;
 
   final T8 value8;
+
+  final T9 value9;
 }
 
-class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
-    with _i1.Codec<Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8>> {
-  const Tuple9Codec(
+class Tuple10Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>
+    with _i1.Codec<Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>> {
+  const Tuple10Codec(
     this.codec0,
     this.codec1,
     this.codec2,
@@ -45,6 +48,7 @@ class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
     this.codec6,
     this.codec7,
     this.codec8,
+    this.codec9,
   );
 
   final _i1.Codec<T0> codec0;
@@ -65,9 +69,11 @@ class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
 
   final _i1.Codec<T8> codec8;
 
+  final _i1.Codec<T9> codec9;
+
   @override
   void encodeTo(
-    Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> tuple,
+    Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple,
     _i1.Output output,
   ) {
     codec0.encodeTo(tuple.value0, output);
@@ -79,11 +85,12 @@ class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
     codec6.encodeTo(tuple.value6, output);
     codec7.encodeTo(tuple.value7, output);
     codec8.encodeTo(tuple.value8, output);
+    codec9.encodeTo(tuple.value9, output);
   }
 
   @override
-  Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> decode(_i1.Input input) {
-    return Tuple9(
+  Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> decode(_i1.Input input) {
+    return Tuple10(
       codec0.decode(input),
       codec1.decode(input),
       codec2.decode(input),
@@ -93,11 +100,12 @@ class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
       codec6.decode(input),
       codec7.decode(input),
       codec8.decode(input),
+      codec9.decode(input),
     );
   }
 
   @override
-  int sizeHint(Tuple9<T0, T1, T2, T3, T4, T5, T6, T7, T8> tuple) {
+  int sizeHint(Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple) {
     int size = 0;
     size += codec0.sizeHint(tuple.value0);
     size += codec1.sizeHint(tuple.value1);
@@ -108,6 +116,7 @@ class Tuple9Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8>
     size += codec6.sizeHint(tuple.value6);
     size += codec7.sizeHint(tuple.value7);
     size += codec8.sizeHint(tuple.value8);
+    size += codec9.sizeHint(tuple.value9);
     return size;
   }
 }

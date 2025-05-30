@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For checking setup status
-import 'dart:io'; // For File operations
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:io';
 
-// Import your setup and dashboard screens
 import 'features/setup/node_setup_screen.dart';
 import 'features/setup/node_identity_setup_screen.dart';
 import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
-import 'src/services/binary_manager.dart'; // Import BinaryManager
+import 'src/services/binary_manager.dart';
+
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
   const storage = FlutterSecureStorage();
   final currentRoute = state.uri.toString();
 
+  print('initialRedirect');
+
   // Check 1: Node Installed
   bool isNodeInstalled = false;
   try {
-    final nodeBinaryPath = await BinaryManager.getNodeBinaryFilePath();
-    isNodeInstalled = await File(nodeBinaryPath).exists();
+    isNodeInstalled = await BinaryManager.hasBinary();
+    print('isNodeInstalled: $isNodeInstalled');
   } catch (e) {
     print('Error checking node installation status: $e');
     isNodeInstalled = false;
   }
 
   if (!isNodeInstalled) {
+    print('node not installed, going to node setup');
     return (currentRoute == '/node_setup') ? null : '/node_setup';
   }
 
@@ -83,7 +87,18 @@ final _router = GoRouter(
   ],
 );
 
-void main() => runApp(const MinerApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
+  try {
+    await SubstrateService().initialize(); // Initialize SubstrateService
+    await QuantusSdk.init();
+    print('SubstrateService and QuantusSdk initialized successfully.');
+  } catch (e) {
+    print('Error initializing SDK: $e');
+    // Depending on the app, you might want to show an error UI or prevent app startup
+  }
+  runApp(const MinerApp());
+}
 
 class MinerApp extends StatelessWidget {
   const MinerApp({super.key});

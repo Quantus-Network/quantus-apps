@@ -34,7 +34,7 @@ class $WildMultiAsset {
   const $WildMultiAsset();
 
   All all() {
-    return const All();
+    return All();
   }
 
   AllOf allOf({

@@ -139,7 +139,7 @@ class $Instruction {
   }
 
   ClearOrigin clearOrigin() {
-    return const ClearOrigin();
+    return ClearOrigin();
   }
 
   DescendOrigin descendOrigin(_i10.Junctions value0) {
@@ -229,7 +229,7 @@ class $Instruction {
   }
 
   RefundSurplus refundSurplus() {
-    return const RefundSurplus();
+    return RefundSurplus();
   }
 
   SetErrorHandler setErrorHandler(_i7.Xcm value0) {
@@ -241,7 +241,7 @@ class $Instruction {
   }
 
   ClearError clearError() {
-    return const ClearError();
+    return ClearError();
   }
 
   ClaimAsset claimAsset({
@@ -269,7 +269,7 @@ class $Instruction {
   }
 
   UnsubscribeVersion unsubscribeVersion() {
-    return const UnsubscribeVersion();
+    return UnsubscribeVersion();
   }
 
   BurnAsset burnAsset(_i3.MultiAssets value0) {
@@ -323,7 +323,7 @@ class $Instruction {
   }
 
   ClearTransactStatus clearTransactStatus() {
-    return const ClearTransactStatus();
+    return ClearTransactStatus();
   }
 
   UniversalOrigin universalOrigin(_i18.Junction value0) {
@@ -391,7 +391,7 @@ class $Instruction {
   }
 
   ClearTopic clearTopic() {
-    return const ClearTopic();
+    return ClearTopic();
   }
 
   AliasOrigin aliasOrigin(_i6.MultiLocation value0) {

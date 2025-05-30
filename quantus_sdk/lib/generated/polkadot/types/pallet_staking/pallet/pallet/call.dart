@@ -75,7 +75,7 @@ class $Call {
   }
 
   Chill chill() {
-    return const Chill();
+    return Chill();
   }
 
   SetPayee setPayee({required _i3.RewardDestination payee}) {
@@ -83,7 +83,7 @@ class $Call {
   }
 
   SetController setController() {
-    return const SetController();
+    return SetController();
   }
 
   SetValidatorCount setValidatorCount({required BigInt new_}) {
@@ -99,11 +99,11 @@ class $Call {
   }
 
   ForceNoEras forceNoEras() {
-    return const ForceNoEras();
+    return ForceNoEras();
   }
 
   ForceNewEra forceNewEra() {
-    return const ForceNewEra();
+    return ForceNewEra();
   }
 
   SetInvulnerables setInvulnerables(
@@ -122,7 +122,7 @@ class $Call {
   }
 
   ForceNewEraAlways forceNewEraAlways() {
-    return const ForceNewEraAlways();
+    return ForceNewEraAlways();
   }
 
   CancelDeferredSlash cancelDeferredSlash({
@@ -627,7 +627,7 @@ class BondExtra extends Call {
 
 /// Schedule a portion of the stash to be unlocked ready for transfer out after the bond
 /// period ends. If this leaves an amount actively bonded less than
-/// T::Currency::minimum_balance(), then it is increased to the full amount.
+/// [`asset::existential_deposit`], then it is increased to the full amount.
 ///
 /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
 ///

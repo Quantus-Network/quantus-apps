@@ -34,15 +34,15 @@ class $BountyStatus {
   const $BountyStatus();
 
   Proposed proposed() {
-    return const Proposed();
+    return Proposed();
   }
 
   Approved approved() {
-    return const Approved();
+    return Approved();
   }
 
   Funded funded() {
-    return const Funded();
+    return Funded();
   }
 
   CuratorProposed curatorProposed({required _i3.AccountId32 curator}) {
@@ -70,6 +70,10 @@ class $BountyStatus {
       unlockAt: unlockAt,
     );
   }
+
+  ApprovedWithCurator approvedWithCurator({required _i3.AccountId32 curator}) {
+    return ApprovedWithCurator(curator: curator);
+  }
 }
 
 class $BountyStatusCodec with _i1.Codec<BountyStatus> {
@@ -91,6 +95,8 @@ class $BountyStatusCodec with _i1.Codec<BountyStatus> {
         return Active._decode(input);
       case 5:
         return PendingPayout._decode(input);
+      case 6:
+        return ApprovedWithCurator._decode(input);
       default:
         throw Exception('BountyStatus: Invalid variant index: "$index"');
     }
@@ -120,6 +126,9 @@ class $BountyStatusCodec with _i1.Codec<BountyStatus> {
       case PendingPayout:
         (value as PendingPayout).encodeTo(output);
         break;
+      case ApprovedWithCurator:
+        (value as ApprovedWithCurator).encodeTo(output);
+        break;
       default:
         throw Exception(
             'BountyStatus: Unsupported "$value" of type "${value.runtimeType}"');
@@ -141,6 +150,8 @@ class $BountyStatusCodec with _i1.Codec<BountyStatus> {
         return (value as Active)._sizeHint();
       case PendingPayout:
         return (value as PendingPayout)._sizeHint();
+      case ApprovedWithCurator:
+        return (value as ApprovedWithCurator)._sizeHint();
       default:
         throw Exception(
             'BountyStatus: Unsupported "$value" of type "${value.runtimeType}"');
@@ -408,4 +419,53 @@ class PendingPayout extends BountyStatus {
         beneficiary,
         unlockAt,
       );
+}
+
+class ApprovedWithCurator extends BountyStatus {
+  const ApprovedWithCurator({required this.curator});
+
+  factory ApprovedWithCurator._decode(_i1.Input input) {
+    return ApprovedWithCurator(
+        curator: const _i1.U8ArrayCodec(32).decode(input));
+  }
+
+  /// AccountId
+  final _i3.AccountId32 curator;
+
+  @override
+  Map<String, Map<String, List<int>>> toJson() => {
+        'ApprovedWithCurator': {'curator': curator.toList()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(curator);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      6,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      curator,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ApprovedWithCurator &&
+          _i4.listsEqual(
+            other.curator,
+            curator,
+          );
+
+  @override
+  int get hashCode => curator.hashCode;
 }

@@ -4,7 +4,7 @@ import 'dart:typed_data' as _i4;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i5;
 
-import '../polkadot_runtime/proxy_type.dart' as _i3;
+import '../polkadot_runtime_constants/proxy/proxy_type.dart' as _i3;
 import '../sp_core/crypto/account_id32.dart' as _i2;
 
 class ProxyDefinition {

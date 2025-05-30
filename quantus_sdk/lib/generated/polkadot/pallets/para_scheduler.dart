@@ -1,14 +1,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
-import 'dart:typed_data' as _i7;
+import 'dart:async' as _i5;
+import 'dart:typed_data' as _i6;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i3;
 
-import '../types/b_tree_map_4.dart' as _i5;
+import '../types/b_tree_map_6.dart' as _i4;
 import '../types/polkadot_primitives/v8/validator_index.dart' as _i2;
-import '../types/polkadot_runtime_parachains/scheduler/pallet/core_occupied.dart'
-    as _i4;
 
 class Queries {
   const Queries(this.__api);
@@ -23,24 +21,17 @@ class Queries {
         _i3.SequenceCodec<_i2.ValidatorIndex>(_i2.ValidatorIndexCodec())),
   );
 
-  final _i1.StorageValue<List<_i4.CoreOccupied>> _availabilityCores =
-      const _i1.StorageValue<List<_i4.CoreOccupied>>(
-    prefix: 'ParaScheduler',
-    storage: 'AvailabilityCores',
-    valueCodec: _i3.SequenceCodec<_i4.CoreOccupied>(_i4.CoreOccupied.codec),
-  );
-
   final _i1.StorageValue<int> _sessionStartBlock = const _i1.StorageValue<int>(
     prefix: 'ParaScheduler',
     storage: 'SessionStartBlock',
     valueCodec: _i3.U32Codec.codec,
   );
 
-  final _i1.StorageValue<_i5.BTreeMap> _claimQueue =
-      const _i1.StorageValue<_i5.BTreeMap>(
+  final _i1.StorageValue<_i4.BTreeMap> _claimQueue =
+      const _i1.StorageValue<_i4.BTreeMap>(
     prefix: 'ParaScheduler',
     storage: 'ClaimQueue',
-    valueCodec: _i5.BTreeMapCodec(),
+    valueCodec: _i4.BTreeMapCodec(),
   );
 
   /// All the validator groups. One for each core. Indices are into `ActiveValidators` - not the
@@ -50,7 +41,7 @@ class Queries {
   /// Bound: The number of cores is the sum of the numbers of parachains and parathread
   /// multiplexers. Reasonably, 100-1000. The dominant factor is the number of validators: safe
   /// upper bound at 10k.
-  _i6.Future<List<List<_i2.ValidatorIndex>>> validatorGroups(
+  _i5.Future<List<List<_i2.ValidatorIndex>>> validatorGroups(
       {_i1.BlockHash? at}) async {
     final hashedKey = _validatorGroups.hashedKey();
     final bytes = await __api.getStorage(
@@ -63,25 +54,6 @@ class Queries {
     return []; /* Default */
   }
 
-  /// One entry for each availability core. The i'th parachain belongs to the i'th core, with the
-  /// remaining cores all being on demand parachain multiplexers.
-  ///
-  /// Bounded by the maximum of either of these two values:
-  ///   * The number of parachains and parathread multiplexers
-  ///   * The number of validators divided by `configuration.max_validators_per_core`.
-  _i6.Future<List<_i4.CoreOccupied>> availabilityCores(
-      {_i1.BlockHash? at}) async {
-    final hashedKey = _availabilityCores.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
-    if (bytes != null) {
-      return _availabilityCores.decodeValue(bytes);
-    }
-    return []; /* Default */
-  }
-
   /// The block number where the session start occurred. Used to track how many group rotations
   /// have occurred.
   ///
@@ -89,7 +61,7 @@ class Queries {
   /// the block and enacted at the end of the block (at the finalization stage, to be exact).
   /// Thus for all intents and purposes the effect of the session change is observed at the
   /// block following the session change, block number of which we save in this storage value.
-  _i6.Future<int> sessionStartBlock({_i1.BlockHash? at}) async {
+  _i5.Future<int> sessionStartBlock({_i1.BlockHash? at}) async {
     final hashedKey = _sessionStartBlock.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -102,9 +74,8 @@ class Queries {
   }
 
   /// One entry for each availability core. The `VecDeque` represents the assignments to be
-  /// scheduled on that core. The value contained here will not be valid after the end of
-  /// a block. Runtime APIs should be used to determine scheduled cores for the upcoming block.
-  _i6.Future<_i5.BTreeMap> claimQueue({_i1.BlockHash? at}) async {
+  /// scheduled on that core.
+  _i5.Future<_i4.BTreeMap> claimQueue({_i1.BlockHash? at}) async {
     final hashedKey = _claimQueue.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -117,25 +88,19 @@ class Queries {
   }
 
   /// Returns the storage key for `validatorGroups`.
-  _i7.Uint8List validatorGroupsKey() {
+  _i6.Uint8List validatorGroupsKey() {
     final hashedKey = _validatorGroups.hashedKey();
     return hashedKey;
   }
 
-  /// Returns the storage key for `availabilityCores`.
-  _i7.Uint8List availabilityCoresKey() {
-    final hashedKey = _availabilityCores.hashedKey();
-    return hashedKey;
-  }
-
   /// Returns the storage key for `sessionStartBlock`.
-  _i7.Uint8List sessionStartBlockKey() {
+  _i6.Uint8List sessionStartBlockKey() {
     final hashedKey = _sessionStartBlock.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `claimQueue`.
-  _i7.Uint8List claimQueueKey() {
+  _i6.Uint8List claimQueueKey() {
     final hashedKey = _claimQueue.hashedKey();
     return hashedKey;
   }

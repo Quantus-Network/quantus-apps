@@ -5,7 +5,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    await RustLib.init();
+    await QuantusSdk.init();
   });
 
   group('Key Generation Tests', () {

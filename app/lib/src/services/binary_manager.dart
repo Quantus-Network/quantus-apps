@@ -20,6 +20,13 @@ class BinaryManager {
     return p.join(cacheDir.path, _binary);
   }
 
+  static Future<bool> hasBinary() async {
+    final cacheDir = await _cacheDir();
+    final binPath = p.join(cacheDir.path, _binary);
+    final binaryExists = await File(binPath).exists();
+    return binaryExists;
+  }
+
   static Future<File> ensureNodeBinary() async {
     final cacheDir = await _cacheDir();
     final binPath = p.join(cacheDir.path, _binary);
@@ -30,6 +37,8 @@ class BinaryManager {
     // 2. find latest tag on GitHub
     final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
     final tag = jsonDecode(rel.body)['tag_name'] as String;
+
+    print('found latest tag: $tag');
 
     // 3. pick asset name like the shell script
     final target = _targetTriple();

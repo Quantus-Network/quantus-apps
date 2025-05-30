@@ -4,8 +4,8 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i7;
 
-import '../../polkadot_runtime/proxy_type.dart' as _i4;
 import '../../polkadot_runtime/runtime_call.dart' as _i5;
+import '../../polkadot_runtime_constants/proxy/proxy_type.dart' as _i4;
 import '../../primitive_types/h256.dart' as _i6;
 import '../../sp_runtime/multiaddress/multi_address.dart' as _i3;
 
@@ -74,7 +74,7 @@ class $Call {
   }
 
   RemoveProxies removeProxies() {
-    return const RemoveProxies();
+    return RemoveProxies();
   }
 
   CreatePure createPure({

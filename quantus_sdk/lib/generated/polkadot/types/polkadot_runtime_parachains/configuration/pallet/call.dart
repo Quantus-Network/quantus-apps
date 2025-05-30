@@ -71,10 +71,6 @@ class $Call {
     return SetCoretimeCores(new_: new_);
   }
 
-  SetMaxAvailabilityTimeouts setMaxAvailabilityTimeouts({required int new_}) {
-    return SetMaxAvailabilityTimeouts(new_: new_);
-  }
-
   SetGroupRotationFrequency setGroupRotationFrequency({required int new_}) {
     return SetGroupRotationFrequency(new_: new_);
   }
@@ -225,10 +221,6 @@ class $Call {
     return SetOnDemandTargetQueueUtilization(new_: new_);
   }
 
-  SetOnDemandTtl setOnDemandTtl({required int new_}) {
-    return SetOnDemandTtl(new_: new_);
-  }
-
   SetMinimumBackingVotes setMinimumBackingVotes({required int new_}) {
     return SetMinimumBackingVotes(new_: new_);
   }
@@ -274,8 +266,6 @@ class $CallCodec with _i1.Codec<Call> {
         return SetMaxHeadDataSize._decode(input);
       case 6:
         return SetCoretimeCores._decode(input);
-      case 7:
-        return SetMaxAvailabilityTimeouts._decode(input);
       case 8:
         return SetGroupRotationFrequency._decode(input);
       case 9:
@@ -346,8 +336,6 @@ class $CallCodec with _i1.Codec<Call> {
         return SetOnDemandQueueMaxSize._decode(input);
       case 50:
         return SetOnDemandTargetQueueUtilization._decode(input);
-      case 51:
-        return SetOnDemandTtl._decode(input);
       case 52:
         return SetMinimumBackingVotes._decode(input);
       case 53:
@@ -387,9 +375,6 @@ class $CallCodec with _i1.Codec<Call> {
         break;
       case SetCoretimeCores:
         (value as SetCoretimeCores).encodeTo(output);
-        break;
-      case SetMaxAvailabilityTimeouts:
-        (value as SetMaxAvailabilityTimeouts).encodeTo(output);
         break;
       case SetGroupRotationFrequency:
         (value as SetGroupRotationFrequency).encodeTo(output);
@@ -496,9 +481,6 @@ class $CallCodec with _i1.Codec<Call> {
       case SetOnDemandTargetQueueUtilization:
         (value as SetOnDemandTargetQueueUtilization).encodeTo(output);
         break;
-      case SetOnDemandTtl:
-        (value as SetOnDemandTtl).encodeTo(output);
-        break;
       case SetMinimumBackingVotes:
         (value as SetMinimumBackingVotes).encodeTo(output);
         break;
@@ -534,8 +516,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as SetMaxHeadDataSize)._sizeHint();
       case SetCoretimeCores:
         return (value as SetCoretimeCores)._sizeHint();
-      case SetMaxAvailabilityTimeouts:
-        return (value as SetMaxAvailabilityTimeouts)._sizeHint();
       case SetGroupRotationFrequency:
         return (value as SetGroupRotationFrequency)._sizeHint();
       case SetParasAvailabilityPeriod:
@@ -606,8 +586,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as SetOnDemandQueueMaxSize)._sizeHint();
       case SetOnDemandTargetQueueUtilization:
         return (value as SetOnDemandTargetQueueUtilization)._sizeHint();
-      case SetOnDemandTtl:
-        return (value as SetOnDemandTtl)._sizeHint();
       case SetMinimumBackingVotes:
         return (value as SetMinimumBackingVotes)._sizeHint();
       case SetNodeFeature:
@@ -936,51 +914,6 @@ class SetCoretimeCores extends Call {
         other,
       ) ||
       other is SetCoretimeCores && other.new_ == new_;
-
-  @override
-  int get hashCode => new_.hashCode;
-}
-
-/// Set the max number of times a claim may timeout on a core before it is abandoned
-class SetMaxAvailabilityTimeouts extends Call {
-  const SetMaxAvailabilityTimeouts({required this.new_});
-
-  factory SetMaxAvailabilityTimeouts._decode(_i1.Input input) {
-    return SetMaxAvailabilityTimeouts(new_: _i1.U32Codec.codec.decode(input));
-  }
-
-  /// u32
-  final int new_;
-
-  @override
-  Map<String, Map<String, int>> toJson() => {
-        'set_max_availability_timeouts': {'new': new_}
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(new_);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      new_,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetMaxAvailabilityTimeouts && other.new_ == new_;
 
   @override
   int get hashCode => new_.hashCode;
@@ -2583,51 +2516,6 @@ class SetOnDemandTargetQueueUtilization extends Call {
         other,
       ) ||
       other is SetOnDemandTargetQueueUtilization && other.new_ == new_;
-
-  @override
-  int get hashCode => new_.hashCode;
-}
-
-/// Set the on demand (parathreads) ttl in the claimqueue.
-class SetOnDemandTtl extends Call {
-  const SetOnDemandTtl({required this.new_});
-
-  factory SetOnDemandTtl._decode(_i1.Input input) {
-    return SetOnDemandTtl(new_: _i1.U32Codec.codec.decode(input));
-  }
-
-  /// BlockNumberFor<T>
-  final int new_;
-
-  @override
-  Map<String, Map<String, int>> toJson() => {
-        'set_on_demand_ttl': {'new': new_}
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(new_);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      51,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      new_,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetOnDemandTtl && other.new_ == new_;
 
   @override
   int get hashCode => new_.hashCode;
