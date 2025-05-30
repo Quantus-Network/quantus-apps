@@ -15,24 +15,32 @@ class MinerProcess {
   Future<void> start() async {
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final basePath = p.join(quantusHome, 'node_data');
+    // Ensure the base path directory exists
+    await Directory(basePath).create(recursive: true);
 
-    _p = await Process.start(bin.path, [
-      '--base-path',
-      basePath,
-      '--node-key-file',
-      identityPath.path,
-      '--rewards-address',
-      rewardsPath.path,
-      '--validator',
+    final List<String> args = [
+      // '--base-path',
+      // basePath,
+      // '--node-key-file',
+      // identityPath.path,
+      // '--rewards-address',
+      // rewardsPath.path,
+      // '--validator',
       '--chain',
       'live_resonance',
-      '--port',
-      '30333',
-      '--prometheus-port',
-      '9616',
-      '--name',
-      'QuantusMinerGUI'
-    ]);
+      // '--port',
+      // '30333',
+      // '--prometheus-port',
+      // '9616',
+      // '--name',
+      // 'QuantusMinerGUI'
+    ];
+
+    // Print the command and arguments
+    print('DEBUG: Executing command: ${bin.path}');
+    print('DEBUG: With arguments: ${args.join(' ')}');
+
+    _p = await Process.start(bin.path, args);
     _p.stdout.transform(utf8.decoder).listen((l) => print('[node] $l'));
     _p.stderr.transform(utf8.decoder).listen((l) => print('[err]  $l'));
   }
