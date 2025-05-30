@@ -1,0 +1,116 @@
+name: resonance_network_wallet
+description: A Flutter wallet for the Quantus blockchain.
+publish_to: 'none'
+
+version: 1.0.0+16
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  quantus_sdk:
+    path: ../quantus_sdk
+  video_player: ^2.8.6
+  decimal: ^2.3.3
+  hex: ^0.2.0
+  polkadart: ^0.6.1
+  polkadart_keyring: ^0.6.1
+  qr_flutter: ^4.1.0
+  shared_preferences: ^2.5.2
+  ss58: ^1.3.1
+  bip39_mnemonic: ^3.0.9
+  intl: ^0.20.2
+  flutter_svg: ^2.1.0
+  human_checksum:
+    git:
+      url: https://github.com/Resonance-Network/human-checkphrase.git
+      path: dart
+  mobile_scanner: ^3.5.6  # QR code scanning
+  flutter_native_splash: ^2.4.6
+  cupertino_icons: ^1.0.6
+
+# Generate Polkadart bindings
+# dart pub run polkadart_cli:generate -v
+  quiver: any
+  convert: any
+  polkadart_cli: ^0.6.1
+  flutter_launcher_icons: ^0.14.3
+  flash: ^3.1.1
+  flutter_secure_storage: ^9.2.4
+  crypto: ^3.0.6
+  http: ^1.4.0
+
+polkadart:
+  output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
+  chains: # Dictionary of chains and endpoints
+      polkadot: wss://rpc.polkadot.io
+      resonance: wss://a.t.res.fm:443 # This is only used for the code generator, can be local net 
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+    - assets/light_leak_effect_background.jpg
+    - assets/text/crypto_checksum_bip39.txt
+    - assets/send_icon.png
+    - assets/send_icon_1.svg
+    - assets/receive_icon.png
+    - assets/receive_icon.svg
+    - assets/swap_icon.svg
+    - assets/scan.svg
+    - assets/main_wallet_title_logo.svg
+    - assets/account_list_icon.svg
+    - assets/res_icon.svg
+    - assets/intro_bg_video.mp4
+    - assets/paste_icon.svg
+    - assets/active_dot.png
+    - assets/send_line.svg
+    - assets/receive_line.svg
+    - assets/bridge_icon.svg
+    - assets/quantus_logo.svg
+    - assets/quantus_logo_hz.svg
+
+  fonts:
+    - family: Fira Code
+      fonts:
+        - asset: assets/fonts/FiraCode-Light.ttf
+          weight: 100
+        - asset: assets/fonts/FiraCode-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/FiraCode-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/FiraCode-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/FiraCode-Bold.ttf
+          weight: 700
+
+# Add flutter_native_splash configuration section
+flutter_native_splash:
+  # Replace color with background_image
+  # color: "#0E0E0E" 
+  background_image: "assets/light_leak_effect_background.jpg"
+  # image: assets/logo.png # You can still add a logo on top if desired
+
+  # Optional: Configure Android 12 splash screen specific settings
+  android_12:
+    # Replace color with background_image
+    # color: "#0E0E0E"
+    background_image: "assets/light_leak_effect_background.jpg"
+    # image: assets/logo.png
+
+  # Optional: Set color for status bar and navigation bar (Android)
+  # color_dark: "#0E0E0E"
+  # status_bar_color_dark: "#0E0E0E" # Match status bar to background
+  # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
+
+  # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
+  # ios_content_mode: "dark" 

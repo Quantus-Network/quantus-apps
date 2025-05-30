@@ -120,3 +120,5 @@ app.*.symbols
 .DS_Store
 /.idea
 /android/app/.cxx
+/.dart_tool
+/mobile-app/android/app

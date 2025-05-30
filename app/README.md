@@ -1,4 +1,4 @@
-# quantus_workspace
+# quantus_miner
 
 A new Flutter project.
 
