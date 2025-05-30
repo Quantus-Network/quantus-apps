@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/binary_manager.dart';
 import '../services/miner_process.dart';
-import '../services/prometheus_service.dart';
+// PrometheusService import might not be needed here anymore if hashrate is exclusively from MinerProcess
+// import '../services/prometheus_service.dart';
 
 class MinerControls extends StatefulWidget {
   const MinerControls({super.key});
@@ -14,9 +15,14 @@ class MinerControls extends StatefulWidget {
 
 class _MinerControlsState extends State<MinerControls> {
   MinerProcess? _proc;
-  double? _hashrate; // We'll keep fetching hashrate but display it elsewhere
-  Timer? _poll;
-  bool _isAttemptingToggle = false; // To prevent rapid multi-clicks
+  double? _hashrate;
+  // Timer? _poll; // Removed: Hashrate will come from MinerProcess callback
+  bool _isAttemptingToggle = false;
+
+  // New state variables for sync status
+  bool _isSyncingNode = false;
+  int? _currentBlock;
+  int? _targetBlock;
 
   Future<void> _toggle() async {
     if (_isAttemptingToggle) return;
@@ -39,16 +45,29 @@ class _MinerControlsState extends State<MinerControls> {
         setState(() => _isAttemptingToggle = false);
         return;
       }
-      // Potentially clear old data if node fails to start with existing data?
-      // For now, we assume data is fine or user handles it manually.
 
-      _proc = MinerProcess(bin, id, rew);
+      _proc = MinerProcess(bin, id, rew,
+          // Updated to use onMetricsUpdate and new signature
+          onMetricsUpdate: (isSyncing, current, target, newHashrate) {
+        if (mounted) {
+          setState(() {
+            _isSyncingNode = isSyncing;
+            _currentBlock = current;
+            _targetBlock = target;
+            _hashrate = newHashrate; // Update hashrate from callback
+            // print('UI Updated: Syncing=$isSyncing, Current=$current, Target=$target, Hashrate=$newHashrate');
+          });
+        }
+      });
       try {
-        await _proc!.start();
-        _poll = Timer.periodic(const Duration(seconds: 2), (_) async {
-          final h = await PrometheusService.fetchHashrate();
-          if (mounted) setState(() => _hashrate = h);
+        setState(() {
+          _isSyncingNode = true;
+          _currentBlock = null;
+          _targetBlock = null;
+          _hashrate = null;
         });
+        await _proc!.start();
+        // _poll Timer removed - no longer fetching hashrate from here
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
@@ -56,14 +75,27 @@ class _MinerControlsState extends State<MinerControls> {
             SnackBar(content: Text('Error starting miner: ${e.toString()}')),
           );
         }
-        _proc = null; // Ensure proc is null if start failed
+        _proc = null;
+        setState(() {
+          _isSyncingNode = false;
+          _currentBlock = null;
+          _targetBlock = null;
+          _hashrate = null; // Clear hashrate on error too
+        });
       }
     } else {
       print('Stopping mining');
       _proc!.stop();
-      _poll?.cancel();
+      // _poll?.cancel(); // _poll removed
       _proc = null;
       _hashrate = null;
+      if (mounted) {
+        setState(() {
+          _isSyncingNode = false;
+          _currentBlock = null;
+          _targetBlock = null;
+        });
+      }
     }
     if (mounted) {
       setState(() => _isAttemptingToggle = false);
@@ -72,51 +104,65 @@ class _MinerControlsState extends State<MinerControls> {
 
   @override
   void dispose() {
-    _poll?.cancel();
-    // If _proc is not null, it means mining was active.
-    // We might want to ensure it's stopped, though _proc!.stop() should be called by _toggle.
-    // However, if the widget is disposed for other reasons while _proc is active,
-    // the process might be left running. This depends on app lifecycle.
-    // For safety, one might consider _proc?.stop() here, but it can also be complex
-    // if stop() itself has async operations or state changes.
+    // _poll?.cancel(); // _poll removed
+    _proc?.stop();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch, // Make children stretch horizontally
-        children: [
+  Widget build(BuildContext context) {
+    String statusText = 'Status: Not Mining';
+    if (_proc != null) {
+      if (_isSyncingNode) {
+        String blockInfo = '';
+        if (_currentBlock != null && _targetBlock != null) {
+          blockInfo = ' (Block: $_currentBlock/$_targetBlock)';
+        } else if (_currentBlock != null) {
+          blockInfo = ' (Block: $_currentBlock)';
+        }
+        statusText = 'Status: Syncing$blockInfo...';
+      } else {
+        statusText = 'Status: Mining';
+      }
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          statusText,
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        if (_proc != null && !_isSyncingNode && _hashrate != null)
           Text(
-            _proc == null ? 'Status: Not Mining' : 'Status: Mining',
-            style: Theme.of(context).textTheme.headlineSmall,
+            'Hashrate: ${_hashrate!.toStringAsFixed(2)} H/s',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          )
+        else if (_proc != null &&
+            !_isSyncingNode &&
+            _hashrate == null &&
+            !_isSyncingNode) // Show fetching only if not syncing and proc started
+          Text(
+            'Hashrate: Fetching...',
+            style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8), // Reduced space a bit
-          // Display hashrate separately if needed, or it's handled by another widget
-          if (_proc != null && _hashrate != null)
-            Text(
-              'Hashrate: ${_hashrate!.toStringAsFixed(2)} H/s',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            )
-          else if (_proc != null)
-            Text(
-              'Hashrate: Fetching...',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          const SizedBox(height: 20), // Adjusted space
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _proc == null ? Colors.green : Colors.blue,
-              padding: const EdgeInsets.symmetric(vertical: 15), // Adjusted padding
-              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              minimumSize: const Size(200, 50), // Ensure a minimum size
-            ),
-            onPressed: _isAttemptingToggle ? null : _toggle, // Disable button during toggle
-            child: Text(_proc == null ? 'Start Mining' : 'Stop Mining'),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _proc == null ? Colors.green : Colors.blue,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            minimumSize: const Size(200, 50),
           ),
-        ],
-      );
+          onPressed: _isAttemptingToggle ? null : _toggle,
+          child: Text(_proc == null ? 'Start Mining' : 'Stop Mining'),
+        ),
+      ],
+    );
+  }
 }
