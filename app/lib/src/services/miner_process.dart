@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import './binary_manager.dart';
 
 /// quantus_sdk/lib/src/services/miner_process.dart
 class MinerProcess {
@@ -13,7 +13,12 @@ class MinerProcess {
   late Process _p;
 
   Future<void> start() async {
+    final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+    final basePath = p.join(quantusHome, 'node_data');
+
     _p = await Process.start(bin.path, [
+      '--base-path',
+      basePath,
       '--node-key-file',
       identityPath.path,
       '--rewards-address',
@@ -28,8 +33,8 @@ class MinerProcess {
       '--name',
       'QuantusMinerGUI'
     ]);
-    _p.stdout.transform(utf8.decoder).listen((l) => debugPrint('[node] $l'));
-    _p.stderr.transform(utf8.decoder).listen((l) => debugPrint('[err]  $l'));
+    _p.stdout.transform(utf8.decoder).listen((l) => print('[node] $l'));
+    _p.stderr.transform(utf8.decoder).listen((l) => print('[err]  $l'));
   }
 
   void stop() => _p.kill();

@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Import s
 import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
+import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
 
 // Remove explicit imports for internal SDK files
 // import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -24,7 +25,6 @@ class MinerDashboardScreen extends StatefulWidget {
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
-  bool _isMining = false;
   String _miningStats = 'Fetching stats...'; // Placeholder for aggregated stats
 
   final _storage = const FlutterSecureStorage(); // Instantiate secure storage
@@ -34,7 +34,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   void initState() {
     super.initState();
     _fetchWalletBalance();
-    _fetchMiningStats();
   }
 
   @override
@@ -84,29 +83,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       // TODO: Show a more user-friendly error message (e.g., Snackbar)
       print('Error fetching wallet balance: $e');
     }
-  }
-
-  Future<void> _fetchMiningStats() async {
-    // TODO: Implement actual mining stats fetching
-    // This could involve fetching from the node via quantus_sdk or a Prometheus endpoint.
-    await Future.delayed(const Duration(seconds: 1)); // Placeholder delay
-    setState(() {
-      _miningStats = 'Hashrate: 1.2 TH/s\\nShares: 1000\\nLast Reward: 0.01 QUAN'; // Simulated stats
-    });
-  }
-
-  void _toggleMining() {
-    setState(() {
-      _isMining = !_isMining;
-      // TODO: Call quantus_sdk function to start or stop mining based on _isMining
-      if (_isMining) {
-        print('Starting mining...');
-        // Call start mining function
-      } else {
-        print('Stopping mining...');
-        // Call stop mining function
-      }
-    });
   }
 
   // --- Renamed and Updated Method for Logout ---
@@ -220,25 +196,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   ),
                   const SizedBox(width: 16),
                   // Mine Button Section (Right)
-                  Expanded(
+                  const Expanded(
                     flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _toggleMining,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isMining ? Colors.blue : Colors.green, // Button color changes
-                            padding: const EdgeInsets.symmetric(vertical: 30),
-                            textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          child: Text(
-                            _isMining ? 'Stop Mining' : 'Start Mining',
-                          ),
-                        ),
-                        // TODO: Add small indicator for mining status (e.g., animated icon)
-                      ],
-                    ),
+                    child: MinerControls(),
                   ),
                 ],
               ),
@@ -257,7 +217,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _miningStats,
+                      (_miningStats == null || _miningStats.trim().isEmpty)
+                          ? 'No data'
+                          : _miningStats.replaceAll('\\n', '\n'),
                       style: const TextStyle(fontSize: 16),
                     ),
                     // TODO: Format stats nicely, possibly with specific labels

@@ -23,6 +23,8 @@ class BinaryManager {
   static Future<bool> hasBinary() async {
     final cacheDir = await _cacheDir();
     final binPath = p.join(cacheDir.path, _binary);
+    print('BinaryManager: binPath: $binPath');
+
     final binaryExists = await File(binPath).exists();
     return binaryExists;
   }
