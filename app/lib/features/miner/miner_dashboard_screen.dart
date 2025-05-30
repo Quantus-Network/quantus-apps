@@ -60,6 +60,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         // Fetch balance using SubstrateService (exported by quantus_sdk)
         final balance = await SubstrateService().queryBalance(address);
 
+        print('balance: $balance');
+
         setState(() {
           // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
           _walletBalance = '${NumberFormattingService().formatBalance(balance)} ${AppConstants.tokenSymbol}';

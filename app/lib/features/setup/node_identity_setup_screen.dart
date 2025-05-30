@@ -56,13 +56,7 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
       _isLoading = true;
     });
     try {
-      final identityPath = await _getNodeIdentityPath();
-      final identityFile = File(identityPath);
-      await identityFile.create(recursive: true);
-      await identityFile.writeAsString('dummy_node_key_content_for_testing');
-
-      print('Node identity file simulated at: $identityPath');
-
+      await BinaryManager.ensureNodeKeyFile();
       _checkNodeIdentity();
     } catch (e) {
       print('Error setting node identity (simulation): $e');
