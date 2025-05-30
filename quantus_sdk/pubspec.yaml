@@ -7,7 +7,7 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
-  flutter_rust_bridge: ^2.9.0 # Match the version in mobile-app
+  flutter_rust_bridge: ^2.9.0
   rust_lib_resonance_network_wallet:
     path: ./rust_builder
   polkadart: ^0.6.1

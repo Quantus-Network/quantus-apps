@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For checking setup status
-import 'dart:io'; // For File operations
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:io';
 
-// Import your setup and dashboard screens
 import 'features/setup/node_setup_screen.dart';
 import 'features/setup/node_identity_setup_screen.dart';
 import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
-import 'src/services/binary_manager.dart'; // Import BinaryManager
+import 'src/services/binary_manager.dart';
+
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
   const storage = FlutterSecureStorage();
@@ -83,7 +84,18 @@ final _router = GoRouter(
   ],
 );
 
-void main() => runApp(const MinerApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
+  try {
+    await SubstrateService().initialize(); // Initialize SubstrateService
+    await RustLib.init(); // Initialize the Rust library
+    print('SubstrateService and RustLib initialized successfully.');
+  } catch (e) {
+    print('Error initializing SDK: $e');
+    // Depending on the app, you might want to show an error UI or prevent app startup
+  }
+  runApp(const MinerApp());
+}
 
 class MinerApp extends StatelessWidget {
   const MinerApp({super.key});
