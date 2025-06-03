@@ -278,27 +278,27 @@ class SendScreenState extends State<SendScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: const Icon(
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Row(
+                            children: [
+                              Icon(
                                 Icons.arrow_back,
                                 color: Colors.white,
                                 size: 24,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Send',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
+                              SizedBox(width: 4),
+                              Text(
+                                'Send',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       Padding(
