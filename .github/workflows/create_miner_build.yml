@@ -35,7 +35,7 @@ jobs:
         # If you prefer the .app inside a folder in the zip, adjust accordingly
 
       - name: Upload macOS Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: quantus_miner-macos
           path: miner-app/build/macos/Build/Products/Release/quantus_miner_macos.zip
@@ -75,7 +75,7 @@ jobs:
         # The cd above is to ensure files are at the root of the tar.gz
 
       - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: quantus_miner-linux
           path: miner-app/build/linux/x64/release/bundle/quantus_miner_linux.tar.gz
