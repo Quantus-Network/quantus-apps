@@ -7,7 +7,7 @@ import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerContro
 
 // Remove explicit imports for internal SDK files
 // import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-// import 'package:quantus_sdk/src/core/services/substrate_service.dart';
+// import 'package:quantus_sdk/src/services/substrate_service.dart';
 
 // --- Updated Menu Enum ---
 enum _MenuValues {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/src/core/extensions/color_extensions.dart';
+import 'package:quantus_sdk/src/extensions/color_extensions.dart';
 
 class TopSnackBarContent extends StatelessWidget {
   final String title;
