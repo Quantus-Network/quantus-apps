@@ -1,0 +1,68 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, miner-updates ] # Add other branches as needed
+  pull_request:
+    branches: [ main, miner-updates ]
+
+jobs:
+  test-mobile-app-build:
+    name: Test Mobile App Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Test Android build
+        run: flutter build apk --debug
+
+  test-miner-app-build:
+    name: Test Miner App Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./miner-app
+
+      - name: Analyze miner app code
+        run: flutter analyze
+        working-directory: ./miner-app
+
+      - name: Run miner app tests
+        run: flutter test
+        working-directory: ./miner-app
+
+      - name: Test Linux build
+        run: flutter build linux --debug
+        working-directory: ./miner-app 

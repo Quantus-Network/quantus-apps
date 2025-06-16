@@ -1,10 +1,7 @@
 name: Build Cross-Platform Binaries
 
 on:
-  push:
-    branches: [ main ] # Or your primary branch
-  pull_request:
-    branches: [ main ] # Or your primary branch
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   build-macos:
