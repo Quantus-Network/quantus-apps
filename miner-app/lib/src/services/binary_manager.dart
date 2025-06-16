@@ -6,6 +6,13 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
+class DownloadProgress {
+  final int downloadedBytes;
+  final int totalBytes;
+
+  DownloadProgress(this.downloadedBytes, this.totalBytes);
+}
+
 class BinaryManager {
   static const _repoOwner = 'Quantus-Network';
   static const _repoName = 'chain';
@@ -29,11 +36,15 @@ class BinaryManager {
     return File(binPath).exists();
   }
 
-  static Future<File> ensureNodeBinary() async {
+  static Future<File> ensureNodeBinary({void Function(DownloadProgress progress)? onProgress}) async {
     final binPath = await getNodeBinaryFilePath();
     final binFile = File(binPath);
 
-    if (await binFile.exists()) return binFile;
+    if (await binFile.exists()) {
+      // If file exists, report 100% progress and return
+      onProgress?.call(DownloadProgress(1, 1)); // Simulate 100% if already downloaded
+      return binFile;
+    }
 
     // 2. find latest tag on GitHub
     final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
@@ -49,8 +60,44 @@ class BinaryManager {
     // 4. download
     final cacheDir = await _getCacheDir();
     final tgz = File(p.join(cacheDir.path, asset));
-    final res = await http.get(Uri.parse(url));
-    await tgz.writeAsBytes(res.bodyBytes);
+
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', Uri.parse(url));
+      final response = await client.send(request);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download binary: ${response.statusCode} ${response.reasonPhrase}');
+      }
+
+      final totalBytes = response.contentLength ?? -1;
+      int downloadedBytes = 0;
+      List<int> allBytes = [];
+
+      await for (var chunk in response.stream) {
+        allBytes.addAll(chunk);
+        downloadedBytes += chunk.length;
+        if (totalBytes > 0) {
+          onProgress?.call(DownloadProgress(downloadedBytes, totalBytes));
+        } else {
+          // If totalBytes is unknown, we can't show a percentage,
+          // but we can still report bytes downloaded if needed, or just a generic progress.
+          // For now, let's report progress with totalBytes as 0 if unknown.
+          onProgress?.call(DownloadProgress(downloadedBytes, 0));
+        }
+      }
+      await tgz.writeAsBytes(allBytes);
+      // Ensure 100% is reported at the end if not already due to chunking.
+      if (totalBytes > 0 && downloadedBytes < totalBytes) {
+        // This case should ideally not happen if stream ends correctly.
+        onProgress?.call(DownloadProgress(totalBytes, totalBytes));
+      } else if (totalBytes <= 0 && downloadedBytes > 0) {
+        // If total was unknown, still send a final "completed" with what we got.
+        onProgress?.call(DownloadProgress(downloadedBytes, downloadedBytes));
+      }
+    } finally {
+      client.close();
+    }
 
     // 5. extract
     await Process.run('tar', ['-xzf', tgz.path, '-C', cacheDir.path]);

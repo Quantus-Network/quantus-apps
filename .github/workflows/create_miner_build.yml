@@ -1,0 +1,78 @@
+name: Build Cross-Platform Binaries
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest # Use the latest available macOS runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # Or your preferred Flutter channel
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./miner-app # Adjust if your pubspec.yaml is elsewhere
+
+      - name: Build macOS release
+        run: flutter build macos --release
+        working-directory: ./miner-app
+
+      - name: Package macOS App
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          zip -r quantus_miner_macos.zip quantus_miner.app
+        # The cd above is to ensure the .app is at the root of the zip
+        # If you prefer the .app inside a folder in the zip, adjust accordingly
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantus_miner-macos
+          path: miner-app/build/macos/Build/Products/Release/quantus_miner_macos.zip
+
+  build-linux:
+    name: Build Linux App
+    runs-on: ubuntu-latest # Use the latest available Ubuntu runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # Or your preferred Flutter channel
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./miner-app
+
+      - name: Build Linux release
+        run: flutter build linux --release
+        working-directory: ./miner-app
+
+      - name: Package Linux App
+        run: |
+          cd miner-app/build/linux/x64/release/bundle/
+          tar -czvf quantus_miner_linux.tar.gz *
+        # The cd above is to ensure files are at the root of the tar.gz
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantus_miner-linux
+          path: miner-app/build/linux/x64/release/bundle/quantus_miner_linux.tar.gz

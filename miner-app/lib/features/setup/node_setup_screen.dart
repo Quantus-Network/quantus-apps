@@ -14,6 +14,9 @@ class NodeSetupScreen extends StatefulWidget {
 class _NodeSetupScreenState extends State<NodeSetupScreen> {
   bool _isNodeInstalled = false;
   bool _isLoading = true;
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  String _downloadProgressText = "";
 
   @override
   void initState() {
@@ -47,42 +50,96 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
   void _installNode() async {
     setState(() {
       _isLoading = true;
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _downloadProgressText = "Starting download...";
     });
     try {
       // Trigger the installation/download process via BinaryManager
-      await BinaryManager.ensureNodeBinary();
+      await BinaryManager.ensureNodeBinary(
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              if (progress.totalBytes > 0) {
+                _downloadProgress = progress.downloadedBytes / progress.totalBytes;
+                _downloadProgressText =
+                    "${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
+              } else {
+                _downloadProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
+                _downloadProgressText = progress.downloadedBytes > 0 ? "Downloaded" : "Checking...";
+              }
+            });
+          }
+        },
+      );
       // If successful, update installation status
       // We directly set _isNodeInstalled to true here, assuming ensureNodeBinary succeeds.
       // And then refresh the state by calling _checkNodeInstallation to be sure.
-      setState(() {
-        _isNodeInstalled = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isNodeInstalled = true;
+          _isDownloading = false;
+        });
+      }
       // To be absolutely sure and refresh UI correctly, re-check.
       // This might be slightly redundant if ensureNodeBinary is guaranteed to throw on failure,
       // but ensures the UI reflects the true state.
       await _checkNodeInstallation();
     } catch (e) {
       print('Error during node installation: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isDownloading = false;
+          _downloadProgressText = "Error: ${e.toString()}";
+        });
+      }
       // TODO: Show a user-friendly error message indicating installation failed
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error installing node: ${e.toString()}')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    Widget bodyContent;
+
+    if (_isDownloading) {
+      bodyContent = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Downloading Node Binary...',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            child: LinearProgressIndicator(
+              value: _downloadProgress,
+              minHeight: 10,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(_downloadProgressText),
+        ],
+      );
+    } else if (_isLoading) {
+      bodyContent = const CircularProgressIndicator();
+    } else if (_isNodeInstalled) {
+      bodyContent = _buildNodeInstalledView();
+    } else {
+      bodyContent = _buildNodeNotInstalledView();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Node Setup'),
       ),
-      body: Center(
-        child: _isLoading
-            ? const CircularProgressIndicator()
-            : _isNodeInstalled
-                ? _buildNodeInstalledView()
-                : _buildNodeNotInstalledView(),
-      ),
+      body: Center(child: bodyContent),
     );
   }
 
