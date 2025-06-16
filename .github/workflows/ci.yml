@@ -1,10 +1,10 @@
 name: Continuous Integration
 
 on:
-  push:
-    branches: [ main, miner-updates ] # Add other branches as needed
   pull_request:
-    branches: [ main, miner-updates ]
+  push:
+    branches:
+      - main
 
 jobs:
   test-mobile-app-build:
