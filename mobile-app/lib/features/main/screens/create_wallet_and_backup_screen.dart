@@ -73,7 +73,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
       await _settingsService.setMnemonic(_mnemonic);
       await _settingsService.setAccountId(walletInfo.accountId);
 
-      if (context.mounted) {
+      if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const WalletMain()),

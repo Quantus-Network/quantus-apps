@@ -98,9 +98,7 @@ class MinerProcess {
 
     void processLogLine(String line, String streamType) {
       Match? match = _hashrateRegex.firstMatch(line);
-      if (match == null) {
-        match = _legacyHashrateRegex.firstMatch(line);
-      }
+      match ??= _legacyHashrateRegex.firstMatch(line);
 
       if (match != null && match.groupCount >= 1) {
         final newHashrate = double.tryParse(match.group(1)!);

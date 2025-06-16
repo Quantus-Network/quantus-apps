@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class NodeSetupScreen extends StatefulWidget {
-  const NodeSetupScreen({Key? key}) : super(key: key);
+  const NodeSetupScreen({super.key});
 
   @override
-  _NodeSetupScreenState createState() => _NodeSetupScreenState();
+  State<NodeSetupScreen> createState() => _NodeSetupScreenState();
 }
 
 class _NodeSetupScreenState extends State<NodeSetupScreen> {

@@ -1,5 +1,3 @@
-library log_filter_service;
-
 class LogFilterService {
   final int initialLinesToPrint;
   int _linesProcessed = 0;

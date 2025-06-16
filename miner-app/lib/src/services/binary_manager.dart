@@ -1,6 +1,3 @@
-/// quantus_sdk/lib/src/services/binary_manager.dart
-library binary_manager;
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;

@@ -132,20 +132,22 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                 const SizedBox(height: 28),
                 GestureDetector(
                   onTap: () async {
-                    Navigator.pop(context);
+                    final navigator = Navigator.of(context);
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
+                    navigator.pop();
                     try {
                       await SubstrateService().logout();
                       if (mounted) {
-                        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                        navigator.pushNamedAndRemoveUntil('/', (route) => false);
                       }
                     } catch (e) {
                       debugPrint('Error during logout: $e');
                       if (mounted) {
-                        showTopSnackBar(
-                          context,
-                          title: 'Error',
-                          message: 'Logout failed: ${e.toString()}',
-                          icon: buildErrorIcon(),
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Logout failed: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     }

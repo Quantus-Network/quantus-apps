@@ -25,7 +25,7 @@ class MinerDashboardScreen extends StatefulWidget {
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
-  String _miningStats = 'Fetching stats...'; // Placeholder for aggregated stats
+  final String _miningStats = 'Fetching stats...'; // Placeholder for aggregated stats
 
   final _storage = const FlutterSecureStorage(); // Instantiate secure storage
   final _minerSettingsService = MinerSettingsService(); // Instantiate the service
@@ -219,9 +219,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      (_miningStats == null || _miningStats.trim().isEmpty)
-                          ? 'No data'
-                          : _miningStats.replaceAll('\\n', '\n'),
+                      (_miningStats.trim().isEmpty) ? 'No data' : _miningStats.replaceAll('\\n', '\n'),
                       style: const TextStyle(fontSize: 16),
                     ),
                     // TODO: Format stats nicely, possibly with specific labels

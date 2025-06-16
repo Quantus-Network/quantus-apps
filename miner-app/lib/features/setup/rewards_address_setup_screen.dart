@@ -15,10 +15,10 @@ enum RewardsAddressSetupStep {
 }
 
 class RewardsAddressSetupScreen extends StatefulWidget {
-  const RewardsAddressSetupScreen({Key? key}) : super(key: key);
+  const RewardsAddressSetupScreen({super.key});
 
   @override
-  _RewardsAddressSetupScreenState createState() => _RewardsAddressSetupScreenState();
+  State<RewardsAddressSetupScreen> createState() => _RewardsAddressSetupScreenState();
 }
 
 class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
@@ -131,7 +131,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       // TODO: Handle error (e.g., show a Snackbar)
       print('Error securely storing seed: $e');
       // Depending on the severity and platform, you might want to show a critical error message.
-      throw e; // Rethrow to be caught by the calling function
+      rethrow; // Rethrow to be caught by the calling function
     }
   }
 
@@ -282,11 +282,11 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _onAddressSet, // Navigate to main screen
-            child: const Text('I have securely stored my mnemonic'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               textStyle: const TextStyle(fontSize: 18),
             ),
+            child: const Text('I have securely stored my mnemonic'),
           ),
         ],
       ),
@@ -342,11 +342,11 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _onAddressSet, // Navigate to main screen
-          child: const Text('Continue to Miner'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             textStyle: const TextStyle(fontSize: 18),
           ),
+          child: const Text('Continue to Miner'),
         ),
       ],
     );

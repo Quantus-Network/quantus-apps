@@ -5,10 +5,10 @@ import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class NodeIdentitySetupScreen extends StatefulWidget {
-  const NodeIdentitySetupScreen({Key? key}) : super(key: key);
+  const NodeIdentitySetupScreen({super.key});
 
   @override
-  _NodeIdentitySetupScreenState createState() => _NodeIdentitySetupScreenState();
+  State<NodeIdentitySetupScreen> createState() => _NodeIdentitySetupScreenState();
 }
 
 class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
