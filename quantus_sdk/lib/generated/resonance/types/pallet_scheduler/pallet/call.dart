@@ -2,9 +2,10 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i5;
+import 'package:quiver/collection.dart' as _i6;
 
-import '../../resonance_runtime/runtime_call.dart' as _i4;
+import '../../qp_scheduler/block_number_or_timestamp.dart' as _i4;
+import '../../quantus_runtime/runtime_call.dart' as _i5;
 import '../../tuples_1.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
@@ -37,9 +38,9 @@ class $Call {
 
   Schedule schedule({
     required int when,
-    _i3.Tuple2<int, int>? maybePeriodic,
+    _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
-    required _i4.RuntimeCall call,
+    required _i5.RuntimeCall call,
   }) {
     return Schedule(
       when: when,
@@ -50,7 +51,7 @@ class $Call {
   }
 
   Cancel cancel({
-    required int when,
+    required _i4.BlockNumberOrTimestamp when,
     required int index,
   }) {
     return Cancel(
@@ -62,9 +63,9 @@ class $Call {
   ScheduleNamed scheduleNamed({
     required List<int> id,
     required int when,
-    _i3.Tuple2<int, int>? maybePeriodic,
+    _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
-    required _i4.RuntimeCall call,
+    required _i5.RuntimeCall call,
   }) {
     return ScheduleNamed(
       id: id,
@@ -80,10 +81,10 @@ class $Call {
   }
 
   ScheduleAfter scheduleAfter({
-    required int after,
-    _i3.Tuple2<int, int>? maybePeriodic,
+    required _i4.BlockNumberOrTimestamp after,
+    _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
-    required _i4.RuntimeCall call,
+    required _i5.RuntimeCall call,
   }) {
     return ScheduleAfter(
       after: after,
@@ -95,10 +96,10 @@ class $Call {
 
   ScheduleNamedAfter scheduleNamedAfter({
     required List<int> id,
-    required int after,
-    _i3.Tuple2<int, int>? maybePeriodic,
+    required _i4.BlockNumberOrTimestamp after,
+    _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
-    required _i4.RuntimeCall call,
+    required _i5.RuntimeCall call,
   }) {
     return ScheduleNamedAfter(
       id: id,
@@ -110,9 +111,9 @@ class $Call {
   }
 
   SetRetry setRetry({
-    required _i3.Tuple2<int, int> task,
+    required _i3.Tuple2<_i4.BlockNumberOrTimestamp, int> task,
     required int retries,
-    required int period,
+    required _i4.BlockNumberOrTimestamp period,
   }) {
     return SetRetry(
       task: task,
@@ -124,7 +125,7 @@ class $Call {
   SetRetryNamed setRetryNamed({
     required List<int> id,
     required int retries,
-    required int period,
+    required _i4.BlockNumberOrTimestamp period,
   }) {
     return SetRetryNamed(
       id: id,
@@ -133,7 +134,8 @@ class $Call {
     );
   }
 
-  CancelRetry cancelRetry({required _i3.Tuple2<int, int> task}) {
+  CancelRetry cancelRetry(
+      {required _i3.Tuple2<_i4.BlockNumberOrTimestamp, int> task}) {
     return CancelRetry(task: task);
   }
 
@@ -259,33 +261,34 @@ class Schedule extends Call {
     return Schedule(
       when: _i1.U32Codec.codec.decode(input),
       maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       )).decode(input),
       priority: _i1.U8Codec.codec.decode(input),
-      call: _i4.RuntimeCall.codec.decode(input),
+      call: _i5.RuntimeCall.codec.decode(input),
     );
   }
 
   /// BlockNumberFor<T>
   final int when;
 
-  /// Option<schedule::Period<BlockNumberFor<T>>>
-  final _i3.Tuple2<int, int>? maybePeriodic;
+  /// Option<Period<BlockNumberFor<T>, T::Moment>>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic;
 
   /// schedule::Priority
   final int priority;
 
   /// Box<<T as Config>::RuntimeCall>
-  final _i4.RuntimeCall call;
+  final _i5.RuntimeCall call;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'schedule': {
           'when': when,
           'maybePeriodic': [
-            maybePeriodic?.value0,
+            maybePeriodic?.value0.toJson(),
             maybePeriodic?.value1,
           ],
           'priority': priority,
@@ -297,12 +300,13 @@ class Schedule extends Call {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(when);
     size = size +
-        const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         )).sizeHint(maybePeriodic);
     size = size + _i1.U8Codec.codec.sizeHint(priority);
-    size = size + _i4.RuntimeCall.codec.sizeHint(call);
+    size = size + _i5.RuntimeCall.codec.sizeHint(call);
     return size;
   }
 
@@ -315,8 +319,9 @@ class Schedule extends Call {
       when,
       output,
     );
-    const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     )).encodeTo(
       maybePeriodic,
@@ -326,7 +331,7 @@ class Schedule extends Call {
       priority,
       output,
     );
-    _i4.RuntimeCall.codec.encodeTo(
+    _i5.RuntimeCall.codec.encodeTo(
       call,
       output,
     );
@@ -362,28 +367,28 @@ class Cancel extends Call {
 
   factory Cancel._decode(_i1.Input input) {
     return Cancel(
-      when: _i1.U32Codec.codec.decode(input),
+      when: _i4.BlockNumberOrTimestamp.codec.decode(input),
       index: _i1.U32Codec.codec.decode(input),
     );
   }
 
-  /// BlockNumberFor<T>
-  final int when;
+  /// BlockNumberOrTimestampOf<T>
+  final _i4.BlockNumberOrTimestamp when;
 
   /// u32
   final int index;
 
   @override
-  Map<String, Map<String, int>> toJson() => {
+  Map<String, Map<String, dynamic>> toJson() => {
         'cancel': {
-          'when': when,
+          'when': when.toJson(),
           'index': index,
         }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(when);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(when);
     size = size + _i1.U32Codec.codec.sizeHint(index);
     return size;
   }
@@ -393,7 +398,7 @@ class Cancel extends Call {
       1,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
       when,
       output,
     );
@@ -433,12 +438,13 @@ class ScheduleNamed extends Call {
       id: const _i1.U8ArrayCodec(32).decode(input),
       when: _i1.U32Codec.codec.decode(input),
       maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       )).decode(input),
       priority: _i1.U8Codec.codec.decode(input),
-      call: _i4.RuntimeCall.codec.decode(input),
+      call: _i5.RuntimeCall.codec.decode(input),
     );
   }
 
@@ -448,14 +454,14 @@ class ScheduleNamed extends Call {
   /// BlockNumberFor<T>
   final int when;
 
-  /// Option<schedule::Period<BlockNumberFor<T>>>
-  final _i3.Tuple2<int, int>? maybePeriodic;
+  /// Option<Period<BlockNumberFor<T>, T::Moment>>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic;
 
   /// schedule::Priority
   final int priority;
 
   /// Box<<T as Config>::RuntimeCall>
-  final _i4.RuntimeCall call;
+  final _i5.RuntimeCall call;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -463,7 +469,7 @@ class ScheduleNamed extends Call {
           'id': id.toList(),
           'when': when,
           'maybePeriodic': [
-            maybePeriodic?.value0,
+            maybePeriodic?.value0.toJson(),
             maybePeriodic?.value1,
           ],
           'priority': priority,
@@ -476,12 +482,13 @@ class ScheduleNamed extends Call {
     size = size + const _i1.U8ArrayCodec(32).sizeHint(id);
     size = size + _i1.U32Codec.codec.sizeHint(when);
     size = size +
-        const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         )).sizeHint(maybePeriodic);
     size = size + _i1.U8Codec.codec.sizeHint(priority);
-    size = size + _i4.RuntimeCall.codec.sizeHint(call);
+    size = size + _i5.RuntimeCall.codec.sizeHint(call);
     return size;
   }
 
@@ -498,8 +505,9 @@ class ScheduleNamed extends Call {
       when,
       output,
     );
-    const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     )).encodeTo(
       maybePeriodic,
@@ -509,7 +517,7 @@ class ScheduleNamed extends Call {
       priority,
       output,
     );
-    _i4.RuntimeCall.codec.encodeTo(
+    _i5.RuntimeCall.codec.encodeTo(
       call,
       output,
     );
@@ -522,7 +530,7 @@ class ScheduleNamed extends Call {
         other,
       ) ||
       other is ScheduleNamed &&
-          _i5.listsEqual(
+          _i6.listsEqual(
             other.id,
             id,
           ) &&
@@ -581,7 +589,7 @@ class CancelNamed extends Call {
         other,
       ) ||
       other is CancelNamed &&
-          _i5.listsEqual(
+          _i6.listsEqual(
             other.id,
             id,
           );
@@ -601,35 +609,36 @@ class ScheduleAfter extends Call {
 
   factory ScheduleAfter._decode(_i1.Input input) {
     return ScheduleAfter(
-      after: _i1.U32Codec.codec.decode(input),
+      after: _i4.BlockNumberOrTimestamp.codec.decode(input),
       maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       )).decode(input),
       priority: _i1.U8Codec.codec.decode(input),
-      call: _i4.RuntimeCall.codec.decode(input),
+      call: _i5.RuntimeCall.codec.decode(input),
     );
   }
 
-  /// BlockNumberFor<T>
-  final int after;
+  /// BlockNumberOrTimestamp<BlockNumberFor<T>, T::Moment>
+  final _i4.BlockNumberOrTimestamp after;
 
-  /// Option<schedule::Period<BlockNumberFor<T>>>
-  final _i3.Tuple2<int, int>? maybePeriodic;
+  /// Option<Period<BlockNumberFor<T>, T::Moment>>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic;
 
   /// schedule::Priority
   final int priority;
 
   /// Box<<T as Config>::RuntimeCall>
-  final _i4.RuntimeCall call;
+  final _i5.RuntimeCall call;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'schedule_after': {
-          'after': after,
+          'after': after.toJson(),
           'maybePeriodic': [
-            maybePeriodic?.value0,
+            maybePeriodic?.value0.toJson(),
             maybePeriodic?.value1,
           ],
           'priority': priority,
@@ -639,14 +648,15 @@ class ScheduleAfter extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(after);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(after);
     size = size +
-        const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         )).sizeHint(maybePeriodic);
     size = size + _i1.U8Codec.codec.sizeHint(priority);
-    size = size + _i4.RuntimeCall.codec.sizeHint(call);
+    size = size + _i5.RuntimeCall.codec.sizeHint(call);
     return size;
   }
 
@@ -655,12 +665,13 @@ class ScheduleAfter extends Call {
       4,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
       after,
       output,
     );
-    const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     )).encodeTo(
       maybePeriodic,
@@ -670,7 +681,7 @@ class ScheduleAfter extends Call {
       priority,
       output,
     );
-    _i4.RuntimeCall.codec.encodeTo(
+    _i5.RuntimeCall.codec.encodeTo(
       call,
       output,
     );
@@ -710,39 +721,40 @@ class ScheduleNamedAfter extends Call {
   factory ScheduleNamedAfter._decode(_i1.Input input) {
     return ScheduleNamedAfter(
       id: const _i1.U8ArrayCodec(32).decode(input),
-      after: _i1.U32Codec.codec.decode(input),
+      after: _i4.BlockNumberOrTimestamp.codec.decode(input),
       maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       )).decode(input),
       priority: _i1.U8Codec.codec.decode(input),
-      call: _i4.RuntimeCall.codec.decode(input),
+      call: _i5.RuntimeCall.codec.decode(input),
     );
   }
 
   /// TaskName
   final List<int> id;
 
-  /// BlockNumberFor<T>
-  final int after;
+  /// BlockNumberOrTimestamp<BlockNumberFor<T>, T::Moment>
+  final _i4.BlockNumberOrTimestamp after;
 
-  /// Option<schedule::Period<BlockNumberFor<T>>>
-  final _i3.Tuple2<int, int>? maybePeriodic;
+  /// Option<Period<BlockNumberFor<T>, T::Moment>>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic;
 
   /// schedule::Priority
   final int priority;
 
   /// Box<<T as Config>::RuntimeCall>
-  final _i4.RuntimeCall call;
+  final _i5.RuntimeCall call;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'schedule_named_after': {
           'id': id.toList(),
-          'after': after,
+          'after': after.toJson(),
           'maybePeriodic': [
-            maybePeriodic?.value0,
+            maybePeriodic?.value0.toJson(),
             maybePeriodic?.value1,
           ],
           'priority': priority,
@@ -753,14 +765,15 @@ class ScheduleNamedAfter extends Call {
   int _sizeHint() {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(32).sizeHint(id);
-    size = size + _i1.U32Codec.codec.sizeHint(after);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(after);
     size = size +
-        const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         )).sizeHint(maybePeriodic);
     size = size + _i1.U8Codec.codec.sizeHint(priority);
-    size = size + _i4.RuntimeCall.codec.sizeHint(call);
+    size = size + _i5.RuntimeCall.codec.sizeHint(call);
     return size;
   }
 
@@ -773,12 +786,13 @@ class ScheduleNamedAfter extends Call {
       id,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
       after,
       output,
     );
-    const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     )).encodeTo(
       maybePeriodic,
@@ -788,7 +802,7 @@ class ScheduleNamedAfter extends Call {
       priority,
       output,
     );
-    _i4.RuntimeCall.codec.encodeTo(
+    _i5.RuntimeCall.codec.encodeTo(
       call,
       output,
     );
@@ -801,7 +815,7 @@ class ScheduleNamedAfter extends Call {
         other,
       ) ||
       other is ScheduleNamedAfter &&
-          _i5.listsEqual(
+          _i6.listsEqual(
             other.id,
             id,
           ) &&
@@ -841,45 +855,45 @@ class SetRetry extends Call {
 
   factory SetRetry._decode(_i1.Input input) {
     return SetRetry(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       retries: _i1.U8Codec.codec.decode(input),
-      period: _i1.U32Codec.codec.decode(input),
+      period: _i4.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int> task;
 
   /// u8
   final int retries;
 
-  /// BlockNumberFor<T>
-  final int period;
+  /// BlockNumberOrTimestampOf<T>
+  final _i4.BlockNumberOrTimestamp period;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'set_retry': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'retries': retries,
-          'period': period,
+          'period': period.toJson(),
         }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size + _i1.U8Codec.codec.sizeHint(retries);
-    size = size + _i1.U32Codec.codec.sizeHint(period);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(period);
     return size;
   }
 
@@ -888,8 +902,8 @@ class SetRetry extends Call {
       6,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -899,7 +913,7 @@ class SetRetry extends Call {
       retries,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
       period,
       output,
     );
@@ -947,7 +961,7 @@ class SetRetryNamed extends Call {
     return SetRetryNamed(
       id: const _i1.U8ArrayCodec(32).decode(input),
       retries: _i1.U8Codec.codec.decode(input),
-      period: _i1.U32Codec.codec.decode(input),
+      period: _i4.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
 
@@ -957,15 +971,15 @@ class SetRetryNamed extends Call {
   /// u8
   final int retries;
 
-  /// BlockNumberFor<T>
-  final int period;
+  /// BlockNumberOrTimestampOf<T>
+  final _i4.BlockNumberOrTimestamp period;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'set_retry_named': {
           'id': id.toList(),
           'retries': retries,
-          'period': period,
+          'period': period.toJson(),
         }
       };
 
@@ -973,7 +987,7 @@ class SetRetryNamed extends Call {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(32).sizeHint(id);
     size = size + _i1.U8Codec.codec.sizeHint(retries);
-    size = size + _i1.U32Codec.codec.sizeHint(period);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(period);
     return size;
   }
 
@@ -990,7 +1004,7 @@ class SetRetryNamed extends Call {
       retries,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
       period,
       output,
     );
@@ -1003,7 +1017,7 @@ class SetRetryNamed extends Call {
         other,
       ) ||
       other is SetRetryNamed &&
-          _i5.listsEqual(
+          _i6.listsEqual(
             other.id,
             id,
           ) &&
@@ -1024,20 +1038,20 @@ class CancelRetry extends Call {
 
   factory CancelRetry._decode(_i1.Input input) {
     return CancelRetry(
-        task: const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+        task: const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).decode(input));
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int> task;
 
   @override
-  Map<String, Map<String, List<int>>> toJson() => {
+  Map<String, Map<String, List<dynamic>>> toJson() => {
         'cancel_retry': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ]
         }
@@ -1046,8 +1060,8 @@ class CancelRetry extends Call {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     return size;
@@ -1058,8 +1072,8 @@ class CancelRetry extends Call {
       8,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -1119,7 +1133,7 @@ class CancelRetryNamed extends Call {
         other,
       ) ||
       other is CancelRetryNamed &&
-          _i5.listsEqual(
+          _i6.listsEqual(
             other.id,
             id,
           );

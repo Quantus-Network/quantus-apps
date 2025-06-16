@@ -11,32 +11,42 @@ enum Error {
   /// The account attempting the action is not marked as reversible.
   accountNotReversible('AccountNotReversible', 1),
 
+  /// Reverser can not be the account itself, because it is redundant.
+  explicitReverserCanNotBeSelf('ExplicitReverserCanNotBeSelf', 2),
+
   /// The specified pending transaction ID was not found.
-  pendingTxNotFound('PendingTxNotFound', 2),
+  pendingTxNotFound('PendingTxNotFound', 3),
 
   /// The caller is not the original submitter of the transaction they are trying to cancel.
-  notOwner('NotOwner', 3),
+  notOwner('NotOwner', 4),
 
   /// The account has reached the maximum number of pending reversible transactions.
-  tooManyPendingTransactions('TooManyPendingTransactions', 4),
+  tooManyPendingTransactions('TooManyPendingTransactions', 5),
 
   /// The specified delay period is below the configured minimum.
-  delayTooShort('DelayTooShort', 5),
+  delayTooShort('DelayTooShort', 6),
 
   /// Failed to schedule the transaction execution with the scheduler pallet.
-  schedulingFailed('SchedulingFailed', 6),
+  schedulingFailed('SchedulingFailed', 7),
 
   /// Failed to cancel the scheduled task with the scheduler pallet.
-  cancellationFailed('CancellationFailed', 7),
+  cancellationFailed('CancellationFailed', 8),
 
   /// Failed to decode the OpaqueCall back into a RuntimeCall.
-  callDecodingFailed('CallDecodingFailed', 8),
+  callDecodingFailed('CallDecodingFailed', 9),
 
   /// Call is invalid.
-  invalidCall('InvalidCall', 9),
+  invalidCall('InvalidCall', 10),
 
   /// Invalid scheduler origin
-  invalidSchedulerOrigin('InvalidSchedulerOrigin', 10);
+  invalidSchedulerOrigin('InvalidSchedulerOrigin', 11),
+
+  /// Reverser is invalid
+  invalidReverser('InvalidReverser', 12),
+
+  /// Cannot schedule one time reversible transaction when account is reversible (theft deterrence)
+  accountAlreadyReversibleCannotScheduleOneTime(
+      'AccountAlreadyReversibleCannotScheduleOneTime', 13);
 
   const Error(
     this.variantName,
@@ -71,23 +81,29 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 1:
         return Error.accountNotReversible;
       case 2:
-        return Error.pendingTxNotFound;
+        return Error.explicitReverserCanNotBeSelf;
       case 3:
-        return Error.notOwner;
+        return Error.pendingTxNotFound;
       case 4:
-        return Error.tooManyPendingTransactions;
+        return Error.notOwner;
       case 5:
-        return Error.delayTooShort;
+        return Error.tooManyPendingTransactions;
       case 6:
-        return Error.schedulingFailed;
+        return Error.delayTooShort;
       case 7:
-        return Error.cancellationFailed;
+        return Error.schedulingFailed;
       case 8:
-        return Error.callDecodingFailed;
+        return Error.cancellationFailed;
       case 9:
-        return Error.invalidCall;
+        return Error.callDecodingFailed;
       case 10:
+        return Error.invalidCall;
+      case 11:
         return Error.invalidSchedulerOrigin;
+      case 12:
+        return Error.invalidReverser;
+      case 13:
+        return Error.accountAlreadyReversibleCannotScheduleOneTime;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

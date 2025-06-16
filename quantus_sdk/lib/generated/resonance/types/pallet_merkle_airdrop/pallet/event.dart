@@ -2,9 +2,10 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i4;
+import 'package:quiver/collection.dart' as _i5;
 
-import '../../sp_core/crypto/account_id32.dart' as _i3;
+import '../../sp_core/crypto/account_id32.dart' as _i4;
+import '../airdrop_metadata.dart' as _i3;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -36,11 +37,11 @@ class $Event {
 
   AirdropCreated airdropCreated({
     required int airdropId,
-    required List<int> merkleRoot,
+    required _i3.AirdropMetadata airdropMetadata,
   }) {
     return AirdropCreated(
       airdropId: airdropId,
-      merkleRoot: merkleRoot,
+      airdropMetadata: airdropMetadata,
     );
   }
 
@@ -56,7 +57,7 @@ class $Event {
 
   Claimed claimed({
     required int airdropId,
-    required _i3.AccountId32 account,
+    required _i4.AccountId32 account,
     required BigInt amount,
   }) {
     return Claimed(
@@ -139,13 +140,13 @@ class $EventCodec with _i1.Codec<Event> {
 class AirdropCreated extends Event {
   const AirdropCreated({
     required this.airdropId,
-    required this.merkleRoot,
+    required this.airdropMetadata,
   });
 
   factory AirdropCreated._decode(_i1.Input input) {
     return AirdropCreated(
       airdropId: _i1.U32Codec.codec.decode(input),
-      merkleRoot: const _i1.U8ArrayCodec(32).decode(input),
+      airdropMetadata: _i3.AirdropMetadata.codec.decode(input),
     );
   }
 
@@ -153,22 +154,22 @@ class AirdropCreated extends Event {
   /// The ID of the created airdrop
   final int airdropId;
 
-  /// MerkleRoot
-  /// The Merkle root of the airdrop
-  final List<int> merkleRoot;
+  /// AirdropMetadataFor<T>
+  /// Airdrop metadata
+  final _i3.AirdropMetadata airdropMetadata;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'AirdropCreated': {
           'airdropId': airdropId,
-          'merkleRoot': merkleRoot.toList(),
+          'airdropMetadata': airdropMetadata.toJson(),
         }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(airdropId);
-    size = size + const _i1.U8ArrayCodec(32).sizeHint(merkleRoot);
+    size = size + _i3.AirdropMetadata.codec.sizeHint(airdropMetadata);
     return size;
   }
 
@@ -181,8 +182,8 @@ class AirdropCreated extends Event {
       airdropId,
       output,
     );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      merkleRoot,
+    _i3.AirdropMetadata.codec.encodeTo(
+      airdropMetadata,
       output,
     );
   }
@@ -195,15 +196,12 @@ class AirdropCreated extends Event {
       ) ||
       other is AirdropCreated &&
           other.airdropId == airdropId &&
-          _i4.listsEqual(
-            other.merkleRoot,
-            merkleRoot,
-          );
+          other.airdropMetadata == airdropMetadata;
 
   @override
   int get hashCode => Object.hash(
         airdropId,
-        merkleRoot,
+        airdropMetadata,
       );
 }
 
@@ -227,7 +225,7 @@ class AirdropFunded extends Event {
   /// The ID of the funded airdrop
   final int airdropId;
 
-  /// <<T as Config>::Currency as Inspect<T::AccountId>>::Balance
+  /// BalanceOf<T>
   /// The amount of tokens added to the airdrop
   final BigInt amount;
 
@@ -302,9 +300,9 @@ class Claimed extends Event {
 
   /// T::AccountId
   /// The account that claimed the tokens
-  final _i3.AccountId32 account;
+  final _i4.AccountId32 account;
 
-  /// <<T as Config>::Currency as Inspect<T::AccountId>>::Balance
+  /// BalanceOf<T>
   /// The amount of tokens claimed
   final BigInt amount;
 
@@ -320,7 +318,7 @@ class Claimed extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(airdropId);
-    size = size + const _i3.AccountId32Codec().sizeHint(account);
+    size = size + const _i4.AccountId32Codec().sizeHint(account);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     return size;
   }
@@ -352,7 +350,7 @@ class Claimed extends Event {
       ) ||
       other is Claimed &&
           other.airdropId == airdropId &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.account,
             account,
           ) &&

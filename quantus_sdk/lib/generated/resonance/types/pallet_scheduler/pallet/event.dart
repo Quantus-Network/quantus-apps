@@ -3,8 +3,9 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../../sp_runtime/dispatch_error.dart' as _i4;
-import '../../tuples_1.dart' as _i3;
+import '../../qp_scheduler/block_number_or_timestamp.dart' as _i3;
+import '../../sp_runtime/dispatch_error.dart' as _i5;
+import '../../tuples_1.dart' as _i4;
 
 /// Events type.
 abstract class Event {
@@ -35,7 +36,7 @@ class $Event {
   const $Event();
 
   Scheduled scheduled({
-    required int when,
+    required _i3.BlockNumberOrTimestamp when,
     required int index,
   }) {
     return Scheduled(
@@ -45,7 +46,7 @@ class $Event {
   }
 
   Canceled canceled({
-    required int when,
+    required _i3.BlockNumberOrTimestamp when,
     required int index,
   }) {
     return Canceled(
@@ -55,9 +56,9 @@ class $Event {
   }
 
   Dispatched dispatched({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
-    required _i1.Result<dynamic, _i4.DispatchError> result,
+    required _i1.Result<dynamic, _i5.DispatchError> result,
   }) {
     return Dispatched(
       task: task,
@@ -67,9 +68,9 @@ class $Event {
   }
 
   RetrySet retrySet({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
-    required int period,
+    required _i3.BlockNumberOrTimestamp period,
     required int retries,
   }) {
     return RetrySet(
@@ -81,7 +82,7 @@ class $Event {
   }
 
   RetryCancelled retryCancelled({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
     return RetryCancelled(
@@ -91,7 +92,7 @@ class $Event {
   }
 
   CallUnavailable callUnavailable({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
     return CallUnavailable(
@@ -101,7 +102,7 @@ class $Event {
   }
 
   PeriodicFailed periodicFailed({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
     return PeriodicFailed(
@@ -111,7 +112,7 @@ class $Event {
   }
 
   RetryFailed retryFailed({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
     return RetryFailed(
@@ -121,7 +122,7 @@ class $Event {
   }
 
   PermanentlyOverweight permanentlyOverweight({
-    required _i3.Tuple2<int, int> task,
+    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
     return PermanentlyOverweight(
@@ -237,28 +238,28 @@ class Scheduled extends Event {
 
   factory Scheduled._decode(_i1.Input input) {
     return Scheduled(
-      when: _i1.U32Codec.codec.decode(input),
+      when: _i3.BlockNumberOrTimestamp.codec.decode(input),
       index: _i1.U32Codec.codec.decode(input),
     );
   }
 
-  /// BlockNumberFor<T>
-  final int when;
+  /// BlockNumberOrTimestampOf<T>
+  final _i3.BlockNumberOrTimestamp when;
 
   /// u32
   final int index;
 
   @override
-  Map<String, Map<String, int>> toJson() => {
+  Map<String, Map<String, dynamic>> toJson() => {
         'Scheduled': {
-          'when': when,
+          'when': when.toJson(),
           'index': index,
         }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(when);
+    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(when);
     size = size + _i1.U32Codec.codec.sizeHint(index);
     return size;
   }
@@ -268,7 +269,7 @@ class Scheduled extends Event {
       0,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(
       when,
       output,
     );
@@ -302,28 +303,28 @@ class Canceled extends Event {
 
   factory Canceled._decode(_i1.Input input) {
     return Canceled(
-      when: _i1.U32Codec.codec.decode(input),
+      when: _i3.BlockNumberOrTimestamp.codec.decode(input),
       index: _i1.U32Codec.codec.decode(input),
     );
   }
 
-  /// BlockNumberFor<T>
-  final int when;
+  /// BlockNumberOrTimestampOf<T>
+  final _i3.BlockNumberOrTimestamp when;
 
   /// u32
   final int index;
 
   @override
-  Map<String, Map<String, int>> toJson() => {
+  Map<String, Map<String, dynamic>> toJson() => {
         'Canceled': {
-          'when': when,
+          'when': when.toJson(),
           'index': index,
         }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(when);
+    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(when);
     size = size + _i1.U32Codec.codec.sizeHint(index);
     return size;
   }
@@ -333,7 +334,7 @@ class Canceled extends Event {
       1,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(
       when,
       output,
     );
@@ -368,32 +369,32 @@ class Dispatched extends Event {
 
   factory Dispatched._decode(_i1.Input input) {
     return Dispatched(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
-      result: const _i1.ResultCodec<dynamic, _i4.DispatchError>(
+      result: const _i1.ResultCodec<dynamic, _i5.DispatchError>(
         _i1.NullCodec.codec,
-        _i4.DispatchError.codec,
+        _i5.DispatchError.codec,
       ).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   /// DispatchResult
-  final _i1.Result<dynamic, _i4.DispatchError> result;
+  final _i1.Result<dynamic, _i5.DispatchError> result;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'Dispatched': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -404,16 +405,16 @@ class Dispatched extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
         const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     size = size +
-        const _i1.ResultCodec<dynamic, _i4.DispatchError>(
+        const _i1.ResultCodec<dynamic, _i5.DispatchError>(
           _i1.NullCodec.codec,
-          _i4.DispatchError.codec,
+          _i5.DispatchError.codec,
         ).sizeHint(result);
     return size;
   }
@@ -423,8 +424,8 @@ class Dispatched extends Event {
       2,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -434,9 +435,9 @@ class Dispatched extends Event {
       id,
       output,
     );
-    const _i1.ResultCodec<dynamic, _i4.DispatchError>(
+    const _i1.ResultCodec<dynamic, _i5.DispatchError>(
       _i1.NullCodec.codec,
-      _i4.DispatchError.codec,
+      _i5.DispatchError.codec,
     ).encodeTo(
       result,
       output,
@@ -473,24 +474,24 @@ class RetrySet extends Event {
 
   factory RetrySet._decode(_i1.Input input) {
     return RetrySet(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
-      period: _i1.U32Codec.codec.decode(input),
+      period: _i3.BlockNumberOrTimestamp.codec.decode(input),
       retries: _i1.U8Codec.codec.decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
-  /// BlockNumberFor<T>
-  final int period;
+  /// BlockNumberOrTimestampOf<T>
+  final _i3.BlockNumberOrTimestamp period;
 
   /// u8
   final int retries;
@@ -499,11 +500,11 @@ class RetrySet extends Event {
   Map<String, Map<String, dynamic>> toJson() => {
         'RetrySet': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
-          'period': period,
+          'period': period.toJson(),
           'retries': retries,
         }
       };
@@ -511,13 +512,13 @@ class RetrySet extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
         const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
-    size = size + _i1.U32Codec.codec.sizeHint(period);
+    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(period);
     size = size + _i1.U8Codec.codec.sizeHint(retries);
     return size;
   }
@@ -527,8 +528,8 @@ class RetrySet extends Event {
       3,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -538,7 +539,7 @@ class RetrySet extends Event {
       id,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(
       period,
       output,
     );
@@ -578,25 +579,25 @@ class RetryCancelled extends Event {
 
   factory RetryCancelled._decode(_i1.Input input) {
     return RetryCancelled(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   @override
-  Map<String, Map<String, List<int>?>> toJson() => {
+  Map<String, Map<String, List<dynamic>?>> toJson() => {
         'RetryCancelled': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -606,8 +607,8 @@ class RetryCancelled extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
@@ -620,8 +621,8 @@ class RetryCancelled extends Event {
       4,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -657,25 +658,25 @@ class CallUnavailable extends Event {
 
   factory CallUnavailable._decode(_i1.Input input) {
     return CallUnavailable(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   @override
-  Map<String, Map<String, List<int>?>> toJson() => {
+  Map<String, Map<String, List<dynamic>?>> toJson() => {
         'CallUnavailable': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -685,8 +686,8 @@ class CallUnavailable extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
@@ -699,8 +700,8 @@ class CallUnavailable extends Event {
       5,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -736,25 +737,25 @@ class PeriodicFailed extends Event {
 
   factory PeriodicFailed._decode(_i1.Input input) {
     return PeriodicFailed(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   @override
-  Map<String, Map<String, List<int>?>> toJson() => {
+  Map<String, Map<String, List<dynamic>?>> toJson() => {
         'PeriodicFailed': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -764,8 +765,8 @@ class PeriodicFailed extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
@@ -778,8 +779,8 @@ class PeriodicFailed extends Event {
       6,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -816,25 +817,25 @@ class RetryFailed extends Event {
 
   factory RetryFailed._decode(_i1.Input input) {
     return RetryFailed(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   @override
-  Map<String, Map<String, List<int>?>> toJson() => {
+  Map<String, Map<String, List<dynamic>?>> toJson() => {
         'RetryFailed': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -844,8 +845,8 @@ class RetryFailed extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
@@ -858,8 +859,8 @@ class RetryFailed extends Event {
       7,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,
@@ -895,25 +896,25 @@ class PermanentlyOverweight extends Event {
 
   factory PermanentlyOverweight._decode(_i1.Input input) {
     return PermanentlyOverweight(
-      task: const _i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+        _i3.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ).decode(input),
       id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
-  /// TaskAddress<BlockNumberFor<T>>
-  final _i3.Tuple2<int, int> task;
+  /// TaskAddressOf<T>
+  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
 
   /// Option<TaskName>
   final List<int>? id;
 
   @override
-  Map<String, Map<String, List<int>?>> toJson() => {
+  Map<String, Map<String, List<dynamic>?>> toJson() => {
         'PermanentlyOverweight': {
           'task': [
-            task.value0,
+            task.value0.toJson(),
             task.value1,
           ],
           'id': id?.toList(),
@@ -923,8 +924,8 @@ class PermanentlyOverweight extends Event {
   int _sizeHint() {
     int size = 1;
     size = size +
-        const _i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
     size = size +
@@ -937,8 +938,8 @@ class PermanentlyOverweight extends Event {
       8,
       output,
     );
-    const _i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+      _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     ).encodeTo(
       task,

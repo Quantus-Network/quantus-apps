@@ -14,11 +14,14 @@ enum Error {
   /// Given target block number is in the past.
   targetBlockNumberInPast('TargetBlockNumberInPast', 2),
 
+  /// Given target timestamp is in the past.
+  targetTimestampInPast('TargetTimestampInPast', 3),
+
   /// Reschedule failed because it does not change scheduled time.
-  rescheduleNoChange('RescheduleNoChange', 3),
+  rescheduleNoChange('RescheduleNoChange', 4),
 
   /// Attempt to use a non-named function on a named task.
-  named('Named', 4);
+  named('Named', 5);
 
   const Error(
     this.variantName,
@@ -55,8 +58,10 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 2:
         return Error.targetBlockNumberInPast;
       case 3:
-        return Error.rescheduleNoChange;
+        return Error.targetTimestampInPast;
       case 4:
+        return Error.rescheduleNoChange;
+      case 5:
         return Error.named;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

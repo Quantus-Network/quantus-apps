@@ -1,7 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import '../types/pallet_utility/pallet/call.dart' as _i2;
-import '../types/resonance_runtime/origin_caller.dart' as _i3;
-import '../types/resonance_runtime/runtime_call.dart' as _i1;
+import '../types/quantus_runtime/origin_caller.dart' as _i3;
+import '../types/quantus_runtime/runtime_call.dart' as _i1;
 import '../types/sp_weights/weight_v2/weight.dart' as _i4;
 
 class Txs {

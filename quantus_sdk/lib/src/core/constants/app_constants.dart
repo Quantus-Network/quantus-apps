@@ -3,7 +3,7 @@ class AppConstants {
   static const String tokenSymbol = 'QUAN';
 
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
-  static const String rpcEndpoint = 'wss://a.t.res.fm:443';
+  static const String rpcEndpoint = 'ws://localhost:9944';
 
   static const String graphQlEndpoint = 'https://gql.res.fm/graphql';
 

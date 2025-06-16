@@ -12,8 +12,8 @@ import '../types/pallet_referenda/types/curve.dart' as _i14;
 import '../types/pallet_referenda/types/referendum_info_1.dart' as _i3;
 import '../types/pallet_referenda/types/track_info.dart' as _i13;
 import '../types/primitive_types/h256.dart' as _i5;
-import '../types/resonance_runtime/origin_caller.dart' as _i9;
-import '../types/resonance_runtime/runtime_call.dart' as _i8;
+import '../types/quantus_runtime/origin_caller.dart' as _i9;
+import '../types/quantus_runtime/runtime_call.dart' as _i8;
 import '../types/tuples.dart' as _i4;
 
 class Queries {
@@ -381,6 +381,94 @@ class Constants {
           length: 1000000000,
           floor: 10000000,
           ceil: 100000000,
+        ),
+      ),
+    ),
+    _i4.Tuple2<int, _i13.TrackInfo>(
+      2,
+      _i13.TrackInfo(
+        name: 'treasury_small_spender',
+        maxDeciding: 5,
+        decisionDeposit: BigInt.from(100000000000000),
+        preparePeriod: 86400,
+        decisionPeriod: 259200,
+        confirmPeriod: 86400,
+        minEnactmentPeriod: 43200,
+        minApproval: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 250000000,
+          ceil: 500000000,
+        ),
+        minSupport: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 10000000,
+          ceil: 100000000,
+        ),
+      ),
+    ),
+    _i4.Tuple2<int, _i13.TrackInfo>(
+      3,
+      _i13.TrackInfo(
+        name: 'treasury_medium_spender',
+        maxDeciding: 2,
+        decisionDeposit: BigInt.from(250000000000000),
+        preparePeriod: 21600,
+        decisionPeriod: 432000,
+        confirmPeriod: 86400,
+        minEnactmentPeriod: 43200,
+        minApproval: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 500000000,
+          ceil: 750000000,
+        ),
+        minSupport: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 20000000,
+          ceil: 100000000,
+        ),
+      ),
+    ),
+    _i4.Tuple2<int, _i13.TrackInfo>(
+      4,
+      _i13.TrackInfo(
+        name: 'treasury_big_spender',
+        maxDeciding: 2,
+        decisionDeposit: BigInt.from(500000000000000),
+        preparePeriod: 86400,
+        decisionPeriod: 604800,
+        confirmPeriod: 172800,
+        minEnactmentPeriod: 43200,
+        minApproval: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 650000000,
+          ceil: 850000000,
+        ),
+        minSupport: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 50000000,
+          ceil: 150000000,
+        ),
+      ),
+    ),
+    _i4.Tuple2<int, _i13.TrackInfo>(
+      5,
+      _i13.TrackInfo(
+        name: 'treasury_treasurer',
+        maxDeciding: 1,
+        decisionDeposit: BigInt.from(1000000000000000),
+        preparePeriod: 172800,
+        decisionPeriod: 1209600,
+        confirmPeriod: 345600,
+        minEnactmentPeriod: 86400,
+        minApproval: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 750000000,
+          ceil: 1000000000,
+        ),
+        minSupport: const _i14.LinearDecreasing(
+          length: 1000000000,
+          floor: 100000000,
+          ceil: 250000000,
         ),
       ),
     ),

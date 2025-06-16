@@ -12,7 +12,7 @@ import '../types/pallet_balances/types/account_data.dart' as _i4;
 import '../types/pallet_balances/types/adjustment_direction.dart' as _i15;
 import '../types/pallet_balances/types/balance_lock.dart' as _i5;
 import '../types/pallet_balances/types/reserve_data.dart' as _i6;
-import '../types/resonance_runtime/runtime_call.dart' as _i12;
+import '../types/quantus_runtime/runtime_call.dart' as _i12;
 import '../types/sp_core/crypto/account_id32.dart' as _i3;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i13;
 import '../types/tuples_2.dart' as _i9;
@@ -77,12 +77,12 @@ class Queries {
   );
 
   final _i1.StorageMap<
-          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, bool>
+          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>
       _transferProof = const _i1.StorageMap<
-          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, bool>(
+          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>(
     prefix: 'Balances',
     storage: 'TransferProof',
-    valueCodec: _i2.BoolCodec.codec,
+    valueCodec: _i2.NullCodec.codec,
     hasher: _i1.StorageHasher.identity(
         _i9.Tuple4Codec<int, _i3.AccountId32, _i3.AccountId32, BigInt>(
       _i2.U32Codec.codec,
@@ -234,7 +234,7 @@ class Queries {
     return []; /* Default */
   }
 
-  _i10.Future<bool?> transferProof(
+  _i10.Future<dynamic> transferProof(
     _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt> key1, {
     _i1.BlockHash? at,
   }) async {

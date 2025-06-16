@@ -1,6 +1,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import '../types/pallet_faucet/pallet/call.dart' as _i3;
-import '../types/resonance_runtime/runtime_call.dart' as _i1;
+import '../types/quantus_runtime/runtime_call.dart' as _i1;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i2;
 
 class Txs {

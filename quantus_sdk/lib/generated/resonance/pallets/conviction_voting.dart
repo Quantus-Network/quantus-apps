@@ -12,7 +12,7 @@ import '../types/pallet_conviction_voting/vote/account_vote.dart' as _i12;
 import '../types/pallet_conviction_voting/vote/casting.dart' as _i7;
 import '../types/pallet_conviction_voting/vote/prior_lock.dart' as _i9;
 import '../types/pallet_conviction_voting/vote/voting.dart' as _i3;
-import '../types/resonance_runtime/runtime_call.dart' as _i11;
+import '../types/quantus_runtime/runtime_call.dart' as _i11;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i14;
 import '../types/tuples.dart' as _i5;

@@ -1,7 +1,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:typed_data' as _i2;
+import 'dart:typed_data' as _i3;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
+
+import '../qp_scheduler/block_number_or_timestamp.dart' as _i2;
 
 class RetryConfig {
   const RetryConfig({
@@ -21,18 +23,18 @@ class RetryConfig {
   final int remaining;
 
   /// Period
-  final int period;
+  final _i2.BlockNumberOrTimestamp period;
 
   static const $RetryConfigCodec codec = $RetryConfigCodec();
 
-  _i2.Uint8List encode() {
+  _i3.Uint8List encode() {
     return codec.encode(this);
   }
 
-  Map<String, int> toJson() => {
+  Map<String, dynamic> toJson() => {
         'totalRetries': totalRetries,
         'remaining': remaining,
-        'period': period,
+        'period': period.toJson(),
       };
 
   @override
@@ -70,7 +72,7 @@ class $RetryConfigCodec with _i1.Codec<RetryConfig> {
       obj.remaining,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
+    _i2.BlockNumberOrTimestamp.codec.encodeTo(
       obj.period,
       output,
     );
@@ -81,7 +83,7 @@ class $RetryConfigCodec with _i1.Codec<RetryConfig> {
     return RetryConfig(
       totalRetries: _i1.U8Codec.codec.decode(input),
       remaining: _i1.U8Codec.codec.decode(input),
-      period: _i1.U32Codec.codec.decode(input),
+      period: _i2.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
 
@@ -90,7 +92,7 @@ class $RetryConfigCodec with _i1.Codec<RetryConfig> {
     int size = 0;
     size = size + _i1.U8Codec.codec.sizeHint(obj.totalRetries);
     size = size + _i1.U8Codec.codec.sizeHint(obj.remaining);
-    size = size + _i1.U32Codec.codec.sizeHint(obj.period);
+    size = size + _i2.BlockNumberOrTimestamp.codec.sizeHint(obj.period);
     return size;
   }
 }
