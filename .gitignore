@@ -122,3 +122,4 @@ app.*.symbols
 /android/app/.cxx
 /.dart_tool
 /mobile-app/android/app
+.vscode/launch.json

@@ -19,7 +19,7 @@ class MinerDashboardScreen extends StatefulWidget {
   const MinerDashboardScreen({super.key});
 
   @override
-  _MinerDashboardScreenState createState() => _MinerDashboardScreenState();
+  State<MinerDashboardScreen> createState() => _MinerDashboardScreenState();
 }
 
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
