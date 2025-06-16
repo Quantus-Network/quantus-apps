@@ -3,7 +3,7 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../../resonance_runtime/runtime_call.dart' as _i3;
+import '../../quantus_runtime/runtime_call.dart' as _i3;
 import '../../sp_runtime/multiaddress/multi_address.dart' as _i5;
 import '../../sp_weights/weight_v2/weight.dart' as _i4;
 

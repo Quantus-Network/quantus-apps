@@ -4,8 +4,8 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i6;
 
-import '../../resonance_runtime/origin_caller.dart' as _i4;
-import '../../resonance_runtime/runtime_call.dart' as _i3;
+import '../../quantus_runtime/origin_caller.dart' as _i4;
+import '../../quantus_runtime/runtime_call.dart' as _i3;
 import '../../sp_weights/weight_v2/weight.dart' as _i5;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.

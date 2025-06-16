@@ -38,7 +38,7 @@ polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints
       polkadot: wss://rpc.polkadot.io
-      resonance: wss://a.t.res.fm:443 # This is only used for the code generator, can be local net 
+      resonance: ws://localhost:9944 # Local dev node 
 
 dev_dependencies:
   flutter_test:

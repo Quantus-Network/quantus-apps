@@ -6,7 +6,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../../frame_support/traits/preimages/bounded.dart' as _i4;
 import '../../frame_support/traits/schedule/dispatch_time.dart' as _i5;
 import '../../primitive_types/h256.dart' as _i6;
-import '../../resonance_runtime/origin_caller.dart' as _i3;
+import '../../quantus_runtime/origin_caller.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
 abstract class Call {

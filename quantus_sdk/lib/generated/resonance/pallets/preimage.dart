@@ -9,7 +9,7 @@ import '../types/pallet_preimage/old_request_status.dart' as _i3;
 import '../types/pallet_preimage/pallet/call.dart' as _i10;
 import '../types/pallet_preimage/request_status.dart' as _i4;
 import '../types/primitive_types/h256.dart' as _i2;
-import '../types/resonance_runtime/runtime_call.dart' as _i9;
+import '../types/quantus_runtime/runtime_call.dart' as _i9;
 import '../types/tuples.dart' as _i5;
 
 class Queries {

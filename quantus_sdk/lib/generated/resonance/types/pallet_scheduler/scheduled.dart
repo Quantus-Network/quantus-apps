@@ -1,10 +1,11 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:typed_data' as _i5;
+import 'dart:typed_data' as _i6;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_support/traits/preimages/bounded.dart' as _i2;
-import '../resonance_runtime/origin_caller.dart' as _i4;
+import '../qp_scheduler/block_number_or_timestamp.dart' as _i4;
+import '../quantus_runtime/origin_caller.dart' as _i5;
 import '../tuples_1.dart' as _i3;
 
 class Scheduled {
@@ -29,15 +30,15 @@ class Scheduled {
   /// Call
   final _i2.Bounded call;
 
-  /// Option<schedule::Period<BlockNumber>>
-  final _i3.Tuple2<int, int>? maybePeriodic;
+  /// Option<Period<BlockNumber, Moment>>
+  final _i3.Tuple2<_i4.BlockNumberOrTimestamp, int>? maybePeriodic;
 
   /// PalletsOrigin
-  final _i4.OriginCaller origin;
+  final _i5.OriginCaller origin;
 
   static const $ScheduledCodec codec = $ScheduledCodec();
 
-  _i5.Uint8List encode() {
+  _i6.Uint8List encode() {
     return codec.encode(this);
   }
 
@@ -46,7 +47,7 @@ class Scheduled {
         'priority': priority,
         'call': call.toJson(),
         'maybePeriodic': [
-          maybePeriodic?.value0,
+          maybePeriodic?.value0.toJson(),
           maybePeriodic?.value1,
         ],
         'origin': origin.toJson(),
@@ -95,14 +96,15 @@ class $ScheduledCodec with _i1.Codec<Scheduled> {
       obj.call,
       output,
     );
-    const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-      _i1.U32Codec.codec,
+    const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+      _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
     )).encodeTo(
       obj.maybePeriodic,
       output,
     );
-    _i4.OriginCaller.codec.encodeTo(
+    _i5.OriginCaller.codec.encodeTo(
       obj.origin,
       output,
     );
@@ -116,11 +118,12 @@ class $ScheduledCodec with _i1.Codec<Scheduled> {
       priority: _i1.U8Codec.codec.decode(input),
       call: _i2.Bounded.codec.decode(input),
       maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       )).decode(input),
-      origin: _i4.OriginCaller.codec.decode(input),
+      origin: _i5.OriginCaller.codec.decode(input),
     );
   }
 
@@ -133,11 +136,12 @@ class $ScheduledCodec with _i1.Codec<Scheduled> {
     size = size + _i1.U8Codec.codec.sizeHint(obj.priority);
     size = size + _i2.Bounded.codec.sizeHint(obj.call);
     size = size +
-        const _i1.OptionCodec<_i3.Tuple2<int, int>>(_i3.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+          _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         )).sizeHint(obj.maybePeriodic);
-    size = size + _i4.OriginCaller.codec.sizeHint(obj.origin);
+    size = size + _i5.OriginCaller.codec.sizeHint(obj.origin);
     return size;
   }
 }

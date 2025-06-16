@@ -1,12 +1,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:typed_data' as _i10;
+import 'dart:typed_data' as _i11;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../../frame_support/traits/preimages/bounded.dart' as _i3;
 import '../../frame_support/traits/schedule/dispatch_time.dart' as _i4;
 import '../../pallet_conviction_voting/types/tally.dart' as _i7;
-import '../../resonance_runtime/origin_caller.dart' as _i2;
+import '../../qp_scheduler/block_number_or_timestamp.dart' as _i10;
+import '../../quantus_runtime/origin_caller.dart' as _i2;
 import '../../tuples.dart' as _i8;
 import '../../tuples_1.dart' as _i9;
 import 'deciding_status.dart' as _i6;
@@ -62,11 +63,11 @@ class ReferendumStatus {
   final bool inQueue;
 
   /// Option<(Moment, ScheduleAddress)>
-  final _i8.Tuple2<int, _i9.Tuple2<int, int>>? alarm;
+  final _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>? alarm;
 
   static const $ReferendumStatusCodec codec = $ReferendumStatusCodec();
 
-  _i10.Uint8List encode() {
+  _i11.Uint8List encode() {
     return codec.encode(this);
   }
 
@@ -84,7 +85,7 @@ class ReferendumStatus {
         'alarm': [
           alarm?.value0,
           [
-            alarm?.value1.value0,
+            alarm?.value1.value0.toJson(),
             alarm?.value1.value1,
           ],
         ],
@@ -174,11 +175,12 @@ class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
       obj.inQueue,
       output,
     );
-    const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<int, int>>>(
-        _i8.Tuple2Codec<int, _i9.Tuple2<int, int>>(
+    const _i1.OptionCodec<
+            _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+        _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
       _i1.U32Codec.codec,
-      _i9.Tuple2Codec<int, int>(
-        _i1.U32Codec.codec,
+      _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
+        _i10.BlockNumberOrTimestamp.codec,
         _i1.U32Codec.codec,
       ),
     )).encodeTo(
@@ -203,11 +205,12 @@ class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
               .decode(input),
       tally: _i7.Tally.codec.decode(input),
       inQueue: _i1.BoolCodec.codec.decode(input),
-      alarm: const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<int, int>>>(
-          _i8.Tuple2Codec<int, _i9.Tuple2<int, int>>(
+      alarm: const _i1.OptionCodec<
+              _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+          _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
         _i1.U32Codec.codec,
-        _i9.Tuple2Codec<int, int>(
-          _i1.U32Codec.codec,
+        _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
+          _i10.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ),
       )).decode(input),
@@ -232,11 +235,12 @@ class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
     size = size + _i7.Tally.codec.sizeHint(obj.tally);
     size = size + _i1.BoolCodec.codec.sizeHint(obj.inQueue);
     size = size +
-        const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<int, int>>>(
-            _i8.Tuple2Codec<int, _i9.Tuple2<int, int>>(
+        const _i1.OptionCodec<
+                _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+            _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
           _i1.U32Codec.codec,
-          _i9.Tuple2Codec<int, int>(
-            _i1.U32Codec.codec,
+          _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
+            _i10.BlockNumberOrTimestamp.codec,
             _i1.U32Codec.codec,
           ),
         )).sizeHint(obj.alarm);

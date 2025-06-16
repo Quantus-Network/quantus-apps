@@ -6,27 +6,26 @@ import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i4;
 
 import '../types/frame_support/dispatch/per_dispatch_class_1.dart' as _i5;
-import '../types/frame_support/dispatch/per_dispatch_class_2.dart' as _i21;
-import '../types/frame_support/dispatch/per_dispatch_class_3.dart' as _i24;
+import '../types/frame_support/dispatch/per_dispatch_class_2.dart' as _i20;
+import '../types/frame_support/dispatch/per_dispatch_class_3.dart' as _i23;
 import '../types/frame_system/account_info.dart' as _i3;
 import '../types/frame_system/code_upgrade_authorization.dart' as _i12;
 import '../types/frame_system/event_record.dart' as _i8;
 import '../types/frame_system/last_runtime_upgrade_info.dart' as _i10;
-import '../types/frame_system/limits/block_length.dart' as _i23;
-import '../types/frame_system/limits/block_weights.dart' as _i20;
-import '../types/frame_system/limits/weights_per_class.dart' as _i22;
+import '../types/frame_system/limits/block_length.dart' as _i22;
+import '../types/frame_system/limits/block_weights.dart' as _i19;
+import '../types/frame_system/limits/weights_per_class.dart' as _i21;
 import '../types/frame_system/pallet/call.dart' as _i18;
 import '../types/frame_system/phase.dart' as _i11;
 import '../types/pallet_balances/types/account_data.dart' as _i14;
 import '../types/primitive_types/h256.dart' as _i6;
-import '../types/resonance_runtime/runtime_call.dart' as _i17;
+import '../types/quantus_runtime/runtime_call.dart' as _i17;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
 import '../types/sp_runtime/generic/digest/digest.dart' as _i7;
-import '../types/sp_version/runtime_version.dart' as _i26;
-import '../types/sp_weights/runtime_db_weight.dart' as _i25;
+import '../types/sp_version/runtime_version.dart' as _i25;
+import '../types/sp_weights/runtime_db_weight.dart' as _i24;
 import '../types/sp_weights/weight_v2/weight.dart' as _i15;
-import '../types/tuples.dart' as _i19;
-import '../types/tuples_1.dart' as _i9;
+import '../types/tuples.dart' as _i9;
 
 class Queries {
   const Queries(this.__api);
@@ -628,7 +627,7 @@ class Txs {
 
   /// Set some items of storage.
   _i17.System setStorage(
-      {required List<_i19.Tuple2<List<int>, List<int>>> items}) {
+      {required List<_i9.Tuple2<List<int>, List<int>>> items}) {
     return _i17.System(_i18.SetStorage(items: items));
   }
 
@@ -694,7 +693,7 @@ class Constants {
   Constants();
 
   /// Block & extrinsics weights: base values and limits.
-  final _i20.BlockWeights blockWeights = _i20.BlockWeights(
+  final _i19.BlockWeights blockWeights = _i19.BlockWeights(
     baseBlock: _i15.Weight(
       refTime: BigInt.from(431614000),
       proofSize: BigInt.zero,
@@ -706,8 +705,8 @@ class Constants {
         radix: 10,
       ),
     ),
-    perClass: _i21.PerDispatchClass(
-      normal: _i22.WeightsPerClass(
+    perClass: _i20.PerDispatchClass(
+      normal: _i21.WeightsPerClass(
         baseExtrinsic: _i15.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
@@ -731,7 +730,7 @@ class Constants {
           proofSize: BigInt.zero,
         ),
       ),
-      operational: _i22.WeightsPerClass(
+      operational: _i21.WeightsPerClass(
         baseExtrinsic: _i15.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
@@ -758,7 +757,7 @@ class Constants {
           ),
         ),
       ),
-      mandatory: _i22.WeightsPerClass(
+      mandatory: _i21.WeightsPerClass(
         baseExtrinsic: _i15.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
@@ -771,8 +770,8 @@ class Constants {
   );
 
   /// The maximum length of a block (in bytes).
-  final _i23.BlockLength blockLength = const _i23.BlockLength(
-      max: _i24.PerDispatchClass(
+  final _i22.BlockLength blockLength = const _i22.BlockLength(
+      max: _i23.PerDispatchClass(
     normal: 3932160,
     operational: 5242880,
     mandatory: 5242880,
@@ -782,20 +781,20 @@ class Constants {
   final int blockHashCount = 2400;
 
   /// The weight of runtime database operations the runtime can invoke.
-  final _i25.RuntimeDbWeight dbWeight = _i25.RuntimeDbWeight(
+  final _i24.RuntimeDbWeight dbWeight = _i24.RuntimeDbWeight(
     read: BigInt.from(25000000),
     write: BigInt.from(100000000),
   );
 
   /// Get the chain's in-code version.
-  final _i26.RuntimeVersion version = const _i26.RuntimeVersion(
-    specName: 'resonance-runtime',
-    implName: 'resonance-runtime',
+  final _i25.RuntimeVersion version = const _i25.RuntimeVersion(
+    specName: 'quantus-runtime',
+    implName: 'quantus-runtime',
     authoringVersion: 1,
     specVersion: 100,
     implVersion: 1,
     apis: [
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           223,
           106,
@@ -808,7 +807,7 @@ class Constants {
         ],
         5,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           55,
           227,
@@ -821,7 +820,7 @@ class Constants {
         ],
         2,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           64,
           254,
@@ -834,7 +833,7 @@ class Constants {
         ],
         6,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           210,
           188,
@@ -847,7 +846,7 @@ class Constants {
         ],
         3,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           247,
           139,
@@ -860,7 +859,7 @@ class Constants {
         ],
         2,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           171,
           60,
@@ -873,7 +872,7 @@ class Constants {
         ],
         1,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           19,
           40,
@@ -886,7 +885,7 @@ class Constants {
         ],
         1,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           219,
           178,
@@ -899,7 +898,7 @@ class Constants {
         ],
         1,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           188,
           157,
@@ -912,7 +911,7 @@ class Constants {
         ],
         1,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           55,
           200,
@@ -925,7 +924,7 @@ class Constants {
         ],
         4,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           243,
           255,
@@ -938,7 +937,7 @@ class Constants {
         ],
         3,
       ),
-      _i19.Tuple2<List<int>, int>(
+      _i9.Tuple2<List<int>, int>(
         <int>[
           251,
           197,

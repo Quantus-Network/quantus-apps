@@ -5,11 +5,11 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i9;
 
 import '../../frame_support/dispatch/post_dispatch_info.dart' as _i7;
-import '../../frame_support/traits/schedule/dispatch_time.dart' as _i6;
 import '../../primitive_types/h256.dart' as _i5;
+import '../../qp_scheduler/dispatch_time.dart' as _i6;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 import '../../sp_runtime/dispatch_error_with_post_info.dart' as _i8;
-import '../delay_policy.dart' as _i4;
+import '../reversible_account_data.dart' as _i4;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -41,13 +41,11 @@ class $Event {
 
   ReversibilitySet reversibilitySet({
     required _i3.AccountId32 who,
-    required int delay,
-    required _i4.DelayPolicy policy,
+    required _i4.ReversibleAccountData data,
   }) {
     return ReversibilitySet(
       who: who,
-      delay: delay,
-      policy: policy,
+      data: data,
     );
   }
 
@@ -152,41 +150,34 @@ class $EventCodec with _i1.Codec<Event> {
 class ReversibilitySet extends Event {
   const ReversibilitySet({
     required this.who,
-    required this.delay,
-    required this.policy,
+    required this.data,
   });
 
   factory ReversibilitySet._decode(_i1.Input input) {
     return ReversibilitySet(
       who: const _i1.U8ArrayCodec(32).decode(input),
-      delay: _i1.U32Codec.codec.decode(input),
-      policy: _i4.DelayPolicy.codec.decode(input),
+      data: _i4.ReversibleAccountData.codec.decode(input),
     );
   }
 
   /// T::AccountId
   final _i3.AccountId32 who;
 
-  /// BlockNumberFor<T>
-  final int delay;
-
-  /// DelayPolicy
-  final _i4.DelayPolicy policy;
+  /// ReversibleAccountData<T::AccountId, BlockNumberOrTimestampOf<T>>
+  final _i4.ReversibleAccountData data;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'ReversibilitySet': {
           'who': who.toList(),
-          'delay': delay,
-          'policy': policy.toJson(),
+          'data': data.toJson(),
         }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(who);
-    size = size + _i1.U32Codec.codec.sizeHint(delay);
-    size = size + _i4.DelayPolicy.codec.sizeHint(policy);
+    size = size + _i4.ReversibleAccountData.codec.sizeHint(data);
     return size;
   }
 
@@ -199,12 +190,8 @@ class ReversibilitySet extends Event {
       who,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
-      delay,
-      output,
-    );
-    _i4.DelayPolicy.codec.encodeTo(
-      policy,
+    _i4.ReversibleAccountData.codec.encodeTo(
+      data,
       output,
     );
   }
@@ -220,14 +207,12 @@ class ReversibilitySet extends Event {
             other.who,
             who,
           ) &&
-          other.delay == delay &&
-          other.policy == policy;
+          other.data == data;
 
   @override
   int get hashCode => Object.hash(
         who,
-        delay,
-        policy,
+        data,
       );
 }
 
@@ -254,7 +239,7 @@ class TransactionScheduled extends Event {
   /// T::Hash
   final _i5.H256 txId;
 
-  /// DispatchTime<BlockNumberFor<T>>
+  /// DispatchTime<BlockNumberFor<T>, T::Moment>
   final _i6.DispatchTime executeAt;
 
   @override

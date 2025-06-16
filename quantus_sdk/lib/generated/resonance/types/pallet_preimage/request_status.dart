@@ -3,7 +3,7 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../resonance_runtime/governance/preimage_deposit.dart' as _i5;
+import '../quantus_runtime/governance/definitions/preimage_deposit.dart' as _i5;
 import '../sp_core/crypto/account_id32.dart' as _i4;
 import '../tuples.dart' as _i3;
 

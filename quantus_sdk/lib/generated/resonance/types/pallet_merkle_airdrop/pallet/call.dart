@@ -34,8 +34,16 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  CreateAirdrop createAirdrop({required List<int> merkleRoot}) {
-    return CreateAirdrop(merkleRoot: merkleRoot);
+  CreateAirdrop createAirdrop({
+    required List<int> merkleRoot,
+    int? vestingPeriod,
+    int? vestingDelay,
+  }) {
+    return CreateAirdrop(
+      merkleRoot: merkleRoot,
+      vestingPeriod: vestingPeriod,
+      vestingDelay: vestingDelay,
+    );
   }
 
   FundAirdrop fundAirdrop({
@@ -139,24 +147,50 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// * `origin` - The origin of the call (must be signed)
 /// * `merkle_root` - The Merkle root hash representing all valid claims
+/// * `vesting_period` - Optional vesting period for the airdrop
+/// * `vesting_delay` - Optional delay before vesting starts
 class CreateAirdrop extends Call {
-  const CreateAirdrop({required this.merkleRoot});
+  const CreateAirdrop({
+    required this.merkleRoot,
+    this.vestingPeriod,
+    this.vestingDelay,
+  });
 
   factory CreateAirdrop._decode(_i1.Input input) {
-    return CreateAirdrop(merkleRoot: const _i1.U8ArrayCodec(32).decode(input));
+    return CreateAirdrop(
+      merkleRoot: const _i1.U8ArrayCodec(32).decode(input),
+      vestingPeriod:
+          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+      vestingDelay:
+          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+    );
   }
 
   /// MerkleRoot
   final List<int> merkleRoot;
 
+  /// Option<BlockNumberFor<T>>
+  final int? vestingPeriod;
+
+  /// Option<BlockNumberFor<T>>
+  final int? vestingDelay;
+
   @override
-  Map<String, Map<String, List<int>>> toJson() => {
-        'create_airdrop': {'merkleRoot': merkleRoot.toList()}
+  Map<String, Map<String, dynamic>> toJson() => {
+        'create_airdrop': {
+          'merkleRoot': merkleRoot.toList(),
+          'vestingPeriod': vestingPeriod,
+          'vestingDelay': vestingDelay,
+        }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(32).sizeHint(merkleRoot);
+    size = size +
+        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingPeriod);
+    size = size +
+        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingDelay);
     return size;
   }
 
@@ -167,6 +201,14 @@ class CreateAirdrop extends Call {
     );
     const _i1.U8ArrayCodec(32).encodeTo(
       merkleRoot,
+      output,
+    );
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
+      vestingPeriod,
+      output,
+    );
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
+      vestingDelay,
       output,
     );
   }
@@ -181,10 +223,16 @@ class CreateAirdrop extends Call {
           _i4.listsEqual(
             other.merkleRoot,
             merkleRoot,
-          );
+          ) &&
+          other.vestingPeriod == vestingPeriod &&
+          other.vestingDelay == vestingDelay;
 
   @override
-  int get hashCode => merkleRoot.hashCode;
+  int get hashCode => Object.hash(
+        merkleRoot,
+        vestingPeriod,
+        vestingDelay,
+      );
 }
 
 /// Fund an existing airdrop with tokens.
@@ -217,7 +265,7 @@ class FundAirdrop extends Call {
   /// AirdropId
   final int airdropId;
 
-  /// <<T as Config>::Currency as Inspect<T::AccountId>>::Balance
+  /// BalanceOf<T>
   final BigInt amount;
 
   @override
@@ -310,7 +358,7 @@ class Claim extends Call {
   /// T::AccountId
   final _i3.AccountId32 recipient;
 
-  /// <<T as Config>::Currency as Inspect<T::AccountId>>::Balance
+  /// BalanceOf<T>
   final BigInt amount;
 
   /// BoundedVec<MerkleHash, T::MaxProofs>

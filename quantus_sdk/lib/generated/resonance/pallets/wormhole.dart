@@ -6,7 +6,7 @@ import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/pallet_wormhole/pallet/call.dart' as _i6;
-import '../types/resonance_runtime/runtime_call.dart' as _i5;
+import '../types/quantus_runtime/runtime_call.dart' as _i5;
 
 class Queries {
   const Queries(this.__api);

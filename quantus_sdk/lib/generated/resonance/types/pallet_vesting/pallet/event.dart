@@ -28,48 +28,24 @@ abstract class Event {
     return codec.sizeHint(this);
   }
 
-  Map<String, List<dynamic>> toJson();
+  Map<String, Map<String, dynamic>> toJson();
 }
 
 class $Event {
   const $Event();
 
-  VestingScheduleCreated vestingScheduleCreated(
-    _i3.AccountId32 value0,
-    BigInt value1,
-    BigInt value2,
-    BigInt value3,
-    BigInt value4,
-  ) {
-    return VestingScheduleCreated(
-      value0,
-      value1,
-      value2,
-      value3,
-      value4,
+  VestingUpdated vestingUpdated({
+    required _i3.AccountId32 account,
+    required BigInt unvested,
+  }) {
+    return VestingUpdated(
+      account: account,
+      unvested: unvested,
     );
   }
 
-  TokensClaimed tokensClaimed(
-    _i3.AccountId32 value0,
-    BigInt value1,
-    BigInt value2,
-  ) {
-    return TokensClaimed(
-      value0,
-      value1,
-      value2,
-    );
-  }
-
-  VestingScheduleCancelled vestingScheduleCancelled(
-    _i3.AccountId32 value0,
-    BigInt value1,
-  ) {
-    return VestingScheduleCancelled(
-      value0,
-      value1,
-    );
+  VestingCompleted vestingCompleted({required _i3.AccountId32 account}) {
+    return VestingCompleted(account: account);
   }
 }
 
@@ -81,11 +57,9 @@ class $EventCodec with _i1.Codec<Event> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return VestingScheduleCreated._decode(input);
+        return VestingUpdated._decode(input);
       case 1:
-        return TokensClaimed._decode(input);
-      case 2:
-        return VestingScheduleCancelled._decode(input);
+        return VestingCompleted._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -97,14 +71,11 @@ class $EventCodec with _i1.Codec<Event> {
     _i1.Output output,
   ) {
     switch (value.runtimeType) {
-      case VestingScheduleCreated:
-        (value as VestingScheduleCreated).encodeTo(output);
+      case VestingUpdated:
+        (value as VestingUpdated).encodeTo(output);
         break;
-      case TokensClaimed:
-        (value as TokensClaimed).encodeTo(output);
-        break;
-      case VestingScheduleCancelled:
-        (value as VestingScheduleCancelled).encodeTo(output);
+      case VestingCompleted:
+        (value as VestingCompleted).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -115,12 +86,10 @@ class $EventCodec with _i1.Codec<Event> {
   @override
   int sizeHint(Event value) {
     switch (value.runtimeType) {
-      case VestingScheduleCreated:
-        return (value as VestingScheduleCreated)._sizeHint();
-      case TokensClaimed:
-        return (value as TokensClaimed)._sizeHint();
-      case VestingScheduleCancelled:
-        return (value as VestingScheduleCancelled)._sizeHint();
+      case VestingUpdated:
+        return (value as VestingUpdated)._sizeHint();
+      case VestingCompleted:
+        return (value as VestingCompleted)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -128,58 +97,39 @@ class $EventCodec with _i1.Codec<Event> {
   }
 }
 
-class VestingScheduleCreated extends Event {
-  const VestingScheduleCreated(
-    this.value0,
-    this.value1,
-    this.value2,
-    this.value3,
-    this.value4,
-  );
+/// The amount vested has been updated. This could indicate a change in funds available.
+/// The balance given is the amount which is left unvested (and thus locked).
+class VestingUpdated extends Event {
+  const VestingUpdated({
+    required this.account,
+    required this.unvested,
+  });
 
-  factory VestingScheduleCreated._decode(_i1.Input input) {
-    return VestingScheduleCreated(
-      const _i1.U8ArrayCodec(32).decode(input),
-      _i1.U128Codec.codec.decode(input),
-      _i1.U64Codec.codec.decode(input),
-      _i1.U64Codec.codec.decode(input),
-      _i1.U64Codec.codec.decode(input),
+  factory VestingUpdated._decode(_i1.Input input) {
+    return VestingUpdated(
+      account: const _i1.U8ArrayCodec(32).decode(input),
+      unvested: _i1.U128Codec.codec.decode(input),
     );
   }
 
   /// T::AccountId
-  final _i3.AccountId32 value0;
+  final _i3.AccountId32 account;
 
-  /// T::Balance
-  final BigInt value1;
-
-  /// T::Moment
-  final BigInt value2;
-
-  /// T::Moment
-  final BigInt value3;
-
-  /// u64
-  final BigInt value4;
+  /// BalanceOf<T>
+  final BigInt unvested;
 
   @override
-  Map<String, List<dynamic>> toJson() => {
-        'VestingScheduleCreated': [
-          value0.toList(),
-          value1,
-          value2,
-          value3,
-          value4,
-        ]
+  Map<String, Map<String, dynamic>> toJson() => {
+        'VestingUpdated': {
+          'account': account.toList(),
+          'unvested': unvested,
+        }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(value0);
-    size = size + _i1.U128Codec.codec.sizeHint(value1);
-    size = size + _i1.U64Codec.codec.sizeHint(value2);
-    size = size + _i1.U64Codec.codec.sizeHint(value3);
-    size = size + _i1.U64Codec.codec.sizeHint(value4);
+    size = size + const _i3.AccountId32Codec().sizeHint(account);
+    size = size + _i1.U128Codec.codec.sizeHint(unvested);
     return size;
   }
 
@@ -189,23 +139,11 @@ class VestingScheduleCreated extends Event {
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
+      account,
       output,
     );
     _i1.U128Codec.codec.encodeTo(
-      value1,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value2,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value3,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value4,
+      unvested,
       output,
     );
   }
@@ -216,64 +154,39 @@ class VestingScheduleCreated extends Event {
         this,
         other,
       ) ||
-      other is VestingScheduleCreated &&
+      other is VestingUpdated &&
           _i4.listsEqual(
-            other.value0,
-            value0,
+            other.account,
+            account,
           ) &&
-          other.value1 == value1 &&
-          other.value2 == value2 &&
-          other.value3 == value3 &&
-          other.value4 == value4;
+          other.unvested == unvested;
 
   @override
   int get hashCode => Object.hash(
-        value0,
-        value1,
-        value2,
-        value3,
-        value4,
+        account,
+        unvested,
       );
 }
 
-class TokensClaimed extends Event {
-  const TokensClaimed(
-    this.value0,
-    this.value1,
-    this.value2,
-  );
+/// An \[account\] has become fully vested.
+class VestingCompleted extends Event {
+  const VestingCompleted({required this.account});
 
-  factory TokensClaimed._decode(_i1.Input input) {
-    return TokensClaimed(
-      const _i1.U8ArrayCodec(32).decode(input),
-      _i1.U128Codec.codec.decode(input),
-      _i1.U64Codec.codec.decode(input),
-    );
+  factory VestingCompleted._decode(_i1.Input input) {
+    return VestingCompleted(account: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
-  final _i3.AccountId32 value0;
-
-  /// T::Balance
-  final BigInt value1;
-
-  /// u64
-  final BigInt value2;
+  final _i3.AccountId32 account;
 
   @override
-  Map<String, List<dynamic>> toJson() => {
-        'TokensClaimed': [
-          value0.toList(),
-          value1,
-          value2,
-        ]
+  Map<String, Map<String, List<int>>> toJson() => {
+        'VestingCompleted': {'account': account.toList()}
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(value0);
-    size = size + _i1.U128Codec.codec.sizeHint(value1);
-    size = size + _i1.U64Codec.codec.sizeHint(value2);
+    size = size + const _i3.AccountId32Codec().sizeHint(account);
     return size;
   }
 
@@ -283,15 +196,7 @@ class TokensClaimed extends Event {
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      value1,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value2,
+      account,
       output,
     );
   }
@@ -302,87 +207,12 @@ class TokensClaimed extends Event {
         this,
         other,
       ) ||
-      other is TokensClaimed &&
+      other is VestingCompleted &&
           _i4.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          other.value1 == value1 &&
-          other.value2 == value2;
+            other.account,
+            account,
+          );
 
   @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-        value2,
-      );
-}
-
-class VestingScheduleCancelled extends Event {
-  const VestingScheduleCancelled(
-    this.value0,
-    this.value1,
-  );
-
-  factory VestingScheduleCancelled._decode(_i1.Input input) {
-    return VestingScheduleCancelled(
-      const _i1.U8ArrayCodec(32).decode(input),
-      _i1.U64Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 value0;
-
-  /// u64
-  final BigInt value1;
-
-  @override
-  Map<String, List<dynamic>> toJson() => {
-        'VestingScheduleCancelled': [
-          value0.toList(),
-          value1,
-        ]
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(value0);
-    size = size + _i1.U64Codec.codec.sizeHint(value1);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value1,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VestingScheduleCancelled &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          other.value1 == value1;
-
-  @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-      );
+  int get hashCode => account.hashCode;
 }

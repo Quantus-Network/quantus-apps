@@ -8,7 +8,7 @@ import 'package:polkadart/scale_codec.dart' as _i2;
 import '../types/pallet_ranked_collective/member_record.dart' as _i4;
 import '../types/pallet_ranked_collective/pallet/call.dart' as _i10;
 import '../types/pallet_ranked_collective/vote_record.dart' as _i5;
-import '../types/resonance_runtime/runtime_call.dart' as _i8;
+import '../types/quantus_runtime/runtime_call.dart' as _i8;
 import '../types/sp_core/crypto/account_id32.dart' as _i3;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i9;
 

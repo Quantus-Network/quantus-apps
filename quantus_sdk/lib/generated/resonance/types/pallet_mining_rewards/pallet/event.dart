@@ -55,6 +55,14 @@ class $Event {
       total: total,
     );
   }
+
+  TreasuryRewarded treasuryRewarded({required BigInt reward}) {
+    return TreasuryRewarded(reward: reward);
+  }
+
+  FeesRedirectedToTreasury feesRedirectedToTreasury({required BigInt amount}) {
+    return FeesRedirectedToTreasury(amount: amount);
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -68,6 +76,10 @@ class $EventCodec with _i1.Codec<Event> {
         return MinerRewarded._decode(input);
       case 1:
         return FeesCollected._decode(input);
+      case 2:
+        return TreasuryRewarded._decode(input);
+      case 3:
+        return FeesRedirectedToTreasury._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -85,6 +97,12 @@ class $EventCodec with _i1.Codec<Event> {
       case FeesCollected:
         (value as FeesCollected).encodeTo(output);
         break;
+      case TreasuryRewarded:
+        (value as TreasuryRewarded).encodeTo(output);
+        break;
+      case FeesRedirectedToTreasury:
+        (value as FeesRedirectedToTreasury).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -98,6 +116,10 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as MinerRewarded)._sizeHint();
       case FeesCollected:
         return (value as FeesCollected)._sizeHint();
+      case TreasuryRewarded:
+        return (value as TreasuryRewarded)._sizeHint();
+      case FeesRedirectedToTreasury:
+        return (value as FeesRedirectedToTreasury)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -256,4 +278,96 @@ class FeesCollected extends Event {
         amount,
         total,
       );
+}
+
+/// Rewards were sent to Treasury when no miner was specified
+class TreasuryRewarded extends Event {
+  const TreasuryRewarded({required this.reward});
+
+  factory TreasuryRewarded._decode(_i1.Input input) {
+    return TreasuryRewarded(reward: _i1.U128Codec.codec.decode(input));
+  }
+
+  /// BalanceOf<T>
+  /// Total reward (base + fees)
+  final BigInt reward;
+
+  @override
+  Map<String, Map<String, BigInt>> toJson() => {
+        'TreasuryRewarded': {'reward': reward}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U128Codec.codec.sizeHint(reward);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      reward,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TreasuryRewarded && other.reward == reward;
+
+  @override
+  int get hashCode => reward.hashCode;
+}
+
+/// A portion of transaction fees was redirected to the Treasury.
+class FeesRedirectedToTreasury extends Event {
+  const FeesRedirectedToTreasury({required this.amount});
+
+  factory FeesRedirectedToTreasury._decode(_i1.Input input) {
+    return FeesRedirectedToTreasury(amount: _i1.U128Codec.codec.decode(input));
+  }
+
+  /// BalanceOf<T>
+  /// The amount of fees sent to the Treasury
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, BigInt>> toJson() => {
+        'FeesRedirectedToTreasury': {'amount': amount}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is FeesRedirectedToTreasury && other.amount == amount;
+
+  @override
+  int get hashCode => amount.hashCode;
 }
