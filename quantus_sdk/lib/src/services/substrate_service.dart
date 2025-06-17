@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
+import 'package:ss58/ss58.dart';
 import '../constants/app_constants.dart';
 import '../extensions/keypair_extensions.dart';
 import 'number_formatting_service.dart';
@@ -39,10 +40,21 @@ const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
 const crystalCharlie = '//Crystal Charlie';
 
-// Dilithium Keypair
-// This differs from the built in keypairs in that the public key is very long.
-// The address is a poseidon hash of the public key.
-// We get the address as ss58 from our library, and we can convert it back into bytes if needed.
+extension on Address {
+  // Address is used to convert between ss58 Strings and AccountID32 bytes.
+  // The ss58 package assumes Ed25519 addresses, and it assumes that AccountID32 for an ss58 address is
+  // the same as the public key.
+  // That is not true for dilithium signatures, where AccoundID32 is a
+  // Poseidon hash of the public key.
+  // Just to explain why this field is named pubkey - it's not a pub key in our signature scheme.
+  // However, we can still use this class to convert between ss58 Strings and AccountID32 bytes.
+  Uint8List get addressBytes => pubkey;
+}
+
+// equivalent to crypto.ss58ToAccountId(s: ss58Address)
+Uint8List getAccountId32(String ss58Address) {
+  return Address.decode(ss58Address).addressBytes;
+}
 
 class SubstrateService {
   static final SubstrateService _instance = SubstrateService._internal();
@@ -122,8 +134,7 @@ class SubstrateService {
   Future<BigInt> getFee(String senderAddress, String recipientAddress, BigInt amount) async {
     try {
       final resonanceApi = Resonance(_provider!);
-      final accountID = crypto.ss58ToAccountId(s: recipientAddress);
-      final multiDest = const multi_address.$MultiAddress().id(accountID);
+      final multiDest = const multi_address.$MultiAddress().id(getAccountId32(recipientAddress));
 
       // Retrieve sender's mnemonic and generate keypair
       // Assuming senderAddress corresponds to the current wallet's account ID
