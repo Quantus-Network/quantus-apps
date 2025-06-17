@@ -132,6 +132,64 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Session information in a rolling window.
+  /// Should have an entry in range `EarliestStoredSession..=CurrentSessionIndex`.
+  /// Does not have any entries before the session index in the first session change notification.
+  _i7.Future<List<_i4.SessionInfo?>> multiSessions(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _sessions.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _sessions.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The validator account keys of the validators actively participating in parachain consensus.
+  _i7.Future<List<List<_i5.AccountId32>?>> multiAccountKeys(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _accountKeys.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _accountKeys.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Executor parameter set for a given session index
+  _i7.Future<List<_i6.ExecutorParams?>> multiSessionExecutorParams(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _sessionExecutorParams.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _sessionExecutorParams.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `assignmentKeysUnsafe`.
   _i8.Uint8List assignmentKeysUnsafeKey() {
     final hashedKey = _assignmentKeysUnsafe.hashedKey();

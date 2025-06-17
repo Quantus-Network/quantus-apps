@@ -399,6 +399,66 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The ongoing queries.
+  _i13.Future<List<_i3.QueryStatus?>> multiQueries(
+    List<BigInt> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _queries.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _queries.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The existing asset traps.
+  ///
+  /// Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
+  /// times this pair has been trapped (usually just 1 if it exists at all).
+  _i13.Future<List<int>> multiAssetTraps(
+    List<_i4.H256> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _assetTraps.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _assetTraps.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// Fungible assets which we know are locked on this chain.
+  _i13.Future<List<List<_i6.Tuple2<BigInt, _i5.VersionedLocation>>?>>
+      multiLockedFungibles(
+    List<_i9.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _lockedFungibles.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _lockedFungibles.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `queryCounter`.
   _i14.Uint8List queryCounterKey() {
     final hashedKey = _queryCounter.hashedKey();

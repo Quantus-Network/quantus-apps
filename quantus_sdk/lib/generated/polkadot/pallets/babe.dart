@@ -435,6 +435,26 @@ class Queries {
     return []; /* Default */
   }
 
+  /// TWOX-NOTE: `SegmentIndex` is an increasing integer, so this is okay.
+  _i10.Future<List<List<List<int>>>> multiUnderConstruction(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _underConstruction.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _underConstruction.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<List<int>>>); /* Default */
+  }
+
   /// Returns the storage key for `epochIndex`.
   _i11.Uint8List epochIndexKey() {
     final hashedKey = _epochIndex.hashedKey();

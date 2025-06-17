@@ -43,6 +43,27 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Maps an asset to its fixed point representation in the native balance.
+  ///
+  /// E.g. `native_amount = asset_amount * ConversionRateToNative::<T>::get(asset_kind)`
+  _i4.Future<List<_i3.FixedU128?>> multiConversionRateToNative(
+    List<_i2.VersionedLocatableAsset> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _conversionRateToNative.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _conversionRateToNative.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `conversionRateToNative`.
   _i5.Uint8List conversionRateToNativeKey(_i2.VersionedLocatableAsset key1) {
     final hashedKey = _conversionRateToNative.hashedKeyFor(key1);

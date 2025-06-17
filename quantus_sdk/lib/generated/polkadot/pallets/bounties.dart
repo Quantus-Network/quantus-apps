@@ -107,6 +107,43 @@ class Queries {
     ); /* Default */
   }
 
+  /// Bounties that have been made.
+  _i4.Future<List<_i3.Bounty?>> multiBounties(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _bounties.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _bounties.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The description of each bounty.
+  _i4.Future<List<List<int>?>> multiBountyDescriptions(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _bountyDescriptions.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _bountyDescriptions.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `bountyCount`.
   _i5.Uint8List bountyCountKey() {
     final hashedKey = _bountyCount.hashedKey();

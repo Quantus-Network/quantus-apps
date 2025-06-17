@@ -279,6 +279,31 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Unchecked, signed solutions.
+  ///
+  /// Together with `SubmissionIndices`, this stores a bounded set of `SignedSubmissions` while
+  /// allowing us to keep only a single one in memory at a time.
+  ///
+  /// Twox note: the key of the map is an auto-incrementing index which users cannot inspect or
+  /// affect; we shouldn't need a cryptographically secure hasher.
+  _i10.Future<List<_i9.SignedSubmission?>> multiSignedSubmissionsMap(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _signedSubmissionsMap.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _signedSubmissionsMap.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `round`.
   _i11.Uint8List roundKey() {
     final hashedKey = _round.hashedKey();

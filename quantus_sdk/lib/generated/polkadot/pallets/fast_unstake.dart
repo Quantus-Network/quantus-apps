@@ -109,6 +109,24 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// The map of all accounts wishing to be unstaked.
+  ///
+  /// Keeps track of `AccountId` wishing to unstake and it's corresponding deposit.
+  _i5.Future<List<BigInt?>> multiQueue(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _queue.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _queue.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `head`.
   _i6.Uint8List headKey() {
     final hashedKey = _head.hashedKey();

@@ -89,6 +89,46 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// A single node, within some bag.
+  ///
+  /// Nodes store links forward and back within their respective bags.
+  _i6.Future<List<_i3.Node?>> multiListNodes(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _listNodes.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _listNodes.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// A bag stored in storage.
+  ///
+  /// Stores a `Bag` struct, which stores head and tail pointers to itself.
+  _i6.Future<List<_i5.Bag?>> multiListBags(
+    List<BigInt> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _listBags.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _listBags.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `listNodes`.
   _i7.Uint8List listNodesKey(_i2.AccountId32 key1) {
     final hashedKey = _listNodes.hashedKeyFor(key1);

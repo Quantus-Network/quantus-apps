@@ -517,6 +517,120 @@ class SubstrateService {
     }
   }
 
+  // Generic method to submit any extrinsic
+  Future<String> submitExtrinsic(String senderSeed, dynamic call) async {
+    try {
+      // Ensure provider is connected before proceeding
+      if (_provider == null) {
+        await initialize();
+      }
+
+      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+
+      // Get all necessary info for the transaction
+      final runtimeVersion = await _stateApi!.getRuntimeVersion();
+      final specVersion = runtimeVersion.specVersion;
+      final transactionVersion = runtimeVersion.transactionVersion;
+
+      final block = await _provider!.send('chain_getBlock', []);
+      final blockNumber = int.parse(block.result['block']['header']['number']);
+      final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+      final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+      final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      final nonce = int.parse(nonceResult.result.toString());
+
+      // Encode call
+      final resonanceApi = Resonance(_provider!);
+      final transferCall = call.encode();
+
+      // Create and sign the payload
+      final payloadToSign = SigningPayload(
+        method: transferCall,
+        specVersion: specVersion,
+        transactionVersion: transactionVersion,
+        genesisHash: genesisHash,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
+        eraPeriod: 64,
+        nonce: nonce,
+        tip: 0,
+      );
+
+      final payload = payloadToSign.encode(resonanceApi.registry);
+      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
+
+      // Create the extrinsic
+      var extrinsic = ResonanceExtrinsicPayload(
+        signer: Uint8List.fromList(senderWallet.addressBytes),
+        method: transferCall,
+        signature: signatureWithPublicKeyBytes,
+        eraPeriod: 64,
+        blockNumber: blockNumber,
+        nonce: nonce,
+        tip: 0,
+      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+
+      // Submit with retry logic
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
+            print('Extrinsic type: ${data.type}, value: ${data.value}');
+          });
+          return '0'; // Success
+        } catch (e) {
+          retryCount++;
+          if (retryCount >= maxRetries) rethrow;
+          await Future.delayed(Duration(milliseconds: 500 * retryCount));
+
+          // Refresh block info for retry
+          final newBlock = await _provider!.send('chain_getBlock', []);
+          final newBlockNumber = int.parse(newBlock.result['block']['header']['number']);
+          final newBlockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+          final newNonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+          final newNonce = int.parse(newNonceResult.result.toString());
+
+          // Recreate payload with new block info
+          final newPayloadToSign = SigningPayload(
+            method: transferCall,
+            specVersion: specVersion,
+            transactionVersion: transactionVersion,
+            genesisHash: genesisHash,
+            blockHash: newBlockHash,
+            blockNumber: newBlockNumber,
+            eraPeriod: 64,
+            nonce: newNonce,
+            tip: 0,
+          );
+
+          final newPayload = newPayloadToSign.encode(resonanceApi.registry);
+          final newSignature = crypto.signMessage(keypair: senderWallet, message: newPayload);
+          final newSignatureWithPublicKeyBytes = _combineSignatureAndPubkey(newSignature, senderWallet.publicKey);
+
+          extrinsic = ResonanceExtrinsicPayload(
+            signer: Uint8List.fromList(senderWallet.addressBytes),
+            method: transferCall,
+            signature: newSignatureWithPublicKeyBytes,
+            eraPeriod: 64,
+            blockNumber: newBlockNumber,
+            nonce: newNonce,
+            tip: 0,
+          ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+        }
+      }
+
+      return '0';
+    } catch (e) {
+      throw Exception('Failed to submit extrinsic: $e');
+    }
+  }
+
+  // Getter for provider (for services that need direct access)
+  Provider? get provider => _provider;
+
   Future<void> logout() async {
     await _settingsService.clearAll();
   }

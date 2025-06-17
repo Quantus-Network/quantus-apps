@@ -604,6 +604,331 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// All currently active PVF pre-checking votes.
+  ///
+  /// Invariant:
+  /// - There are no PVF pre-checking votes that exists in list but not in the set and vice versa.
+  _i14.Future<List<_i3.PvfCheckActiveVoteState?>> multiPvfActiveVoteMap(
+    List<_i2.ValidationCodeHash> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _pvfActiveVoteMap.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _pvfActiveVoteMap.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The current lifecycle of a all known Para IDs.
+  _i14.Future<List<_i6.ParaLifecycle?>> multiParaLifecycles(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _paraLifecycles.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _paraLifecycles.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The head-data of every registered para.
+  _i14.Future<List<_i7.HeadData?>> multiHeads(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _heads.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _heads.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The context (relay-chain block number) of the most recent parachain head.
+  _i14.Future<List<int?>> multiMostRecentContext(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _mostRecentContext.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _mostRecentContext.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The validation code hash of every live para.
+  ///
+  /// Corresponding code can be retrieved with [`CodeByHash`].
+  _i14.Future<List<_i2.ValidationCodeHash?>> multiCurrentCodeHash(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _currentCodeHash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _currentCodeHash.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Actual past code hash, indicated by the para id as well as the block number at which it
+  /// became outdated.
+  ///
+  /// Corresponding code can be retrieved with [`CodeByHash`].
+  _i14.Future<List<_i2.ValidationCodeHash?>> multiPastCodeHash(
+    List<_i8.Tuple2<_i5.Id, int>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _pastCodeHash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _pastCodeHash.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Past code of parachains. The parachains themselves may not be registered anymore,
+  /// but we also keep their code on-chain for the same amount of time as outdated code
+  /// to keep it available for approval checkers.
+  _i14.Future<List<_i9.ParaPastCodeMeta>> multiPastCodeMeta(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _pastCodeMeta.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _pastCodeMeta.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i9.ParaPastCodeMeta(
+              upgradeTimes: [],
+              lastPruned: null,
+            ))
+        .toList() as List<_i9.ParaPastCodeMeta>); /* Default */
+  }
+
+  /// The block number at which the planned code change is expected for a parachain.
+  ///
+  /// The change will be applied after the first parablock for this ID included which executes
+  /// in the context of a relay chain block with a number >= `expected_at`.
+  _i14.Future<List<int?>> multiFutureCodeUpgrades(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _futureCodeUpgrades.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _futureCodeUpgrades.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The actual future code hash of a para.
+  ///
+  /// Corresponding code can be retrieved with [`CodeByHash`].
+  _i14.Future<List<_i2.ValidationCodeHash?>> multiFutureCodeHash(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _futureCodeHash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _futureCodeHash.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// This is used by the relay-chain to communicate to a parachain a go-ahead with in the upgrade
+  /// procedure.
+  ///
+  /// This value is absent when there are no upgrades scheduled or during the time the relay chain
+  /// performs the checks. It is set at the first relay-chain block when the corresponding
+  /// parachain can switch its upgrade function. As soon as the parachain's block is included, the
+  /// value gets reset to `None`.
+  ///
+  /// NOTE that this field is used by parachains via merkle storage proofs, therefore changing
+  /// the format will require migration of parachains.
+  _i14.Future<List<_i10.UpgradeGoAhead?>> multiUpgradeGoAheadSignal(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _upgradeGoAheadSignal.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _upgradeGoAheadSignal.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// This is used by the relay-chain to communicate that there are restrictions for performing
+  /// an upgrade for this parachain.
+  ///
+  /// This may be a because the parachain waits for the upgrade cooldown to expire. Another
+  /// potential use case is when we want to perform some maintenance (such as storage migration)
+  /// we could restrict upgrades to make the process simpler.
+  ///
+  /// NOTE that this field is used by parachains via merkle storage proofs, therefore changing
+  /// the format will require migration of parachains.
+  _i14.Future<List<_i11.UpgradeRestriction?>> multiUpgradeRestrictionSignal(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _upgradeRestrictionSignal.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _upgradeRestrictionSignal.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The actions to perform during the start of a specific session index.
+  _i14.Future<List<List<_i5.Id>>> multiActionsQueue(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _actionsQueue.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _actionsQueue.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList() as List<List<_i5.Id>>); /* Default */
+  }
+
+  /// Upcoming paras instantiation arguments.
+  ///
+  /// NOTE that after PVF pre-checking is enabled the para genesis arg will have it's code set
+  /// to empty. Instead, the code will be saved into the storage right away via `CodeByHash`.
+  _i14.Future<List<_i12.ParaGenesisArgs?>> multiUpcomingParasGenesis(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _upcomingParasGenesis.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _upcomingParasGenesis.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The number of reference on the validation code in [`CodeByHash`] storage.
+  _i14.Future<List<int>> multiCodeByHashRefs(
+    List<_i2.ValidationCodeHash> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _codeByHashRefs.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _codeByHashRefs.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// Validation code stored by its hash.
+  ///
+  /// This storage is consistent with [`FutureCodeHash`], [`CurrentCodeHash`] and
+  /// [`PastCodeHash`].
+  _i14.Future<List<_i13.ValidationCode?>> multiCodeByHash(
+    List<_i2.ValidationCodeHash> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _codeByHash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _codeByHash.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `pvfActiveVoteMap`.
   _i15.Uint8List pvfActiveVoteMapKey(_i2.ValidationCodeHash key1) {
     final hashedKey = _pvfActiveVoteMap.hashedKeyFor(key1);

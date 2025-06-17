@@ -4,32 +4,43 @@ version: 0.1.0
 publish_to: none
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
-  flutter_rust_bridge: 2.9.0
+  flutter:
+    sdk: flutter
+  
+  # Rust bridge and local dependencies
+  flutter_rust_bridge: # Version managed by melos.yaml
   rust_lib_resonance_network_wallet:
     path: ./rust_builder
-  polkadart: ^0.6.1
-  polkadart_keyring: ^0.6.1
+  
+  # Polkadart ecosystem (managed by melos.yaml)
+  polkadart: # Version managed by melos.yaml
+  polkadart_keyring: # Version managed by melos.yaml
+  polkadart_cli: # Version managed by melos.yaml
+  
+  # Crypto and encoding
+  bip39_mnemonic: # Version managed by melos.yaml
+  crypto: # Version managed by melos.yaml
+  ss58: # Version managed by melos.yaml
+  convert: # Version managed by melos.yaml
+  
+  # Storage, networking, and utilities
+  shared_preferences: # Version managed by melos.yaml
+  flutter_secure_storage: # Version managed by melos.yaml
+  http: # Version managed by melos.yaml
+  decimal: # Version managed by melos.yaml
+  quiver: # Version managed by melos.yaml
+  
+  # UI feedback
+  flash: # Version managed by melos.yaml
+  
+  # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:
     git:
       url: https://github.com/Resonance-Network/human-checkphrase.git
       path: dart
-  shared_preferences: ^2.5.2
-  flutter_secure_storage: ^9.2.4
-  decimal: ^2.3.3
-  flash: ^3.1.1
-  http: ^1.4.0
-
-  quiver: ^3.1.0
-  flutter:
-    sdk: flutter
-  bip39_mnemonic: ^3.0.9
-  crypto: ^3.0.6
-  ss58: ^1.3.1
-  convert: ^3.0.0
-  polkadart_cli: ^0.6.1
 
 # Generate Polkadart bindings
 # dart pub run polkadart_cli:generate -v
@@ -43,6 +54,6 @@ polkadart:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter

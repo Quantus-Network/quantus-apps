@@ -1189,6 +1189,304 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Map from all locked "stash" accounts to the controller account.
+  ///
+  /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+  _i21.Future<List<_i3.AccountId32?>> multiBonded(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _bonded.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _bonded.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
+  ///
+  /// Note: All the reads and mutations to this storage *MUST* be done through the methods exposed
+  /// by [`StakingLedger`] to ensure data and lock consistency.
+  _i21.Future<List<_i5.StakingLedger?>> multiLedger(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _ledger.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _ledger.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Where the reward payment should be made. Keyed by stash.
+  ///
+  /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+  _i21.Future<List<_i6.RewardDestination?>> multiPayee(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _payee.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _payee.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The map from (wannabe) validator stash key to the preferences of that validator.
+  ///
+  /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+  _i21.Future<List<_i7.ValidatorPrefs>> multiValidators(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _validators.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _validators.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i7.ValidatorPrefs(
+              commission: BigInt.zero,
+              blocked: false,
+            ))
+        .toList() as List<_i7.ValidatorPrefs>); /* Default */
+  }
+
+  /// The map from nominator stash key to their nomination preferences, namely the validators that
+  /// they wish to support.
+  ///
+  /// Note that the keys of this storage map might become non-decodable in case the
+  /// account's [`NominationsQuota::MaxNominations`] configuration is decreased.
+  /// In this rare case, these nominators
+  /// are still existent in storage, their key is correct and retrievable (i.e. `contains_key`
+  /// indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable
+  /// nominators will effectively not-exist, until they re-submit their preferences such that it
+  /// is within the bounds of the newly set `Config::MaxNominations`.
+  ///
+  /// This implies that `::iter_keys().count()` and `::iter().count()` might return different
+  /// values for this map. Moreover, the main `::count()` is aligned with the former, namely the
+  /// number of keys that exist.
+  ///
+  /// Lastly, if any of the nominators become non-decodable, they can be chilled immediately via
+  /// [`Call::chill_other`] dispatchable by anyone.
+  ///
+  /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+  _i21.Future<List<_i8.Nominations?>> multiNominators(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _nominators.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _nominators.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Stakers whose funds are managed by other pallets.
+  ///
+  /// This pallet does not apply any locks on them, therefore they are only virtually bonded. They
+  /// are expected to be keyless accounts and hence should not be allowed to mutate their ledger
+  /// directly via this pallet. Instead, these accounts are managed by other pallets and accessed
+  /// via low level apis. We keep track of them to do minimal integrity checks.
+  _i21.Future<List<dynamic>> multiVirtualStakers(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _virtualStakers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _virtualStakers.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The session index at which the era start for the last [`Config::HistoryDepth`] eras.
+  ///
+  /// Note: This tracks the starting session (i.e. session index when era start being active)
+  /// for the eras in `[CurrentEra - HISTORY_DEPTH, CurrentEra]`.
+  _i21.Future<List<int?>> multiErasStartSessionIndex(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _erasStartSessionIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _erasStartSessionIndex.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The total validator era payout for the last [`Config::HistoryDepth`] eras.
+  ///
+  /// Eras that haven't finished yet or has been removed doesn't have reward.
+  _i21.Future<List<BigInt?>> multiErasValidatorReward(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _erasValidatorReward.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _erasValidatorReward.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Rewards for the last [`Config::HistoryDepth`] eras.
+  /// If reward hasn't been set or has been removed then 0 reward is returned.
+  _i21.Future<List<_i13.EraRewardPoints>> multiErasRewardPoints(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _erasRewardPoints.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _erasRewardPoints.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i13.EraRewardPoints(
+              total: 0,
+              individual: [],
+            ))
+        .toList() as List<_i13.EraRewardPoints>); /* Default */
+  }
+
+  /// The total amount staked for the last [`Config::HistoryDepth`] eras.
+  /// If total hasn't been set or has been removed then 0 stake is returned.
+  _i21.Future<List<BigInt>> multiErasTotalStake(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _erasTotalStake.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _erasTotalStake.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => BigInt.zero).toList()
+        as List<BigInt>); /* Default */
+  }
+
+  /// All unapplied slashes that are queued for later.
+  _i21.Future<List<List<_i16.UnappliedSlash>>> multiUnappliedSlashes(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _unappliedSlashes.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _unappliedSlashes.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i16.UnappliedSlash>>); /* Default */
+  }
+
+  /// Slashing spans for stash accounts.
+  _i21.Future<List<_i19.SlashingSpans?>> multiSlashingSpans(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _slashingSpans.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _slashingSpans.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Records information about the maximum slash of a stash within a slashing span,
+  /// as well as how much reward has been paid out.
+  _i21.Future<List<_i20.SpanRecord>> multiSpanSlash(
+    List<_i18.Tuple2<_i3.AccountId32, int>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _spanSlash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _spanSlash.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i20.SpanRecord(
+              slashed: BigInt.zero,
+              paidOut: BigInt.zero,
+            ))
+        .toList() as List<_i20.SpanRecord>); /* Default */
+  }
+
   /// Returns the storage key for `validatorCount`.
   _i22.Uint8List validatorCountKey() {
     final hashedKey = _validatorCount.hashedKey();

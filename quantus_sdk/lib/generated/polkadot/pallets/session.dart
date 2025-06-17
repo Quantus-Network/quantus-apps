@@ -184,6 +184,42 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The next session keys for a validator.
+  _i7.Future<List<_i5.SessionKeys?>> multiNextKeys(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _nextKeys.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _nextKeys.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The owner of a key. The key is the `KeyTypeId` + the encoded key.
+  _i7.Future<List<_i2.AccountId32?>> multiKeyOwner(
+    List<_i4.Tuple2<_i6.KeyTypeId, List<int>>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _keyOwner.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _keyOwner.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `validators`.
   _i8.Uint8List validatorsKey() {
     final hashedKey = _validators.hashedKey();

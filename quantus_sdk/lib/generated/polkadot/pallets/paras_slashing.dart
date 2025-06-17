@@ -72,6 +72,25 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// `ValidatorSetCount` per session.
+  _i5.Future<List<int?>> multiValidatorSetCounts(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _validatorSetCounts.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _validatorSetCounts.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `unappliedSlashes`.
   _i6.Uint8List unappliedSlashesKey(
     int key1,

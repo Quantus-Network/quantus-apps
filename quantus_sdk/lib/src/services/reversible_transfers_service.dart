@@ -1,0 +1,253 @@
+import 'dart:typed_data';
+import 'package:polkadart/polkadart.dart';
+import 'package:quantus_sdk/generated/resonance/resonance.dart';
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/resonance/types/primitive_types/h256.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/delay_policy.dart';
+import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart';
+import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/reversible_account_data.dart';
+import 'substrate_service.dart';
+import '../constants/app_constants.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+
+/// Service for managing reversible transfers for theft deterrence and ad hoc transfers
+class ReversibleTransfersService {
+  static final ReversibleTransfersService _instance = ReversibleTransfersService._internal();
+  factory ReversibleTransfersService() => _instance;
+  ReversibleTransfersService._internal();
+
+  final SubstrateService _substrateService = SubstrateService();
+
+  /// Enable reversibility for the calling account with specified delay and policy
+  /// Used for theft deterrence - enables all future transfers to be reversible
+  Future<String> enableReversibility({
+    required String senderSeed,
+    BlockNumberOrTimestamp? delay,
+    required DelayPolicy policy,
+    String? reverserAddress,
+  }) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+
+      // Convert reverser address if provided
+      AccountId32? reverser;
+      if (reverserAddress != null) {
+        reverser = Address.decode(reverserAddress).pubkey;
+      }
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.setReversibility(
+        delay: delay,
+        policy: policy,
+        reverser: reverser,
+      );
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to enable reversibility: $e');
+    }
+  }
+
+  /// Disable reversibility for the calling account
+  Future<String> disableReversibility({required String senderSeed}) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+
+      // Create the call with null delay to disable
+      final call = resonanceApi.tx.reversibleTransfers.setReversibility(
+        delay: null,
+        policy: const DelayPolicy.manual(),
+        reverser: null,
+      );
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to disable reversibility: $e');
+    }
+  }
+
+  /// Schedule a reversible transfer using account's default settings
+  Future<String> scheduleReversibleTransfer({
+    required String senderSeed,
+    required String recipientAddress,
+    required BigInt amount,
+  }) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(recipientAddress).pubkey);
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.scheduleTransfer(
+        dest: multiDest,
+        amount: amount,
+      );
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to schedule reversible transfer: $e');
+    }
+  }
+
+  /// Schedule a reversible transfer with custom delay (ad hoc transfer)
+  Future<String> scheduleReversibleTransferWithDelay({
+    required String senderSeed,
+    required String recipientAddress,
+    required BigInt amount,
+    required BlockNumberOrTimestamp delay,
+  }) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final multiDest = const multi_address.$MultiAddress().id(Address.decode(recipientAddress).pubkey);
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
+        dest: multiDest,
+        amount: amount,
+        delay: delay,
+      );
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to schedule reversible transfer with delay: $e');
+    }
+  }
+
+  /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
+  Future<String> cancelReversibleTransfer({
+    required String senderSeed,
+    required H256 transactionId,
+  }) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.cancel(txId: transactionId);
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to cancel reversible transfer: $e');
+    }
+  }
+
+  /// Execute a scheduled transfer (typically called by the scheduler)
+  Future<String> executeTransfer({
+    required String senderSeed,
+    required H256 transactionId,
+  }) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.executeTransfer(txId: transactionId);
+
+      // Submit the transaction using substrate service
+      return await _substrateService.submitExtrinsic(senderSeed, call);
+    } catch (e) {
+      throw Exception('Failed to execute transfer: $e');
+    }
+  }
+
+  /// Query account's reversibility configuration
+  Future<ReversibleAccountData?> getAccountReversibilityConfig(String address) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final accountId = Address.decode(address).pubkey;
+
+      return await resonanceApi.query.reversibleTransfers.reversibleAccounts(accountId);
+    } catch (e) {
+      throw Exception('Failed to get account reversibility config: $e');
+    }
+  }
+
+  /// Query pending transfer details
+  Future<PendingTransfer?> getPendingTransfer(H256 transactionId) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+
+      return await resonanceApi.query.reversibleTransfers.pendingTransfers(transactionId);
+    } catch (e) {
+      throw Exception('Failed to get pending transfer: $e');
+    }
+  }
+
+  /// Get account's pending transaction index
+  Future<int> getAccountPendingIndex(String address) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final accountId = Address.decode(address).pubkey;
+
+      return await resonanceApi.query.reversibleTransfers.accountPendingIndex(accountId);
+    } catch (e) {
+      throw Exception('Failed to get account pending index: $e');
+    }
+  }
+
+  /// Check if account has reversibility enabled
+  Future<bool> isReversibilityEnabled(String address) async {
+    try {
+      final config = await getAccountReversibilityConfig(address);
+      return config != null;
+    } catch (e) {
+      throw Exception('Failed to check reversibility status: $e');
+    }
+  }
+
+  /// Get all pending transfers for an account by querying storage
+  Future<List<PendingTransfer>> getAccountPendingTransfers(String address) async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final accountId = Address.decode(address).pubkey;
+
+      // Get the pending index to know how many transfers to check
+      final pendingIndex = await getAccountPendingIndex(address);
+
+      final pendingTransfers = <PendingTransfer>[];
+
+      // Query each potential pending transfer
+      // Note: This is a simplified approach - in practice you might want to
+      // use storage iteration or events to get all pending transfers
+      for (int i = 0; i < pendingIndex; i++) {
+        // This would need the actual transaction ID generation logic
+        // For now, this is a placeholder showing the pattern
+      }
+
+      return pendingTransfers;
+    } catch (e) {
+      throw Exception('Failed to get account pending transfers: $e');
+    }
+  }
+
+  /// Helper method to create delay from milliseconds
+  static BlockNumberOrTimestamp delayFromMilliseconds(int milliseconds) {
+    return BlockNumberOrTimestamp.moment(BigInt.from(milliseconds));
+  }
+
+  /// Helper method to create delay from block number
+  static BlockNumberOrTimestamp delayFromBlocks(int blocks) {
+    return BlockNumberOrTimestamp.blockNumber(blocks);
+  }
+
+  /// Get constants related to reversible transfers
+  Future<Map<String, dynamic>> getConstants() async {
+    try {
+      final resonanceApi = Resonance(_substrateService.provider!);
+      final constants = resonanceApi.constants.reversibleTransfers;
+
+      return {
+        'maxPendingPerAccount': constants.maxPendingPerAccount,
+        'defaultDelay': constants.defaultDelay,
+        'minDelayPeriodBlocks': constants.minDelayPeriodBlocks,
+        'minDelayPeriodMoment': constants.minDelayPeriodMoment,
+      };
+    } catch (e) {
+      throw Exception('Failed to get reversible transfers constants: $e');
+    }
+  }
+}

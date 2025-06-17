@@ -43,6 +43,26 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Candidates pending availability by `ParaId`. They form a chain starting from the latest
+  /// included head of the para.
+  /// Use a different prefix post-migration to v1, since the v0 `PendingAvailability` storage
+  /// would otherwise have the exact same prefix which could cause undefined behaviour when doing
+  /// the migration.
+  _i5.Future<List<List<_i3.CandidatePendingAvailability>?>> multiV1(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _v1.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _v1.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `v1`.
   _i6.Uint8List v1Key(_i2.Id key1) {
     final hashedKey = _v1.hashedKeyFor(key1);

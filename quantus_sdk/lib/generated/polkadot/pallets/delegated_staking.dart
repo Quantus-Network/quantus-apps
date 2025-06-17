@@ -106,6 +106,46 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Map of Delegators to their `Delegation`.
+  ///
+  /// Implementation note: We are not using a double map with `delegator` and `agent` account
+  /// as keys since we want to restrict delegators to delegate only to one account at a time.
+  _i6.Future<List<_i3.Delegation?>> multiDelegators(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _delegators.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _delegators.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Map of `Agent` to their `Ledger`.
+  _i6.Future<List<_i5.AgentLedger?>> multiAgents(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _agents.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _agents.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `delegators`.
   _i7.Uint8List delegatorsKey(_i2.AccountId32 key1) {
     final hashedKey = _delegators.hashedKeyFor(key1);

@@ -102,6 +102,82 @@ class Queries {
     ); /* Default */
   }
 
+  /// The downward messages addressed for a certain para.
+  _i7.Future<List<List<_i3.InboundDownwardMessage>>> multiDownwardMessageQueues(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _downwardMessageQueues.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _downwardMessageQueues.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i3.InboundDownwardMessage>>); /* Default */
+  }
+
+  /// A mapping that stores the downward message queue MQC head for each para.
+  ///
+  /// Each link in this chain has a form:
+  /// `(prev_head, B, H(M))`, where
+  /// - `prev_head`: is the previous head hash or zero if none.
+  /// - `B`: is the relay-chain block number in which a message was appended.
+  /// - `H(M)`: is the hash of the message being appended.
+  _i7.Future<List<_i5.H256>> multiDownwardMessageQueueHeads(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys
+        .map((key) => _downwardMessageQueueHeads.hashedKeyFor(key))
+        .toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _downwardMessageQueueHeads.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => List<int>.filled(
+              32,
+              0,
+              growable: false,
+            ))
+        .toList() as List<_i5.H256>); /* Default */
+  }
+
+  /// The factor to multiply the base delivery fee by.
+  _i7.Future<List<_i6.FixedU128>> multiDeliveryFeeFactor(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _deliveryFeeFactor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _deliveryFeeFactor.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => BigInt.parse(
+              '1000000000000000000',
+              radix: 10,
+            ))
+        .toList() as List<_i6.FixedU128>); /* Default */
+  }
+
   /// Returns the storage key for `downwardMessageQueues`.
   _i8.Uint8List downwardMessageQueuesKey(_i2.Id key1) {
     final hashedKey = _downwardMessageQueues.hashedKeyFor(key1);

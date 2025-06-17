@@ -45,6 +45,24 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The lookup from index to account.
+  _i5.Future<List<_i2.Tuple3<_i3.AccountId32, BigInt, bool>?>> multiAccounts(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _accounts.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _accounts.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `accounts`.
   _i6.Uint8List accountsKey(int key1) {
     final hashedKey = _accounts.hashedKeyFor(key1);

@@ -128,6 +128,47 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Amounts currently reserved in the accounts of the bidders currently winning
+  /// (sub-)ranges.
+  _i7.Future<List<BigInt?>> multiReservedAmounts(
+    List<_i4.Tuple2<_i5.AccountId32, _i6.Id>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _reservedAmounts.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _reservedAmounts.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The winning bids for each of the 10 ranges at each sample in the final Ending Period of
+  /// the current auction. The map's key is the 0-based index into the Sample Size. The
+  /// first sample of the ending period is 0; the last is `Sample Size - 1`.
+  _i7.Future<List<List<_i4.Tuple3<_i5.AccountId32, _i6.Id, BigInt>?>?>>
+      multiWinning(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _winning.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _winning.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `auctionCounter`.
   _i8.Uint8List auctionCounterKey() {
     final hashedKey = _auctionCounter.hashedKey();

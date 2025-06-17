@@ -139,6 +139,80 @@ class Queries {
     return null; /* Nullable */
   }
 
+  _i7.Future<List<BigInt?>> multiClaims(
+    List<_i2.EthereumAddress> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _claims.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _claims.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Vesting schedule for a claim.
+  /// First balance is the total amount that should be held for vesting.
+  /// Second balance is how much should be unlocked per block.
+  /// The block number is when the vesting should start.
+  _i7.Future<List<_i4.Tuple3<BigInt, BigInt, int>?>> multiVesting(
+    List<_i2.EthereumAddress> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _vesting.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _vesting.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The statement kind that must be signed, if any.
+  _i7.Future<List<_i5.StatementKind?>> multiSigning(
+    List<_i2.EthereumAddress> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _signing.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _signing.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Pre-claimed Ethereum accounts, by the Account ID that they are claimed to.
+  _i7.Future<List<_i2.EthereumAddress?>> multiPreclaims(
+    List<_i6.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _preclaims.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _preclaims.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `claims`.
   _i8.Uint8List claimsKey(_i2.EthereumAddress key1) {
     final hashedKey = _claims.hashedKeyFor(key1);

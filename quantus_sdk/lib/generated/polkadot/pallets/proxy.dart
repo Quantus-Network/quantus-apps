@@ -85,6 +85,57 @@ class Queries {
     ); /* Default */
   }
 
+  /// The set of account proxies. Maps the account which has delegated to the accounts
+  /// which are being delegated to, together with the amount held on deposit.
+  _i7.Future<List<_i3.Tuple2<List<_i4.ProxyDefinition>, BigInt>>> multiProxies(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _proxies.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _proxies.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+            .map((key) => _i3.Tuple2<List<_i4.ProxyDefinition>, BigInt>(
+                  [],
+                  BigInt.zero,
+                ))
+            .toList()
+        as List<_i3.Tuple2<List<_i4.ProxyDefinition>, BigInt>>); /* Default */
+  }
+
+  /// The announcements made by the proxy (key).
+  _i7.Future<List<_i3.Tuple2<List<_i6.Announcement>, BigInt>>>
+      multiAnnouncements(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _announcements.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _announcements.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+            .map((key) => _i3.Tuple2<List<_i6.Announcement>, BigInt>(
+                  [],
+                  BigInt.zero,
+                ))
+            .toList()
+        as List<_i3.Tuple2<List<_i6.Announcement>, BigInt>>); /* Default */
+  }
+
   /// Returns the storage key for `proxies`.
   _i8.Uint8List proxiesKey(_i2.AccountId32 key1) {
     final hashedKey = _proxies.hashedKeyFor(key1);

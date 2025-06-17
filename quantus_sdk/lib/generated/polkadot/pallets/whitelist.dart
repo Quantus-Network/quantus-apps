@@ -38,6 +38,24 @@ class Queries {
     return null; /* Nullable */
   }
 
+  _i4.Future<List<dynamic>> multiWhitelistedCall(
+    List<_i2.H256> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _whitelistedCall.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _whitelistedCall.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `whitelistedCall`.
   _i5.Uint8List whitelistedCallKey(_i2.H256 key1) {
     final hashedKey = _whitelistedCall.hashedKeyFor(key1);
