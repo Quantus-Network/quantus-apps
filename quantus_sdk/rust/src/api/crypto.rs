@@ -1,8 +1,8 @@
-use rusty_crystals_dilithium::*;
 use bip39::{Language, Mnemonic};
 use poseidon_resonance::PoseidonHasher;
-use sp_core::Hasher;
+use rusty_crystals_dilithium::*;
 use sp_core::crypto::{AccountId32, Ss58Codec};
+use sp_core::Hasher;
 #[flutter_rust_bridge::frb(sync)] // Synchronous mode
 pub struct Keypair {
     pub public_key: Vec<u8>,
@@ -16,7 +16,14 @@ pub fn to_account_id(obj: &Keypair) -> String {
     let account = AccountId32::from(hashed.0);
     let result = account.to_ss58check();
     result
- }
+}
+/// Convert key in ss58check format to accountId32
+#[flutter_rust_bridge::frb(sync)]
+pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
+    // from_ss58check returns a Result, we unwrap it to panic on invalid input.
+    // We then convert the AccountId32 struct to a Vec<u8> to be compatible with Polkadart's typedef.
+    AccountId32::from_ss58check(s).unwrap().0.to_vec()
+}
 
 #[flutter_rust_bridge::frb(sync)]
 impl Keypair {
@@ -27,9 +34,9 @@ impl Keypair {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair(mnemonic_str: String) -> Keypair {
-
     // Note this mirrors our implementation in rusty crystals hdwallet
-    let mnemonic = Mnemonic::parse_in_normalized(Language::English, &mnemonic_str).expect("Failed to parse mnemonic");
+    let mnemonic = Mnemonic::parse_in_normalized(Language::English, &mnemonic_str)
+        .expect("Failed to parse mnemonic");
 
     // Generate seed from mnemonic
     let seed: [u8; 64] = mnemonic.to_seed_normalized(None.unwrap_or(""));
@@ -48,12 +55,14 @@ pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
-    let keypair = ml_dsa_87::Keypair{
+    let keypair = ml_dsa_87::Keypair {
         secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key),
         public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key),
     };
 
-    let signature = keypair.sign(&message, None, false).expect("message signing failed");
+    let signature = keypair
+        .sign(&message, None, false)
+        .expect("message signing failed");
     signature.as_slice().to_vec()
 }
 
@@ -66,10 +75,9 @@ pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
     result
 }
 
-
 #[flutter_rust_bridge::frb(sync)]
 pub fn verify_message(keypair: &Keypair, message: &[u8], signature: &[u8]) -> bool {
-    let keypair = ml_dsa_87::Keypair{
+    let keypair = ml_dsa_87::Keypair {
         secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key),
         public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key),
     };
@@ -93,7 +101,6 @@ pub fn crystal_charlie() -> Keypair {
     generate_keypair_from_seed(vec![2; 32])
 }
 
-
 #[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
     // Default utilities - feel free to customize
@@ -109,10 +116,10 @@ mod tests {
         // Test with a simple message
         let message = b"Hello, World!";
         let keypair = crystal_alice();
-        
+
         // Sign the message
         let signature = sign_message(&keypair, message);
-        
+
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed");
@@ -123,14 +130,17 @@ mod tests {
         // Test with a simple message
         let message = b"Hello, World!";
         let keypair = crystal_alice();
-        
+
         // Sign the message
         let signature = sign_message(&keypair, message);
-        
+
         // Try to verify with a different keypair
         let different_keypair = crystal_bob();
         let is_valid = verify_message(&different_keypair, message, &signature);
-        assert!(!is_valid, "Signature should not be valid with different keypair");
+        assert!(
+            !is_valid,
+            "Signature should not be valid with different keypair"
+        );
     }
 
     #[test]
@@ -138,10 +148,10 @@ mod tests {
         // Test with an empty message
         let message = b"";
         let keypair = crystal_alice();
-        
+
         // Sign the message
         let signature = sign_message(&keypair, message);
-        
+
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed for empty message");
@@ -152,10 +162,10 @@ mod tests {
         // Test with a longer message
         let message = b"This is a longer message that should also work correctly with our signing and verification process.";
         let keypair = crystal_alice();
-        
+
         // Sign the message
         let signature = sign_message(&keypair, message);
-        
+
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
         assert!(is_valid, "Signature verification failed for long message");

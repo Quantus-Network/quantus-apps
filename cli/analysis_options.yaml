@@ -1,4 +1,4 @@
-include: package:flutter_lints/flutter.yaml
+include: package:lints/recommended.yaml
 
 # Additional lint rules to maintain code quality
 linter:
@@ -6,12 +6,14 @@ linter:
     - prefer_single_quotes
     - sort_constructors_first
     - sort_unnamed_constructors_first
-    - lines_longer_than_80_chars
     - avoid_redundant_argument_values
     - prefer_const_constructors
     - prefer_const_literals_to_create_immutables
     - use_super_parameters
     - require_trailing_commas
+
+formatter:
+  page_width: 120
 
 analyzer:
   exclude:

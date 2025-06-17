@@ -219,6 +219,49 @@ class Queries {
     return 0; /* Default */
   }
 
+  _i4.Future<List<_i2.U512>> multiBlockDistanceThresholds(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _blockDistanceThresholds.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _blockDistanceThresholds.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => List<BigInt>.filled(
+              8,
+              BigInt.zero,
+              growable: false,
+            ))
+        .toList() as List<_i2.U512>); /* Default */
+  }
+
+  _i4.Future<List<BigInt>> multiBlockTimeHistory(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _blockTimeHistory.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _blockTimeHistory.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => BigInt.zero).toList()
+        as List<BigInt>); /* Default */
+  }
+
   /// Returns the storage key for `blockDistanceThresholds`.
   _i5.Uint8List blockDistanceThresholdsKey(int key1) {
     final hashedKey = _blockDistanceThresholds.hashedKeyFor(key1);

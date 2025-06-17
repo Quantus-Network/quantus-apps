@@ -148,6 +148,91 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Information concerning any given referendum.
+  _i6.Future<List<_i3.ReferendumInfo?>> multiReferendumInfoFor(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _referendumInfoFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _referendumInfoFor.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The sorted list of referenda ready to be decided but not yet being decided, ordered by
+  /// conviction-weighted approvals.
+  ///
+  /// This should be empty if `DecidingCount` is less than `TrackInfo::max_deciding`.
+  _i6.Future<List<List<_i4.Tuple2<int, int>>>> multiTrackQueue(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _trackQueue.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _trackQueue.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i4.Tuple2<int, int>>>); /* Default */
+  }
+
+  /// The number of referenda being decided currently.
+  _i6.Future<List<int>> multiDecidingCount(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _decidingCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _decidingCount.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// The metadata is a general information concerning the referendum.
+  /// The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
+  /// dump or IPFS hash of a JSON file.
+  ///
+  /// Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
+  /// large preimages.
+  _i6.Future<List<_i5.H256?>> multiMetadataOf(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _metadataOf.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _metadataOf.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `referendumCount`.
   _i7.Uint8List referendumCountKey() {
     final hashedKey = _referendumCount.hashedKey();

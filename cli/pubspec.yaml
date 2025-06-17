@@ -14,6 +14,7 @@ dependencies:
   
   # Workspace packages (managed by melos.yaml)
   quantus_sdk: # Version managed by melos.yaml
+  flutter_secure_storage: ^9.2.4
   
   # Shared dependencies (managed by melos.yaml)
   polkadart: # Version managed by melos.yaml

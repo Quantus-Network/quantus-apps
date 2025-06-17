@@ -176,6 +176,62 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The number of members in the collective who have at least the rank according to the index
+  /// of the vec.
+  _i6.Future<List<int>> multiMemberCount(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _memberCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _memberCount.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// The current members of the collective.
+  _i6.Future<List<_i4.MemberRecord?>> multiMembers(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _members.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _members.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  _i6.Future<List<List<int>?>> multiVotingCleanup(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _votingCleanup.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _votingCleanup.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `memberCount`.
   _i7.Uint8List memberCountKey(int key1) {
     final hashedKey = _memberCount.hashedKeyFor(key1);

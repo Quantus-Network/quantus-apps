@@ -4,7 +4,6 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/crypto.dart';
-import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -34,12 +33,8 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
   /// Initialize flutter_rust_bridge in mock mode.
   /// No libraries for FFI are loaded.
-  static void initMock({
-    required RustLibApi api,
-  }) {
-    instance.initMockImpl(
-      api: api,
-    );
+  static void initMock({required RustLibApi api}) {
+    instance.initMockImpl(api: api);
   }
 
   /// Dispose flutter_rust_bridge
@@ -59,7 +54,6 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   @override
   Future<void> executeRustInitializers() async {
     await api.crateApiCryptoInitApp();
-    await api.crateApiSimpleInitApp();
   }
 
   @override
@@ -70,14 +64,14 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.9.0';
 
   @override
-  int get rustContentHash => 600193706;
+  int get rustContentHash => 843187936;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
-    stem: 'rust_lib_resonance_network_wallet',
-    ioDirectory: 'rust/target/release/',
-    webPrefix: 'pkg/',
-  );
+        stem: 'rust_lib_resonance_network_wallet',
+        ioDirectory: 'rust/target/release/',
+        webPrefix: 'pkg/',
+      );
 }
 
 abstract class RustLibApi extends BaseApi {
@@ -91,24 +85,27 @@ abstract class RustLibApi extends BaseApi {
 
   Keypair crateApiCryptoGenerateKeypairFromSeed({required List<int> seed});
 
-  String crateApiSimpleGreet({required String name});
-
   Future<void> crateApiCryptoInitApp();
 
-  Future<void> crateApiSimpleInitApp();
+  Uint8List crateApiCryptoSignMessage({
+    required Keypair keypair,
+    required List<int> message,
+  });
 
-  Uint8List crateApiCryptoSignMessage(
-      {required Keypair keypair, required List<int> message});
+  Uint8List crateApiCryptoSignMessageWithPubkey({
+    required Keypair keypair,
+    required List<int> message,
+  });
 
-  Uint8List crateApiCryptoSignMessageWithPubkey(
-      {required Keypair keypair, required List<int> message});
+  Uint8List crateApiCryptoSs58ToAccountId({required String s});
 
   String crateApiCryptoToAccountId({required Keypair obj});
 
-  bool crateApiCryptoVerifyMessage(
-      {required Keypair keypair,
-      required List<int> message,
-      required List<int> signature});
+  bool crateApiCryptoVerifyMessage({
+    required Keypair keypair,
+    required List<int> message,
+    required List<int> signature,
+  });
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -121,87 +118,88 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Keypair crateApiCryptoCrystalAlice() {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_keypair,
-        decodeErrorData: null,
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoCrystalAliceConstMeta,
+        argValues: [],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoCrystalAliceConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
+    );
   }
 
-  TaskConstMeta get kCrateApiCryptoCrystalAliceConstMeta => const TaskConstMeta(
-        debugName: 'crystal_alice',
-        argNames: [],
-      );
+  TaskConstMeta get kCrateApiCryptoCrystalAliceConstMeta =>
+      const TaskConstMeta(debugName: 'crystal_alice', argNames: []);
 
   @override
   Keypair crateApiCryptoCrystalBob() {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_keypair,
-        decodeErrorData: null,
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoCrystalBobConstMeta,
+        argValues: [],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoCrystalBobConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
+    );
   }
 
-  TaskConstMeta get kCrateApiCryptoCrystalBobConstMeta => const TaskConstMeta(
-        debugName: 'crystal_bob',
-        argNames: [],
-      );
+  TaskConstMeta get kCrateApiCryptoCrystalBobConstMeta =>
+      const TaskConstMeta(debugName: 'crystal_bob', argNames: []);
 
   @override
   Keypair crateApiCryptoCrystalCharlie() {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_keypair,
-        decodeErrorData: null,
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoCrystalCharlieConstMeta,
+        argValues: [],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoCrystalCharlieConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoCrystalCharlieConstMeta =>
-      const TaskConstMeta(
-        debugName: 'crystal_charlie',
-        argNames: [],
-      );
+      const TaskConstMeta(debugName: 'crystal_charlie', argNames: []);
 
   @override
   Keypair crateApiCryptoGenerateKeypair({required String mnemonicStr}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(mnemonicStr, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_keypair,
-        decodeErrorData: null,
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(mnemonicStr, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoGenerateKeypairConstMeta,
+        argValues: [mnemonicStr],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoGenerateKeypairConstMeta,
-      argValues: [mnemonicStr],
-      apiImpl: this,
-    ));
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateKeypairConstMeta =>
@@ -212,20 +210,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Keypair crateApiCryptoGenerateKeypairFromSeed({required List<int> seed}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_list_prim_u_8_loose(seed, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_keypair,
-        decodeErrorData: null,
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(seed, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoGenerateKeypairFromSeedConstMeta,
+        argValues: [seed],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoGenerateKeypairFromSeedConstMeta,
-      argValues: [seed],
-      apiImpl: this,
-    ));
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateKeypairFromSeedConstMeta =>
@@ -235,117 +235,83 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  String crateApiSimpleGreet({required String name}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(name, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_String,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiSimpleGreetConstMeta,
-      argValues: [name],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiSimpleGreetConstMeta => const TaskConstMeta(
-        debugName: 'greet',
-        argNames: ['name'],
-      );
-
-  @override
   Future<void> crateApiCryptoInitApp() {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: null,
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoInitAppConstMeta,
+        argValues: [],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoInitAppConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
+    );
   }
 
-  TaskConstMeta get kCrateApiCryptoInitAppConstMeta => const TaskConstMeta(
-        debugName: 'init_app',
-        argNames: [],
-      );
+  TaskConstMeta get kCrateApiCryptoInitAppConstMeta =>
+      const TaskConstMeta(debugName: 'init_app', argNames: []);
 
   @override
-  Future<void> crateApiSimpleInitApp() {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: null,
+  Uint8List crateApiCryptoSignMessage({
+    required Keypair keypair,
+    required List<int> message,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_keypair(keypair, serializer);
+          sse_encode_list_prim_u_8_loose(message, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoSignMessageConstMeta,
+        argValues: [keypair, message],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiSimpleInitAppConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiSimpleInitAppConstMeta => const TaskConstMeta(
-        debugName: 'init_app',
-        argNames: [],
-      );
-
-  @override
-  Uint8List crateApiCryptoSignMessage(
-      {required Keypair keypair, required List<int> message}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_keypair(keypair, serializer);
-        sse_encode_list_prim_u_8_loose(message, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_prim_u_8_strict,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiCryptoSignMessageConstMeta,
-      argValues: [keypair, message],
-      apiImpl: this,
-    ));
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoSignMessageConstMeta => const TaskConstMeta(
-        debugName: 'sign_message',
-        argNames: ['keypair', 'message'],
-      );
+    debugName: 'sign_message',
+    argNames: ['keypair', 'message'],
+  );
 
   @override
-  Uint8List crateApiCryptoSignMessageWithPubkey(
-      {required Keypair keypair, required List<int> message}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_keypair(keypair, serializer);
-        sse_encode_list_prim_u_8_loose(message, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_prim_u_8_strict,
-        decodeErrorData: null,
+  Uint8List crateApiCryptoSignMessageWithPubkey({
+    required Keypair keypair,
+    required List<int> message,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_keypair(keypair, serializer);
+          sse_encode_list_prim_u_8_loose(message, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
+        argValues: [keypair, message],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
-      argValues: [keypair, message],
-      apiImpl: this,
-    ));
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoSignMessageWithPubkeyConstMeta =>
@@ -355,49 +321,75 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  String crateApiCryptoToAccountId({required Keypair obj}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_keypair(obj, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_String,
-        decodeErrorData: null,
+  Uint8List crateApiCryptoSs58ToAccountId({required String s}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(s, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoSs58ToAccountIdConstMeta,
+        argValues: [s],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoToAccountIdConstMeta,
-      argValues: [obj],
-      apiImpl: this,
-    ));
+    );
   }
 
-  TaskConstMeta get kCrateApiCryptoToAccountIdConstMeta => const TaskConstMeta(
-        debugName: 'to_account_id',
-        argNames: ['obj'],
-      );
+  TaskConstMeta get kCrateApiCryptoSs58ToAccountIdConstMeta =>
+      const TaskConstMeta(debugName: 'ss58_to_account_id', argNames: ['s']);
 
   @override
-  bool crateApiCryptoVerifyMessage(
-      {required Keypair keypair,
-      required List<int> message,
-      required List<int> signature}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_keypair(keypair, serializer);
-        sse_encode_list_prim_u_8_loose(message, serializer);
-        sse_encode_list_prim_u_8_loose(signature, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: null,
+  String crateApiCryptoToAccountId({required Keypair obj}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_keypair(obj, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoToAccountIdConstMeta,
+        argValues: [obj],
+        apiImpl: this,
       ),
-      constMeta: kCrateApiCryptoVerifyMessageConstMeta,
-      argValues: [keypair, message, signature],
-      apiImpl: this,
-    ));
+    );
+  }
+
+  TaskConstMeta get kCrateApiCryptoToAccountIdConstMeta =>
+      const TaskConstMeta(debugName: 'to_account_id', argNames: ['obj']);
+
+  @override
+  bool crateApiCryptoVerifyMessage({
+    required Keypair keypair,
+    required List<int> message,
+    required List<int> signature,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_keypair(keypair, serializer);
+          sse_encode_list_prim_u_8_loose(message, serializer);
+          sse_encode_list_prim_u_8_loose(signature, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiCryptoVerifyMessageConstMeta,
+        argValues: [keypair, message, signature],
+        apiImpl: this,
+      ),
+    );
   }
 
   TaskConstMeta get kCrateApiCryptoVerifyMessageConstMeta =>
@@ -545,16 +537,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void sse_encode_list_prim_u_8_loose(
-      List<int> self, SseSerializer serializer) {
+    List<int> self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
-    serializer.buffer
-        .putUint8List(self is Uint8List ? self : Uint8List.fromList(self));
+    serializer.buffer.putUint8List(
+      self is Uint8List ? self : Uint8List.fromList(self),
+    );
   }
 
   @protected
   void sse_encode_list_prim_u_8_strict(
-      Uint8List self, SseSerializer serializer) {
+    Uint8List self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);

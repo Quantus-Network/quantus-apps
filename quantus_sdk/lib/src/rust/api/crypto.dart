@@ -12,6 +12,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 String toAccountId({required Keypair obj}) =>
     RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
+/// Convert key in ss58check format to accountId32
+Uint8List ss58ToAccountId({required String s}) =>
+    RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
+
 Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
     .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
@@ -19,20 +23,28 @@ Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
 Uint8List signMessage({required Keypair keypair, required List<int> message}) =>
-    RustLib.instance.api
-        .crateApiCryptoSignMessage(keypair: keypair, message: message);
+    RustLib.instance.api.crateApiCryptoSignMessage(
+      keypair: keypair,
+      message: message,
+    );
 
-Uint8List signMessageWithPubkey(
-        {required Keypair keypair, required List<int> message}) =>
-    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
-        keypair: keypair, message: message);
+Uint8List signMessageWithPubkey({
+  required Keypair keypair,
+  required List<int> message,
+}) => RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
+  keypair: keypair,
+  message: message,
+);
 
-bool verifyMessage(
-        {required Keypair keypair,
-        required List<int> message,
-        required List<int> signature}) =>
-    RustLib.instance.api.crateApiCryptoVerifyMessage(
-        keypair: keypair, message: message, signature: signature);
+bool verifyMessage({
+  required Keypair keypair,
+  required List<int> message,
+  required List<int> signature,
+}) => RustLib.instance.api.crateApiCryptoVerifyMessage(
+  keypair: keypair,
+  message: message,
+  signature: signature,
+);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 
@@ -44,10 +56,7 @@ class Keypair {
   final Uint8List publicKey;
   final Uint8List secretKey;
 
-  const Keypair({
-    required this.publicKey,
-    required this.secretKey,
-  });
+  const Keypair({required this.publicKey, required this.secretKey});
 
   @override
   int get hashCode => publicKey.hashCode ^ secretKey.hashCode;

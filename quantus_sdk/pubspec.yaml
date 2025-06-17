@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   
   # Rust bridge and local dependencies
-  flutter_rust_bridge: # Version managed by melos.yaml
+  flutter_rust_bridge: 2.9.0 # Version managed by melos.yaml
   rust_lib_resonance_network_wallet:
     path: ./rust_builder
   

@@ -175,6 +175,45 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+  /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+  ///
+  /// Proposals that have been made.
+  _i5.Future<List<_i3.Proposal?>> multiProposals(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _proposals.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _proposals.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Spends that have been approved and being processed.
+  _i5.Future<List<_i4.SpendStatus?>> multiSpends(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _spends.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _spends.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `proposalCount`.
   _i6.Uint8List proposalCountKey() {
     final hashedKey = _proposalCount.hashedKey();

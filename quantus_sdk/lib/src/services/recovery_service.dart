@@ -1,14 +1,11 @@
 import 'dart:typed_data';
-import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
 import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
-import 'substrate_service.dart';
-import '../constants/app_constants.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'substrate_service.dart';
 
 /// Service for managing account recovery functionality
 class RecoveryService {
@@ -28,9 +25,7 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-
-      // Convert friend addresses to AccountId32
-      final friends = friendAddresses.map((addr) => Address.decode(addr).pubkey).toList();
+      final friends = friendAddresses.map((addr) => crypto.ss58ToAccountId(s: addr)).toList();
 
       // Create the call
       final call = resonanceApi.tx.recovery.createRecovery(
@@ -47,13 +42,10 @@ class RecoveryService {
   }
 
   /// Initiate recovery process for a lost account
-  Future<String> initiateRecovery({
-    required String rescuerSeed,
-    required String lostAccountAddress,
-  }) async {
+  Future<String> initiateRecovery({required String rescuerSeed, required String lostAccountAddress}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(Address.decode(lostAccountAddress).pubkey);
+      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
 
       // Create the call
       final call = resonanceApi.tx.recovery.initiateRecovery(account: lostAccount);
@@ -73,14 +65,11 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(Address.decode(lostAccountAddress).pubkey);
-      final rescuer = const multi_address.$MultiAddress().id(Address.decode(rescuerAddress).pubkey);
+      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+      final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
 
       // Create the call
-      final call = resonanceApi.tx.recovery.vouchRecovery(
-        lost: lostAccount,
-        rescuer: rescuer,
-      );
+      final call = resonanceApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(friendSeed, call);
@@ -90,13 +79,10 @@ class RecoveryService {
   }
 
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
-  Future<String> claimRecovery({
-    required String rescuerSeed,
-    required String lostAccountAddress,
-  }) async {
+  Future<String> claimRecovery({required String rescuerSeed, required String lostAccountAddress}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(Address.decode(lostAccountAddress).pubkey);
+      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
 
       // Create the call
       final call = resonanceApi.tx.recovery.claimRecovery(account: lostAccount);
@@ -109,13 +95,10 @@ class RecoveryService {
   }
 
   /// Close an active recovery process (called by the lost account owner)
-  Future<String> closeRecovery({
-    required String lostAccountSeed,
-    required String rescuerAddress,
-  }) async {
+  Future<String> closeRecovery({required String lostAccountSeed, required String rescuerAddress}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final rescuer = const multi_address.$MultiAddress().id(Address.decode(rescuerAddress).pubkey);
+      final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
 
       // Create the call
       final call = resonanceApi.tx.recovery.closeRecovery(rescuer: rescuer);
@@ -150,13 +133,12 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final recoveredAccount = const multi_address.$MultiAddress().id(Address.decode(recoveredAccountAddress).pubkey);
+      final recoveredAccount = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: recoveredAccountAddress),
+      );
 
       // Create the call
-      final proxyCall = resonanceApi.tx.recovery.asRecovered(
-        account: recoveredAccount,
-        call: call,
-      );
+      final proxyCall = resonanceApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerSeed, proxyCall);
@@ -166,13 +148,12 @@ class RecoveryService {
   }
 
   /// Cancel the ability to use a recovered account
-  Future<String> cancelRecovered({
-    required String rescuerSeed,
-    required String recoveredAccountAddress,
-  }) async {
+  Future<String> cancelRecovered({required String rescuerSeed, required String recoveredAccountAddress}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final recoveredAccount = const multi_address.$MultiAddress().id(Address.decode(recoveredAccountAddress).pubkey);
+      final recoveredAccount = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: recoveredAccountAddress),
+      );
 
       // Create the call
       final call = resonanceApi.tx.recovery.cancelRecovered(account: recoveredAccount);
@@ -188,7 +169,7 @@ class RecoveryService {
   Future<RecoveryConfig?> getRecoveryConfig(String address) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final accountId = Address.decode(address).pubkey;
+      final accountId = crypto.ss58ToAccountId(s: address);
 
       return await resonanceApi.query.recovery.recoverable(accountId);
     } catch (e) {
@@ -200,8 +181,8 @@ class RecoveryService {
   Future<ActiveRecovery?> getActiveRecovery(String lostAccountAddress, String rescuerAddress) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccountId = Address.decode(lostAccountAddress).pubkey;
-      final rescuerId = Address.decode(rescuerAddress).pubkey;
+      final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
+      final rescuerId = crypto.ss58ToAccountId(s: rescuerAddress);
 
       return await resonanceApi.query.recovery.activeRecoveries(lostAccountId, rescuerId);
     } catch (e) {
@@ -213,10 +194,14 @@ class RecoveryService {
   Future<String?> getProxyRecoveredAccount(String proxyAddress) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final proxyId = Address.decode(proxyAddress).pubkey;
+      final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
       final recoveredAccountId = await resonanceApi.query.recovery.proxy(proxyId);
-      return recoveredAccountId != null ? Address.encode(recoveredAccountId, AppConstants.ss58Prefix) : null;
+      return recoveredAccountId != null
+          ? crypto.toAccountId(
+              obj: crypto.Keypair(publicKey: Uint8List.fromList(recoveredAccountId), secretKey: Uint8List(0)),
+            )
+          : null;
     } catch (e) {
       throw Exception('Failed to get proxy recovered account: $e');
     }
@@ -267,7 +252,7 @@ class RecoveryService {
   Future<Map<String, dynamic>> getConstants() async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final constants = resonanceApi.constants.recovery;
+      final constants = resonanceApi.constant.recovery;
 
       return {
         'configDepositBase': constants.configDepositBase,
@@ -281,10 +266,12 @@ class RecoveryService {
   }
 
   /// Helper to create a balance transfer call for recovered account
-  RuntimeCall createBalanceTransferCall(String recipientAddress, BigInt amount) {
+  Balances createBalanceTransferCall(String recipientAddress, BigInt amount) {
     final resonanceApi = Resonance(_substrateService.provider!);
-    final dest = const multi_address.$MultiAddress().id(Address.decode(recipientAddress).pubkey);
-    return RuntimeCall.balances(resonanceApi.tx.balances.transferKeepAlive(dest: dest, value: amount));
+    final accountID = crypto.ss58ToAccountId(s: recipientAddress);
+    final dest = const multi_address.$MultiAddress().id(accountID);
+    final call = resonanceApi.tx.balances.transferAllowDeath(dest: dest, value: amount);
+    return call;
   }
 
   /// Convenience method to transfer balance as recovered account

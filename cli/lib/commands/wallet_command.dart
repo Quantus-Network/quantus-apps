@@ -1,185 +1,99 @@
-import 'dart:io';
-import 'package:args/args.dart';
+import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-class WalletCommand {
-  WalletCommand();
-
-  ArgParser get argParser {
-    final parser = ArgParser()
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        help: 'Print this command usage information.',
-        negatable: false,
-      );
-
-    // Add subcommands
-    parser.addCommand('create')
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        help: 'Print this command usage information.',
-        negatable: false,
-      );
-
-    parser.addCommand('import')
-      ..addOption(
-        'mnemonic',
-        abbr: 'm',
-        help: 'Mnemonic phrase to import',
-        mandatory: true,
-      )
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        help: 'Print this command usage information.',
-        negatable: false,
-      );
-
-    parser.addCommand('list')
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        help: 'Print this command usage information.',
-        negatable: false,
-      );
-
-    parser.addCommand('balance')
-      ..addOption(
-        'address',
-        abbr: 'a',
-        help: 'Account address to check balance for',
-      )
-      ..addFlag(
-        'help',
-        abbr: 'h',
-        help: 'Print this command usage information.',
-        negatable: false,
-      );
-
-    return parser;
+class WalletCommand extends Command<int> {
+  WalletCommand({required this.logger}) {
+    addSubcommand(_SetPassphraseCommand(logger: logger));
+    addSubcommand(_ClearPassphraseCommand(logger: logger));
+    addSubcommand(_ShowAddressCommand(logger: logger));
   }
 
-  Future<void> run(ArgResults command) async {
-    final logger = Logger();
+  @override
+  String get description => 'Manage your wallet passphrase and address.';
 
-    if (command['help'] as bool) {
-      _printUsage();
-      return;
-    }
+  @override
+  String get name => 'wallet';
 
-    final subcommand = command.command;
-    if (subcommand == null) {
-      logger.err('No subcommand specified. Use --help for usage information.');
-      exit(1);
-    }
+  final Logger logger;
+}
 
-    switch (subcommand.name) {
-      case 'create':
-        await _createWallet(logger);
-        break;
-      case 'import':
-        await _importWallet(logger, subcommand);
-        break;
-      case 'list':
-        await _listWallets(logger);
-        break;
-      case 'balance':
-        await _checkBalance(logger, subcommand);
-        break;
-      default:
-        logger.err('Unknown subcommand: ${subcommand.name}');
-        exit(1);
-    }
+class _SetPassphraseCommand extends Command<int> {
+  _SetPassphraseCommand({required this.logger}) {
+    argParser.addOption('mnemonic', abbr: 'm', help: 'The 12 or 24-word mnemonic passphrase to set.', mandatory: true);
   }
 
-  Future<void> _createWallet(Logger logger) async {
+  @override
+  String get description => 'Set and save your wallet passphrase securely.';
+
+  @override
+  String get name => 'set-passphrase';
+
+  final Logger logger;
+  final _settingsService = SettingsService();
+
+  @override
+  Future<int> run() async {
+    final mnemonic = argResults?['mnemonic'] as String;
+    await _settingsService.initialize();
+    await _settingsService.setMnemonic(mnemonic);
+    logger.success('Passphrase has been set successfully.');
+    return ExitCode.success.code;
+  }
+}
+
+class _ClearPassphraseCommand extends Command<int> {
+  _ClearPassphraseCommand({required this.logger});
+
+  @override
+  String get description => 'Clear your saved wallet passphrase.';
+
+  @override
+  String get name => 'clear-passphrase';
+
+  final Logger logger;
+  final _settingsService = SettingsService();
+
+  @override
+  Future<int> run() async {
+    await _settingsService.initialize();
+    await _settingsService.clearMnemonic();
+    logger.success('Passphrase has been cleared.');
+    return ExitCode.success.code;
+  }
+}
+
+class _ShowAddressCommand extends Command<int> {
+  _ShowAddressCommand({required this.logger});
+
+  @override
+  String get description => 'Show the public address of your saved wallet.';
+
+  @override
+  String get name => 'show-address';
+
+  final Logger logger;
+  final _settingsService = SettingsService();
+  final _substrateService = SubstrateService();
+
+  @override
+  Future<int> run() async {
+    await _settingsService.initialize();
+    await _substrateService.initialize();
+    final mnemonic = await _settingsService.getMnemonic();
+
+    if (mnemonic == null || mnemonic.isEmpty) {
+      logger.warn('No passphrase is set. Use "wallet set-passphrase" first.');
+      return ExitCode.unavailable.code;
+    }
+
     try {
-      final substrateService = SubstrateService();
-      await substrateService.initialize();
-
-      final mnemonic = await substrateService.generateMnemonic();
-      final walletInfo = await substrateService.generateWalletFromSeed(mnemonic);
-
-      logger.info('✅ New wallet created successfully!');
+      final walletInfo = await _substrateService.generateWalletFromSeed(mnemonic);
       logger.info('Address: ${walletInfo.accountId}');
-      logger.warn('⚠️  IMPORTANT: Save your mnemonic phrase securely:');
-      logger.info('Mnemonic: $mnemonic');
-      logger.warn('⚠️  Anyone with this mnemonic can access your funds!');
+      return ExitCode.success.code;
     } catch (e) {
-      logger.err('Failed to create wallet: $e');
-      exit(1);
+      logger.err('Failed to derive address from passphrase: $e');
+      return ExitCode.software.code;
     }
-  }
-
-  Future<void> _importWallet(Logger logger, ArgResults command) async {
-    try {
-      final mnemonic = command['mnemonic'] as String;
-      final substrateService = SubstrateService();
-      await substrateService.initialize();
-
-      final walletInfo = await substrateService.generateWalletFromSeed(mnemonic);
-
-      logger.info('✅ Wallet imported successfully!');
-      logger.info('Address: ${walletInfo.accountId}');
-    } catch (e) {
-      logger.err('Failed to import wallet: $e');
-      exit(1);
-    }
-  }
-
-  Future<void> _listWallets(Logger logger) async {
-    try {
-      // This would typically read from local storage/config
-      logger.info('📋 Wallet management features coming soon...');
-      logger.info('For now, use individual wallet operations.');
-    } catch (e) {
-      logger.err('Failed to list wallets: $e');
-      exit(1);
-    }
-  }
-
-  Future<void> _checkBalance(Logger logger, ArgResults command) async {
-    try {
-      final address = command['address'] as String?;
-      if (address == null) {
-        logger.err('Address is required. Use --address or -a to specify.');
-        exit(1);
-      }
-
-      final substrateService = SubstrateService();
-      await substrateService.initialize();
-
-      final balance = await substrateService.queryBalance(address);
-      final formattedBalance = NumberFormattingService().formatBalance(balance);
-
-      logger.info('💰 Balance for $address:');
-      logger.info('$formattedBalance QUAN');
-    } catch (e) {
-      logger.err('Failed to check balance: $e');
-      exit(1);
-    }
-  }
-
-  void _printUsage() {
-    final logger = Logger();
-    logger.info('''
-Wallet management commands
-
-Usage: resonance wallet <subcommand> [arguments]
-
-Available subcommands:
-  create                   Create a new wallet
-  import --mnemonic <phrase>  Import wallet from mnemonic
-  list                     List available wallets
-  balance --address <addr> Check balance for an address
-
-Examples:
-  resonance wallet create
-  resonance wallet import --mnemonic "word1 word2 ... word12"
-  resonance wallet balance --address 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-''');
   }
 }

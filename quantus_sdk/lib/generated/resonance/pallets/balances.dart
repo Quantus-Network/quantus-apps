@@ -249,6 +249,152 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The Balances pallet example of storing the balance of an account.
+  ///
+  /// # Example
+  ///
+  /// ```nocompile
+  ///  impl pallet_balances::Config for Runtime {
+  ///    type AccountStore = StorageMapShim<Self::Account<Runtime>, frame_system::Provider<Runtime>, AccountId, Self::AccountData<Balance>>
+  ///  }
+  /// ```
+  ///
+  /// You can also store the balance of an account in the `System` pallet.
+  ///
+  /// # Example
+  ///
+  /// ```nocompile
+  ///  impl pallet_balances::Config for Runtime {
+  ///   type AccountStore = System
+  ///  }
+  /// ```
+  ///
+  /// But this comes with tradeoffs, storing account balances in the system pallet stores
+  /// `frame_system` data alongside the account data contrary to storing account balances in the
+  /// `Balances` pallet, which uses a `StorageMap` to store balances data only.
+  /// NOTE: This is only used in the case that this pallet is used to store balances.
+  _i10.Future<List<_i4.AccountData>> multiAccount(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _account.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _account.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i4.AccountData(
+              free: BigInt.zero,
+              reserved: BigInt.zero,
+              frozen: BigInt.zero,
+              flags: BigInt.parse(
+                '170141183460469231731687303715884105728',
+                radix: 10,
+              ),
+            ))
+        .toList() as List<_i4.AccountData>); /* Default */
+  }
+
+  /// Any liquidity locks on some account balances.
+  /// NOTE: Should only be accessed when setting, changing and freeing a lock.
+  ///
+  /// Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
+  _i10.Future<List<List<_i5.BalanceLock>>> multiLocks(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _locks.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _locks.decodeValue(v.key)).toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i5.BalanceLock>>); /* Default */
+  }
+
+  /// Named reserves on some account balances.
+  ///
+  /// Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
+  _i10.Future<List<List<_i6.ReserveData>>> multiReserves(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _reserves.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _reserves.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i6.ReserveData>>); /* Default */
+  }
+
+  /// Holds on account balances.
+  _i10.Future<List<List<_i7.IdAmount>>> multiHolds(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _holds.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _holds.decodeValue(v.key)).toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i7.IdAmount>>); /* Default */
+  }
+
+  /// Freeze locks on account balances.
+  _i10.Future<List<List<_i8.IdAmount>>> multiFreezes(
+    List<_i3.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _freezes.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _freezes.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i8.IdAmount>>); /* Default */
+  }
+
+  _i10.Future<List<dynamic>> multiTransferProof(
+    List<_i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _transferProof.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _transferProof.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `totalIssuance`.
   _i11.Uint8List totalIssuanceKey() {
     final hashedKey = _totalIssuance.hashedKey();
