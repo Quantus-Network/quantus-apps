@@ -3,6 +3,7 @@ use poseidon_resonance::PoseidonHasher;
 use rusty_crystals_dilithium::*;
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_core::Hasher;
+use std::convert::AsRef;
 #[flutter_rust_bridge::frb(sync)] // Synchronous mode
 pub struct Keypair {
     pub public_key: Vec<u8>,
@@ -22,7 +23,7 @@ pub fn to_account_id(obj: &Keypair) -> String {
 pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
     // from_ss58check returns a Result, we unwrap it to panic on invalid input.
     // We then convert the AccountId32 struct to a Vec<u8> to be compatible with Polkadart's typedef.
-    AccountId32::from_ss58check(s).unwrap().0.to_vec()
+    AsRef::<[u8]>::as_ref(&AccountId32::from_ss58check(s).unwrap()).to_vec()
 }
 
 #[flutter_rust_bridge::frb(sync)]
