@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/widgets.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_cli/commands/send_command.dart';
@@ -9,8 +8,6 @@ import 'package:resonance_cli/runner.dart';
 final logger = Logger();
 
 void main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   try {
     await SubstrateService().initialize(); // Initialize SubstrateService
     await QuantusSdk.init();

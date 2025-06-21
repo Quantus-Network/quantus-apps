@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:flutter/services.dart';
 
@@ -138,10 +139,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                             borderRadius: BorderRadius.circular(5),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              width: 1,
-                              color: const Color(0xFF9F7AEA).useOpacity(0.8),
-                            ),
+                            borderSide: BorderSide(width: 1, color: const Color(0xFF9F7AEA).useOpacity(0.8)),
                             borderRadius: BorderRadius.circular(5),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -220,11 +218,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ),
                 const Spacer(), // Add Spacer to push the button down
-                GradientActionButton(
-                  label: 'Import Wallet',
-                  onPressed: _importWallet,
-                  isLoading: _isLoading,
-                ),
+                GradientActionButton(label: 'Import Wallet', onPressed: _importWallet, isLoading: _isLoading),
                 const SizedBox(height: 24), // Consistent bottom padding like CreateWalletScreen
               ],
             ),

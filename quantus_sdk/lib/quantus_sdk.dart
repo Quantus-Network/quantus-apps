@@ -9,10 +9,8 @@ export 'src/constants/app_constants.dart';
 export 'src/services/human_readable_checksum_service.dart';
 export 'src/services/number_formatting_service.dart';
 export 'src/models/transaction_model.dart';
-export 'src/helpers/snackbar_helper.dart';
 export 'src/services/chain_history_service.dart';
-export 'src/widgets/top_snackbar_content.dart';
-export 'src/widgets/gradient_action_button.dart';
+export 'src/extensions/keypair_extensions.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead TODO...
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;

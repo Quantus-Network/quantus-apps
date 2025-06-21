@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 
 class AccountInfo {
   final String name;
@@ -14,10 +15,7 @@ class AccountInfo {
 class AccountProfilePage extends StatefulWidget {
   final String currentAccountId;
 
-  const AccountProfilePage({
-    super.key,
-    required this.currentAccountId,
-  });
+  const AccountProfilePage({super.key, required this.currentAccountId});
 
   @override
   State<AccountProfilePage> createState() => _AccountProfilePageState();
@@ -52,11 +50,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       final formattedBalance = _formattingService.formatBalance(balance);
 
       setState(() {
-        _account = AccountInfo(
-          name: '',
-          address: accountId,
-          balance: formattedBalance,
-        );
+        _account = AccountInfo(name: '', address: accountId, balance: formattedBalance);
         _isLoading = false;
       });
     } catch (e) {
@@ -69,11 +63,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
 
   void _createNewWallet() {
     debugPrint('Create New Wallet tapped');
-    showTopSnackBar(
-      context,
-      title: 'Info',
-      message: 'Create New Wallet action not implemented yet.',
-    );
+    showTopSnackBar(context, title: 'Info', message: 'Create New Wallet action not implemented yet.');
   }
 
   void _showLogoutConfirmationSheet(BuildContext context) {
@@ -89,10 +79,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
             decoration: const ShapeDecoration(
               color: Colors.black,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
               ),
             ),
             child: Column(
@@ -144,10 +131,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                       debugPrint('Error during logout: $e');
                       if (mounted) {
                         scaffoldMessenger.showSnackBar(
-                          SnackBar(
-                            content: Text('Logout failed: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                          ),
+                          SnackBar(content: Text('Logout failed: ${e.toString()}'), backgroundColor: Colors.red),
                         );
                       }
                     }
@@ -211,11 +195,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
 
   void _copyAddress(String address) {
     Clipboard.setData(ClipboardData(text: address));
-    showTopSnackBar(
-      context,
-      title: 'Copied!',
-      message: 'Address copied to clipboard',
-    );
+    showTopSnackBar(context, title: 'Copied!', message: 'Address copied to clipboard');
   }
 
   @override
@@ -227,12 +207,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
         elevation: 0,
         title: const Text(
           'Your Accounts',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -254,33 +229,18 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
               children: [
                 if (_isLoading)
                   const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
+                    child: Center(child: CircularProgressIndicator(color: Colors.white)),
                   )
                 else if (_account == null)
                   const Expanded(
                     child: Center(
-                      child: Text(
-                        'No account found',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      child: Text('No account found', style: TextStyle(color: Colors.white)),
                     ),
                   )
                 else
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        _buildAccountItem(_account!, true),
-                      ],
-                    ),
-                  ),
+                  Expanded(child: ListView(children: [_buildAccountItem(_account!, true)])),
                 const SizedBox(height: 24),
-                _buildActionButton(
-                  text: 'Create New Wallet',
-                  onPressed: _createNewWallet,
-                  isOutlined: true,
-                ),
+                _buildActionButton(text: 'Create New Wallet', onPressed: _createNewWallet, isOutlined: true),
                 const SizedBox(height: 16),
                 _buildActionButton(
                   text: 'Log Out & Clear Data',
@@ -311,11 +271,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       ),
       child: Row(
         children: [
-          SvgPicture.asset(
-            'assets/account_list_icon.svg',
-            width: 21,
-            height: 32,
-          ),
+          SvgPicture.asset('assets/account_list_icon.svg', width: 21, height: 32),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
@@ -326,13 +282,17 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox(
-                          height: 14,
-                          child: Row(children: [
+                        height: 14,
+                        child: Row(
+                          children: [
                             SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54)),
-                          ]));
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                            ),
+                          ],
+                        ),
+                      );
                     } else if (snapshot.hasError) {
                       debugPrint('Error fetching identity name for ${account.address}: ${snapshot.error}');
                       return Text(
@@ -388,11 +348,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () => _copyAddress(account.address),
-                      child: const Icon(
-                        Icons.content_copy,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
+                      child: const Icon(Icons.content_copy, color: Colors.white70, size: 14),
                     ),
                   ],
                 ),
@@ -442,22 +398,14 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
             side: const BorderSide(width: 1, color: Color(0xFFE6E6E6)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
             minimumSize: const Size(double.infinity, 50),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
+            textStyle: const TextStyle(fontSize: 18, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
           )
         : ElevatedButton.styleFrom(
             backgroundColor: backgroundColor ?? const Color(0xFFE6E6E6),
             foregroundColor: textColor ?? const Color(0xFF0E0E0E),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
             minimumSize: const Size(double.infinity, 50),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
+            textStyle: const TextStyle(fontSize: 18, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
           );
 
     return SizedBox(

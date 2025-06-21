@@ -1,7 +1,7 @@
 import 'package:flash/flash.dart';
 import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
-import '../widgets/top_snackbar_content.dart'; // Import the content widget
+import 'package:resonance_network_wallet/features/components/top_snackbar_content.dart';
 
 // Helper function to show a custom top snackbar
 Future<void> showTopSnackBar(
