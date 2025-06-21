@@ -4,8 +4,8 @@ import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/mu
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
 import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-import 'substrate_service.dart';
 
 /// Service for managing account recovery functionality
 class RecoveryService {
@@ -13,7 +13,7 @@ class RecoveryService {
   factory RecoveryService() => _instance;
   RecoveryService._internal();
 
-  final SubstrateService _substrateService = SubstrateService();
+  final SubstrateService _substrateService = ServiceLocator().substrateService;
 
   /// Create a recovery configuration for an account
   /// This makes the account recoverable by trusted friends

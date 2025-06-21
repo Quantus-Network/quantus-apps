@@ -4,7 +4,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SubstrateService().initialize();
+  ServiceLocator().initialize();
+  await ServiceLocator().substrateService.initialize();
   await QuantusSdk.init();
   runApp(const ResonanceWalletApp());
 }

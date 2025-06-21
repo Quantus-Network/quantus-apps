@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -17,7 +18,8 @@ class SendScreenState extends State<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
-  final SettingsService _settingsService = SettingsService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
   BigInt _maxBalance = BigInt.zero;
   BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
   bool _isFetchingFee = false;
@@ -48,7 +50,7 @@ class SendScreenState extends State<SendScreen> {
 
   bool _isValidSS58Address(String address) {
     try {
-      return SubstrateService().isValidSS58Address(address);
+      return _substrateService.isValidSS58Address(address);
     } catch (e) {
       debugPrint('Error validating address: $e');
       return false;
@@ -63,7 +65,7 @@ class SendScreenState extends State<SendScreen> {
         throw Exception('Wallet not found');
       }
 
-      final balance = await SubstrateService().queryBalance(accountId);
+      final balance = await _substrateService.queryBalance(accountId);
       return balance;
     } catch (e) {
       debugPrint('Error loading balance: $e');
@@ -151,14 +153,18 @@ class SendScreenState extends State<SendScreen> {
 
   Future<void> _fetchNetworkFee() async {
     final recipient = _recipientController.text.trim();
-    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero || (_networkFee > BigInt.zero)) {
+    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero) {
       setState(() {
-        _networkFee = _networkFee;
+        _networkFee = BigInt.zero;
         _isFetchingFee = false;
         _hasAmountError = _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
       });
       return;
     }
+
+    setState(() {
+      _isFetchingFee = true;
+    });
 
     try {
       final senderAccountId = await _settingsService.getAccountId();
@@ -166,8 +172,9 @@ class SendScreenState extends State<SendScreen> {
         throw Exception('Sender account not found');
       }
       final dummyAmountForFee = BigInt.from(1) * NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
-      final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, dummyAmountForFee);
+      final estimatedFee = await _substrateService.getFee(senderAccountId, recipient, dummyAmountForFee);
 
+      if (!mounted) return;
       setState(() {
         _networkFee = estimatedFee;
         _isFetchingFee = false;
@@ -219,10 +226,7 @@ class SendScreenState extends State<SendScreen> {
     print('Scanning QR code');
     final scannedAddress = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-        fullscreenDialog: true,
-      ),
+      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
     );
 
     if (scannedAddress != null && mounted) {
@@ -244,10 +248,7 @@ class SendScreenState extends State<SendScreen> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.54,
-              child: Image.asset(
-                'assets/light_leak_effect_background.jpg',
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
             ),
           ),
           SafeArea(
@@ -282,11 +283,7 @@ class SendScreenState extends State<SendScreen> {
                           onTap: () => Navigator.pop(context),
                           child: const Row(
                             children: [
-                              Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                                size: 24,
-                              ),
+                              Icon(Icons.arrow_back, color: Colors.white, size: 24),
                               SizedBox(width: 4),
                               Text(
                                 'Send',
@@ -378,10 +375,7 @@ class SendScreenState extends State<SendScreen> {
                               ),
                               Row(
                                 children: [
-                                  GestureDetector(
-                                    onTap: _scanQRCode,
-                                    child: _buildIconButton('assets/scan.svg'),
-                                  ),
+                                  GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
                                   const SizedBox(width: 9),
                                   GestureDetector(
                                     onTap: () async {
@@ -458,9 +452,7 @@ class SendScreenState extends State<SendScreen> {
                                     fillColor: Colors.transparent,
                                   ),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                                  ],
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                                   onChanged: _validateAmount,
                                 ),
                               ),
@@ -495,9 +487,7 @@ class SendScreenState extends State<SendScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: ShapeDecoration(
                                 color: Colors.white.useOpacity(0.15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                               ),
                               child: GestureDetector(
                                 onTap: _setMaxAmount,
@@ -565,7 +555,8 @@ class SendScreenState extends State<SendScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GestureDetector(
-                          onTap: (_hasAddressError ||
+                          onTap:
+                              (_hasAddressError ||
                                   _hasAmountError ||
                                   _recipientController.text.isEmpty ||
                                   _amount <= BigInt.zero ||
@@ -573,7 +564,8 @@ class SendScreenState extends State<SendScreen> {
                               ? null
                               : _showSendConfirmation,
                           child: Opacity(
-                            opacity: (_hasAddressError ||
+                            opacity:
+                                (_hasAddressError ||
                                     _hasAmountError ||
                                     _recipientController.text.isEmpty ||
                                     _amount <= BigInt.zero ||
@@ -585,18 +577,16 @@ class SendScreenState extends State<SendScreen> {
                               padding: const EdgeInsets.all(16),
                               decoration: ShapeDecoration(
                                 color: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                               ),
                               child: Text(
                                 (_hasAddressError || _recipientController.text.isEmpty)
                                     ? 'Enter Address'
                                     : (_amount <= BigInt.zero)
-                                        ? 'Enter Amount'
-                                        : _hasAmountError
-                                            ? 'Insufficient Balance'
-                                            : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
+                                    ? 'Enter Amount'
+                                    : _hasAmountError
+                                    ? 'Insufficient Balance'
+                                    : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: Color(0xFF0E0E0E),
@@ -628,15 +618,9 @@ class SendScreenState extends State<SendScreen> {
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
         color: Colors.white.useOpacity(0.15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: SvgPicture.asset(
-        assetPath,
-        width: 17,
-        height: 17,
-      ),
+      child: SvgPicture.asset(assetPath, width: 17, height: 17),
     );
   }
 }

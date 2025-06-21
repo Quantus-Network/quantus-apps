@@ -24,9 +24,10 @@ class AccountProfilePage extends StatefulWidget {
 class _AccountProfilePageState extends State<AccountProfilePage> {
   AccountInfo? _account;
   bool _isLoading = true;
-  final NumberFormattingService _formattingService = NumberFormattingService();
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-  final SettingsService _settingsService = SettingsService();
+  final _formattingService = NumberFormattingService();
+  final _checksumService = HumanReadableChecksumService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
 
   @override
   void initState() {
@@ -46,7 +47,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
         throw Exception('No account found');
       }
 
-      final balance = await SubstrateService().queryBalance(accountId);
+      final balance = await _substrateService.queryBalance(accountId);
       final formattedBalance = _formattingService.formatBalance(balance);
 
       setState(() {
@@ -123,7 +124,7 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
                     final scaffoldMessenger = ScaffoldMessenger.of(context);
                     navigator.pop();
                     try {
-                      await SubstrateService().logout();
+                      await _substrateService.logout();
                       if (mounted) {
                         navigator.pushNamedAndRemoveUntil('/', (route) => false);
                       }

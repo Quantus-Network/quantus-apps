@@ -1,15 +1,12 @@
 name: quantus_sdk
 description: Shared Quantus Dart + Rust bindings and services
 version: 0.1.0
-publish_to: none
+publish_to: 'none'
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-  
   # Rust bridge and local dependencies
   flutter_rust_bridge: 2.9.0 # Version managed by melos.yaml
   rust_lib_resonance_network_wallet:
@@ -25,16 +22,15 @@ dependencies:
   crypto: # Version managed by melos.yaml
   ss58: # Version managed by melos.yaml
   convert: # Version managed by melos.yaml
+  encrypt: ^5.0.3
   
   # Storage, networking, and utilities
-  shared_preferences: # Version managed by melos.yaml
-  flutter_secure_storage: # Version managed by melos.yaml
   http: # Version managed by melos.yaml
   decimal: # Version managed by melos.yaml
   quiver: # Version managed by melos.yaml
-  
-  # UI feedback
-  flash: # Version managed by melos.yaml
+  path: # Version managed by melos.yaml
+  flutter_secure_storage: # Version managed by melos.yaml
+  shared_preferences: # Version managed by melos.yaml
   
   # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:
@@ -52,8 +48,5 @@ polkadart:
       resonance: ws://localhost:9944 # Local dev node 
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: # Version managed by melos.yaml
-  integration_test:
-    sdk: flutter
+  lints: ^3.0.0
+  test: # Version managed by melos.yaml

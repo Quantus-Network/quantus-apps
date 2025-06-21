@@ -57,21 +57,20 @@ Uint8List getAccountId32(String ss58Address) {
 }
 
 class SubstrateService {
-  static final SubstrateService _instance = SubstrateService._internal();
-  factory SubstrateService() => _instance;
-  SubstrateService._internal();
+  final SettingsService _settingsService;
 
   Provider? _provider;
   StateApi? _stateApi;
   AuthorApi? _authorApi;
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
-  final SettingsService _settingsService = SettingsService();
 
   // Add StreamController for connection status
   final _connectionStatusController = StreamController<ConnectionStatus>.broadcast();
 
   // Expose the stream
   Stream<ConnectionStatus> get connectionStatus => _connectionStatusController.stream;
+
+  SubstrateService(this._settingsService);
 
   Future<void> initialize() async {
     // Only create the provider if it hasn't been created yet
@@ -216,7 +215,7 @@ class SubstrateService {
   }
 
   Future<crypto.Keypair> _getUserWallet() async {
-    final settingsService = SettingsService();
+    final settingsService = _settingsService;
     final senderSeed = await settingsService.getMnemonic();
     if (senderSeed == null || senderSeed.isEmpty) {
       throw Exception('Sender mnemonic not found for fee estimation.');

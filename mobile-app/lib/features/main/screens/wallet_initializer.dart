@@ -13,7 +13,7 @@ class WalletInitializer extends StatefulWidget {
 class WalletInitializerState extends State<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
-  final SettingsService _settingsService = SettingsService();
+  final SettingsService _settingsService = ServiceLocator().settingsService;
 
   @override
   void initState() {
@@ -33,11 +33,7 @@ class WalletInitializerState extends State<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_walletExists) {

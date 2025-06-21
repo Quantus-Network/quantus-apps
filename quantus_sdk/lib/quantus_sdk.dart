@@ -5,6 +5,7 @@ export 'src/services/reversible_transfers_service.dart';
 export 'src/services/recovery_service.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/services/settings_service.dart';
+export 'service_locator.dart';
 export 'src/constants/app_constants.dart';
 export 'src/services/human_readable_checksum_service.dart';
 export 'src/services/number_formatting_service.dart';

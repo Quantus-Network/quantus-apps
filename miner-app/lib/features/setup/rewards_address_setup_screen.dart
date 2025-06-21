@@ -5,14 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has walle
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Will need this for secure storage
 import 'package:flutter_svg/flutter_svg.dart';
 
-enum RewardsAddressSetupStep {
-  checking,
-  notSet,
-  createOrImport,
-  createNew,
-  importExisting,
-  set,
-}
+enum RewardsAddressSetupStep { checking, notSet, createOrImport, createNew, importExisting, set }
 
 class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
@@ -68,7 +61,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     });
 
     try {
-      final newMnemonic = await SubstrateService().generateMnemonic();
+      final newMnemonic = await ServiceLocator().substrateService.generateMnemonic();
 
       setState(() {
         _generatedMnemonic = newMnemonic;
@@ -108,7 +101,9 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     try {
       // Derive seed from mnemonic and securely store it
-      SubstrateService().dilithiumKeypairFromMnemonic(mnemonic); // Validate mnemonic by trying to derive keypair
+      ServiceLocator().substrateService.dilithiumKeypairFromMnemonic(
+        mnemonic,
+      ); // Validate mnemonic by trying to derive keypair
       await _securelyStoreMnemonic(mnemonic);
 
       setState(() {
@@ -144,12 +139,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rewards Address Setup'),
-      ),
-      body: Center(
-        child: _buildBody(),
-      ),
+      appBar: AppBar(title: const Text('Rewards Address Setup')),
+      body: Center(child: _buildBody()),
     );
   }
 
@@ -176,10 +167,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       children: [
         SvgPicture.asset('assets/quantus_icon.svg', width: 80, height: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Rewards Address not set.',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Rewards Address not set.', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         const Text(
           'You need to set a rewards address to receive mining rewards.',
@@ -308,10 +296,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: _importController,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Enter mnemonic or seed phrase',
-            ),
+            decoration: InputDecoration(border: OutlineInputBorder(), hintText: 'Enter mnemonic or seed phrase'),
             maxLines: 3,
           ),
           const SizedBox(height: 24),
@@ -335,10 +320,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       children: [
         const Icon(Icons.account_balance_wallet, color: Colors.green, size: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Rewards Address Set!',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Rewards Address Set!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _onAddressSet, // Navigate to main screen

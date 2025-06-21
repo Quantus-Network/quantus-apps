@@ -98,12 +98,16 @@ scripts:
   # Get dependencies for all packages
   get:
     description: Get dependencies for all packages
-    run: melos exec -- flutter pub get
+    run: |
+      melos exec --scope="*app" -- flutter pub get
+      melos exec --scope="quantus_sdk,cli" -- dart pub get
 
   # Clean all packages
   clean:
     description: Clean all packages
-    run: melos exec -- flutter clean
+    run: |
+      melos exec --scope="*app" -- flutter clean
+      melos exec --scope="quantus_sdk,cli" -- dart clean
 
   # Generate pubspec_overrides.yaml files
   bootstrap:
@@ -119,11 +123,8 @@ scripts:
   build-cli:
     description: Build CLI executable
     run: |
-      cd cli
-      flutter build macos --release
-      echo '#!/bin/bash' > resonance_cli
-      echo 'DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"' >> resonance_cli
-      echo 'exec "$DIR/build/macos/Build/Products/Release/resonance_cli.app/Contents/MacOS/resonance_cli" "$@"' >> resonance_cli
+      dart compile exe cli/bin/main.dart -o cli/build/resonance
+      mv cli/build/resonance resonance_cli
       chmod +x resonance_cli
 
   # Full setup - bootstrap, get deps, generate, and analyze

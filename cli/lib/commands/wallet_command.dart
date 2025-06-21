@@ -30,13 +30,12 @@ class _SetPassphraseCommand extends Command<int> {
   String get name => 'set-passphrase';
 
   final Logger logger;
-  final _settingsService = SettingsService();
+  final _settingsService = ServiceLocator().settingsService;
 
   @override
   Future<int> run() async {
     final mnemonic = argResults?['mnemonic'] as String;
     logger.info('Attempting to set passphrase with mnemonic: "$mnemonic"');
-    await _settingsService.initialize();
     await _settingsService.setMnemonic(mnemonic);
     logger.success('Passphrase has been set successfully.');
     return ExitCode.success.code;
@@ -53,12 +52,11 @@ class _ClearPassphraseCommand extends Command<int> {
   String get name => 'clear-passphrase';
 
   final Logger logger;
-  final _settingsService = SettingsService();
+  final _settingsService = ServiceLocator().settingsService;
 
   @override
   Future<int> run() async {
     logger.info('Attempting to clear passphrase...');
-    await _settingsService.initialize();
     await _settingsService.clearMnemonic();
     logger.success('Passphrase has been cleared.');
     return ExitCode.success.code;
@@ -75,14 +73,12 @@ class _ShowAddressCommand extends Command<int> {
   String get name => 'show-address';
 
   final Logger logger;
-  final _settingsService = SettingsService();
-  final _substrateService = SubstrateService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
 
   @override
   Future<int> run() async {
     logger.info('Attempting to show address...');
-    await _settingsService.initialize();
-    await _substrateService.initialize();
     final mnemonic = await _settingsService.getMnemonic();
 
     if (mnemonic == null || mnemonic.isEmpty) {

@@ -9,7 +9,7 @@ final logger = Logger();
 
 void main(List<String> args) async {
   try {
-    await SubstrateService().initialize(); // Initialize SubstrateService
+    await ServiceLocator().substrateService.initialize(); // Initialize SubstrateService
     await QuantusSdk.init();
 
     final exitCode = await ResonanceCliRunner(

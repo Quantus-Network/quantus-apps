@@ -15,7 +15,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
   final TextEditingController _mnemonicController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
-  final SettingsService _settingsService = SettingsService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
 
   Future<void> _importWallet() async {
     setState(() {
@@ -38,7 +39,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
+      final walletInfo = await _substrateService.generateWalletFromSeed(input);
       // Save wallet info
       await _settingsService.setHasWallet(true);
       await _settingsService.setMnemonic(input);

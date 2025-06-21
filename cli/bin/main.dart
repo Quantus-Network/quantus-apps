@@ -10,7 +10,8 @@ import 'package:resonance_cli/runner.dart';
 final logger = Logger();
 
 Future<void> main(List<String> args) async {
-  await SubstrateService().initialize(); // Initialize SubstrateService
+  ServiceLocator().initialize();
+  await ServiceLocator().substrateService.initialize();
   await QuantusSdk.init();
 
   await _flushThenExit(

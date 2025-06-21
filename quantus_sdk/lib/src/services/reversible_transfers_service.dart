@@ -6,6 +6,7 @@ import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_
 import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/reversible_account_data.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'substrate_service.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -15,7 +16,7 @@ class ReversibleTransfersService {
   factory ReversibleTransfersService() => _instance;
   ReversibleTransfersService._internal();
 
-  final SubstrateService _substrateService = SubstrateService();
+  final SubstrateService _substrateService = ServiceLocator().substrateService;
 
   /// Enable reversibility for the calling account with specified delay and policy
   /// Used for theft deterrence - enables all future transfers to be reversible

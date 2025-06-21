@@ -17,7 +17,8 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
   bool _isLoading = true;
   bool _hasSavedMnemonic = false;
   String? _error;
-  final SettingsService _settingsService = SettingsService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     });
 
     try {
-      _mnemonic = await SubstrateService().generateMnemonic();
+      _mnemonic = await _substrateService.generateMnemonic();
       if (_mnemonic.isEmpty) throw Exception('Mnemonic generation returned empty.');
 
       if (mounted) {
@@ -62,10 +63,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     }
 
     try {
-      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-
-      // final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
-      // if (walletName.isEmpty) throw Exception('Checksum generation failed');
+      final walletInfo = await _substrateService.generateWalletFromSeed(_mnemonic);
 
       await _settingsService.setHasWallet(true);
       await _settingsService.setMnemonic(_mnemonic);
@@ -280,35 +278,14 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                         ],
                       ),
                       const SizedBox(height: 17),
-                      if (canContinue)
+                      if (!canContinue)
                         GradientActionButton(
                           label: 'Continue',
                           onPressed: _saveWalletAndContinue,
                           isLoading: _isLoading,
                         )
                       else
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.grey[700],
-                              backgroundColor: Colors.grey[400],
-                              minimumSize: const Size(double.infinity, 50),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
-                            ),
-                            onPressed: null,
-                            child: const Text(
-                              'Continue',
-                              style: TextStyle(
-                                color: Color(0xFF0E0E0E),
-                                fontSize: 18,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
+                        GradientActionButton(label: 'Continue', onPressed: _saveWalletAndContinue),
                     ],
                   ),
                 ),
@@ -322,17 +299,39 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
 
   Widget _buildMnemonicWord(int index, String word) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: ShapeDecoration(
+        color: Colors.white.useOpacity(0.1),
         shape: RoundedRectangleBorder(
-          side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
-          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(width: 1, color: Color(0x33D9D9D9)),
+          borderRadius: BorderRadius.circular(100),
         ),
       ),
-      child: Text(
-        '$index.$word',
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            '$index',
+            style: TextStyle(
+              color: Colors.white.useOpacity(0.5),
+              fontSize: 12,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            word,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -31,8 +31,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   SendOverlayState _currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
-  final NumberFormattingService _formattingService = NumberFormattingService();
-  final SettingsService _settingsService = SettingsService();
+  final _formattingService = NumberFormattingService();
+  final _settingsService = ServiceLocator().settingsService;
+  final _substrateService = ServiceLocator().substrateService;
 
   Future<void> _confirmSend() async {
     if (_isSending) return;
@@ -55,7 +56,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Recipient: ${widget.recipientAddress}');
       debugPrint('  Amount (BigInt): ${widget.amount}');
 
-      await SubstrateService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+      await _substrateService.balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
 
       debugPrint('Balance transfer successful.');
 
@@ -96,10 +97,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
+                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
                   child: const Icon(Icons.close, color: Colors.black, size: 18),
                 ),
               ),
@@ -112,25 +110,13 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             Container(
               width: 49,
               height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.useOpacity(0.1),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: SvgPicture.asset(
-                'assets/send_icon_1.svg',
-                width: 24,
-                height: 24,
-              ),
+              decoration: BoxDecoration(color: Colors.white.useOpacity(0.1), borderRadius: BorderRadius.circular(5)),
+              child: SvgPicture.asset('assets/send_icon_1.svg', width: 24, height: 24),
             ),
             const SizedBox(width: 7),
             const Text(
               'SEND',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w300,
-              ),
+              style: TextStyle(color: Colors.white, fontSize: 28, fontFamily: 'Fira Code', fontWeight: FontWeight.w300),
             ),
           ],
         ),
@@ -143,15 +129,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 Container(
                   width: 25,
                   height: 25,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/res_icon.svg',
-                    ),
-                  ),
+                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
+                  child: Center(child: SvgPicture.asset('assets/res_icon.svg')),
                 ),
                 const SizedBox(width: 13),
                 Text.rich(
@@ -268,9 +247,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     padding: const EdgeInsets.all(16),
                     decoration: ShapeDecoration(
                       color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                     ),
                     child: const Text(
                       'Confirm',
@@ -310,10 +287,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
+                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
                   child: const Icon(Icons.close, color: Colors.black, size: 18),
                 ),
               ),
@@ -329,13 +303,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               Positioned(
                 top: 0,
-                child: SizedBox(
-                  width: 85,
-                  height: 85,
-                  child: SvgPicture.asset(
-                    'assets/res_icon.svg',
-                  ),
-                ),
+                child: SizedBox(width: 85, height: 85, child: SvgPicture.asset('assets/res_icon.svg')),
               ),
               const Positioned(
                 bottom: 0,
@@ -376,10 +344,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
+                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
                   child: const Icon(Icons.close, color: Colors.black, size: 18),
                 ),
               ),
@@ -397,11 +362,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 85,
-                    height: 85,
-                    child: SvgPicture.asset('assets/res_icon.svg'),
-                  ),
+                  SizedBox(width: 85, height: 85, child: SvgPicture.asset('assets/res_icon.svg')),
                   const SizedBox(height: 17),
                   const SizedBox(
                     width: 126,
@@ -503,9 +464,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             padding: const EdgeInsets.all(16),
             decoration: ShapeDecoration(
               color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
             ),
             child: const Text(
               'Done',
@@ -546,9 +505,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                color: Colors.black.useOpacity(0.3),
-              ),
+              child: Container(color: Colors.black.useOpacity(0.3)),
             ),
           ),
           Container(

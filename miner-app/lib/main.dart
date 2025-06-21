@@ -68,29 +68,18 @@ final _router = GoRouter(
       // but can be a fallback or initial loading screen.
       builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
     ),
-    GoRoute(
-      path: '/node_setup',
-      builder: (context, state) => const NodeSetupScreen(),
-    ),
-    GoRoute(
-      path: '/node_identity_setup',
-      builder: (context, state) => const NodeIdentitySetupScreen(),
-    ),
-    GoRoute(
-      path: '/rewards_address_setup',
-      builder: (context, state) => const RewardsAddressSetupScreen(),
-    ),
-    GoRoute(
-      path: '/miner_dashboard',
-      builder: (context, state) => const MinerDashboardScreen(),
-    ),
+    GoRoute(path: '/node_setup', builder: (context, state) => const NodeSetupScreen()),
+    GoRoute(path: '/node_identity_setup', builder: (context, state) => const NodeIdentitySetupScreen()),
+    GoRoute(path: '/rewards_address_setup', builder: (context, state) => const RewardsAddressSetupScreen()),
+    GoRoute(path: '/miner_dashboard', builder: (context, state) => const MinerDashboardScreen()),
   ],
 );
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
   try {
-    await SubstrateService().initialize(); // Initialize SubstrateService
+    ServiceLocator().initialize();
+    await ServiceLocator().substrateService.initialize();
     await QuantusSdk.init();
     print('SubstrateService and QuantusSdk initialized successfully.');
   } catch (e) {
@@ -104,9 +93,6 @@ class MinerApp extends StatelessWidget {
   const MinerApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
-        title: 'Quantus Miner',
-        theme: ThemeData.dark(useMaterial3: true),
-        routerConfig: _router,
-      );
+  Widget build(BuildContext context) =>
+      MaterialApp.router(title: 'Quantus Miner', theme: ThemeData.dark(useMaterial3: true), routerConfig: _router);
 }
