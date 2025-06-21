@@ -6,12 +6,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_cli/commands/send_command.dart';
 import 'package:resonance_cli/commands/wallet_command.dart';
 import 'package:resonance_cli/runner.dart';
-import 'package:flutter/widgets.dart';
 
 final logger = Logger();
 
 Future<void> main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
   await SubstrateService().initialize(); // Initialize SubstrateService
   await QuantusSdk.init();
 
