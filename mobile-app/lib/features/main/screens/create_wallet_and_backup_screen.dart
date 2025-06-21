@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/features/components/gradient_action_but
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});

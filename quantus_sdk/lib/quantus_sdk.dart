@@ -3,7 +3,6 @@ library;
 export 'src/services/substrate_service.dart';
 export 'src/services/reversible_transfers_service.dart';
 export 'src/services/recovery_service.dart';
-export 'src/extensions/color_extensions.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/service_locator.dart';
 export 'src/services/secure_storage_service.dart';

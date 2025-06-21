@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class ResonanceWalletApp extends StatelessWidget {
   const ResonanceWalletApp({super.key});
@@ -11,10 +11,7 @@ class ResonanceWalletApp extends StatelessWidget {
     return MaterialApp(
       title: 'Quantus Wallet',
       initialRoute: '/',
-      routes: {
-        '/': (context) => const WalletInitializer(),
-        '/send': (context) => const SendScreen(),
-      },
+      routes: {'/': (context) => const WalletInitializer(), '/send': (context) => const SendScreen()},
       theme: ThemeData(
         primaryColor: const Color(0xFF6B46C1), // Deep purple
         scaffoldBackgroundColor: const Color(0xFF1A1A1A), // Dark background
@@ -25,33 +22,22 @@ class ResonanceWalletApp extends StatelessWidget {
           surface: const Color(0xFF2D2D2D),
           error: Colors.red.shade400,
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2D2D2D),
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF2D2D2D), elevation: 0),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF6B46C1),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF9F7AEA),
             side: const BorderSide(color: Color(0xFF9F7AEA)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF9F7AEA),
-          ),
-        ),
+        textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: const Color(0xFF9F7AEA))),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -79,33 +65,22 @@ class ResonanceWalletApp extends StatelessWidget {
           surface: const Color(0xFF2D2D2D),
           error: Colors.red.shade400,
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2D2D2D),
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF2D2D2D), elevation: 0),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF6B46C1),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFF9F7AEA),
             side: const BorderSide(color: Color(0xFF9F7AEA)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF9F7AEA),
-          ),
-        ),
+        textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: const Color(0xFF9F7AEA))),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

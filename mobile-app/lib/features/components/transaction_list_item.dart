@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final bool isReceived;
 
-  const TransactionListItem({
-    super.key,
-    required this.transaction,
-    required this.isReceived,
-  });
+  const TransactionListItem({super.key, required this.transaction, required this.isReceived});
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +22,7 @@ class TransactionListItem extends StatelessWidget {
           color: isReceived ? Colors.green : Colors.red,
         ),
       ),
-      title: Text(
-        isReceived ? 'Received' : 'Sent',
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: Text(isReceived ? 'Received' : 'Sent', style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(
         transaction.otherParty,
         style: const TextStyle(fontSize: 12),
@@ -41,15 +35,9 @@ class TransactionListItem extends StatelessWidget {
         children: [
           Text(
             '${isReceived ? '+' : '-'}${NumberFormattingService().formatBalance(transaction.amount)} QUAN',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isReceived ? Colors.green : Colors.red,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: isReceived ? Colors.green : Colors.red),
           ),
-          Text(
-            transaction.status.name,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(transaction.status.name, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );

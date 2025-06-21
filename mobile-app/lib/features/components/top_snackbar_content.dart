@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class TopSnackBarContent extends StatelessWidget {
   final String title;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});

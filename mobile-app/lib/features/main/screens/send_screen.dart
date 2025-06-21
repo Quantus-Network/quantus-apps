@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/main/screens/send_progress_ove
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
+import 'package:resonance_network_wallet/features/components/color_extensions.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
