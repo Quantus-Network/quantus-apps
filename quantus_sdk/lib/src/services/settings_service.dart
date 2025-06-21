@@ -1,5 +1,4 @@
-import 'package:quantus_sdk/secure_storage_service.dart';
-import 'package:quantus_sdk/preferences_storage_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class SettingsService {
   final SecureStorageService _secureStorage;

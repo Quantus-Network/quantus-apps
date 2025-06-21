@@ -1,6 +1,6 @@
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/services/settings_service.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
-import 'package:quantus_sdk/storage_provider_cli.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();

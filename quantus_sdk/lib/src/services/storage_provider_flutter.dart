@@ -1,7 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:quantus_sdk/secure_storage_service.dart';
-import 'package:quantus_sdk/preferences_storage_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class FlutterSecureStorageService implements SecureStorageService {
   final _secureStorage = const FlutterSecureStorage();
