@@ -18,6 +18,7 @@ class BinaryManager {
   // External miner constants
   static const _minerRepoName = 'quantus-miner';
   static const _minerBinary = 'external-miner';
+  static const _minerReleaseBinary = 'quantus-miner'; // The actual binary name in releases
 
   static Future<String> getQuantusHomeDirectoryPath() async {
     final dir = Directory(p.join(_home(), '.quantus'));
@@ -121,37 +122,94 @@ class BinaryManager {
     final binPath = await getExternalMinerBinaryFilePath();
     final binFile = File(binPath);
 
+    print('DEBUG: Checking for external miner at path: $binPath');
+
     if (await binFile.exists()) {
       // If file exists, report 100% progress and return
+      print('DEBUG: External miner binary already exists at $binPath');
       onProgress?.call(DownloadProgress(1, 1)); // Simulate 100% if already downloaded
       return binFile;
     }
 
+    print('DEBUG: External miner binary not found, starting download process...');
+
     // 2. find latest tag on GitHub
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest'));
-    final tag = jsonDecode(rel.body)['tag_name'] as String;
+    final releaseUrl = 'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
+    print('DEBUG: Fetching latest release from: $releaseUrl');
 
-    print('found latest external miner tag: $tag');
+    final rel = await http.get(Uri.parse(releaseUrl));
+    print('DEBUG: GitHub API response status: ${rel.statusCode}');
+    print('DEBUG: GitHub API response body: ${rel.body}');
 
-    // 3. pick asset name like the shell script
-    final target = _targetTriple();
-    final asset = '$_minerBinary-$tag-$target.tar.gz';
+    final releaseData = jsonDecode(rel.body);
+    final tag = releaseData['tag_name'] as String;
+
+    print('DEBUG: Found latest external miner tag: $tag');
+
+    // 3. pick asset name to match actual GitHub releases
+    // The releases use: quantus-miner-{platform}-{arch}
+    String platform;
+    String arch;
+
+    if (Platform.isMacOS) {
+      platform = 'macos';
+    } else if (Platform.isLinux) {
+      platform = 'linux';
+    } else if (Platform.isWindows) {
+      platform = 'windows';
+    } else {
+      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+    }
+
+    if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+      arch = 'aarch64';
+    } else {
+      arch = 'x86_64';
+    }
+
+    final asset = Platform.isWindows
+        ? '$_minerReleaseBinary-$platform-$arch.exe'
+        : '$_minerReleaseBinary-$platform-$arch';
+
+    print('DEBUG: Looking for asset: $asset');
+
     final url = 'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
+    print('DEBUG: Download URL: $url');
 
-    // 4. download
+    // Check if the asset exists in the release
+    final assets = releaseData['assets'] as List;
+    print('DEBUG: Available assets in release:');
+    bool assetFound = false;
+    for (var assetInfo in assets) {
+      print('  - ${assetInfo['name']} (${assetInfo['browser_download_url']})');
+      if (assetInfo['name'] == asset) {
+        assetFound = true;
+      }
+    }
+
+    if (!assetFound) {
+      throw Exception(
+        'Asset $asset not found in release. Available assets: ${assets.map((a) => a['name']).join(', ')}',
+      );
+    }
+
+    // 4. download the binary directly (no compression)
     final cacheDir = await _getCacheDir();
-    final tgz = File(p.join(cacheDir.path, asset));
+    final tempBinaryFile = File(p.join(cacheDir.path, asset));
+    print('DEBUG: Will download to: ${tempBinaryFile.path}');
 
     final client = http.Client();
     try {
       final request = http.Request('GET', Uri.parse(url));
       final response = await client.send(request);
 
+      print('DEBUG: Download response status: ${response.statusCode}');
       if (response.statusCode != 200) {
         throw Exception('Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}');
       }
 
       final totalBytes = response.contentLength ?? -1;
+      print('DEBUG: Expected download size: $totalBytes bytes');
       int downloadedBytes = 0;
       List<int> allBytes = [];
 
@@ -167,7 +225,9 @@ class BinaryManager {
           onProgress?.call(DownloadProgress(downloadedBytes, 0));
         }
       }
-      await tgz.writeAsBytes(allBytes);
+      await tempBinaryFile.writeAsBytes(allBytes);
+      print('DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}');
+
       // Ensure 100% is reported at the end if not already due to chunking.
       if (totalBytes > 0 && downloadedBytes < totalBytes) {
         // This case should ideally not happen if stream ends correctly.
@@ -180,9 +240,33 @@ class BinaryManager {
       client.close();
     }
 
-    // 5. extract
-    await Process.run('tar', ['-xzf', tgz.path, '-C', cacheDir.path]);
-    if (!Platform.isWindows) await Process.run('chmod', ['+x', binPath]);
+    // 5. Move the downloaded binary to the expected location and make executable
+    print('DEBUG: Moving binary from ${tempBinaryFile.path} to $binPath');
+    await tempBinaryFile.rename(binPath);
+
+    // List contents of cache dir to see what we have
+    print('DEBUG: Contents of cache directory after download:');
+    final cacheDirContents = await cacheDir.list().toList();
+    for (var item in cacheDirContents) {
+      print('  - ${item.path}');
+    }
+
+    if (!Platform.isWindows) {
+      print('DEBUG: Setting executable permissions on $binPath');
+      final chmodResult = await Process.run('chmod', ['+x', binPath]);
+      print('DEBUG: chmod exit code: ${chmodResult.exitCode}');
+      if (chmodResult.exitCode != 0) {
+        print('DEBUG: chmod stderr: ${chmodResult.stderr}');
+      }
+    }
+
+    // Final check
+    if (await binFile.exists()) {
+      print('DEBUG: External miner binary successfully created at $binPath');
+    } else {
+      print('DEBUG: ERROR - External miner binary still not found at $binPath after download!');
+      throw Exception('External miner binary not found after download at $binPath');
+    }
 
     return binFile;
   }

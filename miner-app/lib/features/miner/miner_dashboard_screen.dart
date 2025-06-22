@@ -48,7 +48,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
     print('fetching wallet balance');
     try {
       final mnemonic = await _storage.read(key: 'rewards_address_mnemonic');
-      print('mnemonic: $mnemonic');
+      print('mnemonic: ${mnemonic?.split(" ").length} words');
       if (mnemonic != null) {
         // Derive keypair from mnemonic using SubstrateService (exported by quantus_sdk)
         final keypair = SubstrateService().dilithiumKeypairFromMnemonic(mnemonic);
@@ -95,7 +95,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         return AlertDialog(
           title: const Text('Logout?'),
           content: const Text(
-              'This will delete your stored rewards address mnemonic, node identity, and the downloaded node binary. You will need to go through the full setup process again.\n\nAre you sure you want to continue?'),
+            'This will delete your stored rewards address mnemonic, node identity, and the downloaded node binary. You will need to go through the full setup process again.\n\nAre you sure you want to continue?',
+          ),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -198,10 +199,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   ),
                   const SizedBox(width: 16),
                   // Mine Button Section (Right)
-                  const Expanded(
-                    flex: 1,
-                    child: MinerControls(),
-                  ),
+                  const Expanded(flex: 1, child: MinerControls()),
                 ],
               ),
             ),
@@ -213,10 +211,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Mining Stats:',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Mining Stats:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text(
                       (_miningStats.trim().isEmpty) ? 'No data' : _miningStats.replaceAll('\\n', '\n'),

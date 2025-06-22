@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
-import 'dart:io';
 
 void main() {
   group('External Miner Binary Management', () {
