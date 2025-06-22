@@ -30,35 +30,56 @@ class _MinerControlsState extends State<MinerControls> {
 
     if (_proc == null) {
       print('Starting mining');
+
+      // Check for all required files and binaries
       final id = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p');
       final rew = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/rewards-address.txt');
       final binPath = await BinaryManager.getNodeBinaryFilePath();
       final bin = File(binPath);
+      final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
+      final minerBin = File(minerBinPath);
 
+      // Check node binary
       if (!await bin.exists()) {
         print('Node binary not found. Cannot start mining.');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Node binary not found. Please run setup.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Node binary not found. Please run setup.')));
         }
         setState(() => _isAttemptingToggle = false);
         return;
       }
 
-      _proc = MinerProcess(bin, id, rew,
-          // Updated to use onMetricsUpdate and new signature
-          onMetricsUpdate: (isSyncing, current, target, newHashrate) {
+      // Check external miner binary
+      if (!await minerBin.exists()) {
+        print('External miner binary not found. Cannot start mining.');
         if (mounted) {
-          setState(() {
-            _isSyncingNode = isSyncing;
-            _currentBlock = current;
-            _targetBlock = target;
-            _hashrate = newHashrate; // Update hashrate from callback
-            // print('UI Updated: Syncing=$isSyncing, Current=$current, Target=$target, Hashrate=$newHashrate');
-          });
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('External miner binary not found. Please run setup.')));
         }
-      });
+        setState(() => _isAttemptingToggle = false);
+        return;
+      }
+
+      _proc = MinerProcess(
+        bin,
+        id,
+        rew,
+        // Updated to use onMetricsUpdate and new signature
+        onMetricsUpdate: (isSyncing, current, target, newHashrate) {
+          if (mounted) {
+            setState(() {
+              _isSyncingNode = isSyncing;
+              _currentBlock = current;
+              _targetBlock = target;
+              _hashrate = newHashrate; // Update hashrate from callback
+              // print('UI Updated: Syncing=$isSyncing, Current=$current, Target=$target, Hashrate=$newHashrate');
+            });
+          }
+        },
+      );
       try {
         setState(() {
           _isSyncingNode = true;
@@ -71,9 +92,7 @@ class _MinerControlsState extends State<MinerControls> {
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error starting miner: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error starting miner: ${e.toString()}')));
         }
         _proc = null;
         setState(() {
@@ -122,7 +141,7 @@ class _MinerControlsState extends State<MinerControls> {
         }
         statusText = 'Status: Syncing$blockInfo...';
       } else {
-        statusText = 'Status: Mining';
+        statusText = 'Status: Mining (External Miner)';
       }
     }
 
@@ -130,11 +149,7 @@ class _MinerControlsState extends State<MinerControls> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          statusText,
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
+        Text(statusText, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
         const SizedBox(height: 8),
         if (_proc != null && !_isSyncingNode && _hashrate != null)
           Text(
@@ -146,11 +161,7 @@ class _MinerControlsState extends State<MinerControls> {
             !_isSyncingNode &&
             _hashrate == null &&
             !_isSyncingNode) // Show fetching only if not syncing and proc started
-          Text(
-            'Hashrate: Fetching...',
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
+          Text('Hashrate: Fetching...', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
         const SizedBox(height: 20),
         ElevatedButton(
           style: ElevatedButton.styleFrom(

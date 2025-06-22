@@ -11,22 +11,67 @@ class MinerProcess {
   final File bin;
   final File identityPath;
   final File rewardsPath;
-  late Process _p;
+  late Process _nodeProcess;
+  Process? _externalMinerProcess;
   late LogFilterService _stdoutFilter;
   late LogFilterService _stderrFilter;
   late PrometheusService _prometheusService;
   Timer? _syncStatusTimer;
   bool _isCurrentlySyncing = true;
   double? _currentHashrate;
+  final int minerCores;
+  final int externalMinerPort;
 
   final Function(bool isSyncing, int? currentBlock, int? targetBlock, double? hashrate)? onMetricsUpdate;
 
-  MinerProcess(this.bin, this.identityPath, this.rewardsPath, {this.onMetricsUpdate});
+  MinerProcess(
+    this.bin,
+    this.identityPath,
+    this.rewardsPath, {
+    this.onMetricsUpdate,
+    this.minerCores = 8,
+    this.externalMinerPort = 9833,
+  });
 
   final _hashrateRegex = RegExp(r"(\d+\.\d+)\s*H/s");
   final _legacyHashrateRegex = RegExp(r"Mining target.* (\d+\.\d+)");
 
   Future<void> start() async {
+    // First, ensure both binaries are available
+    print('Ensuring node binary is available...');
+    await BinaryManager.ensureNodeBinary();
+
+    print('Ensuring external miner binary is available...');
+    final externalMinerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
+    await BinaryManager.ensureExternalMinerBinary();
+    final externalMinerBin = File(externalMinerBinPath);
+
+    if (!await externalMinerBin.exists()) {
+      throw Exception('External miner binary not found at $externalMinerBinPath');
+    }
+
+    // Start the external miner first
+    print('Starting external miner on port $externalMinerPort with $minerCores cores...');
+    _externalMinerProcess = await Process.start(externalMinerBin.path, [
+      '--port',
+      externalMinerPort.toString(),
+      '--num-cores',
+      minerCores.toString(),
+    ]);
+
+    // Set up external miner log handling
+    _externalMinerProcess!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      print('[ext-miner] $line');
+    });
+
+    _externalMinerProcess!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      print('[ext-miner-err] $line');
+    });
+
+    // Give the external miner a moment to start up
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Now start the node process
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final basePath = p.join(quantusHome, 'node_data');
     await Directory(basePath).create(recursive: true);
@@ -61,13 +106,15 @@ class MinerProcess {
       '--prometheus-port',
       '9616',
       '--name',
-      'QuantusMinerGUI'
+      'QuantusMinerGUI',
+      '--external-miner',
+      'http://127.0.0.1:$externalMinerPort',
     ];
 
     print('DEBUG: Executing command: ${bin.path}');
     print('DEBUG: With arguments: ${args.join(' ')}');
 
-    _p = await Process.start(bin.path, args);
+    _nodeProcess = await Process.start(bin.path, args);
     _stdoutFilter = LogFilterService();
     _stderrFilter = LogFilterService();
     _prometheusService = PrometheusService();
@@ -120,25 +167,31 @@ class MinerProcess {
       }
     }
 
-    _p.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+    _nodeProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
       processLogLine(line, 'stdout');
     });
 
-    _p.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+    _nodeProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
       processLogLine(line, 'stderr');
     });
   }
 
   void stop() {
-    print('MinerProcess: stop() called. Killing process.');
+    print('MinerProcess: stop() called. Killing processes.');
     _syncStatusTimer?.cancel();
     _currentHashrate = null;
     onMetricsUpdate?.call(false, null, null, _currentHashrate);
 
     try {
-      _p.kill();
+      _nodeProcess.kill();
     } catch (e) {
-      print('MinerProcess: Error killing process: $e');
+      print('MinerProcess: Error killing node process: $e');
+    }
+
+    try {
+      _externalMinerProcess?.kill();
+    } catch (e) {
+      print('MinerProcess: Error killing external miner process: $e');
     }
   }
 }

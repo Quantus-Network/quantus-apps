@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
 
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});
 
@@ -46,11 +48,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   void _copyAddress() {
     if (_accountId != null) {
       Clipboard.setData(ClipboardData(text: _accountId!));
-      showTopSnackBar(
-        context,
-        title: 'Copied!',
-        message: 'Address copied to clipboard',
-      );
+      showTopSnackBar(context, title: 'Copied!', message: 'Address copied to clipboard');
     }
   }
 
@@ -73,26 +71,15 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               padding: const EdgeInsets.all(7),
               decoration: ShapeDecoration(
                 color: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(width: 10, height: 10),
-                ],
-              ),
+              child: const Row(mainAxisAlignment: MainAxisAlignment.end, children: [SizedBox(width: 10, height: 10)]),
             ),
             const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset(
-                  'assets/receive_icon.svg',
-                  width: 37,
-                  height: 37,
-                ),
+                SvgPicture.asset('assets/receive_icon.svg', width: 37, height: 37),
                 const SizedBox(width: 7),
                 const Text(
                   'RECEIVE',
@@ -107,28 +94,20 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
             ),
             const SizedBox(height: 28),
             if (_accountId == null)
-              const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
+              const Center(child: CircularProgressIndicator(color: Colors.white))
             else ...[
               Container(
                 width: 227,
                 height: 227,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                 child: QrImageView(
                   data: _accountId!,
                   version: QrVersions.auto,
                   size: 260.0,
                   padding: EdgeInsets.zero,
                   backgroundColor: Colors.white,
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: Colors.black,
-                  ),
+                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
                     color: Colors.black,
@@ -144,15 +123,20 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(
-                            height: 14,
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          height: 14,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
                               SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54)),
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                              ),
                               SizedBox(width: 8),
                               Text('Loading name...', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                            ]));
+                            ],
+                          ),
+                        );
                       } else if (snapshot.hasError ||
                           !snapshot.hasData ||
                           snapshot.data == null ||
@@ -200,11 +184,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                         const SizedBox(width: 8),
                         InkWell(
                           onTap: _copyAddress,
-                          child: SvgPicture.asset(
-                            'assets/copy_icon.svg',
-                            width: 16,
-                            height: 16,
-                          ),
+                          child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
                         ),
                       ],
                     ),
@@ -219,9 +199,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   onPressed: _copyAddress,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                   ),
                   child: const Text(
                     'Share',
@@ -250,10 +228,7 @@ void showReceiveSheet(BuildContext context) {
     isScrollControlled: true,
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: Container(
-        color: Colors.black.useOpacity(0.2),
-        child: const ReceiveSheet(),
-      ),
+      child: Container(color: Colors.black.useOpacity(0.2), child: const ReceiveSheet()),
     ),
   );
 }
