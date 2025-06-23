@@ -57,13 +57,13 @@ pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
 #[flutter_rust_bridge::frb(sync)]
 pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
     let keypair = ml_dsa_87::Keypair {
-        secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key),
-        public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key),
+        secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key)
+            .expect("Failed to parse secret key"),
+        public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key)
+            .expect("Failed to parse public key"),
     };
 
-    let signature = keypair
-        .sign(&message, None, false)
-        .expect("message signing failed");
+    let signature = keypair.sign(&message, None, false);
     signature.as_slice().to_vec()
 }
 
@@ -79,8 +79,10 @@ pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
 #[flutter_rust_bridge::frb(sync)]
 pub fn verify_message(keypair: &Keypair, message: &[u8], signature: &[u8]) -> bool {
     let keypair = ml_dsa_87::Keypair {
-        secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key),
-        public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key),
+        secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key)
+            .expect("Failed to parse secret key"),
+        public: ml_dsa_87::PublicKey::from_bytes(&keypair.public_key)
+            .expect("Failed to parse public key"),
     };
 
     let verified = keypair.verify(&message, &signature, None);
