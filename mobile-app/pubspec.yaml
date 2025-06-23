@@ -35,7 +35,7 @@ dependencies:
   
   human_checksum:
     git:
-      url: https://github.com/Resonance-Network/human-checkphrase.git
+      url: https://github.com/Quantus-Network/human-checkphrase.git
       path: dart
 
 dev_dependencies:

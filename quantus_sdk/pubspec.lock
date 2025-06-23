@@ -368,7 +368,7 @@ packages:
       path: dart
       ref: HEAD
       resolved-ref: "15d4110742fea7c5a0a1d4930aee27b471107215"
-      url: "https://github.com/Resonance-Network/human-checkphrase.git"
+      url: "https://github.com/Quantus-Network/human-checkphrase.git"
     source: git
     version: "0.1.0"
   integration_test:

@@ -39,7 +39,7 @@ dependencies:
   # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:
     git:
-      url: https://github.com/Resonance-Network/human-checkphrase.git
+      url: https://github.com/Quantus-Network/human-checkphrase.git
       path: dart
 
 # Generate Polkadart bindings
