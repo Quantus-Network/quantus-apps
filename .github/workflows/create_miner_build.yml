@@ -21,8 +21,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure Git for private repos
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Configure Git credentials for private repos
+        run: |
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -36,6 +39,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
         working-directory: ./miner-app
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Build macOS release
         run: flutter build macos --release
@@ -60,8 +65,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure Git for private repos
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Configure Git credentials for private repos
+        run: |
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -80,6 +88,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
         working-directory: ./miner-app
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Build Linux release
         run: flutter build linux --release
@@ -103,8 +113,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure Git for private repos
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Configure Git credentials for private repos
+        run: |
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > $env:USERPROFILE\.git-credentials
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -118,6 +131,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
         working-directory: ./miner-app
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Build Windows release
         run: flutter build windows --release
