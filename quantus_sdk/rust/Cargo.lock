@@ -1764,7 +1764,7 @@ dependencies = [
 [[package]]
 name = "plonky2"
 version = "1.0.2"
-source = "git+https://github.com/Resonance-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
+source = "git+https://github.com/Quantus-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
 dependencies = [
  "ahash",
  "anyhow",
@@ -1785,7 +1785,7 @@ dependencies = [
 [[package]]
 name = "plonky2_field"
 version = "1.0.0"
-source = "git+https://github.com/Resonance-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
+source = "git+https://github.com/Quantus-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -1799,12 +1799,12 @@ dependencies = [
 [[package]]
 name = "plonky2_maybe_rayon"
 version = "1.0.0"
-source = "git+https://github.com/Resonance-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
+source = "git+https://github.com/Quantus-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
 
 [[package]]
 name = "plonky2_util"
 version = "1.0.0"
-source = "git+https://github.com/Resonance-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
+source = "git+https://github.com/Quantus-Network/plonky2#80a10007d8359b54843acb826097561859a6b621"
 
 [[package]]
 name = "polkavm-common"
@@ -1889,7 +1889,7 @@ checksum = "350e9b48cbc6b0e028b0473b114454c6316e57336ee184ceab6e53f72c178b3e"
 [[package]]
 name = "poseidon-resonance"
 version = "0.6.0"
-source = "git+https://github.com/Resonance-Network/poseidon-resonance#e39fff549e4bef8f97b1b96e0857c47a6a7eb5ab"
+source = "git+https://github.com/Quantus-Network/poseidon-resonance#fce507b40c166d9acae1a8885898eea83d0d3780"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -2145,7 +2145,7 @@ checksum = "8a0d197bd2c9dc6e53b84da9556a69ba4cdfab8619eb41a8bd1cc2027a0f6b1d"
 [[package]]
 name = "rusty-crystals-dilithium"
 version = "1.0.0"
-source = "git+https://gitlab.com/resonance-network/rusty-crystals.git#035445bb319a176226d756e397151ab24dee2eff"
+source = "git+https://github.com/Quantus-Network/rusty-crystals.git#9d51f1701a729a1f44bcbe165a2bfc269c330118"
 dependencies = [
  "sha2 0.10.9",
 ]
