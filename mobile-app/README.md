@@ -22,7 +22,7 @@ A mobile wallet application for the Quantus blockchain and its native QNT crypto
 
 1. Clone this repository
 ```
-git clone git@github.com:Resonance-Network/resonance-mobile-app.git
+git clone git@github.com:Quantus-Network/resonance-mobile-app.git
 ```
 
 2. Navigate to the project directory
