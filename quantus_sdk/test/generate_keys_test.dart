@@ -37,11 +37,7 @@ void main() {
       expect(signature, isNotEmpty);
 
       // Verify the signature is valid
-      final isValid = verifyMessage(
-        keypair: keypair,
-        message: message,
-        signature: signature,
-      );
+      final isValid = verifyMessage(keypair: keypair, message: message, signature: signature);
 
       expect(isValid, isTrue);
     });

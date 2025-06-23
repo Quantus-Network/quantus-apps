@@ -174,7 +174,7 @@ class BinaryManager {
     print('DEBUG: Looking for asset: $asset');
 
     final url = 'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
-    print('DEBUG: Download URL: $url');
+    // print('DEBUG: Download URL: $url');
 
     // Check if the asset exists in the release
     final assets = releaseData['assets'] as List;
