@@ -138,8 +138,8 @@ class BinaryManager {
     print('DEBUG: Fetching latest release from: $releaseUrl');
 
     final rel = await http.get(Uri.parse(releaseUrl));
-    print('DEBUG: GitHub API response status: ${rel.statusCode}');
-    print('DEBUG: GitHub API response body: ${rel.body}');
+    // print('DEBUG: GitHub API response status: ${rel.statusCode}');
+    // print('DEBUG: GitHub API response body: ${rel.body}');
 
     final releaseData = jsonDecode(rel.body);
     final tag = releaseData['tag_name'] as String;

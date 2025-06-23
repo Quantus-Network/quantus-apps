@@ -198,8 +198,8 @@ class MinerProcess {
       'http://127.0.0.1:$externalMinerPort',
     ];
 
-    print('DEBUG: Executing command: ${bin.path}');
-    print('DEBUG: With arguments: ${args.join(' ')}');
+    print('DEBUG: Executing command:\n ${bin.path} ${args.join(' ')}');
+    print('DEBUG: Args: ${args.join('\n')}');
 
     _nodeProcess = await Process.start(bin.path, args);
     _stdoutFilter = LogFilterService();
