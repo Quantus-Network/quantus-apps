@@ -4,35 +4,46 @@ version: 0.1.0
 publish_to: none
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.4.0
-  path: ^1.9.1
-  quantus_sdk:
-    path: ../quantus_sdk
-  flutter_secure_storage: ^9.0.0
   flutter_localizations:
     sdk: flutter
-  shared_preferences: ^2.5.2
-  provider: ^6.1.2
-  another_flushbar: ^1.10.2
-  go_router: ^14.1.0
-  flutter_hooks: ^0.20.0
-  hooks_riverpod: ^2.5.0
-  decimal: ^2.3.3
-  permission_handler: ^11.1.0
-  image_picker: ^1.1.2
-  logger: ^2.5.0
-  path_provider: ^2.0.0
-  flutter_svg: ^2.0.10+1
+    
+  # Workspace packages (managed by melos.yaml)
+  quantus_sdk: # Version managed by melos.yaml
+  
+  # Networking and storage
+  http: # Version managed by melos.yaml
+  shared_preferences: # Version managed by melos.yaml
+  flutter_secure_storage: # Version managed by melos.yaml
+  
+  # State management and architecture
+  provider: # Version managed by melos.yaml
+  hooks_riverpod: # Version managed by melos.yaml
+  flutter_hooks: # Version managed by melos.yaml
+  go_router: # Version managed by melos.yaml
+  
+  # UI and utilities
+  another_flushbar: # Version managed by melos.yaml
+  flutter_svg: # Version managed by melos.yaml
+  
+  # System and file operations
+  path: # Version managed by melos.yaml
+  path_provider: # Version managed by melos.yaml
+  permission_handler: # Version managed by melos.yaml
+  image_picker: # Version managed by melos.yaml
+  
+  # Math and logging
+  decimal: # Version managed by melos.yaml
+  logger: # Version managed by melos.yaml
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:flutter/services.dart';
 
@@ -54,11 +56,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     if (_mnemonic.isEmpty) {
       debugPrint('Cannot save wallet, mnemonic is empty.');
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Recovery phrase not generated.',
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Recovery phrase not generated.');
       }
       return;
     }
@@ -83,11 +81,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     } catch (e) {
       debugPrint('Error saving wallet: $e');
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Error saving wallet: $e',
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Error saving wallet: $e');
       }
     } finally {
       if (mounted) {
@@ -174,10 +168,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               children: [
                                 CircularProgressIndicator(color: Colors.white),
                                 SizedBox(height: 16),
-                                Text(
-                                  'Generating secure phrase...',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
+                                Text('Generating secure phrase...', style: TextStyle(color: Colors.white70)),
                               ],
                             ),
                           )
@@ -270,9 +261,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               side: WidgetStateBorderSide.resolveWith((states) {
                                 return const BorderSide(width: 1, color: Colors.white);
                               }),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
@@ -306,9 +295,7 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               backgroundColor: Colors.grey[400],
                               minimumSize: const Size(double.infinity, 50),
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5.0),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
                             ),
                             onPressed: null,
                             child: const Text(
@@ -338,22 +325,14 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.white.useOpacity(0.15),
-          ),
+          side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Text(
         '$index.$word',
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
       ),
     );
   }

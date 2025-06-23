@@ -91,6 +91,44 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Pending swap operations.
+  _i4.Future<List<_i2.Id?>> multiPendingSwap(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _pendingSwap.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _pendingSwap.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Amount held on deposit for each para and the original depositor.
+  ///
+  /// The given account ID is responsible for registering the code and initial head data, but may
+  /// only do so if it isn't yet registered. (After that, it's up to governance to do so.)
+  _i4.Future<List<_i3.ParaInfo?>> multiParas(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _paras.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _paras.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `pendingSwap`.
   _i5.Uint8List pendingSwapKey(_i2.Id key1) {
     final hashedKey = _pendingSwap.hashedKeyFor(key1);

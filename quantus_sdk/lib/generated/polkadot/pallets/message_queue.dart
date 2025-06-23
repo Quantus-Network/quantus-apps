@@ -100,6 +100,34 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The index of the first and last (non-empty) pages.
+  _i6.Future<List<_i3.BookState>> multiBookStateFor(
+    List<_i2.AggregateMessageOrigin> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _bookStateFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _bookStateFor.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i3.BookState(
+              begin: 0,
+              end: 0,
+              count: 0,
+              readyNeighbours: null,
+              messageCount: BigInt.zero,
+              size: BigInt.zero,
+            ))
+        .toList() as List<_i3.BookState>); /* Default */
+  }
+
   /// Returns the storage key for `bookStateFor`.
   _i7.Uint8List bookStateForKey(_i2.AggregateMessageOrigin key1) {
     final hashedKey = _bookStateFor.hashedKeyFor(key1);

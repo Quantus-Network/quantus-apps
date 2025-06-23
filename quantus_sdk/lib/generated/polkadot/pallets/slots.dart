@@ -61,6 +61,40 @@ class Queries {
     return []; /* Default */
   }
 
+  /// Amounts held on deposit for each (possibly future) leased parachain.
+  ///
+  /// The actual amount locked on its behalf by any account at any time is the maximum of the
+  /// second values of the items in this list whose first value is the account.
+  ///
+  /// The first item in the list is the amount locked for the current Lease Period. Following
+  /// items are for the subsequent lease periods.
+  ///
+  /// The default value (an empty list) implies that the parachain no longer exists (or never
+  /// existed) as far as this pallet is concerned.
+  ///
+  /// If a parachain doesn't exist *yet* but is scheduled to exist in the future, then it
+  /// will be left-padded with one or more `None`s to denote the fact that nothing is held on
+  /// deposit for the non-existent chain currently, but is held at some point in the future.
+  ///
+  /// It is illegal for a `None` value to trail in the list.
+  _i6.Future<List<List<_i3.Tuple2<_i4.AccountId32, BigInt>?>>> multiLeases(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _leases.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _leases.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i3.Tuple2<_i4.AccountId32, BigInt>?>>); /* Default */
+  }
+
   /// Returns the storage key for `leases`.
   _i7.Uint8List leasesKey(_i2.Id key1) {
     final hashedKey = _leases.hashedKeyFor(key1);

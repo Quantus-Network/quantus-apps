@@ -132,6 +132,34 @@ class Queries {
     return null; /* Default */
   }
 
+  /// A mapping from BEEFY set ID to the index of the *most recent* session for which its
+  /// members were responsible.
+  ///
+  /// This is only used for validating equivocation proofs. An equivocation proof must
+  /// contains a key-ownership proof for a given session, therefore we need a way to tie
+  /// together sessions and BEEFY set ids, i.e. we need to validate that a validator
+  /// was the owner of a given key on a given session, and what the active set ID was
+  /// during that session.
+  ///
+  /// TWOX-NOTE: `ValidatorSetId` is not under user control.
+  _i4.Future<List<int?>> multiSetIdSession(
+    List<BigInt> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _setIdSession.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _setIdSession.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `authorities`.
   _i5.Uint8List authoritiesKey() {
     final hashedKey = _authorities.hashedKey();

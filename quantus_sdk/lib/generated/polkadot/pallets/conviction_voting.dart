@@ -93,6 +93,28 @@ class Queries {
     return []; /* Default */
   }
 
+  /// The voting classes which have a non-zero lock requirement and the lock amounts which they
+  /// require. The actual amount locked on behalf of this pallet should always be the maximum of
+  /// this list.
+  _i6.Future<List<List<_i5.Tuple2<int, BigInt>>>> multiClassLocksFor(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _classLocksFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _classLocksFor.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i5.Tuple2<int, BigInt>>>); /* Default */
+  }
+
   /// Returns the storage key for `votingFor`.
   _i10.Uint8List votingForKey(
     _i2.AccountId32 key1,

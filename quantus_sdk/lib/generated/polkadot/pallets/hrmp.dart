@@ -347,6 +347,237 @@ class Queries {
     return []; /* Default */
   }
 
+  /// The set of pending HRMP open channel requests.
+  ///
+  /// The set is accompanied by a list for iteration.
+  ///
+  /// Invariant:
+  /// - There are no channels that exists in list but not in the set and vice versa.
+  _i9.Future<List<_i3.HrmpOpenChannelRequest?>> multiHrmpOpenChannelRequests(
+    List<_i2.HrmpChannelId> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpOpenChannelRequests.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpOpenChannelRequests.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// This mapping tracks how many open channel requests are initiated by a given sender para.
+  /// Invariant: `HrmpOpenChannelRequests` should contain the same number of items that has
+  /// `(X, _)` as the number of `HrmpOpenChannelRequestCount` for `X`.
+  _i9.Future<List<int>> multiHrmpOpenChannelRequestCount(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys
+        .map((key) => _hrmpOpenChannelRequestCount.hashedKeyFor(key))
+        .toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpOpenChannelRequestCount.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// This mapping tracks how many open channel requests were accepted by a given recipient para.
+  /// Invariant: `HrmpOpenChannelRequests` should contain the same number of items `(_, X)` with
+  /// `confirmed` set to true, as the number of `HrmpAcceptedChannelRequestCount` for `X`.
+  _i9.Future<List<int>> multiHrmpAcceptedChannelRequestCount(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys
+        .map((key) => _hrmpAcceptedChannelRequestCount.hashedKeyFor(key))
+        .toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpAcceptedChannelRequestCount.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// A set of pending HRMP close channel requests that are going to be closed during the session
+  /// change. Used for checking if a given channel is registered for closure.
+  ///
+  /// The set is accompanied by a list for iteration.
+  ///
+  /// Invariant:
+  /// - There are no channels that exists in list but not in the set and vice versa.
+  _i9.Future<List<dynamic>> multiHrmpCloseChannelRequests(
+    List<_i2.HrmpChannelId> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpCloseChannelRequests.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpCloseChannelRequests.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The HRMP watermark associated with each para.
+  /// Invariant:
+  /// - each para `P` used here as a key should satisfy `Paras::is_valid_para(P)` within a
+  ///   session.
+  _i9.Future<List<int?>> multiHrmpWatermarks(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpWatermarks.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpWatermarks.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// HRMP channel data associated with each para.
+  /// Invariant:
+  /// - each participant in the channel should satisfy `Paras::is_valid_para(P)` within a session.
+  _i9.Future<List<_i6.HrmpChannel?>> multiHrmpChannels(
+    List<_i2.HrmpChannelId> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpChannels.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpChannels.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Ingress/egress indexes allow to find all the senders and receivers given the opposite side.
+  /// I.e.
+  ///
+  /// (a) ingress index allows to find all the senders for a given recipient.
+  /// (b) egress index allows to find all the recipients for a given sender.
+  ///
+  /// Invariants:
+  /// - for each ingress index entry for `P` each item `I` in the index should present in
+  ///   `HrmpChannels` as `(I, P)`.
+  /// - for each egress index entry for `P` each item `E` in the index should present in
+  ///   `HrmpChannels` as `(P, E)`.
+  /// - there should be no other dangling channels in `HrmpChannels`.
+  /// - the vectors are sorted.
+  _i9.Future<List<List<_i5.Id>>> multiHrmpIngressChannelsIndex(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpIngressChannelsIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpIngressChannelsIndex.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList() as List<List<_i5.Id>>); /* Default */
+  }
+
+  _i9.Future<List<List<_i5.Id>>> multiHrmpEgressChannelsIndex(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpEgressChannelsIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpEgressChannelsIndex.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList() as List<List<_i5.Id>>); /* Default */
+  }
+
+  /// Storage for the messages for each channel.
+  /// Invariant: cannot be non-empty if the corresponding channel in `HrmpChannels` is `None`.
+  _i9.Future<List<List<_i7.InboundHrmpMessage>>> multiHrmpChannelContents(
+    List<_i2.HrmpChannelId> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpChannelContents.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpChannelContents.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i7.InboundHrmpMessage>>); /* Default */
+  }
+
+  /// Maintains a mapping that can be used to answer the question: What paras sent a message at
+  /// the given block number for a given receiver. Invariants:
+  /// - The inner `Vec<ParaId>` is never empty.
+  /// - The inner `Vec<ParaId>` cannot store two same `ParaId`.
+  /// - The outer vector is sorted ascending by block number and cannot store two items with the
+  ///   same block number.
+  _i9.Future<List<List<_i8.Tuple2<int, List<_i5.Id>>>>> multiHrmpChannelDigests(
+    List<_i5.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _hrmpChannelDigests.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _hrmpChannelDigests.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i8.Tuple2<int, List<_i5.Id>>>>); /* Default */
+  }
+
   /// Returns the storage key for `hrmpOpenChannelRequests`.
   _i10.Uint8List hrmpOpenChannelRequestsKey(_i2.HrmpChannelId key1) {
     final hashedKey = _hrmpOpenChannelRequests.hashedKeyFor(key1);

@@ -464,6 +464,118 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The full account information for a particular account ID.
+  _i13.Future<List<_i3.AccountInfo>> multiAccount(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _account.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _account.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i3.AccountInfo(
+              nonce: 0,
+              consumers: 0,
+              providers: 0,
+              sufficients: 0,
+              data: _i14.AccountData(
+                free: BigInt.zero,
+                reserved: BigInt.zero,
+                frozen: BigInt.zero,
+                flags: BigInt.parse(
+                  '170141183460469231731687303715884105728',
+                  radix: 10,
+                ),
+              ),
+            ))
+        .toList() as List<_i3.AccountInfo>); /* Default */
+  }
+
+  /// Map of block numbers to block hashes.
+  _i13.Future<List<_i6.H256>> multiBlockHash(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _blockHash.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _blockHash.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => List<int>.filled(
+              32,
+              0,
+              growable: false,
+            ))
+        .toList() as List<_i6.H256>); /* Default */
+  }
+
+  /// Extrinsics data for the current block (maps an extrinsic's index to its data).
+  _i13.Future<List<List<int>>> multiExtrinsicData(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _extrinsicData.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _extrinsicData.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => List<int>.filled(
+              0,
+              0,
+              growable: true,
+            ))
+        .toList() as List<List<int>>); /* Default */
+  }
+
+  /// Mapping between a topic (represented by T::Hash) and a vector of indexes
+  /// of events in the `<Events<T>>` list.
+  ///
+  /// All topic vectors have deterministic storage locations depending on the topic. This
+  /// allows light-clients to leverage the changes trie storage tracking mechanism and
+  /// in case of changes fetch the list of events of interest.
+  ///
+  /// The value has the type `(BlockNumberFor<T>, EventIndex)` because if we used only just
+  /// the `EventIndex` then in case if the topic has the same contents on the next block
+  /// no notification will be triggered thus the event might be lost.
+  _i13.Future<List<List<_i9.Tuple2<int, int>>>> multiEventTopics(
+    List<_i6.H256> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _eventTopics.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _eventTopics.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i9.Tuple2<int, int>>>); /* Default */
+  }
+
   /// Returns the storage key for `account`.
   _i16.Uint8List accountKey(_i2.AccountId32 key1) {
     final hashedKey = _account.hashedKeyFor(key1);

@@ -501,6 +501,153 @@ class Queries {
     return _i9.ClaimPermission.permissionlessWithdraw; /* Default */
   }
 
+  /// Active members.
+  ///
+  /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+  _i10.Future<List<_i5.PoolMember?>> multiPoolMembers(
+    List<_i4.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _poolMembers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _poolMembers.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Storage for bonded pools.
+  _i10.Future<List<_i6.BondedPoolInner?>> multiBondedPools(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _bondedPools.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _bondedPools.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Reward pools. This is where there rewards for each pool accumulate. When a members payout is
+  /// claimed, the balance comes out of the reward pool. Keyed by the bonded pools account.
+  _i10.Future<List<_i7.RewardPool?>> multiRewardPools(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _rewardPools.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _rewardPools.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Groups of unbonding pools. Each group of unbonding pools belongs to a
+  /// bonded pool, hence the name sub-pools. Keyed by the bonded pools account.
+  _i10.Future<List<_i8.SubPools?>> multiSubPoolsStorage(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _subPoolsStorage.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _subPoolsStorage.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Metadata for the pool.
+  _i10.Future<List<List<int>>> multiMetadata(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _metadata.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _metadata.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => List<int>.filled(
+              0,
+              0,
+              growable: true,
+            ))
+        .toList() as List<List<int>>); /* Default */
+  }
+
+  /// A reverse lookup from the pool's account id to its id.
+  ///
+  /// This is only used for slashing and on automatic withdraw update. In all other instances, the
+  /// pool id is used, and the accounts are deterministically derived from it.
+  _i10.Future<List<int?>> multiReversePoolIdLookup(
+    List<_i4.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _reversePoolIdLookup.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _reversePoolIdLookup.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Map from a pool member account to their opted claim permission.
+  _i10.Future<List<_i9.ClaimPermission>> multiClaimPermissions(
+    List<_i4.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _claimPermissions.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _claimPermissions.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i9.ClaimPermission.permissionlessWithdraw)
+        .toList() as List<_i9.ClaimPermission>); /* Default */
+  }
+
   /// Returns the storage key for `totalValueLocked`.
   _i11.Uint8List totalValueLockedKey() {
     final hashedKey = _totalValueLocked.hashedKey();

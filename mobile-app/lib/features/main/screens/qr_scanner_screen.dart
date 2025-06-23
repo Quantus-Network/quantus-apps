@@ -32,41 +32,38 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         ),
         title: const Text(
           'Scan QR Code',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
         ),
         actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: controller.torchState,
-              builder: (context, state, child) {
-                switch (state) {
-                  case TorchState.off:
-                    return const Icon(Icons.flash_off, color: Colors.white);
-                  case TorchState.on:
-                    return const Icon(Icons.flash_on, color: Colors.white);
-                }
-              },
-            ),
-            onPressed: () => controller.toggleTorch(),
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: controller,
+            builder: (context, state, child) {
+              return IconButton(
+                color: Colors.white,
+                icon: Icon(switch (state.torchState) {
+                  TorchState.off => Icons.flash_off,
+                  TorchState.on => Icons.flash_on,
+                  TorchState.auto => Icons.flash_auto,
+                  TorchState.unavailable => Icons.flash_off,
+                }),
+                onPressed: () => controller.toggleTorch(),
+              );
+            },
           ),
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: controller.cameraFacingState,
-              builder: (context, state, child) {
-                switch (state) {
-                  case CameraFacing.front:
-                    return const Icon(Icons.camera_front, color: Colors.white);
-                  case CameraFacing.back:
-                    return const Icon(Icons.camera_rear, color: Colors.white);
-                }
-              },
-            ),
-            onPressed: () => controller.switchCamera(),
+          ValueListenableBuilder<MobileScannerState>(
+            valueListenable: controller,
+            builder: (context, state, child) {
+              return IconButton(
+                color: Colors.white,
+                icon: Icon(switch (state.cameraDirection) {
+                  CameraFacing.front => Icons.camera_front,
+                  CameraFacing.back => Icons.camera_rear,
+                  CameraFacing.external => Icons.camera,
+                  CameraFacing.unknown => Icons.camera,
+                }),
+                onPressed: () => controller.switchCamera(),
+              );
+            },
           ),
         ],
       ),

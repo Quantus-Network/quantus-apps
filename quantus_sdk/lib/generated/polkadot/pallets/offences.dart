@@ -67,6 +67,24 @@ class Queries {
     return []; /* Default */
   }
 
+  /// The primary structure that holds all offence records keyed by report identifiers.
+  _i5.Future<List<_i3.OffenceDetails?>> multiReports(
+    List<_i2.H256> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _reports.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _reports.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `reports`.
   _i6.Uint8List reportsKey(_i2.H256 key1) {
     final hashedKey = _reports.hashedKeyFor(key1);

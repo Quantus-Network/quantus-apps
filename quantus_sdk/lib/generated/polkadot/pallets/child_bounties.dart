@@ -200,6 +200,88 @@ class Queries {
     return BigInt.zero; /* Default */
   }
 
+  /// Number of active child bounties per parent bounty.
+  /// Map of parent bounty index to number of child bounties.
+  _i5.Future<List<int>> multiParentChildBounties(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _parentChildBounties.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _parentChildBounties.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// Number of total child bounties per parent bounty, including completed bounties.
+  _i5.Future<List<int>> multiParentTotalChildBounties(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _parentTotalChildBounties.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _parentTotalChildBounties.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
+  /// The mapping of the child bounty ids from storage version `V0` to the new `V1` version.
+  ///
+  /// The `V0` ids based on total child bounty count [`ChildBountyCount`]`. The `V1` version ids
+  /// based on the child bounty count per parent bounty [`ParentTotalChildBounties`].
+  /// The item intended solely for client convenience and not used in the pallet's core logic.
+  _i5.Future<List<_i4.Tuple2<int, int>?>> multiV0ToV1ChildBountyIds(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _v0ToV1ChildBountyIds.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _v0ToV1ChildBountyIds.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The cumulative child-bounty curator fee for each parent bounty.
+  _i5.Future<List<BigInt>> multiChildrenCuratorFees(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _childrenCuratorFees.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _childrenCuratorFees.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => BigInt.zero).toList()
+        as List<BigInt>); /* Default */
+  }
+
   /// Returns the storage key for `childBountyCount`.
   _i6.Uint8List childBountyCountKey() {
     final hashedKey = _childBountyCount.hashedKey();

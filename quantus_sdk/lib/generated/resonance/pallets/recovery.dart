@@ -100,6 +100,43 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The set of recoverable accounts and their recovery configuration.
+  _i5.Future<List<_i3.RecoveryConfig?>> multiRecoverable(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _recoverable.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _recoverable.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// The list of allowed proxy accounts.
+  ///
+  /// Map from the user who can access it to the recovered account.
+  _i5.Future<List<_i2.AccountId32?>> multiProxy(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _proxy.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _proxy.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `recoverable`.
   _i6.Uint8List recoverableKey(_i2.AccountId32 key1) {
     final hashedKey = _recoverable.hashedKeyFor(key1);

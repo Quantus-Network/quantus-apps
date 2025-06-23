@@ -102,6 +102,22 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Info on all of the funds.
+  _i5.Future<List<_i3.FundInfo?>> multiFunds(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _funds.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _funds.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `funds`.
   _i6.Uint8List fundsKey(_i2.Id key1) {
     final hashedKey = _funds.hashedKeyFor(key1);

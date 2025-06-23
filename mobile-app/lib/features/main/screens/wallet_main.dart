@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
@@ -91,7 +92,8 @@ class _WalletMainState extends State<WalletMain> {
     } catch (e) {
       print('Initial load/query failed: $e');
 
-      bool isConnectionError = e is SocketException ||
+      bool isConnectionError =
+          e is SocketException ||
           e is TimeoutException ||
           e.toString().contains('Connection refused') ||
           e.toString().contains('WebSocket');
@@ -204,23 +206,11 @@ class _WalletMainState extends State<WalletMain> {
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
-      finalIconWidget = SvgPicture.asset(
-        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
-        width: 20,
-        height: 20,
-      );
+      finalIconWidget = SvgPicture.asset((iconWidget.bytesLoader as SvgAssetLoader).assetName, width: 20, height: 20);
     } else if (iconWidget is Icon) {
-      finalIconWidget = Icon(
-        iconWidget.icon,
-        color: color,
-        size: 20,
-      );
+      finalIconWidget = Icon(iconWidget.icon, color: color, size: 20);
     } else if (iconWidget is Image) {
-      finalIconWidget = SizedBox(
-        width: 20,
-        height: 20,
-        child: iconWidget,
-      );
+      finalIconWidget = SizedBox(width: 20, height: 20, child: iconWidget);
     }
 
     return Opacity(
@@ -248,12 +238,7 @@ class _WalletMainState extends State<WalletMain> {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w300,
-                ),
+                style: TextStyle(color: color, fontSize: 10, fontFamily: 'Inter', fontWeight: FontWeight.w300),
               ),
             ],
           ),
@@ -307,10 +292,7 @@ class _WalletMainState extends State<WalletMain> {
             SizedBox(
               width: 21,
               height: 17,
-              child: SvgPicture.asset(
-                iconAsset,
-                colorFilter: ColorFilter.mode(effectiveTypeColor, BlendMode.srcIn),
-              ),
+              child: SvgPicture.asset(iconAsset, colorFilter: ColorFilter.mode(effectiveTypeColor, BlendMode.srcIn)),
             ),
             const SizedBox(width: 11),
             Expanded(
@@ -359,10 +341,7 @@ class _WalletMainState extends State<WalletMain> {
           ],
         ),
         const SizedBox(height: 14),
-        Divider(
-          color: Colors.white.useOpacity(38 / 255.0),
-          height: 1,
-        ),
+        Divider(color: Colors.white.useOpacity(38 / 255.0), height: 1),
         const SizedBox(height: 14),
       ],
     );
@@ -371,9 +350,7 @@ class _WalletMainState extends State<WalletMain> {
   Widget _buildHistorySection() {
     if (_isHistoryLoading) {
       return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
-        ),
+        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
       );
     }
 
@@ -388,10 +365,7 @@ class _WalletMainState extends State<WalletMain> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            TextButton(
-              onPressed: _fetchTransactionHistory,
-              child: const Text('Retry'),
-            ),
+            TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
           ],
         ),
       );
@@ -399,10 +373,7 @@ class _WalletMainState extends State<WalletMain> {
 
     if (_transfers.isEmpty) {
       return const Center(
-        child: Text(
-          'No transactions yet',
-          style: TextStyle(color: Colors.white70),
-        ),
+        child: Text('No transactions yet', style: TextStyle(color: Colors.white70)),
       );
     }
 
@@ -428,9 +399,7 @@ class _WalletMainState extends State<WalletMain> {
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
-              ),
+              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
             ),
           ),
         if (!_hasMoreTo && !_hasMoreFrom && _transfers.isNotEmpty)
@@ -459,12 +428,7 @@ class _WalletMainState extends State<WalletMain> {
     } catch (e) {
       print('Error during logout: $e');
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Logout failed: ${e.toString()}',
-          icon: buildErrorIcon(),
-        );
+        showTopSnackBar(context, title: 'Error', message: 'Logout failed: ${e.toString()}', icon: buildErrorIcon());
       }
     }
   }
@@ -603,11 +567,7 @@ class _WalletMainState extends State<WalletMain> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Image.asset(
-                                          'assets/active_dot.png',
-                                          width: 20,
-                                          height: 20,
-                                        ),
+                                        Image.asset('assets/active_dot.png', width: 20, height: 20),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Container(

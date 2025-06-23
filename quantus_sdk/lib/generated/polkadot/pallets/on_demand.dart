@@ -141,6 +141,47 @@ class Queries {
     return []; /* Default */
   }
 
+  /// Maps a `ParaId` to `CoreIndex` and keeps track of how many assignments the scheduler has in
+  /// it's lookahead. Keeping track of this affinity prevents parallel execution of the same
+  /// `ParaId` on two or more `CoreIndex`es.
+  _i8.Future<List<_i3.CoreAffinityCount?>> multiParaIdAffinity(
+    List<_i2.Id> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _paraIdAffinity.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _paraIdAffinity.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Queue entries that are currently bound to a particular core due to core affinity.
+  _i8.Future<List<_i5.BinaryHeap>> multiAffinityEntries(
+    List<_i6.CoreIndex> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _affinityEntries.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _affinityEntries.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<_i5.BinaryHeap>); /* Default */
+  }
+
   /// Returns the storage key for `paraIdAffinity`.
   _i9.Uint8List paraIdAffinityKey(_i2.Id key1) {
     final hashedKey = _paraIdAffinity.hashedKeyFor(key1);

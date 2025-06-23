@@ -97,6 +97,66 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Maps accounts to their chosen reversibility delay period (in milliseconds).
+  /// Accounts present in this map have reversibility enabled.
+  _i7.Future<List<_i3.ReversibleAccountData?>> multiReversibleAccounts(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _reversibleAccounts.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _reversibleAccounts.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Stores the details of pending transactions scheduled for delayed execution.
+  /// Keyed by the unique transaction ID.
+  _i7.Future<List<_i5.PendingTransfer?>> multiPendingTransfers(
+    List<_i4.H256> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _pendingTransfers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _pendingTransfers.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Indexes pending transaction IDs per account for efficient lookup and cancellation.
+  /// Also enforces the maximum pending transactions limit per account.
+  _i7.Future<List<int>> multiAccountPendingIndex(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _accountPendingIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _accountPendingIndex.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => 0).toList() as List<int>); /* Default */
+  }
+
   /// Returns the storage key for `reversibleAccounts`.
   _i8.Uint8List reversibleAccountsKey(_i2.AccountId32 key1) {
     final hashedKey = _reversibleAccounts.hashedKeyFor(key1);

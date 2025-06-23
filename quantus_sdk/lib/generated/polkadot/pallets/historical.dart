@@ -64,6 +64,25 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Mapping from historical session indices to session-data root hash and validator count.
+  _i6.Future<List<_i2.Tuple2<_i3.H256, int>?>> multiHistoricalSessions(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _historicalSessions.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _historicalSessions.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `historicalSessions`.
   _i7.Uint8List historicalSessionsKey(int key1) {
     final hashedKey = _historicalSessions.hashedKeyFor(key1);

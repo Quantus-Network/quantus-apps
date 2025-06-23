@@ -88,6 +88,25 @@ class Queries {
     return 0; /* Default */
   }
 
+  /// Stores general info about an airdrop
+  _i5.Future<List<_i2.AirdropMetadata?>> multiAirdropInfo(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _airdropInfo.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _airdropInfo.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `airdropInfo`.
   _i6.Uint8List airdropInfoKey(int key1) {
     final hashedKey = _airdropInfo.hashedKeyFor(key1);

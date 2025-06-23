@@ -78,6 +78,55 @@ class Queries {
     ); /* Default */
   }
 
+  /// Scheduled assignment sets.
+  ///
+  /// Assignments as of the given block number. They will go into state once the block number is
+  /// reached (and replace whatever was in there before).
+  _i7.Future<List<_i4.Schedule?>> multiCoreSchedules(
+    List<_i2.Tuple2<int, _i3.CoreIndex>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _coreSchedules.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _coreSchedules.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Assignments which are currently active.
+  ///
+  /// They will be picked from `PendingAssignments` once we reach the scheduled block number in
+  /// `PendingAssignments`.
+  _i7.Future<List<_i6.CoreDescriptor>> multiCoreDescriptors(
+    List<_i3.CoreIndex> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _coreDescriptors.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _coreDescriptors.decodeValue(v.key))
+          .toList();
+    }
+    return (keys
+        .map((key) => _i6.CoreDescriptor(
+              queue: null,
+              currentWork: null,
+            ))
+        .toList() as List<_i6.CoreDescriptor>); /* Default */
+  }
+
   /// Returns the storage key for `coreSchedules`.
   _i8.Uint8List coreSchedulesKey(_i2.Tuple2<int, _i3.CoreIndex> key1) {
     final hashedKey = _coreSchedules.hashedKeyFor(key1);

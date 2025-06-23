@@ -36,6 +36,24 @@ class Queries {
     return false; /* Default */
   }
 
+  _i3.Future<List<bool>> multiUsedNullifiers(
+    List<List<int>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _usedNullifiers.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => false).toList() as List<bool>); /* Default */
+  }
+
   /// Returns the storage key for `usedNullifiers`.
   _i4.Uint8List usedNullifiersKey(List<int> key1) {
     final hashedKey = _usedNullifiers.hashedKeyFor(key1);

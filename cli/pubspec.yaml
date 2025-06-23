@@ -1,0 +1,31 @@
+name: resonance_cli
+description: Command line interface for Resonance Network blockchain operations
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  # CLI specific packages (managed by melos.yaml)
+  args: # Version managed by melos.yaml
+  cli_completion: # Version managed by melos.yaml
+  mason_logger: # Version managed by melos.yaml
+  
+  # Workspace packages (managed by melos.yaml)
+  quantus_sdk: # Version managed by melos.yaml
+  flutter_secure_storage: ^9.2.4
+  
+  # Shared dependencies (managed by melos.yaml)
+  polkadart: # Version managed by melos.yaml
+  polkadart_keyring: # Version managed by melos.yaml
+  ss58: # Version managed by melos.yaml
+  bip39_mnemonic: # Version managed by melos.yaml
+  crypto: # Version managed by melos.yaml
+
+dev_dependencies:
+  flutter_lints: # Version managed by melos.yaml
+  test: # Version managed by melos.yaml
+
+executables:
+  resonance: main 

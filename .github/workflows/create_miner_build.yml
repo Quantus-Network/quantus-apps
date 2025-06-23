@@ -2,23 +2,40 @@ name: Build Cross-Platform Binaries
 
 on:
   workflow_dispatch: # Manual trigger only
+    inputs:
+      create_release:
+        description: 'Create a new release'
+        required: false
+        default: false
+        type: boolean
+      tag_name:
+        description: 'Tag name for the release (e.g., v1.0.0)'
+        required: false
+        type: string
 
 jobs:
   build-macos:
     name: Build macOS App
-    runs-on: macos-latest # Use the latest available macOS runner
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Configure Git for private repos
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable' # Or your preferred Flutter channel
+          channel: 'stable'
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
 
       - name: Get dependencies
         run: flutter pub get
-        working-directory: ./miner-app # Adjust if your pubspec.yaml is elsewhere
+        working-directory: ./miner-app
 
       - name: Build macOS release
         run: flutter build macos --release
@@ -27,9 +44,8 @@ jobs:
       - name: Package macOS App
         run: |
           cd miner-app/build/macos/Build/Products/Release/
+          # Create a proper DMG or ZIP with the app
           zip -r quantus_miner_macos.zip quantus_miner.app
-        # The cd above is to ensure the .app is at the root of the zip
-        # If you prefer the .app inside a folder in the zip, adjust accordingly
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
@@ -39,20 +55,24 @@ jobs:
 
   build-linux:
     name: Build Linux App
-    runs-on: ubuntu-latest # Use the latest available Ubuntu runner
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Configure Git for private repos
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable' # Or your preferred Flutter channel
+          channel: 'stable'
+          cache: true
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
 
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
@@ -69,10 +89,127 @@ jobs:
         run: |
           cd miner-app/build/linux/x64/release/bundle/
           tar -czvf quantus_miner_linux.tar.gz *
-        # The cd above is to ensure files are at the root of the tar.gz
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: quantus_miner-linux
           path: miner-app/build/linux/x64/release/bundle/quantus_miner_linux.tar.gz
+
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git for private repos
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./miner-app
+
+      - name: Build Windows release
+        run: flutter build windows --release
+        working-directory: ./miner-app
+
+      - name: Package Windows App
+        run: |
+          cd miner-app/build/windows/x64/runner/Release/
+          Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip
+        shell: powershell
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantus_miner-windows
+          path: miner-app/build/windows/x64/runner/Release/quantus_miner_windows.zip
+
+  create-release:
+    name: Create Release
+    if: ${{ github.event.inputs.create_release == 'true' }}
+    needs: [build-macos, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          find ./artifacts -type f -name "*.zip" -o -name "*.tar.gz" | sort
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || 'v0.1.0' }}
+          release_name: Quantus Miner ${{ github.event.inputs.tag_name || 'v0.1.0' }}
+          body: |
+            ## Quantus Miner Release
+            
+            This release includes binaries for:
+            - 🍎 macOS (Intel/Apple Silicon)
+            - 🐧 Linux (x64)
+            - 🪟 Windows (x64)
+            
+            ### Installation
+            
+            **macOS**: Download the `.zip` file, extract it, and run the `quantus_miner.app`
+            **Linux**: Download the `.tar.gz` file, extract it, and run the `quantus_miner` executable
+            **Windows**: Download the `.zip` file, extract it, and run the `quantus_miner.exe`
+            
+            ### What's Changed
+            - Cross-platform mining support
+            - External miner integration
+            - Improved UI and stability
+            
+            Built from commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Upload macOS Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/quantus_miner-macos/quantus_miner_macos.zip
+          asset_name: quantus_miner_macos.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/quantus_miner-linux/quantus_miner_linux.tar.gz
+          asset_name: quantus_miner_linux.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Windows Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/quantus_miner-windows/quantus_miner_windows.zip
+          asset_name: quantus_miner_windows.zip
+          asset_content_type: application/zip

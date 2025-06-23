@@ -82,6 +82,25 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Hashes of the nodes in the MMR.
+  ///
+  /// Note this collection only contains MMR peaks, the inner nodes (and leaves)
+  /// are pruned and only stored in the Offchain DB.
+  _i4.Future<List<_i2.H256?>> multiNodes(
+    List<BigInt> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _nodes.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _nodes.decodeValue(v.key)).toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `rootHash`.
   _i5.Uint8List rootHashKey() {
     final hashedKey = _rootHash.hashedKey();

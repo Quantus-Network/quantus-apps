@@ -117,6 +117,64 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Items to be executed, indexed by the block number that they should be executed on.
+  _i6.Future<List<List<_i3.Scheduled?>>> multiAgenda(
+    List<int> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _agenda.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _agenda.decodeValue(v.key))
+          .toList();
+    }
+    return (keys.map((key) => []).toList()
+        as List<List<_i3.Scheduled?>>); /* Default */
+  }
+
+  /// Retry configurations for items to be executed, indexed by task address.
+  _i6.Future<List<_i5.RetryConfig?>> multiRetries(
+    List<_i4.Tuple2<int, int>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _retries.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _retries.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
+  /// Lookup from a name to the block number and index of the task.
+  ///
+  /// For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
+  /// identities.
+  _i6.Future<List<_i4.Tuple2<int, int>?>> multiLookup(
+    List<List<int>> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _lookup.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _lookup.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `incompleteSince`.
   _i7.Uint8List incompleteSinceKey() {
     final hashedKey = _incompleteSince.hashedKey();

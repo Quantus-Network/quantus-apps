@@ -63,6 +63,24 @@ class Queries {
     return _i5.Releases.v0; /* Default */
   }
 
+  /// Information regarding the vesting of a given account.
+  _i6.Future<List<List<_i3.VestingInfo>?>> multiVesting(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys = keys.map((key) => _vesting.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _vesting.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `vesting`.
   _i7.Uint8List vestingKey(_i2.AccountId32 key1) {
     final hashedKey = _vesting.hashedKeyFor(key1);
