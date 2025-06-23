@@ -1,4 +1,4 @@
-name: Build Cross-Platform Binaries
+name: Create Miner Build
 
 on:
   workflow_dispatch: # Manual trigger only
@@ -17,15 +17,16 @@ jobs:
   build-macos:
     name: Build macOS App
     runs-on: macos-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure Git credentials for private repos
         run: |
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          echo "machine github.com login x-access-token password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+          chmod 600 ~/.netrc
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -61,15 +62,16 @@ jobs:
   build-linux:
     name: Build Linux App
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure Git credentials for private repos
         run: |
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          echo "machine github.com login x-access-token password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+          chmod 600 ~/.netrc
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -109,15 +111,16 @@ jobs:
   build-windows:
     name: Build Windows App
     runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure Git credentials for private repos
         run: |
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > $env:USERPROFILE\.git-credentials
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          echo "machine github.com login x-access-token password ${{ env.GITHUB_TOKEN }}" > $env:USERPROFILE\_netrc
+          attrib +H $env:USERPROFILE\_netrc
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
