@@ -18,14 +18,14 @@ jobs:
     name: Build macOS App
     runs-on: macos-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure Git credentials for private repos
         run: |
-          echo "machine github.com login x-access-token password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+          echo "machine github.com login x-access-token password ${{ secrets.PAT_TOKEN }}" > ~/.netrc
           chmod 600 ~/.netrc
 
       - name: Set up Flutter
@@ -63,14 +63,14 @@ jobs:
     name: Build Linux App
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure Git credentials for private repos
         run: |
-          echo "machine github.com login x-access-token password ${{ secrets.GITHUB_TOKEN }}" > ~/.netrc
+          echo "machine github.com login x-access-token password ${{ secrets.PAT_TOKEN }}" > ~/.netrc
           chmod 600 ~/.netrc
 
       - name: Set up Flutter
@@ -112,7 +112,7 @@ jobs:
     name: Build Windows App
     runs-on: windows-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -175,7 +175,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           tag_name: ${{ github.event.inputs.tag_name || 'v0.1.0' }}
           release_name: Quantus Miner ${{ github.event.inputs.tag_name || 'v0.1.0' }}
@@ -205,7 +205,7 @@ jobs:
       - name: Upload macOS Asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/quantus_miner-macos/quantus_miner_macos.zip
@@ -215,7 +215,7 @@ jobs:
       - name: Upload Linux Asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/quantus_miner-linux/quantus_miner_linux.tar.gz
@@ -225,7 +225,7 @@ jobs:
       - name: Upload Windows Asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/quantus_miner-windows/quantus_miner_windows.zip
