@@ -502,6 +502,56 @@ class SendScreenState extends State<SendScreen> {
                       const SizedBox(height: 24),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: ShapeDecoration(
+                            color: const Color(0xFF313131),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Reversible for: 2 hrs, 30 mins',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Container(
+                                width: 12.84,
+                                height: 12.84,
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      left: 10.14,
+                                      top: 0,
+                                      child: Transform.rotate(
+                                        angle: 0.79,
+                                        child: Container(
+                                          width: 3.81,
+                                          height: 2,
+                                          decoration: ShapeDecoration(
+                                            color: Colors.white.withOpacity(0.7),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0.50)),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
