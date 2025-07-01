@@ -46,7 +46,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     } else if (hours > 0) {
       return '$hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
     } else {
-      return '$minutes min${minutes != 1 ? 's' : ''}';
+      return '$minutes minute${minutes != 1 ? 's' : ''}';
     }
   }
 
