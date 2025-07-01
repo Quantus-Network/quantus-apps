@@ -119,6 +119,7 @@ class SendScreenState extends State<SendScreen> {
         setState(() {
           _savedAddressesLabel = humanReadableName;
         });
+        _debounceFetchFee();
       } else {
         if (!mounted) return; // Check mounted before setState
         setState(() {
