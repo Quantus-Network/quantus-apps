@@ -38,6 +38,7 @@ class SendScreenState extends State<SendScreen> {
   void initState() {
     super.initState();
     _balanceFuture = _loadBalance();
+    _loadReversibleTimeSetting();
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
     _amountController.addListener(_debounceFetchFee);
@@ -49,6 +50,21 @@ class SendScreenState extends State<SendScreen> {
     _amountController.dispose();
     _recipientController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadReversibleTimeSetting() async {
+    final savedTime = (await _settingsService.getReversibleTimeSeconds()) ?? AppConstants.defaultReversibleTimeSeconds;
+    setState(() {
+      _reversibleTimeSeconds = savedTime;
+    });
+  }
+
+  Future<void> _saveReversibleTimeSetting(int seconds) async {
+    try {
+      await _settingsService.setReversibleTimeSeconds(seconds);
+    } catch (e) {
+      debugPrint('Error saving reversible time setting: $e');
+    }
   }
 
   bool _isValidSS58Address(String address) {
@@ -434,10 +450,11 @@ class SendScreenState extends State<SendScreen> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      final newTimeSeconds = (selectedDays * 86400) + (selectedHours * 3600) + (selectedMinutes * 60);
                       setState(() {
-                        _reversibleTimeSeconds =
-                            (selectedDays * 86400) + (selectedHours * 3600) + (selectedMinutes * 60);
+                        _reversibleTimeSeconds = newTimeSeconds;
                       });
+                      _saveReversibleTimeSetting(newTimeSeconds);
                       Navigator.pop(context);
                     },
                     child: Container(
