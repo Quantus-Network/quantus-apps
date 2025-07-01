@@ -231,6 +231,7 @@ class SendScreenState extends State<SendScreen> {
         recipientName: _savedAddressesLabel,
         recipientAddress: _recipientController.text,
         fee: _networkFee,
+        reversibleTimeSeconds: _reversibleTimeSeconds,
         onClose: () => Navigator.pop(context),
       ),
     );

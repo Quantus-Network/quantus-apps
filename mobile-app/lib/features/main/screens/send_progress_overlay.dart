@@ -13,6 +13,7 @@ class SendConfirmationOverlay extends StatefulWidget {
   final String recipientAddress;
   final VoidCallback onClose;
   final BigInt fee;
+  final int reversibleTimeSeconds;
 
   const SendConfirmationOverlay({
     required this.amount,
@@ -20,6 +21,7 @@ class SendConfirmationOverlay extends StatefulWidget {
     required this.recipientAddress,
     required this.onClose,
     required this.fee,
+    required this.reversibleTimeSeconds,
     super.key,
   });
 
@@ -33,6 +35,20 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   bool _isSending = false;
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
+
+  String _formatReversibleTime() {
+    final days = widget.reversibleTimeSeconds ~/ 86400;
+    final hours = (widget.reversibleTimeSeconds % 86400) ~/ 3600;
+    final minutes = (widget.reversibleTimeSeconds % 3600) ~/ 60;
+
+    if (days > 0) {
+      return '$days day${days > 1 ? 's' : ''}, $hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+    } else if (hours > 0) {
+      return '$hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+    } else {
+      return '$minutes min${minutes != 1 ? 's' : ''}';
+    }
+  }
 
   Future<void> _confirmSend() async {
     if (_isSending) return;
@@ -83,8 +99,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Close button
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
@@ -93,65 +110,53 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               GestureDetector(
                 onTap: widget.onClose,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
-                  child: const Icon(Icons.close, color: Colors.black, size: 18),
+                child: Container(width: 24, height: 24, child: const Icon(Icons.close, color: Colors.white, size: 24)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
+
+        // Send icon and title
+        SizedBox(
+          width: 126,
+          child: Column(
+            children: [
+              Container(
+                width: 51,
+                height: 42,
+                // decoration: BoxDecoration(color: Colors.white.useOpacity(0.1), borderRadius: BorderRadius.circular(5)),
+                child: Center(child: SvgPicture.asset('assets/send_icon_1.svg', width: 51, height: 42)),
+              ),
+              const SizedBox(height: 17),
+              const Text(
+                'SEND',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w300,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 28),
-        Row(
-          children: [
-            Container(
-              width: 49,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.useOpacity(0.1),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: SvgPicture.asset(
-                'assets/send_icon_1.svg',
-                width: 24,
-                height: 24,
-              ),
-            ),
-            const SizedBox(width: 7),
-            const Text(
-              'SEND',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w300,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 28),
+
+        // Transaction details
         Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Amount with token icon
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 25,
                   height: 25,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/res_icon.svg',
-                    ),
-                  ),
+                  decoration: const ShapeDecoration(color: Color(0xFFE6E6E6), shape: OvalBorder()),
+                  child: Center(child: SvgPicture.asset('assets/res_icon.svg', width: 11, height: 19)),
                 ),
                 const SizedBox(width: 13),
                 Text.rich(
@@ -180,59 +185,93 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 ),
               ],
             ),
-            const SizedBox(height: 13),
+            const SizedBox(height: 21),
+
+            // Recipient information
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'To:',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 14,
                     fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w300,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 2),
-                SizedBox(
-                  width: 252,
-                  child: Text(
-                    widget.recipientName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 3),
                 Text(
                   widget.recipientAddress,
-                  style: TextStyle(
-                    color: Colors.white.useOpacity(0.6),
-                    fontSize: 10,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
                     fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w300,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                SizedBox(
+                  width: 274,
+                  child: Text(
+                    widget.recipientName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF16CECE),
+                      fontSize: 12,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 21),
+
+            // Reversible time information
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Reversible for:\n',
+                    style: TextStyle(
+                      color: Color(0xFF8AF9A8),
+                      fontSize: 14,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  TextSpan(
+                    text: _formatReversibleTime(),
+                    style: const TextStyle(
+                      color: Color(0xFF8AF9A8),
+                      fontSize: 12,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
+        const SizedBox(height: 28),
+
+        // Error message
         if (_errorMessage != null)
           Padding(
-            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-            child: Center(
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: 'Fira Code'),
-                textAlign: TextAlign.center,
-              ),
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: 'Fira Code'),
+              textAlign: TextAlign.center,
             ),
           ),
-        const SizedBox(height: 28),
+
+        // Network fee and confirm button
         SizedBox(
-          width: double.infinity,
+          width: 305,
           child: Column(
             children: [
               Row(
@@ -247,18 +286,28 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(
-                    '$formattedFee ${AppConstants.tokenSymbol}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '$formattedFee ${AppConstants.tokenSymbol}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 24,
+                        height: 24,
+                        child: const Icon(Icons.settings, color: Colors.white, size: 16),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 23),
+              const SizedBox(height: 16),
               GestureDetector(
                 onTap: _isSending ? null : _confirmSend,
                 child: Opacity(
@@ -268,9 +317,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                     padding: const EdgeInsets.all(16),
                     decoration: ShapeDecoration(
                       color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                     ),
                     child: const Text(
                       'Confirm',
@@ -285,7 +332,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                   ),
                 ),
               ),
-              const SizedBox(height: 50),
             ],
           ),
         ),
@@ -307,15 +353,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               GestureDetector(
                 onTap: widget.onClose,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
-                  child: const Icon(Icons.close, color: Colors.black, size: 18),
-                ),
+                child: Container(width: 24, height: 24, child: const Icon(Icons.close, color: Colors.white, size: 24)),
               ),
             ],
           ),
@@ -329,13 +367,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               Positioned(
                 top: 0,
-                child: SizedBox(
-                  width: 85,
-                  height: 85,
-                  child: SvgPicture.asset(
-                    'assets/res_icon.svg',
-                  ),
-                ),
+                child: SizedBox(width: 85, height: 85, child: SvgPicture.asset('assets/res_icon.svg')),
               ),
               const Positioned(
                 bottom: 0,
@@ -376,10 +408,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: const ShapeDecoration(
-                    color: Colors.white,
-                    shape: OvalBorder(),
-                  ),
+                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
                   child: const Icon(Icons.close, color: Colors.black, size: 18),
                 ),
               ),
@@ -397,11 +426,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 85,
-                    height: 85,
-                    child: SvgPicture.asset('assets/res_icon.svg'),
-                  ),
+                  SizedBox(width: 85, height: 85, child: SvgPicture.asset('assets/res_icon.svg')),
                   const SizedBox(height: 17),
                   const SizedBox(
                     width: 126,
@@ -503,9 +528,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             padding: const EdgeInsets.all(16),
             decoration: ShapeDecoration(
               color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
             ),
             child: const Text(
               'Done',
@@ -546,9 +569,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                color: Colors.black.useOpacity(0.3),
-              ),
+              child: Container(color: Colors.black.useOpacity(0.3)),
             ),
           ),
           Container(
