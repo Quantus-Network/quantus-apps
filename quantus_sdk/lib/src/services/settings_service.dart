@@ -82,6 +82,17 @@ class SettingsService {
     await _secureStorage.delete(key: 'mnemonic');
   }
 
+  // Reversible Time Settings
+  Future<void> setReversibleTimeSeconds(int seconds) async {
+    await _ensureInitialized();
+    await _prefs.setInt('reversible_time_seconds', seconds);
+  }
+
+  Future<int?> getReversibleTimeSeconds() async {
+    await _ensureInitialized();
+    return _prefs.getInt('reversible_time_seconds');
+  }
+
   // Clear all settings
   Future<void> clearAll() async {
     await _ensureInitialized();

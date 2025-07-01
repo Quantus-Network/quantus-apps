@@ -112,6 +112,23 @@ class ReversibleTransfersService {
     }
   }
 
+  /// Schedule a reversible transfer with custom delay in seconds
+  Future<String> scheduleReversibleTransferWithDelaySeconds({
+    required String senderSeed,
+    required String recipientAddress,
+    required BigInt amount,
+    required int delaySeconds,
+  }) async {
+    // convert seconds to milliseconds for runtime
+    final delay = Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
+    return scheduleReversibleTransferWithDelay(
+      senderSeed: senderSeed,
+      recipientAddress: recipientAddress,
+      amount: amount,
+      delay: delay,
+    );
+  }
+
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
   Future<String> cancelReversibleTransfer({required String senderSeed, required H256 transactionId}) async {
     try {

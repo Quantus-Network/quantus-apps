@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
@@ -28,12 +29,16 @@ class SendScreenState extends State<SendScreen> {
   String _savedAddressesLabel = '';
   Timer? _debounce;
 
+  // Reversible time state
+  int _reversibleTimeSeconds = 600; // Default: 10 minutes
+
   late Future<BigInt> _balanceFuture;
 
   @override
   void initState() {
     super.initState();
     _balanceFuture = _loadBalance();
+    _loadReversibleTimeSetting();
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
     _amountController.addListener(_debounceFetchFee);
@@ -45,6 +50,21 @@ class SendScreenState extends State<SendScreen> {
     _amountController.dispose();
     _recipientController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadReversibleTimeSetting() async {
+    final savedTime = (await _settingsService.getReversibleTimeSeconds()) ?? AppConstants.defaultReversibleTimeSeconds;
+    setState(() {
+      _reversibleTimeSeconds = savedTime;
+    });
+  }
+
+  Future<void> _saveReversibleTimeSetting(int seconds) async {
+    try {
+      await _settingsService.setReversibleTimeSeconds(seconds);
+    } catch (e) {
+      debugPrint('Error saving reversible time setting: $e');
+    }
   }
 
   bool _isValidSS58Address(String address) {
@@ -99,6 +119,7 @@ class SendScreenState extends State<SendScreen> {
         setState(() {
           _savedAddressesLabel = humanReadableName;
         });
+        _debounceFetchFee();
       } else {
         if (!mounted) return; // Check mounted before setState
         setState(() {
@@ -211,6 +232,7 @@ class SendScreenState extends State<SendScreen> {
         recipientName: _savedAddressesLabel,
         recipientAddress: _recipientController.text,
         fee: _networkFee,
+        reversibleTimeSeconds: _reversibleTimeSeconds,
         onClose: () => Navigator.pop(context),
       ),
     );
@@ -231,6 +253,237 @@ class SendScreenState extends State<SendScreen> {
         _lookupIdentity();
       }
     }
+  }
+
+  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
+  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
+  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
+
+  String _formatReversibleTime() {
+    final days = _reversibleTimeDays;
+    final hours = _reversibleTimeHours;
+    final minutes = _reversibleTimeMinutes;
+
+    if (days > 0) {
+      return '$days day${days > 1 ? 's' : ''}, $hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+    } else if (hours > 0) {
+      return '$hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+    } else {
+      return '$minutes min${minutes != 1 ? 's' : ''}';
+    }
+  }
+
+  void _showTimePickerModal() {
+    // Set initial values from current state
+    var selectedDays = _reversibleTimeDays;
+    var selectedHours = _reversibleTimeHours;
+    var selectedMinutes = _reversibleTimeMinutes;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: 632,
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            const Column(
+              children: [
+                Icon(Icons.schedule, color: Color(0xFF16CECE), size: 29),
+                SizedBox(height: 16),
+                Text(
+                  'Set Reverse Window',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF16CECE),
+                    fontSize: 18,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Your transaction is reversible during this time period',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+
+            // Time picker labels
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    'Days',
+                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                  ),
+                  Text(
+                    'Hours',
+                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                  ),
+                  Text(
+                    'Minutes',
+                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Time pickers
+            Expanded(
+              child: Row(
+                children: [
+                  // Days picker
+                  Expanded(
+                    child: CupertinoPicker(
+                      scrollController: FixedExtentScrollController(initialItem: selectedDays),
+                      itemExtent: 40,
+                      onSelectedItemChanged: (index) => selectedDays = index,
+                      children: List.generate(
+                        8,
+                        (index) => Center(
+                          child: Text(
+                            index.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Text(':', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  // Hours picker
+                  Expanded(
+                    child: CupertinoPicker(
+                      scrollController: FixedExtentScrollController(initialItem: selectedHours),
+                      itemExtent: 40,
+                      onSelectedItemChanged: (index) => selectedHours = index,
+                      children: List.generate(
+                        24,
+                        (index) => Center(
+                          child: Text(
+                            index.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Text(':', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  // Minutes picker
+                  Expanded(
+                    child: CupertinoPicker(
+                      scrollController: FixedExtentScrollController(initialItem: selectedMinutes),
+                      itemExtent: 40,
+                      onSelectedItemChanged: (index) => selectedMinutes = index,
+                      children: List.generate(
+                        60,
+                        (index) => Center(
+                          child: Text(
+                            index.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFFF2D53),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      final newTimeSeconds = (selectedDays * 86400) + (selectedHours * 3600) + (selectedMinutes * 60);
+                      setState(() {
+                        _reversibleTimeSeconds = newTimeSeconds;
+                      });
+                      _saveReversibleTimeSetting(newTimeSeconds);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFF5FE49E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                      child: const Text(
+                        'Set',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -497,6 +750,37 @@ class SendScreenState extends State<SendScreen> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GestureDetector(
+                          onTap: _showTimePickerModal,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: ShapeDecoration(
+                              color: const Color(0xFF313131),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Reversible for: ${_formatReversibleTime()}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                const Icon(Icons.edit, color: Colors.white70, size: 14),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),

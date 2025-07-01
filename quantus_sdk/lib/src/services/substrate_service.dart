@@ -1,21 +1,18 @@
-import 'package:flutter/foundation.dart';
-import 'package:polkadart/polkadart.dart';
-import 'package:ss58/ss58.dart';
-import '../constants/app_constants.dart';
-import '../extensions/keypair_extensions.dart';
-import 'number_formatting_service.dart';
-import 'dart:math';
-import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:bip39_mnemonic/bip39_mnemonic.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
-import 'settings_service.dart';
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:ss58/ss58.dart';
 
 enum ConnectionStatus { connecting, connected, disconnected, error }
 
@@ -276,11 +273,6 @@ class SubstrateService {
     return result;
   }
 
-  Future<void> _printBalance(String prefix, String address) async {
-    final balance = await queryBalance(address);
-    print('$prefix Balance for $address: ${balance.toString()}');
-  }
-
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
@@ -304,328 +296,72 @@ class SubstrateService {
     return senderWallet;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
-    try {
-      // Ensure provider is connected before proceeding
-      if (_provider == null) {
-        await initialize();
-      }
-
-      // Get the sender's wallet
-      print('sending to $targetAddress');
-      print('amount (BigInt): $amount');
-      print('amount (${AppConstants.tokenSymbol} formatted): ${NumberFormattingService().formatBalance(amount)}');
-
-      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-
-      await _printBalance('Sender before ', senderWallet.ss58Address);
-      await _printBalance('Target before ', targetAddress);
-
-      // Get all necessary info for the transaction in one go to minimize timing issues
-      final runtimeVersion = await _stateApi!.getRuntimeVersion();
-      final specVersion = runtimeVersion.specVersion;
-      final transactionVersion = runtimeVersion.transactionVersion;
-
-      final block = await _provider!.send('chain_getBlock', []);
-      final blockNumber = int.parse(block.result['block']['header']['number']);
-      final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
-      final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
-      final nonce = int.parse(nonceResult.result.toString());
-
-      // Use the passed BigInt amount directly
-      final BigInt rawAmount = amount;
-
-      final dest = targetAddress;
-      final destinationAccountID = crypto.ss58ToAccountId(s: dest);
-      final multiDest = const multi_address.$MultiAddress().id(destinationAccountID);
-      print('Destination: $dest');
-
-      // Encode call
-      final resonanceApi = Resonance(_provider!);
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: rawAmount);
-      final transferCall = runtimeCall.encode();
-
-      // Create and sign the payload
-      final payloadToSign = SigningPayload(
-        method: transferCall,
-        specVersion: specVersion,
-        transactionVersion: transactionVersion,
-        genesisHash: genesisHash,
-        blockHash: blockHash,
-        blockNumber: blockNumber,
-        eraPeriod: 64,
-        nonce: nonce,
-        tip: 0,
-      );
-
-      final payload = payloadToSign.encode(resonanceApi.registry);
-      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
-
-      // Create the extrinsic
-      var extrinsic = ResonanceExtrinsicPayload(
-        signer: Uint8List.fromList(senderWallet.addressBytes),
-        method: transferCall,
-        signature: signatureWithPublicKeyBytes,
-        eraPeriod: 64,
-        blockNumber: blockNumber,
-        nonce: nonce,
-        tip: 0,
-      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
-
-      // Add retry logic for submission
-      int retryCount = 0;
-      const maxRetries = 3;
-
-      while (retryCount < maxRetries) {
-        try {
-          await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
-            print('type: ${data.type}, value: ${data.value}');
-            await _printBalance('after ', senderWallet.ss58Address);
-            await _printBalance('after ', targetAddress);
-          });
-          return '0';
-        } catch (e) {
-          retryCount++;
-          if (retryCount >= maxRetries) rethrow;
-          // Wait a bit before retrying
-          await Future.delayed(Duration(milliseconds: 500 * retryCount));
-          // Refresh block info for retry
-          final newBlock = await _provider!.send('chain_getBlock', []);
-          final newBlockNumber = int.parse(newBlock.result['block']['header']['number']);
-          final newBlockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-          final newNonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
-          final newNonce = int.parse(newNonceResult.result.toString());
-
-          // Recreate payload with new block info
-          final newPayloadToSign = SigningPayload(
-            method: transferCall,
-            specVersion: specVersion,
-            transactionVersion: transactionVersion,
-            genesisHash: genesisHash,
-            blockHash: newBlockHash,
-            blockNumber: newBlockNumber,
-            eraPeriod: 64,
-            nonce: newNonce,
-            tip: 0,
-          );
-
-          final newPayload = newPayloadToSign.encode(resonanceApi.registry);
-          final newSignature = crypto.signMessage(keypair: senderWallet, message: newPayload);
-          final newSignatureWithPublicKeyBytes = _combineSignatureAndPubkey(newSignature, senderWallet.publicKey);
-
-          extrinsic = ResonanceExtrinsicPayload(
-            signer: Uint8List.fromList(senderWallet.addressBytes),
-            method: transferCall,
-            signature: newSignatureWithPublicKeyBytes,
-            eraPeriod: 64,
-            blockNumber: newBlockNumber,
-            nonce: newNonce,
-            tip: 0,
-          ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
-        }
-      }
-
-      return '0';
-    } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
-      throw Exception('Failed to transfer balance: $e');
+  Future<String> submitExtrinsic(
+    String senderSeed,
+    RuntimeCall call, {
+    void Function(ExtrinsicStatus)? onStatus,
+    int maxRetries = 3,
+  }) async {
+    if (_provider == null) {
+      await initialize();
     }
-  }
 
-  // // reference implementation - this works with sr25519 schnorr signatures
-  // Future<String> balanceTransferSr25519Deprecated(String senderSeed, String targetAddress, double amount) async {
-  //   try {
-  //     // Get the sender's wallet
-  //     final senderWallet = await KeyPair.sr25519.fromMnemonic(senderSeed);
+    final senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+    final resonanceApi = Resonance(_provider!);
 
-  //     print('sender\' wallet: ${senderWallet.address}');
+    final runtimeVersion = await _stateApi!.getRuntimeVersion();
+    final specVersion = runtimeVersion.specVersion;
+    final transactionVersion = runtimeVersion.transactionVersion;
+    final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+    final encodedCall = call.encode();
 
-  //     // Get necessary info for the transaction
-  //     final runtimeVersion = await _stateApi!.getRuntimeVersion();
-  //     final specVersion = runtimeVersion.specVersion;
-  //     final transactionVersion = runtimeVersion.transactionVersion;
+    int retryCount = 0;
+    while (retryCount < maxRetries) {
+      try {
+        final block = await _provider!.send('chain_getBlock', []);
+        final blockNumber = int.parse(block.result['block']['header']['number']);
+        final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
+        final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+        final nonce = int.parse(nonceResult.result.toString());
 
-  //     final block = await _provider!.send('chain_getBlock', []);
-  //     final blockNumber = int.parse(block.result['block']['header']['number']);
+        final payloadToSign = SigningPayload(
+          method: encodedCall,
+          specVersion: specVersion,
+          transactionVersion: transactionVersion,
+          genesisHash: genesisHash,
+          blockHash: blockHash,
+          blockNumber: blockNumber,
+          eraPeriod: 64,
+          nonce: nonce,
+          tip: 0,
+        );
 
-  //     final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-  //     final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+        final payload = payloadToSign.encode(resonanceApi.registry);
+        final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+        final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
-  //     // Get the next nonce for the `sender`
-  //     final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.address]);
-  //     final nonce = int.parse(nonceResult.result.toString());
+        final extrinsic = ResonanceExtrinsicPayload(
+          signer: Uint8List.fromList(senderWallet.addressBytes),
+          method: encodedCall,
+          signature: signatureWithPublicKeyBytes,
+          eraPeriod: 64,
+          blockNumber: blockNumber,
+          nonce: nonce,
+          tip: 0,
+        ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
 
-  //     // Convert amount to chain format (considering decimals)
-  //     final rawAmount = BigInt.from(amount * BigInt.from(10).pow(12).toInt());
-
-  //     final dest = targetAddress;
-  //     final multiDest = const multi_address.$MultiAddress().id(Address.decode(dest).pubkey);
-  //     print('Destination: $dest');
-
-  //     // Encode call
-  //     final resonanceApi = Resonance(_provider!);
-  //     final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: rawAmount);
-  //     final transferCall = runtimeCall.encode();
-
-  //     // Get metadata for encoding
-  //     // final metadata = await _stateApi.getMetadata();
-
-  //     // Create and sign the payload
-  //     final payloadToSign = SigningPayload(
-  //       method: transferCall,
-  //       specVersion: specVersion,
-  //       transactionVersion: transactionVersion,
-  //       genesisHash: genesisHash,
-  //       blockHash: blockHash,
-  //       blockNumber: blockNumber,
-  //       eraPeriod: 64,
-  //       nonce: nonce,
-  //       tip: 0,
-  //     );
-
-  //     final payload = payloadToSign.encode(resonanceApi.registry);
-
-  //     final signature = senderWallet.sign(payload);
-
-  //     // Create the extrinsic
-  //     final extrinsic = ExtrinsicPayload(
-  //       signer: Uint8List.fromList(senderWallet.publicKey.bytes),
-  //       method: transferCall,
-  //       signature: signature,
-  //       eraPeriod: 64,
-  //       blockNumber: blockNumber,
-  //       nonce: nonce,
-  //       tip: 0,
-  //     ).encode(resonanceApi.registry, SignatureType.sr25519);
-
-  //     // Submit the extrinsic
-
-  //     await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) {
-  //       print('type: ${data.type}, value: ${data.value}');
-  //     });
-  //     return '0';
-
-  //     // final hash = await _authorApi.submitExtrinsic(extrinsic);
-  //     // return convert.hex.encode(0);
-  //   } catch (e, stackTrace) {
-  //     print('Failed to transfer balance: $e');
-  //     print('Failed to transfer balance: $stackTrace');
-  //     throw Exception('Failed to transfer balance: $e');
-  //   }
-  // }
-
-  // Generic method to submit any extrinsic
-  Future<String> submitExtrinsic(String senderSeed, dynamic call) async {
-    try {
-      // Ensure provider is connected before proceeding
-      if (_provider == null) {
-        await initialize();
-      }
-
-      crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-
-      // Get all necessary info for the transaction
-      final runtimeVersion = await _stateApi!.getRuntimeVersion();
-      final specVersion = runtimeVersion.specVersion;
-      final transactionVersion = runtimeVersion.transactionVersion;
-
-      final block = await _provider!.send('chain_getBlock', []);
-      final blockNumber = int.parse(block.result['block']['header']['number']);
-      final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
-      final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
-      final nonce = int.parse(nonceResult.result.toString());
-
-      // Encode call
-      final resonanceApi = Resonance(_provider!);
-      final transferCall = call.encode();
-
-      // Create and sign the payload
-      final payloadToSign = SigningPayload(
-        method: transferCall,
-        specVersion: specVersion,
-        transactionVersion: transactionVersion,
-        genesisHash: genesisHash,
-        blockHash: blockHash,
-        blockNumber: blockNumber,
-        eraPeriod: 64,
-        nonce: nonce,
-        tip: 0,
-      );
-
-      final payload = payloadToSign.encode(resonanceApi.registry);
-      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
-
-      // Create the extrinsic
-      var extrinsic = ResonanceExtrinsicPayload(
-        signer: Uint8List.fromList(senderWallet.addressBytes),
-        method: transferCall,
-        signature: signatureWithPublicKeyBytes,
-        eraPeriod: 64,
-        blockNumber: blockNumber,
-        nonce: nonce,
-        tip: 0,
-      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
-
-      // Submit with retry logic
-      int retryCount = 0;
-      const maxRetries = 3;
-
-      while (retryCount < maxRetries) {
-        try {
-          await _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) async {
-            print('Extrinsic type: ${data.type}, value: ${data.value}');
-          });
-          return '0'; // Success
-        } catch (e) {
-          retryCount++;
-          if (retryCount >= maxRetries) rethrow;
-          await Future.delayed(Duration(milliseconds: 500 * retryCount));
-
-          // Refresh block info for retry
-          final newBlock = await _provider!.send('chain_getBlock', []);
-          final newBlockNumber = int.parse(newBlock.result['block']['header']['number']);
-          final newBlockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-          final newNonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
-          final newNonce = int.parse(newNonceResult.result.toString());
-
-          // Recreate payload with new block info
-          final newPayloadToSign = SigningPayload(
-            method: transferCall,
-            specVersion: specVersion,
-            transactionVersion: transactionVersion,
-            genesisHash: genesisHash,
-            blockHash: newBlockHash,
-            blockNumber: newBlockNumber,
-            eraPeriod: 64,
-            nonce: newNonce,
-            tip: 0,
-          );
-
-          final newPayload = newPayloadToSign.encode(resonanceApi.registry);
-          final newSignature = crypto.signMessage(keypair: senderWallet, message: newPayload);
-          final newSignatureWithPublicKeyBytes = _combineSignatureAndPubkey(newSignature, senderWallet.publicKey);
-
-          extrinsic = ResonanceExtrinsicPayload(
-            signer: Uint8List.fromList(senderWallet.addressBytes),
-            method: transferCall,
-            signature: newSignatureWithPublicKeyBytes,
-            eraPeriod: 64,
-            blockNumber: newBlockNumber,
-            nonce: newNonce,
-            tip: 0,
-          ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+        await _authorApi!.submitAndWatchExtrinsic(extrinsic, onStatus ?? (data) {});
+        return '0';
+      } catch (e) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          print('Failed to submit extrinsic after $maxRetries retries: $e');
+          rethrow;
         }
+        await Future.delayed(Duration(milliseconds: 500 * retryCount));
       }
-
-      return '0';
-    } catch (e) {
-      throw Exception('Failed to submit extrinsic: $e');
     }
+    throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
   // Getter for provider (for services that need direct access)

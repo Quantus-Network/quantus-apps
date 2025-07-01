@@ -16,4 +16,7 @@ class AppConstants {
   static const String hasWalletKey = 'has_wallet';
   static const String mnemonicKey = 'mnemonic';
   static const String accountIdKey = 'account_id';
+
+  // Reversible time settings
+  static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 }
