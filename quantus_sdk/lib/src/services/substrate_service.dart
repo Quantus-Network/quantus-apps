@@ -273,11 +273,6 @@ class SubstrateService {
     return result;
   }
 
-  Future<void> _printBalance(String prefix, String address) async {
-    final balance = await queryBalance(address);
-    print('$prefix Balance for $address: ${balance.toString()}');
-  }
-
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
     crypto.Keypair senderWallet;
     if (senderSeed.startsWith('//')) {
@@ -367,41 +362,6 @@ class SubstrateService {
       }
     }
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
-  }
-
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
-    try {
-      // Ensure provider is connected before proceeding
-      if (_provider == null) {
-        await initialize();
-      }
-
-      // Get the sender's wallet to print balances
-      final senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-      await _printBalance('Sender before ', senderWallet.ss58Address);
-      await _printBalance('Target before ', targetAddress);
-
-      // Create the transfer call
-      final resonanceApi = Resonance(_provider!);
-      final destinationAccountID = crypto.ss58ToAccountId(s: targetAddress);
-      final multiDest = const multi_address.$MultiAddress().id(destinationAccountID);
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
-
-      // Submit the extrinsic and return its result
-      return await submitExtrinsic(
-        senderSeed,
-        runtimeCall,
-        onStatus: (data) async {
-          print('type: ${data.type}, value: ${data.value}');
-          await _printBalance('after ', senderWallet.ss58Address);
-          await _printBalance('after ', targetAddress);
-        },
-      );
-    } catch (e, stackTrace) {
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
-      throw Exception('Failed to transfer balance: $e');
-    }
   }
 
   // Getter for provider (for services that need direct access)

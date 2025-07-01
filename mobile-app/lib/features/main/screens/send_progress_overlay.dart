@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:quantus_sdk/src/services/balances_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -71,7 +72,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Recipient: ${widget.recipientAddress}');
       debugPrint('  Amount (BigInt): ${widget.amount}');
 
-      await SubstrateService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+      await BalancesService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
 
       debugPrint('Balance transfer successful.');
 
