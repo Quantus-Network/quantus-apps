@@ -71,8 +71,19 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
       debugPrint('  Recipient: ${widget.recipientAddress}');
       debugPrint('  Amount (BigInt): ${widget.amount}');
+      debugPrint('  Fee: ${widget.fee}');
+      debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
 
-      await BalancesService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+      if (widget.reversibleTimeSeconds <= 0) {
+        await BalancesService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+      } else {
+        await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+          senderSeed: senderSeed,
+          recipientAddress: widget.recipientAddress,
+          amount: widget.amount,
+          delaySeconds: widget.reversibleTimeSeconds,
+        );
+      }
 
       debugPrint('Balance transfer successful.');
 
