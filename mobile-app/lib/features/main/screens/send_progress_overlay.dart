@@ -110,7 +110,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               GestureDetector(
                 onTap: widget.onClose,
-                child: Container(width: 24, height: 24, child: const Icon(Icons.close, color: Colors.white, size: 24)),
+                child: const SizedBox(width: 24, height: 24, child: Icon(Icons.close, color: Colors.white, size: 24)),
               ),
             ],
           ),
@@ -122,7 +122,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           width: 126,
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 width: 51,
                 height: 42,
                 // decoration: BoxDecoration(color: Colors.white.useOpacity(0.1), borderRadius: BorderRadius.circular(5)),
@@ -298,11 +298,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        child: const Icon(Icons.settings, color: Colors.white, size: 16),
-                      ),
+                      const SizedBox(width: 24, height: 24, child: Icon(Icons.settings, color: Colors.white, size: 16)),
                     ],
                   ),
                 ],
@@ -353,7 +349,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               GestureDetector(
                 onTap: widget.onClose,
-                child: Container(width: 24, height: 24, child: const Icon(Icons.close, color: Colors.white, size: 24)),
+                child: const SizedBox(width: 24, height: 24, child: Icon(Icons.close, color: Colors.white, size: 24)),
               ),
             ],
           ),
@@ -397,6 +393,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Close button
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(7),
@@ -405,116 +402,145 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             children: [
               GestureDetector(
                 onTap: widget.onClose,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const ShapeDecoration(color: Colors.white, shape: OvalBorder()),
-                  child: const Icon(Icons.close, color: Colors.black, size: 18),
-                ),
+                child: const SizedBox(width: 24, height: 24, child: Icon(Icons.close, color: Colors.white, size: 24)),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 91 - 24),
+        const SizedBox(height: 28),
+
+        // Sent icon and title
         Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(
-              width: 126,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(width: 85, height: 85, child: SvgPicture.asset('assets/res_icon.svg')),
-                  const SizedBox(height: 17),
-                  const SizedBox(
-                    width: 126,
-                    child: Text(
-                      'SENT',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              width: 51,
+              height: 42,
+              child: Center(child: SvgPicture.asset('assets/send_icon_1.svg', width: 51, height: 42)),
             ),
-            const SizedBox(height: 46),
-            SizedBox(
-              width: 305,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 305,
-                    child: Text.rich(
+            const SizedBox(height: 17),
+            const Text(
+              'SENT',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 30, fontFamily: 'Fira Code', fontWeight: FontWeight.w300),
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
+
+        // Transaction details
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Amount
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 25,
+                  height: 25,
+                  decoration: const ShapeDecoration(color: Color(0xFFE6E6E6), shape: OvalBorder()),
+                  child: Center(child: SvgPicture.asset('assets/res_icon.svg', width: 11, height: 19)),
+                ),
+                const SizedBox(width: 13),
+                Text.rich(
+                  TextSpan(
+                    children: [
                       TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '$formattedAmount ${AppConstants.tokenSymbol} ',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'was successfully sent to ',
-                            style: TextStyle(
-                              color: Colors.white.useOpacity(0.5),
-                              fontSize: 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          TextSpan(
-                            text: widget.recipientName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                        text: formattedAmount,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: 305,
-                    child: GestureDetector(
-                      onTap: () {
-                        // TODO: Implement view transaction logic
-                      },
-                      child: const Text(
-                        'View Transaction',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFF16CECE),
+                      TextSpan(
+                        text: ' ${AppConstants.tokenSymbol}',
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 12,
                           fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Color(0xFF16CECE),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
+
+            // Recipient
+            Text(
+              'sent to',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 12,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 9),
+            Text(
+              widget.recipientName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              widget.recipientAddress,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Reversible for
+            Text(
+              'Reversible for: ${_formatReversibleTime()}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // View Transaction
+            GestureDetector(
+              onTap: () {
+                // TODO: Implement view transaction logic
+              },
+              child: const Text(
+                'View Transaction',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF16CECE),
+                  fontSize: 12,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFF16CECE),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 46),
+        const SizedBox(height: 30),
+
+        // Done Button
         GestureDetector(
           onTap: () {
             Navigator.pushAndRemoveUntil(
