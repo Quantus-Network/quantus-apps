@@ -522,29 +522,7 @@ class SendScreenState extends State<SendScreen> {
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
-                              Container(
-                                width: 12.84,
-                                height: 12.84,
-                                child: Stack(
-                                  children: [
-                                    Positioned(
-                                      left: 10.14,
-                                      top: 0,
-                                      child: Transform.rotate(
-                                        angle: 0.79,
-                                        child: Container(
-                                          width: 3.81,
-                                          height: 2,
-                                          decoration: ShapeDecoration(
-                                            color: Colors.white.withOpacity(0.7),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0.50)),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              const Icon(Icons.edit, color: Colors.white70, size: 14),
                             ],
                           ),
                         ),
