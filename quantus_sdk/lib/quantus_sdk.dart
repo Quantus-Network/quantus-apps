@@ -11,6 +11,7 @@ export 'src/services/number_formatting_service.dart';
 export 'src/models/transaction_model.dart';
 export 'src/services/chain_history_service.dart';
 export 'src/extensions/keypair_extensions.dart';
+export 'generated/resonance/types/quantus_runtime/runtime_call.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead TODO...
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
