@@ -903,7 +903,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 100,
+    specVersion: 101,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(
@@ -1072,5 +1072,5 @@ class Constants {
   /// This replaces the "ss58Format" property declared in the chain spec. Reason is
   /// that the runtime should know about the prefix in order to make use of it as
   /// an identifier of the chain.
-  final int sS58Prefix = 42;
+  final int sS58Prefix = 189;
 }

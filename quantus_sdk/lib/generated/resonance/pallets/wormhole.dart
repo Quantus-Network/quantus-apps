@@ -7,6 +7,7 @@ import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/pallet_wormhole/pallet/call.dart' as _i6;
 import '../types/quantus_runtime/runtime_call.dart' as _i5;
+import '../types/sp_core/crypto/account_id32.dart' as _i7;
 
 class Queries {
   const Queries(this.__api);
@@ -73,4 +74,44 @@ class Txs {
   _i5.Wormhole verifyWormholeProof({required List<int> proofBytes}) {
     return _i5.Wormhole(_i6.VerifyWormholeProof(proofBytes: proofBytes));
   }
+}
+
+class Constants {
+  Constants();
+
+  /// Account ID used as the "from" account when creating transfer proofs for minted tokens
+  final _i7.AccountId32 mintingAccount = const <int>[
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+  ];
 }

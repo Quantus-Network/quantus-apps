@@ -338,6 +338,7 @@ class Queries {
 class Constants {
   Constants();
 
+  /// Pallet's weight info
   final int initialDistanceThresholdExponent = 502;
 
   final int difficultyAdjustPercentClamp = 10;
@@ -349,4 +350,10 @@ class Constants {
   final int blockTimeHistorySize = 10;
 
   final int maxReorgDepth = 10;
+
+  /// Fixed point scale for calculations (default: 10^18)
+  final BigInt fixedU128Scale = BigInt.from(1000000000000);
+
+  /// Maximum distance threshold multiplier (default: 4)
+  final int maxDistanceMultiplier = 2;
 }

@@ -4,6 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/call.dart' as _i3;
+import '../pallet_assets/pallet/call.dart' as _i21;
 import '../pallet_balances/pallet/call.dart' as _i5;
 import '../pallet_conviction_voting/pallet/call.dart' as _i14;
 import '../pallet_faucet/pallet/call.dart' as _i19;
@@ -120,6 +121,10 @@ class $RuntimeCall {
   Recovery recovery(_i20.Call value0) {
     return Recovery(value0);
   }
+
+  Assets assets(_i21.Call value0) {
+    return Assets(value0);
+  }
 }
 
 class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
@@ -165,6 +170,8 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return Faucet._decode(input);
       case 21:
         return Recovery._decode(input);
+      case 22:
+        return Assets._decode(input);
       default:
         throw Exception('RuntimeCall: Invalid variant index: "$index"');
     }
@@ -230,6 +237,9 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
+      case Assets:
+        (value as Assets).encodeTo(output);
+        break;
       default:
         throw Exception(
             'RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
@@ -275,6 +285,8 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return (value as Faucet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
+      case Assets:
+        return (value as Assets)._sizeHint();
       default:
         throw Exception(
             'RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
@@ -1066,6 +1078,50 @@ class Recovery extends RuntimeCall {
         other,
       ) ||
       other is Recovery && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Assets extends RuntimeCall {
+  const Assets(this.value0);
+
+  factory Assets._decode(_i1.Input input) {
+    return Assets(_i21.Call.codec.decode(input));
+  }
+
+  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
+  ///::CallableCallFor<Assets, Runtime>
+  final _i21.Call value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Assets': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i21.Call.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      22,
+      output,
+    );
+    _i21.Call.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Assets && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

@@ -1,11 +1,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i23;
+import 'dart:async' as _i24;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 
+import 'pallets/assets.dart' as _i21;
 import 'pallets/balances.dart' as _i4;
 import 'pallets/conviction_voting.dart' as _i15;
-import 'pallets/faucet.dart' as _i22;
+import 'pallets/faucet.dart' as _i23;
 import 'pallets/merkle_airdrop.dart' as _i18;
 import 'pallets/mining_rewards.dart' as _i9;
 import 'pallets/preimage.dart' as _i11;
@@ -21,7 +22,7 @@ import 'pallets/tech_referenda.dart' as _i17;
 import 'pallets/timestamp.dart' as _i3;
 import 'pallets/transaction_payment.dart' as _i5;
 import 'pallets/treasury_pallet.dart' as _i19;
-import 'pallets/utility.dart' as _i21;
+import 'pallets/utility.dart' as _i22;
 import 'pallets/vesting.dart' as _i10;
 import 'pallets/wormhole.dart' as _i8;
 
@@ -45,7 +46,8 @@ class Queries {
         techReferenda = _i17.Queries(api),
         merkleAirdrop = _i18.Queries(api),
         treasuryPallet = _i19.Queries(api),
-        recovery = _i20.Queries(api);
+        recovery = _i20.Queries(api),
+        assets = _i21.Queries(api);
 
   final _i2.Queries system;
 
@@ -84,6 +86,8 @@ class Queries {
   final _i19.Queries treasuryPallet;
 
   final _i20.Queries recovery;
+
+  final _i21.Queries assets;
 }
 
 class Extrinsics {
@@ -105,7 +109,7 @@ class Extrinsics {
 
   final _i12.Txs scheduler = _i12.Txs();
 
-  final _i21.Txs utility = _i21.Txs();
+  final _i22.Txs utility = _i22.Txs();
 
   final _i13.Txs referenda = _i13.Txs();
 
@@ -121,9 +125,11 @@ class Extrinsics {
 
   final _i19.Txs treasuryPallet = _i19.Txs();
 
-  final _i22.Txs faucet = _i22.Txs();
+  final _i23.Txs faucet = _i23.Txs();
 
   final _i20.Txs recovery = _i20.Txs();
+
+  final _i21.Txs assets = _i21.Txs();
 }
 
 class Constants {
@@ -139,13 +145,15 @@ class Constants {
 
   final _i7.Constants qPoW = _i7.Constants();
 
+  final _i8.Constants wormhole = _i8.Constants();
+
   final _i9.Constants miningRewards = _i9.Constants();
 
   final _i10.Constants vesting = _i10.Constants();
 
   final _i12.Constants scheduler = _i12.Constants();
 
-  final _i21.Constants utility = _i21.Constants();
+  final _i22.Constants utility = _i22.Constants();
 
   final _i13.Constants referenda = _i13.Constants();
 
@@ -159,9 +167,11 @@ class Constants {
 
   final _i19.Constants treasuryPallet = _i19.Constants();
 
-  final _i22.Constants faucet = _i22.Constants();
+  final _i23.Constants faucet = _i23.Constants();
 
   final _i20.Constants recovery = _i20.Constants();
+
+  final _i21.Constants assets = _i21.Constants();
 }
 
 class Rpc {
@@ -237,11 +247,11 @@ class Resonance {
 
   final Registry registry;
 
-  _i23.Future connect() async {
+  _i24.Future connect() async {
     return await _provider.connect();
   }
 
-  _i23.Future disconnect() async {
+  _i24.Future disconnect() async {
     return await _provider.disconnect();
   }
 }

@@ -46,7 +46,10 @@ enum Error {
 
   /// Cannot schedule one time reversible transaction when account is reversible (theft deterrence)
   accountAlreadyReversibleCannotScheduleOneTime(
-      'AccountAlreadyReversibleCannotScheduleOneTime', 13);
+      'AccountAlreadyReversibleCannotScheduleOneTime', 13),
+
+  /// The interceptor has reached the maximum number of accounts they can intercept for.
+  tooManyInterceptorAccounts('TooManyInterceptorAccounts', 14);
 
   const Error(
     this.variantName,
@@ -104,6 +107,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.invalidReverser;
       case 13:
         return Error.accountAlreadyReversibleCannotScheduleOneTime;
+      case 14:
+        return Error.tooManyInterceptorAccounts;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

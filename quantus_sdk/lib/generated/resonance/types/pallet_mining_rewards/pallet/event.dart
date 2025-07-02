@@ -35,12 +35,10 @@ class $Event {
   const $Event();
 
   MinerRewarded minerRewarded({
-    required int block,
     required _i3.AccountId32 miner,
     required BigInt reward,
   }) {
     return MinerRewarded(
-      block: block,
       miner: miner,
       reward: reward,
     );
@@ -130,22 +128,16 @@ class $EventCodec with _i1.Codec<Event> {
 /// A miner has been identified for a block
 class MinerRewarded extends Event {
   const MinerRewarded({
-    required this.block,
     required this.miner,
     required this.reward,
   });
 
   factory MinerRewarded._decode(_i1.Input input) {
     return MinerRewarded(
-      block: _i1.U32Codec.codec.decode(input),
       miner: const _i1.U8ArrayCodec(32).decode(input),
       reward: _i1.U128Codec.codec.decode(input),
     );
   }
-
-  /// BlockNumberFor<T>
-  /// Block number
-  final int block;
 
   /// T::AccountId
   /// Miner account
@@ -158,7 +150,6 @@ class MinerRewarded extends Event {
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'MinerRewarded': {
-          'block': block,
           'miner': miner.toList(),
           'reward': reward,
         }
@@ -166,7 +157,6 @@ class MinerRewarded extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(block);
     size = size + const _i3.AccountId32Codec().sizeHint(miner);
     size = size + _i1.U128Codec.codec.sizeHint(reward);
     return size;
@@ -175,10 +165,6 @@ class MinerRewarded extends Event {
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
       0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      block,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -198,7 +184,6 @@ class MinerRewarded extends Event {
         other,
       ) ||
       other is MinerRewarded &&
-          other.block == block &&
           _i4.listsEqual(
             other.miner,
             miner,
@@ -207,7 +192,6 @@ class MinerRewarded extends Event {
 
   @override
   int get hashCode => Object.hash(
-        block,
         miner,
         reward,
       );

@@ -106,7 +106,7 @@ class ProofSubmitted extends Event {
     return ProofSubmitted(nonce: const _i1.U8ArrayCodec(64).decode(input));
   }
 
-  /// [u8; 64]
+  /// NonceType
   final List<int> nonce;
 
   @override
@@ -162,13 +162,13 @@ class DistanceThresholdAdjusted extends Event {
     );
   }
 
-  /// U512
+  /// DistanceThreshold
   final _i3.U512 oldDistanceThreshold;
 
-  /// U512
+  /// DistanceThreshold
   final _i3.U512 newDistanceThreshold;
 
-  /// u64
+  /// BlockDuration
   final BigInt observedBlockTime;
 
   @override

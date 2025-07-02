@@ -77,19 +77,27 @@ class Queries {
   );
 
   final _i1.StorageMap<
-          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>
+          _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>
       _transferProof = const _i1.StorageMap<
-          _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>(
+          _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>,
+          dynamic>(
     prefix: 'Balances',
     storage: 'TransferProof',
     valueCodec: _i2.NullCodec.codec,
     hasher: _i1.StorageHasher.identity(
-        _i9.Tuple4Codec<int, _i3.AccountId32, _i3.AccountId32, BigInt>(
-      _i2.U32Codec.codec,
+        _i9.Tuple4Codec<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>(
+      _i2.U64Codec.codec,
       _i3.AccountId32Codec(),
       _i3.AccountId32Codec(),
       _i2.U128Codec.codec,
     )),
+  );
+
+  final _i1.StorageValue<BigInt> _transferCount =
+      const _i1.StorageValue<BigInt>(
+    prefix: 'Balances',
+    storage: 'TransferCount',
+    valueCodec: _i2.U64Codec.codec,
   );
 
   /// The total units issued in the system.
@@ -235,7 +243,7 @@ class Queries {
   }
 
   _i10.Future<dynamic> transferProof(
-    _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt> key1, {
+    _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt> key1, {
     _i1.BlockHash? at,
   }) async {
     final hashedKey = _transferProof.hashedKeyFor(key1);
@@ -247,6 +255,18 @@ class Queries {
       return _transferProof.decodeValue(bytes);
     }
     return null; /* Nullable */
+  }
+
+  _i10.Future<BigInt> transferCount({_i1.BlockHash? at}) async {
+    final hashedKey = _transferCount.hashedKey();
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _transferCount.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
   }
 
   /// The Balances pallet example of storing the balance of an account.
@@ -378,7 +398,7 @@ class Queries {
   }
 
   _i10.Future<List<dynamic>> multiTransferProof(
-    List<_i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt>> keys, {
+    List<_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>> keys, {
     _i1.BlockHash? at,
   }) async {
     final hashedKeys =
@@ -439,8 +459,14 @@ class Queries {
 
   /// Returns the storage key for `transferProof`.
   _i11.Uint8List transferProofKey(
-      _i9.Tuple4<int, _i3.AccountId32, _i3.AccountId32, BigInt> key1) {
+      _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt> key1) {
     final hashedKey = _transferProof.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
+  /// Returns the storage key for `transferCount`.
+  _i11.Uint8List transferCountKey() {
+    final hashedKey = _transferCount.hashedKey();
     return hashedKey;
   }
 

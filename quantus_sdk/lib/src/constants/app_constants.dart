@@ -22,4 +22,5 @@ class AppConstants {
 
   // Digits of precision
   static const int decimals = 9;
+  static const int ss58prefix = 189;
 }

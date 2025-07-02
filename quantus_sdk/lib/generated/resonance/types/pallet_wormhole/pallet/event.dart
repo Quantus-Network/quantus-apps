@@ -84,7 +84,7 @@ class ProofVerified extends Event {
     return ProofVerified(exitAmount: _i1.U128Codec.codec.decode(input));
   }
 
-  /// <T as BalancesConfig>::Balance
+  /// BalanceOf<T>
   final BigInt exitAmount;
 
   @override

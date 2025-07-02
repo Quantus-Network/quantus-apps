@@ -4,6 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
+import '../pallet_assets/pallet/event.dart' as _i23;
 import '../pallet_balances/pallet/event.dart' as _i4;
 import '../pallet_conviction_voting/pallet/event.dart' as _i16;
 import '../pallet_faucet/pallet/event.dart' as _i21;
@@ -130,6 +131,10 @@ class $RuntimeEvent {
   Recovery recovery(_i22.Event value0) {
     return Recovery(value0);
   }
+
+  Assets assets(_i23.Event value0) {
+    return Assets(value0);
+  }
 }
 
 class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
@@ -179,6 +184,8 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return Faucet._decode(input);
       case 21:
         return Recovery._decode(input);
+      case 22:
+        return Assets._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
     }
@@ -250,6 +257,9 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
+      case Assets:
+        (value as Assets).encodeTo(output);
+        break;
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -299,6 +309,8 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as Faucet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
+      case Assets:
+        return (value as Assets)._sizeHint();
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -1158,6 +1170,49 @@ class Recovery extends RuntimeEvent {
         other,
       ) ||
       other is Recovery && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Assets extends RuntimeEvent {
+  const Assets(this.value0);
+
+  factory Assets._decode(_i1.Input input) {
+    return Assets(_i23.Event.codec.decode(input));
+  }
+
+  /// pallet_assets::Event<Runtime>
+  final _i23.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Assets': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i23.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      22,
+      output,
+    );
+    _i23.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Assets && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
