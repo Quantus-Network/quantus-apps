@@ -19,4 +19,7 @@ class AppConstants {
 
   // Reversible time settings
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
+
+  // Digits of precision
+  static const int decimals = 9;
 }

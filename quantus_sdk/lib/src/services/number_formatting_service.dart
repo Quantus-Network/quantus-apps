@@ -1,9 +1,10 @@
 // Keep for potential future use (grouping)
 import 'package:decimal/decimal.dart';
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:flutter/foundation.dart';
+import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
 
 class NumberFormattingService {
-  static const int decimals = 12;
+  static const int decimals = AppConstants.decimals;
   static final BigInt scaleFactorBigInt = BigInt.from(10).pow(decimals);
   static final Decimal scaleFactorDecimal = Decimal.fromBigInt(scaleFactorBigInt);
 
