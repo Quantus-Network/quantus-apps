@@ -29,50 +29,67 @@ class ChainHistoryService {
 
   // GraphQL query to fetch transfers for a specific account
   final String _eventsQuery = r'''
-query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
+query EventsByAccount($account: String!) {
   events(
     where: {
       OR: [
-        { transfer: { from: { id_eq: $accountId } } },
-        { transfer: { to: { id_eq: $accountId } } },
-        { reversibleTransfer: { from: { id_eq: $accountId } } },
-        { reversibleTransfer: { to: { id_eq: $accountId } } }
+        {
+          transfer: {
+            OR: [
+              { from: { id_eq: $account } }
+              { to:   { id_eq: $account } }
+            ]
+          }
+        }
+        {
+          reversibleTransfer: {
+            OR: [
+              { from: { id_eq: $account } }
+              { to:   { id_eq: $account } }
+            ]
+          }
+        }
       ]
-    },
-    orderBy: timestamp_DESC,
-    limit: $limit,
-    offset: $offset
+    }
   ) {
     id
-    type
-    timestamp
-    extrinsicHash
     transfer {
       id
-      from { id }
-      to { id }
       amount
-      fee
       timestamp
-      extrinsicHash
+      from {
+        id
+      }
+      to {
+        id
+      }
       block {
         height
       }
+      extrinsicHash
+      timestamp
+      fee
     }
     reversibleTransfer {
       id
-      from { id }
-      to { id }
       amount
-      txId
-      status
-      scheduledAt
       timestamp
-      extrinsicHash
+      from {
+        id
+      }
+      to {
+        id
+      }
+      txId
+      scheduledAt
+      status
       block {
         height
       }
+      extrinsicHash
+      timestamp
     }
+
   }
 }
   ''';
@@ -85,7 +102,7 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _eventsQuery,
-      'variables': <String, dynamic>{'accountId': accountId, 'limit': limit, 'offset': offset},
+      'variables': <String, dynamic>{'account': accountId /*, 'limit': limit, 'offset': offset*/},
     };
 
     print('fetchTransfers requestBody: $requestBody');
@@ -122,14 +139,12 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
       final List<TransactionEvent> transactions = [];
       for (var eventJson in events) {
         final event = eventJson as Map<String, dynamic>;
-        final String typeStr = (event['type'] as String).toUpperCase();
-        final eventType = EventType.values.firstWhere((e) => e.toString().split('.').last == typeStr);
 
-        if (eventType == EventType.TRANSFER && event['transfer'] != null) {
+        if (event['transfer'] != null) {
           final transferData = event['transfer'] as Map<String, dynamic>;
           transferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(TransferEvent.fromJson(transferData));
-        } else if (eventType == EventType.REVERSIBLE_TRANSFER && event['reversibleTransfer'] != null) {
+        } else if (event['reversibleTransfer'] != null) {
           final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
           reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
@@ -140,8 +155,9 @@ query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
       final int nextOffset = offset + events.length;
 
       return TransferResult(combinedTransfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error fetching transfers via http: $e');
+      print('Stack trace: $stackTrace');
       rethrow;
     }
   }

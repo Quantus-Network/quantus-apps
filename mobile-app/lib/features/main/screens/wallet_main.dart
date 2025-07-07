@@ -480,8 +480,6 @@ class _WalletMainState extends State<WalletMain> {
                                             ),
                                             child: Text(
                                               displayAddress,
-                                              textAlign: TextAlign.center,
-                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 14,
