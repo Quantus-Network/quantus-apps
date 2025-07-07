@@ -1,0 +1,1 @@
+enum EventType { TRANSFER, REVERSIBLE_TRANSFER }

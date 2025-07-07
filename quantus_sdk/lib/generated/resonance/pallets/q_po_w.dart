@@ -352,7 +352,10 @@ class Constants {
   final int maxReorgDepth = 10;
 
   /// Fixed point scale for calculations (default: 10^18)
-  final BigInt fixedU128Scale = BigInt.from(1000000000000);
+  final BigInt fixedU128Scale = BigInt.parse(
+    '1000000000000000000',
+    radix: 10,
+  );
 
   /// Maximum distance threshold multiplier (default: 4)
   final int maxDistanceMultiplier = 2;

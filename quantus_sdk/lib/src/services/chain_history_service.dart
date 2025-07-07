@@ -2,73 +2,23 @@ import '../constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
-// Data class to represent a single transfer
-class Transfer {
-  final String id;
-  final String from;
-  final String to;
-  final String amount;
-  final String timestamp;
-  final String? fee;
-  final String? extrinsicHash;
-  final int? blockNumber;
-
-  Transfer({
-    required this.id,
-    required this.from,
-    required this.to,
-    required this.amount,
-    required this.timestamp,
-    this.fee,
-    this.extrinsicHash,
-    this.blockNumber,
-  });
-
-  factory Transfer.fromJson(Map<String, dynamic> json) {
-    return Transfer(
-      id: json['id'] as String,
-      from: json['from']?['id'] as String? ?? '', // Handle potential null or missing nested id
-      to: json['to']?['id'] as String? ?? '', // Handle potential null or missing nested id
-      amount: json['amount'] as String,
-      timestamp: json['timestamp'] as String,
-      fee: json['fee'] as String?,
-      extrinsicHash: json['extrinsicHash'] as String?,
-      blockNumber: json['blockNumber'] as int?,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'Transfer{id: $id, from: $from, to: $to, amount: $amount, timestamp: $timestamp, fee: $fee, extrinsicHash: $extrinsicHash, blockNumber: $blockNumber}';
-  }
-}
+import '../models/event_type.dart';
+import '../models/transaction_event.dart';
 
 class TransferList {
-  final List<Transfer> transfers;
+  final List<TransactionEvent> transfers;
   final bool hasMore;
   final int nextOffset;
 
-  TransferList({
-    required this.transfers,
-    required this.hasMore,
-    required this.nextOffset,
-  });
+  TransferList({required this.transfers, required this.hasMore, required this.nextOffset});
 }
 
 class TransferResult {
-  final List<Transfer> combinedTransfers;
-  final bool hasMoreTo;
-  final bool hasMoreFrom;
-  final int nextToOffset;
-  final int nextFromOffset;
+  final List<TransactionEvent> combinedTransfers;
+  final bool hasMore;
+  final int nextOffset;
 
-  TransferResult({
-    required this.combinedTransfers,
-    required this.hasMoreTo,
-    required this.hasMoreFrom,
-    required this.nextToOffset,
-    required this.nextFromOffset,
-  });
+  TransferResult({required this.combinedTransfers, required this.hasMore, required this.nextOffset});
 }
 
 class ChainHistoryService {
@@ -78,70 +28,72 @@ class ChainHistoryService {
   ChainHistoryService();
 
   // GraphQL query to fetch transfers for a specific account
-  final String _transfersQuery = r'''
-query MyQuery($accountId: String!, $limit: Int!, $toOffset: Int!, $fromOffset: Int!) {
-  accounts(where: {id_eq: $accountId}) {
+  final String _eventsQuery = r'''
+query MyQuery($accountId: String!, $limit: Int!, $offset: Int!) {
+  events(
+    where: {
+      OR: [
+        { transfer: { from: { id_eq: $accountId } } },
+        { transfer: { to: { id_eq: $accountId } } },
+        { reversibleTransfer: { from: { id_eq: $accountId } } },
+        { reversibleTransfer: { to: { id_eq: $accountId } } }
+      ]
+    },
+    orderBy: timestamp_DESC,
+    limit: $limit,
+    offset: $offset
+  ) {
     id
-    transfersTo(orderBy: timestamp_DESC, limit: $limit, offset: $toOffset) {
+    type
+    timestamp
+    extrinsicHash
+    transfer {
       id
-      from {
-        id
-      }
-      to {
-        id
-      }
+      from { id }
+      to { id }
       amount
-      timestamp
       fee
+      timestamp
       extrinsicHash
-      blockNumber
+      block {
+        height
+      }
     }
-    transfersFrom(orderBy: timestamp_DESC, limit: $limit, offset: $fromOffset) {
+    reversibleTransfer {
       id
-      from {
-        id
-      }
-      to {
-        id
-      }
+      from { id }
+      to { id }
       amount
+      txId
+      status
+      scheduledAt
       timestamp
-      fee
       extrinsicHash
-      blockNumber
+      block {
+        height
+      }
     }
   }
 }
   ''';
 
   // Method to fetch transfers using http
-  Future<TransferResult> fetchTransfers({
-    required String accountId,
-    int limit = 10,
-    int toOffset = 0,
-    int fromOffset = 0,
-  }) async {
+  Future<TransferResult> fetchTransfers({required String accountId, int limit = 10, int offset = 0}) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-    print(
-        'fetchTransfers for account: $accountId from $uri (limit: $limit, toOffset: $toOffset, fromOffset: $fromOffset)');
+    print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
-      'query': _transfersQuery,
-      'variables': <String, dynamic>{
-        'accountId': accountId,
-        'limit': limit,
-        'toOffset': toOffset,
-        'fromOffset': fromOffset,
-      },
+      'query': _eventsQuery,
+      'variables': <String, dynamic>{'accountId': accountId, 'limit': limit, 'offset': offset},
     };
+
+    print('fetchTransfers requestBody: $requestBody');
 
     try {
       final http.Response response = await http.post(
         uri,
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-        },
+        headers: <String, String>{'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
 
@@ -161,68 +113,33 @@ query MyQuery($accountId: String!, $limit: Int!, $toOffset: Int!, $fromOffset: I
         throw Exception('GraphQL response data is null.');
       }
 
-      final List<dynamic>? accounts = data['accounts'];
+      final List<dynamic>? events = data['events'];
 
-      if (accounts == null || accounts.isEmpty) {
-        return TransferResult(
-          combinedTransfers: [],
-          hasMoreTo: false,
-          hasMoreFrom: false,
-          nextToOffset: toOffset,
-          nextFromOffset: fromOffset,
-        );
+      if (events == null || events.isEmpty) {
+        return TransferResult(combinedTransfers: [], hasMore: false, nextOffset: offset);
       }
 
-      final Map<String, dynamic> accountData = accounts.first;
+      final List<TransactionEvent> transactions = [];
+      for (var eventJson in events) {
+        final event = eventJson as Map<String, dynamic>;
+        final String typeStr = (event['type'] as String).toUpperCase();
+        final eventType = EventType.values.firstWhere((e) => e.toString().split('.').last == typeStr);
 
-      final List<dynamic>? transfersTo = accountData['transfersTo'];
-      final List<dynamic>? transfersFrom = accountData['transfersFrom'];
-
-      // Process transfersTo
-      final List<Transfer> toTransfers = (transfersTo ?? []).map((transferJson) {
-        return Transfer.fromJson(transferJson as Map<String, dynamic>);
-      }).toList();
-
-      // Process transfersFrom
-      final List<Transfer> fromTransfers = (transfersFrom ?? []).map((transferJson) {
-        return Transfer.fromJson(transferJson as Map<String, dynamic>);
-      }).toList();
-
-      // Combine all transfers
-      final List<Transfer> newTransfers = [...toTransfers, ...fromTransfers];
-
-      // Sort by timestamp in descending order
-      newTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-      // Take only the requested number of transfers
-      final combinedTransfers = newTransfers.take(limit).toList();
-
-      // Count the number of transfers included in the limited list.
-      int numberOfToTransfers = 0;
-      int numberOfFromTransfers = 0;
-      for (Transfer t in combinedTransfers) {
-        if (t.from == accountId) {
-          numberOfFromTransfers++;
-        } else {
-          numberOfToTransfers++;
+        if (eventType == EventType.TRANSFER && event['transfer'] != null) {
+          final transferData = event['transfer'] as Map<String, dynamic>;
+          transferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(TransferEvent.fromJson(transferData));
+        } else if (eventType == EventType.REVERSIBLE_TRANSFER && event['reversibleTransfer'] != null) {
+          final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
+          reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
         }
       }
-      // print('numberOfToTransfers: $numberOfToTransfers');
-      // print('numberOfFromTransfers: $numberOfFromTransfers');
-      // print('all loaded to: $numberOfToTransfers');
-      // print('numberOfFromTransfers: $numberOfFromTransfers');
-      // print('limit: ${limit}');
 
-      // Note This is a little tricky because we have 2 lists that get combined into one with the same limit
-      // So we need to keep track of has more and offsets for each list, and combine them with the wild
-      // logic below - AI trap, AI can't figure this out.
-      return TransferResult(
-        combinedTransfers: combinedTransfers,
-        hasMoreTo: toTransfers.length == limit || numberOfToTransfers < toTransfers.length,
-        hasMoreFrom: fromTransfers.length == limit || numberOfFromTransfers < fromTransfers.length,
-        nextToOffset: toOffset + numberOfToTransfers,
-        nextFromOffset: fromOffset + numberOfFromTransfers,
-      );
+      final bool hasMore = events.length == limit;
+      final int nextOffset = offset + events.length;
+
+      return TransferResult(combinedTransfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
     } catch (e) {
       print('Error fetching transfers via http: $e');
       rethrow;

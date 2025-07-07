@@ -6,50 +6,53 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 /// The `Error` enum of this pallet.
 enum Error {
   /// The account attempting to enable reversibility is already marked as reversible.
-  accountAlreadyReversible('AccountAlreadyReversible', 0),
+  accountAlreadyHighSecurity('AccountAlreadyHighSecurity', 0),
 
-  /// The account attempting the action is not marked as reversible.
-  accountNotReversible('AccountNotReversible', 1),
+  /// The account attempting the action is not marked as high security.
+  accountNotHighSecurity('AccountNotHighSecurity', 1),
 
-  /// Reverser can not be the account itself, because it is redundant.
-  explicitReverserCanNotBeSelf('ExplicitReverserCanNotBeSelf', 2),
+  /// Interceptor can not be the account itself, because it is redundant.
+  interceptorCannotBeSelf('InterceptorCannotBeSelf', 2),
+
+  /// Recoverer cannot be the account itself, because it is redundant.
+  recovererCannotBeSelf('RecovererCannotBeSelf', 3),
 
   /// The specified pending transaction ID was not found.
-  pendingTxNotFound('PendingTxNotFound', 3),
+  pendingTxNotFound('PendingTxNotFound', 4),
 
   /// The caller is not the original submitter of the transaction they are trying to cancel.
-  notOwner('NotOwner', 4),
+  notOwner('NotOwner', 5),
 
   /// The account has reached the maximum number of pending reversible transactions.
-  tooManyPendingTransactions('TooManyPendingTransactions', 5),
+  tooManyPendingTransactions('TooManyPendingTransactions', 6),
 
   /// The specified delay period is below the configured minimum.
-  delayTooShort('DelayTooShort', 6),
+  delayTooShort('DelayTooShort', 7),
 
   /// Failed to schedule the transaction execution with the scheduler pallet.
-  schedulingFailed('SchedulingFailed', 7),
+  schedulingFailed('SchedulingFailed', 8),
 
   /// Failed to cancel the scheduled task with the scheduler pallet.
-  cancellationFailed('CancellationFailed', 8),
+  cancellationFailed('CancellationFailed', 9),
 
   /// Failed to decode the OpaqueCall back into a RuntimeCall.
-  callDecodingFailed('CallDecodingFailed', 9),
+  callDecodingFailed('CallDecodingFailed', 10),
 
   /// Call is invalid.
-  invalidCall('InvalidCall', 10),
+  invalidCall('InvalidCall', 11),
 
   /// Invalid scheduler origin
-  invalidSchedulerOrigin('InvalidSchedulerOrigin', 11),
+  invalidSchedulerOrigin('InvalidSchedulerOrigin', 12),
 
   /// Reverser is invalid
-  invalidReverser('InvalidReverser', 12),
+  invalidReverser('InvalidReverser', 13),
 
   /// Cannot schedule one time reversible transaction when account is reversible (theft deterrence)
   accountAlreadyReversibleCannotScheduleOneTime(
-      'AccountAlreadyReversibleCannotScheduleOneTime', 13),
+      'AccountAlreadyReversibleCannotScheduleOneTime', 14),
 
   /// The interceptor has reached the maximum number of accounts they can intercept for.
-  tooManyInterceptorAccounts('TooManyInterceptorAccounts', 14);
+  tooManyInterceptorAccounts('TooManyInterceptorAccounts', 15);
 
   const Error(
     this.variantName,
@@ -80,34 +83,36 @@ class $ErrorCodec with _i1.Codec<Error> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return Error.accountAlreadyReversible;
+        return Error.accountAlreadyHighSecurity;
       case 1:
-        return Error.accountNotReversible;
+        return Error.accountNotHighSecurity;
       case 2:
-        return Error.explicitReverserCanNotBeSelf;
+        return Error.interceptorCannotBeSelf;
       case 3:
-        return Error.pendingTxNotFound;
+        return Error.recovererCannotBeSelf;
       case 4:
-        return Error.notOwner;
+        return Error.pendingTxNotFound;
       case 5:
-        return Error.tooManyPendingTransactions;
+        return Error.notOwner;
       case 6:
-        return Error.delayTooShort;
+        return Error.tooManyPendingTransactions;
       case 7:
-        return Error.schedulingFailed;
+        return Error.delayTooShort;
       case 8:
-        return Error.cancellationFailed;
+        return Error.schedulingFailed;
       case 9:
-        return Error.callDecodingFailed;
+        return Error.cancellationFailed;
       case 10:
-        return Error.invalidCall;
+        return Error.callDecodingFailed;
       case 11:
-        return Error.invalidSchedulerOrigin;
+        return Error.invalidCall;
       case 12:
-        return Error.invalidReverser;
+        return Error.invalidSchedulerOrigin;
       case 13:
-        return Error.accountAlreadyReversibleCannotScheduleOneTime;
+        return Error.invalidReverser;
       case 14:
+        return Error.accountAlreadyReversibleCannotScheduleOneTime;
+      case 15:
         return Error.tooManyInterceptorAccounts;
       default:
         throw Exception('Error: Invalid variant index: "$index"');

@@ -2,13 +2,12 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i8;
+import 'package:quiver/collection.dart' as _i7;
 
-import '../../primitive_types/h256.dart' as _i6;
+import '../../primitive_types/h256.dart' as _i5;
 import '../../qp_scheduler/block_number_or_timestamp.dart' as _i3;
-import '../../sp_core/crypto/account_id32.dart' as _i5;
-import '../../sp_runtime/multiaddress/multi_address.dart' as _i7;
-import '../delay_policy.dart' as _i4;
+import '../../sp_core/crypto/account_id32.dart' as _i4;
+import '../../sp_runtime/multiaddress/multi_address.dart' as _i6;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
 abstract class Call {
@@ -38,28 +37,28 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  SetReversibility setReversibility({
-    _i3.BlockNumberOrTimestamp? delay,
-    required _i4.DelayPolicy policy,
-    _i5.AccountId32? reverser,
+  SetHighSecurity setHighSecurity({
+    required _i3.BlockNumberOrTimestamp delay,
+    required _i4.AccountId32 interceptor,
+    required _i4.AccountId32 recoverer,
   }) {
-    return SetReversibility(
+    return SetHighSecurity(
       delay: delay,
-      policy: policy,
-      reverser: reverser,
+      interceptor: interceptor,
+      recoverer: recoverer,
     );
   }
 
-  Cancel cancel({required _i6.H256 txId}) {
+  Cancel cancel({required _i5.H256 txId}) {
     return Cancel(txId: txId);
   }
 
-  ExecuteTransfer executeTransfer({required _i6.H256 txId}) {
+  ExecuteTransfer executeTransfer({required _i5.H256 txId}) {
     return ExecuteTransfer(txId: txId);
   }
 
   ScheduleTransfer scheduleTransfer({
-    required _i7.MultiAddress dest,
+    required _i6.MultiAddress dest,
     required BigInt amount,
   }) {
     return ScheduleTransfer(
@@ -69,7 +68,7 @@ class $Call {
   }
 
   ScheduleTransferWithDelay scheduleTransferWithDelay({
-    required _i7.MultiAddress dest,
+    required _i6.MultiAddress dest,
     required BigInt amount,
     required _i3.BlockNumberOrTimestamp delay,
   }) {
@@ -89,7 +88,7 @@ class $CallCodec with _i1.Codec<Call> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return SetReversibility._decode(input);
+        return SetHighSecurity._decode(input);
       case 1:
         return Cancel._decode(input);
       case 2:
@@ -109,8 +108,8 @@ class $CallCodec with _i1.Codec<Call> {
     _i1.Output output,
   ) {
     switch (value.runtimeType) {
-      case SetReversibility:
-        (value as SetReversibility).encodeTo(output);
+      case SetHighSecurity:
+        (value as SetHighSecurity).encodeTo(output);
         break;
       case Cancel:
         (value as Cancel).encodeTo(output);
@@ -133,8 +132,8 @@ class $CallCodec with _i1.Codec<Call> {
   @override
   int sizeHint(Call value) {
     switch (value.runtimeType) {
-      case SetReversibility:
-        return (value as SetReversibility)._sizeHint();
+      case SetHighSecurity:
+        return (value as SetHighSecurity)._sizeHint();
       case Cancel:
         return (value as Cancel)._sizeHint();
       case ExecuteTransfer:
@@ -150,57 +149,47 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Enable reversibility for the calling account with a specified delay, or disable it.
+/// Enable high-security for the calling account with a specified delay
 ///
 /// - `delay`: The time (in milliseconds) after submission before the transaction executes.
-///  If `None`, reversibility is disabled for the account.
-///  If `Some`, must be >= `MinDelayPeriod`.
-class SetReversibility extends Call {
-  const SetReversibility({
-    this.delay,
-    required this.policy,
-    this.reverser,
+class SetHighSecurity extends Call {
+  const SetHighSecurity({
+    required this.delay,
+    required this.interceptor,
+    required this.recoverer,
   });
 
-  factory SetReversibility._decode(_i1.Input input) {
-    return SetReversibility(
-      delay: const _i1.OptionCodec<_i3.BlockNumberOrTimestamp>(
-              _i3.BlockNumberOrTimestamp.codec)
-          .decode(input),
-      policy: _i4.DelayPolicy.codec.decode(input),
-      reverser: const _i1.OptionCodec<_i5.AccountId32>(_i5.AccountId32Codec())
-          .decode(input),
+  factory SetHighSecurity._decode(_i1.Input input) {
+    return SetHighSecurity(
+      delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
+      interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      recoverer: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
 
-  /// Option<BlockNumberOrTimestampOf<T>>
-  final _i3.BlockNumberOrTimestamp? delay;
+  /// BlockNumberOrTimestampOf<T>
+  final _i3.BlockNumberOrTimestamp delay;
 
-  /// DelayPolicy
-  final _i4.DelayPolicy policy;
+  /// T::AccountId
+  final _i4.AccountId32 interceptor;
 
-  /// Option<T::AccountId>
-  final _i5.AccountId32? reverser;
+  /// T::AccountId
+  final _i4.AccountId32 recoverer;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_reversibility': {
-          'delay': delay?.toJson(),
-          'policy': policy.toJson(),
-          'reverser': reverser?.toList(),
+        'set_high_security': {
+          'delay': delay.toJson(),
+          'interceptor': interceptor.toList(),
+          'recoverer': recoverer.toList(),
         }
       };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.OptionCodec<_i3.BlockNumberOrTimestamp>(
-                _i3.BlockNumberOrTimestamp.codec)
-            .sizeHint(delay);
-    size = size + _i4.DelayPolicy.codec.sizeHint(policy);
-    size = size +
-        const _i1.OptionCodec<_i5.AccountId32>(_i5.AccountId32Codec())
-            .sizeHint(reverser);
+    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
+    size = size + const _i4.AccountId32Codec().sizeHint(interceptor);
+    size = size + const _i4.AccountId32Codec().sizeHint(recoverer);
     return size;
   }
 
@@ -209,18 +198,16 @@ class SetReversibility extends Call {
       0,
       output,
     );
-    const _i1.OptionCodec<_i3.BlockNumberOrTimestamp>(
-            _i3.BlockNumberOrTimestamp.codec)
-        .encodeTo(
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(
       delay,
       output,
     );
-    _i4.DelayPolicy.codec.encodeTo(
-      policy,
+    const _i1.U8ArrayCodec(32).encodeTo(
+      interceptor,
       output,
     );
-    const _i1.OptionCodec<_i5.AccountId32>(_i5.AccountId32Codec()).encodeTo(
-      reverser,
+    const _i1.U8ArrayCodec(32).encodeTo(
+      recoverer,
       output,
     );
   }
@@ -231,16 +218,22 @@ class SetReversibility extends Call {
         this,
         other,
       ) ||
-      other is SetReversibility &&
+      other is SetHighSecurity &&
           other.delay == delay &&
-          other.policy == policy &&
-          other.reverser == reverser;
+          _i7.listsEqual(
+            other.interceptor,
+            interceptor,
+          ) &&
+          _i7.listsEqual(
+            other.recoverer,
+            recoverer,
+          );
 
   @override
   int get hashCode => Object.hash(
         delay,
-        policy,
-        reverser,
+        interceptor,
+        recoverer,
       );
 }
 
@@ -255,7 +248,7 @@ class Cancel extends Call {
   }
 
   /// T::Hash
-  final _i6.H256 txId;
+  final _i5.H256 txId;
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
@@ -264,7 +257,7 @@ class Cancel extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i6.H256Codec().sizeHint(txId);
+    size = size + const _i5.H256Codec().sizeHint(txId);
     return size;
   }
 
@@ -286,7 +279,7 @@ class Cancel extends Call {
         other,
       ) ||
       other is Cancel &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.txId,
             txId,
           );
@@ -306,7 +299,7 @@ class ExecuteTransfer extends Call {
   }
 
   /// T::Hash
-  final _i6.H256 txId;
+  final _i5.H256 txId;
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
@@ -315,7 +308,7 @@ class ExecuteTransfer extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i6.H256Codec().sizeHint(txId);
+    size = size + const _i5.H256Codec().sizeHint(txId);
     return size;
   }
 
@@ -337,7 +330,7 @@ class ExecuteTransfer extends Call {
         other,
       ) ||
       other is ExecuteTransfer &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.txId,
             txId,
           );
@@ -355,13 +348,13 @@ class ScheduleTransfer extends Call {
 
   factory ScheduleTransfer._decode(_i1.Input input) {
     return ScheduleTransfer(
-      dest: _i7.MultiAddress.codec.decode(input),
+      dest: _i6.MultiAddress.codec.decode(input),
       amount: _i1.U128Codec.codec.decode(input),
     );
   }
 
   /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i7.MultiAddress dest;
+  final _i6.MultiAddress dest;
 
   /// BalanceOf<T>
   final BigInt amount;
@@ -376,7 +369,7 @@ class ScheduleTransfer extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i7.MultiAddress.codec.sizeHint(dest);
+    size = size + _i6.MultiAddress.codec.sizeHint(dest);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     return size;
   }
@@ -386,7 +379,7 @@ class ScheduleTransfer extends Call {
       3,
       output,
     );
-    _i7.MultiAddress.codec.encodeTo(
+    _i6.MultiAddress.codec.encodeTo(
       dest,
       output,
     );
@@ -426,14 +419,14 @@ class ScheduleTransferWithDelay extends Call {
 
   factory ScheduleTransferWithDelay._decode(_i1.Input input) {
     return ScheduleTransferWithDelay(
-      dest: _i7.MultiAddress.codec.decode(input),
+      dest: _i6.MultiAddress.codec.decode(input),
       amount: _i1.U128Codec.codec.decode(input),
       delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
 
   /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i7.MultiAddress dest;
+  final _i6.MultiAddress dest;
 
   /// BalanceOf<T>
   final BigInt amount;
@@ -452,7 +445,7 @@ class ScheduleTransferWithDelay extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i7.MultiAddress.codec.sizeHint(dest);
+    size = size + _i6.MultiAddress.codec.sizeHint(dest);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
     return size;
@@ -463,7 +456,7 @@ class ScheduleTransferWithDelay extends Call {
       4,
       output,
     );
-    _i7.MultiAddress.codec.encodeTo(
+    _i6.MultiAddress.codec.encodeTo(
       dest,
       output,
     );
