@@ -117,17 +117,11 @@ class _TransactionListItemState extends State<_TransactionListItem> {
     return '$hours:$minutes:$seconds';
   }
 
-  String _formatAddress(String address) {
-    if (address.length > 12) {
-      return '${address.substring(0, 6)}...${address.substring(address.length - 6)}';
-    }
-    return address;
-  }
+  final NumberFormattingService _formattingService = NumberFormattingService();
 
   String _formatAmount(BigInt amount) {
     // This should be replaced with a proper formatting service
-    final numberFormat = NumberFormat.currency(symbol: 'QU', decimalDigits: 4);
-    return numberFormat.format(amount / BigInt.from(10).pow(12));
+    return '${_formattingService.formatBalance(amount)} QUAN';
   }
 
   @override
@@ -139,38 +133,42 @@ class _TransactionListItemState extends State<_TransactionListItem> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              isSent ? 'assets/arrow_upward.svg' : 'assets/arrow_downward.svg',
-              width: 21,
-              height: 17,
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-            const SizedBox(width: 11),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text.rich(
-                  TextSpan(
-                    children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                isSent ? 'assets/send_icon.svg' : 'assets/receive_icon.svg',
+                width: 21,
+                height: 17,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
                       TextSpan(
-                        text: isSent ? 'Send' : 'Receive',
-                        style: textStyle.copyWith(color: const Color(0xFF16CECE)),
+                        children: [
+                          TextSpan(
+                            text: isSent ? 'Send' : 'Receive',
+                            style: textStyle.copyWith(color: const Color(0xFF16CECE)),
+                          ),
+                          TextSpan(text: ' ${_formatAmount(widget.transaction.amount)}', style: textStyle),
+                        ],
                       ),
-                      TextSpan(text: ' ${_formatAmount(widget.transaction.amount)}', style: textStyle),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${isSent ? 'to' : 'from'} ${isSent ? widget.transaction.to : widget.transaction.from}',
+                      style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? widget.transaction.to : widget.transaction.from)}',
-                  style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
         _buildStatusOrTimer(),
       ],
