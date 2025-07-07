@@ -1,11 +1,11 @@
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/high_security_account_data.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/generated/resonance/types/primitive_types/h256.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/delay_policy.dart';
 import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/reversible_account_data.dart';
 import 'substrate_service.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -19,9 +19,9 @@ class ReversibleTransfersService {
 
   /// Enable reversibility for the calling account with specified delay and policy
   /// Used for theft deterrence - enables all future transfers to be reversible
-  Future<String> enableReversibility({
+  Future<String> setHighSecurity({
     required String senderSeed,
-    BlockNumberOrTimestamp? delay,
+    required BlockNumberOrTimestamp delay,
     required DelayPolicy policy,
     String? reverserAddress,
   }) async {
@@ -35,35 +35,16 @@ class ReversibleTransfersService {
       }
 
       // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.setReversibility(
+      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
         delay: delay,
-        policy: policy,
-        reverser: reverser,
+        interceptor: reverser ?? crypto.ss58ToAccountId(s: senderSeed),
+        recoverer: reverser ?? crypto.ss58ToAccountId(s: senderSeed),
       );
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(senderSeed, call);
     } catch (e) {
       throw Exception('Failed to enable reversibility: $e');
-    }
-  }
-
-  /// Disable reversibility for the calling account
-  Future<String> disableReversibility({required String senderSeed}) async {
-    try {
-      final resonanceApi = Resonance(_substrateService.provider!);
-
-      // Create the call with null delay to disable
-      final call = resonanceApi.tx.reversibleTransfers.setReversibility(
-        delay: null,
-        policy: DelayPolicy.explicit,
-        reverser: null,
-      );
-
-      // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
-    } catch (e) {
-      throw Exception('Failed to disable reversibility: $e');
     }
   }
 
@@ -160,12 +141,12 @@ class ReversibleTransfersService {
   }
 
   /// Query account's reversibility configuration
-  Future<ReversibleAccountData?> getAccountReversibilityConfig(String address) async {
+  Future<HighSecurityAccountData?> getAccountReversibilityConfig(String address) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
-      return await resonanceApi.query.reversibleTransfers.reversibleAccounts(accountId);
+      return await resonanceApi.query.reversibleTransfers.highSecurityAccounts(accountId);
     } catch (e) {
       throw Exception('Failed to get account reversibility config: $e');
     }

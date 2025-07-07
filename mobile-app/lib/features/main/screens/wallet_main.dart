@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'dart:io';
