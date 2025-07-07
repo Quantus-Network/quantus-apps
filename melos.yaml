@@ -3,7 +3,6 @@ packages:
   - mobile-app
   - miner-app
   - quantus_sdk
-  - cli
 
 ide:
   intellij:
@@ -70,11 +69,6 @@ dependency_overrides:
   # Rust bridge
   flutter_rust_bridge: ^2.10.0
 
-  # CLI specific dependencies (only used in CLI)
-  args: ^2.4.2
-  cli_completion: ^0.5.1
-  mason_logger: ^0.3.3
-
   # Dev dependencies - latest versions
   flutter_lints: ^6.0.0
   test: ^1.25.0
@@ -114,17 +108,6 @@ scripts:
   generate:
     description: Generate polkadart bindings
     run: cd quantus_sdk && dart run polkadart_cli:generate -v
-
-  # Build CLI executable
-  build-cli:
-    description: Build CLI executable
-    run: |
-      cd cli
-      flutter build macos --release
-      echo '#!/bin/bash' > resonance_cli
-      echo 'DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"' >> resonance_cli
-      echo 'exec "$DIR/build/macos/Build/Products/Release/resonance_cli.app/Contents/MacOS/resonance_cli" "$@"' >> resonance_cli
-      chmod +x resonance_cli
 
   # Full setup - bootstrap, get deps, generate, and analyze
   setup:
