@@ -1,3 +1,0 @@
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-exec "$DIR/build/macos/Build/Products/Release/resonance_cli.app/Contents/MacOS/resonance_cli" "$@"
