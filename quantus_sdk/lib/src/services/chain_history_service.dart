@@ -32,23 +32,22 @@ class ChainHistoryService {
 query EventsByAccount($account: String!) {
   events(
     where: {
-      OR: [
-        {
-          transfer: {
-            OR: [
-              { from: { id_eq: $account } }
-              { to:   { id_eq: $account } }
-            ]
-          }
-        }
-        {
-          reversibleTransfer: {
-            OR: [
-              { from: { id_eq: $account } }
-              { to:   { id_eq: $account } }
-            ]
-          }
-        }
+      AND: [
+        { extrinsicHash_isNull: false }      # <- keep only events that HAVE a hash
+        { OR: [
+            { transfer: {
+                OR: [
+                  { from: { id_eq: $account } }
+                  { to:   { id_eq: $account } }
+                ]}
+            }
+            { reversibleTransfer: {
+                OR: [
+                  { from: { id_eq: $account } }
+                  { to:   { id_eq: $account } }
+                ]}
+            }
+        ]}
       ]
     }
   ) {
@@ -89,7 +88,7 @@ query EventsByAccount($account: String!) {
       extrinsicHash
       timestamp
     }
-
+    extrinsicHash
   }
 }
   ''';
@@ -104,8 +103,6 @@ query EventsByAccount($account: String!) {
       'query': _eventsQuery,
       'variables': <String, dynamic>{'account': accountId /*, 'limit': limit, 'offset': offset*/},
     };
-
-    print('fetchTransfers requestBody: $requestBody');
 
     try {
       final http.Response response = await http.post(
