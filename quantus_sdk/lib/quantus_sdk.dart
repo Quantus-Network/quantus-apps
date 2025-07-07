@@ -1,5 +1,7 @@
 library;
 
+import 'package:quantus_sdk/src/rust/api/crypto.dart';
+
 import 'src/rust/frb_generated.dart';
 
 export 'generated/resonance/types/quantus_runtime/runtime_call.dart';
@@ -26,6 +28,7 @@ class QuantusSdk {
   static Future<void> init() async {
     print('initializing rust bindings..');
     await RustLib.init();
+    setDefaultSs58Prefix(prefix: 189);
     print('rust bindings initialized');
   }
 }
