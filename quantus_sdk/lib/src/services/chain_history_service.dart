@@ -85,10 +85,15 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                 ]}
             }
             { reversibleTransfer: {
-                OR: [
-                  { from: { id_eq: $account } }
-                  { to:   { id_eq: $account } }
-                ]}
+              AND:[
+                { status_not_eq: SCHEDULED },
+                {
+                  OR: [
+                    { from: { id_eq: $account } },
+                    { to: { id_eq: $account } }
+                  ]
+                }
+              ]
             }
         ]}
       ]

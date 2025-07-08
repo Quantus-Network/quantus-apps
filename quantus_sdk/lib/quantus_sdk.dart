@@ -22,6 +22,7 @@ export 'src/services/substrate_service.dart';
 export 'src/models/transaction_event.dart';
 export 'src/models/reversible_transfer_status.dart';
 export 'src/models/event_type.dart';
+export 'src/extensions/string_extensions.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

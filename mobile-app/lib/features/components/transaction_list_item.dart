@@ -113,6 +113,10 @@ class _TransactionListItemState extends State<_TransactionListItem> {
     return '${_formattingService.formatBalance(amount)} QUAN';
   }
 
+  String _formatAddress(String address) {
+    return address.shortenedCryptoAddress(prefix: 5, ellipses: '...', postFix: 5);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSent = widget.transaction.from == widget.currentWalletAddress;
@@ -150,7 +154,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${isSent ? 'to' : 'from'} ${isSent ? widget.transaction.to : widget.transaction.from}',
+                      '${isSent ? 'to' : 'from'} ${isSent ? _formatAddress(widget.transaction.to) : _formatAddress(widget.transaction.from)}',
                       style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
                     ),
                   ],
