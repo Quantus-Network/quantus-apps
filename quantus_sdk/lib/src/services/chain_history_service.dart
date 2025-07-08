@@ -2,7 +2,6 @@ import '../constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
-import '../models/event_type.dart';
 import '../models/transaction_event.dart';
 
 class TransferList {
@@ -26,6 +25,48 @@ class ChainHistoryService {
 
   // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
+
+  final String _scheduledTransfersQuery = r'''
+query ScheduledTransfersByAccount($account: String!) {
+  events(
+    where: {
+      reversibleTransfer: {
+        AND:[
+          { status_eq: SCHEDULED },
+          {
+            OR: [
+              { from: { id_eq: $account } },
+              { to: { id_eq: $account } }
+            ]
+          }
+        ]
+      }
+    }
+    orderBy: reversibleTransfer_scheduledAt_DESC
+  ) {
+    id
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      txId
+      scheduledAt
+      status
+      block {
+        height
+      }
+      extrinsicHash
+      timestamp
+    }
+  }
+}
+''';
 
   // GraphQL query to fetch transfers for a specific account
   final String _eventsQuery = r'''
@@ -96,8 +137,49 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
 }
   ''';
 
+  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({required String accountId}) async {
+    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+    final Map<String, dynamic> requestBody = {
+      'query': _scheduledTransfersQuery,
+      'variables': {'account': accountId},
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody['errors'] != null) {
+        throw Exception('GraphQL errors: ${responseBody['errors']}');
+      }
+
+      final List<dynamic>? events = responseBody['data']?['events'];
+      if (events == null) {
+        return [];
+      }
+
+      final result = events.map((event) => ReversibleTransferEvent.fromJson(event['reversibleTransfer'])).toList();
+
+      for (var transfer in result) {
+        print('Transfer: ${transfer.scheduledAt} ${transfer.status}');
+      }
+      return result;
+    } catch (e, stackTrace) {
+      print('Error fetching scheduled transfers: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
   // Method to fetch transfers using http
-  Future<TransferResult> fetchTransfers({required String accountId, int limit = 10, int offset = 0}) async {
+  Future<TransferResult> fetchAllTransfers({required String accountId, int limit = 10, int offset = 0}) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
 

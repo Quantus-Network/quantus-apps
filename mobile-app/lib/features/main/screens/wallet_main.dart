@@ -34,7 +34,8 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
-  List<TransactionEvent> _transfers = [];
+  List<ReversibleTransferEvent> _scheduledTransfers = [];
+  List<TransactionEvent> _allTransfers = [];
   bool _isHistoryLoading = true;
   String? _historyError;
 
@@ -126,14 +127,14 @@ class _WalletMainState extends State<WalletMain> {
     });
 
     try {
-      final result = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchAllTransfers(
         accountId: _accountId!,
         limit: _transactionsPerPage,
         offset: _offset,
       );
 
       setState(() {
-        _transfers.addAll(result.combinedTransfers);
+        _allTransfers.addAll(result.combinedTransfers);
         _hasMore = result.hasMore;
         _offset = result.nextOffset;
         _isLoadingMore = false;
@@ -153,28 +154,28 @@ class _WalletMainState extends State<WalletMain> {
     setState(() {
       _isHistoryLoading = true;
       _historyError = null;
-      // Reset pagination state for main screen.
-      // We are fetching a fixed number of items here.
       _offset = 0;
-      _hasMore = true; // Assume there might be more for the "See More" page
-      _transfers = [];
+      _hasMore = true;
+      _scheduledTransfers = [];
+      _allTransfers = [];
     });
 
     try {
-      final result = await _chainHistoryService.fetchTransfers(
-        accountId: _accountId!,
-        limit: 5, // Fetch only 5 transactions for the main screen
-        offset: 0,
-      );
+      // Fetch both lists in parallel
+      final results = await Future.wait([
+        _chainHistoryService.fetchScheduledTransfers(accountId: _accountId!),
+        _chainHistoryService.fetchAllTransfers(accountId: _accountId!, limit: 5, offset: 0),
+      ]);
+
+      final scheduled = results[0] as List<ReversibleTransferEvent>;
+      final allTransfers = results[1] as TransferResult;
 
       setState(() {
-        _transfers = result.combinedTransfers;
-        // _hasMore should reflect if there are more than 5,
-        // which can be inferred if the result length is 5 (the limit)
-        _hasMore = result.hasMore;
+        _scheduledTransfers = scheduled;
+        _allTransfers = allTransfers.combinedTransfers;
+        _hasMore = allTransfers.hasMore;
         _isHistoryLoading = false;
       });
-      print('fetchedTransfers: ${_transfers.length}');
     } catch (e) {
       print('Error fetching transaction history: $e');
       setState(() {
@@ -301,7 +302,7 @@ class _WalletMainState extends State<WalletMain> {
             ),
           ),
         ),
-        RecentTransactionsList(transactions: _transfers, currentWalletAddress: _accountId!),
+        RecentTransactionsList(transactions: _scheduledTransfers, currentWalletAddress: _accountId!),
         if (true || _hasMore)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, right: 12.0),

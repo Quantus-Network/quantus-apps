@@ -41,7 +41,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       _error = null;
     });
     try {
-      final result = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchAllTransfers(
         accountId: widget.initialAccountId,
         limit: _limit,
         offset: 0,
@@ -68,7 +68,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
 
     try {
-      final result = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchAllTransfers(
         accountId: widget.initialAccountId,
         limit: _limit,
         offset: _offset,
