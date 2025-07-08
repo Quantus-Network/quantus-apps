@@ -213,13 +213,7 @@ class _TimerDisplay extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            width: 13,
-            height: 13,
-            decoration: const ShapeDecoration(
-              shape: OvalBorder(side: BorderSide(width: 1, color: Color(0xFFFF2D53))),
-            ),
-          ),
+          SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
         ],
       ),
     );

@@ -76,7 +76,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     offset: $offset
     where: {
       AND: [
-        { extrinsicHash_isNull: false }      # <- keep only events that HAVE a hash
+        { extrinsicHash_isNull: false } 
         { OR: [
             { transfer: {
                 OR: [
@@ -85,7 +85,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                 ]}
             }
             { reversibleTransfer: {
-              AND:[
+              AND: [
                 { status_not_eq: SCHEDULED },
                 {
                   OR: [
@@ -94,8 +94,10 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                   ]
                 }
               ]
+              }
             }
-        ]}
+          ]
+        }
       ]
     }
     orderBy: timestamp_DESC
