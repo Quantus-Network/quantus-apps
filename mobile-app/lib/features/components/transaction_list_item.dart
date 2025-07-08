@@ -21,7 +21,6 @@ class RecentTransactionsList extends StatelessWidget {
     final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
 
     return Container(
-      width: 321,
       padding: const EdgeInsets.all(10),
       decoration: ShapeDecoration(
         color: const Color(0x3F000000), // black w/ alpha
