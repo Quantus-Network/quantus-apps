@@ -29,8 +29,10 @@ class ChainHistoryService {
 
   // GraphQL query to fetch transfers for a specific account
   final String _eventsQuery = r'''
-query EventsByAccount($account: String!) {
+query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   events(
+    limit: $limit
+    offset: $offset
     where: {
       AND: [
         { extrinsicHash_isNull: false }      # <- keep only events that HAVE a hash
@@ -50,6 +52,7 @@ query EventsByAccount($account: String!) {
         ]}
       ]
     }
+    orderBy: timestamp_DESC
   ) {
     id
     transfer {
@@ -101,7 +104,7 @@ query EventsByAccount($account: String!) {
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _eventsQuery,
-      'variables': <String, dynamic>{'account': accountId /*, 'limit': limit, 'offset': offset*/},
+      'variables': <String, dynamic>{'account': accountId, 'limit': limit, 'offset': offset},
     };
 
     try {

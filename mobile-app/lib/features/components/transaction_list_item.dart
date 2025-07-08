@@ -32,16 +32,6 @@ class RecentTransactionsList extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Recent Transactions',
-            style: TextStyle(
-              color: Color(0xFFE6E6E6),
-              fontSize: 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 18),
           if (transactionsToShow.isEmpty)
             const Text(
               'No transactions yet.',

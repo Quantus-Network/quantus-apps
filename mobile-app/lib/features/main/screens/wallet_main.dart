@@ -153,22 +153,25 @@ class _WalletMainState extends State<WalletMain> {
     setState(() {
       _isHistoryLoading = true;
       _historyError = null;
+      // Reset pagination state for main screen.
+      // We are fetching a fixed number of items here.
       _offset = 0;
-      _hasMore = true;
+      _hasMore = true; // Assume there might be more for the "See More" page
       _transfers = [];
     });
 
     try {
       final result = await _chainHistoryService.fetchTransfers(
         accountId: _accountId!,
-        limit: _transactionsPerPage,
+        limit: 5, // Fetch only 5 transactions for the main screen
         offset: 0,
       );
 
       setState(() {
         _transfers = result.combinedTransfers;
+        // _hasMore should reflect if there are more than 5,
+        // which can be inferred if the result length is 5 (the limit)
         _hasMore = result.hasMore;
-        _offset = result.nextOffset;
         _isHistoryLoading = false;
       });
       print('fetchedTransfers: ${_transfers.length}');
@@ -284,9 +287,22 @@ class _WalletMainState extends State<WalletMain> {
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RecentTransactionsList(transactions: _transfers.take(5).toList(), currentWalletAddress: _accountId!),
-        if (_transfers.length > 5)
+        const Padding(
+          padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+          child: Text(
+            'Reversible Transactions',
+            style: TextStyle(
+              color: Color(0xFFE6E6E6),
+              fontSize: 14,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        RecentTransactionsList(transactions: _transfers, currentWalletAddress: _accountId!),
+        if (true || _hasMore)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, right: 12.0),
             child: Align(
@@ -295,14 +311,11 @@ class _WalletMainState extends State<WalletMain> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          TransactionsScreen(allTransactions: _transfers, currentWalletAddress: _accountId!),
-                    ),
+                    MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
                   );
                 },
                 child: Text(
-                  'See more →',
+                  'Transaction History →',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.80),
                     fontSize: 12,
