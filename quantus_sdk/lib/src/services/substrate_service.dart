@@ -240,6 +240,9 @@ class SubstrateService {
 
   Future<BigInt> queryBalance(String address) async {
     try {
+      if (_provider == null) {
+        await initialize();
+      }
       // Create Resonance API instance
       final resonanceApi = Resonance(_provider!);
       // Account from SS58 address

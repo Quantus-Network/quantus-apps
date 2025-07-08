@@ -37,6 +37,7 @@ dependencies:
     git:
       url: https://github.com/Quantus-Network/human-checkphrase.git
       path: dart
+  graphql_flutter: ^5.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'dart:io';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -34,35 +34,19 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
-  List<ReversibleTransferEvent> _scheduledTransfers = [];
-  List<TransactionEvent> _allTransfers = [];
-  bool _isHistoryLoading = true;
-  String? _historyError;
 
-  // Pagination state
-  int _offset = 0;
-  bool _hasMore = true;
-  bool _isLoadingMore = false;
-  static const int _transactionsPerPage = 10;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadWalletDataAndSetFuture();
-    // _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      _loadMoreTransactions();
-    }
   }
 
   void _loadWalletDataAndSetFuture() {
@@ -78,116 +62,22 @@ class _WalletMainState extends State<WalletMain> {
 
     try {
       accountId = await _settingsService.getAccountId();
-
       if (accountId == null || accountId.isEmpty) {
         throw Exception('Account ID not found');
       }
-
       _accountId = accountId;
-
-      print('Attempting initial balance query for $accountId...');
       balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-      print('Initial balance query successful.');
-
-      // Fetch transaction history after successful wallet data load
-      await _fetchTransactionHistory();
     } catch (e) {
-      print('Initial load/query failed: $e');
-
-      bool isConnectionError =
-          e is SocketException ||
-          e is TimeoutException ||
-          e.toString().contains('Connection refused') ||
-          e.toString().contains('WebSocket');
-
-      if (isConnectionError && accountId != null) {
-        print('Connection error detected. Attempting reconnect and retry...');
-        try {
-          await _substrateService.reconnect();
-          balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-          print('Balance query successful after reconnect.');
-        } catch (retryError) {
-          print('Retry failed after reconnect: $retryError');
-          throw Exception('Failed to load wallet data after retry: $retryError');
-        }
-      } else {
-        print('Error was not connection-related or accountId is null. Rethrowing.');
-        throw Exception('Failed to load wallet data: $e');
-      }
+      // Errors will be handled by the FutureBuilder
     }
-
+    if (accountId == null || balance == null) {
+      return null;
+    }
     return WalletData(accountId: accountId, walletName: '', balance: balance);
   }
 
-  Future<void> _loadMoreTransactions() async {
-    if (!_hasMore || _isLoadingMore || _isHistoryLoading) return;
-
-    setState(() {
-      _isLoadingMore = true;
-    });
-
-    try {
-      final result = await _chainHistoryService.fetchAllTransfers(
-        accountId: _accountId!,
-        limit: _transactionsPerPage,
-        offset: _offset,
-      );
-
-      setState(() {
-        _allTransfers.addAll(result.combinedTransfers);
-        _hasMore = result.hasMore;
-        _offset = result.nextOffset;
-        _isLoadingMore = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingMore = false;
-        _historyError = 'Failed to load more transactions.';
-      });
-    }
-  }
-
-  Future<void> _fetchTransactionHistory() async {
-    print('fetchTransactionHistory: $_accountId');
-    if (_accountId == null) return;
-
-    setState(() {
-      _isHistoryLoading = true;
-      _historyError = null;
-      _offset = 0;
-      _hasMore = true;
-      _scheduledTransfers = [];
-      _allTransfers = [];
-    });
-
-    try {
-      // Fetch both lists in parallel
-      final results = await Future.wait([
-        _chainHistoryService.fetchScheduledTransfers(accountId: _accountId!),
-        _chainHistoryService.fetchAllTransfers(accountId: _accountId!, limit: 5, offset: 0),
-      ]);
-
-      final scheduled = results[0] as List<ReversibleTransferEvent>;
-      final allTransfers = results[1] as TransferResult;
-
-      setState(() {
-        _scheduledTransfers = scheduled;
-        _allTransfers = allTransfers.combinedTransfers;
-        _hasMore = allTransfers.hasMore;
-        _isHistoryLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching transaction history: $e');
-      setState(() {
-        _historyError = 'Failed to load transaction history.';
-        _isHistoryLoading = false;
-      });
-    }
-  }
-
-  // Helper to format the address (now just returns the full address)
   String _formatAddress(String address) {
-    return address; // Return the full address, let Text widget handle overflow
+    return address; // Keep full address
   }
 
   Widget _buildActionButton({
@@ -197,9 +87,9 @@ class _WalletMainState extends State<WalletMain> {
     required VoidCallback onPressed,
     bool disabled = false,
   }) {
-    final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
-    final bgColor = Colors.black.useOpacity(166 / 255.0);
-    final effectiveBorderColor = disabled ? borderColor.useOpacity(0.5) : borderColor;
+    final color = disabled ? Colors.white.withOpacity(0.5) : Colors.white;
+    final bgColor = Colors.black.withOpacity(166 / 255.0);
+    final effectiveBorderColor = disabled ? borderColor.withOpacity(0.5) : borderColor;
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
@@ -245,89 +135,118 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Widget _buildHistorySection() {
-    if (_isHistoryLoading) {
-      return Container(
-        width: 321,
-        padding: const EdgeInsets.all(10),
-        decoration: ShapeDecoration(
-          color: Colors.black.withAlpha(64),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: const Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 40.0),
-            child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
-          ),
-        ),
-      );
+    if (_accountId == null) {
+      return const Center(child: Text('Account not loaded.'));
     }
 
-    if (_historyError != null) {
-      return Container(
-        width: 321,
-        padding: const EdgeInsets.all(20),
-        decoration: ShapeDecoration(
-          color: Colors.black.withAlpha(64),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    final subscriptionDocument = gql(_chainHistoryService.eventsSubscription);
+
+    return Subscription(
+      options: SubscriptionOptions(document: subscriptionDocument, variables: {'account': _accountId!}),
+      builder: (QueryResult result, {VoidCallback? refetch, FetchMore? fetchMore}) {
+        if (result.hasException) {
+          return Center(child: Text('Error loading history: ${result.exception.toString()}'));
+        }
+
+        if (result.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final List<dynamic>? events = result.data?['events'];
+        if (events == null || events.isEmpty) {
+          return Column(
             children: [
-              Text(
-                _historyError!,
-                style: const TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center,
+              RecentTransactionsList(transactions: const [], currentWalletAddress: _accountId!),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text('No transactions yet.', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                ),
               ),
-              const SizedBox(height: 10),
-              TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
             ],
-          ),
-        ),
-      );
-    }
+          );
+        }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
-          child: Text(
-            'Reversible Transactions',
-            style: TextStyle(
-              color: Color(0xFFE6E6E6),
-              fontSize: 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        RecentTransactionsList(transactions: _scheduledTransfers, currentWalletAddress: _accountId!),
-        if (true || _hasMore)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0, right: 12.0),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
-                  );
-                },
+        final List<TransactionEvent> allTransactions = [];
+        for (var eventJson in events) {
+          final event = eventJson as Map<String, dynamic>;
+          if (event['transfer'] != null) {
+            allTransactions.add(TransferEvent.fromJson(event['transfer']));
+          } else if (event['reversibleTransfer'] != null) {
+            allTransactions.add(ReversibleTransferEvent.fromJson(event['reversibleTransfer']));
+          }
+        }
+
+        final scheduled = allTransactions
+            .whereType<ReversibleTransferEvent>()
+            .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
+            .toList();
+        final cleared = allTransactions
+            .where((tx) => tx is! ReversibleTransferEvent || tx.status != ReversibleTransferStatus.SCHEDULED)
+            .toList();
+
+        scheduled.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+        cleared.sort((a, b) => (b.timestamp).compareTo(a.timestamp));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (scheduled.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
                 child: Text(
-                  'Transaction History →',
+                  'Reversible Transactions',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.80),
-                    fontSize: 12,
+                    color: Color(0xFFE6E6E6),
+                    fontSize: 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
+              RecentTransactionsList(transactions: scheduled, currentWalletAddress: _accountId!),
+              const SizedBox(height: 20),
+            ],
+            const Padding(
+              padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+              child: Text(
+                'History',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 14,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-          ),
-      ],
+            RecentTransactionsList(transactions: cleared.take(5).toList(), currentWalletAddress: _accountId!),
+            if (cleared.length > 5)
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
+                      );
+                    },
+                    child: Text(
+                      'Transaction History →',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.80),
+                        fontSize: 12,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -342,7 +261,6 @@ class _WalletMainState extends State<WalletMain> {
         );
       }
     } catch (e) {
-      print('Error during logout: $e');
       if (mounted) {
         showTopSnackBar(context, title: 'Error', message: 'Logout failed: ${e.toString()}', icon: buildErrorIcon());
       }
@@ -390,7 +308,7 @@ class _WalletMainState extends State<WalletMain> {
                                 const SizedBox(height: 10),
                                 Text(
                                   'Could not load wallet data. Please check your network connection and try again.',
-                                  style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
+                                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
@@ -416,8 +334,8 @@ class _WalletMainState extends State<WalletMain> {
                             _buildFullWidthActionButton(
                               label: 'Logout',
                               onTap: _logout,
-                              backgroundColor: Colors.white.useOpacity(0.2),
-                              textColor: Colors.white.useOpacity(0.8),
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              textColor: Colors.white.withOpacity(0.8),
                             ),
                           ],
                         ),
@@ -489,7 +407,7 @@ class _WalletMainState extends State<WalletMain> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                             decoration: ShapeDecoration(
-                                              color: Colors.black.useOpacity(0.5),
+                                              color: Colors.black.withOpacity(0.5),
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                             ),
                                             child: Text(

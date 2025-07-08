@@ -144,6 +144,59 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
 }
   ''';
 
+  final String _eventsSubscription = r'''
+subscription EventsSubscription($account: String!) {
+  events(
+    where: {
+      OR: [
+        {
+          transfer: {
+            OR: [
+              { from: { id_eq: $account } },
+              { to: { id_eq: $account } }
+            ]
+          }
+        },
+        {
+          reversibleTransfer: {
+            OR: [
+              { from: { id_eq: $account } },
+              { to: { id_eq: $account } }
+            ]
+          }
+        }
+      ]
+    }
+  ) {
+    id
+    transfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      block { height }
+      extrinsicHash
+      fee
+    }
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      txId
+      scheduledAt
+      status
+      block { height }
+      extrinsicHash
+    }
+  }
+}
+''';
+
+  String get eventsSubscription => _eventsSubscription;
+
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({required String accountId}) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
