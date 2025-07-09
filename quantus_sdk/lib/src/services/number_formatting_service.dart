@@ -27,7 +27,7 @@ class NumberFormattingService {
     // 'en_US' locale is used to ensure '.' is the decimal separator and ',' is for grouping.
     final formatter = NumberFormat.decimalPatternDigits(locale: 'en_US', decimalDigits: maxDecimals);
 
-    String formatted = formatter.format(decimalBalance);
+    String formatted = formatter.format(decimalBalance.toDouble());
 
     // The formatter might add unnecessary trailing zeros up to `maxDecimals`,
     // and we want to trim them for a cleaner look if they are not significant.
