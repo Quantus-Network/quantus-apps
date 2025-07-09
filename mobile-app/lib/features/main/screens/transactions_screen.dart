@@ -8,7 +8,7 @@ class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key, required this.initialAccountId});
 
   @override
-  _TransactionsScreenState createState() => _TransactionsScreenState();
+  State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {

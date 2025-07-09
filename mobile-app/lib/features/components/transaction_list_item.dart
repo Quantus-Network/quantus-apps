@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -80,14 +78,14 @@ class _TransactionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSent = transaction.from == currentWalletAddress;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
+          SizedBox(
             width: 21,
             height: 17,
             child: SvgPicture.asset(
@@ -99,7 +97,7 @@ class _TransactionListItem extends StatelessWidget {
           ),
           const SizedBox(width: 11),
           Expanded(
-            child: Container(
+            child: SizedBox(
               height: 38.50,
               child: Stack(
                 children: [

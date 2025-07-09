@@ -303,7 +303,7 @@ class _WalletMainState extends State<WalletMain> {
           ),
         ),
         RecentTransactionsList(transactions: _scheduledTransfers, currentWalletAddress: _accountId!),
-        if (true || _hasMore)
+        if (true)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, right: 12.0),
             child: Align(
@@ -318,7 +318,7 @@ class _WalletMainState extends State<WalletMain> {
                 child: Text(
                   'Transaction History →',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.80),
+                    color: Colors.white.useOpacity(0.80),
                     fontSize: 12,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
