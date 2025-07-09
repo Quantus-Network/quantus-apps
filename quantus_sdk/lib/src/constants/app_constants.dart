@@ -22,6 +22,6 @@ class AppConstants {
   static const int defaultReversibleTimeSeconds = 600; // 10 minutes
 
   // Digits of precision
-  static const int decimals = 9;
+  static const int decimals = 12;
   static const int ss58prefix = 189;
 }
