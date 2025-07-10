@@ -179,10 +179,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => FractionallySizedBox(
-        heightFactor: isReversibleScheduled && isSent ? 0.7 : 0.4, // Adjust as needed
-        child: sheet,
-      ),
+      builder: (context) => SizedBox(height: isReversibleScheduled && isSent ? 638 : 400, child: sheet),
     );
   }
 

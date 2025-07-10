@@ -38,7 +38,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
   @override
   void dispose() {
-    // TODO: Dispose resources like timers and process if running
     super.dispose();
   }
 
