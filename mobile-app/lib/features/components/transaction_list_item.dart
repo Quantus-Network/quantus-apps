@@ -133,12 +133,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SvgPicture.asset(
-                isSent ? 'assets/send_icon_1.svg' : 'assets/receive_icon.svg',
-                width: 21,
-                height: 17,
-                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              ),
+              Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
@@ -189,7 +184,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
           }
           return const _StatusDisplay(status: 'Pending');
         case ReversibleTransferStatus.EXECUTED:
-          return const _StatusDisplay(status: 'Completed');
+          return const SizedBox.shrink();
         case ReversibleTransferStatus.CANCELLED:
           return const _StatusDisplay(status: 'Cancelled');
       }
