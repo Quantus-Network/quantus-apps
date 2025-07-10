@@ -21,6 +21,18 @@ class RecentTransactionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
 
+    final scheduled = transactionsToShow
+        .whereType<ReversibleTransferEvent>()
+        .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
+        .toList();
+
+    final others = transactionsToShow.where((tx) {
+      if (tx is ReversibleTransferEvent) {
+        return tx.status != ReversibleTransferStatus.SCHEDULED;
+      }
+      return true;
+    }).toList();
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: ShapeDecoration(
@@ -36,19 +48,36 @@ class RecentTransactionsList extends StatelessWidget {
               'No transactions yet.',
               style: TextStyle(color: Colors.white, fontFamily: 'Fira Code'),
             )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactionsToShow.length,
-              itemBuilder: (context, index) {
-                return _TransactionListItem(
-                  transaction: transactionsToShow[index],
-                  currentWalletAddress: currentWalletAddress,
-                );
-              },
-              separatorBuilder: (context, index) => const _Divider(),
-            ),
+          else ...[
+            if (scheduled.isNotEmpty)
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: scheduled.length,
+                itemBuilder: (context, index) {
+                  return _TransactionListItem(
+                    transaction: scheduled[index],
+                    currentWalletAddress: currentWalletAddress,
+                  );
+                },
+                separatorBuilder: (context, index) => const _Divider(),
+              ),
+            if (scheduled.isNotEmpty && others.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12.0),
+                child: Divider(color: Colors.white, thickness: 1),
+              ),
+            if (others.isNotEmpty)
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: others.length,
+                itemBuilder: (context, index) {
+                  return _TransactionListItem(transaction: others[index], currentWalletAddress: currentWalletAddress);
+                },
+                separatorBuilder: (context, index) => const _Divider(),
+              ),
+          ],
         ],
       ),
     );
@@ -68,6 +97,10 @@ class _TransactionListItem extends StatefulWidget {
 class _TransactionListItemState extends State<_TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
+  bool get isSent => widget.transaction.from == widget.currentWalletAddress;
+  bool get isReversibleScheduled =>
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
 
   @override
   void initState() {
@@ -120,6 +153,15 @@ class _TransactionListItemState extends State<_TransactionListItem> {
     return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
   }
 
+  String _getSubtitle(TransactionEvent transaction) {
+    String prefix =
+        '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? widget.transaction.to : widget.transaction.from)}';
+    if (isReversibleScheduled) {
+      return prefix;
+    }
+    return '$prefix | ${_formatTimestamp(widget.transaction.timestamp)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSent = widget.transaction.from == widget.currentWalletAddress;
@@ -160,7 +202,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? widget.transaction.to : widget.transaction.from)} | ${_formatTimestamp(widget.transaction.timestamp)}',
+                      _getSubtitle(widget.transaction),
                       style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
                     ),
                   ],
