@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -53,16 +55,60 @@ class RecentTransactionsList extends StatelessWidget {
   }
 }
 
-class _TransactionListItem extends StatelessWidget {
+class _TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
   final String currentWalletAddress;
 
-  _TransactionListItem({required this.transaction, required this.currentWalletAddress});
+  const _TransactionListItem({required this.transaction, required this.currentWalletAddress});
+
+  @override
+  _TransactionListItemState createState() => _TransactionListItemState();
+}
+
+class _TransactionListItemState extends State<_TransactionListItem> {
+  Timer? _timer;
+  Duration? _remainingTime;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transaction is ReversibleTransferEvent) {
+      final tx = widget.transaction as ReversibleTransferEvent;
+      if (tx.status == ReversibleTransferStatus.SCHEDULED) {
+        _remainingTime = tx.scheduledAt.difference(DateTime.now());
+        if (_remainingTime!.isNegative) {
+          _remainingTime = Duration.zero;
+        }
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          setState(() {
+            if (_remainingTime! > Duration.zero) {
+              _remainingTime = _remainingTime! - const Duration(seconds: 1);
+            } else {
+              _timer?.cancel();
+            }
+          });
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
+  }
 
   final NumberFormattingService _formattingService = NumberFormattingService();
 
   String _formatAmount(BigInt amount) {
-    // This should be replaced with a proper formatting service
     return '${_formattingService.formatBalance(amount)} QUAN';
   }
 
@@ -76,78 +122,128 @@ class _TransactionListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSent = transaction.from == currentWalletAddress;
+    final isSent = widget.transaction.from == widget.currentWalletAddress;
+    const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
 
-    return SizedBox(
-      width: double.infinity,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 21,
-            height: 17,
-            child: SvgPicture.asset(
-              isSent ? 'assets/send_icon.svg' : 'assets/receive_icon.svg',
-              width: 21,
-              height: 17,
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: SizedBox(
-              height: 38.50,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    child: Text.rich(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                isSent ? 'assets/send_icon_1.svg' : 'assets/receive_icon.svg',
+                width: 21,
+                height: 17,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(
                             text: isSent ? 'Sent' : 'Receive',
-                            style: const TextStyle(
-                              color: Color(0xFF16CECE),
+                            style: textStyle.copyWith(
+                              color: const Color(0xFF16CECE),
                               fontSize: 14,
-                              fontFamily: 'Fira Code',
                               fontWeight: FontWeight.w400,
                             ),
                           ),
                           TextSpan(
-                            text: ' ${_formatAmount(transaction.amount)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w400,
-                            ),
+                            text: ' ${_formatAmount(widget.transaction.amount)}',
+                            style: textStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    top: 23.50,
-                    child: Text(
-                      '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? transaction.to : transaction.from)} | ${_formatTimestamp(transaction.timestamp)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w300,
-                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? widget.transaction.to : widget.transaction.from)} | ${_formatTimestamp(widget.transaction.timestamp)}',
+                      style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          ),
+        ),
+        _buildStatusOrTimer(),
+      ],
+    );
+  }
+
+  Widget _buildStatusOrTimer() {
+    if (widget.transaction is ReversibleTransferEvent) {
+      final tx = widget.transaction as ReversibleTransferEvent;
+      switch (tx.status) {
+        case ReversibleTransferStatus.SCHEDULED:
+          if (_remainingTime != null && _remainingTime! > Duration.zero) {
+            return _TimerDisplay(duration: _remainingTime!, formatDuration: _formatDuration);
+          }
+          return const _StatusDisplay(status: 'Pending');
+        case ReversibleTransferStatus.EXECUTED:
+          return const _StatusDisplay(status: 'Completed');
+        case ReversibleTransferStatus.CANCELLED:
+          return const _StatusDisplay(status: 'Cancelled');
+      }
+    }
+    return const _StatusDisplay(status: 'Completed');
+  }
+}
+
+class _TimerDisplay extends StatelessWidget {
+  final Duration duration;
+  final String Function(Duration) formatDuration;
+
+  const _TimerDisplay({required this.duration, required this.formatDuration});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+      decoration: ShapeDecoration(
+        color: const Color(0x3F000000), // black w/ alpha
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(width: 1, color: Color(0x26FFFFFF)), // white w/ alpha
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            formatDuration(duration),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w400,
             ),
           ),
+          const SizedBox(width: 10),
+          SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
         ],
       ),
+    );
+  }
+}
+
+class _StatusDisplay extends StatelessWidget {
+  final String status;
+  const _StatusDisplay({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      status,
+      style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code'),
     );
   }
 }
