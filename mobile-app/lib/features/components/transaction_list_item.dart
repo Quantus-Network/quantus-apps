@@ -113,11 +113,11 @@ class _TransactionListItemState extends State<_TransactionListItem> {
   }
 
   String _formatAddress(String address) {
-    return AddressFormattingService.formatAddress(address, prefix: 5, ellipses: '...', postFix: 5);
+    return address.shortenedCryptoAddress(prefix: 5, ellipses: '...', postFix: 5);
   }
 
   String _formatTimestamp(DateTime timestamp) {
-    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp);
+    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
   }
 
   @override

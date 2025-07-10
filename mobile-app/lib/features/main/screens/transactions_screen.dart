@@ -97,7 +97,21 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('All Transactions'), backgroundColor: const Color(0xFF0E0E0E), elevation: 0),
+      appBar: AppBar(
+        iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
+        centerTitle: false,
+        title: const Text(
+          'Transaction History',
+          style: TextStyle(
+            color: Color(0xFFE6E6E6),
+            fontSize: 16,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        backgroundColor: const Color(0xFF0E0E0E),
+        elevation: 0,
+      ),
       backgroundColor: const Color(0xFF0E0E0E),
       body: _buildBody(),
     );
@@ -118,24 +132,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       );
     }
 
-    // Note: RecentTransactionsList is not designed for infinite scrolling out of the box.
-    // This implementation wraps it in a ListView and adds a progress indicator at the bottom.
-    return ListView(
-      controller: _scrollController,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: RecentTransactionsList(
-            transactions: _transactions!.combined,
-            currentWalletAddress: widget.initialAccountId,
+    return RefreshIndicator(
+      onRefresh: _fetchInitialTransactions,
+      child: ListView(
+        controller: _scrollController,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: RecentTransactionsList(
+              transactions: _transactions!.combined,
+              currentWalletAddress: widget.initialAccountId,
+            ),
           ),
-        ),
-        if (_hasMore)
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-      ],
+          if (_hasMore)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
     );
   }
 }
