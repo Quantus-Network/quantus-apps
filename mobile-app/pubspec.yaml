@@ -1,8 +1,8 @@
 name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
-publish_to: 'none'
+publish_to: "none"
 
-version: 1.0.0+16
+version: 1.0.0+17
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -19,7 +19,7 @@ dependencies:
   cupertino_icons:
   flash:
   flutter_launcher_icons:
-  
+
   decimal:
   hex:
   ss58:
@@ -28,11 +28,11 @@ dependencies:
   quiver:
   convert:
   crypto:
-  
+
   shared_preferences:
   flutter_secure_storage:
   http:
-  
+
   human_checksum:
     git:
       url: https://github.com/Quantus-Network/human-checkphrase.git
@@ -88,7 +88,7 @@ flutter:
 # Add flutter_native_splash configuration section
 flutter_native_splash:
   # Replace color with background_image
-  # color: "#0E0E0E" 
+  # color: "#0E0E0E"
   background_image: "assets/light_leak_effect_background.jpg"
   # image: assets/logo.png # You can still add a logo on top if desired
 
@@ -105,4 +105,4 @@ flutter_native_splash:
   # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
 
   # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
-  # ios_content_mode: "dark" 
+  # ios_content_mode: "dark"
