@@ -70,6 +70,7 @@ flutter:
     - assets/quantus_logo_hz.svg
     - assets/stop_icon.svg
     - assets/receive_icon_sm.png
+    - assets/hourglass_icon.svg
 
   fonts:
     - family: Fira Code

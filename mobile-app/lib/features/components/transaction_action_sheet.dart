@@ -76,28 +76,30 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        boxShadow: [
-          BoxShadow(color: Color(0x0A0A0D12), blurRadius: 8, offset: Offset(0, 8), spreadRadius: -4),
-          BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: IconButton(
-              icon: Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          boxShadow: [
+            BoxShadow(color: Color(0x0A0A0D12), blurRadius: 8, offset: Offset(0, 8), spreadRadius: -4),
+            BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: 0,
+              top: 0,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
-          ),
-          _buildContent(),
-        ],
+            Padding(padding: const EdgeInsets.only(top: 54.0), child: _buildContent()),
+          ],
+        ),
       ),
     );
   }
@@ -116,15 +118,28 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   Widget _buildInitialView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader('Reversible Transaction', 'Cancel or keep your send'),
         const SizedBox(height: 20),
-        _buildTimer(),
-        const SizedBox(height: 20),
-        _buildTransactionDetails(),
-        const Spacer(),
-        _buildInitialButtons(),
+        const Divider(color: Colors.white, thickness: 1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              _buildTimer(),
+              const SizedBox(height: 12),
+              const Divider(color: Colors.white, thickness: 1),
+              const SizedBox(height: 12),
+              _buildTransactionDetails(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        const Divider(color: Colors.white, thickness: 1),
+        const SizedBox(height: 40),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 18.0), child: _buildInitialButtons()),
       ],
     );
   }
@@ -133,8 +148,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // TODO: This was a complex stack in the design, maybe an icon is enough
-        Icon(Icons.shield_outlined, color: const Color(0xFF16CECE), size: 29),
+        Icon(Icons.hourglass_top_rounded, color: const Color(0xFF16CECE), size: 29),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -216,7 +230,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   Widget _buildTransactionDetails() {
     return Column(
       children: [
-        _buildDetailRow('Recipient', _formatAddress(widget.transaction.to)),
+        _buildRecipientRow(widget.transaction.to),
         const SizedBox(height: 12),
         _buildDetailRow('Amount', _formatAmount(widget.transaction.amount)),
       ],
@@ -249,8 +263,41 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     );
   }
 
+  Widget _buildRecipientRow(String address) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 5,
+      children: [
+        SizedBox(
+          width: 269,
+          child: Text(
+            'Recipient',
+            style: TextStyle(
+              color: const Color(0xFFD9D9D9),
+              fontSize: 16,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Text(
+          address,
+          style: TextStyle(
+            color: const Color(0xFFD9D9D9),
+            fontSize: 10,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInitialButtons() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _buildButton('Keep Transaction', const Color(0xFF5FE49E), Colors.black, () {
           Navigator.of(context).pop();
@@ -269,8 +316,8 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 188,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        width: 260,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: ShapeDecoration(
           color: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -291,57 +338,76 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       children: [
         _buildHeader('Reversible Transaction', 'Cancel or keep your send'),
         const SizedBox(height: 20),
-        _buildTimer(),
-        const SizedBox(height: 20),
-        _buildTransactionDetails(),
-        const Spacer(),
-        Text(
-          'Are you sure you want to cancel this tx?',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: const Color(0xFFD9D9D9),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w600,
+        const Divider(color: Colors.white24, thickness: 1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              _buildTimer(),
+              const SizedBox(height: 20),
+              _buildTransactionDetails(),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        if (_isCancelling)
-          const CircularProgressIndicator()
-        else ...[
-          _buildButton('Yes Cancel', const Color(0xFFFF2D53), Colors.white, _cancelTransaction),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => setState(() => _sheetState = _SheetState.initial),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 1, color: Colors.white.withOpacity(0.50)),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              child: Text(
-                'Keep transaction',
+        const SizedBox(height: 20),
+        const Divider(color: Colors.white24, thickness: 1),
+        const SizedBox(height: 40),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+          child: Column(
+            children: [
+              Text(
+                'Are you sure you want to cancel this tx?',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFD9D9D9),
-                  fontSize: 14,
+                style: TextStyle(
+                  color: const Color(0xFFD9D9D9),
+                  fontSize: 16,
                   fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
+              const SizedBox(height: 12),
+              if (_isCancelling)
+                const CircularProgressIndicator()
+              else ...[
+                _buildButton('Yes Cancel', const Color(0xFFFF2D53), Colors.white, _cancelTransaction),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () => setState(() => _sheetState = _SheetState.initial),
+                  child: Container(
+                    width: 260,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: ShapeDecoration(
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(width: 1, color: Colors.white.withOpacity(0.50)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: Text(
+                      'Keep transaction',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFD9D9D9),
+                        fontSize: 14,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
           ),
-        ],
-        if (_errorMessage != null) ...[
-          const SizedBox(height: 10),
-          Text(
-            _errorMessage!,
-            style: const TextStyle(color: Colors.red, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ],
     );
   }
@@ -385,36 +451,19 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: ShapeDecoration(
-                shape: OvalBorder(side: BorderSide(width: 2, color: const Color(0xFFFF2D53))),
-              ),
-              child: Icon(Icons.check, color: const Color(0xFFFF2D53), size: 20),
-            ),
-            const SizedBox(width: 16),
-            const Text(
-              'Transaction Cancelled',
-              style: TextStyle(
-                color: Color(0xFFD9D9D9),
-                fontSize: 18,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+        _buildHeader('Transaction Cancelled', ''),
         const SizedBox(height: 40),
-        _buildTransactionDetails(),
-        const Spacer(),
-        Center(
-          child: _buildButton('Done', const Color(0xFF5FE49E), Colors.black, () {
-            Navigator.of(context).pop();
-          }),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 18.0), child: _buildTransactionDetails()),
+        const SizedBox(height: 20),
+        const Divider(color: Colors.white24, thickness: 1),
+        const SizedBox(height: 40),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+          child: Center(
+            child: _buildButton('Done', const Color(0xFF5FE49E), Colors.black, () {
+              Navigator.of(context).pop();
+            }),
+          ),
         ),
       ],
     );
