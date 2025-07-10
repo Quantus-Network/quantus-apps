@@ -32,6 +32,7 @@ dependencies:
   http: # Version managed by melos.yaml
   decimal: # Version managed by melos.yaml
   quiver: # Version managed by melos.yaml
+  intl: # Version managed by melos.yaml
   
   # UI feedback
   flash: # Version managed by melos.yaml

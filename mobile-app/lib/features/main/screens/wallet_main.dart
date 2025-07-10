@@ -59,11 +59,12 @@ class _WalletMainState extends State<WalletMain> {
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      _loadMoreTransactions();
-    }
-  }
+  // TODO: we need to have scrolling
+  // void _onScroll() {
+  //   if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+  //     _loadMoreTransactions();
+  //   }
+  // }
 
   void _loadWalletDataAndSetFuture() {
     setState(() {
