@@ -180,7 +180,11 @@ class _TransactionListItemState extends State<_TransactionListItem> {
       switch (tx.status) {
         case ReversibleTransferStatus.SCHEDULED:
           if (_remainingTime != null && _remainingTime! > Duration.zero) {
-            return _TimerDisplay(duration: _remainingTime!, formatDuration: _formatDuration);
+            return _TimerDisplay(
+              duration: _remainingTime!,
+              formatDuration: _formatDuration,
+              isSending: widget.transaction.from == widget.currentWalletAddress,
+            );
           }
           return const _StatusDisplay(status: 'Pending');
         case ReversibleTransferStatus.EXECUTED:
@@ -196,8 +200,9 @@ class _TransactionListItemState extends State<_TransactionListItem> {
 class _TimerDisplay extends StatelessWidget {
   final Duration duration;
   final String Function(Duration) formatDuration;
+  final bool isSending;
 
-  const _TimerDisplay({required this.duration, required this.formatDuration});
+  const _TimerDisplay({required this.duration, required this.formatDuration, required this.isSending});
 
   @override
   Widget build(BuildContext context) {
@@ -222,8 +227,8 @@ class _TimerDisplay extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(width: 10),
-          SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
+          if (isSending) const SizedBox(width: 10),
+          if (isSending) SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
         ],
       ),
     );
