@@ -7,13 +7,10 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 enum Error {
   invalidProof('InvalidProof', 0),
   proofDeserializationFailed('ProofDeserializationFailed', 1),
-  invalidVerificationKey('InvalidVerificationKey', 2),
-  notInitialized('NotInitialized', 3),
-  alreadyInitialized('AlreadyInitialized', 4),
-  verificationFailed('VerificationFailed', 5),
-  verifierNotFound('VerifierNotFound', 6),
-  invalidPublicInputs('InvalidPublicInputs', 7),
-  nullifierAlreadyUsed('NullifierAlreadyUsed', 8);
+  verificationFailed('VerificationFailed', 2),
+  invalidPublicInputs('InvalidPublicInputs', 3),
+  nullifierAlreadyUsed('NullifierAlreadyUsed', 4),
+  verifierNotAvailable('VerifierNotAvailable', 5);
 
   const Error(
     this.variantName,
@@ -48,19 +45,13 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 1:
         return Error.proofDeserializationFailed;
       case 2:
-        return Error.invalidVerificationKey;
-      case 3:
-        return Error.notInitialized;
-      case 4:
-        return Error.alreadyInitialized;
-      case 5:
         return Error.verificationFailed;
-      case 6:
-        return Error.verifierNotFound;
-      case 7:
+      case 3:
         return Error.invalidPublicInputs;
-      case 8:
+      case 4:
         return Error.nullifierAlreadyUsed;
+      case 5:
+        return Error.verifierNotAvailable;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

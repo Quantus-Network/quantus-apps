@@ -4,6 +4,12 @@ use rusty_crystals_dilithium::*;
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_core::Hasher;
 use std::convert::AsRef;
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn set_default_ss58_prefix(prefix: u16) {
+    sp_core::crypto::set_default_ss58_version(sp_core::crypto::Ss58AddressFormat::custom(prefix));
+}
+
 #[flutter_rust_bridge::frb(sync)] // Synchronous mode
 pub struct Keypair {
     pub public_key: Vec<u8>,

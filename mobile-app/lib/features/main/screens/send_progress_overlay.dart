@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:quantus_sdk/src/services/balances_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -466,9 +465,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: ' ${AppConstants.tokenSymbol}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                           fontFamily: 'Fira Code',
@@ -487,7 +486,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               'sent to',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.useOpacity(0.5),
                 fontSize: 12,
                 fontFamily: 'Fira Code',
                 fontWeight: FontWeight.w400,

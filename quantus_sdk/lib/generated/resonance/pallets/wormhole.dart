@@ -19,7 +19,7 @@ class Queries {
     prefix: 'Wormhole',
     storage: 'UsedNullifiers',
     valueCodec: _i2.BoolCodec.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.U8ArrayCodec(64)),
+    hasher: _i1.StorageHasher.blake2b128Concat(_i2.U8ArrayCodec(32)),
   );
 
   _i3.Future<bool> usedNullifiers(

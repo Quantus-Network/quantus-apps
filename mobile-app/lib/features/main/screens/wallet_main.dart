@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'dart:io';
 import 'dart:async';
@@ -7,6 +8,7 @@ import 'package:resonance_network_wallet/features/main/screens/account_profile.d
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 
 class WalletData {
@@ -32,15 +34,14 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
-  List<Transfer> _transfers = [];
+  List<ReversibleTransferEvent> _scheduledTransfers = [];
+  List<TransactionEvent> _allTransfers = [];
   bool _isHistoryLoading = true;
   String? _historyError;
 
   // Pagination state
-  int _toOffset = 0;
-  int _fromOffset = 0;
-  bool _hasMoreTo = true;
-  bool _hasMoreFrom = true;
+  int _offset = 0;
+  bool _hasMore = true;
   bool _isLoadingMore = false;
   static const int _transactionsPerPage = 10;
   final ScrollController _scrollController = ScrollController();
@@ -49,7 +50,7 @@ class _WalletMainState extends State<WalletMain> {
   void initState() {
     super.initState();
     _loadWalletDataAndSetFuture();
-    _scrollController.addListener(_onScroll);
+    // _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -81,6 +82,7 @@ class _WalletMainState extends State<WalletMain> {
       if (accountId == null || accountId.isEmpty) {
         throw Exception('Account ID not found');
       }
+
       _accountId = accountId;
 
       print('Attempting initial balance query for $accountId...');
@@ -118,26 +120,23 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Future<void> _loadMoreTransactions() async {
-    if ((!_hasMoreTo && !_hasMoreFrom) || _isLoadingMore || _isHistoryLoading) return;
+    if (!_hasMore || _isLoadingMore || _isHistoryLoading) return;
 
     setState(() {
       _isLoadingMore = true;
     });
 
     try {
-      final result = await _chainHistoryService.fetchTransfers(
+      final result = await _chainHistoryService.fetchAllTransfers(
         accountId: _accountId!,
         limit: _transactionsPerPage,
-        toOffset: _toOffset,
-        fromOffset: _fromOffset,
+        offset: _offset,
       );
 
       setState(() {
-        _transfers = [..._transfers, ...result.combinedTransfers];
-        _hasMoreTo = result.hasMoreTo;
-        _hasMoreFrom = result.hasMoreFrom;
-        _toOffset = result.nextToOffset;
-        _fromOffset = result.nextFromOffset;
+        _allTransfers.addAll(result.combinedTransfers);
+        _hasMore = result.hasMore;
+        _offset = result.nextOffset;
         _isLoadingMore = false;
       });
     } catch (e) {
@@ -155,30 +154,28 @@ class _WalletMainState extends State<WalletMain> {
     setState(() {
       _isHistoryLoading = true;
       _historyError = null;
-      _toOffset = 0;
-      _fromOffset = 0;
-      _hasMoreTo = true;
-      _hasMoreFrom = true;
-      _transfers = [];
+      _offset = 0;
+      _hasMore = true;
+      _scheduledTransfers = [];
+      _allTransfers = [];
     });
 
     try {
-      final result = await _chainHistoryService.fetchTransfers(
-        accountId: _accountId!,
-        limit: _transactionsPerPage,
-        toOffset: 0,
-        fromOffset: 0,
-      );
+      // Fetch both lists in parallel
+      final results = await Future.wait([
+        _chainHistoryService.fetchScheduledTransfers(accountId: _accountId!),
+        _chainHistoryService.fetchAllTransfers(accountId: _accountId!, limit: 5, offset: 0),
+      ]);
+
+      final scheduled = results[0] as List<ReversibleTransferEvent>;
+      final allTransfers = results[1] as TransferResult;
 
       setState(() {
-        _transfers = result.combinedTransfers;
-        _hasMoreTo = result.hasMoreTo;
-        _hasMoreFrom = result.hasMoreFrom;
-        _toOffset = result.nextToOffset;
-        _fromOffset = result.nextFromOffset;
+        _scheduledTransfers = scheduled;
+        _allTransfers = allTransfers.combinedTransfers;
+        _hasMore = allTransfers.hasMore;
         _isHistoryLoading = false;
       });
-      print('fetchedTransfers: ${_transfers.length}');
     } catch (e) {
       print('Error fetching transaction history: $e');
       setState(() {
@@ -247,168 +244,87 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
-  Widget _buildTransactionItem({
-    required String type,
-    required String amount,
-    required String details,
-    required Widget iconWidget,
-    required Color typeColor,
-    required String rawTimestamp,
-  }) {
-    final String iconAsset;
-    final Color effectiveTypeColor;
-    if (type == 'Sent') {
-      iconAsset = 'assets/send_icon_1.svg';
-      effectiveTypeColor = const Color(0xFF16CECE);
-    } else {
-      iconAsset = 'assets/receive_icon.svg';
-      effectiveTypeColor = const Color(0xFFB259F2);
-    }
-
-    String formattedTimestamp = 'Invalid Timestamp';
-    try {
-      final dateTime = DateTime.parse(rawTimestamp).toLocal();
-      final day = dateTime.day.toString().padLeft(2, '0');
-      final month = dateTime.month.toString().padLeft(2, '0');
-      final year = dateTime.year;
-      final hour = dateTime.hour.toString().padLeft(2, '0');
-      final minute = dateTime.minute.toString().padLeft(2, '0');
-      final second = dateTime.second.toString().padLeft(2, '0');
-      formattedTimestamp = '$day-$month-$year $hour:$minute:$second';
-    } catch (e) {
-      print('Error formatting timestamp $rawTimestamp: $e');
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 21,
-              height: 17,
-              child: SvgPicture.asset(iconAsset, colorFilter: ColorFilter.mode(effectiveTypeColor, BlendMode.srcIn)),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: type,
-                          style: TextStyle(
-                            color: effectiveTypeColor,
-                            fontSize: 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' $amount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '$details | $formattedTimestamp',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontFamily: 'Fira Code',
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Divider(color: Colors.white.useOpacity(38 / 255.0), height: 1),
-        const SizedBox(height: 14),
-      ],
-    );
-  }
-
   Widget _buildHistorySection() {
     if (_isHistoryLoading) {
-      return const Center(
-        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
+      return Container(
+        width: 321,
+        padding: const EdgeInsets.all(10),
+        decoration: ShapeDecoration(
+          color: Colors.black.withAlpha(64),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40.0),
+            child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
+          ),
+        ),
       );
     }
 
     if (_historyError != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _historyError!,
-              style: const TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
-          ],
+      return Container(
+        width: 321,
+        padding: const EdgeInsets.all(20),
+        decoration: ShapeDecoration(
+          color: Colors.black.withAlpha(64),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _historyError!,
+                style: const TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
+            ],
+          ),
         ),
       );
     }
 
-    if (_transfers.isEmpty) {
-      return const Center(
-        child: Text('No transactions yet', style: TextStyle(color: Colors.white70)),
-      );
-    }
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._transfers.map((transfer) {
-          final isSend = transfer.from == _accountId;
-          final type = isSend ? 'Sent' : 'Received';
-          final details = isSend ? 'to ${_formatAddress(transfer.to)}' : 'from ${_formatAddress(transfer.from)}';
-          final amountDisplay =
-              '${isSend ? '-' : '+'}${_formattingService.formatBalance(BigInt.parse(transfer.amount))} ${AppConstants.tokenSymbol}';
-
-          return _buildTransactionItem(
-            type: type,
-            amount: amountDisplay,
-            details: details,
-            iconWidget: Container(),
-            typeColor: Colors.transparent,
-            rawTimestamp: transfer.timestamp,
-          );
-        }),
-        if (_isLoadingMore)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
+        const Padding(
+          padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+          child: Text(
+            'Reversible Transactions',
+            style: TextStyle(
+              color: Color(0xFFE6E6E6),
+              fontSize: 14,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
             ),
           ),
-        if (!_hasMoreTo && !_hasMoreFrom && _transfers.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'No more transactions',
-              style: TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
+        ),
+        RecentTransactionsList(transactions: _scheduledTransfers, currentWalletAddress: _accountId!),
+        if (true)
+          Padding(
+            padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
+                  );
+                },
+                child: Text(
+                  'Transaction History →',
+                  style: TextStyle(
+                    color: Colors.white.useOpacity(0.80),
+                    fontSize: 12,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
           ),
       ],
@@ -578,8 +494,6 @@ class _WalletMainState extends State<WalletMain> {
                                             ),
                                             child: Text(
                                               displayAddress,
-                                              textAlign: TextAlign.center,
-                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 14,
@@ -663,31 +577,7 @@ class _WalletMainState extends State<WalletMain> {
                           ],
                         ),
                       ),
-                      SliverToBoxAdapter(
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: ShapeDecoration(
-                            color: Colors.black.withAlpha(64),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Recent Transactions',
-                                style: TextStyle(
-                                  color: Color(0xFFE6E6E6),
-                                  fontSize: 14,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              _buildHistorySection(),
-                            ],
-                          ),
-                        ),
-                      ),
+                      SliverToBoxAdapter(child: _buildHistorySection()),
                     ],
                   ),
                 );

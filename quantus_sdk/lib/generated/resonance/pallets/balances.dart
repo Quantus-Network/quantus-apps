@@ -242,6 +242,7 @@ class Queries {
     return []; /* Default */
   }
 
+  /// Transfer proofs for a wormhole transfers
   _i10.Future<dynamic> transferProof(
     _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt> key1, {
     _i1.BlockHash? at,
@@ -397,6 +398,7 @@ class Queries {
         as List<List<_i8.IdAmount>>); /* Default */
   }
 
+  /// Transfer proofs for a wormhole transfers
   _i10.Future<List<dynamic>> multiTransferProof(
     List<_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>> keys, {
     _i1.BlockHash? at,

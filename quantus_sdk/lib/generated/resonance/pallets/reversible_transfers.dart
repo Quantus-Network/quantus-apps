@@ -5,28 +5,27 @@ import 'dart:typed_data' as _i8;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i6;
 
-import '../types/pallet_reversible_transfers/delay_policy.dart' as _i11;
-import '../types/pallet_reversible_transfers/pallet/call.dart' as _i12;
-import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i5;
-import '../types/pallet_reversible_transfers/reversible_account_data.dart'
+import '../types/pallet_reversible_transfers/high_security_account_data.dart'
     as _i3;
+import '../types/pallet_reversible_transfers/pallet/call.dart' as _i11;
+import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i5;
 import '../types/primitive_types/h256.dart' as _i4;
 import '../types/qp_scheduler/block_number_or_timestamp.dart' as _i10;
 import '../types/quantus_runtime/runtime_call.dart' as _i9;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
-import '../types/sp_runtime/multiaddress/multi_address.dart' as _i13;
+import '../types/sp_runtime/multiaddress/multi_address.dart' as _i12;
 
 class Queries {
   const Queries(this.__api);
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<_i2.AccountId32, _i3.ReversibleAccountData>
-      _reversibleAccounts =
-      const _i1.StorageMap<_i2.AccountId32, _i3.ReversibleAccountData>(
+  final _i1.StorageMap<_i2.AccountId32, _i3.HighSecurityAccountData>
+      _highSecurityAccounts =
+      const _i1.StorageMap<_i2.AccountId32, _i3.HighSecurityAccountData>(
     prefix: 'ReversibleTransfers',
-    storage: 'ReversibleAccounts',
-    valueCodec: _i3.ReversibleAccountData.codec,
+    storage: 'HighSecurityAccounts',
+    valueCodec: _i3.HighSecurityAccountData.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
   );
 
@@ -73,19 +72,25 @@ class Queries {
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
   );
 
+  final _i1.StorageValue<BigInt> _globalNonce = const _i1.StorageValue<BigInt>(
+    prefix: 'ReversibleTransfers',
+    storage: 'GlobalNonce',
+    valueCodec: _i6.U64Codec.codec,
+  );
+
   /// Maps accounts to their chosen reversibility delay period (in milliseconds).
   /// Accounts present in this map have reversibility enabled.
-  _i7.Future<_i3.ReversibleAccountData?> reversibleAccounts(
+  _i7.Future<_i3.HighSecurityAccountData?> highSecurityAccounts(
     _i2.AccountId32 key1, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKey = _reversibleAccounts.hashedKeyFor(key1);
+    final hashedKey = _highSecurityAccounts.hashedKeyFor(key1);
     final bytes = await __api.getStorage(
       hashedKey,
       at: at,
     );
     if (bytes != null) {
-      return _reversibleAccounts.decodeValue(bytes);
+      return _highSecurityAccounts.decodeValue(bytes);
     }
     return null; /* Nullable */
   }
@@ -175,21 +180,34 @@ class Queries {
     return []; /* Default */
   }
 
+  /// Global nonce for generating unique transaction IDs.
+  _i7.Future<BigInt> globalNonce({_i1.BlockHash? at}) async {
+    final hashedKey = _globalNonce.hashedKey();
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _globalNonce.decodeValue(bytes);
+    }
+    return BigInt.zero; /* Default */
+  }
+
   /// Maps accounts to their chosen reversibility delay period (in milliseconds).
   /// Accounts present in this map have reversibility enabled.
-  _i7.Future<List<_i3.ReversibleAccountData?>> multiReversibleAccounts(
+  _i7.Future<List<_i3.HighSecurityAccountData?>> multiHighSecurityAccounts(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
     final hashedKeys =
-        keys.map((key) => _reversibleAccounts.hashedKeyFor(key)).toList();
+        keys.map((key) => _highSecurityAccounts.hashedKeyFor(key)).toList();
     final bytes = await __api.queryStorageAt(
       hashedKeys,
       at: at,
     );
     if (bytes.isNotEmpty) {
       return bytes.first.changes
-          .map((v) => _reversibleAccounts.decodeValue(v.key))
+          .map((v) => _highSecurityAccounts.decodeValue(v.key))
           .toList();
     }
     return []; /* Nullable */
@@ -299,9 +317,9 @@ class Queries {
         as List<List<_i2.AccountId32>>); /* Default */
   }
 
-  /// Returns the storage key for `reversibleAccounts`.
-  _i8.Uint8List reversibleAccountsKey(_i2.AccountId32 key1) {
-    final hashedKey = _reversibleAccounts.hashedKeyFor(key1);
+  /// Returns the storage key for `highSecurityAccounts`.
+  _i8.Uint8List highSecurityAccountsKey(_i2.AccountId32 key1) {
+    final hashedKey = _highSecurityAccounts.hashedKeyFor(key1);
     return hashedKey;
   }
 
@@ -335,9 +353,15 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage map key prefix for `reversibleAccounts`.
-  _i8.Uint8List reversibleAccountsMapPrefix() {
-    final hashedKey = _reversibleAccounts.mapPrefix();
+  /// Returns the storage key for `globalNonce`.
+  _i8.Uint8List globalNonceKey() {
+    final hashedKey = _globalNonce.hashedKey();
+    return hashedKey;
+  }
+
+  /// Returns the storage map key prefix for `highSecurityAccounts`.
+  _i8.Uint8List highSecurityAccountsMapPrefix() {
+    final hashedKey = _highSecurityAccounts.mapPrefix();
     return hashedKey;
   }
 
@@ -375,20 +399,18 @@ class Queries {
 class Txs {
   const Txs();
 
-  /// Enable reversibility for the calling account with a specified delay, or disable it.
+  /// Enable high-security for the calling account with a specified delay
   ///
   /// - `delay`: The time (in milliseconds) after submission before the transaction executes.
-  ///  If `None`, reversibility is disabled for the account.
-  ///  If `Some`, must be >= `MinDelayPeriod`.
-  _i9.ReversibleTransfers setReversibility({
-    _i10.BlockNumberOrTimestamp? delay,
-    required _i11.DelayPolicy policy,
-    _i2.AccountId32? reverser,
+  _i9.ReversibleTransfers setHighSecurity({
+    required _i10.BlockNumberOrTimestamp delay,
+    required _i2.AccountId32 interceptor,
+    required _i2.AccountId32 recoverer,
   }) {
-    return _i9.ReversibleTransfers(_i12.SetReversibility(
+    return _i9.ReversibleTransfers(_i11.SetHighSecurity(
       delay: delay,
-      policy: policy,
-      reverser: reverser,
+      interceptor: interceptor,
+      recoverer: recoverer,
     ));
   }
 
@@ -396,22 +418,22 @@ class Txs {
   ///
   /// - `tx_id`: The unique identifier of the transaction to cancel.
   _i9.ReversibleTransfers cancel({required _i4.H256 txId}) {
-    return _i9.ReversibleTransfers(_i12.Cancel(txId: txId));
+    return _i9.ReversibleTransfers(_i11.Cancel(txId: txId));
   }
 
   /// Called by the Scheduler to finalize the scheduled task/call
   ///
   /// - `tx_id`: The unique id of the transaction to finalize and dispatch.
   _i9.ReversibleTransfers executeTransfer({required _i4.H256 txId}) {
-    return _i9.ReversibleTransfers(_i12.ExecuteTransfer(txId: txId));
+    return _i9.ReversibleTransfers(_i11.ExecuteTransfer(txId: txId));
   }
 
   /// Schedule a transaction for delayed execution.
   _i9.ReversibleTransfers scheduleTransfer({
-    required _i13.MultiAddress dest,
+    required _i12.MultiAddress dest,
     required BigInt amount,
   }) {
-    return _i9.ReversibleTransfers(_i12.ScheduleTransfer(
+    return _i9.ReversibleTransfers(_i11.ScheduleTransfer(
       dest: dest,
       amount: amount,
     ));
@@ -424,11 +446,11 @@ class Txs {
   ///
   /// - `delay`: The time (in blocks or milliseconds) before the transaction executes.
   _i9.ReversibleTransfers scheduleTransferWithDelay({
-    required _i13.MultiAddress dest,
+    required _i12.MultiAddress dest,
     required BigInt amount,
     required _i10.BlockNumberOrTimestamp delay,
   }) {
-    return _i9.ReversibleTransfers(_i12.ScheduleTransferWithDelay(
+    return _i9.ReversibleTransfers(_i11.ScheduleTransferWithDelay(
       dest: dest,
       amount: amount,
       delay: delay,

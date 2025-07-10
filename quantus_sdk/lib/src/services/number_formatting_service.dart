@@ -1,6 +1,7 @@
 // Keep for potential future use (grouping)
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
 
 class NumberFormattingService {
@@ -18,24 +19,26 @@ class NumberFormattingService {
     }
 
     // Perform division with Decimal
-    final rationalBalance = Decimal.fromBigInt(balance) / scaleFactorDecimal;
+    final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
+      scaleOnInfinitePrecision: maxDecimals,
+    );
 
-    // Convert Rational to Decimal *without* premature scaling
-    final decimalBalance = rationalBalance.toDecimal();
+    // Use a NumberFormat that can handle the full decimal range and grouping.
+    // 'en_US' locale is used to ensure '.' is the decimal separator and ',' is for grouping.
+    final formatter = NumberFormat.decimalPatternDigits(locale: 'en_US', decimalDigits: maxDecimals);
 
-    // Now use toStringAsFixed on the resulting Decimal
-    String formatted = decimalBalance.toStringAsFixed(maxDecimals);
+    String formatted = formatter.format(decimalBalance.toDouble());
 
-    // Simple manual trim of trailing zeros and decimal point if necessary
+    // The formatter might add unnecessary trailing zeros up to `maxDecimals`,
+    // and we want to trim them for a cleaner look if they are not significant.
     if (formatted.contains('.')) {
-      formatted = formatted.replaceAll(RegExp(r'0+$'), ''); // Remove trailing zeros
+      // Remove trailing zeros, but not if it's the only digit after the decimal point.
+      formatted = formatted.replaceAll(RegExp(r'0+$'), '');
+      // If we are left with a trailing decimal point, remove it.
       if (formatted.endsWith('.')) {
-        formatted = formatted.substring(0, formatted.length - 1); // Remove trailing decimal point
+        formatted = formatted.substring(0, formatted.length - 1);
       }
     }
-
-    // Optional: Add grouping separators for the integer part if needed in the future
-    // using NumberFormat on the integer part before combining.
 
     return formatted;
   }

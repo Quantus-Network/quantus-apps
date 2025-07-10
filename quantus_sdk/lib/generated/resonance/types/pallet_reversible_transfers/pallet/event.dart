@@ -6,10 +6,10 @@ import 'package:quiver/collection.dart' as _i9;
 
 import '../../frame_support/dispatch/post_dispatch_info.dart' as _i7;
 import '../../primitive_types/h256.dart' as _i5;
+import '../../qp_scheduler/block_number_or_timestamp.dart' as _i4;
 import '../../qp_scheduler/dispatch_time.dart' as _i6;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 import '../../sp_runtime/dispatch_error_with_post_info.dart' as _i8;
-import '../reversible_account_data.dart' as _i4;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -39,23 +39,33 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  ReversibilitySet reversibilitySet({
+  HighSecuritySet highSecuritySet({
     required _i3.AccountId32 who,
-    required _i4.ReversibleAccountData data,
+    required _i3.AccountId32 interceptor,
+    required _i3.AccountId32 recoverer,
+    required _i4.BlockNumberOrTimestamp delay,
   }) {
-    return ReversibilitySet(
+    return HighSecuritySet(
       who: who,
-      data: data,
+      interceptor: interceptor,
+      recoverer: recoverer,
+      delay: delay,
     );
   }
 
   TransactionScheduled transactionScheduled({
-    required _i3.AccountId32 who,
+    required _i3.AccountId32 from,
+    required _i3.AccountId32 to,
+    required _i3.AccountId32 interceptor,
+    required BigInt amount,
     required _i5.H256 txId,
     required _i6.DispatchTime executeAt,
   }) {
     return TransactionScheduled(
-      who: who,
+      from: from,
+      to: to,
+      interceptor: interceptor,
+      amount: amount,
       txId: txId,
       executeAt: executeAt,
     );
@@ -91,7 +101,7 @@ class $EventCodec with _i1.Codec<Event> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return ReversibilitySet._decode(input);
+        return HighSecuritySet._decode(input);
       case 1:
         return TransactionScheduled._decode(input);
       case 2:
@@ -109,8 +119,8 @@ class $EventCodec with _i1.Codec<Event> {
     _i1.Output output,
   ) {
     switch (value.runtimeType) {
-      case ReversibilitySet:
-        (value as ReversibilitySet).encodeTo(output);
+      case HighSecuritySet:
+        (value as HighSecuritySet).encodeTo(output);
         break;
       case TransactionScheduled:
         (value as TransactionScheduled).encodeTo(output);
@@ -130,8 +140,8 @@ class $EventCodec with _i1.Codec<Event> {
   @override
   int sizeHint(Event value) {
     switch (value.runtimeType) {
-      case ReversibilitySet:
-        return (value as ReversibilitySet)._sizeHint();
+      case HighSecuritySet:
+        return (value as HighSecuritySet)._sizeHint();
       case TransactionScheduled:
         return (value as TransactionScheduled)._sizeHint();
       case TransactionCancelled:
@@ -145,39 +155,53 @@ class $EventCodec with _i1.Codec<Event> {
   }
 }
 
-/// A user has enabled or updated their reversibility settings.
-/// [who, maybe_delay: None means disabled]
-class ReversibilitySet extends Event {
-  const ReversibilitySet({
+/// A user has enabled their high-security settings.
+/// [who, interceptor, recoverer, delay]
+class HighSecuritySet extends Event {
+  const HighSecuritySet({
     required this.who,
-    required this.data,
+    required this.interceptor,
+    required this.recoverer,
+    required this.delay,
   });
 
-  factory ReversibilitySet._decode(_i1.Input input) {
-    return ReversibilitySet(
+  factory HighSecuritySet._decode(_i1.Input input) {
+    return HighSecuritySet(
       who: const _i1.U8ArrayCodec(32).decode(input),
-      data: _i4.ReversibleAccountData.codec.decode(input),
+      interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      recoverer: const _i1.U8ArrayCodec(32).decode(input),
+      delay: _i4.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
 
   /// T::AccountId
   final _i3.AccountId32 who;
 
-  /// ReversibleAccountData<T::AccountId, BlockNumberOrTimestampOf<T>>
-  final _i4.ReversibleAccountData data;
+  /// T::AccountId
+  final _i3.AccountId32 interceptor;
+
+  /// T::AccountId
+  final _i3.AccountId32 recoverer;
+
+  /// BlockNumberOrTimestampOf<T>
+  final _i4.BlockNumberOrTimestamp delay;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ReversibilitySet': {
+        'HighSecuritySet': {
           'who': who.toList(),
-          'data': data.toJson(),
+          'interceptor': interceptor.toList(),
+          'recoverer': recoverer.toList(),
+          'delay': delay.toJson(),
         }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(who);
-    size = size + _i4.ReversibleAccountData.codec.sizeHint(data);
+    size = size + const _i3.AccountId32Codec().sizeHint(interceptor);
+    size = size + const _i3.AccountId32Codec().sizeHint(recoverer);
+    size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(delay);
     return size;
   }
 
@@ -190,8 +214,16 @@ class ReversibilitySet extends Event {
       who,
       output,
     );
-    _i4.ReversibleAccountData.codec.encodeTo(
-      data,
+    const _i1.U8ArrayCodec(32).encodeTo(
+      interceptor,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      recoverer,
+      output,
+    );
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(
+      delay,
       output,
     );
   }
@@ -202,39 +234,64 @@ class ReversibilitySet extends Event {
         this,
         other,
       ) ||
-      other is ReversibilitySet &&
+      other is HighSecuritySet &&
           _i9.listsEqual(
             other.who,
             who,
           ) &&
-          other.data == data;
+          _i9.listsEqual(
+            other.interceptor,
+            interceptor,
+          ) &&
+          _i9.listsEqual(
+            other.recoverer,
+            recoverer,
+          ) &&
+          other.delay == delay;
 
   @override
   int get hashCode => Object.hash(
         who,
-        data,
+        interceptor,
+        recoverer,
+        delay,
       );
 }
 
 /// A transaction has been intercepted and scheduled for delayed execution.
-/// [who, tx_id, execute_at_moment]
+/// [from, to, interceptor, amount, tx_id, execute_at_moment]
 class TransactionScheduled extends Event {
   const TransactionScheduled({
-    required this.who,
+    required this.from,
+    required this.to,
+    required this.interceptor,
+    required this.amount,
     required this.txId,
     required this.executeAt,
   });
 
   factory TransactionScheduled._decode(_i1.Input input) {
     return TransactionScheduled(
-      who: const _i1.U8ArrayCodec(32).decode(input),
+      from: const _i1.U8ArrayCodec(32).decode(input),
+      to: const _i1.U8ArrayCodec(32).decode(input),
+      interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      amount: _i1.U128Codec.codec.decode(input),
       txId: const _i1.U8ArrayCodec(32).decode(input),
       executeAt: _i6.DispatchTime.codec.decode(input),
     );
   }
 
   /// T::AccountId
-  final _i3.AccountId32 who;
+  final _i3.AccountId32 from;
+
+  /// T::AccountId
+  final _i3.AccountId32 to;
+
+  /// T::AccountId
+  final _i3.AccountId32 interceptor;
+
+  /// T::Balance
+  final BigInt amount;
 
   /// T::Hash
   final _i5.H256 txId;
@@ -245,7 +302,10 @@ class TransactionScheduled extends Event {
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'TransactionScheduled': {
-          'who': who.toList(),
+          'from': from.toList(),
+          'to': to.toList(),
+          'interceptor': interceptor.toList(),
+          'amount': amount,
           'txId': txId.toList(),
           'executeAt': executeAt.toJson(),
         }
@@ -253,7 +313,10 @@ class TransactionScheduled extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(who);
+    size = size + const _i3.AccountId32Codec().sizeHint(from);
+    size = size + const _i3.AccountId32Codec().sizeHint(to);
+    size = size + const _i3.AccountId32Codec().sizeHint(interceptor);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + const _i5.H256Codec().sizeHint(txId);
     size = size + _i6.DispatchTime.codec.sizeHint(executeAt);
     return size;
@@ -265,7 +328,19 @@ class TransactionScheduled extends Event {
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
-      who,
+      from,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      to,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      interceptor,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      amount,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -286,9 +361,18 @@ class TransactionScheduled extends Event {
       ) ||
       other is TransactionScheduled &&
           _i9.listsEqual(
-            other.who,
-            who,
+            other.from,
+            from,
           ) &&
+          _i9.listsEqual(
+            other.to,
+            to,
+          ) &&
+          _i9.listsEqual(
+            other.interceptor,
+            interceptor,
+          ) &&
+          other.amount == amount &&
           _i9.listsEqual(
             other.txId,
             txId,
@@ -297,7 +381,10 @@ class TransactionScheduled extends Event {
 
   @override
   int get hashCode => Object.hash(
-        who,
+        from,
+        to,
+        interceptor,
+        amount,
         txId,
         executeAt,
       );

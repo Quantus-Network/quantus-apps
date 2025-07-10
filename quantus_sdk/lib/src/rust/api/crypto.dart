@@ -8,6 +8,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `to_account_id`
 
+void setDefaultSs58Prefix({required int prefix}) =>
+    RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
+
 /// Convert public key to accountId32 in ss58check format
 String toAccountId({required Keypair obj}) =>
     RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);

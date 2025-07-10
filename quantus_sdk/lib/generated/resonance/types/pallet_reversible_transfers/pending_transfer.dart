@@ -9,10 +9,11 @@ import '../sp_core/crypto/account_id32.dart' as _i2;
 
 class PendingTransfer {
   const PendingTransfer({
-    required this.who,
+    required this.from,
+    required this.to,
+    required this.interceptor,
     required this.call,
     required this.amount,
-    required this.count,
   });
 
   factory PendingTransfer.decode(_i1.Input input) {
@@ -20,16 +21,19 @@ class PendingTransfer {
   }
 
   /// AccountId
-  final _i2.AccountId32 who;
+  final _i2.AccountId32 from;
+
+  /// AccountId
+  final _i2.AccountId32 to;
+
+  /// AccountId
+  final _i2.AccountId32 interceptor;
 
   /// Call
   final _i3.Bounded call;
 
   /// Balance
   final BigInt amount;
-
-  /// u32
-  final int count;
 
   static const $PendingTransferCodec codec = $PendingTransferCodec();
 
@@ -38,10 +42,11 @@ class PendingTransfer {
   }
 
   Map<String, dynamic> toJson() => {
-        'who': who.toList(),
+        'from': from.toList(),
+        'to': to.toList(),
+        'interceptor': interceptor.toList(),
         'call': call.toJson(),
         'amount': amount,
-        'count': count,
       };
 
   @override
@@ -52,19 +57,27 @@ class PendingTransfer {
       ) ||
       other is PendingTransfer &&
           _i5.listsEqual(
-            other.who,
-            who,
+            other.from,
+            from,
+          ) &&
+          _i5.listsEqual(
+            other.to,
+            to,
+          ) &&
+          _i5.listsEqual(
+            other.interceptor,
+            interceptor,
           ) &&
           other.call == call &&
-          other.amount == amount &&
-          other.count == count;
+          other.amount == amount;
 
   @override
   int get hashCode => Object.hash(
-        who,
+        from,
+        to,
+        interceptor,
         call,
         amount,
-        count,
       );
 }
 
@@ -77,7 +90,15 @@ class $PendingTransferCodec with _i1.Codec<PendingTransfer> {
     _i1.Output output,
   ) {
     const _i1.U8ArrayCodec(32).encodeTo(
-      obj.who,
+      obj.from,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      obj.to,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      obj.interceptor,
       output,
     );
     _i3.Bounded.codec.encodeTo(
@@ -88,29 +109,27 @@ class $PendingTransferCodec with _i1.Codec<PendingTransfer> {
       obj.amount,
       output,
     );
-    _i1.U32Codec.codec.encodeTo(
-      obj.count,
-      output,
-    );
   }
 
   @override
   PendingTransfer decode(_i1.Input input) {
     return PendingTransfer(
-      who: const _i1.U8ArrayCodec(32).decode(input),
+      from: const _i1.U8ArrayCodec(32).decode(input),
+      to: const _i1.U8ArrayCodec(32).decode(input),
+      interceptor: const _i1.U8ArrayCodec(32).decode(input),
       call: _i3.Bounded.codec.decode(input),
       amount: _i1.U128Codec.codec.decode(input),
-      count: _i1.U32Codec.codec.decode(input),
     );
   }
 
   @override
   int sizeHint(PendingTransfer obj) {
     int size = 0;
-    size = size + const _i2.AccountId32Codec().sizeHint(obj.who);
+    size = size + const _i2.AccountId32Codec().sizeHint(obj.from);
+    size = size + const _i2.AccountId32Codec().sizeHint(obj.to);
+    size = size + const _i2.AccountId32Codec().sizeHint(obj.interceptor);
     size = size + _i3.Bounded.codec.sizeHint(obj.call);
     size = size + _i1.U128Codec.codec.sizeHint(obj.amount);
-    size = size + _i1.U32Codec.codec.sizeHint(obj.count);
     return size;
   }
 }

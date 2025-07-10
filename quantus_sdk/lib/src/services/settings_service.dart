@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:ss58/ss58.dart';
 
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
@@ -26,7 +27,16 @@ class SettingsService {
 
   Future<String?> getAccountId() async {
     await _ensureInitialized();
-    return _prefs.getString('account_id');
+    final accountId = _prefs.getString('account_id');
+    if (accountId != null && accountId.startsWith('5')) {
+      final address = Address.decode(accountId);
+      final newAddress = Address(prefix: 189, pubkey: address.pubkey);
+      await _prefs.setString('account_id', newAddress.encode());
+      print('Converting accountId to qz account ${newAddress.encode()}');
+      return newAddress.encode();
+    }
+
+    return accountId;
   }
 
   Future<void> clearAccountId() async {

@@ -6,7 +6,7 @@ import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
 import '../types/frame_support/pallet_id.dart' as _i5;
-import '../types/sp_arithmetic/per_things/permill.dart' as _i6;
+import '../types/sp_core/crypto/account_id32.dart' as _i6;
 
 class Queries {
   const Queries(this.__api);
@@ -43,7 +43,10 @@ class Constants {
   Constants();
 
   /// The base block reward given to miners
-  final BigInt blockReward = BigInt.from(1000000000000);
+  final BigInt minerBlockReward = BigInt.from(10000000000000);
+
+  /// The base block reward given to treasury
+  final BigInt treasuryBlockReward = BigInt.from(1000000000000);
 
   /// The treasury pallet ID
   final _i5.PalletId treasuryPalletId = const <int>[
@@ -57,6 +60,39 @@ class Constants {
     121,
   ];
 
-  /// The percentage of transaction fees that should go to the Treasury.
-  final _i6.Permill feesToTreasuryPermill = 100000;
+  /// Account ID used as the "from" account when creating transfer proofs for minted tokens
+  final _i6.AccountId32 mintingAccount = const <int>[
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+  ];
 }
