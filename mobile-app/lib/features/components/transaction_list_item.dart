@@ -189,7 +189,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
           return const _StatusDisplay(status: 'Cancelled');
       }
     }
-    return const _StatusDisplay(status: 'Completed');
+    return const SizedBox.shrink();
   }
 }
 
