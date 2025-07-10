@@ -149,7 +149,6 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Future<void> _fetchTransactionHistory() async {
-    print('fetchTransactionHistory: $_accountId');
     if (_accountId == null) return;
 
     setState(() {
