@@ -150,6 +150,7 @@ class SubstrateService {
 
       // Get the next nonce for the sender
       final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      print('nonceResult: ${nonceResult.result} ${senderWallet.ss58Address}');
       final nonce = int.parse(nonceResult.result.toString());
 
       // Create the call for fee estimation
@@ -197,17 +198,18 @@ class SubstrateService {
       // Parse the result to get the partialFee
       // The result structure is typically {'partialFee': '...'} for this RPC
       final partialFeeString = result.result['partialFee'] as String;
+      print('partialFeeString: $partialFeeString');
       final partialFee = BigInt.parse(partialFeeString);
 
       print('partialFee: $partialFee');
 
       return partialFee;
-    } catch (e) {
+    } catch (e, s) {
       // If a network error occurs here, update the connection status
       if (e.toString().contains('WebSocketChannelException') || e is SocketException || e is TimeoutException) {
         _connectionStatusController.add(ConnectionStatus.disconnected);
       }
-      print('Error estimating fee: $e');
+      print('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
   }
