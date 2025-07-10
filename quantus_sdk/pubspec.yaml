@@ -55,7 +55,6 @@ polkadart:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  test: # Version managed by melos.yaml
   flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter
