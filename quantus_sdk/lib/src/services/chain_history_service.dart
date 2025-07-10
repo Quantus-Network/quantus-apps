@@ -1,3 +1,5 @@
+import 'package:quantus_sdk/src/models/sorted_transactions.dart';
+
 import '../constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
@@ -144,6 +146,17 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
 }
   ''';
 
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required String accountId,
+    int limit = 10,
+    int offset = 0,
+  }) async {
+    final scheduled = await fetchScheduledTransfers(accountId: accountId);
+    final other = await _fetchOtherTransfers(accountId: accountId, limit: limit, offset: offset);
+
+    return SortedTransactionsList(reversibleTransfers: scheduled, otherTransfers: other.transfers);
+  }
+
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({required String accountId}) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
@@ -186,7 +199,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   }
 
   // Method to fetch transfers using http
-  Future<TransferResult> fetchAllTransfers({required String accountId, int limit = 10, int offset = 0}) async {
+  Future<TransferList> _fetchOtherTransfers({required String accountId, int limit = 10, int offset = 0}) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
 
@@ -222,7 +235,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       final List<dynamic>? events = data['events'];
 
       if (events == null || events.isEmpty) {
-        return TransferResult(combinedTransfers: [], hasMore: false, nextOffset: offset);
+        return TransferList(transfers: [], hasMore: false, nextOffset: offset);
       }
 
       final List<TransactionEvent> transactions = [];
@@ -243,10 +256,10 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       final bool hasMore = events.length == limit;
       final int nextOffset = offset + events.length;
 
-      return TransferResult(combinedTransfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
+      return TransferList(transfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
     } catch (e, stackTrace) {
-      print('Error fetching transfers via http: $e');
-      print('Stack trace: $stackTrace');
+      print('Error fetching transfers: $e');
+      print(stackTrace);
       rethrow;
     }
   }

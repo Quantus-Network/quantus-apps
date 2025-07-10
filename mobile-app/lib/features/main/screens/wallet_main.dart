@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/sorted_transactions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
@@ -34,8 +35,7 @@ class _WalletMainState extends State<WalletMain> {
 
   Future<WalletData?>? _walletDataFuture;
   String? _accountId;
-  List<ReversibleTransferEvent> _scheduledTransfers = [];
-  List<TransactionEvent> _allTransfers = [];
+  SortedTransactionsList? _transactions;
   bool _isHistoryLoading = true;
   String? _historyError;
 
@@ -128,16 +128,16 @@ class _WalletMainState extends State<WalletMain> {
     });
 
     try {
-      final result = await _chainHistoryService.fetchAllTransfers(
+      final result = await _chainHistoryService.fetchAllTransactionTypes(
         accountId: _accountId!,
         limit: _transactionsPerPage,
         offset: _offset,
       );
 
       setState(() {
-        _allTransfers.addAll(result.combinedTransfers);
-        _hasMore = result.hasMore;
-        _offset = result.nextOffset;
+        _transactions?.otherTransfers.addAll(result.otherTransfers);
+        _hasMore = result.otherTransfers.length == _transactionsPerPage;
+        _offset += result.otherTransfers.length;
         _isLoadingMore = false;
       });
     } catch (e) {
@@ -156,24 +156,15 @@ class _WalletMainState extends State<WalletMain> {
       _historyError = null;
       _offset = 0;
       _hasMore = true;
-      _scheduledTransfers = [];
-      _allTransfers = [];
+      _transactions = null;
     });
 
     try {
-      // Fetch both lists in parallel
-      final results = await Future.wait([
-        _chainHistoryService.fetchScheduledTransfers(accountId: _accountId!),
-        _chainHistoryService.fetchAllTransfers(accountId: _accountId!, limit: 5, offset: 0),
-      ]);
-
-      final scheduled = results[0] as List<ReversibleTransferEvent>;
-      final allTransfers = results[1] as TransferResult;
+      final result = await _chainHistoryService.fetchAllTransactionTypes(accountId: _accountId!, limit: 5, offset: 0);
 
       setState(() {
-        _scheduledTransfers = scheduled;
-        _allTransfers = allTransfers.combinedTransfers;
-        _hasMore = allTransfers.hasMore;
+        _transactions = result;
+        _hasMore = result.otherTransfers.length == 5;
         _isHistoryLoading = false;
       });
     } catch (e) {
@@ -293,7 +284,7 @@ class _WalletMainState extends State<WalletMain> {
         const Padding(
           padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
           child: Text(
-            'Reversible Transactions',
+            'Recent Transactions',
             style: TextStyle(
               color: Color(0xFFE6E6E6),
               fontSize: 14,
@@ -302,7 +293,10 @@ class _WalletMainState extends State<WalletMain> {
             ),
           ),
         ),
-        RecentTransactionsList(transactions: _scheduledTransfers, currentWalletAddress: _accountId!),
+        RecentTransactionsList(
+          transactions: _transactions?.combined.take(5).toList() ?? [],
+          currentWalletAddress: _accountId!,
+        ),
         if (true)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, right: 12.0),
