@@ -120,7 +120,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader('Reversible\nTransaction', 'Cancel or keep your send'),
+        _buildHeader('assets/hourglass.svg', 'Reversible\nTransaction', 'Cancel or keep your send', true),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
         Padding(
@@ -144,6 +144,31 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     );
   }
 
+  Widget _buildCancelledView() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildHeader('assets/stop_icon.svg', 'Transaction\nCancelled', '', false),
+        const SizedBox(height: 20),
+        const Divider(color: Colors.white, thickness: 1),
+
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 12.0), child: _buildTransactionDetails()),
+        const SizedBox(height: 22),
+        const Divider(color: Colors.white, thickness: 1),
+        const SizedBox(height: 40),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+          child: Center(
+            child: _buildButton('Done', const Color(0xFF5FE49E), Colors.black, () {
+              Navigator.of(context).pop();
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInitialView() {
     return _buildBaseBlockView(_buildInitialButtons(), 18);
   }
@@ -152,11 +177,11 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return _buildBaseBlockView(_buildConfirmCancelButtons(), 6);
   }
 
-  Widget _buildHeader(String title, String subtitle) {
+  Widget _buildHeader(String iconName, String title, String subtitle, bool titleIsGreen) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SvgPicture.asset('assets/hourglass.svg', width: 20, height: 24),
+        SvgPicture.asset(iconName, width: 34, height: 34),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -164,22 +189,23 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFF16CECE),
+                style: TextStyle(
+                  color: Color(titleIsGreen ? 0xFF16CECE : 0xFFD9D9D9),
                   fontSize: 18,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: Color(0xFFD9D9D9),
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+              if (subtitle.isNotEmpty)
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFFD9D9D9),
+                    fontSize: 12,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -427,28 +453,5 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         _isCancelling = false;
       });
     }
-  }
-
-  Widget _buildCancelledView() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader('Transaction Cancelled', ''),
-        const SizedBox(height: 40),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 18.0), child: _buildTransactionDetails()),
-        const SizedBox(height: 20),
-        const Divider(color: Colors.white24, thickness: 1),
-        const SizedBox(height: 40),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0),
-          child: Center(
-            child: _buildButton('Done', const Color(0xFF5FE49E), Colors.black, () {
-              Navigator.of(context).pop();
-            }),
-          ),
-        ),
-      ],
-    );
   }
 }
