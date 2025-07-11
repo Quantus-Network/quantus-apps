@@ -103,6 +103,9 @@ class _TransactionListItemState extends State<_TransactionListItem> {
   bool get isReversibleScheduled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
+  bool get isReversibleCancelled =>
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.CANCELLED;
 
   @override
   void initState() {
@@ -200,7 +203,10 @@ class _TransactionListItemState extends State<_TransactionListItem> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
+                if (isReversibleCancelled)
+                  SvgPicture.asset('assets/stop_icon.svg', width: 21, height: 17)
+                else
+                  Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
@@ -211,7 +217,11 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: isSent ? 'Sent' : 'Receive',
+                              text: isReversibleCancelled
+                                  ? 'Cancelled'
+                                  : isSent
+                                  ? 'Sent'
+                                  : 'Receive',
                               style: textStyle.copyWith(
                                 color: const Color(0xFF16CECE),
                                 fontSize: 14,
@@ -220,7 +230,11 @@ class _TransactionListItemState extends State<_TransactionListItem> {
                             ),
                             TextSpan(
                               text: ' ${_formatAmount(widget.transaction.amount)}',
-                              style: textStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
+                              style: textStyle.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: isReversibleCancelled ? const Color(0xFFD9D9D9) : textStyle.color,
+                              ),
                             ),
                           ],
                         ),
@@ -258,7 +272,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
         case ReversibleTransferStatus.EXECUTED:
           return const SizedBox.shrink();
         case ReversibleTransferStatus.CANCELLED:
-          return const _StatusDisplay(status: 'Cancelled');
+          return const SizedBox.shrink();
       }
     }
     return const SizedBox.shrink();
