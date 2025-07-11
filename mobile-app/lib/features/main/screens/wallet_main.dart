@@ -6,7 +6,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/models/sorted_transactions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';

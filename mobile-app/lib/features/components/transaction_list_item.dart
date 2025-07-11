@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
@@ -101,6 +103,9 @@ class _TransactionListItemState extends State<_TransactionListItem> {
   bool get isReversibleScheduled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
+  bool get isReversibleCancelled =>
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.CANCELLED;
 
   @override
   void initState() {
@@ -162,57 +167,92 @@ class _TransactionListItemState extends State<_TransactionListItem> {
     return '$prefix | ${_formatTimestamp(widget.transaction.timestamp)}';
   }
 
+  void _showActionSheet(BuildContext context) {
+    Widget sheet;
+    if (isReversibleScheduled && isSent) {
+      sheet = TransactionActionSheet(
+        transaction: widget.transaction as ReversibleTransferEvent,
+        currentWalletAddress: widget.currentWalletAddress,
+      );
+    } else {
+      sheet = TransactionDetailsActionSheet(transaction: widget.transaction);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SizedBox(height: isReversibleScheduled && isSent ? 638 : 400, child: sheet),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSent = widget.transaction.from == widget.currentWalletAddress;
     const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: isSent ? 'Sent' : 'Receive',
-                            style: textStyle.copyWith(
-                              color: const Color(0xFF16CECE),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
+    return GestureDetector(
+      onTap: () {
+        _showActionSheet(context);
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (isReversibleCancelled)
+                  SvgPicture.asset('assets/stop_icon.svg', width: 21, height: 17)
+                else
+                  Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: isReversibleCancelled
+                                  ? 'Cancelled'
+                                  : isSent
+                                  ? 'Sent'
+                                  : 'Receive',
+                              style: textStyle.copyWith(
+                                color: const Color(0xFF16CECE),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: ' ${_formatAmount(widget.transaction.amount)}',
-                            style: textStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
-                          ),
-                        ],
+                            TextSpan(
+                              text: ' ${_formatAmount(widget.transaction.amount)}',
+                              style: textStyle.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: isReversibleCancelled ? const Color(0xFFD9D9D9) : textStyle.color,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _getSubtitle(widget.transaction),
-                      style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        _getSubtitle(widget.transaction),
+                        style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        _buildStatusOrTimer(),
-      ],
+          _buildStatusOrTimer(),
+        ],
+      ),
     );
   }
 
@@ -232,7 +272,7 @@ class _TransactionListItemState extends State<_TransactionListItem> {
         case ReversibleTransferStatus.EXECUTED:
           return const SizedBox.shrink();
         case ReversibleTransferStatus.CANCELLED:
-          return const _StatusDisplay(status: 'Cancelled');
+          return const SizedBox.shrink();
       }
     }
     return const SizedBox.shrink();
