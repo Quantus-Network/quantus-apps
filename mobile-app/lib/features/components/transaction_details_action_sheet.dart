@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/services/human_readable_checksum_service.dart';
 
 class TransactionDetailsActionSheet extends StatelessWidget {
   final TransactionEvent transaction;
@@ -16,7 +17,7 @@ class TransactionDetailsActionSheet extends StatelessWidget {
     }
 
     String formatAddress(String address) {
-      return AddressFormattingService.formatAddress(address, prefix: 10, ellipses: '...', postFix: 10);
+      return address;
     }
 
     String formatTimestamp(DateTime timestamp) {
@@ -34,45 +35,87 @@ class TransactionDetailsActionSheet extends StatelessWidget {
             BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Transaction Details',
-                  style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 18,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Transaction Details',
+                    style: TextStyle(
+                      color: Color(0xFF16CECE),
+                      fontSize: 18,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildDetailRow('Amount:', formatAmount(transaction.amount)),
+              const SizedBox(height: 12),
+              _buildDetailRow('From:', formatAddress(transaction.from)),
+              const SizedBox(height: 12),
+              FutureBuilder<String>(
+                future: HumanReadableChecksumService().getHumanReadableName(transaction.to),
+                builder: (context, snapshot) {
+                  String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
+                  if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'To:',
+                        style: TextStyle(
+                          color: Color(0xFFD9D9D9),
+                          fontSize: 16,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        checkPhrase,
+                        style: const TextStyle(
+                          color: Color(0xFF16CECE),
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        formatAddress(transaction.to),
+                        style: const TextStyle(
+                          color: Color(0xFFD9D9D9),
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildDetailRow('Date:', formatTimestamp(transaction.timestamp)),
+              if (transaction.extrinsicHash != null) ...[
+                const SizedBox(height: 12),
+                _buildDetailRow('Hash:', formatAddress(transaction.extrinsicHash!)),
               ],
-            ),
-            const SizedBox(height: 20),
-            _buildDetailRow('Amount:', formatAmount(transaction.amount)),
-            const SizedBox(height: 12),
-            _buildDetailRow('From:', formatAddress(transaction.from)),
-            const SizedBox(height: 12),
-            _buildDetailRow('To:', formatAddress(transaction.to)),
-            const SizedBox(height: 12),
-            _buildDetailRow('Date:', formatTimestamp(transaction.timestamp)),
-            if (transaction.extrinsicHash != null) ...[
-              const SizedBox(height: 12),
-              _buildDetailRow('Hash:', formatAddress(transaction.extrinsicHash!)),
+              if (transaction is ReversibleTransferEvent) ...[
+                const SizedBox(height: 12),
+                _buildDetailRow('Status:', (transaction as ReversibleTransferEvent).status.name),
+              ],
             ],
-            if (transaction is ReversibleTransferEvent) ...[
-              const SizedBox(height: 12),
-              _buildDetailRow('Status:', (transaction as ReversibleTransferEvent).status.name),
-            ],
-          ],
+          ),
         ),
       ),
     );
