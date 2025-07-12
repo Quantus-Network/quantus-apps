@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/main/services/wallet_state_manager.dart';
+import 'dart:isolate';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -63,18 +64,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     });
 
     final manager = Provider.of<WalletStateManager>(context, listen: false);
-    manager.addPendingSend(
-      amount: widget.amount,
-      to: widget.recipientAddress,
-      isReversible: widget.reversibleTimeSeconds > 0,
-    );
-
-    compute(_performSend, {
-      'senderSeed': await _settingsService.getMnemonic(),
-      'recipientAddress': widget.recipientAddress,
-      'amount': widget.amount,
-      'reversibleTimeSeconds': widget.reversibleTimeSeconds,
-    }).then((success) {
+    try {
+      final success = await manager.performSend(
+        amount: widget.amount,
+        recipientAddress: widget.recipientAddress,
+        reversibleTimeSeconds: widget.reversibleTimeSeconds,
+      );
       if (mounted) {
         setState(() {
           _currentState = success ? SendOverlayState.complete : SendOverlayState.confirm;
@@ -82,30 +77,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           if (!success) _errorMessage = 'Transfer failed';
         });
       }
-    });
-  }
-
-  static Future<bool> _performSend(Map<String, dynamic> params) async {
-    final senderSeed = params['senderSeed'] as String;
-    final recipientAddress = params['recipientAddress'] as String;
-    final amount = params['amount'] as BigInt;
-    final reversibleTimeSeconds = params['reversibleTimeSeconds'] as int;
-
-    try {
-      if (reversibleTimeSeconds <= 0) {
-        await BalancesService().balanceTransfer(senderSeed, recipientAddress, amount);
-      } else {
-        await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-          senderSeed: senderSeed,
-          recipientAddress: recipientAddress,
-          amount: amount,
-          delaySeconds: reversibleTimeSeconds,
-        );
-      }
-      return true;
     } catch (e) {
-      debugPrint('Send failed in background: $e');
-      return false;
+      if (mounted) {
+        setState(() {
+          _currentState = SendOverlayState.confirm;
+          _isSending = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 

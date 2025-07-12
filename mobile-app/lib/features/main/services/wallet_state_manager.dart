@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'dart:isolate'; // For isolate spawning
 
 enum TxState { sent, includedInBlock, includedInHistory, failed }
 
@@ -75,9 +76,10 @@ class WalletStateManager extends ChangeNotifier {
   }
 
   Future<void> addPendingSend({required BigInt amount, required String to, bool isReversible = false}) async {
+    final String tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
     final pendingEvent = isReversible
         ? ReversibleTransferEvent(
-            id: 'pending_${Random().nextInt(100000)}',
+            id: tempId,
             from: 'currentWallet', // Replace with actual
             to: to,
             amount: amount,
@@ -89,7 +91,7 @@ class WalletStateManager extends ChangeNotifier {
             blockNumber: 0,
           )
         : TransferEvent(
-            id: 'pending_${Random().nextInt(100000)}',
+            id: tempId,
             from: 'currentWallet',
             to: to,
             amount: amount,
@@ -103,7 +105,7 @@ class WalletStateManager extends ChangeNotifier {
     notifyListeners();
 
     // Start background monitoring (simulate for now)
-    compute(_monitorTx, pendingEvent.id).then((confirmedEvent) {
+    compute(_monitorTx, {'txId': pendingEvent.id}).then((confirmedEvent) {
       final index = _transactions.indexWhere((mt) => mt.event.id == pendingEvent.id);
       if (index != -1) {
         _transactions[index].event = confirmedEvent ?? pendingEvent;
@@ -113,11 +115,25 @@ class WalletStateManager extends ChangeNotifier {
     });
   }
 
-  static Future<TransactionEvent?> _monitorTx(String txId) async {
+  static Future<TransactionEvent?> _monitorTx(Map<String, dynamic> params) async {
+    final String txId = params['txId'] ?? params['pendingEvent']?.id ?? '';
+    if (txId.isEmpty) return null;
     // Simulate background work: poll Subsquid/chain for confirmation
     await Future.delayed(const Duration(seconds: 10)); // Replace with real polling
     // For demo, return a confirmed event or null on failure
     return null; // Simulate failure; implement real logic
+  }
+
+  Future<void> _monitorPendingTx(TransactionEvent pendingEvent) async {
+    final accountId = await _settingsService.getAccountId();
+    if (accountId == null) {
+      debugPrint('Account ID not available for monitoring pending transaction.');
+      return;
+    }
+    await compute<Map<String, dynamic>, TransactionEvent?>(_monitorTx, {
+      'pendingEvent': pendingEvent,
+      'accountId': accountId,
+    });
   }
 
   static Future<BigInt> _fetchBalance(String accountId) async {
@@ -189,5 +205,78 @@ class WalletStateManager extends ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<bool> performSend({
+    required BigInt amount,
+    required String recipientAddress,
+    required int reversibleTimeSeconds,
+  }) async {
+    final senderSeed = await _settingsService.getMnemonic();
+    if (senderSeed == null) {
+      throw Exception('No sender seed available');
+    }
+
+    // Optimistic add
+    addPendingSend(amount: amount, to: recipientAddress, isReversible: reversibleTimeSeconds > 0);
+
+    // Spawn isolate for actual send
+    final receivePort = ReceivePort();
+    final isolate = await Isolate.spawn(_sendIsolateEntry, [
+      receivePort.sendPort,
+      senderSeed,
+      recipientAddress,
+      amount,
+      reversibleTimeSeconds,
+    ]);
+
+    final completer = Completer<bool>();
+    receivePort.listen((message) {
+      if (message is bool) {
+        final index = _transactions.indexWhere((mt) => mt.event.id.startsWith('pending_'));
+        if (index != -1) {
+          if (message) {
+            // Start monitoring for on-chain confirmation
+            _monitorPendingTx(_transactions[index].event);
+          } else {
+            _transactions[index].state = TxState.failed;
+          }
+          notifyListeners();
+        }
+        completer.complete(message);
+        isolate.kill();
+        receivePort.close();
+      }
+    });
+
+    return completer.future;
+  }
+
+  static void _sendIsolateEntry(List<dynamic> args) async {
+    final SendPort sendPort = args[0];
+    final String senderSeed = args[1];
+    final String recipientAddress = args[2];
+    final BigInt amount = args[3];
+    final int reversibleTimeSeconds = args[4];
+
+    await QuantusSdk.init();
+    await SubstrateService().initialize();
+
+    try {
+      if (reversibleTimeSeconds <= 0) {
+        await BalancesService().balanceTransfer(senderSeed, recipientAddress, amount);
+      } else {
+        await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+          senderSeed: senderSeed,
+          recipientAddress: recipientAddress,
+          amount: amount,
+          delaySeconds: reversibleTimeSeconds,
+        );
+      }
+      sendPort.send(true);
+    } catch (e) {
+      debugPrint('Send failed in background: $e');
+      sendPort.send(false);
+    }
   }
 }
