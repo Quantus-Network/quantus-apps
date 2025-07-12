@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/services/human_readable_checksum_service.dart';
 
 class TransactionDetailsActionSheet extends StatelessWidget {
   final TransactionEvent transaction;

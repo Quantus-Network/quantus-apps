@@ -1,9 +1,13 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:provider/provider.dart';
+import 'package:resonance_network_wallet/features/main/services/wallet_state_manager.dart';
+import 'dart:isolate';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -59,46 +63,26 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       _errorMessage = null;
     });
 
+    final manager = Provider.of<WalletStateManager>(context, listen: false);
     try {
-      final senderSeed = await _settingsService.getMnemonic();
-
-      if (senderSeed == null || senderSeed.isEmpty) {
-        throw Exception('Sender mnemonic not found. Please re-import your wallet.');
-      }
-
-      debugPrint('Attempting balance transfer...');
-      debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
-      debugPrint('  Recipient: ${widget.recipientAddress}');
-      debugPrint('  Amount (BigInt): ${widget.amount}');
-      debugPrint('  Fee: ${widget.fee}');
-      debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
-
-      if (widget.reversibleTimeSeconds <= 0) {
-        await BalancesService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
-      } else {
-        await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-          senderSeed: senderSeed,
-          recipientAddress: widget.recipientAddress,
-          amount: widget.amount,
-          delaySeconds: widget.reversibleTimeSeconds,
-        );
-      }
-
-      debugPrint('Balance transfer successful.');
-
+      final success = await manager.performSend(
+        amount: widget.amount,
+        recipientAddress: widget.recipientAddress,
+        reversibleTimeSeconds: widget.reversibleTimeSeconds,
+      );
       if (mounted) {
         setState(() {
-          _currentState = SendOverlayState.complete;
+          _currentState = success ? SendOverlayState.complete : SendOverlayState.confirm;
           _isSending = false;
+          if (!success) _errorMessage = 'Transfer failed';
         });
       }
     } catch (e) {
-      debugPrint('Balance transfer failed: $e');
       if (mounted) {
         setState(() {
           _currentState = SendOverlayState.confirm;
-          _errorMessage = 'Transfer failed: ${e.toString()}';
           _isSending = false;
+          _errorMessage = e.toString();
         });
       }
     }
