@@ -13,8 +13,7 @@ class PendingTransactionEvent extends TransactionEvent {
   final bool isReversible;
   String? txId; // Nullable, set later for reversible
   final ReversibleTransferStatus? status; // Optional, for reversible
-  final DateTime?
-  scheduledAt; // Optional, null for non-reversible (reversible duration inferred as scheduledAt - timestamp)
+  DateTime? scheduledAt; // Optional, null for non-reversible (reversible duration inferred as scheduledAt - timestamp)
   BigInt? fee; // Optional, for transfers
   String? error;
 

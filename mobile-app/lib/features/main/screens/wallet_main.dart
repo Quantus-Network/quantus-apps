@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'dart:io';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/models/wallet_data.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 class WalletMain extends StatefulWidget {
@@ -26,11 +28,9 @@ class _WalletMainState extends State<WalletMain> {
 
   late final walletStateManager = WalletStateManager(_chainHistoryService, _settingsService, _substrateService);
 
-  Future<void>? _walletDataFuture;
   String? get _accountId => walletStateManager.walletData.data?.accountId;
   bool get _isHistoryLoading => walletStateManager.txData.isLoading;
   String? get _historyError => walletStateManager.txData.error;
-  SortedTransactionsList? get _transactions => walletStateManager.txData.data;
 
   // Pagination state
   int _offset = 0;
@@ -42,10 +42,10 @@ class _WalletMainState extends State<WalletMain> {
   @override
   void initState() {
     super.initState();
-    _loadWalletDataAndSetFuture();
+    walletStateManager.load();
     walletStateManager.addListener(() {
       setState(() {});
-    }); // Added to react to notifications
+    });
   }
 
   @override
@@ -53,24 +53,8 @@ class _WalletMainState extends State<WalletMain> {
     walletStateManager.removeListener(() {
       setState(() {});
     });
+    _scrollController.dispose();
     super.dispose();
-  }
-
-  // TODO: we need to have scrolling
-  // void _onScroll() {
-  //   if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-  //     _loadMoreTransactions();
-  //   }
-  // }
-
-  void _loadWalletDataAndSetFuture() {
-    setState(() {
-      _walletDataFuture = _loadWalletDataInternal();
-    });
-  }
-
-  Future<void> _loadWalletDataInternal() async {
-    walletStateManager.load();
   }
 
   Future<void> _loadMoreTransactions() async {
@@ -95,9 +79,9 @@ class _WalletMainState extends State<WalletMain> {
     required VoidCallback onPressed,
     bool disabled = false,
   }) {
-    final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
-    final bgColor = Colors.black.useOpacity(166 / 255.0);
-    final effectiveBorderColor = disabled ? borderColor.useOpacity(0.5) : borderColor;
+    final color = disabled ? Colors.white.withOpacity(0.5) : Colors.white;
+    final bgColor = Colors.black.withOpacity(166 / 255.0);
+    final effectiveBorderColor = disabled ? borderColor.withOpacity(0.5) : borderColor;
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
@@ -201,7 +185,7 @@ class _WalletMainState extends State<WalletMain> {
           ),
         ),
         RecentTransactionsList(
-          transactions: _transactions?.combined.take(5).toList() ?? [],
+          transactions: walletStateManager.combinedTransactions.take(5).toList(),
           currentWalletAddress: _accountId!,
         ),
         if (true)
@@ -219,7 +203,7 @@ class _WalletMainState extends State<WalletMain> {
                 child: Text(
                   'Transaction History →',
                   style: TextStyle(
-                    color: Colors.white.useOpacity(0.80),
+                    color: Colors.white.withOpacity(0.80),
                     fontSize: 12,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w500,
@@ -252,6 +236,77 @@ class _WalletMainState extends State<WalletMain> {
 
   @override
   Widget build(BuildContext context) {
+    final balanceLoader = walletStateManager.walletData;
+
+    if (balanceLoader.isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0E0E0E),
+        body: const Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (balanceLoader.hasError || !balanceLoader.hasData) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0E0E0E),
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Failed to Connect',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Could not load wallet data. Please check your network connection and try again.',
+                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0, top: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildFullWidthActionButton(
+                    label: 'Retry',
+                    onTap: () => walletStateManager.load(),
+                    gradient: const LinearGradient(
+                      begin: Alignment(0.50, 0.00),
+                      end: Alignment(0.50, 1.00),
+                      colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  _buildFullWidthActionButton(
+                    label: 'Logout',
+                    onTap: _logout,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    textColor: Colors.white.withOpacity(0.8),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final walletData = balanceLoader.data!;
+    final displayAddress = _formatAddress(walletData.accountId);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -265,225 +320,152 @@ class _WalletMainState extends State<WalletMain> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: FutureBuilder<void>(
-              future: _walletDataFuture,
-              builder: (context, snapshot) {
-                final balanceLoader = walletStateManager.walletData;
-                if (balanceLoader.isLoading) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.white));
-                }
-                if (balanceLoader.hasError || !balanceLoader.hasData) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline, color: Colors.red, size: 50),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  'Failed to Connect',
-                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Could not load wallet data. Please check your network connection and try again.',
-                                  style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0, top: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                walletStateManager.load();
+              },
+              color: const Color(0xFF0CE6ED),
+              backgroundColor: Colors.black,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildFullWidthActionButton(
-                              label: 'Retry',
-                              onTap: _loadWalletDataAndSetFuture,
-                              gradient: const LinearGradient(
-                                begin: Alignment(0.50, 0.00),
-                                end: Alignment(0.50, 1.00),
-                                colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            _buildFullWidthActionButton(
-                              label: 'Logout',
-                              onTap: _logout,
-                              backgroundColor: Colors.white.useOpacity(0.2),
-                              textColor: Colors.white.useOpacity(0.8),
+                            SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
+                            IconButton(
+                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                              onPressed: () {
+                                if (_accountId != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  );
-                }
-
-                final walletData = balanceLoader.data!;
-                final displayAddress = _formatAddress(walletData.accountId);
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    _loadWalletDataAndSetFuture();
-                    await _walletDataFuture;
-                  },
-                  color: const Color(0xFF0CE6ED),
-                  backgroundColor: Colors.black,
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Column(
+                        const SizedBox(height: 40),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
-                                IconButton(
-                                  icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
-                                  onPressed: () {
-                                    if (_accountId != null) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                            InkWell(
+                              onTap: () {
+                                if (_accountId != null) {
+                                  Clipboard.setData(ClipboardData(text: _accountId!));
+                                  showTopSnackBar(context, title: 'Copied!', message: 'Account ID copied to clipboard');
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(5),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image.asset('assets/active_dot.png', width: 20, height: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                        decoration: ShapeDecoration(
+                                          color: Colors.black.withOpacity(0.5),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 40),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                InkWell(
-                                  onTap: () {
-                                    if (_accountId != null) {
-                                      Clipboard.setData(ClipboardData(text: _accountId!));
-                                      showTopSnackBar(
-                                        context,
-                                        title: 'Copied!',
-                                        message: 'Account ID copied to clipboard',
-                                      );
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Image.asset('assets/active_dot.png', width: 20, height: 20),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                            decoration: ShapeDecoration(
-                                              color: Colors.black.useOpacity(0.5),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            ),
-                                            child: Text(
-                                              displayAddress,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontFamily: 'Fira Code',
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                            ),
+                                        child: Text(
+                                          displayAddress,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontFamily: 'Fira Code',
+                                            fontWeight: FontWeight.w400,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        const Icon(Icons.expand_more, color: Colors.white70, size: 12),
-                                      ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: _formattingService.formatBalance(walletStateManager.estimatedBalance),
+                                    style: const TextStyle(
+                                      color: Color(0xFFE6E6E6),
+                                      fontSize: 40,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 7),
-                                Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: _formattingService.formatBalance(walletData.balance),
-                                        style: const TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 40,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const TextSpan(
-                                        text: ' ${AppConstants.tokenSymbol}',
-                                        style: TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 20,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+                                  const TextSpan(
+                                    text: ' ${AppConstants.tokenSymbol}',
+                                    style: TextStyle(
+                                      color: Color(0xFFE6E6E6),
+                                      fontSize: 20,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 30),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
-                                  label: 'SEND',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/send');
-                                  },
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
-                                  label: 'RECEIVE',
-                                  borderColor: const Color(0xFFB258F1),
-                                  onPressed: () {
-                                    showReceiveSheet(context);
-                                  },
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
-                                  label: 'SWAP',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {},
-                                  disabled: true,
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
-                                  label: 'BRIDGE',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {},
-                                  disabled: true,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 30),
                           ],
                         ),
-                      ),
-                      SliverToBoxAdapter(child: _buildHistorySection()),
-                    ],
+                        const SizedBox(height: 30),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
+                              label: 'SEND',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/send');
+                              },
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                              label: 'RECEIVE',
+                              borderColor: const Color(0xFFB258F1),
+                              onPressed: () {
+                                showReceiveSheet(context);
+                              },
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
+                              label: 'SWAP',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {},
+                              disabled: true,
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
+                              label: 'BRIDGE',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {},
+                              disabled: true,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
-                );
-              },
+                  SliverToBoxAdapter(child: _buildHistorySection()),
+                ],
+              ),
             ),
           ),
         ),
