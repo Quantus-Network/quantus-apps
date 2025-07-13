@@ -7,8 +7,8 @@ abstract class TransactionEvent {
   final String to;
   final BigInt amount;
   final DateTime timestamp;
-  final String? extrinsicHash;
-  final int blockNumber;
+  String? extrinsicHash;
+  int blockNumber;
 
   TransactionEvent({
     required this.id,
