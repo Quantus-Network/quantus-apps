@@ -10,14 +10,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-
-class WalletData {
-  final String accountId;
-  final String walletName;
-  final BigInt balance;
-
-  WalletData({required this.accountId, required this.walletName, required this.balance});
-}
+import 'package:resonance_network_wallet/models/wallet_data.dart';
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
@@ -32,29 +26,35 @@ class _WalletMainState extends State<WalletMain> {
   final SettingsService _settingsService = SettingsService();
   final ChainHistoryService _chainHistoryService = ChainHistoryService();
 
-  Future<WalletData?>? _walletDataFuture;
-  String? _accountId;
-  SortedTransactionsList? _transactions;
-  bool _isHistoryLoading = true;
-  String? _historyError;
+  late final walletStateManager = WalletStateManager(_chainHistoryService, _settingsService, _substrateService);
+
+  Future<void>? _walletDataFuture;
+  String? get _accountId => walletStateManager.walletData.data?.accountId;
+  bool get _isHistoryLoading => walletStateManager.txData.isLoading;
+  String? get _historyError => walletStateManager.txData.error;
+  SortedTransactionsList? get _transactions => walletStateManager.txData.data;
 
   // Pagination state
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  static const int _transactionsPerPage = 10;
+  static const int _transactionsPerPage = 20;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadWalletDataAndSetFuture();
-    // _scrollController.addListener(_onScroll);
+    walletStateManager.addListener(() {
+      setState(() {});
+    }); // Added to react to notifications
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    walletStateManager.removeListener(() {
+      setState(() {});
+    });
     super.dispose();
   }
 
@@ -71,108 +71,18 @@ class _WalletMainState extends State<WalletMain> {
     });
   }
 
-  Future<WalletData?> _loadWalletDataInternal() async {
-    String? accountId;
-    BigInt? balance;
-    const Duration networkTimeout = Duration(seconds: 15);
-
-    try {
-      accountId = await _settingsService.getAccountId();
-
-      if (accountId == null || accountId.isEmpty) {
-        throw Exception('Account ID not found');
-      }
-
-      _accountId = accountId;
-
-      print('Attempting initial balance query for $accountId...');
-      balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-      print('Initial balance query successful.');
-
-      // Fetch transaction history after successful wallet data load
-      await _fetchTransactionHistory();
-    } catch (e) {
-      print('Initial load/query failed: $e');
-
-      bool isConnectionError =
-          e is SocketException ||
-          e is TimeoutException ||
-          e.toString().contains('Connection refused') ||
-          e.toString().contains('WebSocket');
-
-      if (isConnectionError && accountId != null) {
-        print('Connection error detected. Attempting reconnect and retry...');
-        try {
-          await _substrateService.reconnect();
-          balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-          print('Balance query successful after reconnect.');
-        } catch (retryError) {
-          print('Retry failed after reconnect: $retryError');
-          throw Exception('Failed to load wallet data after retry: $retryError');
-        }
-      } else {
-        print('Error was not connection-related or accountId is null. Rethrowing.');
-        throw Exception('Failed to load wallet data: $e');
-      }
-    }
-
-    return WalletData(accountId: accountId, walletName: '', balance: balance);
+  Future<void> _loadWalletDataInternal() async {
+    walletStateManager.load();
   }
 
   Future<void> _loadMoreTransactions() async {
-    if (!_hasMore || _isLoadingMore || _isHistoryLoading) return;
+    if (!_hasMore || _isLoadingMore || walletStateManager.txData.isLoading) return;
 
     setState(() {
       _isLoadingMore = true;
     });
-
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(
-        accountId: _accountId!,
-        limit: _transactionsPerPage,
-        offset: _offset,
-      );
-
-      setState(() {
-        _transactions?.otherTransfers.addAll(result.otherTransfers);
-        _hasMore = result.otherTransfers.length == _transactionsPerPage;
-        _offset += result.otherTransfers.length;
-        _isLoadingMore = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingMore = false;
-        _historyError = 'Failed to load more transactions.';
-      });
-    }
-  }
-
-  Future<void> _fetchTransactionHistory() async {
-    if (_accountId == null) return;
-
-    setState(() {
-      _isHistoryLoading = true;
-      _historyError = null;
-      _offset = 0;
-      _hasMore = true;
-      _transactions = null;
-    });
-
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(accountId: _accountId!, limit: 5, offset: 0);
-
-      setState(() {
-        _transactions = result;
-        _hasMore = result.otherTransfers.length == 5;
-        _isHistoryLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching transaction history: $e');
-      setState(() {
-        _historyError = 'Failed to load transaction history.';
-        _isHistoryLoading = false;
-      });
-    }
+    walletStateManager.loadMoreTransactions(accountId: _accountId!, limit: _transactionsPerPage, offset: _offset);
+    print("TBD - implement this");
   }
 
   // Helper to format the address (now just returns the full address)
@@ -270,7 +180,7 @@ class _WalletMainState extends State<WalletMain> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
+              TextButton(onPressed: walletStateManager.txData.load, child: const Text('Retry')),
             ],
           ),
         ),
@@ -305,7 +215,7 @@ class _WalletMainState extends State<WalletMain> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
+                    MaterialPageRoute(builder: (context) => TransactionsScreen(manager: walletStateManager)),
                   );
                 },
                 child: Text(
@@ -357,13 +267,14 @@ class _WalletMainState extends State<WalletMain> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: FutureBuilder<WalletData?>(
+            child: FutureBuilder<void>(
               future: _walletDataFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                final balanceLoader = walletStateManager.walletData;
+                if (balanceLoader.isLoading) {
                   return const Center(child: CircularProgressIndicator(color: Colors.white));
                 }
-                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                if (balanceLoader.hasError || !balanceLoader.hasData) {
                   return Column(
                     children: [
                       Expanded(
@@ -419,7 +330,7 @@ class _WalletMainState extends State<WalletMain> {
                   );
                 }
 
-                final walletData = snapshot.data!;
+                final walletData = balanceLoader.data!;
                 final displayAddress = _formatAddress(walletData.accountId);
 
                 return RefreshIndicator(
