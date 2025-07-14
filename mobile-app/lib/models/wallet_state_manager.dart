@@ -16,8 +16,10 @@ class LoadingState<T> {
 
   LoadingState({this.data, this.isLoading = false, this.error, required this.loadData});
 
-  Future<LoadingState<T>> load() async {
-    isLoading = true;
+  Future<LoadingState<T>> load({bool quiet = false}) async {
+    if (!quiet) {
+      isLoading = true;
+    }
     try {
       data = await loadData;
     } catch (e) {
@@ -185,8 +187,16 @@ class WalletStateManager with ChangeNotifier {
     });
   }
 
+  String _senderAddressFromSeed(String senderSeed) {
+    return SubstrateService().dilithiumKeypairFromMnemonic(senderSeed).ss58Address;
+  }
+
   Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
-    final pending = createPendingTransaction(from: senderSeed, to: targetAddress, amount: amount);
+    final pending = createPendingTransaction(
+      from: _senderAddressFromSeed(senderSeed),
+      to: targetAddress,
+      amount: amount,
+    );
     addPendingTransaction(pending);
 
     void onStatus(ExtrinsicStatus status) {
@@ -231,11 +241,16 @@ class WalletStateManager with ChangeNotifier {
     required BigInt amount,
     required int delaySeconds,
   }) async {
-    // convert seconds to milliseconds for runtime
-    final pending = createPendingTransaction(from: senderSeed, to: recipientAddress, amount: amount);
+    final pending = createPendingTransaction(
+      from: _senderAddressFromSeed(senderSeed),
+      to: recipientAddress,
+      amount: amount,
+    );
     addPendingTransaction(pending);
+
+    // update function for the ephemeral pending event
     void onStatus(ExtrinsicStatus status) {
-      String? hash;
+      String? blockHash;
       TransactionState newState;
       switch (status.type) {
         case 'ready':
@@ -246,14 +261,14 @@ class WalletStateManager with ChangeNotifier {
           break;
         case 'inBlock':
           newState = TransactionState.inBlock;
-          hash = status.value;
+          blockHash = status.value;
           break;
         default:
           newState = TransactionState.failed;
           pending.error = 'Unknown status';
       }
-      updatePendingTransaction(pending.id, newState, blockHash: hash);
-      if (newState == TransactionState.inBlock && hash != null) {
+      updatePendingTransaction(pending.id, newState, blockHash: blockHash);
+      if (newState == TransactionState.inBlock) {
         _startPollingForHistory();
       }
     }

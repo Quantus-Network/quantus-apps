@@ -23,9 +23,7 @@ class BalancesService {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));
-
       final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
-
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(
         senderSeed,
