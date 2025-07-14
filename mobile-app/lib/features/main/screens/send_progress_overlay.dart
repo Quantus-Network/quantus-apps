@@ -79,13 +79,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
 
       if (widget.reversibleTimeSeconds <= 0) {
-        await walletStateManager.balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+        await walletStateManager.balanceTransfer(senderSeed, widget.recipientAddress, widget.amount, widget.fee);
       } else {
         await walletStateManager.scheduleReversibleTransferWithDelaySeconds(
           senderSeed: senderSeed,
           recipientAddress: widget.recipientAddress,
           amount: widget.amount,
           delaySeconds: widget.reversibleTimeSeconds,
+          feeEstimate: widget.fee,
         );
       }
 

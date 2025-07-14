@@ -76,8 +76,12 @@ class WalletStateManager with ChangeNotifier {
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
       if (tx.transactionState != TransactionState.inHistory && tx.transactionState != TransactionState.failed) {
-        final adjustment = (tx.from == walletData.data!.accountId) ? -tx.amount : tx.amount;
+        final isSend = tx.from == walletData.data!.accountId;
+        final adjustment = isSend ? -tx.amount : tx.amount;
         base += adjustment;
+        if (isSend && tx.fee != null) {
+          base -= tx.fee!;
+        }
       }
     }
     return base;
@@ -96,6 +100,7 @@ class WalletStateManager with ChangeNotifier {
 
   Future<void> load({bool quiet = false}) async {
     await Future.wait([txData.load(quiet: quiet), walletData.load(quiet: quiet)]);
+    updatePendingTransactions();
     notifyListeners();
   }
 
@@ -152,7 +157,7 @@ class WalletStateManager with ChangeNotifier {
     DateTime? scheduledAt,
     bool isOutgoing = true,
     bool isReversible = false,
-    BigInt? fee,
+    required BigInt fee,
   }) {
     final tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
     final timestamp = DateTime.now();
@@ -163,7 +168,7 @@ class WalletStateManager with ChangeNotifier {
       amount: amount,
       timestamp: timestamp,
       isReversible: isReversible,
-      fee: fee ?? BigInt.zero,
+      fee: fee,
       scheduledAtTime: scheduledAt,
     );
     return pending;
@@ -194,11 +199,12 @@ class WalletStateManager with ChangeNotifier {
     return SubstrateService().dilithiumKeypairFromMnemonic(senderSeed).ss58Address;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount, BigInt feeEstimate) async {
     final pending = createPendingTransaction(
       from: _senderAddressFromSeed(senderSeed),
       to: targetAddress,
       amount: amount,
+      fee: feeEstimate,
     );
     addPendingTransaction(pending);
 
@@ -243,11 +249,13 @@ class WalletStateManager with ChangeNotifier {
     required String recipientAddress,
     required BigInt amount,
     required int delaySeconds,
+    required BigInt feeEstimate,
   }) async {
     final pending = createPendingTransaction(
       from: _senderAddressFromSeed(senderSeed),
       to: recipientAddress,
       amount: amount,
+      fee: feeEstimate,
     );
     addPendingTransaction(pending);
 

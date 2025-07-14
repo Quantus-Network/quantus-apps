@@ -29,7 +29,7 @@ class PendingTransactionEvent extends TransactionEvent {
     this.txId,
     this.status = ReversibleTransferStatus.SCHEDULED, // Default for reversible
     this.scheduledAtTime, // Set optimistically if reversible
-    this.fee,
+    required this.fee,
     super.extrinsicHash,
     super.blockNumber = 0, // Initial 0, update on inclusion
     this.error,

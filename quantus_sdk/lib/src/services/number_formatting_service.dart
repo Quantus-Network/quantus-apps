@@ -20,10 +20,9 @@ class NumberFormattingService {
 
     // 1. Perform division to get the precise decimal value.
     final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
-      scaleOnInfinitePrecision: maxDecimals * 3, // Note: We never have an infinite number of decimals because we divide by powers of 10. 
+      scaleOnInfinitePrecision:
+          maxDecimals * 3, // Note: We never have an infinite number of decimals because we divide by powers of 10.
     );
-
-    print('decimal balance: $decimalBalance');
 
     // 2. Convert to a string for manipulation.
     String asString = decimalBalance.toString();
@@ -36,7 +35,6 @@ class NumberFormattingService {
         asString = asString.substring(0, dotIndex + maxDecimals + 1);
       }
     }
-    print('asString: $asString');
 
     // 4. Remove any trailing zeros from the fractional part for a clean look.
     if (asString.contains('.')) {
