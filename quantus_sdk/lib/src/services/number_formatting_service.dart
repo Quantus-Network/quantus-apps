@@ -13,34 +13,51 @@ class NumberFormattingService {
   /// user-readable string with a specified number of decimal places.
   ///
   /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4)
-  String formatBalance(BigInt balance, {int maxDecimals = 6}) {
+  String formatBalance(BigInt balance, {int maxDecimals = 4}) {
     if (balance == BigInt.zero) {
       return '0';
     }
 
-    // Perform division with Decimal
+    // 1. Perform division to get the precise decimal value.
     final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
-      scaleOnInfinitePrecision: maxDecimals,
+      scaleOnInfinitePrecision: maxDecimals * 3, // Note: We never have an infinite number of decimals because we divide by powers of 10. 
     );
 
-    // Use a NumberFormat that can handle the full decimal range and grouping.
-    // 'en_US' locale is used to ensure '.' is the decimal separator and ',' is for grouping.
-    final formatter = NumberFormat.decimalPatternDigits(locale: 'en_US', decimalDigits: maxDecimals);
+    print('decimal balance: $decimalBalance');
 
-    String formatted = formatter.format(decimalBalance.toDouble());
+    // 2. Convert to a string for manipulation.
+    String asString = decimalBalance.toString();
 
-    // The formatter might add unnecessary trailing zeros up to `maxDecimals`,
-    // and we want to trim them for a cleaner look if they are not significant.
-    if (formatted.contains('.')) {
-      // Remove trailing zeros, but not if it's the only digit after the decimal point.
-      formatted = formatted.replaceAll(RegExp(r'0+$'), '');
-      // If we are left with a trailing decimal point, remove it.
-      if (formatted.endsWith('.')) {
-        formatted = formatted.substring(0, formatted.length - 1);
+    // 3. Manually truncate the string representation.
+    final dotIndex = asString.indexOf('.');
+    if (dotIndex != -1) {
+      // Check if there are enough characters after the dot.
+      if (asString.length > dotIndex + maxDecimals + 1) {
+        asString = asString.substring(0, dotIndex + maxDecimals + 1);
+      }
+    }
+    print('asString: $asString');
+
+    // 4. Remove any trailing zeros from the fractional part for a clean look.
+    if (asString.contains('.')) {
+      asString = asString.replaceAll(RegExp(r'0+$'), '');
+      // If we're left with a trailing dot, remove it.
+      if (asString.endsWith('.')) {
+        asString = asString.substring(0, asString.length - 1);
       }
     }
 
-    return formatted;
+    // 5. Manually add thousand separators to the integer part.
+    final parts = asString.split('.');
+    final integerPart = parts[0];
+    final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+    final formattedInteger = integerPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+
+    return formattedInteger + decimalPart;
   }
 
   /// Parses a user-entered formatted string amount (e.g., "1.23") into a
