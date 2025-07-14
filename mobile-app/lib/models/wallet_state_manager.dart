@@ -95,9 +95,8 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshTransactions() async {
-    txData = LoadingState(loadData: _fetchTransactionHistory());
-    await txData.load();
+  Future<void> refreshTransactions({bool quiet = false}) async {
+    await txData.load(quiet: quiet);
     updatePendingTransactions();
     notifyListeners();
   }
@@ -308,7 +307,7 @@ class WalletStateManager with ChangeNotifier {
     _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
       try {
         print('polling history');
-        await refreshTransactions();
+        await refreshTransactions(quiet: true);
         if (pendingTransactions.isEmpty) {
           print('no more pending tx, ending history polling');
           _historyPollTimer?.cancel();
