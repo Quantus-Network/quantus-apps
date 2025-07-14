@@ -311,7 +311,7 @@ class WalletStateManager with ChangeNotifier {
     _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
       try {
         print('polling history');
-        await refreshTransactions(quiet: true);
+        await load(quiet: true);
         if (pendingTransactions.isEmpty) {
           print('no more pending tx, ending history polling');
           _historyPollTimer?.cancel();
