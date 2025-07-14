@@ -13,7 +13,7 @@ class NumberFormattingService {
   /// user-readable string with a specified number of decimal places.
   ///
   /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4)
-  String formatBalance(BigInt balance, {int maxDecimals = 4}) {
+  String formatBalance(BigInt balance, {int maxDecimals = 6}) {
     if (balance == BigInt.zero) {
       return '0';
     }

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:typed_data';
+import 'package:polkadart/primitives/primitives.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
@@ -17,7 +19,7 @@ class RecoveryService {
 
   /// Create a recovery configuration for an account
   /// This makes the account recoverable by trusted friends
-  Future<String> createRecoveryConfig({
+  Future<StreamSubscription<ExtrinsicStatus>> createRecoveryConfig({
     required String senderSeed,
     required List<String> friendAddresses,
     required int threshold,
@@ -42,7 +44,10 @@ class RecoveryService {
   }
 
   /// Initiate recovery process for a lost account
-  Future<String> initiateRecovery({required String rescuerSeed, required String lostAccountAddress}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> initiateRecovery({
+    required String rescuerSeed,
+    required String lostAccountAddress,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
@@ -58,7 +63,7 @@ class RecoveryService {
   }
 
   /// Vouch for an active recovery process (called by friends)
-  Future<String> vouchForRecovery({
+  Future<StreamSubscription<ExtrinsicStatus>> vouchForRecovery({
     required String friendSeed,
     required String lostAccountAddress,
     required String rescuerAddress,
@@ -79,7 +84,10 @@ class RecoveryService {
   }
 
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
-  Future<String> claimRecovery({required String rescuerSeed, required String lostAccountAddress}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> claimRecovery({
+    required String rescuerSeed,
+    required String lostAccountAddress,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
@@ -95,7 +103,10 @@ class RecoveryService {
   }
 
   /// Close an active recovery process (called by the lost account owner)
-  Future<String> closeRecovery({required String lostAccountSeed, required String rescuerAddress}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> closeRecovery({
+    required String lostAccountSeed,
+    required String rescuerAddress,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
@@ -111,7 +122,7 @@ class RecoveryService {
   }
 
   /// Remove recovery configuration from account
-  Future<String> removeRecoveryConfig({required String senderSeed}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({required String senderSeed}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
@@ -126,7 +137,7 @@ class RecoveryService {
   }
 
   /// Call a function as a recovered account (proxy call)
-  Future<String> callAsRecovered({
+  Future<StreamSubscription<ExtrinsicStatus>> callAsRecovered({
     required String rescuerSeed,
     required String recoveredAccountAddress,
     required RuntimeCall call,
@@ -148,7 +159,10 @@ class RecoveryService {
   }
 
   /// Cancel the ability to use a recovered account
-  Future<String> cancelRecovered({required String rescuerSeed, required String recoveredAccountAddress}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> cancelRecovered({
+    required String rescuerSeed,
+    required String recoveredAccountAddress,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
@@ -275,7 +289,7 @@ class RecoveryService {
   }
 
   /// Convenience method to transfer balance as recovered account
-  Future<String> transferAsRecovered({
+  Future<StreamSubscription<ExtrinsicStatus>> transferAsRecovered({
     required String rescuerSeed,
     required String recoveredAccountAddress,
     required String recipientAddress,

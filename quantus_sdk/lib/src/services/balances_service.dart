@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -12,7 +14,7 @@ class BalancesService {
 
   final SubstrateService _substrateService = SubstrateService();
 
-  Future<String> balanceTransfer(
+  Future<StreamSubscription<ExtrinsicStatus>> balanceTransfer(
     String senderSeed,
     String targetAddress,
     BigInt amount,

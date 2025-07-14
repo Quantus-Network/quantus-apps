@@ -6,103 +6,23 @@ import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
+import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 
-class RecentTransactionsList extends StatelessWidget {
-  final List<TransactionEvent> transactions;
-  final String currentWalletAddress;
-  final bool Function(TransactionEvent)? filter;
-
-  const RecentTransactionsList({
-    super.key,
-    required this.transactions,
-    required this.currentWalletAddress,
-    this.filter,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
-
-    final scheduled = transactionsToShow
-        .whereType<ReversibleTransferEvent>()
-        .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
-        .toList();
-
-    final others = transactionsToShow.where((tx) {
-      if (tx is ReversibleTransferEvent) {
-        return tx.status != ReversibleTransferStatus.SCHEDULED;
-      }
-      return true;
-    }).toList();
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: ShapeDecoration(
-        color: const Color(0x3F000000), // black w/ alpha
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (transactionsToShow.isEmpty)
-            const Text(
-              'No transactions yet.',
-              style: TextStyle(color: Colors.white, fontFamily: 'Fira Code'),
-            )
-          else ...[
-            if (scheduled.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: scheduled.length,
-                itemBuilder: (context, index) {
-                  return _TransactionListItem(
-                    transaction: scheduled[index],
-                    currentWalletAddress: currentWalletAddress,
-                  );
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
-            if (scheduled.isNotEmpty && others.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Divider(color: Colors.white, thickness: 1),
-              ),
-            if (others.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: others.length,
-                itemBuilder: (context, index) {
-                  return _TransactionListItem(transaction: others[index], currentWalletAddress: currentWalletAddress);
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TransactionListItem extends StatefulWidget {
+class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
   final String currentWalletAddress;
 
-  const _TransactionListItem({required this.transaction, required this.currentWalletAddress});
+  const TransactionListItem({super.key, required this.transaction, required this.currentWalletAddress});
 
   @override
-  _TransactionListItemState createState() => _TransactionListItemState();
+  TransactionListItemState createState() => TransactionListItemState();
 }
 
-class _TransactionListItemState extends State<_TransactionListItem> {
+class TransactionListItemState extends State<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
-  bool get isReversibleScheduled =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
+  bool get isReversibleScheduled => widget.transaction.isScheduled;
   bool get isReversibleCancelled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.CANCELLED;
@@ -110,23 +30,21 @@ class _TransactionListItemState extends State<_TransactionListItem> {
   @override
   void initState() {
     super.initState();
-    if (widget.transaction is ReversibleTransferEvent) {
+    if (widget.transaction.isScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
-      if (tx.status == ReversibleTransferStatus.SCHEDULED) {
-        _remainingTime = tx.scheduledAt.difference(DateTime.now());
-        if (_remainingTime!.isNegative) {
-          _remainingTime = Duration.zero;
-        }
-        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          setState(() {
-            if (_remainingTime! > Duration.zero) {
-              _remainingTime = _remainingTime! - const Duration(seconds: 1);
-            } else {
-              _timer?.cancel();
-            }
-          });
-        });
+      _remainingTime = tx.scheduledAt.difference(DateTime.now());
+      if (_remainingTime!.isNegative) {
+        _remainingTime = Duration.zero;
       }
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          if (_remainingTime! > Duration.zero) {
+            _remainingTime = _remainingTime! - const Duration(seconds: 1);
+          } else {
+            _timer?.cancel();
+          }
+        });
+      });
     }
   }
 
@@ -257,6 +175,9 @@ class _TransactionListItemState extends State<_TransactionListItem> {
   }
 
   Widget _buildStatusOrTimer() {
+    if (widget.transaction is PendingTransactionEvent) {
+      return _PendingStatusDisplay(transaction: widget.transaction as PendingTransactionEvent);
+    }
     if (widget.transaction is ReversibleTransferEvent) {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
@@ -330,17 +251,25 @@ class _StatusDisplay extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
-  const _Divider();
+class _PendingStatusDisplay extends StatelessWidget {
+  final PendingTransactionEvent transaction;
+  const _PendingStatusDisplay({required this.transaction});
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 7.0),
-      child: Divider(
-        color: Color(0x26FFFFFF), // white w/ alpha
-        height: 1,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const ShapeDecoration(color: Colors.yellow, shape: OvalBorder()),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          transaction.transactionState.name,
+          style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code'),
+        ),
+      ],
     );
   }
 }

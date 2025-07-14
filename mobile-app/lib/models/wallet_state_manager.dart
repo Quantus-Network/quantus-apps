@@ -69,7 +69,7 @@ class WalletStateManager with ChangeNotifier {
     if (!walletData.hasData) return BigInt.zero;
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
-      if (tx.state != TransactionState.inHistory && tx.state != TransactionState.failed) {
+      if (tx.transactionState != TransactionState.inHistory && tx.transactionState != TransactionState.failed) {
         final adjustment = (tx.from == walletData.data!.accountId) ? -tx.amount : tx.amount;
         base += adjustment;
       }
@@ -107,12 +107,12 @@ class WalletStateManager with ChangeNotifier {
     var transferList = txData.data?.combined ?? [];
     for (var pending in pendingTransactions) {
       if (pending.extrinsicHash != null) {
-        print("pending ${pending.amount} extrinsic hash: ${pending.extrinsicHash}");
+        print('pending ${pending.amount} extrinsic hash: ${pending.extrinsicHash}');
 
         for (var transfer in transferList) {
-          print("checking trasfer ${transfer.amount} with tx hash: ${transfer.extrinsicHash}");
+          print('checking trasfer ${transfer.amount} with tx hash: ${transfer.extrinsicHash}');
           if (transfer.extrinsicHash == pending.extrinsicHash) {
-            pending.state = TransactionState.inHistory;
+            pending.transactionState = TransactionState.inHistory;
             pendingTransactions.remove(pending);
             updated = true;
           }
@@ -155,7 +155,7 @@ class WalletStateManager with ChangeNotifier {
       timestamp: timestamp,
       isReversible: isReversible,
       fee: fee ?? BigInt.zero,
-      scheduledAt: scheduledAt,
+      scheduledAtTime: scheduledAt,
     );
     return pending;
   }
@@ -268,7 +268,7 @@ class WalletStateManager with ChangeNotifier {
       (tx) => tx.id == id,
       orElse: () => throw Exception('Pending TX not found'),
     );
-    tx.state = newState;
+    tx.transactionState = newState;
     if (extrinsicHash != null) {
       tx.extrinsicHash = extrinsicHash;
     }
@@ -282,7 +282,6 @@ class WalletStateManager with ChangeNotifier {
 
   void _startPollingForHistory() {
     const pollInterval = Duration(seconds: 10);
-    final startTime = DateTime.now();
 
     if (pendingTransactions.isEmpty) {
       return;
@@ -290,40 +289,14 @@ class WalletStateManager with ChangeNotifier {
     _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
       try {
         await refreshTransactions();
+        if (pendingTransactions.isEmpty) {
+          print('no more peding tx, ending history polling');
+          _historyPollTimer?.cancel();
+          _historyPollTimer = null;
+        }
       } catch (e) {
         print('error fetching transaction history: $e');
       }
     });
-
-    // _pollTimers[pendingId] = Timer.periodic(pollInterval, (timer) async {
-    //   if (DateTime.now().difference(startTime) > maxDuration) {
-    //     updatePendingTransaction(pendingId, TransactionState.failed, error: 'History inclusion timeout');
-    //     timer.cancel();
-    //     _pollTimers.remove(pendingId);
-    //     return;
-    //   }
-
-    //   try {
-    //     await refreshTransactions(); // Poll recent history
-    //     final historyTx = txData.data?.combined.firstWhere(
-    //       (tx) => tx.extrinsicHash == extrinsicHash,
-    //       orElse: () => null,
-    //     );
-    //     if (historyTx != null) {
-    //       // Merge: Add if not already (though refresh might), update with real data
-    //       final pending = pendingTransactions.firstWhere((tx) => tx.id == pendingId);
-    //       // Optionally copy real fields to pending or directly add historyTx
-    //       txData.data!.combined.add(historyTx); // Ensure added
-    //       pendingTransactions.remove(pending);
-    //       updatePendingTransaction(pendingId, TransactionState.inHistory);
-    //       await _fetchBalance(); // Refresh balance
-    //       notifyListeners();
-    //       timer.cancel();
-    //       _pollTimers.remove(pendingId);
-    //     }
-    //   } catch (e) {
-    //     // Log error, continue polling
-    //   }
-    // });
   }
 }
