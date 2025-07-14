@@ -1,3 +1,4 @@
+import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/high_security_account_data.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
@@ -74,6 +75,7 @@ class ReversibleTransfersService {
     required String recipientAddress,
     required BigInt amount,
     required BlockNumberOrTimestamp delay,
+    void Function(ExtrinsicStatus)? onStatus,
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
@@ -87,7 +89,7 @@ class ReversibleTransfersService {
       );
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return await _substrateService.submitExtrinsic(senderSeed, call, onStatus);
     } catch (e) {
       throw Exception('Failed to schedule reversible transfer with delay: $e');
     }
@@ -99,6 +101,7 @@ class ReversibleTransfersService {
     required String recipientAddress,
     required BigInt amount,
     required int delaySeconds,
+    void Function(ExtrinsicStatus)? onStatus,
   }) async {
     // convert seconds to milliseconds for runtime
     final delay = Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
@@ -107,6 +110,7 @@ class ReversibleTransfersService {
       recipientAddress: recipientAddress,
       amount: amount,
       delay: delay,
+      onStatus: onStatus,
     );
   }
 

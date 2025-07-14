@@ -2,9 +2,11 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 enum TransactionState {
-  sent,
-  includedInBlock,
-  includedInHistory,
+  created,
+  ready,
+  broadcast,
+  inBlock,
+  inHistory,
   failed, // For errors
 }
 
@@ -23,7 +25,7 @@ class PendingTransactionEvent extends TransactionEvent {
     required super.to,
     required super.amount,
     required super.timestamp,
-    this.state = TransactionState.sent,
+    this.state = TransactionState.created,
     this.isReversible = false,
     this.txId,
     this.status = ReversibleTransferStatus.SCHEDULED, // Default for reversible

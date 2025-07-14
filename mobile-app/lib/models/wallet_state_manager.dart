@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/wallet_data.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:polkadart/polkadart.dart';
 
 class LoadingState<T> {
   T? data;
@@ -68,7 +69,7 @@ class WalletStateManager with ChangeNotifier {
     if (!walletData.hasData) return BigInt.zero;
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
-      if (tx.state != TransactionState.includedInHistory && tx.state != TransactionState.failed) {
+      if (tx.state != TransactionState.inHistory && tx.state != TransactionState.failed) {
         final adjustment = (tx.from == walletData.data!.accountId) ? -tx.amount : tx.amount;
         base += adjustment;
       }
@@ -95,7 +96,30 @@ class WalletStateManager with ChangeNotifier {
   Future<void> refreshTransactions() async {
     txData = LoadingState(loadData: _fetchTransactionHistory());
     await txData.load();
+    updatePendingTransactions();
     notifyListeners();
+  }
+
+  // Update pending transactions - see if any have been resolved in the history list, and remove
+  // them accordingly as they are coming in with chain history.
+  bool updatePendingTransactions() {
+    bool updated = false;
+    var transferList = txData.data?.combined ?? [];
+    for (var pending in pendingTransactions) {
+      if (pending.extrinsicHash != null) {
+        print("pending ${pending.amount} extrinsic hash: ${pending.extrinsicHash}");
+
+        for (var transfer in transferList) {
+          print("checking trasfer ${transfer.amount} with tx hash: ${transfer.extrinsicHash}");
+          if (transfer.extrinsicHash == pending.extrinsicHash) {
+            pending.state = TransactionState.inHistory;
+            pendingTransactions.remove(pending);
+            updated = true;
+          }
+        }
+      }
+    }
+    return updated;
   }
 
   Future<void> loadMoreTransactions({required String accountId, required int limit, required int offset}) async {
@@ -112,14 +136,15 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<PendingTransactionEvent> addPendingTransaction({
+  PendingTransactionEvent createPendingTransaction({
     required String from,
     required String to,
     required BigInt amount,
+    DateTime? scheduledAt,
     bool isOutgoing = true,
     bool isReversible = false,
     BigInt? fee,
-  }) async {
+  }) {
     final tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
     final timestamp = DateTime.now();
     final pending = PendingTransactionEvent(
@@ -130,64 +155,175 @@ class WalletStateManager with ChangeNotifier {
       timestamp: timestamp,
       isReversible: isReversible,
       fee: fee ?? BigInt.zero,
+      scheduledAt: scheduledAt,
     );
-    if (isReversible) {
-      pending.scheduledAt = timestamp.add(const Duration(hours: 24));
-    }
-    pendingTransactions.add(pending);
-    notifyListeners();
     return pending;
   }
+
+  void addPendingTransaction(PendingTransactionEvent pending) {
+    pendingTransactions.add(pending);
+    notifyListeners();
+  }
+
+  // TODO: this should update the state of the pending transfer to one of
+  // * ready
+  // * broadcast
+  // * in block
+  // * failed
+  void updatePending(String PendingID, String Status) {}
 
   void _startPolling() {
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       if (pendingTransactions.isEmpty) return;
+      // TODO see if we need this - we need to get the history as long as we have pending tx, and resolve them.
 
-      for (var tx in List.from(pendingTransactions)) {
-        await _updateTxState(tx);
-      }
       notifyListeners();
     });
   }
 
-  Future<void> _updateTxState(PendingTransactionEvent tx) async {
-    try {
-      final inclusionStatus = await _substrateService.checkTxInclusion(tx.extrinsicHash ?? '');
-      if (inclusionStatus.included) {
-        tx.state = TransactionState.includedInBlock;
-        tx.blockNumber = inclusionStatus.blockNumber;
-        if (tx.isReversible && tx.txId == null) {
-          tx.txId = _parseTxIdFromEvents(inclusionStatus.events);
-        }
-      }
+  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount) async {
+    final pending = createPendingTransaction(from: senderSeed, to: targetAddress, amount: amount);
+    addPendingTransaction(pending);
 
-      if (tx.state == TransactionState.includedInBlock) {
-        final historyItem = await _chainHistoryService.fetchTxById(tx.txId ?? tx.extrinsicHash ?? '');
-        if (historyItem != null) {
-          tx.state = TransactionState.includedInHistory;
-          if (historyItem is ReversibleTransferEvent) {
-            txData.data?.combined.add(historyItem);
-          } else if (historyItem is TransferEvent) {
-            txData.data?.combined.add(historyItem);
-          }
-          pendingTransactions.remove(tx);
-          walletData = LoadingState(loadData: _fetchBalance());
-          await walletData.load();
-        }
+    void onStatus(ExtrinsicStatus status) {
+      String? hash;
+      TransactionState newState;
+      switch (status.type) {
+        case 'ready':
+          newState = TransactionState.ready;
+          break;
+        case 'broadcast':
+          newState = TransactionState.broadcast;
+          break;
+        case 'inBlock':
+          newState = TransactionState.inBlock;
+          hash = status.value;
+          break;
+        default:
+          print("Error: unexpected status ${status.type}");
+          newState = TransactionState.failed;
+          pending.error = 'Unknown status ${status.type}';
       }
-    } catch (e) {
-      tx.state = TransactionState.failed;
-      tx.error = e.toString();
-      notifyListeners();
+      updatePendingTransaction(pending.id, newState, extrinsicHash: hash);
+      if (newState == TransactionState.inBlock && hash != null) {
+        _startPollingForHistory();
+      }
     }
+
+    try {
+      await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
+    } catch (e, stackTrace) {
+      updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
+      print('Failed to transfer balance: $e');
+      print('Failed to transfer balance: $stackTrace');
+      throw Exception('Failed to transfer balance: $e');
+    }
+    return pending.id;
   }
 
-  String? _parseTxIdFromEvents(List<dynamic> events) {
-    for (var event in events) {
-      if (event['type'] == 'ReversibleTransfer' && event['action'] == 'created') {
-        return event['txId'] as String?;
+  Future<void> scheduleReversibleTransferWithDelaySeconds({
+    required String senderSeed,
+    required String recipientAddress,
+    required BigInt amount,
+    required int delaySeconds,
+  }) async {
+    // convert seconds to milliseconds for runtime
+    final pending = createPendingTransaction(from: senderSeed, to: recipientAddress, amount: amount);
+    addPendingTransaction(pending);
+    void onStatus(ExtrinsicStatus status) {
+      String? hash;
+      TransactionState newState;
+      switch (status.type) {
+        case 'ready':
+          newState = TransactionState.ready;
+          break;
+        case 'broadcast':
+          newState = TransactionState.broadcast;
+          break;
+        case 'inBlock':
+          newState = TransactionState.inBlock;
+          hash = status.value;
+          break;
+        default:
+          newState = TransactionState.failed;
+          pending.error = 'Unknown status';
+      }
+      updatePendingTransaction(pending.id, newState, extrinsicHash: hash);
+      if (newState == TransactionState.inBlock && hash != null) {
+        _startPollingForHistory();
       }
     }
-    return null;
+
+    await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+      senderSeed: senderSeed,
+      recipientAddress: recipientAddress,
+      amount: amount,
+      delaySeconds: delaySeconds,
+      onStatus: onStatus,
+    );
+  }
+
+  void updatePendingTransaction(String id, TransactionState newState, {String? extrinsicHash, String? error}) {
+    final tx = pendingTransactions.firstWhere(
+      (tx) => tx.id == id,
+      orElse: () => throw Exception('Pending TX not found'),
+    );
+    tx.state = newState;
+    if (extrinsicHash != null) {
+      tx.extrinsicHash = extrinsicHash;
+    }
+    if (error != null) {
+      tx.error = error;
+    }
+    notifyListeners();
+  }
+
+  Timer? _historyPollTimer;
+
+  void _startPollingForHistory() {
+    const pollInterval = Duration(seconds: 10);
+    final startTime = DateTime.now();
+
+    if (pendingTransactions.isEmpty) {
+      return;
+    }
+    _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
+      try {
+        await refreshTransactions();
+      } catch (e) {
+        print('error fetching transaction history: $e');
+      }
+    });
+
+    // _pollTimers[pendingId] = Timer.periodic(pollInterval, (timer) async {
+    //   if (DateTime.now().difference(startTime) > maxDuration) {
+    //     updatePendingTransaction(pendingId, TransactionState.failed, error: 'History inclusion timeout');
+    //     timer.cancel();
+    //     _pollTimers.remove(pendingId);
+    //     return;
+    //   }
+
+    //   try {
+    //     await refreshTransactions(); // Poll recent history
+    //     final historyTx = txData.data?.combined.firstWhere(
+    //       (tx) => tx.extrinsicHash == extrinsicHash,
+    //       orElse: () => null,
+    //     );
+    //     if (historyTx != null) {
+    //       // Merge: Add if not already (though refresh might), update with real data
+    //       final pending = pendingTransactions.firstWhere((tx) => tx.id == pendingId);
+    //       // Optionally copy real fields to pending or directly add historyTx
+    //       txData.data!.combined.add(historyTx); // Ensure added
+    //       pendingTransactions.remove(pending);
+    //       updatePendingTransaction(pendingId, TransactionState.inHistory);
+    //       await _fetchBalance(); // Refresh balance
+    //       notifyListeners();
+    //       timer.cancel();
+    //       _pollTimers.remove(pendingId);
+    //     }
+    //   } catch (e) {
+    //     // Log error, continue polling
+    //   }
+    // });
   }
 }
