@@ -105,19 +105,23 @@ class WalletStateManager with ChangeNotifier {
   bool updatePendingTransactions() {
     bool updated = false;
     var transferList = txData.data?.combined ?? [];
+    List<PendingTransactionEvent> toRemove = [];
     for (var pending in pendingTransactions) {
-      if (pending.extrinsicHash != null) {
-        print('pending ${pending.amount} extrinsic hash: ${pending.extrinsicHash}');
+      if (pending.blockHash != null) {
+        print('pending ${pending.amount} extrinsic hash: ${pending.blockHash}');
 
         for (var transfer in transferList) {
-          print('checking trasfer ${transfer.amount} with tx hash: ${transfer.extrinsicHash}');
-          if (transfer.extrinsicHash == pending.extrinsicHash) {
-            pending.transactionState = TransactionState.inHistory;
-            pendingTransactions.remove(pending);
+          print('checking trasfer ${transfer.amount} with tx hash: ${transfer.blockHash}');
+          if (transfer.blockHash == pending.blockHash) {
+            print('found item block hash - removing');
+            toRemove.add(pending);
             updated = true;
           }
         }
       }
+    }
+    if (toRemove.isNotEmpty) {
+      pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
     }
     return updated;
   }
@@ -200,11 +204,11 @@ class WalletStateManager with ChangeNotifier {
           hash = status.value;
           break;
         default:
-          print("Error: unexpected status ${status.type}");
+          print('Error: unexpected status ${status.type}');
           newState = TransactionState.failed;
           pending.error = 'Unknown status ${status.type}';
       }
-      updatePendingTransaction(pending.id, newState, extrinsicHash: hash);
+      updatePendingTransaction(pending.id, newState, blockHash: hash);
       if (newState == TransactionState.inBlock && hash != null) {
         _startPollingForHistory();
       }
@@ -248,7 +252,7 @@ class WalletStateManager with ChangeNotifier {
           newState = TransactionState.failed;
           pending.error = 'Unknown status';
       }
-      updatePendingTransaction(pending.id, newState, extrinsicHash: hash);
+      updatePendingTransaction(pending.id, newState, blockHash: hash);
       if (newState == TransactionState.inBlock && hash != null) {
         _startPollingForHistory();
       }
@@ -263,14 +267,14 @@ class WalletStateManager with ChangeNotifier {
     );
   }
 
-  void updatePendingTransaction(String id, TransactionState newState, {String? extrinsicHash, String? error}) {
+  void updatePendingTransaction(String id, TransactionState newState, {String? blockHash, String? error}) {
     final tx = pendingTransactions.firstWhere(
       (tx) => tx.id == id,
       orElse: () => throw Exception('Pending TX not found'),
     );
     tx.transactionState = newState;
-    if (extrinsicHash != null) {
-      tx.extrinsicHash = extrinsicHash;
+    if (blockHash != null) {
+      tx.blockHash = blockHash;
     }
     if (error != null) {
       tx.error = error;
@@ -288,9 +292,10 @@ class WalletStateManager with ChangeNotifier {
     }
     _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
       try {
+        print('polling history');
         await refreshTransactions();
         if (pendingTransactions.isEmpty) {
-          print('no more peding tx, ending history polling');
+          print('no more pending tx, ending history polling');
           _historyPollTimer?.cancel();
           _historyPollTimer = null;
         }
