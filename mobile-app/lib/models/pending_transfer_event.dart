@@ -23,6 +23,7 @@ class PendingTransactionEvent extends TransactionEvent {
     required super.to,
     required super.amount,
     required super.timestamp,
+    super.blockHash,
     this.transactionState = TransactionState.created,
     this.isReversible = false,
     this.txId,

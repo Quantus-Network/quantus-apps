@@ -8,8 +8,9 @@ abstract class TransactionEvent {
   final String to;
   final BigInt amount;
   final DateTime timestamp;
-  String? extrinsicHash;
   int blockNumber;
+  String? extrinsicHash;
+  String? blockHash;
 
   bool get isReversible => false;
   bool get isScheduled => false;
@@ -24,6 +25,7 @@ abstract class TransactionEvent {
     required this.timestamp,
     this.extrinsicHash,
     required this.blockNumber,
+    this.blockHash,
   });
 
   @override
@@ -45,11 +47,13 @@ class TransferEvent extends TransactionEvent {
     required this.fee,
     super.extrinsicHash,
     required super.blockNumber,
+    required super.blockHash,
   });
 
   factory TransferEvent.fromJson(Map<String, dynamic> json) {
     final block = json['block'] as Map<String, dynamic>?;
     final blockHeight = block?['height'] as int? ?? 0;
+    final blockHash = block?['hash'] as String? ?? '';
     return TransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',
@@ -59,6 +63,7 @@ class TransferEvent extends TransactionEvent {
       fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
+      blockHash: blockHash,
     );
   }
 
@@ -89,11 +94,13 @@ class ReversibleTransferEvent extends TransactionEvent {
     required this.scheduledAt,
     super.extrinsicHash,
     required super.blockNumber,
+    required super.blockHash,
   });
 
   factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json) {
     final block = json['block'] as Map<String, dynamic>;
     final blockHeight = block['height'] as int;
+    final blockHash = block['hash'] as String? ?? '';
     return ReversibleTransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',
@@ -105,6 +112,7 @@ class ReversibleTransferEvent extends TransactionEvent {
       scheduledAt: DateTime.parse(json['scheduledAt'] as String),
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
+      blockHash: blockHash,
     );
   }
 
