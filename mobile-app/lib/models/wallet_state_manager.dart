@@ -9,7 +9,7 @@ class LoadingState<T> {
   T? data;
   bool isLoading;
   String? error;
-  Future<T> loadData;
+  Future<T> Function() loadData;
 
   bool get hasData => data != null;
   bool get hasError => error != null;
@@ -20,12 +20,16 @@ class LoadingState<T> {
     if (!quiet) {
       isLoading = true;
     }
+    error = null;
     try {
-      data = await loadData;
+      data = await loadData();
     } catch (e) {
       error = e.toString();
+      print('Load error: $e');
     } finally {
-      isLoading = false;
+      if (!quiet) {
+        isLoading = false;
+      }
     }
     return this;
   }
@@ -43,8 +47,8 @@ class WalletStateManager with ChangeNotifier {
   Timer? _pollingTimer;
 
   WalletStateManager(this._chainHistoryService, this._settingsService, this._substrateService) {
-    txData = LoadingState(loadData: _fetchTransactionHistory());
-    walletData = LoadingState(loadData: _fetchBalance());
+    txData = LoadingState(loadData: _fetchTransactionHistory);
+    walletData = LoadingState(loadData: _fetchBalance);
     _startPolling();
   }
 
@@ -90,8 +94,8 @@ class WalletStateManager with ChangeNotifier {
     return all;
   }
 
-  Future<void> load() async {
-    await Future.wait([txData.load(), walletData.load()]);
+  Future<void> load({bool quiet = false}) async {
+    await Future.wait([txData.load(quiet: quiet), walletData.load(quiet: quiet)]);
     notifyListeners();
   }
 
@@ -109,10 +113,10 @@ class WalletStateManager with ChangeNotifier {
     List<PendingTransactionEvent> toRemove = [];
     for (var pending in pendingTransactions) {
       if (pending.blockHash != null) {
-        print('pending ${pending.amount} extrinsic hash: ${pending.blockHash}');
+        print('pending ${pending.amount} block hash: ${pending.blockHash}');
 
         for (var transfer in transferList) {
-          print('checking trasfer ${transfer.amount} with tx hash: ${transfer.blockHash}');
+          print('checking trasfer ${transfer.amount} with block hash: ${transfer.blockHash}');
           if (transfer.blockHash == pending.blockHash) {
             print('found item block hash - removing');
             toRemove.add(pending);
