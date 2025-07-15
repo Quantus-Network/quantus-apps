@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
@@ -280,10 +281,8 @@ class SendScreenState extends State<SendScreen> {
     var selectedHours = _reversibleTimeHours;
     var selectedMinutes = _reversibleTimeMinutes;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) => Container(
         height: 632,
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
@@ -511,10 +510,8 @@ class SendScreenState extends State<SendScreen> {
 
   // NEW: Method to show the recent addresses modal bottom sheet
   void _showRecentAddresses() {
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.8, // Adjustable height for scrollability
         padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
