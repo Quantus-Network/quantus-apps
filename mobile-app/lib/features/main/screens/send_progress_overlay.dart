@@ -534,25 +534,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // // View Transaction
-            // GestureDetector(
-            //   onTap: () {
-            //     // TODO: Implement view transaction logic - remove this probably
-            //   },
-            //   child: const Text(
-            //     'View Transaction',
-            //     textAlign: TextAlign.center,
-            //     style: TextStyle(
-            //       color: Color(0xFF16CECE),
-            //       fontSize: 12,
-            //       fontFamily: 'Fira Code',
-            //       fontWeight: FontWeight.w500,
-            //       decoration: TextDecoration.underline,
-            //       decorationColor: Color(0xFF16CECE),
-            //     ),
-            //   ),
-            // ),
           ],
         ),
         const SizedBox(height: 30),

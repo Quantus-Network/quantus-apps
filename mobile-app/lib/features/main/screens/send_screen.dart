@@ -322,99 +322,121 @@ class SendScreenState extends State<SendScreen> {
             ),
             const SizedBox(height: 40),
 
-            // Time picker labels
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(
-                    'Days',
-                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
-                  ),
-                  Text(
-                    'Hours',
-                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
-                  ),
-                  Text(
-                    'Minutes',
-                    style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Time pickers
             Expanded(
               child: Row(
                 children: [
-                  // Days picker
+                  // Days
                   Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedDays),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (index) => selectedDays = index,
-                      children: List.generate(
-                        8,
-                        (index) => Center(
-                          child: Text(
-                            index.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w600,
-                            ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Days',
+                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: CupertinoPicker(
+                                  scrollController: FixedExtentScrollController(initialItem: selectedDays),
+                                  itemExtent: 40,
+                                  onSelectedItemChanged: (index) => selectedDays = index,
+                                  children: List.generate(
+                                    8,
+                                    (index) => Center(
+                                      child: Text(
+                                        index.toString().padLeft(2, '0'),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  const Text(':', style: TextStyle(color: Colors.white, fontSize: 20)),
-                  // Hours picker
+                  // Hours
                   Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedHours),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (index) => selectedHours = index,
-                      children: List.generate(
-                        24,
-                        (index) => Center(
-                          child: Text(
-                            index.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w600,
-                            ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Hours',
+                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: CupertinoPicker(
+                                  scrollController: FixedExtentScrollController(initialItem: selectedHours),
+                                  itemExtent: 40,
+                                  onSelectedItemChanged: (index) => selectedHours = index,
+                                  children: List.generate(
+                                    24,
+                                    (index) => Center(
+                                      child: Text(
+                                        index.toString().padLeft(2, '0'),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  const Text(':', style: TextStyle(color: Colors.white, fontSize: 20)),
-                  // Minutes picker
+                  // Minutes
                   Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedMinutes),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (index) => selectedMinutes = index,
-                      children: List.generate(
-                        60,
-                        (index) => Center(
-                          child: Text(
-                            index.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w600,
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Minutes',
+                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(initialItem: selectedMinutes),
+                            itemExtent: 40,
+                            onSelectedItemChanged: (index) => selectedMinutes = index,
+                            children: List.generate(
+                              60,
+                              (index) => Center(
+                                child: Text(
+                                  index.toString().padLeft(2, '0'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ],
