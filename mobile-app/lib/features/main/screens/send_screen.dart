@@ -619,13 +619,13 @@ class SendScreenState extends State<SendScreen> {
                           onTap: () => Navigator.pop(context),
                           child: const Row(
                             children: [
-                              Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                              Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                               SizedBox(width: 4),
                               Text(
                                 'Send',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 24,
+                                  fontSize: 12,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w400,
                                 ),
