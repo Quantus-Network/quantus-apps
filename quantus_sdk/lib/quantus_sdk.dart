@@ -26,6 +26,7 @@ export 'src/extensions/string_extensions.dart';
 export 'src/services/address_formatting_service.dart';
 export 'src/models/sorted_transactions.dart';
 export 'src/models/transaction_state.dart';
+export 'src/services/recent_addresses_service.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

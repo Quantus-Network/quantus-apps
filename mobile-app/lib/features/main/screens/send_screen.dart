@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/send_progress_ove
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
+import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -42,6 +43,7 @@ class SendScreenState extends State<SendScreen> {
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
     _amountController.addListener(_debounceFetchFee);
+    // NEW: In real implementation, load _recentAddresses from a service here (e.g., RecentAddressesService.loadRecent())
   }
 
   @override
@@ -508,6 +510,72 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
+  // NEW: Method to show the recent addresses modal bottom sheet
+  void _showRecentAddresses() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8, // Adjustable height for scrollability
+        padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
+        decoration: const ShapeDecoration(
+          color: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)), // Softer radius for modal
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Top row with close button (replacing empty stack in Figma)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ],
+            ),
+            const SizedBox(height: 26), // Spacing from Figma
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 226,
+                    child: Text(
+                      'Recently Used',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Spacing from Figma
+                  Expanded(
+                    child: RecentAddressList(
+                      onAddressSelected: (address) {
+                        _recipientController.text = address;
+                        _lookupIdentity();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -662,20 +730,32 @@ class SendScreenState extends State<SendScreen> {
                           ),
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: Text(
-                            _savedAddressesLabel,
-                            style: TextStyle(
-                              color: Colors.white.useOpacity(0.8),
-                              fontSize: 13,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: _savedAddressesLabel.isEmpty
+                              ? GestureDetector(
+                                  onTap: _showRecentAddresses,
+                                  child: Text(
+                                    'Recent Addresses',
+                                    style: TextStyle(
+                                      color: Colors.white.useOpacity(0.50),
+                                      fontSize: 12,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  _savedAddressesLabel,
+                                  style: TextStyle(
+                                    color: Colors.white.useOpacity(0.8),
+                                    fontSize: 13,
+                                    fontFamily: 'Fira Code',
+                                  ),
+                                ),
                         ),
                       ),
                       Expanded(

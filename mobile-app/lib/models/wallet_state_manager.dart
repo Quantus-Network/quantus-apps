@@ -214,6 +214,7 @@ class WalletStateManager with ChangeNotifier {
         case 'inBlock':
           newState = TransactionState.inBlock;
           hash = status.value;
+          RecentAddressesService().addAddress(targetAddress);
           break;
         case 'finalized':
           print('unexpected finalized status.');
@@ -275,6 +276,7 @@ class WalletStateManager with ChangeNotifier {
         case 'inBlock':
           newState = TransactionState.inBlock;
           blockHash = status.value;
+          RecentAddressesService().addAddress(recipientAddress);
           break;
         case 'finalized':
           print('unexpected finalized status.');
