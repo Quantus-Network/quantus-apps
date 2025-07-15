@@ -2,9 +2,7 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class PendingTransactionEvent extends TransactionEvent {
-  @override
   TransactionState transactionState;
-  @override
   final bool isReversible;
   String? txId; // Nullable, set later for reversible
   final ReversibleTransferStatus? status; // Optional, for reversible
@@ -12,9 +10,7 @@ class PendingTransactionEvent extends TransactionEvent {
   BigInt? fee; // Optional, for transfers
   String? error;
 
-  @override
   DateTime get scheduledAt => scheduledAtTime ?? DateTime.now();
-  @override
   bool get isScheduled => isReversible;
 
   PendingTransactionEvent({

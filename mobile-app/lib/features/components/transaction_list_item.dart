@@ -23,7 +23,9 @@ class TransactionListItemState extends State<TransactionListItem> {
   Duration? _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
   bool get isPending => widget.transaction is PendingTransactionEvent;
-  bool get isReversibleScheduled => widget.transaction.isScheduled;
+  bool get isReversibleScheduled =>
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
   bool get isReversibleCancelled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.CANCELLED;
@@ -31,9 +33,11 @@ class TransactionListItemState extends State<TransactionListItem> {
   @override
   void initState() {
     super.initState();
-    if (widget.transaction.isScheduled) {
+    if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
+      print('tx is scheduled ${tx.scheduledAt}');
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
+      print('remaining time: $_remainingTime');
       if (_remainingTime!.isNegative) {
         _remainingTime = Duration.zero;
       }
@@ -185,14 +189,16 @@ class TransactionListItemState extends State<TransactionListItem> {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
         case ReversibleTransferStatus.SCHEDULED:
+          print('remaining time: $_remainingTime');
           if (_remainingTime != null && _remainingTime! > Duration.zero) {
             return _TimerDisplay(
               duration: _remainingTime!,
               formatDuration: _formatDuration,
               isSending: widget.transaction.from == widget.currentWalletAddress,
             );
+          } else {
+            return const _StatusDisplay(status: 'Pending');
           }
-          return const _StatusDisplay(status: 'Pending');
         case ReversibleTransferStatus.EXECUTED:
           return const SizedBox.shrink();
         case ReversibleTransferStatus.CANCELLED:

@@ -1,5 +1,4 @@
 import 'package:quantus_sdk/src/models/reversible_transfer_status.dart';
-import 'package:quantus_sdk/src/models/transaction_state.dart';
 
 // Base class for different transaction types
 abstract class TransactionEvent {
@@ -11,11 +10,6 @@ abstract class TransactionEvent {
   int blockNumber;
   String? extrinsicHash;
   String? blockHash;
-
-  bool get isReversible => false;
-  bool get isScheduled => false;
-  DateTime get scheduledAt => DateTime.now();
-  TransactionState get transactionState => TransactionState.inHistory;
 
   TransactionEvent({
     required this.id,
@@ -76,11 +70,8 @@ class TransferEvent extends TransactionEvent {
 class ReversibleTransferEvent extends TransactionEvent {
   final String txId;
   final ReversibleTransferStatus status;
-  @override
   final DateTime scheduledAt;
-  @override
   bool get isReversible => true;
-  @override
   bool get isScheduled => status == ReversibleTransferStatus.SCHEDULED;
 
   ReversibleTransferEvent({
@@ -101,6 +92,8 @@ class ReversibleTransferEvent extends TransactionEvent {
     final block = json['block'] as Map<String, dynamic>;
     final blockHeight = block['height'] as int;
     final blockHash = block['hash'] as String? ?? '';
+
+    print('scheduled event parser ${DateTime.parse(json['scheduledAt'] as String)}');
     return ReversibleTransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',
