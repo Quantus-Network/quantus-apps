@@ -5,10 +5,10 @@ import 'package:resonance_network_wallet/features/components/recent_address_list
 class RecentAddressList extends StatefulWidget {
   final Function(String) onAddressSelected;
 
-  const RecentAddressList({Key? key, required this.onAddressSelected}) : super(key: key);
+  const RecentAddressList({super.key, required this.onAddressSelected});
 
   @override
-  _RecentAddressListState createState() => _RecentAddressListState();
+  State<RecentAddressList> createState() => _RecentAddressListState();
 }
 
 class _RecentAddressListState extends State<RecentAddressList> {

@@ -43,7 +43,6 @@ class SendScreenState extends State<SendScreen> {
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
     _amountController.addListener(_debounceFetchFee);
-    // NEW: In real implementation, load _recentAddresses from a service here (e.g., RecentAddressesService.loadRecent())
   }
 
   @override
