@@ -51,7 +51,6 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         _isExternalMinerInstalled = false;
         _isLoading = false;
       });
-      // TODO: Potentially show a user-friendly error message here
     }
   }
 
@@ -142,7 +141,6 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
           _downloadProgressText = "Error: ${e.toString()}";
         });
       }
-      // TODO: Show a user-friendly error message indicating installation failed
       if (mounted) {
         ScaffoldMessenger.of(
           context,

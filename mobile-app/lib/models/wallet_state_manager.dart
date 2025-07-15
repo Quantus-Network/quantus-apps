@@ -179,18 +179,9 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  // TODO: this should update the state of the pending transfer to one of
-  // * ready
-  // * broadcast
-  // * in block
-  // * failed
-  void updatePending(String PendingID, String Status) {}
-
   void _startPolling() {
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       if (pendingTransactions.isEmpty) return;
-      // TODO see if we need this - we need to get the history as long as we have pending tx, and resolve them.
-
       notifyListeners();
     });
   }

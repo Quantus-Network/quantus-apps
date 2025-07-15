@@ -24,12 +24,6 @@ class _WalletMainState extends State<WalletMain> {
   final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
 
-  // Pagination state
-  int _offset = 0;
-  bool _hasMore = true;
-  bool _isLoadingMore = false;
-  static const int _transactionsPerPage = 20;
-
   @override
   void initState() {
     super.initState();
@@ -43,20 +37,6 @@ class _WalletMainState extends State<WalletMain> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadMoreTransactions(WalletStateManager walletStateManager) async {
-    final _accountId = walletStateManager.walletData.data?.accountId;
-    if (!_hasMore || _isLoadingMore || walletStateManager.txData.isLoading || _accountId == null) return;
-
-    setState(() {
-      _isLoadingMore = true;
-    });
-    await walletStateManager.loadMoreTransactions(accountId: _accountId, limit: _transactionsPerPage, offset: _offset);
-    setState(() {
-      _isLoadingMore = false;
-      _offset = walletStateManager.combinedTransactions.length;
-    });
   }
 
   // Helper to format the address (now just returns the full address)
@@ -119,7 +99,7 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Widget _buildHistorySection(WalletStateManager walletStateManager) {
-    final _accountId = walletStateManager.walletData.data?.accountId;
+    final accountId = walletStateManager.walletData.data?.accountId;
     if (walletStateManager.txData.isLoading) {
       return Container(
         width: 321,
@@ -179,7 +159,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         RecentTransactionsList(
           transactions: walletStateManager.combinedTransactions.take(5).toList(),
-          currentWalletAddress: _accountId!,
+          currentWalletAddress: accountId!,
         ),
         if (true)
           Padding(
@@ -233,9 +213,9 @@ class _WalletMainState extends State<WalletMain> {
     final balanceLoader = walletStateManager.walletData;
 
     if (balanceLoader.isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF0E0E0E),
-        body: const Center(child: CircularProgressIndicator(color: Colors.white)),
+      return const Scaffold(
+        backgroundColor: Color(0xFF0E0E0E),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
@@ -300,7 +280,7 @@ class _WalletMainState extends State<WalletMain> {
 
     final walletData = balanceLoader.data!;
     final displayAddress = _formatAddress(walletData.accountId);
-    final _accountId = walletStateManager.walletData.data?.accountId;
+    final accountId = walletStateManager.walletData.data?.accountId;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
@@ -333,11 +313,11 @@ class _WalletMainState extends State<WalletMain> {
                             IconButton(
                               icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
                               onPressed: () {
-                                if (_accountId != null) {
+                                if (accountId != null) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AccountProfilePage(currentAccountId: _accountId),
+                                      builder: (context) => AccountProfilePage(currentAccountId: accountId),
                                     ),
                                   );
                                 }
@@ -351,8 +331,8 @@ class _WalletMainState extends State<WalletMain> {
                           children: [
                             InkWell(
                               onTap: () {
-                                if (_accountId != null) {
-                                  Clipboard.setData(ClipboardData(text: _accountId));
+                                if (accountId != null) {
+                                  Clipboard.setData(ClipboardData(text: accountId));
                                   showTopSnackBar(context, title: 'Copied!', message: 'Account ID copied to clipboard');
                                 }
                               },

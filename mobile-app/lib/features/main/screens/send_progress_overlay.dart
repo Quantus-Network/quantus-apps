@@ -524,7 +524,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
             // Reversible for
             Text(
-              'Reversible for: ${_formatReversibleTime()}',
+              widget.reversibleTimeSeconds > 0 ? 'Reversible for: ${_formatReversibleTime()}' : '',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -535,24 +535,24 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             ),
             const SizedBox(height: 16),
 
-            // View Transaction
-            GestureDetector(
-              onTap: () {
-                // TODO: Implement view transaction logic
-              },
-              child: const Text(
-                'View Transaction',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF16CECE),
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.underline,
-                  decorationColor: Color(0xFF16CECE),
-                ),
-              ),
-            ),
+            // // View Transaction
+            // GestureDetector(
+            //   onTap: () {
+            //     // TODO: Implement view transaction logic - remove this probably
+            //   },
+            //   child: const Text(
+            //     'View Transaction',
+            //     textAlign: TextAlign.center,
+            //     style: TextStyle(
+            //       color: Color(0xFF16CECE),
+            //       fontSize: 12,
+            //       fontFamily: 'Fira Code',
+            //       fontWeight: FontWeight.w500,
+            //       decoration: TextDecoration.underline,
+            //       decorationColor: Color(0xFF16CECE),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: 30),

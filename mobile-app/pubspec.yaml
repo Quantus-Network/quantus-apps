@@ -38,6 +38,7 @@ dependencies:
       url: https://github.com/Quantus-Network/human-checkphrase.git
       path: dart
   provider: ^6.1.5
+  polkadart: ^0.7.1
 
 dev_dependencies:
   flutter_test:

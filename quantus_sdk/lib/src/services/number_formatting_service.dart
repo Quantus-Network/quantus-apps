@@ -1,7 +1,6 @@
 // Keep for potential future use (grouping)
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
 
 class NumberFormattingService {

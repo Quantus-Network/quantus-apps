@@ -78,7 +78,7 @@ class ReversibleTransfersService {
     required BigInt amount,
     required BlockNumberOrTimestamp delay,
     void Function(ExtrinsicStatus)? onStatus,
-  }) async {
+  }) {
     final resonanceApi = Resonance(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
@@ -99,7 +99,7 @@ class ReversibleTransfersService {
     required BigInt amount,
     required int delaySeconds,
     void Function(ExtrinsicStatus)? onStatus,
-  }) async {
+  }) {
     // convert seconds to milliseconds for runtime
     final delay = Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
     return scheduleReversibleTransferWithDelay(
