@@ -72,33 +72,28 @@ class ReversibleTransfersService {
   }
 
   /// Schedule a reversible transfer with custom delay (ad hoc transfer)
-  Future<Future<StreamSubscription<ExtrinsicStatus>>> scheduleReversibleTransferWithDelay({
+  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransferWithDelay({
     required String senderSeed,
     required String recipientAddress,
     required BigInt amount,
     required BlockNumberOrTimestamp delay,
     void Function(ExtrinsicStatus)? onStatus,
   }) async {
-    try {
-      final resonanceApi = Resonance(_substrateService.provider!);
-      final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
+    final resonanceApi = Resonance(_substrateService.provider!);
+    final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
-      // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
-        dest: multiDest,
-        amount: amount,
-        delay: delay,
-      );
+    final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
+      dest: multiDest,
+      amount: amount,
+      delay: delay,
+    );
 
-      // Submit the transaction using substrate service
-      return _substrateService.submitExtrinsic(senderSeed, call, onStatus: onStatus);
-    } catch (e) {
-      throw Exception('Failed to schedule reversible transfer with delay: $e');
-    }
+    // Submit the transaction using substrate service
+    return _substrateService.submitExtrinsic(senderSeed, call, onStatus: onStatus);
   }
 
   /// Schedule a reversible transfer with custom delay in seconds
-  Future<Future<Future<StreamSubscription<ExtrinsicStatus>>>> scheduleReversibleTransferWithDelaySeconds({
+  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransferWithDelaySeconds({
     required String senderSeed,
     required String recipientAddress,
     required BigInt amount,
