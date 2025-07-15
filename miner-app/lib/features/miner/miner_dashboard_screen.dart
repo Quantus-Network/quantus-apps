@@ -71,7 +71,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
           _walletBalance = 'Address not set';
           _walletAddress = null;
         });
-        // TODO: Implement navigation to rewards address setup screen
         print('Rewards address mnemonic not found. Redirecting to setup...');
         // Example Navigation (requires go_router setup)
         // context.go('/rewards_address_setup');
@@ -81,7 +80,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         _walletBalance = 'Error fetching balance';
         _walletAddress = address;
       });
-      // TODO: Show a more user-friendly error message (e.g., Snackbar)
       print('Error fetching wallet balance: $e');
     }
   }
@@ -190,7 +188,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                   style: const TextStyle(fontSize: 14, color: Colors.black54, fontFamily: 'Fira Code'),
                                 ),
                               ),
-                            // TODO: Potentially add recent transactions or address here
                           ],
                         ),
                       ),
@@ -216,7 +213,6 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       (_miningStats.trim().isEmpty) ? 'No data' : _miningStats.replaceAll('\\n', '\n'),
                       style: const TextStyle(fontSize: 16),
                     ),
-                    // TODO: Format stats nicely, possibly with specific labels
                   ],
                 ),
               ),

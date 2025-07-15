@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'dart:io';
+import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'dart:async';
 import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -10,14 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-
-class WalletData {
-  final String accountId;
-  final String walletName;
-  final BigInt balance;
-
-  WalletData({required this.accountId, required this.walletName, required this.balance});
-}
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
@@ -27,152 +20,23 @@ class WalletMain extends StatefulWidget {
 }
 
 class _WalletMainState extends State<WalletMain> {
-  final SubstrateService _substrateService = SubstrateService();
   final NumberFormattingService _formattingService = NumberFormattingService();
-  final SettingsService _settingsService = SettingsService();
-  final ChainHistoryService _chainHistoryService = ChainHistoryService();
-
-  Future<WalletData?>? _walletDataFuture;
-  String? _accountId;
-  SortedTransactionsList? _transactions;
-  bool _isHistoryLoading = true;
-  String? _historyError;
-
-  // Pagination state
-  int _offset = 0;
-  bool _hasMore = true;
-  bool _isLoadingMore = false;
-  static const int _transactionsPerPage = 10;
+  final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadWalletDataAndSetFuture();
-    // _scrollController.addListener(_onScroll);
+    // Access the WalletStateManager from the provider without listening to changes
+    final walletStateManager = Provider.of<WalletStateManager>(context, listen: false);
+    // Initial data load
+    walletStateManager.load();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  // TODO: we need to have scrolling
-  // void _onScroll() {
-  //   if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-  //     _loadMoreTransactions();
-  //   }
-  // }
-
-  void _loadWalletDataAndSetFuture() {
-    setState(() {
-      _walletDataFuture = _loadWalletDataInternal();
-    });
-  }
-
-  Future<WalletData?> _loadWalletDataInternal() async {
-    String? accountId;
-    BigInt? balance;
-    const Duration networkTimeout = Duration(seconds: 15);
-
-    try {
-      accountId = await _settingsService.getAccountId();
-
-      if (accountId == null || accountId.isEmpty) {
-        throw Exception('Account ID not found');
-      }
-
-      _accountId = accountId;
-
-      print('Attempting initial balance query for $accountId...');
-      balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-      print('Initial balance query successful.');
-
-      // Fetch transaction history after successful wallet data load
-      await _fetchTransactionHistory();
-    } catch (e) {
-      print('Initial load/query failed: $e');
-
-      bool isConnectionError =
-          e is SocketException ||
-          e is TimeoutException ||
-          e.toString().contains('Connection refused') ||
-          e.toString().contains('WebSocket');
-
-      if (isConnectionError && accountId != null) {
-        print('Connection error detected. Attempting reconnect and retry...');
-        try {
-          await _substrateService.reconnect();
-          balance = await _substrateService.queryBalance(accountId).timeout(networkTimeout);
-          print('Balance query successful after reconnect.');
-        } catch (retryError) {
-          print('Retry failed after reconnect: $retryError');
-          throw Exception('Failed to load wallet data after retry: $retryError');
-        }
-      } else {
-        print('Error was not connection-related or accountId is null. Rethrowing.');
-        throw Exception('Failed to load wallet data: $e');
-      }
-    }
-
-    return WalletData(accountId: accountId, walletName: '', balance: balance);
-  }
-
-  Future<void> _loadMoreTransactions() async {
-    if (!_hasMore || _isLoadingMore || _isHistoryLoading) return;
-
-    setState(() {
-      _isLoadingMore = true;
-    });
-
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(
-        accountId: _accountId!,
-        limit: _transactionsPerPage,
-        offset: _offset,
-      );
-
-      setState(() {
-        _transactions?.otherTransfers.addAll(result.otherTransfers);
-        _hasMore = result.otherTransfers.length == _transactionsPerPage;
-        _offset += result.otherTransfers.length;
-        _isLoadingMore = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingMore = false;
-        _historyError = 'Failed to load more transactions.';
-      });
-    }
-  }
-
-  Future<void> _fetchTransactionHistory() async {
-    if (_accountId == null) return;
-
-    setState(() {
-      _isHistoryLoading = true;
-      _historyError = null;
-      _offset = 0;
-      _hasMore = true;
-      _transactions = null;
-    });
-
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(accountId: _accountId!, limit: 5, offset: 0);
-
-      setState(() {
-        _transactions = result;
-        _hasMore = result.otherTransfers.length == 5;
-        _isHistoryLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching transaction history: $e');
-      setState(() {
-        _historyError = 'Failed to load transaction history.';
-        _isHistoryLoading = false;
-      });
-    }
   }
 
   // Helper to format the address (now just returns the full address)
@@ -234,8 +98,9 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
-  Widget _buildHistorySection() {
-    if (_isHistoryLoading) {
+  Widget _buildHistorySection(WalletStateManager walletStateManager) {
+    final accountId = walletStateManager.walletData.data?.accountId;
+    if (walletStateManager.txData.isLoading) {
       return Container(
         width: 321,
         padding: const EdgeInsets.all(10),
@@ -252,7 +117,7 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    if (_historyError != null) {
+    if (walletStateManager.txData.hasError) {
       return Container(
         width: 321,
         padding: const EdgeInsets.all(20),
@@ -265,12 +130,12 @@ class _WalletMainState extends State<WalletMain> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _historyError!,
+                walletStateManager.txData.error!,
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              TextButton(onPressed: _fetchTransactionHistory, child: const Text('Retry')),
+              TextButton(onPressed: walletStateManager.load, child: const Text('Retry')),
             ],
           ),
         ),
@@ -293,8 +158,8 @@ class _WalletMainState extends State<WalletMain> {
           ),
         ),
         RecentTransactionsList(
-          transactions: _transactions?.combined.take(5).toList() ?? [],
-          currentWalletAddress: _accountId!,
+          transactions: walletStateManager.combinedTransactions.take(5).toList(),
+          currentWalletAddress: accountId!,
         ),
         if (true)
           Padding(
@@ -305,7 +170,7 @@ class _WalletMainState extends State<WalletMain> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TransactionsScreen(initialAccountId: _accountId!)),
+                    MaterialPageRoute(builder: (context) => TransactionsScreen(manager: walletStateManager)),
                   );
                 },
                 child: Text(
@@ -344,6 +209,79 @@ class _WalletMainState extends State<WalletMain> {
 
   @override
   Widget build(BuildContext context) {
+    final walletStateManager = Provider.of<WalletStateManager>(context);
+    final balanceLoader = walletStateManager.walletData;
+
+    if (balanceLoader.isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0E0E0E),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (balanceLoader.hasError || !balanceLoader.hasData) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0E0E0E),
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Failed to Connect',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Could not load wallet data. Please check your network connection and try again.',
+                        style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0, top: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildFullWidthActionButton(
+                    label: 'Retry',
+                    onTap: () => walletStateManager.load(),
+                    gradient: const LinearGradient(
+                      begin: Alignment(0.50, 0.00),
+                      end: Alignment(0.50, 1.00),
+                      colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  _buildFullWidthActionButton(
+                    label: 'Logout',
+                    onTap: _logout,
+                    backgroundColor: Colors.white.useOpacity(0.2),
+                    textColor: Colors.white.useOpacity(0.8),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final walletData = balanceLoader.data!;
+    final displayAddress = _formatAddress(walletData.accountId);
+    final accountId = walletStateManager.walletData.data?.accountId;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
       body: Container(
@@ -357,224 +295,150 @@ class _WalletMainState extends State<WalletMain> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: FutureBuilder<WalletData?>(
-              future: _walletDataFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.white));
-                }
-                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline, color: Colors.red, size: 50),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  'Failed to Connect',
-                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Could not load wallet data. Please check your network connection and try again.',
-                                  style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0, top: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: RefreshIndicator(
+              onRefresh: () => walletStateManager.load(),
+              color: const Color(0xFF0CE6ED),
+              backgroundColor: Colors.black,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildFullWidthActionButton(
-                              label: 'Retry',
-                              onTap: _loadWalletDataAndSetFuture,
-                              gradient: const LinearGradient(
-                                begin: Alignment(0.50, 0.00),
-                                end: Alignment(0.50, 1.00),
-                                colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            _buildFullWidthActionButton(
-                              label: 'Logout',
-                              onTap: _logout,
-                              backgroundColor: Colors.white.useOpacity(0.2),
-                              textColor: Colors.white.useOpacity(0.8),
+                            SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
+                            IconButton(
+                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                              onPressed: () {
+                                if (accountId != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AccountProfilePage(currentAccountId: accountId),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  );
-                }
-
-                final walletData = snapshot.data!;
-                final displayAddress = _formatAddress(walletData.accountId);
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    _loadWalletDataAndSetFuture();
-                    await _walletDataFuture;
-                  },
-                  color: const Color(0xFF0CE6ED),
-                  backgroundColor: Colors.black,
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Column(
+                        const SizedBox(height: 40),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
-                                IconButton(
-                                  icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
-                                  onPressed: () {
-                                    if (_accountId != null) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AccountProfilePage(currentAccountId: _accountId!),
+                            InkWell(
+                              onTap: () {
+                                if (accountId != null) {
+                                  Clipboard.setData(ClipboardData(text: accountId));
+                                  showTopSnackBar(context, title: 'Copied!', message: 'Account ID copied to clipboard');
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(5),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image.asset('assets/active_dot.png', width: 20, height: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                        decoration: ShapeDecoration(
+                                          color: Colors.black.useOpacity(0.5),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                         ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 40),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                InkWell(
-                                  onTap: () {
-                                    if (_accountId != null) {
-                                      Clipboard.setData(ClipboardData(text: _accountId!));
-                                      showTopSnackBar(
-                                        context,
-                                        title: 'Copied!',
-                                        message: 'Account ID copied to clipboard',
-                                      );
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Image.asset('assets/active_dot.png', width: 20, height: 20),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                            decoration: ShapeDecoration(
-                                              color: Colors.black.useOpacity(0.5),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            ),
-                                            child: Text(
-                                              displayAddress,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontFamily: 'Fira Code',
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                            ),
+                                        child: Text(
+                                          displayAddress,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontFamily: 'Fira Code',
+                                            fontWeight: FontWeight.w400,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        const Icon(Icons.expand_more, color: Colors.white70, size: 12),
-                                      ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: _formattingService.formatBalance(walletStateManager.estimatedBalance),
+                                    style: const TextStyle(
+                                      color: Color(0xFFE6E6E6),
+                                      fontSize: 40,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 7),
-                                Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: _formattingService.formatBalance(walletData.balance),
-                                        style: const TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 40,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const TextSpan(
-                                        text: ' ${AppConstants.tokenSymbol}',
-                                        style: TextStyle(
-                                          color: Color(0xFFE6E6E6),
-                                          fontSize: 20,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+                                  const TextSpan(
+                                    text: ' ${AppConstants.tokenSymbol}',
+                                    style: TextStyle(
+                                      color: Color(0xFFE6E6E6),
+                                      fontSize: 20,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 30),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
-                                  label: 'SEND',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/send');
-                                  },
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
-                                  label: 'RECEIVE',
-                                  borderColor: const Color(0xFFB258F1),
-                                  onPressed: () {
-                                    showReceiveSheet(context);
-                                  },
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
-                                  label: 'SWAP',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {},
-                                  disabled: true,
-                                ),
-                                _buildActionButton(
-                                  iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
-                                  label: 'BRIDGE',
-                                  borderColor: const Color(0xFF0AD4F6),
-                                  onPressed: () {},
-                                  disabled: true,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 30),
                           ],
                         ),
-                      ),
-                      SliverToBoxAdapter(child: _buildHistorySection()),
-                    ],
+                        const SizedBox(height: 30),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
+                              label: 'SEND',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/send');
+                              },
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                              label: 'RECEIVE',
+                              borderColor: const Color(0xFFB258F1),
+                              onPressed: () {
+                                showReceiveSheet(context);
+                              },
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
+                              label: 'SWAP',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {},
+                              disabled: true,
+                            ),
+                            _buildActionButton(
+                              iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
+                              label: 'BRIDGE',
+                              borderColor: const Color(0xFF0AD4F6),
+                              onPressed: () {},
+                              disabled: true,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
-                );
-              },
+                  SliverToBoxAdapter(child: _buildHistorySection(walletStateManager)),
+                ],
+              ),
             ),
           ),
         ),

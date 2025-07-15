@@ -62,6 +62,7 @@ query ScheduledTransfersByAccount($account: String!) {
       status
       block {
         height
+        hash
       }
       extrinsicHash
       timestamp
@@ -117,6 +118,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       }
       block {
         height
+        hash
       }
       extrinsicHash
       timestamp
@@ -137,6 +139,7 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       status
       block {
         height
+        hash
       }
       extrinsicHash
       timestamp

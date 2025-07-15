@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/models/sorted_transactions.dart';
-import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/features/components/transactions_list.dart';
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
 
 class TransactionsScreen extends StatefulWidget {
-  final String initialAccountId;
+  final WalletStateManager manager;
 
-  const TransactionsScreen({super.key, required this.initialAccountId});
+  const TransactionsScreen({super.key, required this.manager});
 
   @override
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  final ChainHistoryService _chainHistoryService = ChainHistoryService();
   final ScrollController _scrollController = ScrollController();
 
   SortedTransactionsList? _transactions;
@@ -26,66 +25,52 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchInitialTransactions();
+    widget.manager.addListener(_updateState);
+    _updateState(); // Set initial state from manager
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    widget.manager.removeListener(_updateState);
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchInitialTransactions() async {
+  void _updateState() {
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _isLoading = widget.manager.txData.isLoading;
+      _error = widget.manager.txData.error;
+      _transactions = widget.manager.txData.data;
+      if (_transactions != null && _offset == 0) {
+        // On initial/refresh, update pagination info
+        _offset = _transactions!.otherTransfers.length;
+        _hasMore = _transactions!.otherTransfers.length == _limit;
+      }
     });
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(
-        accountId: widget.initialAccountId,
-        limit: _limit,
-        offset: 0,
-      );
-      setState(() {
-        _transactions = result;
-        _hasMore = result.otherTransfers.length == _limit;
-        _offset = result.otherTransfers.length;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Failed to load transactions.';
-      });
-    }
   }
 
   Future<void> _fetchMoreTransactions() async {
     if (!_hasMore || _isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    final oldLength = _transactions?.otherTransfers.length ?? 0;
+    final accountId = widget.manager.walletData.data!.accountId;
 
-    try {
-      final result = await _chainHistoryService.fetchAllTransactionTypes(
-        accountId: widget.initialAccountId,
-        limit: _limit,
-        offset: _offset,
-      );
-      setState(() {
-        _transactions!.otherTransfers.addAll(result.otherTransfers);
-        _hasMore = result.otherTransfers.length == _limit;
-        _offset += result.otherTransfers.length;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        // Optionally show an error for loading more
-      });
-    }
+    await widget.manager.loadMoreTransactions(accountId: accountId, limit: _limit, offset: _offset);
+
+    // No need for setState; listener will trigger _updateState
+    // But calculate hasMore/offset here if needed (listener updates _transactions)
+    final added = _transactions!.otherTransfers.length - oldLength;
+    _offset += added;
+    _hasMore = added == _limit;
+  }
+
+  Future<void> _refreshTransactions() async {
+    _offset = 0;
+    _hasMore = true;
+    _error = null;
+    await widget.manager.refreshTransactions();
+    // Listener will handle UI update
   }
 
   void _onScroll() {
@@ -126,14 +111,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         child: Text(_error!, style: const TextStyle(color: Colors.red)),
       );
     }
-    if (_transactions!.combined.isEmpty) {
+    if (_transactions?.combined.isEmpty ?? true) {
       return const Center(
         child: Text('No transactions found.', style: TextStyle(color: Colors.white)),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchInitialTransactions,
+      onRefresh: _refreshTransactions,
       child: ListView(
         controller: _scrollController,
         children: [
@@ -141,10 +126,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: RecentTransactionsList(
               transactions: _transactions!.combined,
-              currentWalletAddress: widget.initialAccountId,
+              currentWalletAddress: widget.manager.walletData.data!.accountId,
             ),
           ),
-          if (_hasMore)
+          if (_isLoading && _hasMore)
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: Center(child: CircularProgressIndicator()),

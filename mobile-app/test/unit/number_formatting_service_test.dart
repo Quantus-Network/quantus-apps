@@ -23,9 +23,9 @@ void main() {
         expect(service.formatBalance(balance, maxDecimals: 5), '1.2345'); // No trailing zeros
       });
 
-      test('formats balance with more decimals than max (rounds display)', () {
+      test('formats balance with more decimals than max (truncates display)', () {
         final balance = BigInt.parse('1234567800000'); // 1.2345678
-        expect(service.formatBalance(balance, maxDecimals: 4), '1.2346');
+        expect(service.formatBalance(balance, maxDecimals: 4), '1.2345');
         expect(service.formatBalance(balance, maxDecimals: 2), '1.23');
         expect(service.formatBalance(balance, maxDecimals: 0), '1');
       });

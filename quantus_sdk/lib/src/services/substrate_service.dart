@@ -298,7 +298,7 @@ class SubstrateService {
     return senderWallet;
   }
 
-  Future<String> submitExtrinsic(
+  Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(
     String senderSeed,
     RuntimeCall call, {
     void Function(ExtrinsicStatus)? onStatus,
@@ -352,8 +352,7 @@ class SubstrateService {
           tip: 0,
         ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
 
-        await _authorApi!.submitAndWatchExtrinsic(extrinsic, onStatus ?? (data) {});
-        return '0';
+        return _authorApi!.submitAndWatchExtrinsic(extrinsic, onStatus ?? (data) {});
       } catch (e) {
         retryCount++;
         if (retryCount >= maxRetries) {

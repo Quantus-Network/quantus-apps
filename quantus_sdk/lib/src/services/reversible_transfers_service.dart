@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/high_security_account_data.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
@@ -19,7 +22,7 @@ class ReversibleTransfersService {
 
   /// Enable reversibility for the calling account with specified delay and policy
   /// Used for theft deterrence - enables all future transfers to be reversible
-  Future<String> setHighSecurity({
+  Future<StreamSubscription<ExtrinsicStatus>> setHighSecurity({
     required String senderSeed,
     required BlockNumberOrTimestamp delay,
     required DelayPolicy policy,
@@ -42,14 +45,14 @@ class ReversibleTransfersService {
       );
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return _substrateService.submitExtrinsic(senderSeed, call);
     } catch (e) {
       throw Exception('Failed to enable reversibility: $e');
     }
   }
 
   /// Schedule a reversible transfer using account's default settings
-  Future<String> scheduleReversibleTransfer({
+  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransfer({
     required String senderSeed,
     required String recipientAddress,
     required BigInt amount,
@@ -62,44 +65,41 @@ class ReversibleTransfersService {
       final call = resonanceApi.tx.reversibleTransfers.scheduleTransfer(dest: multiDest, amount: amount);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return _substrateService.submitExtrinsic(senderSeed, call);
     } catch (e) {
       throw Exception('Failed to schedule reversible transfer: $e');
     }
   }
 
   /// Schedule a reversible transfer with custom delay (ad hoc transfer)
-  Future<String> scheduleReversibleTransferWithDelay({
+  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransferWithDelay({
     required String senderSeed,
     required String recipientAddress,
     required BigInt amount,
     required BlockNumberOrTimestamp delay,
-  }) async {
-    try {
-      final resonanceApi = Resonance(_substrateService.provider!);
-      final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
+    void Function(ExtrinsicStatus)? onStatus,
+  }) {
+    final resonanceApi = Resonance(_substrateService.provider!);
+    final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
-      // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
-        dest: multiDest,
-        amount: amount,
-        delay: delay,
-      );
+    final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
+      dest: multiDest,
+      amount: amount,
+      delay: delay,
+    );
 
-      // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
-    } catch (e) {
-      throw Exception('Failed to schedule reversible transfer with delay: $e');
-    }
+    // Submit the transaction using substrate service
+    return _substrateService.submitExtrinsic(senderSeed, call, onStatus: onStatus);
   }
 
   /// Schedule a reversible transfer with custom delay in seconds
-  Future<String> scheduleReversibleTransferWithDelaySeconds({
+  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransferWithDelaySeconds({
     required String senderSeed,
     required String recipientAddress,
     required BigInt amount,
     required int delaySeconds,
-  }) async {
+    void Function(ExtrinsicStatus)? onStatus,
+  }) {
     // convert seconds to milliseconds for runtime
     final delay = Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
     return scheduleReversibleTransferWithDelay(
@@ -107,11 +107,15 @@ class ReversibleTransfersService {
       recipientAddress: recipientAddress,
       amount: amount,
       delay: delay,
+      onStatus: onStatus,
     );
   }
 
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
-  Future<String> cancelReversibleTransfer({required String senderSeed, required H256 transactionId}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> cancelReversibleTransfer({
+    required String senderSeed,
+    required H256 transactionId,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
@@ -119,14 +123,17 @@ class ReversibleTransfersService {
       final call = resonanceApi.tx.reversibleTransfers.cancel(txId: transactionId);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return _substrateService.submitExtrinsic(senderSeed, call);
     } catch (e) {
       throw Exception('Failed to cancel reversible transfer: $e');
     }
   }
 
   /// Execute a scheduled transfer (typically called by the scheduler)
-  Future<String> executeTransfer({required String senderSeed, required H256 transactionId}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> executeTransfer({
+    required String senderSeed,
+    required H256 transactionId,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
@@ -134,7 +141,7 @@ class ReversibleTransfersService {
       final call = resonanceApi.tx.reversibleTransfers.executeTransfer(txId: transactionId);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return _substrateService.submitExtrinsic(senderSeed, call);
     } catch (e) {
       throw Exception('Failed to execute transfer: $e');
     }

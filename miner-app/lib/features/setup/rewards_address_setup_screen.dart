@@ -79,7 +79,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
       print('Seed securely stored.');
     } catch (e) {
-      // TODO: Handle error (e.g., show a Snackbar)
       print('Error generating mnemonic or storing seed: $e');
       setState(() {
         _currentStep = RewardsAddressSetupStep.notSet; // Go back to not set on error
@@ -96,7 +95,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   void _importAddress() async {
     final mnemonic = _importController.text.trim();
     if (mnemonic.isEmpty) {
-      // TODO: Show an error to the user (e.g., Snackbar)
       print('Mnemonic/seed phrase cannot be empty.');
       return;
     }
@@ -115,7 +113,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
         _currentStep = RewardsAddressSetupStep.set; // Simulate success
       });
     } catch (e) {
-      // TODO: Handle error (e.g., show a Snackbar indicating invalid mnemonic)
       print('Error importing mnemonic or storing seed: $e');
       setState(() {
         _currentStep = RewardsAddressSetupStep.importExisting; // Stay on import screen on error
@@ -128,7 +125,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       await _storage.write(key: 'rewards_address_mnemonic', value: mnemonic);
       print('Mnemonic securely stored.');
     } catch (e) {
-      // TODO: Handle error (e.g., show a Snackbar)
       print('Error securely storing seed: $e');
       // Depending on the severity and platform, you might want to show a critical error message.
       rethrow; // Rethrow to be caught by the calling function
@@ -263,7 +259,6 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           ElevatedButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _generatedMnemonic));
-              // TODO: Show a confirmation message (e.g., Snackbar)
               print('Mnemonic copied to clipboard');
             },
             icon: const Icon(Icons.copy),

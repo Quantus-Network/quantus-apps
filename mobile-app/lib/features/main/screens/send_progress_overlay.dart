@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -66,6 +68,9 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         throw Exception('Sender mnemonic not found. Please re-import your wallet.');
       }
 
+      // ignore: use_build_context_synchronously
+      final walletStateManager = Provider.of<WalletStateManager>(context, listen: false);
+
       debugPrint('Attempting balance transfer...');
       debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
       debugPrint('  Recipient: ${widget.recipientAddress}');
@@ -74,13 +79,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
 
       if (widget.reversibleTimeSeconds <= 0) {
-        await BalancesService().balanceTransfer(senderSeed, widget.recipientAddress, widget.amount);
+        await walletStateManager.balanceTransfer(senderSeed, widget.recipientAddress, widget.amount, widget.fee);
       } else {
-        await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+        await walletStateManager.scheduleReversibleTransferWithDelaySeconds(
           senderSeed: senderSeed,
           recipientAddress: widget.recipientAddress,
           amount: widget.amount,
           delaySeconds: widget.reversibleTimeSeconds,
+          feeEstimate: widget.fee,
         );
       }
 
@@ -518,7 +524,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
             // Reversible for
             Text(
-              'Reversible for: ${_formatReversibleTime()}',
+              widget.reversibleTimeSeconds > 0 ? 'Reversible for: ${_formatReversibleTime()}' : '',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -528,25 +534,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // View Transaction
-            GestureDetector(
-              onTap: () {
-                // TODO: Implement view transaction logic
-              },
-              child: const Text(
-                'View Transaction',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF16CECE),
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.underline,
-                  decorationColor: Color(0xFF16CECE),
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 30),

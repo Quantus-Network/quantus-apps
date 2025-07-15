@@ -7,8 +7,9 @@ abstract class TransactionEvent {
   final String to;
   final BigInt amount;
   final DateTime timestamp;
-  final String? extrinsicHash;
-  final int blockNumber;
+  int blockNumber;
+  String? extrinsicHash;
+  String? blockHash;
 
   TransactionEvent({
     required this.id,
@@ -18,6 +19,7 @@ abstract class TransactionEvent {
     required this.timestamp,
     this.extrinsicHash,
     required this.blockNumber,
+    this.blockHash,
   });
 
   @override
@@ -39,11 +41,13 @@ class TransferEvent extends TransactionEvent {
     required this.fee,
     super.extrinsicHash,
     required super.blockNumber,
+    required super.blockHash,
   });
 
   factory TransferEvent.fromJson(Map<String, dynamic> json) {
     final block = json['block'] as Map<String, dynamic>?;
     final blockHeight = block?['height'] as int? ?? 0;
+    final blockHash = block?['hash'] as String? ?? '';
     return TransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',
@@ -53,6 +57,7 @@ class TransferEvent extends TransactionEvent {
       fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
+      blockHash: blockHash,
     );
   }
 
@@ -66,6 +71,8 @@ class ReversibleTransferEvent extends TransactionEvent {
   final String txId;
   final ReversibleTransferStatus status;
   final DateTime scheduledAt;
+  bool get isReversible => true;
+  bool get isScheduled => status == ReversibleTransferStatus.SCHEDULED;
 
   ReversibleTransferEvent({
     required super.id,
@@ -78,11 +85,15 @@ class ReversibleTransferEvent extends TransactionEvent {
     required this.scheduledAt,
     super.extrinsicHash,
     required super.blockNumber,
+    required super.blockHash,
   });
 
   factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json) {
     final block = json['block'] as Map<String, dynamic>;
     final blockHeight = block['height'] as int;
+    final blockHash = block['hash'] as String? ?? '';
+
+    print('scheduled event parser ${DateTime.parse(json['scheduledAt'] as String)}');
     return ReversibleTransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',
@@ -94,6 +105,7 @@ class ReversibleTransferEvent extends TransactionEvent {
       scheduledAt: DateTime.parse(json['scheduledAt'] as String),
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
+      blockHash: blockHash,
     );
   }
 
