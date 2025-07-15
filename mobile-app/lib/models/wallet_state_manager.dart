@@ -228,12 +228,14 @@ class WalletStateManager with ChangeNotifier {
       updatePendingTransaction(pending.id, newState, blockHash: hash);
       if (newState == TransactionState.inBlock && hash != null) {
         _startPollingForHistory();
+        print('Cancel stream subscription for ${pending.id} $subscription');
         subscription?.cancel();
       }
     }
 
     try {
       subscription = await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
+      print('Subscribed to stream for ${pending.id} $subscription');
     } catch (e, stackTrace) {
       updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
       print('Failed to transfer balance: $e');
@@ -286,17 +288,26 @@ class WalletStateManager with ChangeNotifier {
       updatePendingTransaction(pending.id, newState, blockHash: blockHash);
       if (newState == TransactionState.inBlock) {
         _startPollingForHistory();
+        print('Cancel rev stream subscription for ${pending.id} $subscription');
         subscription?.cancel();
       }
     }
 
-    subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-      senderSeed: senderSeed,
-      recipientAddress: recipientAddress,
-      amount: amount,
-      delaySeconds: delaySeconds,
-      onStatus: onStatus,
-    );
+    try {
+      subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+        senderSeed: senderSeed,
+        recipientAddress: recipientAddress,
+        amount: amount,
+        delaySeconds: delaySeconds,
+        onStatus: onStatus,
+      );
+      print('Subscribed to rev stream for ${pending.id} $subscription');
+    } catch (e, stackTrace) {
+      updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
+      print('Failed to send reversible: $e');
+      print('Failed to send reversible: $stackTrace');
+      throw Exception('Failed to send reversible transfer: $e');
+    }
   }
 
   void updatePendingTransaction(String id, TransactionState newState, {String? blockHash, String? error}) {
