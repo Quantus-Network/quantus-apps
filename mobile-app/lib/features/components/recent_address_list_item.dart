@@ -5,10 +5,10 @@ class RecentAddressListItem extends StatefulWidget {
   final String address;
   final VoidCallback onTap;
 
-  const RecentAddressListItem({Key? key, required this.address, required this.onTap}) : super(key: key);
+  const RecentAddressListItem({super.key, required this.address, required this.onTap});
 
   @override
-  _RecentAddressListItemState createState() => _RecentAddressListItemState();
+  State<RecentAddressListItem> createState() => _RecentAddressListItemState();
 }
 
 class _RecentAddressListItemState extends State<RecentAddressListItem> {
@@ -68,7 +68,7 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
           Text(
             widget.address,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.60),
+              color: Colors.white.useOpacity(0.60),
               fontSize: 11,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w300,

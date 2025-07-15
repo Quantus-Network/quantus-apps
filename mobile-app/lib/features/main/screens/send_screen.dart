@@ -636,31 +636,51 @@ class SendScreenState extends State<SendScreen> {
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text(
-                                      'To:',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 1,
-                                      height: 17,
-                                      color: Colors.white,
-                                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                                    ),
-                                    Expanded(
-                                      child: TextField(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                GestureDetector(
+                                  onTap: () async {
+                                    final data = await Clipboard.getData('text/plain');
+                                    if (data != null && data.text != null) {
+                                      _recipientController.text = data.text!;
+                                      _lookupIdentity();
+                                    }
+                                  },
+                                  child: _buildIconButton('assets/paste_icon.svg'),
+                                ),
+                                const SizedBox(width: 9),
+                                GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
+                                const SizedBox(width: 9),
+                                GestureDetector(onTap: _showRecentAddresses, child: _buildHistoryIconButton()),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'To:',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 17,
+                                  color: Colors.white,
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      TextField(
                                         controller: _recipientController,
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -705,56 +725,25 @@ class SendScreenState extends State<SendScreen> {
                                           });
                                         },
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
-                                  const SizedBox(width: 9),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final data = await Clipboard.getData('text/plain');
-                                      if (data != null && data.text != null) {
-                                        _recipientController.text = data.text!;
-                                        _lookupIdentity();
-                                      }
-                                    },
-                                    child: _buildIconButton('assets/paste_icon.svg'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: _savedAddressesLabel.isEmpty
-                              ? GestureDetector(
-                                  onTap: _showRecentAddresses,
-                                  child: Text(
-                                    'Recent Addresses',
-                                    style: TextStyle(
-                                      color: Colors.white.useOpacity(0.50),
-                                      fontSize: 12,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w500,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  _savedAddressesLabel,
-                                  style: TextStyle(
-                                    color: Colors.white.useOpacity(0.8),
-                                    fontSize: 13,
-                                    fontFamily: 'Fira Code',
+                                      if (_savedAddressesLabel.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            _savedAddressesLabel,
+                                            style: const TextStyle(
+                                              color: Color(0xFF16CECE),
+                                              fontSize: 12,
+                                              fontFamily: 'Fira Code',
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       Expanded(
@@ -992,6 +981,7 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
+  static const iconSize = 22.0;
   Widget _buildIconButton(String assetPath) {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -999,7 +989,18 @@ class SendScreenState extends State<SendScreen> {
         color: Colors.white.useOpacity(0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: SvgPicture.asset(assetPath, width: 17, height: 17),
+      child: SvgPicture.asset(assetPath, width: iconSize, height: iconSize),
+    );
+  }
+
+  Widget _buildHistoryIconButton() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(
+        color: Colors.white.useOpacity(0.15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      child: const Icon(Icons.history, color: Colors.white, size: iconSize),
     );
   }
 }
