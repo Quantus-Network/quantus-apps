@@ -208,6 +208,8 @@ class WalletStateManager with ChangeNotifier {
     );
     addPendingTransaction(pending);
 
+    StreamSubscription<ExtrinsicStatus>? subscription;
+
     void onStatus(ExtrinsicStatus status) {
       String? hash;
       TransactionState newState;
@@ -222,6 +224,11 @@ class WalletStateManager with ChangeNotifier {
           newState = TransactionState.inBlock;
           hash = status.value;
           break;
+        case 'finalized':
+          print('unexpected finalized status.');
+          // we want to stop listening to history tx long before this.
+          newState = TransactionState.inBlock;
+          break;
         default:
           print('Error: unexpected status ${status.type}');
           newState = TransactionState.failed;
@@ -230,11 +237,12 @@ class WalletStateManager with ChangeNotifier {
       updatePendingTransaction(pending.id, newState, blockHash: hash);
       if (newState == TransactionState.inBlock && hash != null) {
         _startPollingForHistory();
+        subscription?.cancel();
       }
     }
 
     try {
-      await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
+      subscription = await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
     } catch (e, stackTrace) {
       updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
       print('Failed to transfer balance: $e');
@@ -258,6 +266,7 @@ class WalletStateManager with ChangeNotifier {
       fee: feeEstimate,
     );
     addPendingTransaction(pending);
+    StreamSubscription<ExtrinsicStatus>? subscription;
 
     // update function for the ephemeral pending event
     void onStatus(ExtrinsicStatus status) {
@@ -274,6 +283,11 @@ class WalletStateManager with ChangeNotifier {
           newState = TransactionState.inBlock;
           blockHash = status.value;
           break;
+        case 'finalized':
+          print('unexpected finalized status.');
+          // we want to stop listening to history tx long before this.
+          newState = TransactionState.inBlock;
+          break;
         default:
           newState = TransactionState.failed;
           pending.error = 'Unknown status';
@@ -281,10 +295,11 @@ class WalletStateManager with ChangeNotifier {
       updatePendingTransaction(pending.id, newState, blockHash: blockHash);
       if (newState == TransactionState.inBlock) {
         _startPollingForHistory();
+        subscription?.cancel();
       }
     }
 
-    await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
+    subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
       senderSeed: senderSeed,
       recipientAddress: recipientAddress,
       amount: amount,
