@@ -981,7 +981,7 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
-  static const iconSize = 22.0;
+  static const iconSize = 21.0; // + 4 inset = 25 size
   Widget _buildIconButton(String assetPath) {
     return Container(
       padding: const EdgeInsets.all(4),
