@@ -1,6 +1,7 @@
 library;
 
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
+import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
@@ -34,9 +35,8 @@ export 'src/services/hd_wallet_service.dart';
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).
   static Future<void> init() async {
-    print('initializing rust bindings..');
     await RustLib.init();
+    await SettingsService().initialize();
     setDefaultSs58Prefix(prefix: 189);
-    print('rust bindings initialized');
   }
 }

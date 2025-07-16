@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 
 Future<T?> showAppModalBottomSheet<T>({required BuildContext context, required WidgetBuilder builder}) {
   return showModalBottomSheet(

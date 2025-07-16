@@ -1,6 +1,4 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 
 // We define the following 5 levels in BIP32 path:
 // m / purpose' / coin_type' / account' / change / address_index
@@ -20,7 +18,6 @@ class AccountsService {
   final SettingsService _settingsService = SettingsService();
 
   Future<Account> createNewAccount(String name) async {
-    final accounts = await _settingsService.getAccounts();
     final mnemonic = await _settingsService.getMnemonic();
 
     if (mnemonic == null) {
@@ -28,8 +25,8 @@ class AccountsService {
     }
 
     // Determine the next index for derivation
-    // Note: child indexes start at 1.
-    final nextIndex = accounts.isNotEmpty ? accounts.map((a) => a.index).reduce((a, b) => a > b ? a : b) + 1 : 1;
+    // Note: child indexes start at 1. Index 0 is the root account with NO derivation.
+    final nextIndex = await _settingsService.getNextFreeAccountIndex();
 
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
 

@@ -28,14 +28,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   Future<void> _loadAccountData() async {
     try {
-      final accountId = await _settingsService.getAccountId();
-
-      if (accountId == null) {
-        throw Exception('No account found');
-      }
-
+      final account = await _settingsService.getActiveAccount();
       setState(() {
-        _accountId = accountId;
+        _accountId = account.accountId;
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');

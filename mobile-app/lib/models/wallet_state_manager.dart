@@ -60,7 +60,6 @@ class WalletStateManager with ChangeNotifier {
 
   Future<SortedTransactionsList?> _fetchTransactionHistory() async {
     final account = await _settingsService.getActiveAccount();
-    if (account == null) return null;
     final result = await _chainHistoryService.fetchAllTransactionTypes(
       accountId: account.accountId,
       limit: 20,
@@ -72,7 +71,6 @@ class WalletStateManager with ChangeNotifier {
   Future<WalletData?> _fetchBalance() async {
     const Duration networkTimeout = Duration(seconds: 15);
     final account = await _settingsService.getActiveAccount();
-    if (account == null) return null;
     final balance = await _substrateService.queryBalance(account.accountId).timeout(networkTimeout);
     return WalletData(account: account, balance: balance);
   }
@@ -197,13 +195,13 @@ class WalletStateManager with ChangeNotifier {
     });
   }
 
-  String _senderAddressFromSeed(String senderSeed) {
-    return SubstrateService().dilithiumKeypairFromMnemonic(senderSeed).ss58Address;
+  String _senderAddressFromAccount(Account account) {
+    return account.accountId;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount, BigInt feeEstimate) async {
+  Future<String> balanceTransfer(Account account, String targetAddress, BigInt amount, BigInt feeEstimate) async {
     final pending = createPendingTransaction(
-      from: _senderAddressFromSeed(senderSeed),
+      from: _senderAddressFromAccount(account),
       to: targetAddress,
       amount: amount,
       fee: feeEstimate,
@@ -245,7 +243,7 @@ class WalletStateManager with ChangeNotifier {
     }
 
     try {
-      subscription = await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
+      subscription = await BalancesService().balanceTransfer(account, targetAddress, amount, onStatus);
       print('Subscribed to stream for ${pending.id} $subscription');
     } catch (e, stackTrace) {
       updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
@@ -257,14 +255,14 @@ class WalletStateManager with ChangeNotifier {
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
-    required String senderSeed,
+    required Account account,
     required String recipientAddress,
     required BigInt amount,
     required int delaySeconds,
     required BigInt feeEstimate,
   }) async {
     final pending = createPendingTransaction(
-      from: _senderAddressFromSeed(senderSeed),
+      from: _senderAddressFromAccount(account),
       to: recipientAddress,
       amount: amount,
       fee: feeEstimate,
@@ -306,7 +304,7 @@ class WalletStateManager with ChangeNotifier {
 
     try {
       subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-        senderSeed: senderSeed,
+        account: account,
         recipientAddress: recipientAddress,
         amount: amount,
         delaySeconds: delaySeconds,

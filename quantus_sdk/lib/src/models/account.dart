@@ -21,3 +21,4 @@ class Account {
     return Account(index: index ?? this.index, name: name ?? this.name, accountId: accountId ?? this.accountId);
   }
 }
+

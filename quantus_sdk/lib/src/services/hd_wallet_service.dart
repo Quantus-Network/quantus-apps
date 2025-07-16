@@ -15,11 +15,7 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 /// Hierarchical deterministic wallet service.
 ///
 class HdWalletService {
-  Uint8List derivedSeedAtIndex(Uint8List seed, int index, {int coinType = 0}) {
-    return deriveHDWallet(seed: seed, account: index);
-  }
-
-  Uint8List deriveHDWallet({
+  Uint8List _deriveHDWallet({
     required Uint8List seed,
     int purpose = 1899,
     int coinType = 0,
@@ -32,15 +28,23 @@ class HdWalletService {
     return derivedSeed;
   }
 
-  Keypair keyPairAtIndex(String mnemonic, int nextIndex) {
+  Uint8List _derivedSeedAtIndex(Uint8List seed, int index, {int coinType = 0}) {
+    return _deriveHDWallet(seed: seed, account: index, coinType: coinType);
+  }
+
+  Keypair keyPairAtIndex(String mnemonic, int index) {
     // Derive the new keypair
     final seed = crypto.seedFromMnemonic(mnemonicStr: mnemonic);
 
-    // HD derivation
-    final privateKey = HdWalletService().derivedSeedAtIndex(seed, nextIndex);
+    var seedToUse = seed;
+
+    if (index != 0) {
+      // HD derivation
+      seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
+    }
 
     // We use this private key as seed to derive a new Dilithium pair.
-    final keypair = crypto.generateKeypairFromSeed(seed: privateKey);
+    final keypair = crypto.generateKeypairFromSeed(seed: seedToUse);
 
     return keypair;
   }

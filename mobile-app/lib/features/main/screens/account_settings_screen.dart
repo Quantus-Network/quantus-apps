@@ -6,19 +6,16 @@ import 'package:resonance_network_wallet/features/components/snackbar_helper.dar
 
 class AccountSettingsScreen extends StatefulWidget {
   final Account account;
+  final String balance;
+  final String checksumName;
 
-  const AccountSettingsScreen({super.key, required this.account});
+  const AccountSettingsScreen({super.key, required this.account, required this.balance, required this.checksumName});
 
   @override
   State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
 }
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
-  // TODO: Fetch real balance and checksum name
-  final String _balance = '4,287.21 QU';
-  final String _checksumName = 'Grain-Red-Flash-Hyper-Cloud';
-  final bool _isHighSecurityOff = true;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,12 +84,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         ),
         const SizedBox(height: 5),
         Text(
-          _checksumName,
+          widget.checksumName,
           style: const TextStyle(color: Color(0xFF16CECE), fontSize: 14, fontFamily: 'Fira Code'),
         ),
         const SizedBox(height: 5),
         Text(
-          _balance,
+          widget.balance,
           style: const TextStyle(color: Color(0xFFE6E6E6), fontSize: 14, fontFamily: 'Fira Code'),
         ),
       ],

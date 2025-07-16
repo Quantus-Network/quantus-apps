@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
@@ -38,11 +37,6 @@ class _WalletMainState extends State<WalletMain> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  // Helper to format the address (now just returns the full address)
-  String _formatAddress(String address) {
-    return address; // Return the full address, let Text widget handle overflow
   }
 
   Widget _buildActionButton({

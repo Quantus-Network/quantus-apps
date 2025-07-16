@@ -5,6 +5,14 @@ import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 
+class AccountDetails {
+  final Account account;
+  final BigInt balance;
+  final String checksumName;
+
+  AccountDetails({required this.account, required this.balance, required this.checksumName});
+}
+
 class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
 
@@ -15,24 +23,61 @@ class AccountsScreen extends StatefulWidget {
 class _AccountsScreenState extends State<AccountsScreen> {
   final SettingsService _settingsService = SettingsService();
   final AccountsService _accountsService = AccountsService();
-  List<Account> _accounts = [];
+  final SubstrateService _substrateService = SubstrateService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final NumberFormattingService _formattingService = NumberFormattingService();
+
+  List<AccountDetails> _accountDetails = [];
   Account? _activeAccount;
+  bool _isLoading = true;
   bool _isCreatingAccount = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAccounts();
+    _checksumService.initialize().then((_) {
+      _loadAccounts();
+    });
   }
 
   Future<void> _loadAccounts() async {
-    final accounts = await _settingsService.getAccounts();
-    final activeAccount = await _settingsService.getActiveAccount();
-    if (mounted) {
-      setState(() {
-        _accounts = accounts;
-        _activeAccount = activeAccount;
-      });
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final accounts = await _settingsService.getAccounts();
+      final activeAccount = await _settingsService.getActiveAccount();
+
+      final detailsFutures = accounts.map((account) async {
+        try {
+          final balance = await _substrateService.queryBalance(account.accountId);
+          final checksumName = await _checksumService.getHumanReadableName(account.accountId);
+          return AccountDetails(account: account, balance: balance, checksumName: checksumName);
+        } catch (e) {
+          print('Error fetching details for ${account.accountId}: $e');
+          // Return with default/error values if a single account fails
+          return AccountDetails(account: account, balance: BigInt.zero, checksumName: 'Unavailable');
+        }
+      }).toList();
+
+      final details = await Future.wait(detailsFutures);
+
+      if (mounted) {
+        setState(() {
+          _accountDetails = details;
+          _activeAccount = activeAccount;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load accounts: ${e.toString()}')));
+      }
     }
   }
 
@@ -44,7 +89,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         title: const Text('Create New Account'),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(hintText: "Account Name (optional)"),
+          decoration: const InputDecoration(hintText: 'Account Name (optional)'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
@@ -121,26 +166,29 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 
   Widget _buildAccountsList() {
-    if (_accounts.isEmpty) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+
+    if (_accountDetails.isEmpty) {
       return const Center(
         child: Text('No accounts found.', style: TextStyle(color: Colors.white70)),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      itemCount: _accounts.length,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      itemCount: _accountDetails.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final account = _accounts[index];
-        final bool isActive = account.accountId == _activeAccount?.accountId;
-        return _buildAccountListItem(account, isActive);
+        final details = _accountDetails[index];
+        final bool isActive = details.account.accountId == _activeAccount?.accountId;
+        return _buildAccountListItem(details, isActive);
       },
     );
   }
 
-  Widget _buildAccountListItem(Account account, bool isActive) {
-    // This is a simplified representation based on the screenshot
-    // It will need to be fleshed out with real data (like balance, checksum name, etc.)
+  Widget _buildAccountListItem(AccountDetails details, bool isActive) {
+    final account = details.account;
     return InkWell(
       onTap: () async {
         if (!isActive) {
@@ -153,9 +201,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.black.withOpacity(0.3),
+          color: isActive ? Colors.white : Colors.black.useOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
-          border: isActive ? null : Border.all(color: Colors.white.withOpacity(0.2)),
+          border: isActive ? null : Border.all(color: Colors.white.useOpacity(0.2)),
         ),
         child: Row(
           children: [
@@ -164,7 +212,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               'assets/quantus_icon.svg',
               width: 40,
               height: 40,
-              color: isActive ? Colors.black : Colors.white,
+              colorFilter: ColorFilter.mode(isActive ? Colors.black : Colors.white, BlendMode.srcIn),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -180,15 +228,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Placeholder for checksum name
-                  Text(
-                    'Grain-Red-Flash-Hyper-Cloud',
-                    style: TextStyle(color: isActive ? Colors.black54 : Colors.white70),
-                  ),
+                  Text(details.checksumName, style: TextStyle(color: isActive ? Colors.black54 : Colors.white70)),
                   const SizedBox(height: 4),
-                  // Placeholder for address
                   Text(
-                    '${account.accountId.substring(0, 6)}...${account.accountId.substring(account.accountId.length - 6)}',
+                    '${_formattingService.formatBalance(details.balance)} ${AppConstants.tokenSymbol}',
                     style: TextStyle(color: isActive ? Colors.black54 : Colors.white70, fontFamily: 'Fira Code'),
                   ),
                 ],
@@ -199,7 +242,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AccountSettingsScreen(account: account)),
+                  MaterialPageRoute(
+                    builder: (context) => AccountSettingsScreen(
+                      account: account,
+                      balance: '${_formattingService.formatBalance(details.balance)} ${AppConstants.tokenSymbol}',
+                      checksumName: details.checksumName,
+                    ),
+                  ),
                 );
               },
             ),
@@ -234,11 +283,5 @@ class _AccountsScreenState extends State<AccountsScreen> {
         ],
       ),
     );
-  }
-}
-
-extension on SvgPicture {
-  SvgPicture copyWith({Color? color}) {
-    return SvgPicture.asset((bytesLoader as SvgAssetLoader).assetName, width: width, height: height, color: color);
   }
 }

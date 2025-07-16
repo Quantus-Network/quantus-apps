@@ -40,11 +40,8 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
       _isLoading = true;
     });
     try {
-      final accountId = await _settingsService.getAccountId();
-
-      if (accountId == null) {
-        throw Exception('No account found');
-      }
+      final account = await _settingsService.getActiveAccount();
+      final accountId = account.accountId;
 
       final balance = await SubstrateService().queryBalance(accountId);
       final formattedBalance = _formattingService.formatBalance(balance);
