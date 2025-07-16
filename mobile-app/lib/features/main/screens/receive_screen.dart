@@ -16,7 +16,12 @@ class ReceiveSheet extends StatefulWidget {
 
 class _ReceiveSheetState extends State<ReceiveSheet> {
   String? _accountId;
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  String? _checksum;
+  Future<String>? _checksumFuture;
+  List<String>? _splittedAddress;
+
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -36,6 +41,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
       setState(() {
         _accountId = accountId;
+        _checksumFuture = _checksumService.getHumanReadableName(accountId);
+        _splittedAddress = AddressFormattingService.splitIntoChunks(accountId);
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
@@ -46,10 +53,33 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   void _copyAddress() {
-    if (_accountId != null) {
-      Clipboard.setData(ClipboardData(text: _accountId!));
-      showTopSnackBar(context, title: 'Copied!', message: 'Address copied to clipboard');
+    if (_accountId != null && _checksum != null) {
+      Clipboard.setData(ClipboardData(text: '$_accountId\n$_checksum'));
+
+      showTopSnackBar(
+        context,
+        icon: Container(
+          width: 36,
+          height: 36,
+          decoration: const ShapeDecoration(
+            color: Color(0xFF494949), // Default grey background
+            shape: OvalBorder(), // Use OvalBorder for circle
+          ),
+          alignment: Alignment.center,
+          child: SvgPicture.asset(
+            'assets/copy_icon.svg',
+            width: 16,
+            height: 16,
+          ),
+        ),
+        title: 'Copied!',
+        message: 'Address copied to clipboard',
+      );
     }
+  }
+
+  void _closeSheet() {
+    Navigator.pop(context);
   }
 
   @override
@@ -71,21 +101,32 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               padding: const EdgeInsets.all(7),
               decoration: ShapeDecoration(
                 color: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100),
+                ),
               ),
-              child: const Row(mainAxisAlignment: MainAxisAlignment.end, children: [SizedBox(width: 10, height: 10)]),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  InkWell(onTap: _closeSheet, child: const Icon(Icons.close)),
+                ],
+              ),
             ),
             const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset('assets/receive_icon.svg', width: 37, height: 37),
+                SvgPicture.asset(
+                  'assets/receive_icon.svg',
+                  width: 37,
+                  height: 37,
+                ),
                 const SizedBox(width: 7),
                 const Text(
                   'RECEIVE',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 37,
+                    fontSize: 28,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w300,
                   ),
@@ -94,32 +135,62 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
             ),
             const SizedBox(height: 28),
             if (_accountId == null)
-              const Center(child: CircularProgressIndicator(color: Colors.white))
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
             else ...[
               Container(
                 width: 227,
                 height: 227,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: QrImageView(
                   data: _accountId!,
                   version: QrVersions.auto,
                   size: 260.0,
                   padding: EdgeInsets.zero,
                   backgroundColor: Colors.white,
-                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Colors.black,
+                  ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
                     color: Colors.black,
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 15),
+              Row(
+                spacing: 15,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/account_list_icon.svg',
+                    width: 21,
+                    height: 32,
+                  ),
+                  const Text(
+                    'Everyday Account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'Fira Code',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 26),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   FutureBuilder<String?>(
-                    future: _checksumService.getHumanReadableName(_accountId!),
+                    future: _checksumFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const SizedBox(
@@ -130,10 +201,19 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               SizedBox(
                                 width: 12,
                                 height: 12,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white54,
+                                ),
                               ),
                               SizedBox(width: 8),
-                              Text('Loading name...', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                              Text(
+                                'Loading name...',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -141,53 +221,101 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           !snapshot.hasData ||
                           snapshot.data == null ||
                           snapshot.data!.isEmpty) {
-                        debugPrint('Error loading checksum name for $_accountId: ${snapshot.error}');
+                        debugPrint(
+                          'Error loading checksum name for $_accountId: ${snapshot.error}',
+                        );
+                        // In case of error, set checksum to null or an error string
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_checksum != null) {
+                            // Only clear if it was set before
+                            setState(() {
+                              _checksum = null;
+                            });
+                          }
+                        });
+
                         return const Text(
                           'Name not found',
                           style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
+                            color: Colors.white,
+                            fontSize: 14,
                             fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                           textAlign: TextAlign.center,
                         );
                       } else {
-                        return Text(
-                          snapshot.data!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
+                        // Use addPostFrameCallback to avoid calling setState during build
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_checksum != snapshot.data) {
+                            // Only update if it's different
+                            setState(() {
+                              _checksum = snapshot.data!;
+                            });
+                          }
+                        });
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 7,
+                          children: [
+                            Text(
+                              snapshot.data!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w400,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            InkWell(
+                              onTap: _copyAddress,
+                              child: SvgPicture.asset(
+                                'assets/copy_icon.svg',
+                                width: 16,
+                                height: 16,
+                              ),
+                            ),
+                          ],
                         );
                       }
                     },
                   ),
-                  const SizedBox(height: 8),
-                  Opacity(
-                    opacity: 0.5,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${_accountId!.substring(0, 6)}...${_accountId!.substring(_accountId!.length - 5)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'Fira Code',
-                            fontWeight: FontWeight.w500,
+                  const SizedBox(height: 27.5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 8,
+                    children: [
+                      Container(
+                        width: 214,
+                        padding: const EdgeInsets.all(10),
+                        decoration: ShapeDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: _copyAddress,
-                          child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
+                        child: Text(
+                          '${_splittedAddress?.join(" ")}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      InkWell(
+                        onTap: _copyAddress,
+                        child: SvgPicture.asset(
+                          'assets/copy_icon.svg',
+                          width: 16,
+                          height: 16,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -199,7 +327,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   onPressed: _copyAddress,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
                   child: const Text(
                     'Share',
@@ -228,7 +358,10 @@ void showReceiveSheet(BuildContext context) {
     isScrollControlled: true,
     builder: (context) => BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: Container(color: Colors.black.useOpacity(0.2), child: const ReceiveSheet()),
+      child: Container(
+        color: Colors.black.useOpacity(0.2),
+        child: const ReceiveSheet(),
+      ),
     ),
   );
 }
