@@ -59,16 +59,22 @@ class WalletStateManager with ChangeNotifier {
   }
 
   Future<SortedTransactionsList?> _fetchTransactionHistory() async {
-    final accountId = await _settingsService.getAccountId();
-    final result = await _chainHistoryService.fetchAllTransactionTypes(accountId: accountId!, limit: 20, offset: 0);
+    final account = await _settingsService.getActiveAccount();
+    if (account == null) return null;
+    final result = await _chainHistoryService.fetchAllTransactionTypes(
+      accountId: account.accountId,
+      limit: 20,
+      offset: 0,
+    );
     return result;
   }
 
   Future<WalletData?> _fetchBalance() async {
     const Duration networkTimeout = Duration(seconds: 15);
-    final accountId = await _settingsService.getAccountId();
-    final balance = await _substrateService.queryBalance(accountId!).timeout(networkTimeout);
-    return WalletData(accountId: accountId, walletName: '', balance: balance);
+    final account = await _settingsService.getActiveAccount();
+    if (account == null) return null;
+    final balance = await _substrateService.queryBalance(account.accountId).timeout(networkTimeout);
+    return WalletData(account: account, balance: balance);
   }
 
   BigInt get estimatedBalance {
@@ -76,7 +82,7 @@ class WalletStateManager with ChangeNotifier {
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
       if (tx.transactionState != TransactionState.inHistory && tx.transactionState != TransactionState.failed) {
-        final isSend = tx.from == walletData.data!.accountId;
+        final isSend = tx.from == walletData.data!.account.accountId;
         final adjustment = isSend ? -tx.amount : tx.amount;
         base += adjustment;
         if (isSend && tx.fee != null) {
@@ -102,6 +108,11 @@ class WalletStateManager with ChangeNotifier {
     await Future.wait([txData.load(quiet: quiet), walletData.load(quiet: quiet)]);
     updatePendingTransactions();
     notifyListeners();
+  }
+
+  Future<void> switchAccount(Account account) async {
+    await _settingsService.setActiveAccount(account);
+    await load(); // Reload all data for the new account
   }
 
   Future<void> refreshTransactions({bool quiet = false}) async {
