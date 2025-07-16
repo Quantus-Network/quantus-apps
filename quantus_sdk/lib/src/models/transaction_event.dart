@@ -92,8 +92,6 @@ class ReversibleTransferEvent extends TransactionEvent {
     final block = json['block'] as Map<String, dynamic>;
     final blockHeight = block['height'] as int;
     final blockHash = block['hash'] as String? ?? '';
-
-    print('scheduled event parser ${DateTime.parse(json['scheduledAt'] as String)}');
     return ReversibleTransferEvent(
       id: json['id'] as String,
       from: json['from']?['id'] as String? ?? '',

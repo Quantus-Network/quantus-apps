@@ -35,9 +35,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     super.initState();
     if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
-      print('tx is scheduled ${tx.scheduledAt}');
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      print('remaining time: $_remainingTime');
       if (_remainingTime!.isNegative) {
         _remainingTime = Duration.zero;
       }
@@ -189,7 +187,6 @@ class TransactionListItemState extends State<TransactionListItem> {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
         case ReversibleTransferStatus.SCHEDULED:
-          print('remaining time: $_remainingTime');
           if (_remainingTime != null && _remainingTime! > Duration.zero) {
             return _TimerDisplay(
               duration: _remainingTime!,

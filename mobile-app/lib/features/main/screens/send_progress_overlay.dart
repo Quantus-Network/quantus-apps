@@ -91,6 +91,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       }
 
       debugPrint('Balance transfer successful.');
+      RecentAddressesService().addAddress(widget.recipientAddress);
 
       if (mounted) {
         setState(() {
