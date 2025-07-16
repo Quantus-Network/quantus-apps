@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
+import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -279,10 +281,8 @@ class SendScreenState extends State<SendScreen> {
     var selectedHours = _reversibleTimeHours;
     var selectedMinutes = _reversibleTimeMinutes;
 
-    showModalBottomSheet(
+    showAppModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) => Container(
         height: 632,
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
@@ -508,6 +508,70 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
+  // NEW: Method to show the recent addresses modal bottom sheet
+  void _showRecentAddresses() {
+    showAppModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8, // Adjustable height for scrollability
+        padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
+        decoration: const ShapeDecoration(
+          color: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)), // Softer radius for modal
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Top row with close button (replacing empty stack in Figma)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ],
+            ),
+            const SizedBox(height: 26), // Spacing from Figma
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 226,
+                    child: Text(
+                      'Recently Used',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Spacing from Figma
+                  Expanded(
+                    child: RecentAddressList(
+                      onAddressSelected: (address) {
+                        _recipientController.text = address;
+                        _lookupIdentity();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -552,13 +616,13 @@ class SendScreenState extends State<SendScreen> {
                           onTap: () => Navigator.pop(context),
                           child: const Row(
                             children: [
-                              Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                              Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                               SizedBox(width: 4),
                               Text(
                                 'Send',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 24,
+                                  fontSize: 12,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -569,31 +633,51 @@ class SendScreenState extends State<SendScreen> {
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Text(
-                                      'To:',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 1,
-                                      height: 17,
-                                      color: Colors.white,
-                                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                                    ),
-                                    Expanded(
-                                      child: TextField(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                GestureDetector(
+                                  onTap: () async {
+                                    final data = await Clipboard.getData('text/plain');
+                                    if (data != null && data.text != null) {
+                                      _recipientController.text = data.text!;
+                                      _lookupIdentity();
+                                    }
+                                  },
+                                  child: _buildIconButton('assets/paste_icon.svg'),
+                                ),
+                                const SizedBox(width: 9),
+                                GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
+                                const SizedBox(width: 9),
+                                GestureDetector(onTap: _showRecentAddresses, child: _buildHistoryIconButton()),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'To:',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 17,
+                                  color: Colors.white,
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      TextField(
                                         controller: _recipientController,
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -638,44 +722,25 @@ class SendScreenState extends State<SendScreen> {
                                           });
                                         },
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
-                                  const SizedBox(width: 9),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final data = await Clipboard.getData('text/plain');
-                                      if (data != null && data.text != null) {
-                                        _recipientController.text = data.text!;
-                                        _lookupIdentity();
-                                      }
-                                    },
-                                    child: _buildIconButton('assets/paste_icon.svg'),
+                                      if (_savedAddressesLabel.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            _savedAddressesLabel,
+                                            style: const TextStyle(
+                                              color: Color(0xFF16CECE),
+                                              fontSize: 12,
+                                              fontFamily: 'Fira Code',
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 16),
-                          child: Text(
-                            _savedAddressesLabel,
-                            style: TextStyle(
-                              color: Colors.white.useOpacity(0.8),
-                              fontSize: 13,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
+                                ),
+                              ],
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       Expanded(
@@ -913,6 +978,7 @@ class SendScreenState extends State<SendScreen> {
     );
   }
 
+  static const iconSize = 21.0; // + 4 inset = 25 size
   Widget _buildIconButton(String assetPath) {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -920,7 +986,18 @@ class SendScreenState extends State<SendScreen> {
         color: Colors.white.useOpacity(0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: SvgPicture.asset(assetPath, width: 17, height: 17),
+      child: SvgPicture.asset(assetPath, width: iconSize, height: iconSize),
+    );
+  }
+
+  Widget _buildHistoryIconButton() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(
+        color: Colors.white.useOpacity(0.15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      child: const Icon(Icons.history, color: Colors.white, size: iconSize),
     );
   }
 }
