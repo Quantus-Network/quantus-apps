@@ -17,7 +17,7 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 class HdWalletService {
   Uint8List _deriveHDWallet({
     required Uint8List seed,
-    int purpose = 1899,
+    int purpose = 189189,
     int coinType = 0,
     int account = 0,
     int change = 0,

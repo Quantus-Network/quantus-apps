@@ -31,7 +31,6 @@ class _AccountProfilePageState extends State<AccountProfilePage> {
   @override
   void initState() {
     super.initState();
-    _checksumService.initialize();
     _loadAccountData();
   }
 

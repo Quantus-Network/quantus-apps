@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 
 class AccountDetails {
   final Account account;
   final BigInt balance;
-  final String checksumName;
+  final Future<String> checksumNameFuture;
 
-  AccountDetails({required this.account, required this.balance, required this.checksumName});
+  AccountDetails({required this.account, required this.balance, required this.checksumNameFuture});
 }
 
 class AccountsScreen extends StatefulWidget {
@@ -35,9 +37,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
   @override
   void initState() {
     super.initState();
-    _checksumService.initialize().then((_) {
-      _loadAccounts();
-    });
+    _loadAccounts();
   }
 
   Future<void> _loadAccounts() async {
@@ -53,12 +53,16 @@ class _AccountsScreenState extends State<AccountsScreen> {
       final detailsFutures = accounts.map((account) async {
         try {
           final balance = await _substrateService.queryBalance(account.accountId);
-          final checksumName = await _checksumService.getHumanReadableName(account.accountId);
-          return AccountDetails(account: account, balance: balance, checksumName: checksumName);
+          final checksumNameFuture = _checksumService.getHumanReadableName(account.accountId);
+          return AccountDetails(account: account, balance: balance, checksumNameFuture: checksumNameFuture);
         } catch (e) {
           print('Error fetching details for ${account.accountId}: $e');
           // Return with default/error values if a single account fails
-          return AccountDetails(account: account, balance: BigInt.zero, checksumName: 'Unavailable');
+          return AccountDetails(
+            account: account,
+            balance: BigInt.zero,
+            checksumNameFuture: Future.value('Unavailable'),
+          );
         }
       }).toList();
 
@@ -82,40 +86,22 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 
   Future<void> _createNewAccount() async {
-    final nameController = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Account'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(hintText: 'Account Name (optional)'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(nameController.text), child: const Text('Create')),
-        ],
-      ),
-    );
-
-    if (name != null) {
-      setState(() {
-        _isCreatingAccount = true;
-      });
-      try {
-        await _accountsService.createNewAccount(name);
+    setState(() {
+      _isCreatingAccount = true;
+    });
+    try {
+      final created = await Navigator.push<bool?>(
+        context,
+        MaterialPageRoute(builder: (context) => const CreateAccountScreen()),
+      );
+      if (created == true) {
         await _loadAccounts(); // Reload accounts to show the new one
-      } catch (e) {
-        // Handle error, maybe show a snackbar
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create account: $e')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isCreatingAccount = false;
-          });
-        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingAccount = false;
+        });
       }
     }
   }
@@ -124,23 +110,27 @@ class _AccountsScreenState extends State<AccountsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/light_leak_effect_background.jpg'),
-              fit: BoxFit.cover,
-              opacity: 0.54,
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/light_leak_effect_background.jpg'),
+                fit: BoxFit.cover,
+                opacity: 0.54,
+              ),
             ),
           ),
-          child: Column(
-            children: [
-              _buildAppBar(),
-              Expanded(child: _buildAccountsList()),
-              _buildFooter(),
-            ],
+          SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(),
+                Expanded(child: _buildAccountsList()),
+                _buildFooter(),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -151,13 +141,22 @@ class _AccountsScreenState extends State<AccountsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const Text(
-            'Your Accounts',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const Text(
+                'Your Accounts',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 48), // to balance the back button
         ],
@@ -171,24 +170,214 @@ class _AccountsScreenState extends State<AccountsScreen> {
     }
 
     if (_accountDetails.isEmpty) {
-      return const Center(
-        child: Text('No accounts found.', style: TextStyle(color: Colors.white70)),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('No accounts found.', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 25),
+            _buildCreateNewAccountButton(),
+          ],
+        ),
       );
     }
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      itemCount: _accountDetails.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemCount: _accountDetails.length + 1,
+      separatorBuilder: (context, index) => const SizedBox(height: 25),
       itemBuilder: (context, index) {
+        if (index == _accountDetails.length) {
+          return _buildCreateNewAccountButton();
+        }
         final details = _accountDetails[index];
         final bool isActive = details.account.accountId == _activeAccount?.accountId;
-        return _buildAccountListItem(details, isActive);
+        return _buildAccountListItem(details, isActive, index);
       },
     );
   }
 
-  Widget _buildAccountListItem(AccountDetails details, bool isActive) {
+  Widget _buildCreateNewAccountButton() {
+    return InkWell(
+      onTap: _isCreatingAccount ? null : _createNewAccount,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: ShapeDecoration(
+          color: Colors.black.useOpacity(0.50),
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(width: 1, color: Color(0xFFE6E6E6)),
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (_isCreatingAccount)
+              const CircularProgressIndicator(color: Colors.white)
+            else
+              const Text(
+                'Create New Account',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 18,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: ShapeDecoration(
+        color: color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+      ),
+    );
+  }
+
+  Widget _buildAccountListItem(AccountDetails details, bool isActive, int index) {
     final account = details.account;
+
+    final cardContent = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: ShapeDecoration(
+        color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
+        shape: RoundedRectangleBorder(
+          side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ),
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            'assets/res_icon.svg',
+            width: 32,
+            height: 32,
+            // colorFilter: ColorFilter.mode(isActive ? Colors.black : Colors.white, BlendMode.srcIn),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isActive && index == 1) ...[
+                  Row(
+                    children: [
+                      _buildTag('Recovery', const Color(0xFF16CECE)),
+                      const SizedBox(width: 8),
+                      _buildTag('Anti-Theft', const Color(0xFFFADC34)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                ],
+                Text(
+                  account.name,
+                  style: TextStyle(
+                    color: isActive ? Colors.black : Colors.white,
+                    fontSize: 14,
+                    fontFamily: 'Fira Code',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                // const SizedBox(height: 2),
+                SizedBox(
+                  height: 18, // Fixed height to prevent layout shifts
+                  child: FutureBuilder<String>(
+                    future: details.checksumNameFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: isActive ? const Color(0xFF06A8A8) : const Color(0xFF16CECE),
+                          ),
+                        );
+                      }
+                      return Text(
+                        snapshot.data ?? 'Unavailable',
+                        style: TextStyle(
+                          color: isActive ? const Color(0xFF06A8A8) : const Color(0xFF16CECE),
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w100,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      AddressFormattingService.formatAddress(account.accountId),
+                      style: TextStyle(
+                        color: isActive ? const Color(0xFF313131) : Colors.white.useOpacity(0.6),
+                        fontSize: 10,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    InkWell(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: account.accountId));
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(const SnackBar(content: Text('Address copied to clipboard')));
+                      },
+                      child: Icon(
+                        Icons.copy,
+                        size: 14,
+                        color: isActive ? const Color(0xFF313131) : Colors.white.useOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: _formattingService.formatBalance(details.balance),
+                        style: TextStyle(
+                          color: isActive ? const Color(0xFF313131) : const Color(0xFFE6E6E6),
+                          fontSize: 12,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' ${AppConstants.tokenSymbol}',
+                        style: TextStyle(
+                          color: isActive ? const Color(0xFF313131) : const Color(0xFFE6E6E6),
+                          fontSize: 10,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
     return InkWell(
       onTap: () async {
         if (!isActive) {
@@ -198,89 +387,60 @@ class _AccountsScreenState extends State<AccountsScreen> {
           if (mounted) Navigator.pop(context);
         }
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.black.useOpacity(0.3),
-          borderRadius: BorderRadius.circular(8),
-          border: isActive ? null : Border.all(color: Colors.white.useOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            // Placeholder for account icon
-            SvgPicture.asset(
-              'assets/quantus_icon.svg',
-              width: 40,
-              height: 40,
-              colorFilter: ColorFilter.mode(isActive ? Colors.black : Colors.white, BlendMode.srcIn),
+      child: Row(
+        children: [
+          Expanded(child: cardContent),
+          const SizedBox(width: 10),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: SvgPicture.asset(
+              'assets/settings_icon_off.svg',
+              width: 21,
+              height: 21,
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    account.name,
-                    style: TextStyle(
-                      color: isActive ? Colors.black : Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+            onPressed: () async {
+              final checksumName = await details.checksumNameFuture;
+              if (!mounted) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AccountSettingsScreen(
+                    account: account,
+                    balance: '${_formattingService.formatBalance(details.balance)} ${AppConstants.tokenSymbol}',
+                    checksumName: checksumName,
                   ),
-                  const SizedBox(height: 4),
-                  Text(details.checksumName, style: TextStyle(color: isActive ? Colors.black54 : Colors.white70)),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_formattingService.formatBalance(details.balance)} ${AppConstants.tokenSymbol}',
-                    style: TextStyle(color: isActive ? Colors.black54 : Colors.white70, fontFamily: 'Fira Code'),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.settings, color: isActive ? Colors.black : Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AccountSettingsScreen(
-                      account: account,
-                      balance: '${_formattingService.formatBalance(details.balance)} ${AppConstants.tokenSymbol}',
-                      checksumName: details.checksumName,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFooter() {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        children: [
-          ElevatedButton(
-            onPressed: _isCreatingAccount ? null : _createNewAccount,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-              backgroundColor: Colors.blueAccent,
-            ),
-            child: _isCreatingAccount
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text('Create New Account', style: TextStyle(color: Colors.white)),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: ElevatedButton(
+        onPressed: () {
+          // TODO: Implement lock functionality
+        },
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 50),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: const Text(
+          'Lock',
+          style: TextStyle(
+            color: Color(0xFF0E0E0E),
+            fontSize: 18,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () {
-              // TODO: Implement lock functionality
-            },
-            child: const Text('Lock', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ),
-        ],
+        ),
       ),
     );
   }

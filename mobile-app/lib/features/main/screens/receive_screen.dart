@@ -26,7 +26,6 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   @override
   void initState() {
     super.initState();
-    _checksumService.initialize();
     _loadAccountData();
   }
 
