@@ -309,7 +309,10 @@ class _WalletMainState extends State<WalletMain> {
                             IconButton(
                               icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
                               onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => AccountsScreen()));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                );
                               },
                             ),
                           ],

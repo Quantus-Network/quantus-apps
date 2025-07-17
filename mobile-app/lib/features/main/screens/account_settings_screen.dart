@@ -144,10 +144,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: const Color(0xFF313131), borderRadius: BorderRadius.circular(4)),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.lock_outline, color: Colors.white, size: 25),
                 SizedBox(width: 12),
@@ -166,7 +166,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 ),
               ],
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 17),
+            Icon(Icons.arrow_forward_ios, color: Colors.white, size: 17),
           ],
         ),
       ),

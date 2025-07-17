@@ -16,6 +16,7 @@ class ReceiveSheet extends StatefulWidget {
 
 class _ReceiveSheetState extends State<ReceiveSheet> {
   String? _accountId;
+  String? _accountName;
   String? _checksum;
   Future<String>? _checksumFuture;
   List<String>? _splittedAddress;
@@ -33,6 +34,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     try {
       final account = await _settingsService.getActiveAccount();
       setState(() {
+        _accountName = account.name;
         _accountId = account.accountId;
         _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
         _splittedAddress = AddressFormattingService.splitIntoChunks(account.accountId);
@@ -62,7 +64,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
           child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
         ),
         title: 'Copied!',
-        message: 'Address copied to clipboard',
+        message: 'Address and checkphrase copied to clipboard',
       );
     }
   }
@@ -142,10 +144,10 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SvgPicture.asset('assets/account_list_icon.svg', width: 21, height: 32),
-                  const Text(
-                    'Everyday Account',
+                  Text(
+                    _accountName ?? '',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontFamily: 'Fira Code',

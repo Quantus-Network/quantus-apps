@@ -123,7 +123,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               children: [
                 _buildAppBar(),
                 Expanded(child: _buildAccountsList()),
-                _buildFooter(),
+                // _buildFooter(),
               ],
             ),
           ),
@@ -228,20 +228,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
-  Widget _buildTag(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: ShapeDecoration(
-        color: color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
-      ),
-    );
-  }
+  // Widget _buildTag(String text, Color color) {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+  //     decoration: ShapeDecoration(
+  //       color: color,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+  //     ),
+  //     child: Text(
+  //       text,
+  //       textAlign: TextAlign.center,
+  //       style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+  //     ),
+  //   );
+  // }
 
   Widget _buildAccountListItem(AccountDetails details, bool isActive, int index) {
     final account = details.account;
@@ -412,36 +412,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
               );
               if (result == true) {
                 _loadAccounts();
-                Provider.of<WalletStateManager>(context, listen: false).refreshActiveAccount();
+                if (mounted) {
+                  Provider.of<WalletStateManager>(context, listen: false).refreshActiveAccount();
+                }
               }
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement lock functionality
-        },
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 50),
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: const Text(
-          'Lock',
-          style: TextStyle(
-            color: Color(0xFF0E0E0E),
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
-        ),
       ),
     );
   }
