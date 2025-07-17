@@ -357,4 +357,8 @@ class WalletStateManager with ChangeNotifier {
       }
     });
   }
+
+  void refreshActiveAccount() {
+    load(); // async!
+  }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   final Account account;
@@ -16,6 +16,22 @@ class AccountSettingsScreen extends StatefulWidget {
 }
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
+  void _showReceiveModal() {
+    showReceiveSheet(context);
+  }
+
+  void _editAccountName() {
+    Navigator.push<bool?>(
+      context,
+      MaterialPageRoute(builder: (context) => CreateAccountScreen(accountToEdit: widget.account)),
+    ).then((result) {
+      if (result == true && mounted) {
+        // Pop this screen with a result to force a refresh on the previous one
+        Navigator.of(context).pop(true);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,16 +87,19 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         // Placeholder for account icon
         SvgPicture.asset('assets/res_icon.svg', width: 60, height: 60),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.account.name,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.edit, color: Colors.white70, size: 16),
-          ],
+        InkWell(
+          onTap: _editAccountName,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                widget.account.name,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.edit, color: Colors.white70, size: 16),
+            ],
+          ),
         ),
         const SizedBox(height: 5),
         Text(
@@ -106,15 +125,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${widget.account.accountId.substring(0, 6)}...${widget.account.accountId.substring(widget.account.accountId.length - 8)}',
+              AddressFormattingService.formatAddress(widget.account.accountId),
               style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
             ),
             IconButton(
               icon: const Icon(Icons.copy, color: Colors.white, size: 22),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: widget.account.accountId));
-                showTopSnackBar(context, title: 'Copied!', message: 'Address copied to clipboard');
-              },
+              onPressed: _showReceiveModal,
             ),
           ],
         ),

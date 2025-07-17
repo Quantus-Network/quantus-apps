@@ -3,7 +3,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 
 class CreateAccountScreen extends StatefulWidget {
-  const CreateAccountScreen({super.key});
+  final Account? accountToEdit;
+
+  const CreateAccountScreen({super.key, this.accountToEdit});
 
   @override
   State<CreateAccountScreen> createState() => _CreateAccountScreenState();
@@ -19,10 +21,38 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _isLoading = true;
   bool _isCreating = false;
 
+  bool get _isEditMode => widget.accountToEdit != null;
+
   @override
   void initState() {
     super.initState();
-    _generateAccount();
+    if (_isEditMode) {
+      _loadExistingAccount();
+    } else {
+      _generateAccount();
+    }
+  }
+
+  Future<void> _loadExistingAccount() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final account = widget.accountToEdit!;
+      setState(() {
+        _provisionalAccount = account;
+        _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
+        _nameController.text = account.name;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load account details: $e')));
+      }
+    }
   }
 
   Future<void> _generateAccount() async {
@@ -50,21 +80,26 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     }
   }
 
-  Future<void> _createAccount() async {
-    _provisionalAccount = _provisionalAccount.copyWith(name: _nameController.text);
+  Future<void> _saveAccount() async {
     setState(() {
       _isCreating = true;
     });
     try {
-      await _accountsService.addAccount(_provisionalAccount);
+      if (_isEditMode) {
+        await _accountsService.updateAccountName(_provisionalAccount, _nameController.text);
+      } else {
+        final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
+        await _accountsService.addAccount(accountToSave);
+      }
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e, s) {
       print('Exception on _createAccount: $e $s');
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create account')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to ${_isEditMode ? 'save' : 'create'} account')));
       }
     } finally {
       if (mounted) {
@@ -136,9 +171,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          const Text(
-            'Create New Account',
-            style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+          Text(
+            _isEditMode ? 'Edit Account' : 'Create New Account',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
@@ -238,7 +278,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: _isCreating
           ? const Center(child: CircularProgressIndicator())
-          : GradientActionButton(onPressed: _createAccount, label: 'Create Account'),
+          : GradientActionButton(onPressed: _saveAccount, label: _isEditMode ? 'Save' : 'Create Account'),
     );
   }
 }

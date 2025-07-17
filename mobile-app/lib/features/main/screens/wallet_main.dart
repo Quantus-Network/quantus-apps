@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'dart:async';
-import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
@@ -310,12 +309,7 @@ class _WalletMainState extends State<WalletMain> {
                             IconButton(
                               icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AccountProfilePage(currentAccountId: activeAccount.accountId),
-                                  ),
-                                );
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => AccountsScreen()));
                               },
                             ),
                           ],

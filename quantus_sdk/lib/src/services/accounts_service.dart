@@ -32,9 +32,12 @@ class AccountsService {
     return newAccount;
   }
 
+  Future<void> updateAccountName(Account account, String name) async {
+    final updatedAccount = account.copyWith(name: name);
+    await _settingsService.updateAccount(updatedAccount);
+  }
+
   Future<void> addAccount(Account newAccount) async {
-    // Save the new account
     await _settingsService.addAccount(newAccount);
-    await _settingsService.setActiveAccount(newAccount);
   }
 }

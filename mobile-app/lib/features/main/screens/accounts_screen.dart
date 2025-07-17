@@ -48,7 +48,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       final accounts = await _settingsService.getAccounts();
       final activeAccount = await _settingsService.getActiveAccount();
 
-      final detailsFutures = accounts.map((account) async {
+      final detailsFutures = accounts.map((account) {
         try {
           final detailsFuture = Future.wait([
             _substrateService.queryBalance(account.accountId),
@@ -65,11 +65,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
         }
       }).toList();
 
-      final details = await Future.wait(detailsFutures);
-
       if (mounted) {
         setState(() {
-          _accountDetails = details;
+          _accountDetails = detailsFutures;
           _activeAccount = activeAccount;
           _isLoading = false;
         });
@@ -402,7 +400,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               final checksumName = accountDetails['checksumName'] as String;
               final balance = accountDetails['balance'] as BigInt;
               if (!mounted) return;
-              Navigator.push(
+              final result = await Navigator.push<bool?>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AccountSettingsScreen(
@@ -412,6 +410,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   ),
                 ),
               );
+              if (result == true) {
+                _loadAccounts();
+                Provider.of<WalletStateManager>(context, listen: false).refreshActiveAccount();
+              }
             },
           ),
         ],
