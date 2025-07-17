@@ -69,7 +69,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Column(
       children: [
         // Placeholder for account icon
-        SvgPicture.asset('assets/quantus_icon.svg', width: 60, height: 60),
+        SvgPicture.asset('assets/res_icon.svg', width: 60, height: 60),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

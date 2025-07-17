@@ -59,10 +59,11 @@ class HumanReadableChecksumService {
     }
   }
 
-  Future<String> getHumanReadableName(String address) async {
+  Future<String> getHumanReadableName(String address, {upperCase = true}) async {
     try {
-      if (_checkPhraseCache.containsKey(address)) {
-        return _checkPhraseCache[address]!;
+      final key = address + (upperCase ? '#U' : '');
+      if (_checkPhraseCache.containsKey(key)) {
+        return _checkPhraseCache[key]!;
       }
 
       if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
@@ -79,9 +80,16 @@ class HumanReadableChecksumService {
       final result = await responsePort.first as String?;
       responsePort.close();
 
-      final finalResult = result ?? '';
+      var finalResult = result ?? '';
 
-      _checkPhraseCache[address] = finalResult;
+      if (upperCase) {
+        finalResult = finalResult
+            .split('-')
+            .map((word) => word[0].toUpperCase() + word.substring(1))
+            .toList()
+            .join('-');
+      }
+      _checkPhraseCache[key] = finalResult;
       return finalResult;
     } catch (e, s) {
       debugPrint('Error in getHumanReadableName for address $address: $e');

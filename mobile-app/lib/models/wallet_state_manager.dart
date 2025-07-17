@@ -110,7 +110,8 @@ class WalletStateManager with ChangeNotifier {
 
   Future<void> switchAccount(Account account) async {
     await _settingsService.setActiveAccount(account);
-    await load(); // Reload all data for the new account
+    load();
+    notifyListeners();
   }
 
   Future<void> refreshTransactions({bool quiet = false}) async {

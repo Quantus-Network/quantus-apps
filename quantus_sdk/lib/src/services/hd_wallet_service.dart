@@ -23,7 +23,8 @@ class HdWalletService {
     int change = 0,
     int addressIndex = 0,
   }) {
-    final derivationPath = "//$purpose'//$coinType'//$account'//$change//$addressIndex";
+    final derivationPath = "m/$purpose'/$coinType'/$account'/$change/$addressIndex";
+    print("Derivation path: $derivationPath");
     final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
     return derivedSeed;
   }

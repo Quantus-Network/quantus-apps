@@ -14,7 +14,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
 
-  Account? _provisionalAccount;
+  late Account _provisionalAccount;
   Future<String>? _checksumFuture;
   bool _isLoading = true;
   bool _isCreating = false;
@@ -30,7 +30,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       _isLoading = true;
     });
     try {
-      final account = await _accountsService.generateProvisionalAccount();
+      final account = await _accountsService.createNewAccount();
       if (mounted) {
         setState(() {
           _provisionalAccount = account;
@@ -39,29 +39,32 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, s) {
+      print('Exception on create account screen: $e $s');
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate account details: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to generate account details')));
       }
     }
   }
 
   Future<void> _createAccount() async {
-    if (_provisionalAccount == null) return;
+    _provisionalAccount = _provisionalAccount.copyWith(name: _nameController.text);
     setState(() {
       _isCreating = true;
     });
     try {
-      await _accountsService.createNewAccount(_provisionalAccount!, name: _nameController.text);
+      await _accountsService.addAccount(_provisionalAccount);
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
       }
-    } catch (e) {
+    } catch (e, s) {
+      print('Exception on _createAccount: $e $s');
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create account: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create account')));
       }
     } finally {
       if (mounted) {
@@ -189,7 +192,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           child: Text(
             'A unique phrase which allows you to easily recognise and verify your wallet.',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.60),
+              color: Colors.white.useOpacity(0.60),
               fontSize: 14,
               fontFamily: 'Fira Code',
               fontWeight: FontWeight.w400,

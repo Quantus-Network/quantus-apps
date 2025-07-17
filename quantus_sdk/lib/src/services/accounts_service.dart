@@ -17,29 +17,24 @@ class AccountsService {
 
   final SettingsService _settingsService = SettingsService();
 
-  Future<Account> createNewAccount(String name) async {
+  Future<Account> createNewAccount() async {
     final mnemonic = await _settingsService.getMnemonic();
-
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
-
-    // Determine the next index for derivation
-    // Note: child indexes start at 1. Index 0 is the root account with NO derivation.
     final nextIndex = await _settingsService.getNextFreeAccountIndex();
-
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
-
     final newAccount = Account(
       index: nextIndex,
-      name: name.isEmpty ? 'Account ${nextIndex + 1}' : name,
+      name: 'Account ${nextIndex + 1}', // Default name
       accountId: keypair.ss58Address,
     );
+    return newAccount;
+  }
 
+  Future<void> addAccount(Account newAccount) async {
     // Save the new account
     await _settingsService.addAccount(newAccount);
     await _settingsService.setActiveAccount(newAccount);
-
-    return newAccount;
   }
 }
