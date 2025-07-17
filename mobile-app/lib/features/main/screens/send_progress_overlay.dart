@@ -762,7 +762,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         children: [
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
               child: Container(color: Colors.black.useOpacity(0.3)),
             ),
           ),
