@@ -7,6 +7,7 @@ class AppConstants {
 
   static const String rpcEndpoint = 'wss://a.t.res.fm:443';
   static const String graphQlEndpoint = 'https://gql.res.fm';
+  static const String explorerEndpoint = 'https://explorer.quantus.com';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';
@@ -24,4 +25,7 @@ class AppConstants {
   // Digits of precision
   static const int decimals = 12;
   static const int ss58prefix = 189;
+
+  // Default sheet height in percentage of screen height
+  static const double sheetHeightFraction = 0.69;
 }
