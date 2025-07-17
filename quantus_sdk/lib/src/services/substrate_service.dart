@@ -10,6 +10,7 @@ import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';
@@ -215,19 +216,16 @@ class SubstrateService {
   }
 
   Future<crypto.Keypair> _getUserWallet() async {
-    final settingsService = SettingsService();
-    final senderSeed = await settingsService.getMnemonic();
-    if (senderSeed == null || senderSeed.isEmpty) {
-      throw Exception('Sender mnemonic not found for fee estimation.');
-    }
-    crypto.Keypair senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
-    return senderWallet;
+    final account = await SettingsService().getActiveAccount();
+    final keypair = await account.getKeypair();
+    return keypair;
   }
 
-  Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase) async {
+  @Deprecated('Use Account.getKeypair() instead')
+  Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase, Account account) async {
     try {
-      crypto.Keypair keypair = dilithiumKeypairFromMnemonic(seedPhrase);
-      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: '');
+      final keypair = HdWalletService().keyPairAtIndex(seedPhrase, account.index);
+      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: 'Account 1');
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
     }
@@ -275,31 +273,20 @@ class SubstrateService {
     return result;
   }
 
+  @Deprecated('Use Account.getKeypair() instead')
   crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
-    crypto.Keypair senderWallet;
+    // This method is now simplified to support legacy calls or testing.
+    // It defaults to deriving the key for account index 0.
+    // For specific accounts, use HdWalletService().keyPairAtIndex(mnemonic, index).
     if (senderSeed.startsWith('//')) {
-      switch (senderSeed) {
-        case crystalAlice:
-          senderWallet = crypto.crystalAlice();
-          break;
-        case crystalBob:
-          senderWallet = crypto.crystalBob();
-          break;
-        case crystalCharlie:
-          senderWallet = crypto.crystalCharlie();
-          break;
-        default:
-          throw Exception('Invalid sender seed: $senderSeed');
-      }
-    } else {
-      // Get the sender's wallet
-      senderWallet = crypto.generateKeypair(mnemonicStr: senderSeed);
+      // Handle test seeds
+      return crypto.generateKeypair(mnemonicStr: senderSeed);
     }
-    return senderWallet;
+    return HdWalletService().keyPairAtIndex(senderSeed, 0);
   }
 
   Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(
-    String senderSeed,
+    Account account,
     RuntimeCall call, {
     void Function(ExtrinsicStatus)? onStatus,
     int maxRetries = 3,
@@ -308,7 +295,12 @@ class SubstrateService {
       await initialize();
     }
 
-    final senderWallet = dilithiumKeypairFromMnemonic(senderSeed);
+    final mnemonic = await account.getMnemonic();
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found for signing.');
+    }
+    final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
+
     final resonanceApi = Resonance(_provider!);
 
     final runtimeVersion = await _stateApi!.getRuntimeVersion();

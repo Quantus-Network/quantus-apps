@@ -6,6 +6,7 @@ import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/mu
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
 import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'substrate_service.dart';
 
@@ -20,7 +21,7 @@ class RecoveryService {
   /// Create a recovery configuration for an account
   /// This makes the account recoverable by trusted friends
   Future<StreamSubscription<ExtrinsicStatus>> createRecoveryConfig({
-    required String senderSeed,
+    required Account account,
     required List<String> friendAddresses,
     required int threshold,
     required int delayPeriod,
@@ -37,7 +38,7 @@ class RecoveryService {
       );
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return await _substrateService.submitExtrinsic(account, call);
     } catch (e) {
       throw Exception('Failed to create recovery config: $e');
     }
@@ -45,7 +46,7 @@ class RecoveryService {
 
   /// Initiate recovery process for a lost account
   Future<StreamSubscription<ExtrinsicStatus>> initiateRecovery({
-    required String rescuerSeed,
+    required Account rescuerAccount,
     required String lostAccountAddress,
   }) async {
     try {
@@ -56,7 +57,7 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.initiateRecovery(account: lostAccount);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(rescuerSeed, call);
+      return await _substrateService.submitExtrinsic(rescuerAccount, call);
     } catch (e) {
       throw Exception('Failed to initiate recovery: $e');
     }
@@ -64,7 +65,7 @@ class RecoveryService {
 
   /// Vouch for an active recovery process (called by friends)
   Future<StreamSubscription<ExtrinsicStatus>> vouchForRecovery({
-    required String friendSeed,
+    required Account friendAccount,
     required String lostAccountAddress,
     required String rescuerAddress,
   }) async {
@@ -77,7 +78,7 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(friendSeed, call);
+      return await _substrateService.submitExtrinsic(friendAccount, call);
     } catch (e) {
       throw Exception('Failed to vouch for recovery: $e');
     }
@@ -85,7 +86,7 @@ class RecoveryService {
 
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
   Future<StreamSubscription<ExtrinsicStatus>> claimRecovery({
-    required String rescuerSeed,
+    required Account rescuerAccount,
     required String lostAccountAddress,
   }) async {
     try {
@@ -96,7 +97,7 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.claimRecovery(account: lostAccount);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(rescuerSeed, call);
+      return await _substrateService.submitExtrinsic(rescuerAccount, call);
     } catch (e) {
       throw Exception('Failed to claim recovery: $e');
     }
@@ -104,7 +105,7 @@ class RecoveryService {
 
   /// Close an active recovery process (called by the lost account owner)
   Future<StreamSubscription<ExtrinsicStatus>> closeRecovery({
-    required String lostAccountSeed,
+    required Account lostAccount,
     required String rescuerAddress,
   }) async {
     try {
@@ -115,14 +116,14 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.closeRecovery(rescuer: rescuer);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(lostAccountSeed, call);
+      return await _substrateService.submitExtrinsic(lostAccount, call);
     } catch (e) {
       throw Exception('Failed to close recovery: $e');
     }
   }
 
   /// Remove recovery configuration from account
-  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({required String senderSeed}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({required Account senderAccount}) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
@@ -130,7 +131,7 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.removeRecovery();
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(senderSeed, call);
+      return await _substrateService.submitExtrinsic(senderAccount, call);
     } catch (e) {
       throw Exception('Failed to remove recovery config: $e');
     }
@@ -138,7 +139,7 @@ class RecoveryService {
 
   /// Call a function as a recovered account (proxy call)
   Future<StreamSubscription<ExtrinsicStatus>> callAsRecovered({
-    required String rescuerSeed,
+    required Account rescuerAccount,
     required String recoveredAccountAddress,
     required RuntimeCall call,
   }) async {
@@ -152,7 +153,7 @@ class RecoveryService {
       final proxyCall = resonanceApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(rescuerSeed, proxyCall);
+      return await _substrateService.submitExtrinsic(rescuerAccount, proxyCall);
     } catch (e) {
       throw Exception('Failed to call as recovered: $e');
     }
@@ -160,7 +161,7 @@ class RecoveryService {
 
   /// Cancel the ability to use a recovered account
   Future<StreamSubscription<ExtrinsicStatus>> cancelRecovered({
-    required String rescuerSeed,
+    required Account rescuerAccount,
     required String recoveredAccountAddress,
   }) async {
     try {
@@ -173,7 +174,7 @@ class RecoveryService {
       final call = resonanceApi.tx.recovery.cancelRecovered(account: recoveredAccount);
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(rescuerSeed, call);
+      return await _substrateService.submitExtrinsic(rescuerAccount, call);
     } catch (e) {
       throw Exception('Failed to cancel recovered: $e');
     }
@@ -290,7 +291,7 @@ class RecoveryService {
 
   /// Convenience method to transfer balance as recovered account
   Future<StreamSubscription<ExtrinsicStatus>> transferAsRecovered({
-    required String rescuerSeed,
+    required Account rescuerAccount,
     required String recoveredAccountAddress,
     required String recipientAddress,
     required BigInt amount,
@@ -298,7 +299,7 @@ class RecoveryService {
     try {
       final transferCall = createBalanceTransferCall(recipientAddress, amount);
       return await callAsRecovered(
-        rescuerSeed: rescuerSeed,
+        rescuerAccount: rescuerAccount,
         recoveredAccountAddress: recoveredAccountAddress,
         call: transferCall,
       );

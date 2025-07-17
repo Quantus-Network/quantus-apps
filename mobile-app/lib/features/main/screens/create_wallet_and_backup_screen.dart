@@ -62,14 +62,9 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     }
 
     try {
-      final walletInfo = await SubstrateService().generateWalletFromSeed(_mnemonic);
-
-      // final walletName = await HumanReadableChecksumService().getHumanReadableName(walletInfo.accountId);
-      // if (walletName.isEmpty) throw Exception('Checksum generation failed');
-
-      await _settingsService.setHasWallet(true);
+      final key = HdWalletService().keyPairAtIndex(_mnemonic, 0);
       await _settingsService.setMnemonic(_mnemonic);
-      await _settingsService.setAccountId(walletInfo.accountId);
+      await _settingsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(

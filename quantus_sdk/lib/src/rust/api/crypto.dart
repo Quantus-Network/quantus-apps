@@ -22,6 +22,11 @@ Uint8List ss58ToAccountId({required String s}) =>
 Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
     .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
+Uint8List seedFromMnemonic({required String mnemonicStr}) => RustLib
+    .instance
+    .api
+    .crateApiCryptoSeedFromMnemonic(mnemonicStr: mnemonicStr);
+
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
@@ -54,6 +59,9 @@ Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 Keypair crystalBob() => RustLib.instance.api.crateApiCryptoCrystalBob();
 
 Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
+
+Uint8List deriveHdPath({required List<int> seed, required String path}) =>
+    RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
 
 class Keypair {
   final Uint8List publicKey;

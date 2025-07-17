@@ -65,13 +65,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     });
 
     try {
-      final senderSeed = await _settingsService.getMnemonic();
-
-      if (senderSeed == null || senderSeed.isEmpty) {
-        throw Exception(
-          'Sender mnemonic not found. Please re-import your wallet.',
-        );
-      }
+      final account = await _settingsService.getActiveAccount();
 
       // ignore: use_build_context_synchronously
       final walletStateManager = Provider.of<WalletStateManager>(
@@ -80,7 +74,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       );
 
       debugPrint('Attempting balance transfer...');
-      debugPrint('  Sender Seed: ${senderSeed.substring(0, 4)}...');
       debugPrint('  Recipient: ${widget.recipientAddress}');
       debugPrint('  Amount (BigInt): ${widget.amount}');
       debugPrint('  Fee: ${widget.fee}');
@@ -88,14 +81,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
       if (widget.reversibleTimeSeconds <= 0) {
         await walletStateManager.balanceTransfer(
-          senderSeed,
+          account,
           widget.recipientAddress,
           widget.amount,
           widget.fee,
         );
       } else {
         await walletStateManager.scheduleReversibleTransferWithDelaySeconds(
-          senderSeed: senderSeed,
+          account: account,
           recipientAddress: widget.recipientAddress,
           amount: widget.amount,
           delaySeconds: widget.reversibleTimeSeconds,

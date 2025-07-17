@@ -82,13 +82,8 @@ class SendScreenState extends State<SendScreen> {
 
   Future<BigInt> _loadBalance() async {
     try {
-      final accountId = await _settingsService.getAccountId();
-
-      if (accountId == null) {
-        throw Exception('Wallet not found');
-      }
-
-      final balance = await SubstrateService().queryBalance(accountId);
+      final account = await _settingsService.getActiveAccount();
+      final balance = await SubstrateService().queryBalance(account.accountId);
       return balance;
     } catch (e) {
       debugPrint('Error loading balance: $e');
@@ -192,15 +187,12 @@ class SendScreenState extends State<SendScreen> {
     }
 
     try {
-      final senderAccountId = await _settingsService.getAccountId();
-      if (senderAccountId == null) {
-        throw Exception('Sender account not found');
-      }
+      final account = await _settingsService.getActiveAccount();
       final dummyAmountForFee =
           BigInt.from(1) *
           NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
       final estimatedFee = await SubstrateService().getFee(
-        senderAccountId,
+        account.accountId,
         recipient,
         dummyAmountForFee,
       );

@@ -428,10 +428,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     });
 
     try {
-      final senderSeed = await _settingsService.getMnemonic();
-      if (senderSeed == null || senderSeed.isEmpty) {
-        throw Exception('Wallet mnemonic not found.');
-      }
+      final senderAccount = await _settingsService.getActiveAccount();
 
       var txId = widget.transaction.txId;
       if (txId.startsWith('0x')) {
@@ -439,7 +436,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       }
       final transactionId = HEX.decode(txId);
 
-      await _reversibleTransfersService.cancelReversibleTransfer(senderSeed: senderSeed, transactionId: transactionId);
+      await _reversibleTransfersService.cancelReversibleTransfer(account: senderAccount, transactionId: transactionId);
 
       setState(() {
         _sheetState = _SheetState.cancelled;

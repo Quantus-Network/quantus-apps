@@ -4,7 +4,6 @@ import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'substrate_service.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class BalancesService {
@@ -15,7 +14,7 @@ class BalancesService {
   final SubstrateService _substrateService = SubstrateService();
 
   Future<StreamSubscription<ExtrinsicStatus>> balanceTransfer(
-    String senderSeed,
+    Account account,
     String targetAddress,
     BigInt amount,
     void Function(ExtrinsicStatus)? onStatus,
@@ -26,7 +25,7 @@ class BalancesService {
       final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(
-        senderSeed,
+        account,
         runtimeCall,
         onStatus:
             onStatus ??

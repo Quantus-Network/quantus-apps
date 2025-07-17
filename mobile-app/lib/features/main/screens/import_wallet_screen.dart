@@ -24,25 +24,23 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
     });
 
     try {
-      final input = _mnemonicController.text.trim();
+      final mnemonic = _mnemonicController.text.trim();
 
       // Check if it's a derivation path
-      if (input.startsWith('//')) {
+      if (mnemonic.startsWith('//')) {
         // No validation needed for derivation paths
-        debugPrint('Using derivation path: $input');
+        debugPrint('Using derivation path: $mnemonic');
       } else {
         // Validate mnemonic
-        final words = input.split(' ').where((word) => word.isNotEmpty).toList();
+        final words = mnemonic.split(' ').where((word) => word.isNotEmpty).toList();
         if (words.length != 12 && words.length != 24) {
           throw Exception('Mnemonic must be 12 or 24 words');
         }
       }
 
-      final walletInfo = await SubstrateService().generateWalletFromSeed(input);
-      // Save wallet info
-      await _settingsService.setHasWallet(true);
-      await _settingsService.setMnemonic(input);
-      await _settingsService.setAccountId(walletInfo.accountId);
+      final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
+      await _settingsService.setMnemonic(mnemonic);
+      await _settingsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
