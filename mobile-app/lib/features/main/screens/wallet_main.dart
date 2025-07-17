@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'dart:async';
-import 'package:resonance_network_wallet/features/main/screens/account_profile.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
@@ -37,11 +36,6 @@ class _WalletMainState extends State<WalletMain> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  // Helper to format the address (now just returns the full address)
-  String _formatAddress(String address) {
-    return address; // Return the full address, let Text widget handle overflow
   }
 
   Widget _buildActionButton({
@@ -99,7 +93,6 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Widget _buildHistorySection(WalletStateManager walletStateManager) {
-    final accountId = walletStateManager.walletData.data?.accountId;
     if (walletStateManager.txData.isLoading) {
       return Container(
         width: 321,
@@ -141,6 +134,10 @@ class _WalletMainState extends State<WalletMain> {
         ),
       );
     }
+    final activeAccount = walletStateManager.walletData.data?.account;
+    if (activeAccount == null) {
+      return const SizedBox.shrink(); // or a placeholder
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +156,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         RecentTransactionsList(
           transactions: walletStateManager.combinedTransactions.take(5).toList(),
-          currentWalletAddress: accountId!,
+          currentWalletAddress: activeAccount.accountId,
         ),
         if (true)
           Padding(
@@ -279,8 +276,7 @@ class _WalletMainState extends State<WalletMain> {
     }
 
     final walletData = balanceLoader.data!;
-    final displayAddress = _formatAddress(walletData.accountId);
-    final accountId = walletStateManager.walletData.data?.accountId;
+    final activeAccount = walletData.account;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
@@ -313,14 +309,10 @@ class _WalletMainState extends State<WalletMain> {
                             IconButton(
                               icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
                               onPressed: () {
-                                if (accountId != null) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AccountProfilePage(currentAccountId: accountId),
-                                    ),
-                                  );
-                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                );
                               },
                             ),
                           ],
@@ -331,10 +323,10 @@ class _WalletMainState extends State<WalletMain> {
                           children: [
                             InkWell(
                               onTap: () {
-                                if (accountId != null) {
-                                  Clipboard.setData(ClipboardData(text: accountId));
-                                  showTopSnackBar(context, title: 'Copied!', message: 'Account ID copied to clipboard');
-                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                );
                               },
                               borderRadius: BorderRadius.circular(5),
                               child: Container(
@@ -344,26 +336,17 @@ class _WalletMainState extends State<WalletMain> {
                                   children: [
                                     Image.asset('assets/active_dot.png', width: 20, height: 20),
                                     const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                        decoration: ShapeDecoration(
-                                          color: Colors.black.useOpacity(0.5),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                        ),
-                                        child: Text(
-                                          displayAddress,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontFamily: 'Fira Code',
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
+                                    Text(
+                                      activeAccount.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(Icons.expand_more, color: Colors.white70, size: 12),
+                                    const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 12),
                                   ],
                                 ),
                               ),

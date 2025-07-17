@@ -123,3 +123,4 @@ app.*.symbols
 /.dart_tool
 /mobile-app/android/app
 .vscode/launch.json
+/.vscode

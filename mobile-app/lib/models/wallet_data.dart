@@ -1,7 +1,8 @@
+import 'package:quantus_sdk/quantus_sdk.dart';
+
 class WalletData {
-  final String accountId;
-  final String walletName;
+  final Account account;
   final BigInt balance;
 
-  WalletData({required this.accountId, required this.walletName, required this.balance});
+  WalletData({required this.account, required this.balance});
 }

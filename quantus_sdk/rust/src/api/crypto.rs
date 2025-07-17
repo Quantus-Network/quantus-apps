@@ -1,4 +1,5 @@
 use bip39::{Language, Mnemonic};
+use nam_tiny_hderive::bip32::ExtendedPrivKey;
 use poseidon_resonance::PoseidonHasher;
 use rusty_crystals_dilithium::*;
 use sp_core::crypto::{AccountId32, Ss58Codec};
@@ -49,6 +50,18 @@ pub fn generate_keypair(mnemonic_str: String) -> Keypair {
     let seed: [u8; 64] = mnemonic.to_seed_normalized(None.unwrap_or(""));
 
     generate_keypair_from_seed(seed.to_vec())
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn seed_from_mnemonic(mnemonic_str: String) -> Vec<u8> {
+    // Note this mirrors our implementation in rusty crystals hdwallet
+    let mnemonic = Mnemonic::parse_in_normalized(Language::English, &mnemonic_str)
+        .expect("Failed to parse mnemonic");
+
+    // Generate seed from mnemonic
+    let seed: [u8; 64] = mnemonic.to_seed_normalized(None.unwrap_or(""));
+
+    return seed.to_vec();
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -108,6 +121,14 @@ pub fn crystal_bob() -> Keypair {
 #[flutter_rust_bridge::frb(sync)]
 pub fn crystal_charlie() -> Keypair {
     generate_keypair_from_seed(vec![2; 32])
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn derive_hd_path(seed: Vec<u8>, path: String) -> Vec<u8> {
+    let seed = seed.as_slice();
+    let path = path.as_str();
+    let ext = ExtendedPrivKey::derive(seed, path).expect("Failed to derive HD path");
+    return ext.secret().to_vec();
 }
 
 #[flutter_rust_bridge::frb(init)]

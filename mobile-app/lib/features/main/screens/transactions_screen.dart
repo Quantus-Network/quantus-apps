@@ -54,7 +54,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     if (!_hasMore || _isLoading) return;
 
     final oldLength = _transactions?.otherTransfers.length ?? 0;
-    final accountId = widget.manager.walletData.data!.accountId;
+    final accountId = widget.manager.walletData.data!.account.accountId;
 
     await widget.manager.loadMoreTransactions(accountId: accountId, limit: _limit, offset: _offset);
 
@@ -126,7 +126,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: RecentTransactionsList(
               transactions: _transactions!.combined,
-              currentWalletAddress: widget.manager.walletData.data!.accountId,
+              currentWalletAddress: widget.manager.walletData.data!.account.accountId,
             ),
           ),
           if (_isLoading && _hasMore)

@@ -59,16 +59,20 @@ class WalletStateManager with ChangeNotifier {
   }
 
   Future<SortedTransactionsList?> _fetchTransactionHistory() async {
-    final accountId = await _settingsService.getAccountId();
-    final result = await _chainHistoryService.fetchAllTransactionTypes(accountId: accountId!, limit: 20, offset: 0);
+    final account = await _settingsService.getActiveAccount();
+    final result = await _chainHistoryService.fetchAllTransactionTypes(
+      accountId: account.accountId,
+      limit: 20,
+      offset: 0,
+    );
     return result;
   }
 
   Future<WalletData?> _fetchBalance() async {
     const Duration networkTimeout = Duration(seconds: 15);
-    final accountId = await _settingsService.getAccountId();
-    final balance = await _substrateService.queryBalance(accountId!).timeout(networkTimeout);
-    return WalletData(accountId: accountId, walletName: '', balance: balance);
+    final account = await _settingsService.getActiveAccount();
+    final balance = await _substrateService.queryBalance(account.accountId).timeout(networkTimeout);
+    return WalletData(account: account, balance: balance);
   }
 
   BigInt get estimatedBalance {
@@ -76,7 +80,7 @@ class WalletStateManager with ChangeNotifier {
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
       if (tx.transactionState != TransactionState.inHistory && tx.transactionState != TransactionState.failed) {
-        final isSend = tx.from == walletData.data!.accountId;
+        final isSend = tx.from == walletData.data!.account.accountId;
         final adjustment = isSend ? -tx.amount : tx.amount;
         base += adjustment;
         if (isSend && tx.fee != null) {
@@ -101,6 +105,12 @@ class WalletStateManager with ChangeNotifier {
   Future<void> load({bool quiet = false}) async {
     await Future.wait([txData.load(quiet: quiet), walletData.load(quiet: quiet)]);
     updatePendingTransactions();
+    notifyListeners();
+  }
+
+  Future<void> switchAccount(Account account) async {
+    await _settingsService.setActiveAccount(account);
+    load();
     notifyListeners();
   }
 
@@ -186,13 +196,13 @@ class WalletStateManager with ChangeNotifier {
     });
   }
 
-  String _senderAddressFromSeed(String senderSeed) {
-    return SubstrateService().dilithiumKeypairFromMnemonic(senderSeed).ss58Address;
+  String _senderAddressFromAccount(Account account) {
+    return account.accountId;
   }
 
-  Future<String> balanceTransfer(String senderSeed, String targetAddress, BigInt amount, BigInt feeEstimate) async {
+  Future<String> balanceTransfer(Account account, String targetAddress, BigInt amount, BigInt feeEstimate) async {
     final pending = createPendingTransaction(
-      from: _senderAddressFromSeed(senderSeed),
+      from: _senderAddressFromAccount(account),
       to: targetAddress,
       amount: amount,
       fee: feeEstimate,
@@ -234,7 +244,7 @@ class WalletStateManager with ChangeNotifier {
     }
 
     try {
-      subscription = await BalancesService().balanceTransfer(senderSeed, targetAddress, amount, onStatus);
+      subscription = await BalancesService().balanceTransfer(account, targetAddress, amount, onStatus);
       print('Subscribed to stream for ${pending.id} $subscription');
     } catch (e, stackTrace) {
       updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
@@ -246,14 +256,14 @@ class WalletStateManager with ChangeNotifier {
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
-    required String senderSeed,
+    required Account account,
     required String recipientAddress,
     required BigInt amount,
     required int delaySeconds,
     required BigInt feeEstimate,
   }) async {
     final pending = createPendingTransaction(
-      from: _senderAddressFromSeed(senderSeed),
+      from: _senderAddressFromAccount(account),
       to: recipientAddress,
       amount: amount,
       fee: feeEstimate,
@@ -295,7 +305,7 @@ class WalletStateManager with ChangeNotifier {
 
     try {
       subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-        senderSeed: senderSeed,
+        account: account,
         recipientAddress: recipientAddress,
         amount: amount,
         delaySeconds: delaySeconds,
@@ -346,5 +356,9 @@ class WalletStateManager with ChangeNotifier {
         print('error fetching transaction history: $e');
       }
     });
+  }
+
+  void refreshActiveAccount() {
+    load(); // async!
   }
 }

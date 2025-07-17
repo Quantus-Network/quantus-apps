@@ -1,6 +1,7 @@
 library;
 
 import 'package:quantus_sdk/src/rust/api/crypto.dart';
+import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
@@ -27,13 +28,15 @@ export 'src/services/address_formatting_service.dart';
 export 'src/models/sorted_transactions.dart';
 export 'src/models/transaction_state.dart';
 export 'src/services/recent_addresses_service.dart';
+export 'src/models/account.dart';
+export 'src/services/accounts_service.dart';
+export 'src/services/hd_wallet_service.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).
   static Future<void> init() async {
-    print('initializing rust bindings..');
     await RustLib.init();
+    await SettingsService().initialize();
     setDefaultSs58Prefix(prefix: 189);
-    print('rust bindings initialized');
   }
 }
