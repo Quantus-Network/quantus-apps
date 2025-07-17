@@ -28,6 +28,10 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>We need camera access to scan QR codes for sending funds.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
