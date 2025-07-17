@@ -769,7 +769,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
           Container(
             height:
                 MediaQuery.of(context).size.height *
-                AppConstants.sheetHeightFraction,
+                AppConstants.sendingSheetHeightFraction,
             width: MediaQuery.of(context).size.width,
             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
             decoration: ShapeDecoration(

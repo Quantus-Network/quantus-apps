@@ -27,5 +27,5 @@ class AppConstants {
   static const int ss58prefix = 189;
 
   // Default sheet height in percentage of screen height
-  static const double sheetHeightFraction = 0.69;
+  static const double sendingSheetHeightFraction = 0.72;
 }
