@@ -21,7 +21,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   Future<String>? _checksumFuture;
   List<String>? _splittedAddress;
 
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -36,8 +37,12 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
       setState(() {
         _accountName = account.name;
         _accountId = account.accountId;
-        _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
-        _splittedAddress = AddressFormattingService.splitIntoChunks(account.accountId);
+        _checksumFuture = _checksumService.getHumanReadableName(
+          account.accountId,
+        );
+        _splittedAddress = AddressFormattingService.splitIntoChunks(
+          account.accountId,
+        );
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
@@ -61,7 +66,11 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
             shape: OvalBorder(), // Use OvalBorder for circle
           ),
           alignment: Alignment.center,
-          child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
+          child: SvgPicture.asset(
+            'assets/copy_icon.svg',
+            width: 16,
+            height: 16,
+          ),
         ),
         title: 'Copied!',
         message: 'Address and checkphrase copied to clipboard',
@@ -92,18 +101,26 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               padding: const EdgeInsets.all(7),
               decoration: ShapeDecoration(
                 color: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [InkWell(onTap: _closeSheet, child: const Icon(Icons.close))],
+                children: [
+                  InkWell(onTap: _closeSheet, child: const Icon(Icons.close)),
+                ],
               ),
             ),
             const SizedBox(height: 28),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset('assets/receive_icon.svg', width: 37, height: 37),
+                SvgPicture.asset(
+                  'assets/receive_icon.svg',
+                  width: 37,
+                  height: 37,
+                ),
                 const SizedBox(width: 7),
                 const Text(
                   'RECEIVE',
@@ -118,20 +135,28 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
             ),
             const SizedBox(height: 28),
             if (_accountId == null)
-              const Center(child: CircularProgressIndicator(color: Colors.white))
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
             else ...[
               Container(
                 width: 227,
                 height: 227,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: QrImageView(
                   data: _accountId!,
                   version: QrVersions.auto,
                   size: 260.0,
                   padding: EdgeInsets.zero,
                   backgroundColor: Colors.white,
-                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Colors.black,
+                  ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
                     color: Colors.black,
@@ -143,7 +168,11 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 spacing: 15,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SvgPicture.asset('assets/account_list_icon.svg', width: 21, height: 32),
+                  SvgPicture.asset(
+                    'assets/account_list_icon.svg',
+                    width: 21,
+                    height: 32,
+                  ),
                   Text(
                     _accountName ?? '',
                     textAlign: TextAlign.center,
@@ -172,10 +201,19 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               SizedBox(
                                 width: 12,
                                 height: 12,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white54,
+                                ),
                               ),
                               SizedBox(width: 8),
-                              Text('Loading name...', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                              Text(
+                                'Loading name...',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -183,7 +221,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           !snapshot.hasData ||
                           snapshot.data == null ||
                           snapshot.data!.isEmpty) {
-                        debugPrint('Error loading checksum name for $_accountId: ${snapshot.error}');
+                        debugPrint(
+                          'Error loading checksum name for $_accountId: ${snapshot.error}',
+                        );
                         // In case of error, set checksum to null or an error string
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_checksum != null) {
@@ -231,7 +271,11 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                             ),
                             InkWell(
                               onTap: _copyAddress,
-                              child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
+                              child: SvgPicture.asset(
+                                'assets/copy_icon.svg',
+                                width: 16,
+                                height: 16,
+                              ),
                             ),
                           ],
                         );
@@ -248,7 +292,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                         padding: const EdgeInsets.all(10),
                         decoration: ShapeDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                         child: Text(
                           '${_splittedAddress?.join(" ")}',
@@ -263,7 +309,11 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                       ),
                       InkWell(
                         onTap: _copyAddress,
-                        child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
+                        child: SvgPicture.asset(
+                          'assets/copy_icon.svg',
+                          width: 16,
+                          height: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -277,7 +327,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   onPressed: _copyAddress,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
                   child: const Text(
                     'Share',
@@ -304,9 +356,36 @@ void showReceiveSheet(BuildContext context) {
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (context) => BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-      child: Container(color: Colors.black.useOpacity(0.2), child: const ReceiveSheet()),
+    builder: (context) => Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black,
+                  const Color(0xFF312E6E).useOpacity(0.4),
+                  Colors.black,
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+            child: Container(
+              color: Colors.black.useOpacity(0.3),
+              child: const ReceiveSheet(),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 }
