@@ -55,7 +55,9 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _loadReversibleTimeSetting() async {
-    final savedTime = (await _settingsService.getReversibleTimeSeconds()) ?? AppConstants.defaultReversibleTimeSeconds;
+    final savedTime =
+        (await _settingsService.getReversibleTimeSeconds()) ??
+        AppConstants.defaultReversibleTimeSeconds;
     setState(() {
       _reversibleTimeSeconds = savedTime;
     });
@@ -115,7 +117,8 @@ class SendScreenState extends State<SendScreen> {
 
       if (isValid) {
         print('Starting wallet name lookup for: $recipient');
-        final humanReadableName = await HumanReadableChecksumService().getHumanReadableName(recipient);
+        final humanReadableName = await HumanReadableChecksumService()
+            .getHumanReadableName(recipient);
         print('Final humanReadableName: $humanReadableName');
         if (!mounted) return; // Check mounted before setState
         setState(() {
@@ -160,7 +163,8 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = parsedAmount;
         // Simplified check; full check including fee happens after fetching fee
-        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance; // Basic validation
+        _hasAmountError =
+            _amount <= BigInt.zero || _amount > _maxBalance; // Basic validation
       });
       _debounceFetchFee(); // Trigger fee fetch after amount validation
     }
@@ -175,11 +179,14 @@ class SendScreenState extends State<SendScreen> {
 
   Future<void> _fetchNetworkFee() async {
     final recipient = _recipientController.text.trim();
-    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero || (_networkFee > BigInt.zero)) {
+    if (!_isValidSS58Address(recipient) ||
+        _amount <= BigInt.zero ||
+        (_networkFee > BigInt.zero)) {
       setState(() {
         _networkFee = _networkFee;
         _isFetchingFee = false;
-        _hasAmountError = _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
+        _hasAmountError =
+            _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
       });
       return;
     }
@@ -189,8 +196,14 @@ class SendScreenState extends State<SendScreen> {
       if (senderAccountId == null) {
         throw Exception('Sender account not found');
       }
-      final dummyAmountForFee = BigInt.from(1) * NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
-      final estimatedFee = await SubstrateService().getFee(senderAccountId, recipient, dummyAmountForFee);
+      final dummyAmountForFee =
+          BigInt.from(1) *
+          NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
+      final estimatedFee = await SubstrateService().getFee(
+        senderAccountId,
+        recipient,
+        dummyAmountForFee,
+      );
 
       setState(() {
         _networkFee = estimatedFee;
@@ -205,7 +218,11 @@ class SendScreenState extends State<SendScreen> {
         _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
       });
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Error fetching network fee: ${e.toString()}');
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Error fetching network fee: ${e.toString()}',
+        );
       }
     }
   }
@@ -227,15 +244,40 @@ class SendScreenState extends State<SendScreen> {
 
     showModalBottomSheet(
       context: context,
+      barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => SendConfirmationOverlay(
-        amount: _amount,
-        recipientName: _savedAddressesLabel,
-        recipientAddress: _recipientController.text,
-        fee: _networkFee,
-        reversibleTimeSeconds: _reversibleTimeSeconds,
-        onClose: () => Navigator.pop(context),
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black,
+                    const Color(0xFF312E6E).useOpacity(0.4),
+                    Colors.black,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SendConfirmationOverlay(
+              amount: _amount,
+              recipientName: _savedAddressesLabel,
+              recipientAddress: _recipientController.text,
+              fee: _networkFee,
+              reversibleTimeSeconds: _reversibleTimeSeconds,
+              onClose: () => Navigator.pop(context),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -244,7 +286,10 @@ class SendScreenState extends State<SendScreen> {
     print('Scanning QR code');
     final scannedAddress = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (context) => const QRScannerScreen(),
+        fullscreenDialog: true,
+      ),
     );
 
     if (scannedAddress != null && mounted) {
@@ -332,7 +377,11 @@ class SendScreenState extends State<SendScreen> {
                       children: [
                         const Text(
                           'Days',
-                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                          style: TextStyle(
+                            color: Color(0xFFD9D9D9),
+                            fontSize: 16,
+                            fontFamily: 'Fira Code',
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Expanded(
@@ -340,9 +389,12 @@ class SendScreenState extends State<SendScreen> {
                             children: [
                               Expanded(
                                 child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(initialItem: selectedDays),
+                                  scrollController: FixedExtentScrollController(
+                                    initialItem: selectedDays,
+                                  ),
                                   itemExtent: 40,
-                                  onSelectedItemChanged: (index) => selectedDays = index,
+                                  onSelectedItemChanged: (index) =>
+                                      selectedDays = index,
                                   children: List.generate(
                                     8,
                                     (index) => Center(
@@ -359,7 +411,13 @@ class SendScreenState extends State<SendScreen> {
                                   ),
                                 ),
                               ),
-                              const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
+                              const Text(
+                                ':',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -372,7 +430,11 @@ class SendScreenState extends State<SendScreen> {
                       children: [
                         const Text(
                           'Hours',
-                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                          style: TextStyle(
+                            color: Color(0xFFD9D9D9),
+                            fontSize: 16,
+                            fontFamily: 'Fira Code',
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Expanded(
@@ -380,9 +442,12 @@ class SendScreenState extends State<SendScreen> {
                             children: [
                               Expanded(
                                 child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(initialItem: selectedHours),
+                                  scrollController: FixedExtentScrollController(
+                                    initialItem: selectedHours,
+                                  ),
                                   itemExtent: 40,
-                                  onSelectedItemChanged: (index) => selectedHours = index,
+                                  onSelectedItemChanged: (index) =>
+                                      selectedHours = index,
                                   children: List.generate(
                                     24,
                                     (index) => Center(
@@ -399,7 +464,13 @@ class SendScreenState extends State<SendScreen> {
                                   ),
                                 ),
                               ),
-                              const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
+                              const Text(
+                                ':',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -412,14 +483,21 @@ class SendScreenState extends State<SendScreen> {
                       children: [
                         const Text(
                           'Minutes',
-                          style: TextStyle(color: Color(0xFFD9D9D9), fontSize: 16, fontFamily: 'Fira Code'),
+                          style: TextStyle(
+                            color: Color(0xFFD9D9D9),
+                            fontSize: 16,
+                            fontFamily: 'Fira Code',
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Expanded(
                           child: CupertinoPicker(
-                            scrollController: FixedExtentScrollController(initialItem: selectedMinutes),
+                            scrollController: FixedExtentScrollController(
+                              initialItem: selectedMinutes,
+                            ),
                             itemExtent: 40,
-                            onSelectedItemChanged: (index) => selectedMinutes = index,
+                            onSelectedItemChanged: (index) =>
+                                selectedMinutes = index,
                             children: List.generate(
                               60,
                               (index) => Center(
@@ -455,7 +533,9 @@ class SendScreenState extends State<SendScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: ShapeDecoration(
                         color: const Color(0xFFFF2D53),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       child: const Text(
                         'Cancel',
@@ -474,7 +554,10 @@ class SendScreenState extends State<SendScreen> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      final newTimeSeconds = (selectedDays * 86400) + (selectedHours * 3600) + (selectedMinutes * 60);
+                      final newTimeSeconds =
+                          (selectedDays * 86400) +
+                          (selectedHours * 3600) +
+                          (selectedMinutes * 60);
                       setState(() {
                         _reversibleTimeSeconds = newTimeSeconds;
                       });
@@ -485,7 +568,9 @@ class SendScreenState extends State<SendScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: ShapeDecoration(
                         color: const Color(0xFF5FE49E),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       child: const Text(
                         'Set',
@@ -513,12 +598,16 @@ class SendScreenState extends State<SendScreen> {
     showAppModalBottomSheet(
       context: context,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8, // Adjustable height for scrollability
+        height:
+            MediaQuery.of(context).size.height *
+            0.8, // Adjustable height for scrollability
         padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
         decoration: const ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)), // Softer radius for modal
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(20),
+            ), // Softer radius for modal
           ),
         ),
         child: Column(
@@ -581,7 +670,10 @@ class SendScreenState extends State<SendScreen> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.54,
-              child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
+              child: Image.asset(
+                'assets/light_leak_effect_background.jpg',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           SafeArea(
@@ -589,7 +681,9 @@ class SendScreenState extends State<SendScreen> {
               future: _balanceFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
                 }
 
                 if (snapshot.hasError) {
@@ -598,7 +692,10 @@ class SendScreenState extends State<SendScreen> {
                       padding: const EdgeInsets.all(20.0),
                       child: Text(
                         'Error loading balance: ${snapshot.error}',
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 16,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -611,12 +708,19 @@ class SendScreenState extends State<SendScreen> {
                   return Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         child: GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: const Row(
                             children: [
-                              Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                              Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'Send',
@@ -640,18 +744,28 @@ class SendScreenState extends State<SendScreen> {
                               children: [
                                 GestureDetector(
                                   onTap: () async {
-                                    final data = await Clipboard.getData('text/plain');
+                                    final data = await Clipboard.getData(
+                                      'text/plain',
+                                    );
                                     if (data != null && data.text != null) {
                                       _recipientController.text = data.text!;
                                       _lookupIdentity();
                                     }
                                   },
-                                  child: _buildIconButton('assets/paste_icon.svg'),
+                                  child: _buildIconButton(
+                                    'assets/paste_icon.svg',
+                                  ),
                                 ),
                                 const SizedBox(width: 9),
-                                GestureDetector(onTap: _scanQRCode, child: _buildIconButton('assets/scan.svg')),
+                                GestureDetector(
+                                  onTap: _scanQRCode,
+                                  child: _buildIconButton('assets/scan.svg'),
+                                ),
                                 const SizedBox(width: 9),
-                                GestureDetector(onTap: _showRecentAddresses, child: _buildHistoryIconButton()),
+                                GestureDetector(
+                                  onTap: _showRecentAddresses,
+                                  child: _buildHistoryIconButton(),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),
@@ -671,11 +785,14 @@ class SendScreenState extends State<SendScreen> {
                                   width: 1,
                                   height: 17,
                                   color: Colors.white,
-                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       TextField(
                                         controller: _recipientController,
@@ -689,15 +806,22 @@ class SendScreenState extends State<SendScreen> {
                                           border: InputBorder.none,
                                           enabledBorder: _hasAddressError
                                               ? const OutlineInputBorder(
-                                                  borderSide: BorderSide(color: Colors.red, width: 1),
+                                                  borderSide: BorderSide(
+                                                    color: Colors.red,
+                                                    width: 1,
+                                                  ),
                                                 )
                                               : InputBorder.none,
                                           focusedBorder: _hasAddressError
                                               ? const OutlineInputBorder(
-                                                  borderSide: BorderSide(color: Colors.red, width: 1),
+                                                  borderSide: BorderSide(
+                                                    color: Colors.red,
+                                                    width: 1,
+                                                  ),
                                                 )
                                               : InputBorder.none,
-                                          hintText: '${AppConstants.tokenSymbol} address',
+                                          hintText:
+                                              '${AppConstants.tokenSymbol} address',
                                           hintStyle: TextStyle(
                                             color: Colors.white.useOpacity(0.3),
                                             fontSize: 14,
@@ -714,17 +838,25 @@ class SendScreenState extends State<SendScreen> {
                                         enableSuggestions: false,
                                         enableInteractiveSelection: true,
                                         keyboardType: TextInputType.text,
-                                        textCapitalization: TextCapitalization.none,
+                                        textCapitalization:
+                                            TextCapitalization.none,
                                         onChanged: (value) {
-                                          if (_debounce?.isActive ?? false) _debounce?.cancel();
-                                          _debounce = Timer(const Duration(milliseconds: 300), () {
-                                            _lookupIdentity();
-                                          });
+                                          if (_debounce?.isActive ?? false) {
+                                            _debounce?.cancel();
+                                          }
+                                          _debounce = Timer(
+                                            const Duration(milliseconds: 300),
+                                            () {
+                                              _lookupIdentity();
+                                            },
+                                          );
                                         },
                                       ),
                                       if (_savedAddressesLabel.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 4.0),
+                                          padding: const EdgeInsets.only(
+                                            top: 4.0,
+                                          ),
                                           child: Text(
                                             _savedAddressesLabel,
                                             style: const TextStyle(
@@ -763,14 +895,24 @@ class SendScreenState extends State<SendScreen> {
                                     border: InputBorder.none,
                                     enabledBorder: _hasAmountError
                                         ? OutlineInputBorder(
-                                            borderSide: const BorderSide(color: Colors.red, width: 1),
-                                            borderRadius: BorderRadius.circular(5),
+                                            borderSide: const BorderSide(
+                                              color: Colors.red,
+                                              width: 1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ),
                                           )
                                         : InputBorder.none,
                                     focusedBorder: _hasAmountError
                                         ? OutlineInputBorder(
-                                            borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                                            borderRadius: BorderRadius.circular(5),
+                                            borderSide: const BorderSide(
+                                              color: Colors.red,
+                                              width: 1.5,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ),
                                           )
                                         : InputBorder.none,
                                     hintText: '0',
@@ -785,8 +927,15 @@ class SendScreenState extends State<SendScreen> {
                                     filled: true,
                                     fillColor: Colors.transparent,
                                   ),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d*\.?\d*'),
+                                    ),
+                                  ],
                                   onChanged: _validateAmount,
                                 ),
                               ),
@@ -818,10 +967,15 @@ class SendScreenState extends State<SendScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: ShapeDecoration(
                                 color: Colors.white.useOpacity(0.15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                               child: GestureDetector(
                                 onTap: _setMaxAmount,
@@ -846,10 +1000,15 @@ class SendScreenState extends State<SendScreen> {
                           onTap: _showTimePickerModal,
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
                             decoration: ShapeDecoration(
                               color: const Color(0xFF313131),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -864,7 +1023,11 @@ class SendScreenState extends State<SendScreen> {
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                const Icon(Icons.edit, color: Colors.white70, size: 14),
+                                const Icon(
+                                  Icons.edit,
+                                  color: Colors.white70,
+                                  size: 14,
+                                ),
                               ],
                             ),
                           ),
@@ -905,7 +1068,10 @@ class SendScreenState extends State<SendScreen> {
                                         child: SizedBox(
                                           width: 12,
                                           height: 12,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white70,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -942,10 +1108,13 @@ class SendScreenState extends State<SendScreen> {
                               padding: const EdgeInsets.all(16),
                               decoration: ShapeDecoration(
                                 color: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
                               ),
                               child: Text(
-                                (_hasAddressError || _recipientController.text.isEmpty)
+                                (_hasAddressError ||
+                                        _recipientController.text.isEmpty)
                                     ? 'Enter Address'
                                     : (_amount <= BigInt.zero)
                                     ? 'Enter Amount'
