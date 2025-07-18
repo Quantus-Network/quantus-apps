@@ -1,11 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final SettingsService _settingsService = SettingsService();
+
+  void _resetAndClearData() {
+    _settingsService.clearAll();
+    Navigator.of(context).pop(); // Close the bottom sheet
+    // You might want to navigate to an initial screen here.
+  }
+
+  void _showResetConfirmationSheet() {
+    showAppModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ResetConfirmationBottomSheet(
+          onReset: _resetAndClearData,
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,9 +190,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildResetButton(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // TODO: Handle reset and clear data
-      },
+      onTap: _showResetConfirmationSheet,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.only(
@@ -181,11 +206,11 @@ class SettingsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'Reset & Clear Data',
               style: TextStyle(
                 color: Color(0xFFFF2D53),
@@ -194,7 +219,7 @@ class SettingsScreen extends StatelessWidget {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               size: 11,
               color: Color(0xFFFF2D53),

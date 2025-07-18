@@ -35,7 +35,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   SendOverlayState _currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
-  String? _transactionHash;
 
   bool get _isReversible => widget.reversibleTimeSeconds > 0;
 
