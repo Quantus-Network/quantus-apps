@@ -1,7 +1,8 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
@@ -26,7 +27,6 @@ class SettingsService {
   // --- Multi-Account Methods ---
 
   Future<List<Account>> getAccounts() async {
-    await _ensureInitialized();
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final List<dynamic> decoded = jsonDecode(accountsJson);
@@ -144,45 +144,31 @@ class SettingsService {
   // --- End Multi-Account Methods ---
 
   Future<bool> getHasWallet() async {
-    await _ensureInitialized();
     final accounts = await getAccounts();
     return accounts.isNotEmpty;
   }
 
   // Mnemonic Settings - Using secure storage
   Future<void> setMnemonic(String mnemonic) async {
-    await _ensureInitialized();
     await _secureStorage.write(key: 'mnemonic', value: mnemonic);
   }
 
   Future<String?> getMnemonic() async {
-    await _ensureInitialized();
     return await _secureStorage.read(key: 'mnemonic');
   }
 
   // Reversible Time Settings
   Future<void> setReversibleTimeSeconds(int seconds) async {
-    await _ensureInitialized();
     await _prefs.setInt('reversible_time_seconds', seconds);
   }
 
   Future<int?> getReversibleTimeSeconds() async {
-    await _ensureInitialized();
     return _prefs.getInt('reversible_time_seconds');
   }
 
   // Clear all settings
   Future<void> clearAll() async {
-    await _ensureInitialized();
     await _prefs.clear();
     await _secureStorage.deleteAll();
-  }
-
-  // Helper method to ensure initialization
-  Future<void> _ensureInitialized() async {
-    print('remove this... settings service needs to be intiialized on startup');
-    // if (!_initialized) {
-    //   await initialize();
-    // }
   }
 }

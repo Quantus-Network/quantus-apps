@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 class AccountDetails {
   final Account account;

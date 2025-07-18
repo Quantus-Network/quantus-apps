@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 Future<T?> showAppModalBottomSheet<T>({
@@ -7,7 +8,7 @@ Future<T?> showAppModalBottomSheet<T>({
 }) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: Colors.green,
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (context) => BackdropFilter(
