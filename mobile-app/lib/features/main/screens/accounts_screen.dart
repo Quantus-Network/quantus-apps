@@ -24,7 +24,8 @@ class AccountsScreen extends StatefulWidget {
 class _AccountsScreenState extends State<AccountsScreen> {
   final SettingsService _settingsService = SettingsService();
   final SubstrateService _substrateService = SubstrateService();
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final NumberFormattingService _formattingService = NumberFormattingService();
 
   List<AccountDetails> _accountDetails = [];
@@ -50,17 +51,26 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
       final detailsFutures = accounts.map((account) {
         try {
-          final detailsFuture = Future.wait([
-            _substrateService.queryBalance(account.accountId),
-            _checksumService.getHumanReadableName(account.accountId),
-          ]).then((results) => {'balance': results[0] as BigInt, 'checksumName': results[1] as String});
+          final detailsFuture =
+              Future.wait([
+                _substrateService.queryBalance(account.accountId),
+                _checksumService.getHumanReadableName(account.accountId),
+              ]).then(
+                (results) => {
+                  'balance': results[0] as BigInt,
+                  'checksumName': results[1] as String,
+                },
+              );
           return AccountDetails(account: account, detailsFuture: detailsFuture);
         } catch (e) {
           print('Error fetching details for ${account.accountId}: $e');
           // Return with default/error values if a single account fails
           return AccountDetails(
             account: account,
-            detailsFuture: Future.value({'balance': BigInt.zero, 'checksumName': 'Unavailable'}),
+            detailsFuture: Future.value({
+              'balance': BigInt.zero,
+              'checksumName': 'Unavailable',
+            }),
           );
         }
       }).toList();
@@ -77,7 +87,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load accounts: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load accounts: ${e.toString()}')),
+        );
       }
     }
   }
@@ -141,7 +153,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const Text(
@@ -163,7 +179,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   Widget _buildAccountsList() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     if (_accountDetails.isEmpty) {
@@ -171,7 +189,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('No accounts found.', style: TextStyle(color: Colors.white70)),
+            const Text(
+              'No accounts found.',
+              style: TextStyle(color: Colors.white70),
+            ),
             const SizedBox(height: 25),
             _buildCreateNewAccountButton(),
           ],
@@ -179,7 +200,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       itemCount: _accountDetails.length + 1,
       separatorBuilder: (context, index) => const SizedBox(height: 25),
       itemBuilder: (context, index) {
@@ -187,7 +208,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
           return _buildCreateNewAccountButton();
         }
         final details = _accountDetails[index];
-        final bool isActive = details.account.accountId == _activeAccount?.accountId;
+        final bool isActive =
+            details.account.accountId == _activeAccount?.accountId;
         return _buildAccountListItem(details, isActive, index);
       },
     );
@@ -243,13 +265,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
   //   );
   // }
 
-  Widget _buildAccountListItem(AccountDetails details, bool isActive, int index) {
+  Widget _buildAccountListItem(
+    AccountDetails details,
+    bool isActive,
+    int index,
+  ) {
     final account = details.account;
 
     return InkWell(
       onTap: () async {
         if (!isActive) {
-          final walletStateManager = Provider.of<WalletStateManager>(context, listen: false);
+          final walletStateManager = Provider.of<WalletStateManager>(
+            context,
+            listen: false,
+          );
           await walletStateManager.switchAccount(account);
           if (mounted) Navigator.pop(context);
         }
@@ -258,17 +287,21 @@ class _AccountsScreenState extends State<AccountsScreen> {
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               height: 96,
               decoration: ShapeDecoration(
                 color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
+                  side: BorderSide(
+                    width: 1,
+                    color: Colors.white.useOpacity(0.15),
+                  ),
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
               child: Row(
                 children: [
+                  const SizedBox(width: 8),
                   SvgPicture.asset(
                     'assets/res_icon.svg',
                     width: 32,
@@ -282,13 +315,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       builder: (context, snapshot) {
                         String formattedBalance;
                         String humanChecksum;
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           formattedBalance = 'loading balance...';
                           humanChecksum = '';
                         } else {
-                          final balance = snapshot.data?['balance'] as BigInt? ?? BigInt.zero;
-                          final checksumName = snapshot.data?['checksumName'] as String? ?? 'Unavailable';
-                          formattedBalance = _formattingService.formatBalance(balance);
+                          final balance =
+                              snapshot.data?['balance'] as BigInt? ??
+                              BigInt.zero;
+                          final checksumName =
+                              snapshot.data?['checksumName'] as String? ??
+                              'Unavailable';
+                          formattedBalance = _formattingService.formatBalance(
+                            balance,
+                          );
                           humanChecksum = checksumName;
                         }
 
@@ -318,7 +358,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             Text(
                               humanChecksum,
                               style: TextStyle(
-                                color: isActive ? const Color(0xFF06A8A8) : const Color(0xFF16CECE),
+                                color: isActive
+                                    ? const Color(0xFF06A8A8)
+                                    : const Color(0xFF16CECE),
                                 fontSize: 12,
                                 fontFamily: 'Fira Code',
                                 fontWeight: FontWeight.w400,
@@ -327,9 +369,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             Row(
                               children: [
                                 Text(
-                                  AddressFormattingService.formatAddress(account.accountId),
+                                  AddressFormattingService.formatAddress(
+                                    account.accountId,
+                                  ),
                                   style: TextStyle(
-                                    color: isActive ? const Color(0xFF313131) : Colors.white.useOpacity(0.99),
+                                    color: isActive
+                                        ? const Color(0xFF313131)
+                                        : Colors.white.useOpacity(0.99),
                                     fontSize: 10,
                                     fontFamily: 'Fira Code',
                                     fontWeight: FontWeight.w300,
@@ -338,15 +384,23 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 const SizedBox(width: 5),
                                 InkWell(
                                   onTap: () {
-                                    Clipboard.setData(ClipboardData(text: account.accountId));
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).showSnackBar(const SnackBar(content: Text('Address copied to clipboard')));
+                                    Clipboard.setData(
+                                      ClipboardData(text: account.accountId),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Address copied to clipboard',
+                                        ),
+                                      ),
+                                    );
                                   },
                                   child: Icon(
                                     Icons.copy,
                                     size: 14,
-                                    color: isActive ? const Color(0xFF313131) : Colors.white.useOpacity(0.6),
+                                    color: isActive
+                                        ? const Color(0xFF313131)
+                                        : Colors.white.useOpacity(0.6),
                                   ),
                                 ),
                               ],
@@ -358,7 +412,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                   TextSpan(
                                     text: formattedBalance,
                                     style: TextStyle(
-                                      color: isActive ? const Color(0xFF313131) : const Color(0xFFE6E6E6),
+                                      color: isActive
+                                          ? const Color(0xFF313131)
+                                          : const Color(0xFFE6E6E6),
                                       fontSize: 12,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
@@ -367,7 +423,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                   TextSpan(
                                     text: ' ${AppConstants.tokenSymbol}',
                                     style: TextStyle(
-                                      color: isActive ? const Color(0xFF313131) : const Color(0xFFE6E6E6),
+                                      color: isActive
+                                          ? const Color(0xFF313131)
+                                          : const Color(0xFFE6E6E6),
                                       fontSize: 10,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
@@ -385,7 +443,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 0),
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -393,7 +451,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
               'assets/settings_icon_off.svg',
               width: 21,
               height: 21,
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
             ),
             onPressed: () async {
               final accountDetails = await details.detailsFuture;
@@ -405,7 +466,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 MaterialPageRoute(
                   builder: (context) => AccountSettingsScreen(
                     account: account,
-                    balance: '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+                    balance:
+                        '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
                     checksumName: checksumName,
                   ),
                 ),
@@ -413,7 +475,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
               if (result == true) {
                 _loadAccounts();
                 if (mounted) {
-                  Provider.of<WalletStateManager>(context, listen: false).refreshActiveAccount();
+                  Provider.of<WalletStateManager>(
+                    context,
+                    listen: false,
+                  ).refreshActiveAccount();
                 }
               }
             },

@@ -30,8 +30,18 @@ class TransactionDetailsActionSheet extends StatelessWidget {
         decoration: const BoxDecoration(
           color: Colors.black,
           boxShadow: [
-            BoxShadow(color: Color(0x0A0A0D12), blurRadius: 8, offset: Offset(0, 8), spreadRadius: -4),
-            BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
+            BoxShadow(
+              color: Color(0x0A0A0D12),
+              blurRadius: 8,
+              offset: Offset(0, 8),
+              spreadRadius: -4,
+            ),
+            BoxShadow(
+              color: Color(0x190A0D12),
+              blurRadius: 24,
+              offset: Offset(0, 20),
+              spreadRadius: -4,
+            ),
           ],
         ),
         child: SingleChildScrollView(
@@ -63,10 +73,14 @@ class TransactionDetailsActionSheet extends StatelessWidget {
               _buildDetailRow('From:', formatAddress(transaction.from)),
               const SizedBox(height: 12),
               FutureBuilder<String>(
-                future: HumanReadableChecksumService().getHumanReadableName(transaction.to),
+                future: HumanReadableChecksumService().getHumanReadableName(
+                  transaction.to,
+                ),
                 builder: (context, snapshot) {
-                  String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
-                  if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
+                  String checkPhrase =
+                      snapshot.data ?? 'Loading checkphrase...';
+                  if (snapshot.hasError)
+                    checkPhrase = 'Error loading checkphrase';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -107,11 +121,17 @@ class TransactionDetailsActionSheet extends StatelessWidget {
               _buildDetailRow('Date:', formatTimestamp(transaction.timestamp)),
               if (transaction.extrinsicHash != null) ...[
                 const SizedBox(height: 12),
-                _buildDetailRow('Hash:', formatAddress(transaction.extrinsicHash!)),
+                _buildDetailRow(
+                  'Hash:',
+                  formatAddress(transaction.extrinsicHash!),
+                ),
               ],
               if (transaction is ReversibleTransferEvent) ...[
                 const SizedBox(height: 12),
-                _buildDetailRow('Status:', (transaction as ReversibleTransferEvent).status.name),
+                _buildDetailRow(
+                  'Status:',
+                  (transaction as ReversibleTransferEvent).status.name,
+                ),
               ],
             ],
           ),

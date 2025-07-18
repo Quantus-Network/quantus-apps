@@ -9,7 +9,11 @@ class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
   final String currentWalletAddress;
 
-  const TransactionActionSheet({super.key, required this.transaction, required this.currentWalletAddress});
+  const TransactionActionSheet({
+    super.key,
+    required this.transaction,
+    required this.currentWalletAddress,
+  });
 
   @override
   State<TransactionActionSheet> createState() => _TransactionActionSheetState();
@@ -26,7 +30,8 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
-  final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
+  final ReversibleTransfersService _reversibleTransfersService =
+      ReversibleTransfersService();
 
   @override
   void initState() {
@@ -79,8 +84,18 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         decoration: const BoxDecoration(
           color: Colors.black,
           boxShadow: [
-            BoxShadow(color: Color(0x0A0A0D12), blurRadius: 8, offset: Offset(0, 8), spreadRadius: -4),
-            BoxShadow(color: Color(0x190A0D12), blurRadius: 24, offset: Offset(0, 20), spreadRadius: -4),
+            BoxShadow(
+              color: Color(0x0A0A0D12),
+              blurRadius: 8,
+              offset: Offset(0, 8),
+              spreadRadius: -4,
+            ),
+            BoxShadow(
+              color: Color(0x190A0D12),
+              blurRadius: 24,
+              offset: Offset(0, 20),
+              spreadRadius: -4,
+            ),
           ],
         ),
         child: Column(
@@ -120,7 +135,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader('assets/hourglass.svg', 'Reversible\nTransaction', 'Cancel or keep your send', true),
+        _buildHeader(
+          'assets/hourglass.svg',
+          'Reversible\nTransaction',
+          'Cancel or keep your send',
+          true,
+        ),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
         Padding(
@@ -139,7 +159,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         const SizedBox(height: 22),
         const Divider(color: Colors.white, thickness: 1),
         SizedBox(height: verticalPadding),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 18.0), child: buttons),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0),
+          child: buttons,
+        ),
       ],
     );
   }
@@ -149,20 +172,33 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader('assets/stop_icon.svg', 'Transaction\nCancelled', '', false),
+        _buildHeader(
+          'assets/stop_icon.svg',
+          'Transaction\nCancelled',
+          '',
+          false,
+        ),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
 
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 12.0), child: _buildTransactionDetails()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: _buildTransactionDetails(),
+        ),
         const SizedBox(height: 22),
         const Divider(color: Colors.white, thickness: 1),
         const SizedBox(height: 40),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18.0),
           child: Center(
-            child: _buildButton('Done', const Color(0xFF5FE49E), Colors.black, () {
-              Navigator.of(context).pop();
-            }),
+            child: _buildButton(
+              'Done',
+              const Color(0xFF5FE49E),
+              Colors.black,
+              () {
+                Navigator.of(context).pop();
+              },
+            ),
           ),
         ),
       ],
@@ -177,7 +213,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return _buildBaseBlockView(_buildConfirmCancelButtons(), 6);
   }
 
-  Widget _buildHeader(String iconName, String title, String subtitle, bool titleIsGreen) {
+  Widget _buildHeader(
+    String iconName,
+    String title,
+    String subtitle,
+    bool titleIsGreen,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -333,20 +374,35 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _buildButton('Keep Transaction', const Color(0xFF5FE49E), Colors.black, () {
-          Navigator.of(context).pop();
-        }),
+        _buildButton(
+          'Keep Transaction',
+          const Color(0xFF5FE49E),
+          Colors.black,
+          () {
+            Navigator.of(context).pop();
+          },
+        ),
         const SizedBox(height: 17),
-        _buildButton('Reverse Transaction', const Color(0xFFFF2D53), Colors.black, () {
-          setState(() {
-            _sheetState = _SheetState.confirmCancel;
-          });
-        }),
+        _buildButton(
+          'Reverse Transaction',
+          const Color(0xFFFF2D53),
+          Colors.black,
+          () {
+            setState(() {
+              _sheetState = _SheetState.confirmCancel;
+            });
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildButton(String text, Color bgColor, Color textColor, VoidCallback onPressed) {
+  Widget _buildButton(
+    String text,
+    Color bgColor,
+    Color textColor,
+    VoidCallback onPressed,
+  ) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -359,7 +415,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(color: textColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -382,7 +443,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         if (_isCancelling)
           const CircularProgressIndicator()
         else ...[
-          _buildButton('Yes Cancel', const Color(0xFFFF2D53), Colors.white, _cancelTransaction),
+          _buildButton(
+            'Yes Cancel',
+            const Color(0xFFFF2D53),
+            Colors.white,
+            _cancelTransaction,
+          ),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: () => setState(() => _sheetState = _SheetState.initial),
@@ -391,7 +457,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 1, color: Colors.white.useOpacity(0.50)),
+                  side: BorderSide(
+                    width: 1,
+                    color: Colors.white.useOpacity(0.50),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -436,7 +505,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
       }
       final transactionId = HEX.decode(txId);
 
-      await _reversibleTransfersService.cancelReversibleTransfer(account: senderAccount, transactionId: transactionId);
+      await _reversibleTransfersService.cancelReversibleTransfer(
+        account: senderAccount,
+        transactionId: transactionId,
+      );
 
       setState(() {
         _sheetState = _SheetState.cancelled;

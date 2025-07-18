@@ -56,7 +56,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final oldLength = _transactions?.otherTransfers.length ?? 0;
     final accountId = widget.manager.walletData.data!.account.accountId;
 
-    await widget.manager.loadMoreTransactions(accountId: accountId, limit: _limit, offset: _offset);
+    await widget.manager.loadMoreTransactions(
+      accountId: accountId,
+      limit: _limit,
+      offset: _offset,
+    );
 
     // No need for setState; listener will trigger _updateState
     // But calculate hasMore/offset here if needed (listener updates _transactions)
@@ -74,7 +78,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       _fetchMoreTransactions();
     }
   }
@@ -113,7 +118,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
     if (_transactions?.combined.isEmpty ?? true) {
       return const Center(
-        child: Text('No transactions found.', style: TextStyle(color: Colors.white)),
+        child: Text(
+          'No transactions found.',
+          style: TextStyle(color: Colors.white),
+        ),
       );
     }
 
@@ -126,7 +134,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: RecentTransactionsList(
               transactions: _transactions!.combined,
-              currentWalletAddress: widget.manager.walletData.data!.account.accountId,
+              currentWalletAddress:
+                  widget.manager.walletData.data!.account.accountId,
             ),
           ),
           if (_isLoading && _hasMore)

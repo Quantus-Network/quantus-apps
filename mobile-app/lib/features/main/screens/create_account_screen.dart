@@ -13,7 +13,8 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final AccountsService _accountsService = AccountsService();
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
 
   late Account _provisionalAccount;
@@ -41,7 +42,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       final account = widget.accountToEdit!;
       setState(() {
         _provisionalAccount = account;
-        _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
+        _checksumFuture = _checksumService.getHumanReadableName(
+          account.accountId,
+        );
         _nameController.text = account.name;
         _isLoading = false;
       });
@@ -50,7 +53,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load account details: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load account details: $e')),
+        );
       }
     }
   }
@@ -64,7 +69,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       if (mounted) {
         setState(() {
           _provisionalAccount = account;
-          _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
+          _checksumFuture = _checksumService.getHumanReadableName(
+            account.accountId,
+          );
           _nameController.text = account.name;
           _isLoading = false;
         });
@@ -75,7 +82,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to generate account details')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to generate account details')),
+        );
       }
     }
   }
@@ -86,9 +95,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     });
     try {
       if (_isEditMode) {
-        await _accountsService.updateAccountName(_provisionalAccount, _nameController.text);
+        await _accountsService.updateAccountName(
+          _provisionalAccount,
+          _nameController.text,
+        );
       } else {
-        final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
+        final accountToSave = _provisionalAccount.copyWith(
+          name: _nameController.text,
+        );
         await _accountsService.addAccount(accountToSave);
       }
       if (mounted) {
@@ -97,9 +111,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     } catch (e, s) {
       print('Exception on _createAccount: $e $s');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to ${_isEditMode ? 'save' : 'create'} account')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to ${_isEditMode ? 'save' : 'create'} account',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -168,7 +186,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Text(
@@ -201,12 +223,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 10),
         TextField(
           controller: _nameController,
-          style: const TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'Fira Code'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontFamily: 'Fira Code',
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.black,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 11,
+              vertical: 10,
+            ),
           ),
         ),
       ],
@@ -248,11 +280,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2.0)),
+                  child: SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.0),
+                  ),
                 );
               }
               if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red));
+                return Text(
+                  'Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                );
               }
               if (snapshot.hasData) {
                 return Text(
@@ -278,7 +317,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: _isCreating
           ? const Center(child: CircularProgressIndicator())
-          : GradientActionButton(onPressed: _saveAccount, label: _isEditMode ? 'Save' : 'Create Account'),
+          : GradientActionButton(
+              onPressed: _saveAccount,
+              label: _isEditMode ? 'Save' : 'Create Account',
+            ),
     );
   }
 }

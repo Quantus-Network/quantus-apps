@@ -6,7 +6,12 @@ class TopSnackBarContent extends StatelessWidget {
   final String message;
   final Widget? icon;
 
-  const TopSnackBarContent({super.key, required this.title, required this.message, this.icon});
+  const TopSnackBarContent({
+    super.key,
+    required this.title,
+    required this.message,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +26,11 @@ class TopSnackBarContent extends StatelessWidget {
             shape: OvalBorder(), // Use OvalBorder for circle
           ),
           alignment: Alignment.center,
-          child: const Icon(Icons.check, color: Colors.white, size: 20), // Default check icon
+          child: const Icon(
+            Icons.check,
+            color: Colors.white,
+            size: 20,
+          ), // Default check icon
         );
 
     return Container(
@@ -31,7 +40,9 @@ class TopSnackBarContent extends StatelessWidget {
         color: Colors.white, // White background
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         // Optional shadow for better visibility
-        shadows: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+        shadows: const [
+          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -59,7 +70,9 @@ class TopSnackBarContent extends StatelessWidget {
                 Text(
                   message,
                   style: TextStyle(
-                    color: Colors.black.useOpacity(153 / 255.0), // Black with alpha
+                    color: Colors.black.useOpacity(
+                      153 / 255.0,
+                    ), // Black with alpha
                     fontSize: 12,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w400, // Regular weight for message

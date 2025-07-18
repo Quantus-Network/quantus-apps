@@ -32,7 +32,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         debugPrint('Using derivation path: $mnemonic');
       } else {
         // Validate mnemonic
-        final words = mnemonic.split(' ').where((word) => word.isNotEmpty).toList();
+        final words = mnemonic
+            .split(' ')
+            .where((word) => word.isNotEmpty)
+            .toList();
         if (words.length != 12 && words.length != 24) {
           throw Exception('Mnemonic must be 12 or 24 words');
         }
@@ -40,7 +43,9 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
 
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
-      await _settingsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
+      await _settingsService.addAccount(
+        Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
+      );
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -69,7 +74,9 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/light_leak_effect_background.jpg'), // Assuming this is the correct background
+            image: AssetImage(
+              'assets/light_leak_effect_background.jpg',
+            ), // Assuming this is the correct background
             fit: BoxFit.cover,
             opacity: 0.54,
           ),
@@ -78,7 +85,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch, // Stretch children horizontally
+              crossAxisAlignment:
+                  CrossAxisAlignment.stretch, // Stretch children horizontally
               children: [
                 // Back button row remains at the top
                 Row(
@@ -133,18 +141,28 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                           fillColor: Colors.black.useOpacity(0.5),
                           contentPadding: const EdgeInsets.all(13),
                           border: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF9F7AEA), width: 1),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF9F7AEA),
+                              width: 1,
+                            ),
                             borderRadius: BorderRadius.circular(5),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(width: 1, color: const Color(0xFF9F7AEA).useOpacity(0.8)),
+                            borderSide: BorderSide(
+                              width: 1,
+                              color: const Color(0xFF9F7AEA).useOpacity(0.8),
+                            ),
                             borderRadius: BorderRadius.circular(5),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF9F7AEA), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF9F7AEA),
+                              width: 1.5,
+                            ),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          hintText: 'Type in or paste your recovery phrase. Separate words with spaces',
+                          hintText:
+                              'Type in or paste your recovery phrase. Separate words with spaces',
                           hintStyle: TextStyle(
                             color: Colors.white.useOpacity(0.5),
                             fontSize: 13,
@@ -208,7 +226,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                 // ),
                 if (_errorMessage.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), // Added bottom padding
+                    padding: const EdgeInsets.only(
+                      top: 8.0,
+                      bottom: 8.0,
+                    ), // Added bottom padding
                     child: Text(
                       _errorMessage,
                       style: const TextStyle(color: Colors.red, fontSize: 12),
@@ -216,8 +237,14 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ),
                 const Spacer(), // Add Spacer to push the button down
-                GradientActionButton(label: 'Import Wallet', onPressed: _importWallet, isLoading: _isLoading),
-                const SizedBox(height: 24), // Consistent bottom padding like CreateWalletScreen
+                GradientActionButton(
+                  label: 'Import Wallet',
+                  onPressed: _importWallet,
+                  isLoading: _isLoading,
+                ),
+                const SizedBox(
+                  height: 24,
+                ), // Consistent bottom padding like CreateWalletScreen
               ],
             ),
           ),
