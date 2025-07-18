@@ -200,7 +200,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       itemCount: _accountDetails.length + 1,
       separatorBuilder: (context, index) => const SizedBox(height: 25),
       itemBuilder: (context, index) {
@@ -287,7 +287,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               height: 96,
               decoration: ShapeDecoration(
                 color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
@@ -301,6 +301,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
               child: Row(
                 children: [
+                  const SizedBox(width: 8),
                   SvgPicture.asset(
                     'assets/res_icon.svg',
                     width: 32,
@@ -442,7 +443,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 0),
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
