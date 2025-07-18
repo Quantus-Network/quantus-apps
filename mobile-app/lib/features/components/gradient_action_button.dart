@@ -49,7 +49,9 @@ class GradientActionButton extends StatelessWidget {
           decoration: ShapeDecoration(
             // Use the provided gradient
             gradient: gradient,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
           ),
           child: Center(
             child: isLoading

@@ -5,7 +5,11 @@ class RecentAddressListItem extends StatefulWidget {
   final String address;
   final VoidCallback onTap;
 
-  const RecentAddressListItem({super.key, required this.address, required this.onTap});
+  const RecentAddressListItem({
+    super.key,
+    required this.address,
+    required this.onTap,
+  });
 
   @override
   State<RecentAddressListItem> createState() => _RecentAddressListItemState();
@@ -17,7 +21,8 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
   @override
   void initState() {
     super.initState();
-    _humanReadableNameFuture = HumanReadableChecksumService().getHumanReadableName(widget.address);
+    _humanReadableNameFuture = HumanReadableChecksumService()
+        .getHumanReadableName(widget.address);
   }
 
   @override
@@ -42,7 +47,9 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
                     fontWeight: FontWeight.w400,
                   ),
                 );
-              } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+              } else if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  snapshot.data!.isEmpty) {
                 return const Text(
                   'Unknown Name',
                   style: TextStyle(

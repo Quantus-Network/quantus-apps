@@ -19,10 +19,7 @@ class AppTheme {
         surface: cardColor,
         error: errorColor,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: cardColor,
-        elevation: 0,
-      ),
+      appBarTheme: const AppBarTheme(backgroundColor: cardColor, elevation: 0),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -42,9 +39,7 @@ class AppTheme {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: secondaryColor,
-        ),
+        style: TextButton.styleFrom(foregroundColor: secondaryColor),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(

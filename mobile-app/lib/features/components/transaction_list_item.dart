@@ -12,7 +12,11 @@ class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
   final String currentWalletAddress;
 
-  const TransactionListItem({super.key, required this.transaction, required this.currentWalletAddress});
+  const TransactionListItem({
+    super.key,
+    required this.transaction,
+    required this.currentWalletAddress,
+  });
 
   @override
   TransactionListItemState createState() => TransactionListItemState();
@@ -25,10 +29,12 @@ class TransactionListItemState extends State<TransactionListItem> {
   bool get isPending => widget.transaction is PendingTransactionEvent;
   bool get isReversibleScheduled =>
       widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.SCHEDULED;
+      (widget.transaction as ReversibleTransferEvent).status ==
+          ReversibleTransferStatus.SCHEDULED;
   bool get isReversibleCancelled =>
       widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status == ReversibleTransferStatus.CANCELLED;
+      (widget.transaction as ReversibleTransferEvent).status ==
+          ReversibleTransferStatus.CANCELLED;
 
   @override
   void initState() {
@@ -72,7 +78,12 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 
   String _formatAddress(String address) {
-    return AddressFormattingService.formatAddress(address, prefix: 5, ellipses: '...', postFix: 5);
+    return AddressFormattingService.formatAddress(
+      address,
+      prefix: 5,
+      ellipses: '...',
+      postFix: 5,
+    );
   }
 
   String _formatTimestamp(DateTime timestamp) {
@@ -103,7 +114,10 @@ class TransactionListItemState extends State<TransactionListItem> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => SizedBox(height: isReversibleScheduled && isSent ? 638 : 400, child: sheet),
+      builder: (context) => SizedBox(
+        height: isReversibleScheduled && isSent ? 638 : 400,
+        child: sheet,
+      ),
     );
   }
 
@@ -125,9 +139,19 @@ class TransactionListItemState extends State<TransactionListItem> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (isReversibleCancelled)
-                  SvgPicture.asset('assets/stop_icon.svg', width: 21, height: 17)
+                  SvgPicture.asset(
+                    'assets/stop_icon.svg',
+                    width: 21,
+                    height: 17,
+                  )
                 else
-                  Image.asset(isSent ? 'assets/send_icon.png' : 'assets/receive_icon_sm.png', width: 21, height: 17),
+                  Image.asset(
+                    isSent
+                        ? 'assets/send_icon.png'
+                        : 'assets/receive_icon_sm.png',
+                    width: 21,
+                    height: 17,
+                  ),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
@@ -152,11 +176,14 @@ class TransactionListItemState extends State<TransactionListItem> {
                               ),
                             ),
                             TextSpan(
-                              text: ' ${_formatAmount(widget.transaction.amount)}',
+                              text:
+                                  ' ${_formatAmount(widget.transaction.amount)}',
                               style: textStyle.copyWith(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                color: isReversibleCancelled ? const Color(0xFFD9D9D9) : textStyle.color,
+                                color: isReversibleCancelled
+                                    ? const Color(0xFFD9D9D9)
+                                    : textStyle.color,
                               ),
                             ),
                           ],
@@ -165,7 +192,10 @@ class TransactionListItemState extends State<TransactionListItem> {
                       const SizedBox(height: 6),
                       Text(
                         _getSubtitle(widget.transaction),
-                        style: textStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w300),
+                        style: textStyle.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w300,
+                        ),
                       ),
                     ],
                   ),
@@ -181,7 +211,9 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   Widget _buildStatusOrTimer() {
     if (widget.transaction is PendingTransactionEvent) {
-      return _PendingStatusDisplay(transaction: widget.transaction as PendingTransactionEvent);
+      return _PendingStatusDisplay(
+        transaction: widget.transaction as PendingTransactionEvent,
+      );
     }
     if (widget.transaction is ReversibleTransferEvent) {
       final tx = widget.transaction as ReversibleTransferEvent;
@@ -211,7 +243,11 @@ class _TimerDisplay extends StatelessWidget {
   final String Function(Duration) formatDuration;
   final bool isSending;
 
-  const _TimerDisplay({required this.duration, required this.formatDuration, required this.isSending});
+  const _TimerDisplay({
+    required this.duration,
+    required this.formatDuration,
+    required this.isSending,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +256,10 @@ class _TimerDisplay extends StatelessWidget {
       decoration: ShapeDecoration(
         color: const Color(0x3F000000), // black w/ alpha
         shape: RoundedRectangleBorder(
-          side: const BorderSide(width: 1, color: Color(0x26FFFFFF)), // white w/ alpha
+          side: const BorderSide(
+            width: 1,
+            color: Color(0x26FFFFFF),
+          ), // white w/ alpha
           borderRadius: BorderRadius.circular(4),
         ),
       ),
@@ -237,7 +276,8 @@ class _TimerDisplay extends StatelessWidget {
             ),
           ),
           if (isSending) const SizedBox(width: 10),
-          if (isSending) SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
+          if (isSending)
+            SvgPicture.asset('assets/stop_icon.svg', width: 13, height: 13),
         ],
       ),
     );
@@ -252,7 +292,11 @@ class _StatusDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       status,
-      style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code'),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontFamily: 'Fira Code',
+      ),
     );
   }
 }
@@ -268,12 +312,19 @@ class _PendingStatusDisplay extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: const ShapeDecoration(color: Colors.yellow, shape: OvalBorder()),
+          decoration: const ShapeDecoration(
+            color: Colors.yellow,
+            shape: OvalBorder(),
+          ),
         ),
         const SizedBox(width: 8),
         Text(
           transaction.transactionState.name,
-          style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontFamily: 'Fira Code',
+          ),
         ),
       ],
     );

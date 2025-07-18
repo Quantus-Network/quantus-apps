@@ -9,7 +9,12 @@ class AccountSettingsScreen extends StatefulWidget {
   final String balance;
   final String checksumName;
 
-  const AccountSettingsScreen({super.key, required this.account, required this.balance, required this.checksumName});
+  const AccountSettingsScreen({
+    super.key,
+    required this.account,
+    required this.balance,
+    required this.checksumName,
+  });
 
   @override
   State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
@@ -23,7 +28,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   void _editAccountName() {
     Navigator.push<bool?>(
       context,
-      MaterialPageRoute(builder: (context) => CreateAccountScreen(accountToEdit: widget.account)),
+      MaterialPageRoute(
+        builder: (context) =>
+            CreateAccountScreen(accountToEdit: widget.account),
+      ),
     ).then((result) {
       if (result == true && mounted) {
         // Pop this screen with a result to force a refresh on the previous one
@@ -73,7 +81,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           ),
           const Text(
             'Account Settings',
-            style: TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code'),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontFamily: 'Fira Code',
+            ),
           ),
           const SizedBox(width: 48), // To balance the back button
         ],
@@ -94,7 +106,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             children: [
               Text(
                 widget.account.name,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                ),
               ),
               const SizedBox(width: 8),
               const Icon(Icons.edit, color: Colors.white70, size: 16),
@@ -104,12 +120,20 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         const SizedBox(height: 5),
         Text(
           widget.checksumName,
-          style: const TextStyle(color: Color(0xFF16CECE), fontSize: 14, fontFamily: 'Fira Code'),
+          style: const TextStyle(
+            color: Color(0xFF16CECE),
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+          ),
         ),
         const SizedBox(height: 5),
         Text(
           widget.balance,
-          style: const TextStyle(color: Color(0xFFE6E6E6), fontSize: 14, fontFamily: 'Fira Code'),
+          style: const TextStyle(
+            color: Color(0xFFE6E6E6),
+            fontSize: 14,
+            fontFamily: 'Fira Code',
+          ),
         ),
       ],
     );
@@ -120,13 +144,20 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        decoration: BoxDecoration(color: const Color(0xFF313131), borderRadius: BorderRadius.circular(4)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF313131),
+          borderRadius: BorderRadius.circular(4),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               AddressFormattingService.formatAddress(widget.account.accountId),
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'Fira Code',
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.copy, color: Colors.white, size: 22),
@@ -143,7 +174,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: const Color(0xFF313131), borderRadius: BorderRadius.circular(4)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF313131),
+          borderRadius: BorderRadius.circular(4),
+        ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -156,11 +190,19 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   children: [
                     Text(
                       'High Security',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Fira Code'),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: 'Fira Code',
+                      ),
                     ),
                     Text(
                       'OFF', // This should be dynamic based on the account's state
-                      style: TextStyle(color: Colors.white54, fontSize: 12, fontFamily: 'Fira Code'),
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontFamily: 'Fira Code',
+                      ),
                     ),
                   ],
                 ),

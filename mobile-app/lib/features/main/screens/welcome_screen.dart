@@ -19,18 +19,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.initState();
     // Initialize the controller
     _controller = VideoPlayerController.asset('assets/intro_bg_video.mp4')
-      ..initialize().then((_) {
-        // Ensure the first frame is shown after the video is initialized
-        // and immediately play and loop
-        if (!mounted) return; // Check if widget is still mounted
-        _controller.play();
-        _controller.setLooping(true);
-        // Trigger a rebuild once initialized to show the video
-        setState(() {});
-      }).catchError((error) {
-        // Handle initialization error
-        debugPrint('Video player initialization error: $error');
-      });
+      ..initialize()
+          .then((_) {
+            // Ensure the first frame is shown after the video is initialized
+            // and immediately play and loop
+            if (!mounted) return; // Check if widget is still mounted
+            _controller.play();
+            _controller.setLooping(true);
+            // Trigger a rebuild once initialized to show the video
+            setState(() {});
+          })
+          .catchError((error) {
+            // Handle initialization error
+            debugPrint('Video player initialization error: $error');
+          });
   }
 
   @override
@@ -69,7 +71,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           Positioned(
             left: 0,
             right: 0,
-            top: MediaQuery.of(context).size.height * 0.15, // Adjust positioning as needed
+            top:
+                MediaQuery.of(context).size.height *
+                0.15, // Adjust positioning as needed
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -117,7 +121,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
           Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 60, // Position above bottom safe area
+            bottom:
+                MediaQuery.of(context).padding.bottom +
+                60, // Position above bottom safe area
             left: 16,
             right: 16,
             child: Column(
@@ -129,7 +135,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     style: ElevatedButton.styleFrom(
                       foregroundColor: const Color(0xFF0E0E0E),
                       backgroundColor: const Color(0xFFE6E6E6), // Use const
-                      padding: const EdgeInsets.symmetric(vertical: 16), // Use const
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                      ), // Use const
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5.0),
                       ),
@@ -137,7 +145,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CreateWalletAndBackupScreen()),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const CreateWalletAndBackupScreen(),
+                        ),
                       );
                     },
                     child: const Text(
@@ -156,8 +167,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFE6E6E6),
-                      side: const BorderSide(color: Color(0xFFE6E6E6)), // Use const
-                      padding: const EdgeInsets.symmetric(vertical: 16), // Use const
+                      side: const BorderSide(
+                        color: Color(0xFFE6E6E6),
+                      ), // Use const
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                      ), // Use const
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5.0),
                       ),
@@ -165,7 +180,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ImportWalletScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const ImportWalletScreen(),
+                        ),
                       );
                     },
                     child: const Text(

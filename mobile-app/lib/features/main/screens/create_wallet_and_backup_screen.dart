@@ -9,10 +9,12 @@ class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
 
   @override
-  CreateWalletAndBackupScreenState createState() => CreateWalletAndBackupScreenState();
+  CreateWalletAndBackupScreenState createState() =>
+      CreateWalletAndBackupScreenState();
 }
 
-class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen> {
+class CreateWalletAndBackupScreenState
+    extends State<CreateWalletAndBackupScreen> {
   String _mnemonic = '';
   bool _isLoading = true;
   bool _hasSavedMnemonic = false;
@@ -34,7 +36,8 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
 
     try {
       _mnemonic = await SubstrateService().generateMnemonic();
-      if (_mnemonic.isEmpty) throw Exception('Mnemonic generation returned empty.');
+      if (_mnemonic.isEmpty)
+        throw Exception('Mnemonic generation returned empty.');
 
       if (mounted) {
         setState(() {
@@ -56,7 +59,11 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     if (_mnemonic.isEmpty) {
       debugPrint('Cannot save wallet, mnemonic is empty.');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Recovery phrase not generated.');
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Recovery phrase not generated.',
+        );
       }
       return;
     }
@@ -64,7 +71,9 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     try {
       final key = HdWalletService().keyPairAtIndex(_mnemonic, 0);
       await _settingsService.setMnemonic(_mnemonic);
-      await _settingsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
+      await _settingsService.addAccount(
+        Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
+      );
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -76,7 +85,11 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
     } catch (e) {
       debugPrint('Error saving wallet: $e');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Error saving wallet: $e');
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Error saving wallet: $e',
+        );
       }
     } finally {
       if (mounted) {
@@ -163,26 +176,40 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               children: [
                                 CircularProgressIndicator(color: Colors.white),
                                 SizedBox(height: 16),
-                                Text('Generating secure phrase...', style: TextStyle(color: Colors.white70)),
+                                Text(
+                                  'Generating secure phrase...',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
                               ],
                             ),
                           )
                         else if (_error != null)
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 50.0, horizontal: 20),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 50.0,
+                              horizontal: 20,
+                            ),
                             child: Text(
                               _error!,
-                              style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 16,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           )
                         else
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 13,
+                              horizontal: 9,
+                            ),
                             decoration: ShapeDecoration(
                               color: Colors.black.useOpacity(0.7),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                              ),
                             ),
                             child: GridView.count(
                               crossAxisCount: 3,
@@ -192,7 +219,10 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               crossAxisSpacing: 9.0,
                               childAspectRatio: (105 / 38),
                               children: List.generate(words.length, (index) {
-                                return _buildMnemonicWord(index + 1, words[index]);
+                                return _buildMnemonicWord(
+                                  index + 1,
+                                  words[index],
+                                );
                               }),
                             ),
                           ),
@@ -212,7 +242,11 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.copy, color: Colors.white, size: 24),
+                                  Icon(
+                                    Icons.copy,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Copy to Clipboard',
@@ -254,10 +288,16 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               activeColor: const Color(0xFF8AF9A8),
                               checkColor: const Color(0xFF8AF9A8),
                               side: WidgetStateBorderSide.resolveWith((states) {
-                                return const BorderSide(width: 1, color: Colors.white);
+                                return const BorderSide(
+                                  width: 1,
+                                  color: Colors.white,
+                                );
                               }),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -290,7 +330,9 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
                               backgroundColor: Colors.grey[400],
                               minimumSize: const Size(double.infinity, 50),
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
                             ),
                             onPressed: null,
                             child: const Text(
@@ -327,7 +369,12 @@ class CreateWalletAndBackupScreenState extends State<CreateWalletAndBackupScreen
       child: Text(
         '$index.$word',
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontFamily: 'Fira Code',
+          fontWeight: FontWeight.w400,
+        ),
       ),
     );
   }
