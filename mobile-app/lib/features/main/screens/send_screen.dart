@@ -1079,14 +1079,13 @@ class SendScreenState extends State<SendScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: GestureDetector(
                           onTap:
-                              // (_hasAddressError ||
-                              //     _hasAmountError ||
-                              //     _recipientController.text.isEmpty ||
-                              //     _amount <= BigInt.zero ||
-                              //     _isFetchingFee)
-                              // ? null
-                              // :
-                              _showSendConfirmation,
+                              (_hasAddressError ||
+                                  _hasAmountError ||
+                                  _recipientController.text.isEmpty ||
+                                  _amount <= BigInt.zero ||
+                                  _isFetchingFee)
+                              ? null
+                              : _showSendConfirmation,
                           child: Opacity(
                             opacity:
                                 (_hasAddressError ||
