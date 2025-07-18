@@ -37,7 +37,11 @@ class SettingsService {
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
+      final account = Account(
+        index: 0,
+        name: oldWalletName,
+        accountId: oldAccountId,
+      );
       await saveAccounts([account]);
       await setActiveAccount(account);
       // Clean up old keys after migration
@@ -46,18 +50,22 @@ class SettingsService {
       return [account];
     }
 
-    throw Exception('Wallet is logged out.');
+    return []; // No accounts found;
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
+    final List<Map<String, dynamic>> jsonData = accounts
+        .map((a) => a.toJson())
+        .toList();
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
   }
 
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
-    if (!accounts.any((a) => a.index == account.index || a.accountId == account.accountId)) {
+    if (!accounts.any(
+      (a) => a.index == account.index || a.accountId == account.accountId,
+    )) {
       accounts.add(account);
       await saveAccounts(accounts);
     } else {
@@ -127,7 +135,9 @@ class SettingsService {
 
   Future<int> getNextFreeAccountIndex() async {
     final accounts = await getAccounts();
-    final maxIndex = accounts.map((a) => a.index).reduce((a, b) => a > b ? a : b);
+    final maxIndex = accounts
+        .map((a) => a.index)
+        .reduce((a, b) => a > b ? a : b);
     return maxIndex + 1;
   }
 

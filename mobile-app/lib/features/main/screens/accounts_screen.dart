@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
@@ -288,7 +289,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: 96,
+              height: 105,
               decoration: ShapeDecoration(
                 color: isActive ? Colors.white : Colors.black.useOpacity(0.65),
                 shape: RoundedRectangleBorder(
@@ -385,14 +386,34 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 InkWell(
                                   onTap: () {
                                     Clipboard.setData(
-                                      ClipboardData(text: account.accountId),
+                                      ClipboardData(
+                                        text:
+                                            '${account.accountId}\n$humanChecksum',
+                                      ),
                                     );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Address copied to clipboard',
+
+                                    showTopSnackBar(
+                                      context,
+                                      icon: Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: const ShapeDecoration(
+                                          color: Color(
+                                            0xFF494949,
+                                          ), // Default grey background
+                                          shape:
+                                              OvalBorder(), // Use OvalBorder for circle
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: SvgPicture.asset(
+                                          'assets/copy_icon.svg',
+                                          width: 16,
+                                          height: 16,
                                         ),
                                       ),
+                                      title: 'Copied!',
+                                      message:
+                                          'Address and checkphrase copied to clipboard',
                                     );
                                   },
                                   child: Icon(

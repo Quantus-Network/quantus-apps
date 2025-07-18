@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:flutter/services.dart';
 
 class ImportWalletScreen extends StatefulWidget {
@@ -50,7 +50,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const WalletMain()),
+          MaterialPageRoute(builder: (context) => const Navbar()),
           (route) => false,
         );
       }
