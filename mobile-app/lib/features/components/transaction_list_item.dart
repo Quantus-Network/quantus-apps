@@ -101,22 +101,43 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   void _showActionSheet(BuildContext context) {
     Widget sheet;
+
     if (isReversibleScheduled && isSent) {
       sheet = TransactionActionSheet(
         transaction: widget.transaction as ReversibleTransferEvent,
         currentWalletAddress: widget.currentWalletAddress,
       );
     } else {
-      sheet = TransactionDetailsActionSheet(transaction: widget.transaction);
+      sheet = TransactionDetailsActionSheet(
+        transaction: widget.transaction,
+        currentWalletAddress: widget.currentWalletAddress,
+      );
     }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
       backgroundColor: Colors.transparent,
-      builder: (context) => SizedBox(
-        height: isReversibleScheduled && isSent ? 638 : 400,
-        child: sheet,
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black,
+                    const Color(0xFF312E6E).useOpacity(0.4),
+                    Colors.black,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(bottom: 0, left: 0, right: 0, child: sheet),
+        ],
       ),
     );
   }
@@ -124,6 +145,11 @@ class TransactionListItemState extends State<TransactionListItem> {
   @override
   Widget build(BuildContext context) {
     final isSent = widget.transaction.from == widget.currentWalletAddress;
+    final isFailed =
+        widget.transaction is PendingTransactionEvent &&
+        (widget.transaction as PendingTransactionEvent).transactionState ==
+            TransactionState.failed;
+
     const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
 
     return GestureDetector(
@@ -141,6 +167,12 @@ class TransactionListItemState extends State<TransactionListItem> {
                 if (isReversibleCancelled)
                   SvgPicture.asset(
                     'assets/stop_icon.svg',
+                    width: 21,
+                    height: 17,
+                  )
+                else if (isFailed)
+                  SvgPicture.asset(
+                    'assets/send_failed_icon.svg',
                     width: 21,
                     height: 17,
                   )
@@ -215,6 +247,7 @@ class TransactionListItemState extends State<TransactionListItem> {
         transaction: widget.transaction as PendingTransactionEvent,
       );
     }
+
     if (widget.transaction is ReversibleTransferEvent) {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
