@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,17 +21,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _resetAndClearData() {
     _settingsService.clearAll();
-    Navigator.of(context).pop(); // Close the bottom sheet
-    // You might want to navigate to an initial screen here.
+    _logout();
+  }
+
+  Future<void> _logout() async {
+    try {
+      await SubstrateService().logout();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+      if (mounted) {
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Logout failed: ${e.toString()}',
+          icon: buildErrorIcon(),
+        );
+      }
+    }
   }
 
   void _showResetConfirmationSheet() {
     showAppModalBottomSheet(
       context: context,
       builder: (context) {
-        return ResetConfirmationBottomSheet(
-          onReset: _resetAndClearData,
-        );
+        return ResetConfirmationBottomSheet(onReset: _resetAndClearData);
       },
     );
   }
@@ -219,11 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 11,
-              color: Color(0xFFFF2D53),
-            ),
+            Icon(Icons.arrow_forward_ios, size: 11, color: Color(0xFFFF2D53)),
           ],
         ),
       ),
