@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
@@ -349,21 +350,40 @@ class _WalletMainState extends State<WalletMain> {
                               'assets/quantus_logo_hz.svg',
                               height: 40,
                             ),
-                            IconButton(
-                              icon: SvgPicture.asset(
-                                'assets/wallet_icon.svg',
-                                width: 24,
-                                height: 24,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AccountsScreen(),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: SvgPicture.asset(
+                                    'assets/wallet_icon.svg',
+                                    width: 24,
+                                    height: 24,
                                   ),
-                                );
-                              },
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const AccountsScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.settings,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const SettingsScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
