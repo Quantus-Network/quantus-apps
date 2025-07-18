@@ -39,6 +39,7 @@ dependencies:
       path: dart
   provider: ^6.1.5
   polkadart: ^0.7.1
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:
