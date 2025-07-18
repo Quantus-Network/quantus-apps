@@ -3,7 +3,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
@@ -71,7 +70,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              const WalletAppBar(title: 'Wallet Settings'),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
