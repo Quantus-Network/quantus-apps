@@ -14,7 +14,12 @@ class LoadingState<T> {
   bool get hasData => data != null;
   bool get hasError => error != null;
 
-  LoadingState({this.data, this.isLoading = false, this.error, required this.loadData});
+  LoadingState({
+    this.data,
+    this.isLoading = false,
+    this.error,
+    required this.loadData,
+  });
 
   Future<LoadingState<T>> load({bool quiet = false}) async {
     if (!quiet) {
@@ -46,7 +51,11 @@ class WalletStateManager with ChangeNotifier {
   List<PendingTransactionEvent> pendingTransactions = [];
   Timer? _pollingTimer;
 
-  WalletStateManager(this._chainHistoryService, this._settingsService, this._substrateService) {
+  WalletStateManager(
+    this._chainHistoryService,
+    this._settingsService,
+    this._substrateService,
+  ) {
     txData = LoadingState(loadData: _fetchTransactionHistory);
     walletData = LoadingState(loadData: _fetchBalance);
     _startPolling();
@@ -71,7 +80,9 @@ class WalletStateManager with ChangeNotifier {
   Future<WalletData?> _fetchBalance() async {
     const Duration networkTimeout = Duration(seconds: 15);
     final account = await _settingsService.getActiveAccount();
-    final balance = await _substrateService.queryBalance(account.accountId).timeout(networkTimeout);
+    final balance = await _substrateService
+        .queryBalance(account.accountId)
+        .timeout(networkTimeout);
     return WalletData(account: account, balance: balance);
   }
 
@@ -79,7 +90,8 @@ class WalletStateManager with ChangeNotifier {
     if (!walletData.hasData) return BigInt.zero;
     BigInt base = walletData.data!.balance;
     for (var tx in pendingTransactions) {
-      if (tx.transactionState != TransactionState.inHistory && tx.transactionState != TransactionState.failed) {
+      if (tx.transactionState != TransactionState.inHistory &&
+          tx.transactionState != TransactionState.failed) {
         final isSend = tx.from == walletData.data!.account.accountId;
         final adjustment = isSend ? -tx.amount : tx.amount;
         base += adjustment;
@@ -103,7 +115,10 @@ class WalletStateManager with ChangeNotifier {
   }
 
   Future<void> load({bool quiet = false}) async {
-    await Future.wait([txData.load(quiet: quiet), walletData.load(quiet: quiet)]);
+    await Future.wait([
+      txData.load(quiet: quiet),
+      walletData.load(quiet: quiet),
+    ]);
     updatePendingTransactions();
     notifyListeners();
   }
@@ -131,7 +146,9 @@ class WalletStateManager with ChangeNotifier {
         print('pending ${pending.amount} block hash: ${pending.blockHash}');
 
         for (var transfer in transferList) {
-          print('checking trasfer ${transfer.amount} with block hash: ${transfer.blockHash}');
+          print(
+            'checking trasfer ${transfer.amount} with block hash: ${transfer.blockHash}',
+          );
           if (transfer.blockHash == pending.blockHash) {
             print('found item block hash - removing');
             toRemove.add(pending);
@@ -146,7 +163,11 @@ class WalletStateManager with ChangeNotifier {
     return updated;
   }
 
-  Future<void> loadMoreTransactions({required String accountId, required int limit, required int offset}) async {
+  Future<void> loadMoreTransactions({
+    required String accountId,
+    required int limit,
+    required int offset,
+  }) async {
     final result = await _chainHistoryService.fetchAllTransactionTypes(
       accountId: accountId,
       limit: limit,
@@ -200,7 +221,12 @@ class WalletStateManager with ChangeNotifier {
     return account.accountId;
   }
 
-  Future<String> balanceTransfer(Account account, String targetAddress, BigInt amount, BigInt feeEstimate) async {
+  Future<String> balanceTransfer(
+    Account account,
+    String targetAddress,
+    BigInt amount,
+    BigInt feeEstimate,
+  ) async {
     final pending = createPendingTransaction(
       from: _senderAddressFromAccount(account),
       to: targetAddress,
@@ -244,10 +270,19 @@ class WalletStateManager with ChangeNotifier {
     }
 
     try {
-      subscription = await BalancesService().balanceTransfer(account, targetAddress, amount, onStatus);
+      subscription = await BalancesService().balanceTransfer(
+        account,
+        targetAddress,
+        amount,
+        onStatus,
+      );
       print('Subscribed to stream for ${pending.id} $subscription');
     } catch (e, stackTrace) {
-      updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
+      updatePendingTransaction(
+        pending.id,
+        TransactionState.failed,
+        error: e.toString(),
+      );
       print('Failed to transfer balance: $e');
       print('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
@@ -304,23 +339,33 @@ class WalletStateManager with ChangeNotifier {
     }
 
     try {
-      subscription = await ReversibleTransfersService().scheduleReversibleTransferWithDelaySeconds(
-        account: account,
-        recipientAddress: recipientAddress,
-        amount: amount,
-        delaySeconds: delaySeconds,
-        onStatus: onStatus,
-      );
+      subscription = await ReversibleTransfersService()
+          .scheduleReversibleTransferWithDelaySeconds(
+            account: account,
+            recipientAddress: recipientAddress,
+            amount: amount,
+            delaySeconds: delaySeconds,
+            onStatus: onStatus,
+          );
       print('Subscribed to rev stream for ${pending.id} $subscription');
     } catch (e, stackTrace) {
-      updatePendingTransaction(pending.id, TransactionState.failed, error: e.toString());
+      updatePendingTransaction(
+        pending.id,
+        TransactionState.failed,
+        error: e.toString(),
+      );
       print('Failed to send reversible: $e');
       print('Failed to send reversible: $stackTrace');
       throw Exception('Failed to send reversible transfer: $e');
     }
   }
 
-  void updatePendingTransaction(String id, TransactionState newState, {String? blockHash, String? error}) {
+  void updatePendingTransaction(
+    String id,
+    TransactionState newState, {
+    String? blockHash,
+    String? error,
+  }) {
     final tx = pendingTransactions.firstWhere(
       (tx) => tx.id == id,
       orElse: () => throw Exception('Pending TX not found'),

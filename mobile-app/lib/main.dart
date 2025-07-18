@@ -15,7 +15,11 @@ void main() async {
 
   runApp(
     ChangeNotifierProvider(
-      create: (context) => WalletStateManager(chainHistoryService, settingsService, substrateService),
+      create: (context) => WalletStateManager(
+        chainHistoryService,
+        settingsService,
+        substrateService,
+      ),
       child: const ResonanceWalletApp(),
     ),
   );

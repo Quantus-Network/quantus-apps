@@ -1,5 +1,8 @@
 include: package:flutter_lints/flutter.yaml
 
+formatter:
+  page_width: 80
+
 linter:
   rules:
     - always_declare_return_types
@@ -8,6 +11,7 @@ linter:
     - prefer_const_constructors
     - prefer_final_fields
     - prefer_single_quotes
+    - lines_longer_than_80_chars
 
 analyzer:
   exclude:

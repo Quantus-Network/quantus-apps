@@ -16,7 +16,9 @@ class RecentTransactionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
+    final transactionsToShow = filter == null
+        ? transactions
+        : transactions.where(filter!).toList();
 
     final scheduled = transactionsToShow
         .whereType<ReversibleTransferEvent>()
@@ -52,7 +54,10 @@ class RecentTransactionsList extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: scheduled.length,
                 itemBuilder: (context, index) {
-                  return TransactionListItem(transaction: scheduled[index], currentWalletAddress: currentWalletAddress);
+                  return TransactionListItem(
+                    transaction: scheduled[index],
+                    currentWalletAddress: currentWalletAddress,
+                  );
                 },
                 separatorBuilder: (context, index) => const _Divider(),
               ),
@@ -67,7 +72,10 @@ class RecentTransactionsList extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: others.length,
                 itemBuilder: (context, index) {
-                  return TransactionListItem(transaction: others[index], currentWalletAddress: currentWalletAddress);
+                  return TransactionListItem(
+                    transaction: others[index],
+                    currentWalletAddress: currentWalletAddress,
+                  );
                 },
                 separatorBuilder: (context, index) => const _Divider(),
               ),

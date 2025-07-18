@@ -27,7 +27,10 @@ class _WalletMainState extends State<WalletMain> {
   void initState() {
     super.initState();
     // Access the WalletStateManager from the provider without listening to changes
-    final walletStateManager = Provider.of<WalletStateManager>(context, listen: false);
+    final walletStateManager = Provider.of<WalletStateManager>(
+      context,
+      listen: false,
+    );
     // Initial data load
     walletStateManager.load();
   }
@@ -47,11 +50,17 @@ class _WalletMainState extends State<WalletMain> {
   }) {
     final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
     final bgColor = Colors.black.useOpacity(166 / 255.0);
-    final effectiveBorderColor = disabled ? borderColor.useOpacity(0.5) : borderColor;
+    final effectiveBorderColor = disabled
+        ? borderColor.useOpacity(0.5)
+        : borderColor;
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
-      finalIconWidget = SvgPicture.asset((iconWidget.bytesLoader as SvgAssetLoader).assetName, width: 20, height: 20);
+      finalIconWidget = SvgPicture.asset(
+        (iconWidget.bytesLoader as SvgAssetLoader).assetName,
+        width: 20,
+        height: 20,
+      );
     } else if (iconWidget is Icon) {
       finalIconWidget = Icon(iconWidget.icon, color: color, size: 20);
     } else if (iconWidget is Image) {
@@ -83,7 +92,12 @@ class _WalletMainState extends State<WalletMain> {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: color, fontSize: 10, fontFamily: 'Inter', fontWeight: FontWeight.w300),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w300,
+                ),
               ),
             ],
           ),
@@ -104,7 +118,9 @@ class _WalletMainState extends State<WalletMain> {
         child: const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 40.0),
-            child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED))),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0CE6ED)),
+            ),
           ),
         ),
       );
@@ -128,7 +144,10 @@ class _WalletMainState extends State<WalletMain> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              TextButton(onPressed: walletStateManager.load, child: const Text('Retry')),
+              TextButton(
+                onPressed: walletStateManager.load,
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -155,7 +174,9 @@ class _WalletMainState extends State<WalletMain> {
           ),
         ),
         RecentTransactionsList(
-          transactions: walletStateManager.combinedTransactions.take(5).toList(),
+          transactions: walletStateManager.combinedTransactions
+              .take(5)
+              .toList(),
           currentWalletAddress: activeAccount.accountId,
         ),
         if (true)
@@ -167,7 +188,10 @@ class _WalletMainState extends State<WalletMain> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TransactionsScreen(manager: walletStateManager)),
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          TransactionsScreen(manager: walletStateManager),
+                    ),
                   );
                 },
                 child: Text(
@@ -199,7 +223,12 @@ class _WalletMainState extends State<WalletMain> {
     } catch (e) {
       print('Error during logout: $e');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Logout failed: ${e.toString()}', icon: buildErrorIcon());
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Logout failed: ${e.toString()}',
+          icon: buildErrorIcon(),
+        );
       }
     }
   }
@@ -228,17 +257,28 @@ class _WalletMainState extends State<WalletMain> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 50,
+                      ),
                       const SizedBox(height: 20),
                       const Text(
                         'Failed to Connect',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         'Could not load wallet data. Please check your network connection and try again.',
-                        style: TextStyle(color: Colors.white.useOpacity(0.7), fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.white.useOpacity(0.7),
+                          fontSize: 14,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -305,13 +345,23 @@ class _WalletMainState extends State<WalletMain> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            SvgPicture.asset('assets/quantus_logo_hz.svg', height: 40),
+                            SvgPicture.asset(
+                              'assets/quantus_logo_hz.svg',
+                              height: 40,
+                            ),
                             IconButton(
-                              icon: SvgPicture.asset('assets/wallet_icon.svg', width: 24, height: 24),
+                              icon: SvgPicture.asset(
+                                'assets/wallet_icon.svg',
+                                width: 24,
+                                height: 24,
+                              ),
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AccountsScreen(),
+                                  ),
                                 );
                               },
                             ),
@@ -325,16 +375,26 @@ class _WalletMainState extends State<WalletMain> {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const AccountsScreen()),
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AccountsScreen(),
+                                  ),
                                 );
                               },
                               borderRadius: BorderRadius.circular(5),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 5,
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Image.asset('assets/active_dot.png', width: 20, height: 20),
+                                    Image.asset(
+                                      'assets/active_dot.png',
+                                      width: 20,
+                                      height: 20,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       activeAccount.name,
@@ -346,7 +406,11 @@ class _WalletMainState extends State<WalletMain> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 12),
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white70,
+                                      size: 12,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -356,7 +420,9 @@ class _WalletMainState extends State<WalletMain> {
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: _formattingService.formatBalance(walletStateManager.estimatedBalance),
+                                    text: _formattingService.formatBalance(
+                                      walletStateManager.estimatedBalance,
+                                    ),
                                     style: const TextStyle(
                                       color: Color(0xFFE6E6E6),
                                       fontSize: 40,
@@ -384,7 +450,9 @@ class _WalletMainState extends State<WalletMain> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _buildActionButton(
-                              iconWidget: SvgPicture.asset('assets/send_icon_1.svg'),
+                              iconWidget: SvgPicture.asset(
+                                'assets/send_icon_1.svg',
+                              ),
                               label: 'SEND',
                               borderColor: const Color(0xFF0AD4F6),
                               onPressed: () {
@@ -392,7 +460,9 @@ class _WalletMainState extends State<WalletMain> {
                               },
                             ),
                             _buildActionButton(
-                              iconWidget: SvgPicture.asset('assets/receive_icon.svg'),
+                              iconWidget: SvgPicture.asset(
+                                'assets/receive_icon.svg',
+                              ),
                               label: 'RECEIVE',
                               borderColor: const Color(0xFFB258F1),
                               onPressed: () {
@@ -400,14 +470,18 @@ class _WalletMainState extends State<WalletMain> {
                               },
                             ),
                             _buildActionButton(
-                              iconWidget: SvgPicture.asset('assets/swap_icon.svg'),
+                              iconWidget: SvgPicture.asset(
+                                'assets/swap_icon.svg',
+                              ),
                               label: 'SWAP',
                               borderColor: const Color(0xFF0AD4F6),
                               onPressed: () {},
                               disabled: true,
                             ),
                             _buildActionButton(
-                              iconWidget: SvgPicture.asset('assets/bridge_icon.svg'),
+                              iconWidget: SvgPicture.asset(
+                                'assets/bridge_icon.svg',
+                              ),
                               label: 'BRIDGE',
                               borderColor: const Color(0xFF0AD4F6),
                               onPressed: () {},
@@ -419,7 +493,9 @@ class _WalletMainState extends State<WalletMain> {
                       ],
                     ),
                   ),
-                  SliverToBoxAdapter(child: _buildHistorySection(walletStateManager)),
+                  SliverToBoxAdapter(
+                    child: _buildHistorySection(walletStateManager),
+                  ),
                 ],
               ),
             ),

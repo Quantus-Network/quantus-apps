@@ -32,7 +32,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         ),
         title: const Text(
           'Scan QR Code',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Fira Code',
+            fontWeight: FontWeight.w500,
+          ),
         ),
         actions: [
           ValueListenableBuilder<MobileScannerState>(

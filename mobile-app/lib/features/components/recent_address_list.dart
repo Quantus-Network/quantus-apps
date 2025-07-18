@@ -39,7 +39,10 @@ class _RecentAddressListState extends State<RecentAddressList> {
           separatorBuilder: (context, index) => const SizedBox(height: 20),
           itemBuilder: (context, index) {
             final address = addresses[index];
-            return RecentAddressListItem(address: address, onTap: () => widget.onAddressSelected(address));
+            return RecentAddressListItem(
+              address: address,
+              onTap: () => widget.onAddressSelected(address),
+            );
           },
         );
       },
