@@ -50,7 +50,7 @@ class SettingsService {
       return [account];
     }
 
-    throw Exception('Wallet is logged out.');
+    return []; // No accounts found;
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {

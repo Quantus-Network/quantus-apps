@@ -75,6 +75,7 @@ flutter:
     - assets/receive_icon_sm.png
     - assets/hourglass.svg
     - assets/settings_icon_off.svg
+    - assets/navbar/
 
   fonts:
     - family: Fira Code

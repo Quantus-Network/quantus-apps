@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -37,7 +37,7 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
 
     if (_walletExists) {
-      return const WalletMain();
+      return const Navbar();
     } else {
       return const WelcomeScreen();
     }
