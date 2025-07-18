@@ -37,10 +37,7 @@ class RevealOverlay extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 5,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
             ),
             child: const Text(
               'Reveal',
@@ -57,4 +54,4 @@ class RevealOverlay extends StatelessWidget {
       ),
     );
   }
-} 
+}

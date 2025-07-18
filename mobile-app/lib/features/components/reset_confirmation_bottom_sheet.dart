@@ -89,17 +89,16 @@ class _ResetConfirmationBottomSheetState
             ),
             const SizedBox(height: 28),
             ElevatedButton(
-              onPressed: _isCheckboxChecked
-                  ? widget.onReset
-                  : null,
+              onPressed: _isCheckboxChecked ? widget.onReset : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF2D53),
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(5),
                 ),
-                disabledBackgroundColor:
-                    const Color(0xFFFF2D53).withOpacity(0.5),
+                disabledBackgroundColor: const Color(
+                  0xFFFF2D53,
+                ).withOpacity(0.5),
               ),
               child: const Text(
                 'Reset & Clear Data',
@@ -132,4 +131,4 @@ class _ResetConfirmationBottomSheetState
       ),
     );
   }
-} 
+}

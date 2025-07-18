@@ -34,10 +34,7 @@ class MnemonicGrid extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.white.useOpacity(0.15),
-          ),
+          side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
           borderRadius: BorderRadius.circular(8),
         ),
       ),
