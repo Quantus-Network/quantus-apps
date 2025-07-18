@@ -37,7 +37,7 @@ class MnemonicGrid extends StatelessWidget {
           side: BorderSide(
             width: 1,
             color: Colors.white.useOpacity(0.15),
-          ), // Assuming 'useOpacity' is a custom extension; using standard 'withOpacity'
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
       ),

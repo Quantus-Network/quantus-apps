@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
