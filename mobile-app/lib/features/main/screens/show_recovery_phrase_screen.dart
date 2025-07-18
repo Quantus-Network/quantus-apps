@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
+import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 
@@ -57,11 +58,11 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                       const SizedBox(height: 30),
                       _buildDescription(),
                       const SizedBox(height: 30),
-                      _buildMnemonicGrid(),
+                      _buildMnemonicContainer(),
                       const SizedBox(height: 30),
                       if (_isRevealed) _buildCopyToClipboard(),
-                      const SizedBox(height: 30),
-                      _buildWarning(),
+                      // const SizedBox(height: 30),
+                      // _buildWarning(),
                       const SizedBox(height: 80), // Spacer for button
                     ],
                   ),
@@ -91,7 +92,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         ),
         SizedBox(height: 13),
         Text(
-          'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
+          'This is the only way to recover your wallet. Do not share with anyone.',
+          // Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
           style: TextStyle(
             color: Colors.white60,
             fontSize: 14,
@@ -103,76 +105,29 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildMnemonicGrid() {
+  Widget _buildMnemonicContainer() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.useOpacity(0.70),
+        color: Colors.black.withOpacity(0.70),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
           MnemonicGrid(words: _recoveryPhrase),
-          if (!_isRevealed) _buildRevealOverlay(),
+          if (!_isRevealed)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: RevealOverlay(
+                  onReveal: () => setState(() => _isRevealed = true),
+                ),
+              ),
+            ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRevealOverlay() {
-    return Positioned.fill(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.black.useOpacity(0.40),
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(Icons.visibility_off, color: Colors.white, size: 40),
-            const SizedBox(height: 17),
-            const Text(
-              'This Recovery Phrase provides access to this wallet, only reveal if you are in a secure location',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white60,
-                fontSize: 14,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 17),
-            ElevatedButton(
-              onPressed: () => setState(() => _isRevealed = true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black.useOpacity(0.25),
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    width: 1,
-                    color: Colors.white.useOpacity(0.15),
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 5,
-                ),
-              ),
-              child: const Text(
-                'Reveal',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -214,18 +169,18 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     );
   }
 
-  Widget _buildWarning() {
-    return const Text(
-      'Do not share your Recovery Phrase with any 3rd party, person, website or application',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: Colors.white60,
-        fontSize: 14,
-        fontFamily: 'Fira Code',
-        fontWeight: FontWeight.w400,
-      ),
-    );
-  }
+  // Widget _buildWarning() {
+  //   return const Text(
+  //     'Do not share your Recovery Phrase with any 3rd party, person, website or application',
+  //     textAlign: TextAlign.center,
+  //     style: TextStyle(
+  //       color: Colors.white60,
+  //       fontSize: 14,
+  //       fontFamily: 'Fira Code',
+  //       fontWeight: FontWeight.w400,
+  //     ),
+  //   );
+  // }
 
   Widget _buildDoneButton(BuildContext context) {
     return Padding(
