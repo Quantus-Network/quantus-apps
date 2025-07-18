@@ -48,9 +48,7 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF9F7AEA),
-          ),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF9F7AEA)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
@@ -59,7 +57,9 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
+            borderSide: BorderSide(
+              color: const Color(0xFF6B46C1).useOpacity(0.5),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -102,9 +102,7 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF9F7AEA),
-          ),
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF9F7AEA)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
@@ -113,7 +111,9 @@ class ResonanceWalletApp extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: const Color(0xFF6B46C1).useOpacity(0.5)),
+            borderSide: BorderSide(
+              color: const Color(0xFF6B46C1).useOpacity(0.5),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
