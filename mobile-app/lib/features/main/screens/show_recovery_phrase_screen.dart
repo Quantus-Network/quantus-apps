@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class ShowRecoveryPhraseScreen extends StatefulWidget {
   const ShowRecoveryPhraseScreen({super.key});
@@ -14,34 +15,23 @@ class ShowRecoveryPhraseScreen extends StatefulWidget {
 
 class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   bool _isRevealed = false;
+  List<String> _recoveryPhrase = [];
+  final SettingsService _settingsService = SettingsService();
 
-  // Mock recovery phrase
-  final List<String> _recoveryPhrase = [
-    'future',
-    'use',
-    'crash',
-    'bubble',
-    'disagree',
-    'yard',
-    'exit',
-    'enact',
-    'drum',
-    'plank',
-    'target',
-    'organ',
-    'space',
-    'large',
-    'command',
-    'bliss',
-    'table',
-    'glass',
-    'always',
-    'stand',
-    'screen',
-    'cable',
-    'vent',
-    'height',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadMnemonic();
+  }
+
+  Future<void> _loadMnemonic() async {
+    final mnemonic = await _settingsService.getMnemonic();
+    if (mnemonic != null) {
+      setState(() {
+        _recoveryPhrase = mnemonic.split(' ');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +106,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   Widget _buildMnemonicGrid() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.70),
+        color: Colors.black.useOpacity(0.70),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Stack(
@@ -134,7 +124,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 20),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.40),
+          color: Colors.black.useOpacity(0.40),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Column(
@@ -157,11 +147,11 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             ElevatedButton(
               onPressed: () => setState(() => _isRevealed = true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black.withOpacity(0.25),
+                backgroundColor: Colors.black.useOpacity(0.25),
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
                     width: 1,
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.useOpacity(0.15),
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),

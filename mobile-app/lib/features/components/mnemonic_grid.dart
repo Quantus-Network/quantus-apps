@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MnemonicGrid extends StatelessWidget {
   final List<String> words;
@@ -11,9 +12,7 @@ class MnemonicGrid extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 9),
       decoration: ShapeDecoration(
-        color: Colors.black.withOpacity(
-          0.7,
-        ), // Assuming 'useOpacity' is a custom extension; using standard 'withOpacity'
+        color: Colors.black.useOpacity(0.7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
       child: GridView.count(
@@ -37,7 +36,7 @@ class MnemonicGrid extends StatelessWidget {
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.useOpacity(0.15),
           ), // Assuming 'useOpacity' is a custom extension; using standard 'withOpacity'
           borderRadius: BorderRadius.circular(8),
         ),
