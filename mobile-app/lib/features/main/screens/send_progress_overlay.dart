@@ -38,6 +38,8 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   bool _isSending = false;
   String? _transactionHash;
 
+  bool get _isReversible => widget.reversibleTimeSeconds > 0;
+
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
 
@@ -275,52 +277,53 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               const SizedBox(height: 21),
 
               // Reversible time information
-              Container(
-                width: 305,
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF313131),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+              if (_isReversible)
+                Container(
+                  width: 305,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFF313131),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      SizedBox(
+                        width: 299,
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Reversible for: ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: _formatReversibleTime(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 10,
-                  children: [
-                    SizedBox(
-                      width: 299,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: 'Reversible for: ',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            TextSpan(
-                              text: _formatReversibleTime(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 28),
@@ -513,7 +516,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               ),
               const SizedBox(height: 17),
               const Text(
-                'TRANSACTION INITIATED',
+                'SENDING',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
@@ -623,85 +626,53 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               const SizedBox(height: 14),
 
               // Reversible time information
-              Container(
-                width: 305,
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF313131),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+              if (_isReversible)
+                Container(
+                  width: 305,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFF313131),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      SizedBox(
+                        width: 299,
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Reversible for: ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: _formatReversibleTime(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 10,
-                  children: [
-                    SizedBox(
-                      width: 299,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: 'Reversible for: ',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            TextSpan(
-                              text: _formatReversibleTime(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Explorer link
-              InkWell(
-                onTap: () async {
-                  final Uri url = Uri.parse(
-                    '${AppConstants.explorerEndpoint}/reversible-transactions${_transactionHash != null ? '/$_transactionHash' : ''}',
-                  );
-
-                  if (!await launchUrl(url)) {
-                    throw Exception('Could not launch $url');
-                  }
-                },
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 8,
-                  children: [
-                    Text(
-                      'View in Explorer',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF16CECE) /* other-blue */,
-                        fontSize: 12,
-                        fontFamily: 'Fira Code',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Icon(Icons.open_in_new, size: 12, color: Color(0xFF16CECE)),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 46),
