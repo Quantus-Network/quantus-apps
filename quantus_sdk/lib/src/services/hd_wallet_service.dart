@@ -4,9 +4,9 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 // We define the following 5 levels in BIP32 path:
 // m / purpose' / coin_type' / account' / change / address_index
-// For Quantus purpose should be 189 or if that's not available maybe 1899
+// For Quantus purpose is 189189
 // coin type should be 0 for native
-// account is the account index - 1, 2, 3...
+// account is the account index - 0, 1, 2, 3...
 // change and address index should remain at 0
 
 // Bip44 describes account discovery from seed phrase - it keeps looking by increasing acocunt index, for accounts with activity.
@@ -23,7 +23,8 @@ class HdWalletService {
     int change = 0,
     int addressIndex = 0,
   }) {
-    final derivationPath = "m/$purpose'/$coinType'/$account'/$change/$addressIndex";
+    final derivationPath =
+        "m/$purpose'/$coinType'/$account'/$change/$addressIndex";
     final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
     return derivedSeed;
   }
@@ -36,12 +37,7 @@ class HdWalletService {
     // Derive the new keypair
     final seed = crypto.seedFromMnemonic(mnemonicStr: mnemonic);
 
-    var seedToUse = seed;
-
-    if (index != 0) {
-      // HD derivation
-      seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
-    }
+    var seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
 
     // We use this private key as seed to derive a new Dilithium pair.
     final keypair = crypto.generateKeypairFromSeed(seed: seedToUse);
