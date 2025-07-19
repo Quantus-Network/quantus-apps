@@ -28,9 +28,9 @@ jobs:
       - name: Bootstrap Melos
         run: melos bootstrap
       - name: Clean Flutter projects
-        run: melos exec --no-parallel -- "flutter clean"
+        run: melos exec --concurrency=1 -- "flutter clean"
       - name: Analyze
-        run: melos exec --no-parallel -- "flutter analyze ."
+        run: melos exec --concurrency=1 -- "flutter analyze ."
 
   build_android:
     name: Build Android
