@@ -466,7 +466,7 @@ class _WalletMainState extends State<WalletMain> {
                             ),
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
-                                'assets/receive_icon.svg',
+                                'assets/receive_icon_1.svg',
                               ),
                               label: 'RECEIVE',
                               borderColor: const Color(0xFFB258F1),
@@ -476,7 +476,7 @@ class _WalletMainState extends State<WalletMain> {
                             ),
                             _buildActionButton(
                               iconWidget: SvgPicture.asset(
-                                'assets/swap_icon.svg',
+                                'assets/swap_icon_1.svg',
                               ),
                               label: 'SWAP',
                               borderColor: const Color(0xFF0AD4F6),

@@ -21,6 +21,7 @@ dependencies:
   cupertino_icons:
   flash:
   flutter_launcher_icons:
+  local_auth: ^2.1.6
 
   decimal:
   hex:
@@ -58,14 +59,14 @@ flutter:
     - assets/send_icon.png
     - assets/send_icon_1.svg
     - assets/receive_icon.png
-    - assets/receive_icon.svg
-    - assets/swap_icon.svg
-    - assets/scan.svg
+    - assets/receive_icon_1.svg
+    - assets/swap_icon_1.svg
+    - assets/scan_1.svg
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
     - assets/res_icon.svg
     - assets/intro_bg_video.mp4
-    - assets/paste_icon.svg
+    - assets/paste_icon_1.svg
     - assets/active_dot.png
     - assets/send_line.svg
     - assets/receive_line.svg

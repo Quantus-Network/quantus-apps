@@ -745,13 +745,13 @@ class SendScreenState extends State<SendScreen> {
                                     }
                                   },
                                   child: _buildIconButton(
-                                    'assets/paste_icon.svg',
+                                    'assets/paste_icon_1.svg',
                                   ),
                                 ),
                                 const SizedBox(width: 9),
                                 GestureDetector(
                                   onTap: _scanQRCode,
-                                  child: _buildIconButton('assets/scan.svg'),
+                                  child: _buildIconButton('assets/scan_1.svg'),
                                 ),
                                 const SizedBox(width: 9),
                                 GestureDetector(

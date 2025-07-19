@@ -34,13 +34,13 @@
 │   ├── light_leak_effect_background.jpg
 │   ├── light-leak-effect-black-background 2.png
 │   ├── main_wallet_title_logo.svg
-│   ├── paste_icon.svg
+│   ├── paste_icon_1.svg
 │   ├── quantus_logo_hz.png
 │   ├── quantus_logo_hz.svg
 │   ├── quantus_logo.png
 │   ├── quantus_logo.svg
 │   ├── receive_icon.png
-│   ├── receive_icon.svg
+│   ├── receive_icon_1.svg
 │   ├── receive_line.svg
 │   ├── receive.png
 │   ├── res_app_icon_b.svg
@@ -48,12 +48,12 @@
 │   ├── res_icon.svg
 │   ├── res_logo_main.svg
 │   ├── res_main_logo_icon.svg
-│   ├── scan.svg
+│   ├── scan_1.svg
 │   ├── send_icon_1.svg
 │   ├── send_icon.png
 │   ├── send_line.svg
 │   ├── settings_icon.svg
-│   ├── swap_icon.svg
+│   ├── swap_icon_1.svg
 │   ├── text
 │   │   └── crypto_checksum_bip39.txt
 │   └── wallet_icon.svg
