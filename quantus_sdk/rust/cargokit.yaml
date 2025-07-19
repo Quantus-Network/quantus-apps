@@ -2,11 +2,11 @@
 cargo:
   release:
     toolchain: nightly
-    extra_args:
+    extra_flags:
       - -Zbuild-std=std,panic_abort
       - -Zbuild-std-features=panic_immediate_abort
   debug:
     toolchain: nightly
-    extra_args:
+    extra_flags:
       - -Zbuild-std=std,panic_abort
       - -Zbuild-std-features=panic_immediate_abort
