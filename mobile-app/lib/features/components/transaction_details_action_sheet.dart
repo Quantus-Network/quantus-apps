@@ -148,9 +148,7 @@ class TransactionDetailsActionSheet extends StatelessWidget {
                         onTap: () async {
                           if (!context.mounted) return;
 
-                          Clipboard.setData(
-                            ClipboardData(text: '$accountId\n'),
-                          );
+                          Clipboard.setData(ClipboardData(text: accountId));
                           if (!context.mounted) {
                             return;
                           }
