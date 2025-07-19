@@ -19,3 +19,6 @@ sp-core = "35.0.0"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+[patch.crates-io]
+zerocopy = { git = "https://github.com/google/zerocopy", tag = "v0.8.26" }
