@@ -218,7 +218,7 @@ class TransactionDetailsActionSheet extends StatelessWidget {
         const SizedBox(height: 26),
         GestureDetector(
           onTap: () {
-            // TODO: Implement retry logic
+            // TO DO: Implement retry logic
           },
           child: Container(
             width: 130,

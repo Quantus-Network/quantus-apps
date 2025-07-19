@@ -28,7 +28,7 @@ jobs:
       - name: Bootstrap Melos
         run: melos bootstrap
       - name: Analyze
-        run: melos exec -- "flutter analyze"
+        run: melos exec -- "flutter analyze ."
 
   build_android:
     name: Build Android
