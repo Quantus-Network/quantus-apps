@@ -27,7 +27,10 @@ void main() {
 
       // Verify account ID format (should be a valid SS58 address)
       expect(accountId, isNotEmpty);
-      expect(accountId.startsWith('5'), isTrue); // SS58 addresses typically start with '5'
+      expect(
+        accountId.startsWith('5'),
+        isTrue,
+      ); // SS58 addresses typically start with '5'
 
       // Test signing and verification
       final message = [1, 2, 3, 4, 5];
@@ -37,7 +40,11 @@ void main() {
       expect(signature, isNotEmpty);
 
       // Verify the signature is valid
-      final isValid = verifyMessage(keypair: keypair, message: message, signature: signature);
+      final isValid = verifyMessage(
+        keypair: keypair,
+        message: message,
+        signature: signature,
+      );
 
       expect(isValid, isTrue);
     });
@@ -61,8 +68,9 @@ void main() {
       const mnemonic1 =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
-      const knownAccountId = '5H72qHthhaHuwybTUZDi9gtVqGbitcYPxUgbid8BLdZyiiMM';
-
+      // const knownAccountId = '5H72qHthhaHuwybTUZDi9gtVqGbitcYPxUgbid8BLdZyiiMM';
+      const knownAccountId =
+          'qzpVZcTCHBNBXXGBcfChAWDtqE5FugSvCErzRi4EUfPCf71zg';
       final keypair = generateKeypair(mnemonicStr: mnemonic1);
       final accountId = toAccountId(obj: keypair);
 

@@ -1,4 +1,5 @@
-// New PendingTransactionEvent class (single type, mirroring TransactionEvent with reversible fields optional)
+// New PendingTransactionEvent class (single type, mirroring TransactionEvent
+// with reversible fields optional)
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class PendingTransactionEvent extends TransactionEvent {
@@ -33,6 +34,11 @@ class PendingTransactionEvent extends TransactionEvent {
 
   @override
   String toString() {
-    return 'PendingTransactionEvent{id: $id, from: $from, to: $to, amount: $amount, timestamp: $timestamp, state: $transactionState, isReversible: $isReversible, txId: $txId, status: $status, scheduledAt: $scheduledAt, fee: $fee, extrinsicHash: $extrinsicHash, blockNumber: $blockNumber, error: $error}';
+    return 'PendingTransactionEvent{id: $id, from: $from, to: $to, '
+        'amount: $amount, timestamp: $timestamp, state: $transactionState, '
+        'isReversible: $isReversible, txId: $txId, status: $status, '
+        'scheduledAt: $scheduledAt, fee: $fee, '
+        'extrinsicHash: $extrinsicHash, blockNumber: $blockNumber, '
+        'error: $error}';
   }
 }

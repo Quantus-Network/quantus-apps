@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 
@@ -197,7 +197,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       ),
                     ),
                     Text(
-                      'OFF', // This should be dynamic based on the account's state
+                      'OFF', // TBD
                       style: TextStyle(
                         color: Colors.white54,
                         fontSize: 12,

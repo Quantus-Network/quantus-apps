@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Import secure storage
 import 'package:go_router/go_router.dart'; // Import GoRouter
-import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
 import 'package:quantus_miner/src/services/miner_settings_service.dart'; // Import the new service
 import 'package:quantus_miner/src/ui/miner_controls.dart'; // Import MinerControls
+import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk exports necessary components
 
 // Remove explicit imports for internal SDK files
 // import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -25,10 +25,12 @@ class MinerDashboardScreen extends StatefulWidget {
 class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
-  final String _miningStats = 'Fetching stats...'; // Placeholder for aggregated stats
+  final String _miningStats =
+      'Fetching stats...'; // Placeholder for aggregated stats
 
   final _storage = const FlutterSecureStorage(); // Instantiate secure storage
-  final _minerSettingsService = MinerSettingsService(); // Instantiate the service
+  final _minerSettingsService =
+      MinerSettingsService(); // Instantiate the service
 
   @override
   void initState() {
@@ -50,7 +52,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       print('mnemonic: ${mnemonic?.split(" ").length} words');
       if (mnemonic != null) {
         // Derive keypair from mnemonic using SubstrateService (exported by quantus_sdk)
-        final keypair = SubstrateService().dilithiumKeypairFromMnemonic(mnemonic);
+        // ignore: deprecated_member_use
+        final keypair = SubstrateService().dilithiumKeypairFromMnemonic(
+          mnemonic,
+        );
         // Use toAccountId function to get the SS58 address (exported by quantus_sdk)
         address = toAccountId(obj: keypair);
 
@@ -63,7 +68,8 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
         setState(() {
           // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-          _walletBalance = '${NumberFormattingService().formatBalance(balance)} ${AppConstants.tokenSymbol}';
+          _walletBalance =
+              '${NumberFormattingService().formatBalance(balance)} ${AppConstants.tokenSymbol}';
           _walletAddress = address;
         });
       } else {
@@ -135,12 +141,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   break;
               }
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<_MenuValues>>[
-              const PopupMenuItem<_MenuValues>(
-                value: _MenuValues.logout, // Updated to logout
-                child: Text('Logout (Full Reset)'), // Updated text
-              ),
-            ],
+            itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<_MenuValues>>[
+                  const PopupMenuItem<_MenuValues>(
+                    value: _MenuValues.logout, // Updated to logout
+                    child: Text('Logout (Full Reset)'), // Updated text
+                  ),
+                ],
           ),
         ],
       ),
@@ -166,7 +173,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               children: [
                                 const Text(
                                   'Wallet Balance:',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.refresh),
@@ -178,14 +188,22 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             const SizedBox(height: 8),
                             Text(
                               _walletBalance,
-                              style: const TextStyle(fontSize: 24, color: Colors.green, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             if (_walletAddress != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
                                   _walletAddress!,
-                                  style: const TextStyle(fontSize: 14, color: Colors.black54, fontFamily: 'Fira Code'),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                    fontFamily: 'Fira Code',
+                                  ),
                                 ),
                               ),
                           ],
@@ -207,10 +225,18 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Mining Stats:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Mining Stats:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                      (_miningStats.trim().isEmpty) ? 'No data' : _miningStats.replaceAll('\\n', '\n'),
+                      (_miningStats.trim().isEmpty)
+                          ? 'No data'
+                          : _miningStats.replaceAll('\\n', '\n'),
                       style: const TextStyle(fontSize: 16),
                     ),
                   ],

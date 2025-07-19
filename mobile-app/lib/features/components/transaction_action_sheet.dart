@@ -129,7 +129,8 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     }
   }
 
-  // basic view with different buttons at the bottom - for initial and confirm cancel views
+  // basic view with different buttons at the bottom - for initial and confirm
+  // cancel views
   Widget _buildBaseBlockView(Widget buttons, double verticalPadding) {
     return Column(
       mainAxisSize: MainAxisSize.min,

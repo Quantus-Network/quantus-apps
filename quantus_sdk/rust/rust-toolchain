@@ -1,0 +1,7 @@
+[toolchain]
+channel = "nightly-2024-12-24"
+targets = [
+  "aarch64-apple-ios",
+  "aarch64-linux-android"
+]
+profile = "minimal" 

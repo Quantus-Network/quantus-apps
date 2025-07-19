@@ -47,9 +47,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
     final minutes = (widget.reversibleTimeSeconds % 3600) ~/ 60;
 
     if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, $hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+      return '$days day${days > 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}, '
+          '$minutes min${minutes != 1 ? 's' : ''}';
     } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+      return '$hours hr${hours != 1 ? 's' : ''}, '
+          '$minutes min${minutes != 1 ? 's' : ''}';
     } else {
       return '$minutes minute${minutes != 1 ? 's' : ''}';
     }
@@ -68,7 +71,12 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       final account = await _settingsService.getActiveAccount();
 
       // ignore: use_build_context_synchronously
+      if (!context.mounted) {
+        return;
+      }
+
       final walletStateManager = Provider.of<WalletStateManager>(
+        // ignore: use_build_context_synchronously
         context,
         listen: false,
       );
@@ -154,7 +162,6 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
                 SizedBox(
                   width: 51,
                   height: 42,
-                  // decoration: BoxDecoration(color: Colors.white.useOpacity(0.1), borderRadius: BorderRadius.circular(5)),
                   child: Center(
                     child: SvgPicture.asset(
                       'assets/send_icon_1.svg',

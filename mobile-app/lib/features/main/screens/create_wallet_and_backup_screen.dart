@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:flutter/services.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
@@ -36,8 +36,9 @@ class CreateWalletAndBackupScreenState
 
     try {
       _mnemonic = await SubstrateService().generateMnemonic();
-      if (_mnemonic.isEmpty)
+      if (_mnemonic.isEmpty) {
         throw Exception('Mnemonic generation returned empty.');
+      }
 
       if (mounted) {
         setState(() {
@@ -158,7 +159,9 @@ class CreateWalletAndBackupScreenState
                         ),
                         const SizedBox(height: 13),
                         Text(
-                          'Write down and save your seed phrase in a secure location. This is the only way to recover your wallet',
+                          'Write down and save your seed phrase in a secure '
+                          'location. This is the only way to recover your '
+                          'wallet',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.useOpacity(153 / 255.0),

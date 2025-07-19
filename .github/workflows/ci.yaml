@@ -1,0 +1,100 @@
+name: Quantus Apps CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install Melos
+        run: dart pub global activate melos
+      - name: Bootstrap Melos
+        run: melos bootstrap
+      - name: Clean Flutter projects
+        run: melos exec --concurrency=1 -- "flutter clean"
+      - name: Analyze
+        run: melos exec --concurrency=1 -- "flutter analyze ."
+
+  # build_android:
+  #   name: Build Android
+  #   needs: analyze
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-java@v4
+  #       with:
+  #         distribution: 'zulu'
+  #         java-version: '17'
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'stable'
+  #     - name: Install Melos
+  #       run: dart pub global activate melos
+  #     - name: Bootstrap Melos
+  #       run: melos bootstrap
+  #     - name: Build Android App
+  #       run: |
+  #         cd mobile-app
+  #         flutter build apk --debug
+
+  # build_ios:
+  #   name: Build iOS
+  #   needs: analyze
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'stable'
+  #     - name: Install Rust toolchain
+  #       uses: dtolnay/rust-toolchain@nightly
+  #       with:
+  #         toolchain: nightly-2024-12-24
+  #         targets: aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios
+  #     - name: Install Melos
+  #       run: dart pub global activate melos
+  #     - name: Bootstrap Melos
+  #       run: melos bootstrap
+  #     - name: Build iOS App
+  #       run: |
+  #         cd mobile-app
+  #         flutter build ios --debug --no-codesign
+
+  # build_macos:
+  #   name: Build macOS
+  #   needs: analyze
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: 'stable'
+  #     - name: Install Rust toolchain
+  #       uses: dtolnay/rust-toolchain@nightly
+  #       with:
+  #         toolchain: nightly-2024-12-24
+  #     - name: Install Melos
+  #       run: dart pub global activate melos
+  #     - name: Bootstrap Melos
+  #       run: melos bootstrap
+  #     - name: Build macOS App
+  #       run: |
+  #         cd miner-app
+  #         flutter build macos --debug 

@@ -36,8 +36,11 @@ class HdWalletService {
   Keypair keyPairAtIndex(String mnemonic, int index) {
     // Derive the new keypair
     final seed = crypto.seedFromMnemonic(mnemonicStr: mnemonic);
+    var seedToUse = seed;
 
-    var seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
+    if (index > -1) {
+      seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
+    }
 
     // We use this private key as seed to derive a new Dilithium pair.
     final keypair = crypto.generateKeypairFromSeed(seed: seedToUse);

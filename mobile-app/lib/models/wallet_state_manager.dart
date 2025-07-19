@@ -1,9 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/wallet_data.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:polkadart/polkadart.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:resonance_network_wallet/models/wallet_data.dart';
 
 class LoadingState<T> {
   T? data;
@@ -135,8 +136,8 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  // Update pending transactions - see if any have been resolved in the history list, and remove
-  // them accordingly as they are coming in with chain history.
+  // Update pending transactions - see if any have been resolved in the history
+  // list, and remove them accordingly as they are coming in with chain history.
   bool updatePendingTransactions() {
     bool updated = false;
     var transferList = txData.data?.combined ?? [];
@@ -147,7 +148,8 @@ class WalletStateManager with ChangeNotifier {
 
         for (var transfer in transferList) {
           print(
-            'checking trasfer ${transfer.amount} with block hash: ${transfer.blockHash}',
+            'checking trasfer ${transfer.amount} with block hash: '
+            '${transfer.blockHash}',
           );
           if (transfer.blockHash == pending.blockHash) {
             print('found item block hash - removing');

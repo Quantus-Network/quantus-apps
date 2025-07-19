@@ -12,6 +12,8 @@ Future<void> showTopSnackBar(
   Duration duration = const Duration(seconds: 3), // Default duration
   FlashBehavior style = FlashBehavior.floating, // Floating style
 }) async {
+  if (!context.mounted) return;
+
   // Use context.showFlash<T> for better type safety and context awareness if
   // available, otherwise fallback to showFlash<T>
   await context.showFlash<void>(

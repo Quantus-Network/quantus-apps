@@ -46,7 +46,6 @@ void main() {
         final balance = BigInt.parse(
           '1234567890123000000000',
         ); // 1,234,567,890.123
-        // Current formatBalance doesn't add grouping separators, update if needed
         expect(
           service.formatBalance(balance, maxDecimals: 3),
           '1,234,567,890.123',

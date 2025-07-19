@@ -27,7 +27,8 @@ class _WalletMainState extends State<WalletMain> {
   @override
   void initState() {
     super.initState();
-    // Access the WalletStateManager from the provider without listening to changes
+    // Access the WalletStateManager from the provider without listening to
+    // changes
     final walletStateManager = Provider.of<WalletStateManager>(
       context,
       listen: false,
@@ -275,7 +276,8 @@ class _WalletMainState extends State<WalletMain> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Could not load wallet data. Please check your network connection and try again.',
+                        'Could not load wallet data. Please check your network '
+                        'connection and try again.',
                         style: TextStyle(
                           color: Colors.white.useOpacity(0.7),
                           fontSize: 14,

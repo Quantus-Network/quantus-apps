@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class ResetConfirmationBottomSheet extends StatefulWidget {
   final VoidCallback onReset;
@@ -49,7 +50,9 @@ class _ResetConfirmationBottomSheetState
             const SizedBox(
               width: 309,
               child: Text(
-                'Are you sure you want to proceed? This will delete all local wallet data. Make sure you have backed up your recovery phrase.',
+                'Are you sure you want to proceed? This will delete all local '
+                'wallet data. Make sure you have backed up your recovery '
+                'phrase.',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -98,7 +101,7 @@ class _ResetConfirmationBottomSheetState
                 ),
                 disabledBackgroundColor: const Color(
                   0xFFFF2D53,
-                ).withOpacity(0.5),
+                ).useOpacity(0.5),
               ),
               child: const Text(
                 'Reset & Clear Data',
