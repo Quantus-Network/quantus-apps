@@ -63,6 +63,13 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Add Rust iOS targets
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+          rustup target add x86_64-apple-ios
       - name: Install Melos
         run: dart pub global activate melos
       - name: Bootstrap Melos
@@ -88,4 +95,4 @@ jobs:
       - name: Build macOS App
         run: |
           cd miner-app
-          flutter build macos --debug 
+          flutter build macos --debug --no-codesign 
