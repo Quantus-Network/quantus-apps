@@ -97,4 +97,4 @@ jobs:
       - name: Build macOS App
         run: |
           cd miner-app
-          flutter build macos --debug --no-codesign 
+          flutter build macos --debug 
