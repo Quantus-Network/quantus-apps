@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
-import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:quantus_mobile_wallet/features/components/transaction_action_sheet.dart';
+import 'package:quantus_mobile_wallet/features/components/transaction_details_action_sheet.dart';
+import 'package:quantus_mobile_wallet/models/pending_transfer_event.dart';
 
 class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;

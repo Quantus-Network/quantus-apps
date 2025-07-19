@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
+import 'package:quantus_mobile_wallet/features/components/transactions_list.dart';
+import 'package:quantus_mobile_wallet/models/wallet_state_manager.dart'; // Ensure import
 
 class TransactionsScreen extends StatefulWidget {
   final WalletStateManager manager;

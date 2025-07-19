@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:quantus_mobile_wallet/features/components/wallet_app_bar.dart';
 
 class AuthenticationSettingsScreen extends StatefulWidget {
   const AuthenticationSettingsScreen({super.key});

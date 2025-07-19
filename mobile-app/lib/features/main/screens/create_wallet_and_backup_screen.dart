@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
+import 'package:quantus_mobile_wallet/features/components/gradient_action_button.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/navbar.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});

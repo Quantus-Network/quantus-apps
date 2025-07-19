@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resonance_network_wallet/features/main/screens/app.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/app.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:quantus_mobile_wallet/models/wallet_state_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dotted_border.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:quantus_mobile_wallet/features/components/dotted_border.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/models/pending_transfer_event.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailsActionSheet extends StatelessWidget {

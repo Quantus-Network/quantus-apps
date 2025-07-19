@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/settings_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/transactions_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/wallet_main.dart';
+import 'package:quantus_mobile_wallet/models/wallet_state_manager.dart';
 
 class NavItem {
   final SvgPicture offIcon;

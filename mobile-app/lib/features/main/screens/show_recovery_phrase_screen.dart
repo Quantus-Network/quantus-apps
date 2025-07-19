@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
-import 'package:resonance_network_wallet/features/components/reveal_overlay.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:quantus_mobile_wallet/features/components/mnemonic_grid.dart';
+import 'package:quantus_mobile_wallet/features/components/reveal_overlay.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/features/components/wallet_app_bar.dart';
 
 class ShowRecoveryPhraseScreen extends StatefulWidget {
   const ShowRecoveryPhraseScreen({super.key});

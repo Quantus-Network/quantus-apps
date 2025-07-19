@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:quantus_mobile_wallet/features/components/gradient_action_button.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   final Account? accountToEdit;

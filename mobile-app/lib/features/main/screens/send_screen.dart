@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
+import 'package:quantus_mobile_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:quantus_mobile_wallet/features/components/recent_address_list.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/qr_scanner_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/send_progress_overlay.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});

@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/features/components/transactions_list.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/accounts_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/receive_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/transactions_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/welcome_screen.dart';
+import 'package:quantus_mobile_wallet/models/wallet_state_manager.dart';
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});

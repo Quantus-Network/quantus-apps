@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:quantus_mobile_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:quantus_mobile_wallet/features/components/reset_confirmation_bottom_sheet.dart';
+import 'package:quantus_mobile_wallet/features/components/snackbar_helper.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/accounts_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/authentication_settings_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/show_recovery_phrase_screen.dart';
+import 'package:quantus_mobile_wallet/features/main/screens/welcome_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
