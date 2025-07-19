@@ -64,7 +64,7 @@ jobs:
         with:
           channel: 'stable'
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
       - name: Add Rust iOS targets
         run: |
           rustup target add aarch64-apple-ios
