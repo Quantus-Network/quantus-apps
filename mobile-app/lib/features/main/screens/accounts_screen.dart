@@ -256,12 +256,14 @@ class _AccountsScreenState extends State<AccountsScreen> {
   //     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
   //     decoration: ShapeDecoration(
   //       color: color,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+  //       shape: RoundedRectangleBorder(borderRadius:
+  // BorderRadius.circular(2)),
   //     ),
   //     child: Text(
   //       text,
   //       textAlign: TextAlign.center,
-  //       style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
+  //       style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily:
+  // 'Fira Code', fontWeight: FontWeight.w400),
   //     ),
   //   );
   // }
@@ -307,7 +309,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     'assets/res_icon.svg',
                     width: 32,
                     height: 32,
-                    // colorFilter: ColorFilter.mode(isActive ? Colors.black : Colors.white, BlendMode.srcIn),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -336,13 +337,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // demo code for tags bug not yet implemented, they look good though.
+                            // demo code for tags bug not yet implemented,
+                            // they look good though.
                             // if (!isActive && index == 1) ...[
                             //   Row(
                             //     children: [
-                            //       _buildTag('Recovery', const Color(0xFF16CECE)),
+                            //       _buildTag(
+                            //         'Recovery',
+                            //         const Color(0xFF16CECE),
+                            //       ),
                             //       const SizedBox(width: 8),
-                            //       _buildTag('Anti-Theft', const Color(0xFFFADC34)),
+                            //       _buildTag(
+                            //         'Anti-Theft',
+                            //         const Color(0xFFFADC34),
+                            //       ),
                             //     ],
                             //   ),
                             //   const SizedBox(height: 6),
@@ -386,10 +394,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 InkWell(
                                   onTap: () {
                                     Clipboard.setData(
-                                      ClipboardData(
-                                        text:
-                                            '${account.accountId}\n$humanChecksum',
-                                      ),
+                                      ClipboardData(text: account.accountId),
                                     );
 
                                     showTopSnackBar(
@@ -398,11 +403,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                         width: 36,
                                         height: 36,
                                         decoration: const ShapeDecoration(
-                                          color: Color(
-                                            0xFF494949,
-                                          ), // Default grey background
-                                          shape:
-                                              OvalBorder(), // Use OvalBorder for circle
+                                          color: Color(0xFF494949),
+                                          shape: OvalBorder(),
                                         ),
                                         alignment: Alignment.center,
                                         child: SvgPicture.asset(
@@ -413,7 +415,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                       ),
                                       title: 'Copied!',
                                       message:
-                                          'Address and checkphrase copied to clipboard',
+                                          'Address '
+                                          'copied to clipboard',
                                     );
                                   },
                                   child: Icon(
@@ -488,6 +491,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   builder: (context) => AccountSettingsScreen(
                     account: account,
                     balance:
+                        // ignore: lines_longer_than_80_chars
                         '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
                     checksumName: checksumName,
                   ),

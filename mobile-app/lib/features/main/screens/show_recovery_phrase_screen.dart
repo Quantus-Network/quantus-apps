@@ -92,8 +92,10 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
         ),
         SizedBox(height: 13),
         Text(
-          'This is the only way to recover your wallet. Do not share with anyone.',
-          // Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
+          'This is the only way to recover your wallet.'
+          ' Do not share with anyone.',
+          // Anyone who has this phrase will have full access to this wallet,
+          // your funds may be lost.',
           style: TextStyle(
             color: Colors.white60,
             fontSize: 14,
@@ -108,7 +110,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   Widget _buildMnemonicContainer() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.70),
+        color: Colors.black.useOpacity(0.70),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Stack(
@@ -119,7 +121,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.9),
+                  color: Colors.black.useOpacity(0.9),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: RevealOverlay(
@@ -134,27 +136,26 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
 
   Widget _buildCopyToClipboard() {
     return InkWell(
-      onTap: () {
-        Clipboard.setData(ClipboardData(text: _recoveryPhrase.join(' '))).then((
-          _,
-        ) {
-          showTopSnackBar(
-            context,
-            title: "Copied",
-            message: "Recovery phrase copied to clipboard.",
-            icon: buildCheckmarkIcon(),
-          );
-        });
+      onTap: () async {
+        await Clipboard.setData(ClipboardData(text: _recoveryPhrase.join(' ')));
+        if (!context.mounted) return;
+        showTopSnackBar(
+          // ignore: use_build_context_synchronously
+          context,
+          title: 'Copied',
+          message: 'Recovery phrase copied to clipboard.',
+          icon: buildCheckmarkIcon(),
+        );
       },
-      child: Opacity(
+      child: const Opacity(
         opacity: 0.80,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.copy, color: Colors.white, size: 24),
-            const SizedBox(width: 8),
-            const Text(
+            Icon(Icons.copy, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text(
               'Copy to Clipboard',
               style: TextStyle(
                 color: Colors.white,
@@ -171,7 +172,8 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
 
   // Widget _buildWarning() {
   //   return const Text(
-  //     'Do not share your Recovery Phrase with any 3rd party, person, website or application',
+  //     'Do not share your Recovery Phrase with any 3rd party, person, website
+  //or application',
   //     textAlign: TextAlign.center,
   //     style: TextStyle(
   //       color: Colors.white60,
