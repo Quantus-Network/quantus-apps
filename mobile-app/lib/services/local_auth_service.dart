@@ -47,36 +47,13 @@ class LocalAuthService {
   }
 
   /// Check if local authentication is enabled in app settings
-  Future<bool> isLocalAuthEnabled() async {
-    try {
-      return await _settingsService.getBool(
-            SettingsService.isLocalAuthEnabledKey,
-          ) ??
-          false;
-    } catch (e) {
-      debugPrint('Error checking local auth enabled status: $e');
-      return false;
-    }
+  bool isLocalAuthEnabled() {
+    return _settingsService.isAuthEnabled();
   }
 
   /// Enable or disable local authentication in app settings
-  Future<void> setLocalAuthEnabled(bool enabled) async {
-    try {
-      await _settingsService.setBool(
-        SettingsService.isLocalAuthEnabledKey,
-        enabled,
-      );
-      if (enabled) {
-        // Record the time when local auth was enabled
-        await _settingsService.setString(
-          SettingsService.lastSuccessfulAuthKey,
-          DateTime.now().toIso8601String(),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error setting local auth enabled status: $e');
-      rethrow;
-    }
+  void setLocalAuthEnabled(bool enabled) {
+    _settingsService.setAuthEnabled(enabled);
   }
 
   /// Authenticate using biometrics
@@ -93,9 +70,8 @@ class LocalAuthService {
         return false;
       }
 
-      // Check if local auth is enabled in settings (skip this check during setup)
       if (!forSetup) {
-        final bool isEnabled = await isLocalAuthEnabled();
+        final bool isEnabled = isLocalAuthEnabled();
         if (!isEnabled) {
           debugPrint('Local authentication is disabled in settings');
           return true; // Allow access if not enabled
@@ -113,10 +89,7 @@ class LocalAuthService {
 
       if (didAuthenticate) {
         // Update last successful auth time
-        await _settingsService.setString(
-          SettingsService.lastSuccessfulAuthKey,
-          DateTime.now().toIso8601String(),
-        );
+        _settingsService.setLastSuccessfulAuthTime(DateTime.now());
       }
 
       return didAuthenticate;
@@ -180,6 +153,7 @@ class LocalAuthService {
       } else if (descriptions.length == 2) {
         return '${descriptions[0]} or ${descriptions[1]}';
       } else {
+        // ignore: lines_longer_than_80_chars
         return '${descriptions.take(descriptions.length - 1).join(', ')}, or ${descriptions.last}';
       }
     } catch (e) {
@@ -191,22 +165,23 @@ class LocalAuthService {
   /// Check if authentication is required (based on app lifecycle and settings)
   Future<bool> shouldRequireAuthentication() async {
     try {
-      final bool isEnabled = await isLocalAuthEnabled();
+      final bool isEnabled = isLocalAuthEnabled();
       if (!isEnabled) return false;
 
-      final String? lastAuthString = await _settingsService.getString(
-        SettingsService.lastSuccessfulAuthKey,
-      );
-      if (lastAuthString == null) return true;
-
-      final DateTime lastAuth = DateTime.parse(lastAuthString);
-      final DateTime now = DateTime.now();
+      final DateTime? lastAuthTime = _settingsService
+          .getLastSuccessfulAuthTime();
+      if (lastAuthTime == null) return true;
 
       // Require authentication if more than 1 minute has passed
       // You can adjust this duration based on your security requirements
       const Duration authTimeout = Duration(minutes: 1);
 
-      return now.difference(lastAuth) > authTimeout;
+      print(
+        // ignore: lines_longer_than_80_chars
+        'auth time difference: ${DateTime.now().difference(lastAuthTime).inSeconds}',
+      );
+
+      return DateTime.now().difference(lastAuthTime) > authTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
       return true; // Err on the side of caution
@@ -219,15 +194,6 @@ class LocalAuthService {
       await _localAuth.stopAuthentication();
     } catch (e) {
       debugPrint('Error stopping authentication: $e');
-    }
-  }
-
-  /// Clear authentication session (useful for logout)
-  Future<void> clearAuthSession() async {
-    try {
-      await _settingsService.remove(SettingsService.lastSuccessfulAuthKey);
-    } catch (e) {
-      debugPrint('Error clearing auth session: $e');
     }
   }
 }

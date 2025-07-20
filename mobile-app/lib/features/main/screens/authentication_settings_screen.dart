@@ -25,7 +25,7 @@ class _AuthenticationSettingsScreenState
 
   Future<void> _loadAuthenticationSettings() async {
     try {
-      final isEnabled = await _localAuthService.isLocalAuthEnabled();
+      final isEnabled = _localAuthService.isLocalAuthEnabled();
       final isAvailable = await _localAuthService.isBiometricAvailable();
       final description = await _localAuthService.getBiometricDescription();
 
@@ -58,7 +58,7 @@ class _AuthenticationSettingsScreenState
     try {
       if (!value) {
         // Disabling authentication - no need for biometric verification
-        await _localAuthService.setLocalAuthEnabled(false);
+        _localAuthService.setLocalAuthEnabled(false);
         if (mounted) {
           setState(() {
             _isDeviceAuthEnabled = false;
@@ -104,7 +104,7 @@ class _AuthenticationSettingsScreenState
       debugPrint('Authentication result: $didAuthenticate');
 
       if (didAuthenticate) {
-        await _localAuthService.setLocalAuthEnabled(true);
+        _localAuthService.setLocalAuthEnabled(true);
         if (mounted) {
           setState(() {
             _isDeviceAuthEnabled = true;

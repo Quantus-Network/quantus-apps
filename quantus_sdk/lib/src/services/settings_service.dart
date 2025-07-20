@@ -21,10 +21,6 @@ class SettingsService {
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
 
-  // Public getters for local auth keys (for use by LocalAuthService)
-  static String get isLocalAuthEnabledKey => _isLocalAuthEnabledKey;
-  static String get lastSuccessfulAuthKey => _lastSuccessfulAuthKey;
-
   Future<void> initialize() async {
     if (!_initialized) {
       _prefs = await SharedPreferences.getInstance();
@@ -191,24 +187,24 @@ class SettingsService {
     return _prefs.getString(key);
   }
 
-  /// Set a string value in SharedPreferences
-  Future<void> setString(String key, String value) async {
-    await _prefs.setString(key, value);
+  DateTime? getLastSuccessfulAuthTime() {
+    final String? lastAuthString = _prefs.getString(_lastSuccessfulAuthKey);
+    if (lastAuthString == null) return null;
+
+    final DateTime lastAuth = DateTime.parse(lastAuthString);
+    return lastAuth;
   }
 
-  /// Get an integer value from SharedPreferences
-  Future<int?> getInt(String key) async {
-    return _prefs.getInt(key);
+  void setLastSuccessfulAuthTime(DateTime time) {
+    _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
   }
 
-  /// Set an integer value in SharedPreferences
-  Future<void> setInt(String key, int value) async {
-    await _prefs.setInt(key, value);
+  void setAuthEnabled(bool enabled) {
+    _prefs.setBool(_isLocalAuthEnabledKey, enabled);
   }
 
-  /// Remove a key from SharedPreferences
-  Future<void> remove(String key) async {
-    await _prefs.remove(key);
+  bool isAuthEnabled() {
+    return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
   }
 
   // Clear all settings

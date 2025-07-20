@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Required for Clipboard
-import 'package:go_router/go_router.dart'; // Import go_router
-import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has wallet/address functions
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Will need this for secure storage
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart'; // Import go_router
+import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has wallet/address functions
 
 enum RewardsAddressSetupStep {
   checking,
@@ -18,7 +18,8 @@ class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
 
   @override
-  State<RewardsAddressSetupScreen> createState() => _RewardsAddressSetupScreenState();
+  State<RewardsAddressSetupScreen> createState() =>
+      _RewardsAddressSetupScreenState();
 }
 
 class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
@@ -42,7 +43,9 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   Future<void> _checkRewardsAddress() async {
     // This will involve checking if an address is stored securely.
-    final mnemonic = await _storage.read(key: 'rewards_address_mnemonic'); // Read mnemonic
+    final mnemonic = await _storage.read(
+      key: 'rewards_address_mnemonic',
+    ); // Read mnemonic
 
     setState(() {
       if (mnemonic != null) {
@@ -81,7 +84,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     } catch (e) {
       print('Error generating mnemonic or storing seed: $e');
       setState(() {
-        _currentStep = RewardsAddressSetupStep.notSet; // Go back to not set on error
+        _currentStep =
+            RewardsAddressSetupStep.notSet; // Go back to not set on error
       });
     }
   }
@@ -106,7 +110,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     try {
       // Derive seed from mnemonic and securely store it
-      SubstrateService().dilithiumKeypairFromMnemonic(mnemonic); // Validate mnemonic by trying to derive keypair
+      // ignore: deprecated_member_use
+      SubstrateService().dilithiumKeypairFromMnemonic(
+        mnemonic,
+      ); // Validate mnemonic by trying to derive keypair
       await _securelyStoreMnemonic(mnemonic);
 
       setState(() {
@@ -115,7 +122,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     } catch (e) {
       print('Error importing mnemonic or storing seed: $e');
       setState(() {
-        _currentStep = RewardsAddressSetupStep.importExisting; // Stay on import screen on error
+        _currentStep = RewardsAddressSetupStep
+            .importExisting; // Stay on import screen on error
       });
     }
   }
@@ -140,12 +148,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rewards Address Setup'),
-      ),
-      body: Center(
-        child: _buildBody(),
-      ),
+      appBar: AppBar(title: const Text('Rewards Address Setup')),
+      body: Center(child: _buildBody()),
     );
   }
 
@@ -251,7 +255,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             ),
             child: Text(
               _generatedMnemonic,
-              style: const TextStyle(fontSize: 18, color: Colors.white), // Light text color
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+              ), // Light text color
               textAlign: TextAlign.center,
             ),
           ),
