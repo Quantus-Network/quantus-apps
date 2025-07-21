@@ -8,8 +8,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -933,7 +933,7 @@ class SendScreenState extends State<SendScreen> {
                                       ),
                                   inputFormatters: [
                                     FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*\.?\d*'),
+                                      RegExp(r'^\d*[,.]?\d*'),
                                     ),
                                   ],
                                   onChanged: _validateAmount,

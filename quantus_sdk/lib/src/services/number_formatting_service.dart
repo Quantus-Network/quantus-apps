@@ -6,7 +6,9 @@ import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;
   static final BigInt scaleFactorBigInt = BigInt.from(10).pow(decimals);
-  static final Decimal scaleFactorDecimal = Decimal.fromBigInt(scaleFactorBigInt);
+  static final Decimal scaleFactorDecimal = Decimal.fromBigInt(
+    scaleFactorBigInt,
+  );
 
   /// Formats a raw BigInt balance (representing the smallest unit) into a
   /// user-readable string with a specified number of decimal places.
@@ -18,10 +20,12 @@ class NumberFormattingService {
     }
 
     // 1. Perform division to get the precise decimal value.
-    final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
-      scaleOnInfinitePrecision:
-          maxDecimals * 3, // Note: We never have an infinite number of decimals because we divide by powers of 10.
-    );
+    final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal)
+        .toDecimal(
+          scaleOnInfinitePrecision:
+              maxDecimals *
+              3, // Note: We never have an infinite number of decimals because we divide by powers of 10.
+        );
 
     // 2. Convert to a string for manipulation.
     String asString = decimalBalance.toString();
@@ -57,8 +61,9 @@ class NumberFormattingService {
     return formattedInteger + decimalPart;
   }
 
-  /// Parses a user-entered formatted string amount (e.g., "1.23") into a
-  /// raw BigInt amount scaled by the chain's decimals.
+  /// Parses a user-entered formatted string amount (e.g., "1.23" or "1,23"
+  /// depends on localization) into a raw BigInt amount scaled
+  /// by the chain's decimals.
   ///
   /// Returns null if the input string is invalid.
   BigInt? parseAmount(String formattedAmount) {
@@ -67,12 +72,16 @@ class NumberFormattingService {
     }
 
     try {
-      final decimalAmount = Decimal.parse(formattedAmount);
+      final sanitizedText = formattedAmount.replaceAll(',', '.');
+
+      final decimalAmount = Decimal.parse(sanitizedText);
       // Check if input precision exceeds chain precision
       if (decimalAmount.scale > decimals) {
         // Option 1: Truncate (like toBigInt does)
         // Option 2: Throw an error - let's stick with truncation for now
-        debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
+        debugPrint(
+          'Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.',
+        );
       }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
       return rawDecimalAmount.toBigInt(); // toBigInt truncates

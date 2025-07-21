@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 
 class ResonanceWalletApp extends StatelessWidget {
   const ResonanceWalletApp({super.key});
