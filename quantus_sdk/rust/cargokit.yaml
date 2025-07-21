@@ -2,5 +2,9 @@
 cargo:
   release:
     toolchain: nightly
+    extra_flags:
+      - -Zbuild-std=std,panic_abort
   debug:
     toolchain: nightly
+    extra_flags:
+      - -Zbuild-std=std,panic_abort

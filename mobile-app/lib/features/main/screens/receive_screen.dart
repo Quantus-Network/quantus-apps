@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 
 class ReceiveSheet extends StatefulWidget {
@@ -222,9 +222,9 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           snapshot.data == null ||
                           snapshot.data!.isEmpty) {
                         debugPrint(
-                          'Error loading checksum name for $_accountId: ${snapshot.error}',
+                          'Error loading checksum name for $_accountId: '
+                          '${snapshot.error}',
                         );
-                        // In case of error, set checksum to null or an error string
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_checksum != null) {
                             // Only clear if it was set before
@@ -245,7 +245,6 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           textAlign: TextAlign.center,
                         );
                       } else {
-                        // Use addPostFrameCallback to avoid calling setState during build
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_checksum != snapshot.data) {
                             // Only update if it's different

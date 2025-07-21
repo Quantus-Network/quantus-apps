@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:flutter/services.dart';
 
 class ImportWalletScreen extends StatefulWidget {
   const ImportWalletScreen({super.key});
@@ -41,7 +41,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
+      print('discovering OG key! DEBUG.');
+      final key = HdWalletService().keyPairAtIndex(mnemonic, -1);
       await _settingsService.setMnemonic(mnemonic);
       await _settingsService.addAccount(
         Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
@@ -113,7 +114,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                 ),
                 const SizedBox(height: 13),
                 Text(
-                  'Restore an existing wallet with your 12 or 24 word recovery phrase',
+                  'Restore an existing wallet with your 12 or 24 word '
+                  'recovery phrase',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.useOpacity(0.6),
@@ -162,7 +164,8 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                             borderRadius: BorderRadius.circular(5),
                           ),
                           hintText:
-                              'Type in or paste your recovery phrase. Separate words with spaces',
+                              'Type in or paste your recovery phrase. Separate'
+                              ' words with spaces',
                           hintStyle: TextStyle(
                             color: Colors.white.useOpacity(0.5),
                             fontSize: 13,

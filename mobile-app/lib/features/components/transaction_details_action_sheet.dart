@@ -1,13 +1,13 @@
 import 'dart:ui';
 
-import 'package:dotted_border/dotted_border.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailsActionSheet extends StatelessWidget {
   final TransactionEvent transaction;
@@ -139,24 +139,19 @@ class TransactionDetailsActionSheet extends StatelessWidget {
                   Opacity(
                     opacity: 0.80,
                     child: DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        color: Colors.white.useOpacity(0.5),
-                        radius: const Radius.circular(4),
-                        dashPattern: [3, 3],
-                        strokeWidth: 2,
-                        padding: const EdgeInsets.all(6),
-                      ),
+                      color: Colors.white.useOpacity(0.5),
+                      strokeWidth: 2,
+                      dashLength: 3,
+                      gapLength: 3,
+                      borderRadius: const Radius.circular(4),
                       child: InkWell(
                         onTap: () async {
-                          // Ensure context is still valid before showing snackbar
                           if (!context.mounted) return;
 
-                          String checksum = await _checksumFuture;
-
-                          Clipboard.setData(
-                            ClipboardData(text: '$accountId\n$checksum'),
-                          );
-
+                          Clipboard.setData(ClipboardData(text: accountId));
+                          if (!context.mounted) {
+                            return;
+                          }
                           showTopSnackBar(
                             context,
                             icon: Container(
@@ -177,31 +172,33 @@ class TransactionDetailsActionSheet extends StatelessWidget {
                               ),
                             ),
                             title: 'Copied!',
-                            message:
-                                'Address and checkphrase copied to clipboard',
+                            message: 'Address copied to clipboard',
                           );
                         },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          spacing: 8,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/copy_icon.svg',
-                              width: 20,
-                              height: 20,
-                            ),
-                            const Text(
-                              'Copy Address',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            spacing: 8,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/copy_icon.svg',
+                                width: 20,
+                                height: 20,
                               ),
-                            ),
-                          ],
+                              const Text(
+                                'Copy Address',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -224,7 +221,7 @@ class TransactionDetailsActionSheet extends StatelessWidget {
         const SizedBox(height: 26),
         GestureDetector(
           onTap: () {
-            // TODO: Implement retry logic
+            // TO DO: Implement retry logic
           },
           child: Container(
             width: 130,

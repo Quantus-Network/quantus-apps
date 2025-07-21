@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class RevealOverlay extends StatelessWidget {
   final VoidCallback onReveal;
@@ -16,7 +17,8 @@ class RevealOverlay extends StatelessWidget {
           const Icon(Icons.visibility_off, color: Colors.white, size: 40),
           const SizedBox(height: 17),
           const Text(
-            'This Recovery Phrase provides access to this wallet, only reveal if you are in a secure location',
+            'This Recovery Phrase provides access to this wallet, only reveal '
+            'if you are in a secure location',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white60,
@@ -29,11 +31,11 @@ class RevealOverlay extends StatelessWidget {
           ElevatedButton(
             onPressed: onReveal,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black.withOpacity(0.25),
+              backgroundColor: Colors.black.useOpacity(0.25),
               shape: RoundedRectangleBorder(
                 side: BorderSide(
                   width: 1,
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.useOpacity(0.15),
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
