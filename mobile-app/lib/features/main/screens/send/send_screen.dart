@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/features/components/recent_address_list
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/shared/utilities/decimal_formatter.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -138,6 +139,9 @@ class SendScreenState extends State<SendScreen> {
   }
 
   void _validateAmount(String value) {
+    // Ignore single commas or dots
+    if (value == ',' || value == '.') return;
+
     // Haptic feedback on each character input
     HapticFeedback.lightImpact();
 
@@ -886,7 +890,6 @@ class SendScreenState extends State<SendScreen> {
                                     MediaQuery.of(context).size.width * 0.8,
                                 child: IntrinsicWidth(
                                   child: TextField(
-                                    maxLines: null,
                                     controller: _amountController,
                                     textAlign: TextAlign.end,
                                     style: const TextStyle(
@@ -933,11 +936,7 @@ class SendScreenState extends State<SendScreen> {
                                         const TextInputType.numberWithOptions(
                                           decimal: true,
                                         ),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(
-                                        RegExp(r'^\d*[,.]?\d*'),
-                                      ),
-                                    ],
+                                    inputFormatters: [DecimalInputFormatter()],
                                     onChanged: _validateAmount,
                                   ),
                                 ),
