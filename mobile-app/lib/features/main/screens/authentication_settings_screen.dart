@@ -49,49 +49,30 @@ class _AuthenticationSettingsScreenState
   }
 
   Future<void> _toggleAuthentication(bool value) async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      if (!value) {
-        // Disabling authentication - no need for biometric verification
-        _localAuthService.setLocalAuthEnabled(false);
-        if (mounted) {
-          setState(() {
-            _isDeviceAuthEnabled = false;
-            _isLoading = false;
-          });
+      // on enable, check if the device supports biometrics.
+      if (value) {
+        final isAvailable = await _localAuthService.isBiometricAvailable();
+        debugPrint('Biometric available: $isAvailable');
+
+        if (!isAvailable) {
+          debugPrint('Biometric authentication not available');
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          _showSnackBar(
+            'Biometric authentication is not available on this device',
+            isSuccess: false,
+          );
+          return;
         }
-        _showSnackBar('Device authentication disabled', isSuccess: true);
-        return;
       }
-
-      // Enabling authentication - require biometric verification first
-      debugPrint('Starting authentication enablement process...');
-
-      final isAvailable = await _localAuthService.isBiometricAvailable();
-      debugPrint('Biometric available: $isAvailable');
-
-      if (!isAvailable) {
-        debugPrint('Biometric authentication not available');
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-        _showSnackBar(
-          'Biometric authentication is not available on this device',
-          isSuccess: false,
-        );
-        return;
-      }
-
-      final availableBiometrics = await _localAuthService
-          .getAvailableBiometrics();
-      debugPrint('Available biometrics: $availableBiometrics');
 
       debugPrint('Attempting to authenticate...');
       final didAuthenticate = await _localAuthService.authenticate(
@@ -104,15 +85,15 @@ class _AuthenticationSettingsScreenState
       debugPrint('Authentication result: $didAuthenticate');
 
       if (didAuthenticate) {
-        _localAuthService.setLocalAuthEnabled(true);
+        _localAuthService.setLocalAuthEnabled(value);
         if (mounted) {
           setState(() {
-            _isDeviceAuthEnabled = true;
+            _isDeviceAuthEnabled = value;
             _isLoading = false;
           });
         }
         _showSnackBar(
-          'Device authentication enabled successfully',
+          'Device authentication ${value ? 'enabled' : 'disabled'} successfully',
           isSuccess: true,
         );
       } else {
@@ -123,7 +104,8 @@ class _AuthenticationSettingsScreenState
           });
         }
         _showSnackBar(
-          'Authentication failed. Device authentication not enabled.',
+          'Authentication failed. Device authentication not '
+          '${value ? 'enabled' : 'disabled'}.',
           isSuccess: false,
         );
       }
