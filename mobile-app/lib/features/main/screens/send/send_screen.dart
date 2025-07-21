@@ -881,62 +881,65 @@ class SendScreenState extends State<SendScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IntrinsicWidth(
-                                child: TextField(
-                                  controller: _amountController,
-                                  textAlign: TextAlign.end,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 40,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    enabledBorder: _hasAmountError
-                                        ? OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              5,
-                                            ),
-                                          )
-                                        : InputBorder.none,
-                                    focusedBorder: _hasAmountError
-                                        ? OutlineInputBorder(
-                                            borderSide: const BorderSide(
-                                              color: Colors.red,
-                                              width: 1.5,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              5,
-                                            ),
-                                          )
-                                        : InputBorder.none,
-                                    hintText: '0',
-                                    hintStyle: TextStyle(
-                                      color: Colors.white.useOpacity(0.5),
+                              LimitedBox(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.8,
+                                child: IntrinsicWidth(
+                                  child: TextField(
+                                    maxLines: null,
+                                    controller: _amountController,
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(
+                                      color: Colors.white,
                                       fontSize: 40,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w600,
                                     ),
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    filled: true,
-                                    fillColor: Colors.transparent,
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: _hasAmountError
+                                          ? OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.red,
+                                                width: 1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            )
+                                          : InputBorder.none,
+                                      focusedBorder: _hasAmountError
+                                          ? OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.red,
+                                                width: 1.5,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            )
+                                          : InputBorder.none,
+                                      hintText: '0',
+                                      hintStyle: TextStyle(
+                                        color: Colors.white.useOpacity(0.5),
+                                        fontSize: 40,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*[,.]?\d*'),
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                      filled: true,
+                                      fillColor: Colors.transparent,
                                     ),
-                                  ],
-                                  onChanged: _validateAmount,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d*[,.]?\d*'),
+                                      ),
+                                    ],
+                                    onChanged: _validateAmount,
+                                  ),
                                 ),
                               ),
                               const Text(
