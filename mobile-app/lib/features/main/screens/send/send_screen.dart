@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
@@ -666,489 +667,459 @@ class SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0E0E0E),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.54,
-              child: Image.asset(
-                'assets/light_leak_effect_background.jpg',
-                fit: BoxFit.cover,
+    return BaseWithBackground(
+      child: FutureBuilder<BigInt>(
+        future: _balanceFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'Error loading balance: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-          ),
-          SafeArea(
-            child: FutureBuilder<BigInt>(
-              future: _balanceFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                }
+            );
+          }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(
-                        'Error loading balance: ${snapshot.error}',
-                        style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 16,
+          if (snapshot.hasData) {
+            _maxBalance = snapshot.data!;
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                          size: 20,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasData) {
-                  _maxBalance = snapshot.data!;
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.arrow_back_ios,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Send',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
+                        SizedBox(width: 4),
+                        Text(
+                          'Send',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              final data = await Clipboard.getData(
+                                'text/plain',
+                              );
+                              if (data != null && data.text != null) {
+                                _recipientController.text = data.text!;
+                                _lookupIdentity();
+                              }
+                            },
+                            child: _buildIconButton('assets/paste_icon_1.svg'),
+                          ),
+                          const SizedBox(width: 9),
+                          GestureDetector(
+                            onTap: _scanQRCode,
+                            child: _buildIconButton('assets/scan_1.svg'),
+                          ),
+                          const SizedBox(width: 9),
+                          GestureDetector(
+                            onTap: _showRecentAddresses,
+                            child: _buildHistoryIconButton(),
+                          ),
+                        ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                GestureDetector(
-                                  onTap: () async {
-                                    final data = await Clipboard.getData(
-                                      'text/plain',
-                                    );
-                                    if (data != null && data.text != null) {
-                                      _recipientController.text = data.text!;
-                                      _lookupIdentity();
-                                    }
-                                  },
-                                  child: _buildIconButton(
-                                    'assets/paste_icon_1.svg',
-                                  ),
-                                ),
-                                const SizedBox(width: 9),
-                                GestureDetector(
-                                  onTap: _scanQRCode,
-                                  child: _buildIconButton('assets/scan_1.svg'),
-                                ),
-                                const SizedBox(width: 9),
-                                GestureDetector(
-                                  onTap: _showRecentAddresses,
-                                  child: _buildHistoryIconButton(),
-                                ),
-                              ],
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'To:',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w400,
                             ),
-                            const SizedBox(height: 8),
-                            Row(
+                          ),
+                          Container(
+                            width: 1,
+                            height: 17,
+                            color: Colors.white,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                          ),
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'To:',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 17,
-                                  color: Colors.white,
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 2,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      TextField(
-                                        controller: _recipientController,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                        decoration: InputDecoration(
-                                          border: InputBorder.none,
-                                          enabledBorder: _hasAddressError
-                                              ? const OutlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                    color: Colors.red,
-                                                    width: 1,
-                                                  ),
-                                                )
-                                              : InputBorder.none,
-                                          focusedBorder: _hasAddressError
-                                              ? const OutlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                    color: Colors.red,
-                                                    width: 1,
-                                                  ),
-                                                )
-                                              : InputBorder.none,
-                                          hintText:
-                                              '${AppConstants.tokenSymbol} '
-                                              'address',
-                                          hintStyle: TextStyle(
-                                            color: Colors.white.useOpacity(0.3),
-                                            fontSize: 14,
-                                            fontFamily: 'Fira Code',
-                                            fontWeight: FontWeight.w300,
-                                            letterSpacing: 0.5,
-                                          ),
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.zero,
-                                          filled: true,
-                                          fillColor: Colors.transparent,
-                                        ),
-                                        autocorrect: false,
-                                        enableSuggestions: false,
-                                        enableInteractiveSelection: true,
-                                        keyboardType: TextInputType.text,
-                                        textCapitalization:
-                                            TextCapitalization.none,
-                                        onChanged: (value) {
-                                          if (_debounce?.isActive ?? false) {
-                                            _debounce?.cancel();
-                                          }
-                                          _debounce = Timer(
-                                            const Duration(milliseconds: 300),
-                                            () {
-                                              _lookupIdentity();
-                                            },
-                                          );
-                                        },
-                                      ),
-                                      if (_savedAddressesLabel.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 4.0,
-                                          ),
-                                          child: Text(
-                                            _savedAddressesLabel,
-                                            style: const TextStyle(
-                                              color: Color(0xFF16CECE),
-                                              fontSize: 12,
-                                              fontFamily: 'Fira Code',
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              LimitedBox(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.8,
-                                child: IntrinsicWidth(
-                                  child: TextField(
-                                    controller: _amountController,
-                                    textAlign: TextAlign.end,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 40,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      enabledBorder: _hasAmountError
-                                          ? OutlineInputBorder(
-                                              borderSide: const BorderSide(
-                                                color: Colors.red,
-                                                width: 1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            )
-                                          : InputBorder.none,
-                                      focusedBorder: _hasAmountError
-                                          ? OutlineInputBorder(
-                                              borderSide: const BorderSide(
-                                                color: Colors.red,
-                                                width: 1.5,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            )
-                                          : InputBorder.none,
-                                      hintText: '0',
-                                      hintStyle: TextStyle(
-                                        color: Colors.white.useOpacity(0.5),
-                                        fontSize: 40,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                      filled: true,
-                                      fillColor: Colors.transparent,
-                                    ),
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                          decimal: true,
-                                        ),
-                                    inputFormatters: [DecimalInputFormatter()],
-                                    onChanged: _validateAmount,
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ' ${AppConstants.tokenSymbol}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 19,
-                                  fontFamily: 'Fira Code',
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Available: '
-                              // ignore: lines_longer_than_80_chars
-                              '${_formattingService.formatBalance(_maxBalance)}',
-                              style: const TextStyle(
-                                color: Color(0xFF16CECE),
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: ShapeDecoration(
-                                color: Colors.white.useOpacity(0.15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              child: GestureDetector(
-                                onTap: _setMaxAmount,
-                                child: const Text(
-                                  'Max',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GestureDetector(
-                          onTap: _showTimePickerModal,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            decoration: ShapeDecoration(
-                              color: const Color(0xFF313131),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Reversible for: ${_formatReversibleTime()}',
+                                TextField(
+                                  controller: _recipientController,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontFamily: 'Fira Code',
                                     fontWeight: FontWeight.w400,
                                   ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: _hasAddressError
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.red,
+                                              width: 1,
+                                            ),
+                                          )
+                                        : InputBorder.none,
+                                    focusedBorder: _hasAddressError
+                                        ? const OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.red,
+                                              width: 1,
+                                            ),
+                                          )
+                                        : InputBorder.none,
+                                    hintText:
+                                        '${AppConstants.tokenSymbol} '
+                                        'address',
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.useOpacity(0.3),
+                                      fontSize: 14,
+                                      fontFamily: 'Fira Code',
+                                      fontWeight: FontWeight.w300,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    filled: true,
+                                    fillColor: Colors.transparent,
+                                  ),
+                                  autocorrect: false,
+                                  enableSuggestions: false,
+                                  enableInteractiveSelection: true,
+                                  keyboardType: TextInputType.text,
+                                  textCapitalization: TextCapitalization.none,
+                                  onChanged: (value) {
+                                    if (_debounce?.isActive ?? false) {
+                                      _debounce?.cancel();
+                                    }
+                                    _debounce = Timer(
+                                      const Duration(milliseconds: 300),
+                                      () {
+                                        _lookupIdentity();
+                                      },
+                                    );
+                                  },
                                 ),
-                                const Icon(
-                                  Icons.edit,
-                                  color: Colors.white70,
-                                  size: 14,
-                                ),
+                                if (_savedAddressesLabel.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      _savedAddressesLabel,
+                                      style: const TextStyle(
+                                        color: Color(0xFF16CECE),
+                                        fontSize: 12,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
                               ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LimitedBox(
+                          maxWidth: MediaQuery.of(context).size.width * 0.8,
+                          child: IntrinsicWidth(
+                            child: TextField(
+                              controller: _amountController,
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 40,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                enabledBorder: _hasAmountError
+                                    ? OutlineInputBorder(
+                                        borderSide: const BorderSide(
+                                          color: Colors.red,
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      )
+                                    : InputBorder.none,
+                                focusedBorder: _hasAmountError
+                                    ? OutlineInputBorder(
+                                        borderSide: const BorderSide(
+                                          color: Colors.red,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(5),
+                                      )
+                                    : InputBorder.none,
+                                hintText: '0',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.useOpacity(0.5),
+                                  fontSize: 40,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                filled: true,
+                                fillColor: Colors.transparent,
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              inputFormatters: [DecimalInputFormatter()],
+                              onChanged: _validateAmount,
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          ' ${AppConstants.tokenSymbol}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Available: '
+                        // ignore: lines_longer_than_80_chars
+                        '${_formattingService.formatBalance(_maxBalance)}',
+                        style: const TextStyle(
+                          color: Color(0xFF16CECE),
+                          fontSize: 14,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: Colors.white.useOpacity(0.15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        child: GestureDetector(
+                          onTap: _setMaxAmount,
+                          child: const Text(
+                            'Max',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Network fee',
-                                  style: TextStyle(
-                                    color: Colors.white.useOpacity(0.6),
-                                    fontSize: 12,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      // ignore: lines_longer_than_80_chars
-                                      '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    if (_isFetchingFee)
-                                      const Padding(
-                                        padding: EdgeInsets.only(left: 8.0),
-                                        child: SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            _buildIconButton('assets/settings_icon.svg'),
-                          ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GestureDetector(
+                    onTap: _showTimePickerModal,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFF313131),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: GestureDetector(
-                          onTap:
-                              (_hasAddressError ||
-                                  _hasAmountError ||
-                                  _recipientController.text.isEmpty ||
-                                  _amount <= BigInt.zero ||
-                                  _isFetchingFee)
-                              ? null
-                              : _showSendConfirmation,
-                          child: Opacity(
-                            opacity:
-                                (_hasAddressError ||
-                                    _hasAmountError ||
-                                    _recipientController.text.isEmpty ||
-                                    _amount <= BigInt.zero ||
-                                    _isFetchingFee)
-                                ? 0.3
-                                : 1.0,
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: ShapeDecoration(
-                                color: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                              ),
-                              child: Text(
-                                (_hasAddressError ||
-                                        _recipientController.text.isEmpty)
-                                    ? 'Enter Address'
-                                    : (_amount <= BigInt.zero)
-                                    ? 'Enter Amount'
-                                    : _hasAmountError
-                                    ? 'Insufficient Balance'
-                                    // ignore: lines_longer_than_80_chars
-                                    : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
-                                textAlign: TextAlign.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Reversible for: ${_formatReversibleTime()}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.edit,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Network fee',
+                            style: TextStyle(
+                              color: Colors.white.useOpacity(0.6),
+                              fontSize: 12,
+                              fontFamily: 'Fira Code',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                // ignore: lines_longer_than_80_chars
+                                '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
                                 style: const TextStyle(
-                                  color: Color(0xFF0E0E0E),
-                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontSize: 12,
                                   fontFamily: 'Fira Code',
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
+                              if (_isFetchingFee)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 8.0),
+                                  child: SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      _buildIconButton('assets/settings_icon.svg'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GestureDetector(
+                    onTap:
+                        (_hasAddressError ||
+                            _hasAmountError ||
+                            _recipientController.text.isEmpty ||
+                            _amount <= BigInt.zero ||
+                            _isFetchingFee)
+                        ? null
+                        : _showSendConfirmation,
+                    child: Opacity(
+                      opacity:
+                          (_hasAddressError ||
+                              _hasAmountError ||
+                              _recipientController.text.isEmpty ||
+                              _amount <= BigInt.zero ||
+                              _isFetchingFee)
+                          ? 0.3
+                          : 1.0,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: Text(
+                          (_hasAddressError ||
+                                  _recipientController.text.isEmpty)
+                              ? 'Enter Address'
+                              : (_amount <= BigInt.zero)
+                              ? 'Enter Amount'
+                              : _hasAmountError
+                              ? 'Insufficient Balance'
+                              // ignore: lines_longer_than_80_chars
+                              : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF0E0E0E),
+                            fontSize: 18,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  );
-                }
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            );
+          }
 
-                return const SizedBox();
-              },
-            ),
-          ),
-        ],
+          return const SizedBox();
+        },
       ),
     );
   }
