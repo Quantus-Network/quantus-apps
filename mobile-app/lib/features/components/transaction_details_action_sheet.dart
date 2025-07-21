@@ -175,27 +175,30 @@ class TransactionDetailsActionSheet extends StatelessWidget {
                             message: 'Address copied to clipboard',
                           );
                         },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          spacing: 8,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/copy_icon.svg',
-                              width: 20,
-                              height: 20,
-                            ),
-                            const Text(
-                              'Copy Address',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            spacing: 8,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/copy_icon.svg',
+                                width: 20,
+                                height: 20,
                               ),
-                            ),
-                          ],
+                              const Text(
+                                'Copy Address',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
