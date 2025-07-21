@@ -138,6 +138,9 @@ class SendScreenState extends State<SendScreen> {
   }
 
   void _validateAmount(String value) {
+    // Haptic feedback on each character input
+    HapticFeedback.lightImpact();
+
     if (value.isEmpty) {
       setState(() {
         _amount = BigInt.zero;
