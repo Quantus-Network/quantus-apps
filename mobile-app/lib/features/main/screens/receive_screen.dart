@@ -117,7 +117,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SvgPicture.asset(
-                  'assets/receive_icon.svg',
+                  'assets/receive_icon_1.svg',
                   width: 37,
                   height: 37,
                 ),

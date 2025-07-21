@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
+import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send_screen.dart';
 
 class ResonanceWalletApp extends StatelessWidget {
@@ -12,7 +12,7 @@ class ResonanceWalletApp extends StatelessWidget {
       title: 'Quantus Wallet',
       initialRoute: '/',
       routes: {
-        '/': (context) => const WalletInitializer(),
+        '/': (context) => const AuthenticationWrapper(),
         '/send': (context) => const SendScreen(),
       },
       theme: ThemeData(

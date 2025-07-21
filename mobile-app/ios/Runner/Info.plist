@@ -34,6 +34,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>We need camera access to scan QR codes for sending funds.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to authenticate and securely access your wallet.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

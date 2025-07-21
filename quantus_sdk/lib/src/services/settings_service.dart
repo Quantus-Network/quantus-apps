@@ -17,6 +17,10 @@ class SettingsService {
   static const String _accountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
 
+  // Local authentication keys
+  static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
+  static const String _lastSuccessfulAuthKey = 'last_successful_auth';
+
   Future<void> initialize() async {
     if (!_initialized) {
       _prefs = await SharedPreferences.getInstance();
@@ -164,6 +168,43 @@ class SettingsService {
 
   Future<int?> getReversibleTimeSeconds() async {
     return _prefs.getInt('reversible_time_seconds');
+  }
+
+  // --- Primitive Accessors for General Use ---
+
+  /// Get a boolean value from SharedPreferences
+  Future<bool?> getBool(String key) async {
+    return _prefs.getBool(key);
+  }
+
+  /// Set a boolean value in SharedPreferences
+  Future<void> setBool(String key, bool value) async {
+    await _prefs.setBool(key, value);
+  }
+
+  /// Get a string value from SharedPreferences
+  Future<String?> getString(String key) async {
+    return _prefs.getString(key);
+  }
+
+  DateTime? getLastSuccessfulAuthTime() {
+    final String? lastAuthString = _prefs.getString(_lastSuccessfulAuthKey);
+    if (lastAuthString == null) return null;
+
+    final DateTime lastAuth = DateTime.parse(lastAuthString);
+    return lastAuth;
+  }
+
+  void setLastSuccessfulAuthTime(DateTime time) {
+    _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
+  }
+
+  void setAuthEnabled(bool enabled) {
+    _prefs.setBool(_isLocalAuthEnabledKey, enabled);
+  }
+
+  bool isAuthEnabled() {
+    return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
   }
 
   // Clear all settings

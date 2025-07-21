@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class AuthenticationSettingsScreen extends StatefulWidget {
   const AuthenticationSettingsScreen({super.key});
@@ -11,7 +12,126 @@ class AuthenticationSettingsScreen extends StatefulWidget {
 
 class _AuthenticationSettingsScreenState
     extends State<AuthenticationSettingsScreen> {
+  final LocalAuthService _localAuthService = LocalAuthService();
   bool _isDeviceAuthEnabled = false;
+  bool _isLoading = true;
+  String _biometricDescription = 'Device Authentication';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuthenticationSettings();
+  }
+
+  Future<void> _loadAuthenticationSettings() async {
+    try {
+      final isEnabled = _localAuthService.isLocalAuthEnabled();
+      final isAvailable = await _localAuthService.isBiometricAvailable();
+      final description = await _localAuthService.getBiometricDescription();
+
+      if (mounted) {
+        setState(() {
+          _isDeviceAuthEnabled = isEnabled;
+          _biometricDescription = isAvailable
+              ? description
+              : 'Biometric authentication not available';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading authentication settings: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleAuthentication(bool value) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // on enable, check if the device supports biometrics.
+      if (value) {
+        final isAvailable = await _localAuthService.isBiometricAvailable();
+        debugPrint('Biometric available: $isAvailable');
+
+        if (!isAvailable) {
+          debugPrint('Biometric authentication not available');
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          _showSnackBar(
+            'Biometric authentication is not available on this device',
+            isSuccess: false,
+          );
+          return;
+        }
+      }
+
+      debugPrint('Attempting to authenticate...');
+      final didAuthenticate = await _localAuthService.authenticate(
+        localizedReason:
+            'Authenticate to enable device authentication for your wallet',
+        biometricOnly: false, // Allow fallback to device PIN if needed
+        forSetup: true, // This is a setup flow, so bypass the enabled check
+      );
+
+      debugPrint('Authentication result: $didAuthenticate');
+
+      if (didAuthenticate) {
+        _localAuthService.setLocalAuthEnabled(value);
+        if (mounted) {
+          setState(() {
+            _isDeviceAuthEnabled = value;
+            _isLoading = false;
+          });
+        }
+        _showSnackBar(
+          'Device authentication ${value ? 'enabled' : 'disabled'} '
+          'successfully',
+          isSuccess: true,
+        );
+      } else {
+        debugPrint('Authentication failed or was cancelled');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        _showSnackBar(
+          'Authentication failed. Device authentication not '
+          '${value ? 'enabled' : 'disabled'}.',
+          isSuccess: false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error in authentication toggle: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      _showSnackBar('Failed to toggle authentication: $e', isSuccess: false);
+    }
+  }
+
+  void _showSnackBar(String message, {required bool isSuccess}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,44 +164,53 @@ class _AuthenticationSettingsScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Authentication',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w400,
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Authentication',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Use Device Authentication',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                              fontFamily: 'Fira Code',
-                              fontWeight: FontWeight.w400,
+                            const SizedBox(height: 4),
+                            Text(
+                              _isLoading ? 'Loading...' : _biometricDescription,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                                fontFamily: 'Fira Code',
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      Switch(
-                        value: _isDeviceAuthEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            _isDeviceAuthEnabled = value;
-                          });
-                        },
-                        activeTrackColor: const Color(0xFF16CECE),
-                        inactiveTrackColor: const Color(0xFFD9D9D9),
-                        activeColor: Colors.white,
-                        inactiveThumbColor: Colors.white,
-                      ),
+                      _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF16CECE),
+                                ),
+                              ),
+                            )
+                          : Switch(
+                              value: _isDeviceAuthEnabled,
+                              onChanged: _toggleAuthentication,
+                              activeTrackColor: const Color(0xFF16CECE),
+                              inactiveTrackColor: const Color(0xFFD9D9D9),
+                              activeColor: Colors.white,
+                              inactiveThumbColor: Colors.white,
+                            ),
                     ],
                   ),
                 ),
