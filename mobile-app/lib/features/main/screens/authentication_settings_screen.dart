@@ -93,7 +93,8 @@ class _AuthenticationSettingsScreenState
           });
         }
         _showSnackBar(
-          'Device authentication ${value ? 'enabled' : 'disabled'} successfully',
+          'Device authentication ${value ? 'enabled' : 'disabled'} '
+          'successfully',
           isSuccess: true,
         );
       } else {

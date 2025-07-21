@@ -67,7 +67,8 @@ class LocalAuthService {
       final bool isAvailable = await isBiometricAvailable();
       if (!isAvailable) {
         debugPrint('Biometric authentication is not available');
-        // don't authenticate if auth is enabled but someone ripped out the FaceID cam or whatever?
+        // don't authenticate if auth is enabled but someone ripped out the
+        //FaceID cam or whatever?
         // On a device that doesn't have biometrics, you also can't turn it on.
         // Both auth cases should return false in this case.
         return false;
