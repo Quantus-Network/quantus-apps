@@ -262,7 +262,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         SizedBox(
           width: 325,
           child: Text(
-            'A unique phrase which allows you to easily recognise and verify your wallet.',
+            'A unique phrase which allows you to easily recognise and '
+            'verify your wallet.',
             style: TextStyle(
               color: Colors.white.useOpacity(0.60),
               fontSize: 14,

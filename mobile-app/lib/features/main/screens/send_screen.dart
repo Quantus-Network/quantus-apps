@@ -1,14 +1,15 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
-import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'dart:async';
 import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
+import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/main/screens/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send_progress_overlay.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -304,9 +305,12 @@ class SendScreenState extends State<SendScreen> {
     final minutes = _reversibleTimeMinutes;
 
     if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, $hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+      return '$days day${days > 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}, '
+          '$minutes min${minutes != 1 ? 's' : ''}';
     } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, $minutes min${minutes != 1 ? 's' : ''}';
+      return '$hours hr${hours != 1 ? 's' : ''}, '
+          '$minutes min${minutes != 1 ? 's' : ''}';
     } else {
       return '$minutes min${minutes != 1 ? 's' : ''}';
     }
@@ -813,7 +817,8 @@ class SendScreenState extends State<SendScreen> {
                                                 )
                                               : InputBorder.none,
                                           hintText:
-                                              '${AppConstants.tokenSymbol} address',
+                                              '${AppConstants.tokenSymbol} '
+                                              'address',
                                           hintStyle: TextStyle(
                                             color: Colors.white.useOpacity(0.3),
                                             fontSize: 14,
@@ -950,7 +955,9 @@ class SendScreenState extends State<SendScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Available: ${_formattingService.formatBalance(_maxBalance)}',
+                              'Available: '
+                              // ignore: lines_longer_than_80_chars
+                              '${_formattingService.formatBalance(_maxBalance)}',
                               style: const TextStyle(
                                 color: Color(0xFF16CECE),
                                 fontSize: 14,
@@ -1046,6 +1053,7 @@ class SendScreenState extends State<SendScreen> {
                                 Row(
                                   children: [
                                     Text(
+                                      // ignore: lines_longer_than_80_chars
                                       '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -1112,6 +1120,7 @@ class SendScreenState extends State<SendScreen> {
                                     ? 'Enter Amount'
                                     : _hasAmountError
                                     ? 'Insufficient Balance'
+                                    // ignore: lines_longer_than_80_chars
                                     : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(

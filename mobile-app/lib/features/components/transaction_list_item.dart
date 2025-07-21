@@ -91,8 +91,10 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 
   String _getSubtitle(TransactionEvent transaction) {
+    String address = isSent ? widget.transaction.to : widget.transaction.from;
     String prefix =
-        '${isSent ? 'to' : 'from'} ${_formatAddress(isSent ? widget.transaction.to : widget.transaction.from)}';
+        '${isSent ? 'to' : 'from'} '
+        '${_formatAddress(address)}';
     if (isReversibleScheduled) {
       return prefix;
     }
@@ -209,6 +211,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                             ),
                             TextSpan(
                               text:
+                                  // ignore: lines_longer_than_80_chars
                                   ' ${_formatAmount(widget.transaction.amount)}',
                               style: textStyle.copyWith(
                                 fontSize: 14,
