@@ -153,7 +153,7 @@ class _NotificationGroupState extends State<NotificationGroup>
     final notificationCount = widget.notifications.length;
 
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 20,
+      top: MediaQuery.of(context).padding.top + 100,
       left: 16,
       right: 16,
       child: GestureDetector(
@@ -189,34 +189,69 @@ class _NotificationGroupState extends State<NotificationGroup>
                       child: Column(
                         spacing: 24,
                         children: [
-                          NotificationCard(
-                            notification: topNotification,
-                            onDismiss: () =>
-                                widget.onDismissSingle(topNotification.id),
-                            isTopNotification: true,
+                          Stack(
+                            children: [
+                              NotificationCard(
+                                notification: topNotification,
+                                onDismiss: () =>
+                                    widget.onDismissSingle(topNotification.id),
+                                isTopNotification: true,
+                              ),
+
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: AnimatedOpacity(
+                                  opacity:
+                                      !_isExpanded &&
+                                          widget.notifications.length > 1
+                                      ? 1.0
+                                      : 0.0,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                    child: Text(
+                                      '${widget.notifications.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
 
                           // Expanded list
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             height: _isExpanded
-                                ? (widget.notifications.length - 1) * 70.0
+                                ? MediaQuery.of(context).size.height - 380
                                 : 0,
-                            child: ClipRect(
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  spacing: 24,
-                                  children: widget.notifications.reversed
-                                      .skip(1)
-                                      .map(
-                                        (notification) => NotificationCard(
-                                          notification: notification,
-                                          onDismiss: () => widget
-                                              .onDismissSingle(notification.id),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                spacing: 24,
+                                children: widget.notifications.reversed
+                                    .skip(1)
+                                    .map(
+                                      (notification) => NotificationCard(
+                                        notification: notification,
+                                        onDismiss: () => widget.onDismissSingle(
+                                          notification.id,
                                         ),
-                                      )
-                                      .toList(),
-                                ),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           ),

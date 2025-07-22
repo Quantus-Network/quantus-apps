@@ -31,61 +31,82 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
 
     return BaseWithBackground(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                NotificationService.showNotification(
-                  title: 'Success!',
-                  message: 'Your action was completed successfully.',
-                  backgroundColor: Colors.green,
-                  icon: Icons.check_circle,
-                );
-              },
-              child: const Text('Show Success Notification'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                NotificationService.showNotification(
-                  title: 'Warning!',
-                  message: 'Please check your internet connection.',
-                  backgroundColor: Colors.orange,
-                  icon: Icons.warning,
-                );
-              },
-              child: const Text('Show Warning Notification'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                NotificationService.showNotification(
-                  title: 'Error!',
-                  message: 'Something went wrong. Please try again.',
-                  backgroundColor: Colors.red,
-                  icon: Icons.error,
-                );
-              },
-              child: const Text('Show Error Notification'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Add multiple notifications quickly
-                for (int i = 1; i <= 3; i++) {
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Notifications',
+                style: TextStyle(
+                  color: const Color(0xFFE6E6E6),
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
                   NotificationService.showNotification(
-                    title: 'Notification $i',
-                    message: 'This is notification number $i',
-                    backgroundColor: Colors.blue,
-                    icon: Icons.info,
+                    accountName:
+                        widget.manager.walletData.data?.account.name ??
+                        'Unknown',
+                    title: 'Success!',
+                    message: 'Your action was completed successfully.',
+                    type: NotificationType.success,
                   );
-                }
-              },
-              child: const Text('Add Multiple Notifications'),
-            ),
-          ],
+                },
+                child: const Text('Show Success Notification'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  NotificationService.showNotification(
+                    accountName:
+                        widget.manager.walletData.data?.account.name ??
+                        'Unknown',
+                    title: 'Warning!',
+                    message: 'Please check your internet connection.',
+                    type: NotificationType.warning,
+                  );
+                },
+                child: const Text('Show Warning Notification'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  NotificationService.showNotification(
+                    accountName:
+                        widget.manager.walletData.data?.account.name ??
+                        'Unknown',
+                    title: 'Error!',
+                    message: 'Something went wrong. Please try again.',
+                    type: NotificationType.error,
+                  );
+                },
+                child: const Text('Show Error Notification'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Add multiple notifications quickly
+                  for (int i = 1; i <= 3; i++) {
+                    NotificationService.showNotification(
+                      accountName:
+                          widget.manager.walletData.data?.account.name ??
+                          'Unknown',
+                      title: 'Notification $i',
+                      message: 'This is notification number $i',
+                    );
+                  }
+                },
+                child: const Text('Add Multiple Notifications'),
+              ),
+            ],
+          ),
         ),
       ),
     );
