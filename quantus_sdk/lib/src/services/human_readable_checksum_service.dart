@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:human_checksum/human_checksum.dart';
 
 class HumanReadableChecksumService {
-  static final HumanReadableChecksumService _instance = HumanReadableChecksumService._internal();
+  static final HumanReadableChecksumService _instance =
+      HumanReadableChecksumService._internal();
   factory HumanReadableChecksumService() => _instance;
   HumanReadableChecksumService._internal();
 
@@ -16,11 +17,14 @@ class HumanReadableChecksumService {
   Completer<void>? _isolateReadyCompleter;
 
   Future<void> initialize() async {
-    if (_cachedWordList != null && _isolateSendPort != null && (_isolateReadyCompleter?.isCompleted ?? false)) {
+    if (_cachedWordList != null &&
+        _isolateSendPort != null &&
+        (_isolateReadyCompleter?.isCompleted ?? false)) {
       return;
     }
 
-    if (_isolateReadyCompleter != null && !_isolateReadyCompleter!.isCompleted) {
+    if (_isolateReadyCompleter != null &&
+        !_isolateReadyCompleter!.isCompleted) {
       await _isolateReadyCompleter!.future;
       return;
     }
@@ -29,18 +33,28 @@ class HumanReadableChecksumService {
 
     try {
       if (_cachedWordList == null) {
-        final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
-        _cachedWordList = wordList.split('\n').where((word) => word.isNotEmpty).toList();
+        final wordList = await rootBundle.loadString(
+          'assets/text/crypto_checksum_bip39.txt',
+        );
+        _cachedWordList = wordList
+            .split('\n')
+            .where((word) => word.isNotEmpty)
+            .toList();
 
         if (_cachedWordList!.length != 2048) {
-          _isolateReadyCompleter!.completeError(Exception('Word list must contain exactly 2048 words'));
+          _isolateReadyCompleter!.completeError(
+            Exception('Word list must contain exactly 2048 words'),
+          );
           throw Exception('Word list must contain exactly 2048 words');
         }
       }
 
       if (_isolateSendPort == null) {
         final receivePort = ReceivePort();
-        _isolate = await Isolate.spawn(_isolateEntry, [receivePort.sendPort, _cachedWordList!]);
+        _isolate = await Isolate.spawn(_isolateEntry, [
+          receivePort.sendPort,
+          _cachedWordList!,
+        ]);
         _isolateSendPort = await receivePort.first as SendPort;
       }
 
@@ -59,7 +73,10 @@ class HumanReadableChecksumService {
     }
   }
 
-  Future<String> getHumanReadableName(String address, {upperCase = true}) async {
+  Future<String> getHumanReadableName(
+    String address, {
+    upperCase = true,
+  }) async {
     try {
       final key = address + (upperCase ? '#U' : '');
       if (_checkPhraseCache.containsKey(key)) {
@@ -71,7 +88,9 @@ class HumanReadableChecksumService {
       }
 
       if (_isolateSendPort == null) {
-        debugPrint('Error: _isolateSendPort is null after successful initialization wait.');
+        debugPrint(
+          'Error: _isolateSendPort is null after successful initialization wait.',
+        );
         return '';
       }
 
@@ -107,7 +126,9 @@ class HumanReadableChecksumService {
     _cachedWordList = null;
     _checkPhraseCache.clear();
     if (!(_isolateReadyCompleter?.isCompleted ?? false)) {
-      _isolateReadyCompleter?.completeError('HumanReadableChecksumService disposed');
+      _isolateReadyCompleter?.completeError(
+        'HumanReadableChecksumService disposed',
+      );
     }
     _isolateReadyCompleter = null;
     debugPrint('HumanReadableChecksumService disposed.');

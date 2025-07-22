@@ -11,7 +11,11 @@ class TransferList {
   final bool hasMore;
   final int nextOffset;
 
-  TransferList({required this.transfers, required this.hasMore, required this.nextOffset});
+  TransferList({
+    required this.transfers,
+    required this.hasMore,
+    required this.nextOffset,
+  });
 }
 
 class TransferResult {
@@ -19,7 +23,11 @@ class TransferResult {
   final bool hasMore;
   final int nextOffset;
 
-  TransferResult({required this.combinedTransfers, required this.hasMore, required this.nextOffset});
+  TransferResult({
+    required this.combinedTransfers,
+    required this.hasMore,
+    required this.nextOffset,
+  });
 }
 
 class ChainHistoryService {
@@ -155,12 +163,21 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     int offset = 0,
   }) async {
     final scheduled = await fetchScheduledTransfers(accountId: accountId);
-    final other = await _fetchOtherTransfers(accountId: accountId, limit: limit, offset: offset);
+    final other = await _fetchOtherTransfers(
+      accountId: accountId,
+      limit: limit,
+      offset: offset,
+    );
 
-    return SortedTransactionsList(reversibleTransfers: scheduled, otherTransfers: other.transfers);
+    return SortedTransactionsList(
+      reversibleTransfers: scheduled,
+      otherTransfers: other.transfers,
+    );
   }
 
-  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({required String accountId}) async {
+  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
+    required String accountId,
+  }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _scheduledTransfersQuery,
@@ -175,7 +192,9 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -188,7 +207,12 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
         return [];
       }
 
-      final result = events.map((event) => ReversibleTransferEvent.fromJson(event['reversibleTransfer'])).toList();
+      final result = events
+          .map(
+            (event) =>
+                ReversibleTransferEvent.fromJson(event['reversibleTransfer']),
+          )
+          .toList();
 
       for (var transfer in result) {
         print('Transfer: ${transfer.scheduledAt} ${transfer.status}');
@@ -202,14 +226,24 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   }
 
   // Method to fetch transfers using http
-  Future<TransferList> _fetchOtherTransfers({required String accountId, int limit = 10, int offset = 0}) async {
+  Future<TransferList> _fetchOtherTransfers({
+    required String accountId,
+    int limit = 10,
+    int offset = 0,
+  }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-    print('fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)');
+    print(
+      'fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)',
+    );
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _eventsQuery,
-      'variables': <String, dynamic>{'account': accountId, 'limit': limit, 'offset': offset},
+      'variables': <String, dynamic>{
+        'account': accountId,
+        'limit': limit,
+        'offset': offset,
+      },
     };
 
     try {
@@ -220,7 +254,9 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -250,16 +286,23 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
           transferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(TransferEvent.fromJson(transferData));
         } else if (event['reversibleTransfer'] != null) {
-          final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
+          final reversibleTransferData =
+              event['reversibleTransfer'] as Map<String, dynamic>;
           reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
-          transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
+          transactions.add(
+            ReversibleTransferEvent.fromJson(reversibleTransferData),
+          );
         }
       }
 
       final bool hasMore = events.length == limit;
       final int nextOffset = offset + events.length;
 
-      return TransferList(transfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
+      return TransferList(
+        transfers: transactions,
+        hasMore: hasMore,
+        nextOffset: nextOffset,
+      );
     } catch (e, stackTrace) {
       print('Error fetching transfers: $e');
       print(stackTrace);

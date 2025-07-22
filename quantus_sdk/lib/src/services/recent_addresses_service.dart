@@ -4,7 +4,8 @@ class RecentAddressesService {
   static const String _storageKey = 'recent_addresses';
   static const int _maxSize = 100;
 
-  static final RecentAddressesService _instance = RecentAddressesService._internal();
+  static final RecentAddressesService _instance =
+      RecentAddressesService._internal();
 
   factory RecentAddressesService() {
     return _instance;

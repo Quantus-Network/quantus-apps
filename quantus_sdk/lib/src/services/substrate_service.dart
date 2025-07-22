@@ -8,7 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
@@ -22,9 +23,18 @@ class DilithiumWalletInfo {
   final String accountId;
   final String? mnemonic;
   final String walletName;
-  DilithiumWalletInfo({required this.keypair, required this.accountId, this.mnemonic, required this.walletName});
+  DilithiumWalletInfo({
+    required this.keypair,
+    required this.accountId,
+    this.mnemonic,
+    required this.walletName,
+  });
 
-  factory DilithiumWalletInfo.fromKeyPair(crypto.Keypair keypair, {required String walletName, String? mnemonic}) {
+  factory DilithiumWalletInfo.fromKeyPair(
+    crypto.Keypair keypair, {
+    required String walletName,
+    String? mnemonic,
+  }) {
     return DilithiumWalletInfo(
       keypair: keypair,
       accountId: keypair.ss58Address,
@@ -66,10 +76,12 @@ class SubstrateService {
   final SettingsService _settingsService = SettingsService();
 
   // Add StreamController for connection status
-  final _connectionStatusController = StreamController<ConnectionStatus>.broadcast();
+  final _connectionStatusController =
+      StreamController<ConnectionStatus>.broadcast();
 
   // Expose the stream
-  Stream<ConnectionStatus> get connectionStatus => _connectionStatusController.stream;
+  Stream<ConnectionStatus> get connectionStatus =>
+      _connectionStatusController.stream;
 
   Future<void> initialize() async {
     // Only create the provider if it hasn't been created yet
@@ -119,20 +131,30 @@ class SubstrateService {
       _connectionStatusController.add(ConnectionStatus.connected);
       print('New provider connected successfully during reconnect.');
     } catch (e) {
-      _connectionStatusController.add(ConnectionStatus.disconnected); // Or error
+      _connectionStatusController.add(
+        ConnectionStatus.disconnected,
+      ); // Or error
       print('Failed to recreate/reconnect provider: $e');
       if (e is TimeoutException) {
-        throw Exception('Failed to reconnect to the network: Connection timed out.');
+        throw Exception(
+          'Failed to reconnect to the network: Connection timed out.',
+        );
       } else {
         throw Exception('Failed to reconnect to the network: $e');
       }
     }
   }
 
-  Future<BigInt> getFee(String senderAddress, String recipientAddress, BigInt amount) async {
+  Future<BigInt> getFee(
+    String senderAddress,
+    String recipientAddress,
+    BigInt amount,
+  ) async {
     try {
       final resonanceApi = Resonance(_provider!);
-      final multiDest = const multi_address.$MultiAddress().id(getAccountId32(recipientAddress));
+      final multiDest = const multi_address.$MultiAddress().id(
+        getAccountId32(recipientAddress),
+      );
 
       // Retrieve sender's mnemonic and generate keypair
       // Assuming senderAddress corresponds to the current wallet's account ID
@@ -146,16 +168,26 @@ class SubstrateService {
       final block = await _provider!.send('chain_getBlock', []);
       final blockNumber = int.parse(block.result['block']['header']['number']);
 
-      final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-      final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+      final blockHash = (await _provider!.send(
+        'chain_getBlockHash',
+        [],
+      )).result.replaceAll('0x', '');
+      final genesisHash = (await _provider!.send('chain_getBlockHash', [
+        0,
+      ])).result.replaceAll('0x', '');
 
       // Get the next nonce for the sender
-      final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+      final nonceResult = await _provider!.send('system_accountNextIndex', [
+        senderWallet.ss58Address,
+      ]);
       print('nonceResult: ${nonceResult.result} ${senderWallet.ss58Address}');
       final nonce = int.parse(nonceResult.result.toString());
 
       // Create the call for fee estimation
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(
+        dest: multiDest,
+        value: amount,
+      );
       final transferCall = runtimeCall.encode();
 
       // Create and sign a dummy payload for fee estimation
@@ -172,20 +204,32 @@ class SubstrateService {
       );
 
       final payload = payloadToSign.encode(resonanceApi.registry);
-      final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+      final signature = crypto.signMessage(
+        keypair: senderWallet,
+        message: payload,
+      );
 
       // Construct the signed extrinsic payload (Resonance specific)
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey); // Reuse helper
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
+        signature,
+        senderWallet.publicKey,
+      ); // Reuse helper
 
-      final signedExtrinsic = ResonanceExtrinsicPayload(
-        signer: Uint8List.fromList(senderWallet.addressBytes), // Use signer address bytes
-        method: transferCall, // The encoded call method
-        signature: signatureWithPublicKeyBytes, // The signature
-        eraPeriod: 64, // Must match SigningPayload
-        blockNumber: blockNumber, // Must match SigningPayload
-        nonce: nonce, // Must match SigningPayload
-        tip: 0, // Must match SigningPayload
-      ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+      final signedExtrinsic =
+          ResonanceExtrinsicPayload(
+            signer: Uint8List.fromList(
+              senderWallet.addressBytes,
+            ), // Use signer address bytes
+            method: transferCall, // The encoded call method
+            signature: signatureWithPublicKeyBytes, // The signature
+            eraPeriod: 64, // Must match SigningPayload
+            blockNumber: blockNumber, // Must match SigningPayload
+            nonce: nonce, // Must match SigningPayload
+            tip: 0, // Must match SigningPayload
+          ).encodeResonance(
+            resonanceApi.registry,
+            ResonanceSignatureType.resonance,
+          );
 
       // Convert encoded signed extrinsic to hex string
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
@@ -207,7 +251,9 @@ class SubstrateService {
       return partialFee;
     } catch (e, s) {
       // If a network error occurs here, update the connection status
-      if (e.toString().contains('WebSocketChannelException') || e is SocketException || e is TimeoutException) {
+      if (e.toString().contains('WebSocketChannelException') ||
+          e is SocketException ||
+          e is TimeoutException) {
         _connectionStatusController.add(ConnectionStatus.disconnected);
       }
       print('Error estimating fee: $e $s');
@@ -222,9 +268,15 @@ class SubstrateService {
   }
 
   @Deprecated('Use Account.getKeypair() instead')
-  Future<DilithiumWalletInfo> generateWalletFromSeed(String seedPhrase, Account account) async {
+  Future<DilithiumWalletInfo> generateWalletFromSeed(
+    String seedPhrase,
+    Account account,
+  ) async {
     try {
-      final keypair = HdWalletService().keyPairAtIndex(seedPhrase, account.index);
+      final keypair = HdWalletService().keyPairAtIndex(
+        seedPhrase,
+        account.index,
+      );
       return DilithiumWalletInfo.fromKeyPair(keypair, walletName: 'Account 1');
     } catch (e) {
       throw Exception('Failed to generate wallet: $e');
@@ -252,7 +304,9 @@ class SubstrateService {
       return accountInfo.data.free;
     } catch (e) {
       // If a network error occurs here, update the connection status
-      if (e.toString().contains('WebSocketChannelException') || e is SocketException || e is TimeoutException) {
+      if (e.toString().contains('WebSocketChannelException') ||
+          e is SocketException ||
+          e is TimeoutException) {
         _connectionStatusController.add(ConnectionStatus.disconnected);
       }
       print('Error querying balance: $e');
@@ -299,23 +353,35 @@ class SubstrateService {
     if (mnemonic == null) {
       throw Exception('Mnemonic not found for signing.');
     }
-    final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
+    final senderWallet = HdWalletService().keyPairAtIndex(
+      mnemonic,
+      account.index,
+    );
 
     final resonanceApi = Resonance(_provider!);
 
     final runtimeVersion = await _stateApi!.getRuntimeVersion();
     final specVersion = runtimeVersion.specVersion;
     final transactionVersion = runtimeVersion.transactionVersion;
-    final genesisHash = (await _provider!.send('chain_getBlockHash', [0])).result.replaceAll('0x', '');
+    final genesisHash = (await _provider!.send('chain_getBlockHash', [
+      0,
+    ])).result.replaceAll('0x', '');
     final encodedCall = call.encode();
 
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
         final block = await _provider!.send('chain_getBlock', []);
-        final blockNumber = int.parse(block.result['block']['header']['number']);
-        final blockHash = (await _provider!.send('chain_getBlockHash', [])).result.replaceAll('0x', '');
-        final nonceResult = await _provider!.send('system_accountNextIndex', [senderWallet.ss58Address]);
+        final blockNumber = int.parse(
+          block.result['block']['header']['number'],
+        );
+        final blockHash = (await _provider!.send(
+          'chain_getBlockHash',
+          [],
+        )).result.replaceAll('0x', '');
+        final nonceResult = await _provider!.send('system_accountNextIndex', [
+          senderWallet.ss58Address,
+        ]);
         final nonce = int.parse(nonceResult.result.toString());
 
         final payloadToSign = SigningPayload(
@@ -331,20 +397,33 @@ class SubstrateService {
         );
 
         final payload = payloadToSign.encode(resonanceApi.registry);
-        final signature = crypto.signMessage(keypair: senderWallet, message: payload);
-        final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
+        final signature = crypto.signMessage(
+          keypair: senderWallet,
+          message: payload,
+        );
+        final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
+          signature,
+          senderWallet.publicKey,
+        );
 
-        final extrinsic = ResonanceExtrinsicPayload(
-          signer: Uint8List.fromList(senderWallet.addressBytes),
-          method: encodedCall,
-          signature: signatureWithPublicKeyBytes,
-          eraPeriod: 64,
-          blockNumber: blockNumber,
-          nonce: nonce,
-          tip: 0,
-        ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+        final extrinsic =
+            ResonanceExtrinsicPayload(
+              signer: Uint8List.fromList(senderWallet.addressBytes),
+              method: encodedCall,
+              signature: signatureWithPublicKeyBytes,
+              eraPeriod: 64,
+              blockNumber: blockNumber,
+              nonce: nonce,
+              tip: 0,
+            ).encodeResonance(
+              resonanceApi.registry,
+              ResonanceSignatureType.resonance,
+            );
 
-        return _authorApi!.submitAndWatchExtrinsic(extrinsic, onStatus ?? (data) {});
+        return _authorApi!.submitAndWatchExtrinsic(
+          extrinsic,
+          onStatus ?? (data) {},
+        );
       } catch (e) {
         retryCount++;
         if (retryCount >= maxRetries) {
@@ -367,7 +446,10 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
+      final entropy = List<int>.generate(
+        32,
+        (i) => Random.secure().nextInt(256),
+      );
       // Generate mnemonic from entropy
       final mnemonic = Mnemonic(entropy, Language.english);
 
