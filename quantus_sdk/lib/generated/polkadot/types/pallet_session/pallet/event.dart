@@ -2,6 +2,9 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
+import 'package:quiver/collection.dart' as _i4;
+
+import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -25,7 +28,7 @@ abstract class Event {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, int>> toJson();
+  Map<String, Map<String, dynamic>> toJson();
 }
 
 class $Event {
@@ -33,6 +36,14 @@ class $Event {
 
   NewSession newSession({required int sessionIndex}) {
     return NewSession(sessionIndex: sessionIndex);
+  }
+
+  ValidatorDisabled validatorDisabled({required _i3.AccountId32 validator}) {
+    return ValidatorDisabled(validator: validator);
+  }
+
+  ValidatorReenabled validatorReenabled({required _i3.AccountId32 validator}) {
+    return ValidatorReenabled(validator: validator);
   }
 }
 
@@ -45,6 +56,10 @@ class $EventCodec with _i1.Codec<Event> {
     switch (index) {
       case 0:
         return NewSession._decode(input);
+      case 1:
+        return ValidatorDisabled._decode(input);
+      case 2:
+        return ValidatorReenabled._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -59,6 +74,12 @@ class $EventCodec with _i1.Codec<Event> {
       case NewSession:
         (value as NewSession).encodeTo(output);
         break;
+      case ValidatorDisabled:
+        (value as ValidatorDisabled).encodeTo(output);
+        break;
+      case ValidatorReenabled:
+        (value as ValidatorReenabled).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -70,6 +91,10 @@ class $EventCodec with _i1.Codec<Event> {
     switch (value.runtimeType) {
       case NewSession:
         return (value as NewSession)._sizeHint();
+      case ValidatorDisabled:
+        return (value as ValidatorDisabled)._sizeHint();
+      case ValidatorReenabled:
+        return (value as ValidatorReenabled)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -121,4 +146,104 @@ class NewSession extends Event {
 
   @override
   int get hashCode => sessionIndex.hashCode;
+}
+
+/// Validator has been disabled.
+class ValidatorDisabled extends Event {
+  const ValidatorDisabled({required this.validator});
+
+  factory ValidatorDisabled._decode(_i1.Input input) {
+    return ValidatorDisabled(
+        validator: const _i1.U8ArrayCodec(32).decode(input));
+  }
+
+  /// T::ValidatorId
+  final _i3.AccountId32 validator;
+
+  @override
+  Map<String, Map<String, List<int>>> toJson() => {
+        'ValidatorDisabled': {'validator': validator.toList()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(validator);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      validator,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ValidatorDisabled &&
+          _i4.listsEqual(
+            other.validator,
+            validator,
+          );
+
+  @override
+  int get hashCode => validator.hashCode;
+}
+
+/// Validator has been re-enabled.
+class ValidatorReenabled extends Event {
+  const ValidatorReenabled({required this.validator});
+
+  factory ValidatorReenabled._decode(_i1.Input input) {
+    return ValidatorReenabled(
+        validator: const _i1.U8ArrayCodec(32).decode(input));
+  }
+
+  /// T::ValidatorId
+  final _i3.AccountId32 validator;
+
+  @override
+  Map<String, Map<String, List<int>>> toJson() => {
+        'ValidatorReenabled': {'validator': validator.toList()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(validator);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      validator,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ValidatorReenabled &&
+          _i4.listsEqual(
+            other.validator,
+            validator,
+          );
+
+  @override
+  int get hashCode => validator.hashCode;
 }

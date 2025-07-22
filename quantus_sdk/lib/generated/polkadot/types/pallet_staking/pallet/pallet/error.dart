@@ -100,7 +100,17 @@ enum Error {
   notEnoughFunds('NotEnoughFunds', 29),
 
   /// Operation not allowed for virtual stakers.
-  virtualStakerNotAllowed('VirtualStakerNotAllowed', 30);
+  virtualStakerNotAllowed('VirtualStakerNotAllowed', 30),
+
+  /// Stash could not be reaped as other pallet might depend on it.
+  cannotReapStash('CannotReapStash', 31),
+
+  /// The stake of this account is already migrated to `Fungible` holds.
+  alreadyMigrated('AlreadyMigrated', 32),
+
+  /// Account is restricted from participation in staking. This may happen if the account is
+  /// staking in another way already, such as via pool.
+  restricted('Restricted', 33);
 
   const Error(
     this.variantName,
@@ -192,6 +202,12 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.notEnoughFunds;
       case 30:
         return Error.virtualStakerNotAllowed;
+      case 31:
+        return Error.cannotReapStash;
+      case 32:
+        return Error.alreadyMigrated;
+      case 33:
+        return Error.restricted;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

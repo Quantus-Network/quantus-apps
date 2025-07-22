@@ -387,6 +387,8 @@ class Constants {
 
   final _i50.Constants stateTrieMigration = _i50.Constants();
 
+  final _i51.Constants xcmPallet = _i51.Constants();
+
   final _i52.Constants messageQueue = _i52.Constants();
 
   final _i54.Constants beefy = _i54.Constants();

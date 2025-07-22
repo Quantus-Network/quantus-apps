@@ -3,9 +3,11 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../pallet_delegated_staking/pallet/hold_reason.dart' as _i4;
+import '../pallet_delegated_staking/pallet/hold_reason.dart' as _i5;
 import '../pallet_preimage/pallet/hold_reason.dart' as _i3;
-import '../pallet_state_trie_migration/pallet/hold_reason.dart' as _i5;
+import '../pallet_staking/pallet/pallet/hold_reason.dart' as _i4;
+import '../pallet_state_trie_migration/pallet/hold_reason.dart' as _i6;
+import '../pallet_xcm/pallet/hold_reason.dart' as _i7;
 
 abstract class RuntimeHoldReason {
   const RuntimeHoldReason();
@@ -38,12 +40,20 @@ class $RuntimeHoldReason {
     return Preimage(value0);
   }
 
-  DelegatedStaking delegatedStaking(_i4.HoldReason value0) {
+  Staking staking(_i4.HoldReason value0) {
+    return Staking(value0);
+  }
+
+  DelegatedStaking delegatedStaking(_i5.HoldReason value0) {
     return DelegatedStaking(value0);
   }
 
-  StateTrieMigration stateTrieMigration(_i5.HoldReason value0) {
+  StateTrieMigration stateTrieMigration(_i6.HoldReason value0) {
     return StateTrieMigration(value0);
+  }
+
+  XcmPallet xcmPallet(_i7.HoldReason value0) {
+    return XcmPallet(value0);
   }
 }
 
@@ -56,10 +66,14 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
     switch (index) {
       case 10:
         return Preimage._decode(input);
+      case 7:
+        return Staking._decode(input);
       case 41:
         return DelegatedStaking._decode(input);
       case 98:
         return StateTrieMigration._decode(input);
+      case 99:
+        return XcmPallet._decode(input);
       default:
         throw Exception('RuntimeHoldReason: Invalid variant index: "$index"');
     }
@@ -74,11 +88,17 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
       case Preimage:
         (value as Preimage).encodeTo(output);
         break;
+      case Staking:
+        (value as Staking).encodeTo(output);
+        break;
       case DelegatedStaking:
         (value as DelegatedStaking).encodeTo(output);
         break;
       case StateTrieMigration:
         (value as StateTrieMigration).encodeTo(output);
+        break;
+      case XcmPallet:
+        (value as XcmPallet).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -91,10 +111,14 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
     switch (value.runtimeType) {
       case Preimage:
         return (value as Preimage)._sizeHint();
+      case Staking:
+        return (value as Staking)._sizeHint();
       case DelegatedStaking:
         return (value as DelegatedStaking)._sizeHint();
       case StateTrieMigration:
         return (value as StateTrieMigration)._sizeHint();
+      case XcmPallet:
+        return (value as XcmPallet)._sizeHint();
       default:
         throw Exception(
             'RuntimeHoldReason: Unsupported "$value" of type "${value.runtimeType}"');
@@ -144,18 +168,18 @@ class Preimage extends RuntimeHoldReason {
   int get hashCode => value0.hashCode;
 }
 
-class DelegatedStaking extends RuntimeHoldReason {
-  const DelegatedStaking(this.value0);
+class Staking extends RuntimeHoldReason {
+  const Staking(this.value0);
 
-  factory DelegatedStaking._decode(_i1.Input input) {
-    return DelegatedStaking(_i4.HoldReason.codec.decode(input));
+  factory Staking._decode(_i1.Input input) {
+    return Staking(_i4.HoldReason.codec.decode(input));
   }
 
-  /// pallet_delegated_staking::HoldReason
+  /// pallet_staking::HoldReason
   final _i4.HoldReason value0;
 
   @override
-  Map<String, String> toJson() => {'DelegatedStaking': value0.toJson()};
+  Map<String, String> toJson() => {'Staking': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -165,10 +189,52 @@ class DelegatedStaking extends RuntimeHoldReason {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      41,
+      7,
       output,
     );
     _i4.HoldReason.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Staking && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class DelegatedStaking extends RuntimeHoldReason {
+  const DelegatedStaking(this.value0);
+
+  factory DelegatedStaking._decode(_i1.Input input) {
+    return DelegatedStaking(_i5.HoldReason.codec.decode(input));
+  }
+
+  /// pallet_delegated_staking::HoldReason
+  final _i5.HoldReason value0;
+
+  @override
+  Map<String, String> toJson() => {'DelegatedStaking': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.HoldReason.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      41,
+      output,
+    );
+    _i5.HoldReason.codec.encodeTo(
       value0,
       output,
     );
@@ -190,18 +256,18 @@ class StateTrieMigration extends RuntimeHoldReason {
   const StateTrieMigration(this.value0);
 
   factory StateTrieMigration._decode(_i1.Input input) {
-    return StateTrieMigration(_i5.HoldReason.codec.decode(input));
+    return StateTrieMigration(_i6.HoldReason.codec.decode(input));
   }
 
   /// pallet_state_trie_migration::HoldReason
-  final _i5.HoldReason value0;
+  final _i6.HoldReason value0;
 
   @override
   Map<String, String> toJson() => {'StateTrieMigration': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i5.HoldReason.codec.sizeHint(value0);
+    size = size + _i6.HoldReason.codec.sizeHint(value0);
     return size;
   }
 
@@ -210,7 +276,7 @@ class StateTrieMigration extends RuntimeHoldReason {
       98,
       output,
     );
-    _i5.HoldReason.codec.encodeTo(
+    _i6.HoldReason.codec.encodeTo(
       value0,
       output,
     );
@@ -223,6 +289,48 @@ class StateTrieMigration extends RuntimeHoldReason {
         other,
       ) ||
       other is StateTrieMigration && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class XcmPallet extends RuntimeHoldReason {
+  const XcmPallet(this.value0);
+
+  factory XcmPallet._decode(_i1.Input input) {
+    return XcmPallet(_i7.HoldReason.codec.decode(input));
+  }
+
+  /// pallet_xcm::HoldReason
+  final _i7.HoldReason value0;
+
+  @override
+  Map<String, String> toJson() => {'XcmPallet': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i7.HoldReason.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      99,
+      output,
+    );
+    _i7.HoldReason.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is XcmPallet && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

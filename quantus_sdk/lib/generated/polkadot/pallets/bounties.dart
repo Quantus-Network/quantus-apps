@@ -364,8 +364,13 @@ class Constants {
   /// The delay period for which a bounty beneficiary need to wait before claim the payout.
   final int bountyDepositPayoutDelay = 0;
 
-  /// Bounty duration in blocks.
-  final int bountyUpdatePeriod = 1296000;
+  /// The time limit for a curator to act before a bounty expires.
+  ///
+  /// The period that starts when a curator is approved, during which they must execute or
+  /// update the bounty via `extend_bounty_expiry`. If missed, the bounty expires, and the
+  /// curator may be slashed. If `BlockNumberFor::MAX`, bounties stay active indefinitely,
+  /// removing the need for `extend_bounty_expiry`.
+  final int bountyUpdatePeriod = 51840000;
 
   /// The curator deposit is calculated as a percentage of the curator fee.
   ///

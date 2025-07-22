@@ -1,12 +1,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import '../types/pallet_broker/coretime_interface/core_assignment.dart' as _i4;
+import '../types/pallet_broker/coretime_interface/core_assignment.dart' as _i5;
 import '../types/polkadot_runtime/runtime_call.dart' as _i1;
 import '../types/polkadot_runtime_parachains/assigner_coretime/parts_of57600.dart'
-    as _i5;
+    as _i6;
 import '../types/polkadot_runtime_parachains/coretime/pallet/call.dart' as _i2;
-import '../types/staging_xcm/v5/junction/junction.dart' as _i7;
-import '../types/staging_xcm/v5/junctions/junctions.dart' as _i6;
-import '../types/tuples.dart' as _i3;
+import '../types/sp_core/crypto/account_id32.dart' as _i3;
+import '../types/staging_xcm/v5/junction/junction.dart' as _i8;
+import '../types/staging_xcm/v5/junctions/junctions.dart' as _i7;
+import '../types/tuples.dart' as _i4;
 
 class Txs {
   const Txs();
@@ -29,6 +30,16 @@ class Txs {
     return _i1.Coretime(_i2.RequestRevenueAt(when: when));
   }
 
+  _i1.Coretime creditAccount({
+    required _i3.AccountId32 who,
+    required BigInt amount,
+  }) {
+    return _i1.Coretime(_i2.CreditAccount(
+      who: who,
+      amount: amount,
+    ));
+  }
+
   /// Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
   /// to be used.
   ///
@@ -41,7 +52,7 @@ class Txs {
   _i1.Coretime assignCore({
     required int core,
     required int begin,
-    required List<_i3.Tuple2<_i4.CoreAssignment, _i5.PartsOf57600>> assignment,
+    required List<_i4.Tuple2<_i5.CoreAssignment, _i6.PartsOf57600>> assignment,
     int? endHint,
   }) {
     return _i1.Coretime(_i2.AssignCore(
@@ -60,8 +71,8 @@ class Constants {
   final int brokerId = 1005;
 
   /// The coretime chain pot location.
-  final _i6.Junctions brokerPotLocation = const _i6.X1([
-    _i7.AccountId32(
+  final _i7.Junctions brokerPotLocation = const _i7.X1([
+    _i8.AccountId32(
       network: null,
       id: <int>[
         109,

@@ -166,6 +166,10 @@ class $Error {
     return NothingToSlash();
   }
 
+  SlashTooLow slashTooLow() {
+    return SlashTooLow();
+  }
+
   AlreadyMigrated alreadyMigrated() {
     return AlreadyMigrated();
   }
@@ -176,6 +180,10 @@ class $Error {
 
   NotSupported notSupported() {
     return NotSupported();
+  }
+
+  Restricted restricted() {
+    return Restricted();
   }
 }
 
@@ -253,11 +261,15 @@ class $ErrorCodec with _i1.Codec<Error> {
       case 32:
         return const NothingToSlash();
       case 33:
-        return const AlreadyMigrated();
+        return const SlashTooLow();
       case 34:
-        return const NotMigrated();
+        return const AlreadyMigrated();
       case 35:
+        return const NotMigrated();
+      case 36:
         return const NotSupported();
+      case 37:
+        return const Restricted();
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }
@@ -368,6 +380,9 @@ class $ErrorCodec with _i1.Codec<Error> {
       case NothingToSlash:
         (value as NothingToSlash).encodeTo(output);
         break;
+      case SlashTooLow:
+        (value as SlashTooLow).encodeTo(output);
+        break;
       case AlreadyMigrated:
         (value as AlreadyMigrated).encodeTo(output);
         break;
@@ -376,6 +391,9 @@ class $ErrorCodec with _i1.Codec<Error> {
         break;
       case NotSupported:
         (value as NotSupported).encodeTo(output);
+        break;
+      case Restricted:
+        (value as Restricted).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -452,11 +470,15 @@ class $ErrorCodec with _i1.Codec<Error> {
         return 1;
       case NothingToSlash:
         return 1;
+      case SlashTooLow:
+        return 1;
       case AlreadyMigrated:
         return 1;
       case NotMigrated:
         return 1;
       case NotSupported:
+        return 1;
+      case Restricted:
         return 1;
       default:
         throw Exception(
@@ -1190,6 +1212,27 @@ class NothingToSlash extends Error {
   int get hashCode => runtimeType.hashCode;
 }
 
+/// The slash amount is too low to be applied.
+class SlashTooLow extends Error {
+  const SlashTooLow();
+
+  @override
+  Map<String, dynamic> toJson() => {'SlashTooLow': null};
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      33,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) => other is SlashTooLow;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}
+
 /// The pool or member delegation has already migrated to delegate stake.
 class AlreadyMigrated extends Error {
   const AlreadyMigrated();
@@ -1199,7 +1242,7 @@ class AlreadyMigrated extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      33,
+      34,
       output,
     );
   }
@@ -1220,7 +1263,7 @@ class NotMigrated extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      34,
+      35,
       output,
     );
   }
@@ -1232,8 +1275,7 @@ class NotMigrated extends Error {
   int get hashCode => runtimeType.hashCode;
 }
 
-/// This call is not allowed in the current state of the pallet or an unspecific error
-/// occurred.
+/// This call is not allowed in the current state of the pallet.
 class NotSupported extends Error {
   const NotSupported();
 
@@ -1242,13 +1284,35 @@ class NotSupported extends Error {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      35,
+      36,
       output,
     );
   }
 
   @override
   bool operator ==(Object other) => other is NotSupported;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}
+
+/// Account is restricted from participation in pools. This may happen if the account is
+/// staking in another way already.
+class Restricted extends Error {
+  const Restricted();
+
+  @override
+  Map<String, dynamic> toJson() => {'Restricted': null};
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      37,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) => other is Restricted;
 
   @override
   int get hashCode => runtimeType.hashCode;

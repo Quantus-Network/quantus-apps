@@ -2414,8 +2414,7 @@ class XcmPallet extends RuntimeCall {
   final _i44.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'XcmPallet': value0.toJson()};
+  Map<String, Map<String, dynamic>> toJson() => {'XcmPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;

@@ -354,7 +354,7 @@ class Spend extends Call {
   /// Box<BeneficiaryLookupOf<T, I>>
   final _i5.VersionedLocation beneficiary;
 
-  /// Option<BlockNumberFor<T>>
+  /// Option<BlockNumberFor<T, I>>
   final int? validFrom;
 
   @override

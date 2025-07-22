@@ -895,11 +895,11 @@ class Session extends RuntimeEvent {
     return Session(_i11.Event.codec.decode(input));
   }
 
-  /// pallet_session::Event
+  /// pallet_session::Event<Runtime>
   final _i11.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, int>>> toJson() =>
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
       {'Session': value0.toJson()};
 
   int _sizeHint() {

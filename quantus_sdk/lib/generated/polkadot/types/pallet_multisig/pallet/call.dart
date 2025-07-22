@@ -92,6 +92,18 @@ class $Call {
       callHash: callHash,
     );
   }
+
+  PokeDeposit pokeDeposit({
+    required int threshold,
+    required List<_i3.AccountId32> otherSignatories,
+    required List<int> callHash,
+  }) {
+    return PokeDeposit(
+      threshold: threshold,
+      otherSignatories: otherSignatories,
+      callHash: callHash,
+    );
+  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -109,6 +121,8 @@ class $CallCodec with _i1.Codec<Call> {
         return ApproveAsMulti._decode(input);
       case 3:
         return CancelAsMulti._decode(input);
+      case 4:
+        return PokeDeposit._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -132,6 +146,9 @@ class $CallCodec with _i1.Codec<Call> {
       case CancelAsMulti:
         (value as CancelAsMulti).encodeTo(output);
         break;
+      case PokeDeposit:
+        (value as PokeDeposit).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -149,6 +166,8 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ApproveAsMulti)._sizeHint();
       case CancelAsMulti:
         return (value as CancelAsMulti)._sizeHint();
+      case PokeDeposit:
+        return (value as PokeDeposit)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -666,6 +685,109 @@ class CancelAsMulti extends Call {
         threshold,
         otherSignatories,
         timepoint,
+        callHash,
+      );
+}
+
+/// Poke the deposit reserved for an existing multisig operation.
+///
+/// The dispatch origin for this call must be _Signed_ and must be the original depositor of
+/// the multisig operation.
+///
+/// The transaction fee is waived if the deposit amount has changed.
+///
+/// - `threshold`: The total number of approvals needed for this multisig.
+/// - `other_signatories`: The accounts (other than the sender) who are part of the
+///  multisig.
+/// - `call_hash`: The hash of the call this deposit is reserved for.
+///
+/// Emits `DepositPoked` if successful.
+class PokeDeposit extends Call {
+  const PokeDeposit({
+    required this.threshold,
+    required this.otherSignatories,
+    required this.callHash,
+  });
+
+  factory PokeDeposit._decode(_i1.Input input) {
+    return PokeDeposit(
+      threshold: _i1.U16Codec.codec.decode(input),
+      otherSignatories:
+          const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
+              .decode(input),
+      callHash: const _i1.U8ArrayCodec(32).decode(input),
+    );
+  }
+
+  /// u16
+  final int threshold;
+
+  /// Vec<T::AccountId>
+  final List<_i3.AccountId32> otherSignatories;
+
+  /// [u8; 32]
+  final List<int> callHash;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'poke_deposit': {
+          'threshold': threshold,
+          'otherSignatories':
+              otherSignatories.map((value) => value.toList()).toList(),
+          'callHash': callHash.toList(),
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U16Codec.codec.sizeHint(threshold);
+    size = size +
+        const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
+            .sizeHint(otherSignatories);
+    size = size + const _i1.U8ArrayCodec(32).sizeHint(callHash);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    _i1.U16Codec.codec.encodeTo(
+      threshold,
+      output,
+    );
+    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(
+      otherSignatories,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      callHash,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is PokeDeposit &&
+          other.threshold == threshold &&
+          _i7.listsEqual(
+            other.otherSignatories,
+            otherSignatories,
+          ) &&
+          _i7.listsEqual(
+            other.callHash,
+            callHash,
+          );
+
+  @override
+  int get hashCode => Object.hash(
+        threshold,
+        otherSignatories,
         callHash,
       );
 }

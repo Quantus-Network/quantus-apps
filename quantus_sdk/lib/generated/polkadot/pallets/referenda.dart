@@ -10,7 +10,7 @@ import '../types/frame_support/traits/schedule/dispatch_time.dart' as _i11;
 import '../types/pallet_referenda/pallet/call.dart' as _i12;
 import '../types/pallet_referenda/types/curve.dart' as _i14;
 import '../types/pallet_referenda/types/referendum_info.dart' as _i3;
-import '../types/pallet_referenda/types/track_info.dart' as _i13;
+import '../types/pallet_referenda/types/track_details.dart' as _i13;
 import '../types/polkadot_runtime/origin_caller.dart' as _i9;
 import '../types/polkadot_runtime/runtime_call.dart' as _i8;
 import '../types/primitive_types/h256.dart' as _i5;
@@ -423,12 +423,14 @@ class Constants {
   /// automatic referendum status changes. Explicit servicing instructions are unaffected.
   final int alarmInterval = 1;
 
-  /// Information concerning the different referendum tracks.
-  final List<_i4.Tuple2<int, _i13.TrackInfo>> tracks = [
-    _i4.Tuple2<int, _i13.TrackInfo>(
+  /// A list of tracks.
+  ///
+  /// Note: if the tracks are dynamic, the value in the static metadata might be inaccurate.
+  final List<_i4.Tuple2<int, _i13.TrackDetails>> tracks = [
+    _i4.Tuple2<int, _i13.TrackDetails>(
       0,
-      _i13.TrackInfo(
-        name: 'root',
+      _i13.TrackDetails(
+        name: 'root                     ',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
         preparePeriod: 1200,
@@ -447,10 +449,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       1,
-      _i13.TrackInfo(
-        name: 'whitelisted_caller',
+      _i13.TrackDetails(
+        name: 'whitelisted_caller       ',
         maxDeciding: 100,
         decisionDeposit: BigInt.from(100000000000000),
         preparePeriod: 300,
@@ -469,10 +471,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       2,
-      _i13.TrackInfo(
-        name: 'wish_for_change',
+      _i13.TrackDetails(
+        name: 'wish_for_change          ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(200000000000000),
         preparePeriod: 1200,
@@ -491,10 +493,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       10,
-      _i13.TrackInfo(
-        name: 'staking_admin',
+      _i13.TrackDetails(
+        name: 'staking_admin            ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(50000000000000),
         preparePeriod: 1200,
@@ -513,10 +515,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       11,
-      _i13.TrackInfo(
-        name: 'treasurer',
+      _i13.TrackDetails(
+        name: 'treasurer                ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(10000000000000),
         preparePeriod: 1200,
@@ -535,10 +537,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       12,
-      _i13.TrackInfo(
-        name: 'lease_admin',
+      _i13.TrackDetails(
+        name: 'lease_admin              ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(50000000000000),
         preparePeriod: 1200,
@@ -557,10 +559,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       13,
-      _i13.TrackInfo(
-        name: 'fellowship_admin',
+      _i13.TrackDetails(
+        name: 'fellowship_admin         ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(50000000000000),
         preparePeriod: 1200,
@@ -579,10 +581,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       14,
-      _i13.TrackInfo(
-        name: 'general_admin',
+      _i13.TrackDetails(
+        name: 'general_admin            ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(50000000000000),
         preparePeriod: 1200,
@@ -601,10 +603,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       15,
-      _i13.TrackInfo(
-        name: 'auction_admin',
+      _i13.TrackDetails(
+        name: 'auction_admin            ',
         maxDeciding: 10,
         decisionDeposit: BigInt.from(50000000000000),
         preparePeriod: 1200,
@@ -623,10 +625,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       20,
-      _i13.TrackInfo(
-        name: 'referendum_canceller',
+      _i13.TrackDetails(
+        name: 'referendum_canceller     ',
         maxDeciding: 1000,
         decisionDeposit: BigInt.from(100000000000000),
         preparePeriod: 1200,
@@ -645,10 +647,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       21,
-      _i13.TrackInfo(
-        name: 'referendum_killer',
+      _i13.TrackDetails(
+        name: 'referendum_killer        ',
         maxDeciding: 1000,
         decisionDeposit: BigInt.from(500000000000000),
         preparePeriod: 1200,
@@ -667,10 +669,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       30,
-      _i13.TrackInfo(
-        name: 'small_tipper',
+      _i13.TrackDetails(
+        name: 'small_tipper             ',
         maxDeciding: 200,
         decisionDeposit: BigInt.from(10000000000),
         preparePeriod: 10,
@@ -689,10 +691,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       31,
-      _i13.TrackInfo(
-        name: 'big_tipper',
+      _i13.TrackDetails(
+        name: 'big_tipper               ',
         maxDeciding: 100,
         decisionDeposit: BigInt.from(100000000000),
         preparePeriod: 100,
@@ -711,10 +713,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       32,
-      _i13.TrackInfo(
-        name: 'small_spender',
+      _i13.TrackDetails(
+        name: 'small_spender            ',
         maxDeciding: 50,
         decisionDeposit: BigInt.from(1000000000000),
         preparePeriod: 2400,
@@ -733,10 +735,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       33,
-      _i13.TrackInfo(
-        name: 'medium_spender',
+      _i13.TrackDetails(
+        name: 'medium_spender           ',
         maxDeciding: 50,
         decisionDeposit: BigInt.from(2000000000000),
         preparePeriod: 2400,
@@ -755,10 +757,10 @@ class Constants {
         ),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackInfo>(
+    _i4.Tuple2<int, _i13.TrackDetails>(
       34,
-      _i13.TrackInfo(
-        name: 'big_spender',
+      _i13.TrackDetails(
+        name: 'big_spender              ',
         maxDeciding: 50,
         decisionDeposit: BigInt.from(4000000000000),
         preparePeriod: 2400,

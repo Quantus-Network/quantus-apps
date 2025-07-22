@@ -231,8 +231,20 @@ class $Call {
     );
   }
 
-  WithdrawOverstake withdrawOverstake({required _i7.AccountId32 stash}) {
-    return WithdrawOverstake(stash: stash);
+  MigrateCurrency migrateCurrency({required _i7.AccountId32 stash}) {
+    return MigrateCurrency(stash: stash);
+  }
+
+  ManualSlash manualSlash({
+    required _i7.AccountId32 validatorStash,
+    required int era,
+    required _i12.Perbill slashFraction,
+  }) {
+    return ManualSlash(
+      validatorStash: validatorStash,
+      era: era,
+      slashFraction: slashFraction,
+    );
   }
 }
 
@@ -303,8 +315,10 @@ class $CallCodec with _i1.Codec<Call> {
         return DeprecateControllerBatch._decode(input);
       case 29:
         return RestoreLedger._decode(input);
-      case 32:
-        return WithdrawOverstake._decode(input);
+      case 30:
+        return MigrateCurrency._decode(input);
+      case 33:
+        return ManualSlash._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -406,8 +420,11 @@ class $CallCodec with _i1.Codec<Call> {
       case RestoreLedger:
         (value as RestoreLedger).encodeTo(output);
         break;
-      case WithdrawOverstake:
-        (value as WithdrawOverstake).encodeTo(output);
+      case MigrateCurrency:
+        (value as MigrateCurrency).encodeTo(output);
+        break;
+      case ManualSlash:
+        (value as ManualSlash).encodeTo(output);
         break;
       default:
         throw Exception(
@@ -478,8 +495,10 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as DeprecateControllerBatch)._sizeHint();
       case RestoreLedger:
         return (value as RestoreLedger)._sizeHint();
-      case WithdrawOverstake:
-        return (value as WithdrawOverstake)._sizeHint();
+      case MigrateCurrency:
+        return (value as MigrateCurrency)._sizeHint();
+      case ManualSlash:
+        return (value as ManualSlash)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -2388,17 +2407,18 @@ class RestoreLedger extends Call {
       );
 }
 
-/// Adjusts the staking ledger by withdrawing any excess staked amount.
+/// Removes the legacy Staking locks if they exist.
 ///
-/// This function corrects cases where a user's recorded stake in the ledger
-/// exceeds their actual staked funds. This situation can arise due to cases such as
-/// external slashing by another pallet, leading to an inconsistency between the ledger
-/// and the actual stake.
-class WithdrawOverstake extends Call {
-  const WithdrawOverstake({required this.stash});
+/// This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+/// hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+/// much as possible. The remaining stake is forced withdrawn from the ledger.
+///
+/// The fee is waived if the migration is successful.
+class MigrateCurrency extends Call {
+  const MigrateCurrency({required this.stash});
 
-  factory WithdrawOverstake._decode(_i1.Input input) {
-    return WithdrawOverstake(stash: const _i1.U8ArrayCodec(32).decode(input));
+  factory MigrateCurrency._decode(_i1.Input input) {
+    return MigrateCurrency(stash: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -2406,7 +2426,7 @@ class WithdrawOverstake extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'withdraw_overstake': {'stash': stash.toList()}
+        'migrate_currency': {'stash': stash.toList()}
       };
 
   int _sizeHint() {
@@ -2417,7 +2437,7 @@ class WithdrawOverstake extends Call {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      32,
+      30,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -2432,7 +2452,7 @@ class WithdrawOverstake extends Call {
         this,
         other,
       ) ||
-      other is WithdrawOverstake &&
+      other is MigrateCurrency &&
           _i14.listsEqual(
             other.stash,
             stash,
@@ -2440,4 +2460,107 @@ class WithdrawOverstake extends Call {
 
   @override
   int get hashCode => stash.hashCode;
+}
+
+/// This function allows governance to manually slash a validator and is a
+/// **fallback mechanism**.
+///
+/// The dispatch origin must be `T::AdminOrigin`.
+///
+/// ## Parameters
+/// - `validator_stash` - The stash account of the validator to slash.
+/// - `era` - The era in which the validator was in the active set.
+/// - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+///
+/// ## Behavior
+///
+/// The slash will be applied using the standard slashing mechanics, respecting the
+/// configured `SlashDeferDuration`.
+///
+/// This means:
+/// - If the validator was already slashed by a higher percentage for the same era, this
+///  slash will have no additional effect.
+/// - If the validator was previously slashed by a lower percentage, only the difference
+///  will be applied.
+/// - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+class ManualSlash extends Call {
+  const ManualSlash({
+    required this.validatorStash,
+    required this.era,
+    required this.slashFraction,
+  });
+
+  factory ManualSlash._decode(_i1.Input input) {
+    return ManualSlash(
+      validatorStash: const _i1.U8ArrayCodec(32).decode(input),
+      era: _i1.U32Codec.codec.decode(input),
+      slashFraction: _i1.U32Codec.codec.decode(input),
+    );
+  }
+
+  /// T::AccountId
+  final _i7.AccountId32 validatorStash;
+
+  /// EraIndex
+  final int era;
+
+  /// Perbill
+  final _i12.Perbill slashFraction;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'manual_slash': {
+          'validatorStash': validatorStash.toList(),
+          'era': era,
+          'slashFraction': slashFraction,
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i7.AccountId32Codec().sizeHint(validatorStash);
+    size = size + _i1.U32Codec.codec.sizeHint(era);
+    size = size + const _i12.PerbillCodec().sizeHint(slashFraction);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      33,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      validatorStash,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      era,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      slashFraction,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ManualSlash &&
+          _i14.listsEqual(
+            other.validatorStash,
+            validatorStash,
+          ) &&
+          other.era == era &&
+          other.slashFraction == slashFraction;
+
+  @override
+  int get hashCode => Object.hash(
+        validatorStash,
+        era,
+        slashFraction,
+      );
 }

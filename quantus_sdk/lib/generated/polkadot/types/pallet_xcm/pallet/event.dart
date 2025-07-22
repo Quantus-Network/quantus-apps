@@ -2,20 +2,21 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i14;
+import 'package:quiver/collection.dart' as _i15;
 
-import '../../primitive_types/h256.dart' as _i8;
-import '../../sp_weights/weight_v2/weight.dart' as _i7;
-import '../../staging_xcm/v5/asset/asset.dart' as _i15;
-import '../../staging_xcm/v5/asset/assets.dart' as _i10;
-import '../../staging_xcm/v5/instruction_1.dart' as _i13;
+import '../../primitive_types/h256.dart' as _i10;
+import '../../sp_weights/weight_v2/weight.dart' as _i9;
+import '../../staging_xcm/v5/asset/asset.dart' as _i16;
+import '../../staging_xcm/v5/asset/assets.dart' as _i12;
+import '../../staging_xcm/v5/instruction_1.dart' as _i14;
 import '../../staging_xcm/v5/location/location.dart' as _i4;
-import '../../staging_xcm/v5/response.dart' as _i6;
+import '../../staging_xcm/v5/response.dart' as _i8;
 import '../../staging_xcm/v5/traits/outcome.dart' as _i3;
 import '../../staging_xcm/v5/xcm_1.dart' as _i5;
-import '../../xcm/v5/traits/error.dart' as _i11;
-import '../../xcm/versioned_assets.dart' as _i9;
-import '../../xcm/versioned_location.dart' as _i12;
+import '../../xcm/v3/traits/send_error.dart' as _i6;
+import '../../xcm/v5/traits/error.dart' as _i7;
+import '../../xcm/versioned_assets.dart' as _i11;
+import '../../xcm/versioned_location.dart' as _i13;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -63,6 +64,32 @@ class $Event {
     );
   }
 
+  SendFailed sendFailed({
+    required _i4.Location origin,
+    required _i4.Location destination,
+    required _i6.SendError error,
+    required List<int> messageId,
+  }) {
+    return SendFailed(
+      origin: origin,
+      destination: destination,
+      error: error,
+      messageId: messageId,
+    );
+  }
+
+  ProcessXcmError processXcmError({
+    required _i4.Location origin,
+    required _i7.Error error,
+    required List<int> messageId,
+  }) {
+    return ProcessXcmError(
+      origin: origin,
+      error: error,
+      messageId: messageId,
+    );
+  }
+
   UnexpectedResponse unexpectedResponse({
     required _i4.Location origin,
     required BigInt queryId,
@@ -75,7 +102,7 @@ class $Event {
 
   ResponseReady responseReady({
     required BigInt queryId,
-    required _i6.Response response,
+    required _i8.Response response,
   }) {
     return ResponseReady(
       queryId: queryId,
@@ -99,8 +126,8 @@ class $Event {
     required BigInt queryId,
     required int palletIndex,
     required int callIndex,
-    required _i7.Weight actualWeight,
-    required _i7.Weight maxBudgetedWeight,
+    required _i9.Weight actualWeight,
+    required _i9.Weight maxBudgetedWeight,
   }) {
     return NotifyOverweight(
       queryId: queryId,
@@ -162,9 +189,9 @@ class $Event {
   }
 
   AssetsTrapped assetsTrapped({
-    required _i8.H256 hash,
+    required _i10.H256 hash,
     required _i4.Location origin,
-    required _i9.VersionedAssets assets,
+    required _i11.VersionedAssets assets,
   }) {
     return AssetsTrapped(
       hash: hash,
@@ -176,7 +203,7 @@ class $Event {
   VersionChangeNotified versionChangeNotified({
     required _i4.Location destination,
     required int result,
-    required _i10.Assets cost,
+    required _i12.Assets cost,
     required List<int> messageId,
   }) {
     return VersionChangeNotified(
@@ -200,7 +227,7 @@ class $Event {
   NotifyTargetSendFail notifyTargetSendFail({
     required _i4.Location location,
     required BigInt queryId,
-    required _i11.Error error,
+    required _i7.Error error,
   }) {
     return NotifyTargetSendFail(
       location: location,
@@ -210,7 +237,7 @@ class $Event {
   }
 
   NotifyTargetMigrationFail notifyTargetMigrationFail({
-    required _i12.VersionedLocation location,
+    required _i13.VersionedLocation location,
     required BigInt queryId,
   }) {
     return NotifyTargetMigrationFail(
@@ -245,7 +272,7 @@ class $Event {
 
   VersionNotifyStarted versionNotifyStarted({
     required _i4.Location destination,
-    required _i10.Assets cost,
+    required _i12.Assets cost,
     required List<int> messageId,
   }) {
     return VersionNotifyStarted(
@@ -257,7 +284,7 @@ class $Event {
 
   VersionNotifyRequested versionNotifyRequested({
     required _i4.Location destination,
-    required _i10.Assets cost,
+    required _i12.Assets cost,
     required List<int> messageId,
   }) {
     return VersionNotifyRequested(
@@ -269,7 +296,7 @@ class $Event {
 
   VersionNotifyUnrequested versionNotifyUnrequested({
     required _i4.Location destination,
-    required _i10.Assets cost,
+    required _i12.Assets cost,
     required List<int> messageId,
   }) {
     return VersionNotifyUnrequested(
@@ -281,7 +308,7 @@ class $Event {
 
   FeesPaid feesPaid({
     required _i4.Location paying,
-    required _i10.Assets fees,
+    required _i12.Assets fees,
   }) {
     return FeesPaid(
       paying: paying,
@@ -290,9 +317,9 @@ class $Event {
   }
 
   AssetsClaimed assetsClaimed({
-    required _i8.H256 hash,
+    required _i10.H256 hash,
     required _i4.Location origin,
-    required _i9.VersionedAssets assets,
+    required _i11.VersionedAssets assets,
   }) {
     return AssetsClaimed(
       hash: hash,
@@ -303,6 +330,33 @@ class $Event {
 
   VersionMigrationFinished versionMigrationFinished({required int version}) {
     return VersionMigrationFinished(version: version);
+  }
+
+  AliasAuthorized aliasAuthorized({
+    required _i4.Location aliaser,
+    required _i4.Location target,
+    BigInt? expiry,
+  }) {
+    return AliasAuthorized(
+      aliaser: aliaser,
+      target: target,
+      expiry: expiry,
+    );
+  }
+
+  AliasAuthorizationRemoved aliasAuthorizationRemoved({
+    required _i4.Location aliaser,
+    required _i4.Location target,
+  }) {
+    return AliasAuthorizationRemoved(
+      aliaser: aliaser,
+      target: target,
+    );
+  }
+
+  AliasesAuthorizationsRemoved aliasesAuthorizationsRemoved(
+      {required _i4.Location target}) {
+    return AliasesAuthorizationsRemoved(target: target);
   }
 }
 
@@ -318,49 +372,59 @@ class $EventCodec with _i1.Codec<Event> {
       case 1:
         return Sent._decode(input);
       case 2:
-        return UnexpectedResponse._decode(input);
+        return SendFailed._decode(input);
       case 3:
-        return ResponseReady._decode(input);
+        return ProcessXcmError._decode(input);
       case 4:
-        return Notified._decode(input);
+        return UnexpectedResponse._decode(input);
       case 5:
-        return NotifyOverweight._decode(input);
+        return ResponseReady._decode(input);
       case 6:
-        return NotifyDispatchError._decode(input);
+        return Notified._decode(input);
       case 7:
-        return NotifyDecodeFailed._decode(input);
+        return NotifyOverweight._decode(input);
       case 8:
-        return InvalidResponder._decode(input);
+        return NotifyDispatchError._decode(input);
       case 9:
-        return InvalidResponderVersion._decode(input);
+        return NotifyDecodeFailed._decode(input);
       case 10:
-        return ResponseTaken._decode(input);
+        return InvalidResponder._decode(input);
       case 11:
-        return AssetsTrapped._decode(input);
+        return InvalidResponderVersion._decode(input);
       case 12:
-        return VersionChangeNotified._decode(input);
+        return ResponseTaken._decode(input);
       case 13:
-        return SupportedVersionChanged._decode(input);
+        return AssetsTrapped._decode(input);
       case 14:
-        return NotifyTargetSendFail._decode(input);
+        return VersionChangeNotified._decode(input);
       case 15:
-        return NotifyTargetMigrationFail._decode(input);
+        return SupportedVersionChanged._decode(input);
       case 16:
-        return InvalidQuerierVersion._decode(input);
+        return NotifyTargetSendFail._decode(input);
       case 17:
-        return InvalidQuerier._decode(input);
+        return NotifyTargetMigrationFail._decode(input);
       case 18:
-        return VersionNotifyStarted._decode(input);
+        return InvalidQuerierVersion._decode(input);
       case 19:
-        return VersionNotifyRequested._decode(input);
+        return InvalidQuerier._decode(input);
       case 20:
-        return VersionNotifyUnrequested._decode(input);
+        return VersionNotifyStarted._decode(input);
       case 21:
-        return FeesPaid._decode(input);
+        return VersionNotifyRequested._decode(input);
       case 22:
-        return AssetsClaimed._decode(input);
+        return VersionNotifyUnrequested._decode(input);
       case 23:
+        return FeesPaid._decode(input);
+      case 24:
+        return AssetsClaimed._decode(input);
+      case 25:
         return VersionMigrationFinished._decode(input);
+      case 26:
+        return AliasAuthorized._decode(input);
+      case 27:
+        return AliasAuthorizationRemoved._decode(input);
+      case 28:
+        return AliasesAuthorizationsRemoved._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -377,6 +441,12 @@ class $EventCodec with _i1.Codec<Event> {
         break;
       case Sent:
         (value as Sent).encodeTo(output);
+        break;
+      case SendFailed:
+        (value as SendFailed).encodeTo(output);
+        break;
+      case ProcessXcmError:
+        (value as ProcessXcmError).encodeTo(output);
         break;
       case UnexpectedResponse:
         (value as UnexpectedResponse).encodeTo(output);
@@ -444,6 +514,15 @@ class $EventCodec with _i1.Codec<Event> {
       case VersionMigrationFinished:
         (value as VersionMigrationFinished).encodeTo(output);
         break;
+      case AliasAuthorized:
+        (value as AliasAuthorized).encodeTo(output);
+        break;
+      case AliasAuthorizationRemoved:
+        (value as AliasAuthorizationRemoved).encodeTo(output);
+        break;
+      case AliasesAuthorizationsRemoved:
+        (value as AliasesAuthorizationsRemoved).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -457,6 +536,10 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Attempted)._sizeHint();
       case Sent:
         return (value as Sent)._sizeHint();
+      case SendFailed:
+        return (value as SendFailed)._sizeHint();
+      case ProcessXcmError:
+        return (value as ProcessXcmError)._sizeHint();
       case UnexpectedResponse:
         return (value as UnexpectedResponse)._sizeHint();
       case ResponseReady:
@@ -501,6 +584,12 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as AssetsClaimed)._sizeHint();
       case VersionMigrationFinished:
         return (value as VersionMigrationFinished)._sizeHint();
+      case AliasAuthorized:
+        return (value as AliasAuthorized)._sizeHint();
+      case AliasAuthorizationRemoved:
+        return (value as AliasAuthorizationRemoved)._sizeHint();
+      case AliasesAuthorizationsRemoved:
+        return (value as AliasesAuthorizationsRemoved)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -554,7 +643,7 @@ class Attempted extends Event {
   int get hashCode => outcome.hashCode;
 }
 
-/// A XCM message was sent.
+/// An XCM message was sent.
 class Sent extends Event {
   const Sent({
     required this.origin,
@@ -567,7 +656,7 @@ class Sent extends Event {
     return Sent(
       origin: _i4.Location.codec.decode(input),
       destination: _i4.Location.codec.decode(input),
-      message: const _i1.SequenceCodec<_i13.Instruction>(_i13.Instruction.codec)
+      message: const _i1.SequenceCodec<_i14.Instruction>(_i14.Instruction.codec)
           .decode(input),
       messageId: const _i1.U8ArrayCodec(32).decode(input),
     );
@@ -617,7 +706,7 @@ class Sent extends Event {
       destination,
       output,
     );
-    const _i1.SequenceCodec<_i13.Instruction>(_i13.Instruction.codec).encodeTo(
+    const _i1.SequenceCodec<_i14.Instruction>(_i14.Instruction.codec).encodeTo(
       message,
       output,
     );
@@ -636,11 +725,11 @@ class Sent extends Event {
       other is Sent &&
           other.origin == origin &&
           other.destination == destination &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.message,
             message,
           ) &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.messageId,
             messageId,
           );
@@ -650,6 +739,185 @@ class Sent extends Event {
         origin,
         destination,
         message,
+        messageId,
+      );
+}
+
+/// An XCM message failed to send.
+class SendFailed extends Event {
+  const SendFailed({
+    required this.origin,
+    required this.destination,
+    required this.error,
+    required this.messageId,
+  });
+
+  factory SendFailed._decode(_i1.Input input) {
+    return SendFailed(
+      origin: _i4.Location.codec.decode(input),
+      destination: _i4.Location.codec.decode(input),
+      error: _i6.SendError.codec.decode(input),
+      messageId: const _i1.U8ArrayCodec(32).decode(input),
+    );
+  }
+
+  /// Location
+  final _i4.Location origin;
+
+  /// Location
+  final _i4.Location destination;
+
+  /// SendError
+  final _i6.SendError error;
+
+  /// XcmHash
+  final List<int> messageId;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'SendFailed': {
+          'origin': origin.toJson(),
+          'destination': destination.toJson(),
+          'error': error.toJson(),
+          'messageId': messageId.toList(),
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i4.Location.codec.sizeHint(origin);
+    size = size + _i4.Location.codec.sizeHint(destination);
+    size = size + _i6.SendError.codec.sizeHint(error);
+    size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      origin,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      destination,
+      output,
+    );
+    _i6.SendError.codec.encodeTo(
+      error,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      messageId,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is SendFailed &&
+          other.origin == origin &&
+          other.destination == destination &&
+          other.error == error &&
+          _i15.listsEqual(
+            other.messageId,
+            messageId,
+          );
+
+  @override
+  int get hashCode => Object.hash(
+        origin,
+        destination,
+        error,
+        messageId,
+      );
+}
+
+/// An XCM message failed to process.
+class ProcessXcmError extends Event {
+  const ProcessXcmError({
+    required this.origin,
+    required this.error,
+    required this.messageId,
+  });
+
+  factory ProcessXcmError._decode(_i1.Input input) {
+    return ProcessXcmError(
+      origin: _i4.Location.codec.decode(input),
+      error: _i7.Error.codec.decode(input),
+      messageId: const _i1.U8ArrayCodec(32).decode(input),
+    );
+  }
+
+  /// Location
+  final _i4.Location origin;
+
+  /// XcmError
+  final _i7.Error error;
+
+  /// XcmHash
+  final List<int> messageId;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'ProcessXcmError': {
+          'origin': origin.toJson(),
+          'error': error.toJson(),
+          'messageId': messageId.toList(),
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i4.Location.codec.sizeHint(origin);
+    size = size + _i7.Error.codec.sizeHint(error);
+    size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      origin,
+      output,
+    );
+    _i7.Error.codec.encodeTo(
+      error,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      messageId,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ProcessXcmError &&
+          other.origin == origin &&
+          other.error == error &&
+          _i15.listsEqual(
+            other.messageId,
+            messageId,
+          );
+
+  @override
+  int get hashCode => Object.hash(
+        origin,
+        error,
         messageId,
       );
 }
@@ -693,7 +961,7 @@ class UnexpectedResponse extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      2,
+      4,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -734,7 +1002,7 @@ class ResponseReady extends Event {
   factory ResponseReady._decode(_i1.Input input) {
     return ResponseReady(
       queryId: _i1.U64Codec.codec.decode(input),
-      response: _i6.Response.codec.decode(input),
+      response: _i8.Response.codec.decode(input),
     );
   }
 
@@ -742,7 +1010,7 @@ class ResponseReady extends Event {
   final BigInt queryId;
 
   /// Response
-  final _i6.Response response;
+  final _i8.Response response;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -755,20 +1023,20 @@ class ResponseReady extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U64Codec.codec.sizeHint(queryId);
-    size = size + _i6.Response.codec.sizeHint(response);
+    size = size + _i8.Response.codec.sizeHint(response);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      3,
+      5,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
       queryId,
       output,
     );
-    _i6.Response.codec.encodeTo(
+    _i8.Response.codec.encodeTo(
       response,
       output,
     );
@@ -836,7 +1104,7 @@ class Notified extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      4,
+      6,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
@@ -889,8 +1157,8 @@ class NotifyOverweight extends Event {
       queryId: _i1.U64Codec.codec.decode(input),
       palletIndex: _i1.U8Codec.codec.decode(input),
       callIndex: _i1.U8Codec.codec.decode(input),
-      actualWeight: _i7.Weight.codec.decode(input),
-      maxBudgetedWeight: _i7.Weight.codec.decode(input),
+      actualWeight: _i9.Weight.codec.decode(input),
+      maxBudgetedWeight: _i9.Weight.codec.decode(input),
     );
   }
 
@@ -904,10 +1172,10 @@ class NotifyOverweight extends Event {
   final int callIndex;
 
   /// Weight
-  final _i7.Weight actualWeight;
+  final _i9.Weight actualWeight;
 
   /// Weight
-  final _i7.Weight maxBudgetedWeight;
+  final _i9.Weight maxBudgetedWeight;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -925,14 +1193,14 @@ class NotifyOverweight extends Event {
     size = size + _i1.U64Codec.codec.sizeHint(queryId);
     size = size + _i1.U8Codec.codec.sizeHint(palletIndex);
     size = size + _i1.U8Codec.codec.sizeHint(callIndex);
-    size = size + _i7.Weight.codec.sizeHint(actualWeight);
-    size = size + _i7.Weight.codec.sizeHint(maxBudgetedWeight);
+    size = size + _i9.Weight.codec.sizeHint(actualWeight);
+    size = size + _i9.Weight.codec.sizeHint(maxBudgetedWeight);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      5,
+      7,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
@@ -947,11 +1215,11 @@ class NotifyOverweight extends Event {
       callIndex,
       output,
     );
-    _i7.Weight.codec.encodeTo(
+    _i9.Weight.codec.encodeTo(
       actualWeight,
       output,
     );
-    _i7.Weight.codec.encodeTo(
+    _i9.Weight.codec.encodeTo(
       maxBudgetedWeight,
       output,
     );
@@ -1025,7 +1293,7 @@ class NotifyDispatchError extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      6,
+      8,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
@@ -1107,7 +1375,7 @@ class NotifyDecodeFailed extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      7,
+      9,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
@@ -1192,7 +1460,7 @@ class InvalidResponder extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      8,
+      10,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1271,7 +1539,7 @@ class InvalidResponderVersion extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      9,
+      11,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1325,7 +1593,7 @@ class ResponseTaken extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      10,
+      12,
       output,
     );
     _i1.U64Codec.codec.encodeTo(
@@ -1358,18 +1626,18 @@ class AssetsTrapped extends Event {
     return AssetsTrapped(
       hash: const _i1.U8ArrayCodec(32).decode(input),
       origin: _i4.Location.codec.decode(input),
-      assets: _i9.VersionedAssets.codec.decode(input),
+      assets: _i11.VersionedAssets.codec.decode(input),
     );
   }
 
   /// H256
-  final _i8.H256 hash;
+  final _i10.H256 hash;
 
   /// Location
   final _i4.Location origin;
 
   /// VersionedAssets
-  final _i9.VersionedAssets assets;
+  final _i11.VersionedAssets assets;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -1382,15 +1650,15 @@ class AssetsTrapped extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i8.H256Codec().sizeHint(hash);
+    size = size + const _i10.H256Codec().sizeHint(hash);
     size = size + _i4.Location.codec.sizeHint(origin);
-    size = size + _i9.VersionedAssets.codec.sizeHint(assets);
+    size = size + _i11.VersionedAssets.codec.sizeHint(assets);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      11,
+      13,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -1401,7 +1669,7 @@ class AssetsTrapped extends Event {
       origin,
       output,
     );
-    _i9.VersionedAssets.codec.encodeTo(
+    _i11.VersionedAssets.codec.encodeTo(
       assets,
       output,
     );
@@ -1414,7 +1682,7 @@ class AssetsTrapped extends Event {
         other,
       ) ||
       other is AssetsTrapped &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.hash,
             hash,
           ) &&
@@ -1444,7 +1712,7 @@ class VersionChangeNotified extends Event {
     return VersionChangeNotified(
       destination: _i4.Location.codec.decode(input),
       result: _i1.U32Codec.codec.decode(input),
-      cost: const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).decode(input),
+      cost: const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).decode(input),
       messageId: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
@@ -1456,7 +1724,7 @@ class VersionChangeNotified extends Event {
   final int result;
 
   /// Assets
-  final _i10.Assets cost;
+  final _i12.Assets cost;
 
   /// XcmHash
   final List<int> messageId;
@@ -1475,14 +1743,14 @@ class VersionChangeNotified extends Event {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(destination);
     size = size + _i1.U32Codec.codec.sizeHint(result);
-    size = size + const _i10.AssetsCodec().sizeHint(cost);
+    size = size + const _i12.AssetsCodec().sizeHint(cost);
     size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      12,
+      14,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1493,7 +1761,7 @@ class VersionChangeNotified extends Event {
       result,
       output,
     );
-    const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).encodeTo(
+    const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).encodeTo(
       cost,
       output,
     );
@@ -1512,11 +1780,11 @@ class VersionChangeNotified extends Event {
       other is VersionChangeNotified &&
           other.destination == destination &&
           other.result == result &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.cost,
             cost,
           ) &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.messageId,
             messageId,
           );
@@ -1568,7 +1836,7 @@ class SupportedVersionChanged extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      13,
+      15,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1611,7 +1879,7 @@ class NotifyTargetSendFail extends Event {
     return NotifyTargetSendFail(
       location: _i4.Location.codec.decode(input),
       queryId: _i1.U64Codec.codec.decode(input),
-      error: _i11.Error.codec.decode(input),
+      error: _i7.Error.codec.decode(input),
     );
   }
 
@@ -1622,7 +1890,7 @@ class NotifyTargetSendFail extends Event {
   final BigInt queryId;
 
   /// XcmError
-  final _i11.Error error;
+  final _i7.Error error;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -1637,13 +1905,13 @@ class NotifyTargetSendFail extends Event {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(location);
     size = size + _i1.U64Codec.codec.sizeHint(queryId);
-    size = size + _i11.Error.codec.sizeHint(error);
+    size = size + _i7.Error.codec.sizeHint(error);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      14,
+      16,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1654,7 +1922,7 @@ class NotifyTargetSendFail extends Event {
       queryId,
       output,
     );
-    _i11.Error.codec.encodeTo(
+    _i7.Error.codec.encodeTo(
       error,
       output,
     );
@@ -1689,13 +1957,13 @@ class NotifyTargetMigrationFail extends Event {
 
   factory NotifyTargetMigrationFail._decode(_i1.Input input) {
     return NotifyTargetMigrationFail(
-      location: _i12.VersionedLocation.codec.decode(input),
+      location: _i13.VersionedLocation.codec.decode(input),
       queryId: _i1.U64Codec.codec.decode(input),
     );
   }
 
   /// VersionedLocation
-  final _i12.VersionedLocation location;
+  final _i13.VersionedLocation location;
 
   /// QueryId
   final BigInt queryId;
@@ -1710,17 +1978,17 @@ class NotifyTargetMigrationFail extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i12.VersionedLocation.codec.sizeHint(location);
+    size = size + _i13.VersionedLocation.codec.sizeHint(location);
     size = size + _i1.U64Codec.codec.sizeHint(queryId);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      15,
+      17,
       output,
     );
-    _i12.VersionedLocation.codec.encodeTo(
+    _i13.VersionedLocation.codec.encodeTo(
       location,
       output,
     );
@@ -1790,7 +2058,7 @@ class InvalidQuerierVersion extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      16,
+      18,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1876,7 +2144,7 @@ class InvalidQuerier extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      17,
+      19,
       output,
     );
     _i4.Location.codec.encodeTo(
@@ -1930,7 +2198,7 @@ class VersionNotifyStarted extends Event {
   factory VersionNotifyStarted._decode(_i1.Input input) {
     return VersionNotifyStarted(
       destination: _i4.Location.codec.decode(input),
-      cost: const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).decode(input),
+      cost: const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).decode(input),
       messageId: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
@@ -1939,7 +2207,7 @@ class VersionNotifyStarted extends Event {
   final _i4.Location destination;
 
   /// Assets
-  final _i10.Assets cost;
+  final _i12.Assets cost;
 
   /// XcmHash
   final List<int> messageId;
@@ -1956,21 +2224,21 @@ class VersionNotifyStarted extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(destination);
-    size = size + const _i10.AssetsCodec().sizeHint(cost);
+    size = size + const _i12.AssetsCodec().sizeHint(cost);
     size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      18,
+      20,
       output,
     );
     _i4.Location.codec.encodeTo(
       destination,
       output,
     );
-    const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).encodeTo(
+    const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).encodeTo(
       cost,
       output,
     );
@@ -1988,11 +2256,11 @@ class VersionNotifyStarted extends Event {
       ) ||
       other is VersionNotifyStarted &&
           other.destination == destination &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.cost,
             cost,
           ) &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.messageId,
             messageId,
           );
@@ -2016,7 +2284,7 @@ class VersionNotifyRequested extends Event {
   factory VersionNotifyRequested._decode(_i1.Input input) {
     return VersionNotifyRequested(
       destination: _i4.Location.codec.decode(input),
-      cost: const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).decode(input),
+      cost: const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).decode(input),
       messageId: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
@@ -2025,7 +2293,7 @@ class VersionNotifyRequested extends Event {
   final _i4.Location destination;
 
   /// Assets
-  final _i10.Assets cost;
+  final _i12.Assets cost;
 
   /// XcmHash
   final List<int> messageId;
@@ -2042,21 +2310,21 @@ class VersionNotifyRequested extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(destination);
-    size = size + const _i10.AssetsCodec().sizeHint(cost);
+    size = size + const _i12.AssetsCodec().sizeHint(cost);
     size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      19,
+      21,
       output,
     );
     _i4.Location.codec.encodeTo(
       destination,
       output,
     );
-    const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).encodeTo(
+    const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).encodeTo(
       cost,
       output,
     );
@@ -2074,11 +2342,11 @@ class VersionNotifyRequested extends Event {
       ) ||
       other is VersionNotifyRequested &&
           other.destination == destination &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.cost,
             cost,
           ) &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.messageId,
             messageId,
           );
@@ -2103,7 +2371,7 @@ class VersionNotifyUnrequested extends Event {
   factory VersionNotifyUnrequested._decode(_i1.Input input) {
     return VersionNotifyUnrequested(
       destination: _i4.Location.codec.decode(input),
-      cost: const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).decode(input),
+      cost: const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).decode(input),
       messageId: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
@@ -2112,7 +2380,7 @@ class VersionNotifyUnrequested extends Event {
   final _i4.Location destination;
 
   /// Assets
-  final _i10.Assets cost;
+  final _i12.Assets cost;
 
   /// XcmHash
   final List<int> messageId;
@@ -2129,21 +2397,21 @@ class VersionNotifyUnrequested extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(destination);
-    size = size + const _i10.AssetsCodec().sizeHint(cost);
+    size = size + const _i12.AssetsCodec().sizeHint(cost);
     size = size + const _i1.U8ArrayCodec(32).sizeHint(messageId);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      20,
+      22,
       output,
     );
     _i4.Location.codec.encodeTo(
       destination,
       output,
     );
-    const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).encodeTo(
+    const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).encodeTo(
       cost,
       output,
     );
@@ -2161,11 +2429,11 @@ class VersionNotifyUnrequested extends Event {
       ) ||
       other is VersionNotifyUnrequested &&
           other.destination == destination &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.cost,
             cost,
           ) &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.messageId,
             messageId,
           );
@@ -2188,7 +2456,7 @@ class FeesPaid extends Event {
   factory FeesPaid._decode(_i1.Input input) {
     return FeesPaid(
       paying: _i4.Location.codec.decode(input),
-      fees: const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).decode(input),
+      fees: const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).decode(input),
     );
   }
 
@@ -2196,7 +2464,7 @@ class FeesPaid extends Event {
   final _i4.Location paying;
 
   /// Assets
-  final _i10.Assets fees;
+  final _i12.Assets fees;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -2209,20 +2477,20 @@ class FeesPaid extends Event {
   int _sizeHint() {
     int size = 1;
     size = size + _i4.Location.codec.sizeHint(paying);
-    size = size + const _i10.AssetsCodec().sizeHint(fees);
+    size = size + const _i12.AssetsCodec().sizeHint(fees);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      21,
+      23,
       output,
     );
     _i4.Location.codec.encodeTo(
       paying,
       output,
     );
-    const _i1.SequenceCodec<_i15.Asset>(_i15.Asset.codec).encodeTo(
+    const _i1.SequenceCodec<_i16.Asset>(_i16.Asset.codec).encodeTo(
       fees,
       output,
     );
@@ -2236,7 +2504,7 @@ class FeesPaid extends Event {
       ) ||
       other is FeesPaid &&
           other.paying == paying &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.fees,
             fees,
           );
@@ -2260,18 +2528,18 @@ class AssetsClaimed extends Event {
     return AssetsClaimed(
       hash: const _i1.U8ArrayCodec(32).decode(input),
       origin: _i4.Location.codec.decode(input),
-      assets: _i9.VersionedAssets.codec.decode(input),
+      assets: _i11.VersionedAssets.codec.decode(input),
     );
   }
 
   /// H256
-  final _i8.H256 hash;
+  final _i10.H256 hash;
 
   /// Location
   final _i4.Location origin;
 
   /// VersionedAssets
-  final _i9.VersionedAssets assets;
+  final _i11.VersionedAssets assets;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
@@ -2284,15 +2552,15 @@ class AssetsClaimed extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i8.H256Codec().sizeHint(hash);
+    size = size + const _i10.H256Codec().sizeHint(hash);
     size = size + _i4.Location.codec.sizeHint(origin);
-    size = size + _i9.VersionedAssets.codec.sizeHint(assets);
+    size = size + _i11.VersionedAssets.codec.sizeHint(assets);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      22,
+      24,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -2303,7 +2571,7 @@ class AssetsClaimed extends Event {
       origin,
       output,
     );
-    _i9.VersionedAssets.codec.encodeTo(
+    _i11.VersionedAssets.codec.encodeTo(
       assets,
       output,
     );
@@ -2316,7 +2584,7 @@ class AssetsClaimed extends Event {
         other,
       ) ||
       other is AssetsClaimed &&
-          _i14.listsEqual(
+          _i15.listsEqual(
             other.hash,
             hash,
           ) &&
@@ -2355,7 +2623,7 @@ class VersionMigrationFinished extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      23,
+      25,
       output,
     );
     _i1.U32Codec.codec.encodeTo(
@@ -2374,4 +2642,199 @@ class VersionMigrationFinished extends Event {
 
   @override
   int get hashCode => version.hashCode;
+}
+
+/// An `aliaser` location was authorized by `target` to alias it, authorization valid until
+/// `expiry` block number.
+class AliasAuthorized extends Event {
+  const AliasAuthorized({
+    required this.aliaser,
+    required this.target,
+    this.expiry,
+  });
+
+  factory AliasAuthorized._decode(_i1.Input input) {
+    return AliasAuthorized(
+      aliaser: _i4.Location.codec.decode(input),
+      target: _i4.Location.codec.decode(input),
+      expiry: const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).decode(input),
+    );
+  }
+
+  /// Location
+  final _i4.Location aliaser;
+
+  /// Location
+  final _i4.Location target;
+
+  /// Option<u64>
+  final BigInt? expiry;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'AliasAuthorized': {
+          'aliaser': aliaser.toJson(),
+          'target': target.toJson(),
+          'expiry': expiry,
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i4.Location.codec.sizeHint(aliaser);
+    size = size + _i4.Location.codec.sizeHint(target);
+    size = size +
+        const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).sizeHint(expiry);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      26,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      aliaser,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      target,
+      output,
+    );
+    const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).encodeTo(
+      expiry,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AliasAuthorized &&
+          other.aliaser == aliaser &&
+          other.target == target &&
+          other.expiry == expiry;
+
+  @override
+  int get hashCode => Object.hash(
+        aliaser,
+        target,
+        expiry,
+      );
+}
+
+/// `target` removed alias authorization for `aliaser`.
+class AliasAuthorizationRemoved extends Event {
+  const AliasAuthorizationRemoved({
+    required this.aliaser,
+    required this.target,
+  });
+
+  factory AliasAuthorizationRemoved._decode(_i1.Input input) {
+    return AliasAuthorizationRemoved(
+      aliaser: _i4.Location.codec.decode(input),
+      target: _i4.Location.codec.decode(input),
+    );
+  }
+
+  /// Location
+  final _i4.Location aliaser;
+
+  /// Location
+  final _i4.Location target;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {
+        'AliasAuthorizationRemoved': {
+          'aliaser': aliaser.toJson(),
+          'target': target.toJson(),
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i4.Location.codec.sizeHint(aliaser);
+    size = size + _i4.Location.codec.sizeHint(target);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      27,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      aliaser,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      target,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AliasAuthorizationRemoved &&
+          other.aliaser == aliaser &&
+          other.target == target;
+
+  @override
+  int get hashCode => Object.hash(
+        aliaser,
+        target,
+      );
+}
+
+/// `target` removed all alias authorizations.
+class AliasesAuthorizationsRemoved extends Event {
+  const AliasesAuthorizationsRemoved({required this.target});
+
+  factory AliasesAuthorizationsRemoved._decode(_i1.Input input) {
+    return AliasesAuthorizationsRemoved(
+        target: _i4.Location.codec.decode(input));
+  }
+
+  /// Location
+  final _i4.Location target;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {
+        'AliasesAuthorizationsRemoved': {'target': target.toJson()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i4.Location.codec.sizeHint(target);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      28,
+      output,
+    );
+    _i4.Location.codec.encodeTo(
+      target,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AliasesAuthorizationsRemoved && other.target == target;
+
+  @override
+  int get hashCode => target.hashCode;
 }

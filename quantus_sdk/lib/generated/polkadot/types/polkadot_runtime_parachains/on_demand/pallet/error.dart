@@ -10,7 +10,10 @@ enum Error {
 
   /// The current spot price is higher than the max amount specified in the `place_order`
   /// call, making it invalid.
-  spotPriceHigherThanMaxAmount('SpotPriceHigherThanMaxAmount', 1);
+  spotPriceHigherThanMaxAmount('SpotPriceHigherThanMaxAmount', 1),
+
+  /// The account doesn't have enough credits to purchase on-demand coretime.
+  insufficientCredits('InsufficientCredits', 2);
 
   const Error(
     this.variantName,
@@ -44,6 +47,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.queueFull;
       case 1:
         return Error.spotPriceHigherThanMaxAmount;
+      case 2:
+        return Error.insufficientCredits;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

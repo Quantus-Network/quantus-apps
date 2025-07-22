@@ -13,6 +13,7 @@ import '../types/polkadot_runtime/runtime_call.dart' as _i7;
 import '../types/polkadot_runtime_common/impls/versioned_locatable_asset.dart'
     as _i10;
 import '../types/sp_arithmetic/per_things/permill.dart' as _i12;
+import '../types/sp_core/crypto/account_id32.dart' as _i14;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i8;
 import '../types/xcm/versioned_location.dart' as _i11;
 
@@ -465,4 +466,40 @@ class Constants {
 
   /// The period during which an approved treasury spend has to be claimed.
   final int payoutPeriod = 1296000;
+
+  /// Gets this pallet's derived pot account.
+  final _i14.AccountId32 potAccount = const <int>[
+    109,
+    111,
+    100,
+    108,
+    112,
+    121,
+    47,
+    116,
+    114,
+    115,
+    114,
+    121,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ];
 }

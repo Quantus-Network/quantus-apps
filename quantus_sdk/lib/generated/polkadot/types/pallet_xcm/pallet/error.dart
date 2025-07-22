@@ -78,7 +78,16 @@ enum Error {
   tooManyReserves('TooManyReserves', 23),
 
   /// Local XCM execution incomplete.
-  localExecutionIncomplete('LocalExecutionIncomplete', 24);
+  localExecutionIncomplete('LocalExecutionIncomplete', 24),
+
+  /// Too many locations authorized to alias origin.
+  tooManyAuthorizedAliases('TooManyAuthorizedAliases', 25),
+
+  /// Expiry block number is in the past.
+  expiresInPast('ExpiresInPast', 26),
+
+  /// The alias to remove authorization for was not found.
+  aliasNotFound('AliasNotFound', 27);
 
   const Error(
     this.variantName,
@@ -156,6 +165,12 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.tooManyReserves;
       case 24:
         return Error.localExecutionIncomplete;
+      case 25:
+        return Error.tooManyAuthorizedAliases;
+      case 26:
+        return Error.expiresInPast;
+      case 27:
+        return Error.aliasNotFound;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

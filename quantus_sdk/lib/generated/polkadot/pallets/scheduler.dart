@@ -54,6 +54,7 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U8ArrayCodec(32)),
   );
 
+  /// Block number at which the agenda began incomplete execution.
   _i6.Future<int?> incompleteSince({_i1.BlockHash? at}) async {
     final hashedKey = _incompleteSince.hashedKey();
     final bytes = await __api.getStorage(

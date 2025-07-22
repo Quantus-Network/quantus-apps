@@ -370,13 +370,6 @@ class Queries {
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageValue<List<int>> _disabledValidators =
-      const _i1.StorageValue<List<int>>(
-    prefix: 'Staking',
-    storage: 'DisabledValidators',
-    valueCodec: _i2.U32SequenceCodec.codec,
-  );
-
   final _i1.StorageValue<_i15.Percent> _chillThreshold =
       const _i1.StorageValue<_i15.Percent>(
     prefix: 'Staking',
@@ -1151,29 +1144,6 @@ class Queries {
     return 0; /* Default */
   }
 
-  /// Indices of validators that have offended in the active era. The offenders are disabled for a
-  /// whole era. For this reason they are kept here - only staking pallet knows about eras. The
-  /// implementor of [`DisablingStrategy`] defines if a validator should be disabled which
-  /// implicitly means that the implementor also controls the max number of disabled validators.
-  ///
-  /// The vec is always kept sorted so that we can find whether a given validator has previously
-  /// offended using binary search.
-  _i21.Future<List<int>> disabledValidators({_i1.BlockHash? at}) async {
-    final hashedKey = _disabledValidators.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
-    if (bytes != null) {
-      return _disabledValidators.decodeValue(bytes);
-    }
-    return List<int>.filled(
-      0,
-      0,
-      growable: true,
-    ); /* Default */
-  }
-
   /// The threshold for when users can start calling `chill_other` for other validators /
   /// nominators. The threshold is compared to the actual number of validators / nominators
   /// (`CountFor*`) in the system compared to the configured max (`Max*Count`).
@@ -1780,12 +1750,6 @@ class Queries {
   /// Returns the storage key for `currentPlannedSession`.
   _i22.Uint8List currentPlannedSessionKey() {
     final hashedKey = _currentPlannedSession.hashedKey();
-    return hashedKey;
-  }
-
-  /// Returns the storage key for `disabledValidators`.
-  _i22.Uint8List disabledValidatorsKey() {
-    final hashedKey = _disabledValidators.hashedKey();
     return hashedKey;
   }
 
@@ -2444,14 +2408,48 @@ class Txs {
     ));
   }
 
-  /// Adjusts the staking ledger by withdrawing any excess staked amount.
+  /// Removes the legacy Staking locks if they exist.
   ///
-  /// This function corrects cases where a user's recorded stake in the ledger
-  /// exceeds their actual staked funds. This situation can arise due to cases such as
-  /// external slashing by another pallet, leading to an inconsistency between the ledger
-  /// and the actual stake.
-  _i23.Staking withdrawOverstake({required _i3.AccountId32 stash}) {
-    return _i23.Staking(_i24.WithdrawOverstake(stash: stash));
+  /// This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+  /// hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+  /// much as possible. The remaining stake is forced withdrawn from the ledger.
+  ///
+  /// The fee is waived if the migration is successful.
+  _i23.Staking migrateCurrency({required _i3.AccountId32 stash}) {
+    return _i23.Staking(_i24.MigrateCurrency(stash: stash));
+  }
+
+  /// This function allows governance to manually slash a validator and is a
+  /// **fallback mechanism**.
+  ///
+  /// The dispatch origin must be `T::AdminOrigin`.
+  ///
+  /// ## Parameters
+  /// - `validator_stash` - The stash account of the validator to slash.
+  /// - `era` - The era in which the validator was in the active set.
+  /// - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+  ///
+  /// ## Behavior
+  ///
+  /// The slash will be applied using the standard slashing mechanics, respecting the
+  /// configured `SlashDeferDuration`.
+  ///
+  /// This means:
+  /// - If the validator was already slashed by a higher percentage for the same era, this
+  ///  slash will have no additional effect.
+  /// - If the validator was previously slashed by a lower percentage, only the difference
+  ///  will be applied.
+  /// - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+  _i23.Staking manualSlash({
+    required _i3.AccountId32 validatorStash,
+    required int era,
+    required _i4.Perbill slashFraction,
+  }) {
+    return _i23.Staking(_i24.ManualSlash(
+      validatorStash: validatorStash,
+      era: era,
+      slashFraction: slashFraction,
+    ));
   }
 }
 

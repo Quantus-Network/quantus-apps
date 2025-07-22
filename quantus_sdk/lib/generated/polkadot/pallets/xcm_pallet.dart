@@ -1,29 +1,30 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i13;
-import 'dart:typed_data' as _i14;
+import 'dart:async' as _i14;
+import 'dart:typed_data' as _i15;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/pallet_xcm/pallet/call.dart' as _i17;
+import '../types/pallet_xcm/authorized_aliases_entry.dart' as _i13;
+import '../types/pallet_xcm/pallet/call.dart' as _i18;
 import '../types/pallet_xcm/pallet/query_status.dart' as _i3;
 import '../types/pallet_xcm/pallet/remote_locked_fungible_record.dart' as _i11;
 import '../types/pallet_xcm/pallet/version_migration_stage.dart' as _i8;
-import '../types/polkadot_runtime/runtime_call.dart' as _i15;
+import '../types/polkadot_runtime/runtime_call.dart' as _i16;
 import '../types/primitive_types/h256.dart' as _i4;
 import '../types/sp_core/crypto/account_id32.dart' as _i9;
 import '../types/sp_weights/weight_v2/weight.dart' as _i7;
-import '../types/staging_xcm/v5/location/location.dart' as _i20;
+import '../types/staging_xcm/v5/location/location.dart' as _i21;
 import '../types/staging_xcm/v5/xcm_1.dart' as _i12;
 import '../types/staging_xcm_executor/traits/asset_transfer/transfer_type.dart'
-    as _i22;
+    as _i23;
 import '../types/tuples.dart' as _i6;
-import '../types/xcm/v3/weight_limit.dart' as _i21;
+import '../types/xcm/v3/weight_limit.dart' as _i22;
 import '../types/xcm/versioned_asset_id.dart' as _i10;
-import '../types/xcm/versioned_assets.dart' as _i18;
+import '../types/xcm/versioned_assets.dart' as _i19;
 import '../types/xcm/versioned_location.dart' as _i5;
-import '../types/xcm/versioned_xcm_1.dart' as _i16;
-import '../types/xcm/versioned_xcm_2.dart' as _i19;
+import '../types/xcm/versioned_xcm_1.dart' as _i17;
+import '../types/xcm/versioned_xcm_2.dart' as _i20;
 
 class Queries {
   const Queries(this.__api);
@@ -158,8 +159,17 @@ class Queries {
     valueCodec: _i12.XcmCodec(),
   );
 
+  final _i1.StorageMap<_i5.VersionedLocation, _i13.AuthorizedAliasesEntry>
+      _authorizedAliases =
+      const _i1.StorageMap<_i5.VersionedLocation, _i13.AuthorizedAliasesEntry>(
+    prefix: 'XcmPallet',
+    storage: 'AuthorizedAliases',
+    valueCodec: _i13.AuthorizedAliasesEntry.codec,
+    hasher: _i1.StorageHasher.blake2b128Concat(_i5.VersionedLocation.codec),
+  );
+
   /// The latest available query index.
-  _i13.Future<BigInt> queryCounter({_i1.BlockHash? at}) async {
+  _i14.Future<BigInt> queryCounter({_i1.BlockHash? at}) async {
     final hashedKey = _queryCounter.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -172,7 +182,7 @@ class Queries {
   }
 
   /// The ongoing queries.
-  _i13.Future<_i3.QueryStatus?> queries(
+  _i14.Future<_i3.QueryStatus?> queries(
     BigInt key1, {
     _i1.BlockHash? at,
   }) async {
@@ -191,7 +201,7 @@ class Queries {
   ///
   /// Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
   /// times this pair has been trapped (usually just 1 if it exists at all).
-  _i13.Future<int> assetTraps(
+  _i14.Future<int> assetTraps(
     _i4.H256 key1, {
     _i1.BlockHash? at,
   }) async {
@@ -208,7 +218,7 @@ class Queries {
 
   /// Default version to encode XCM when latest version of destination is unknown. If `None`,
   /// then the destinations whose XCM version is unknown are considered unreachable.
-  _i13.Future<int?> safeXcmVersion({_i1.BlockHash? at}) async {
+  _i14.Future<int?> safeXcmVersion({_i1.BlockHash? at}) async {
     final hashedKey = _safeXcmVersion.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -221,7 +231,7 @@ class Queries {
   }
 
   /// The Latest versions that we know various locations support.
-  _i13.Future<int?> supportedVersion(
+  _i14.Future<int?> supportedVersion(
     int key1,
     _i5.VersionedLocation key2, {
     _i1.BlockHash? at,
@@ -241,7 +251,7 @@ class Queries {
   }
 
   /// All locations that we have requested version notifications from.
-  _i13.Future<BigInt?> versionNotifiers(
+  _i14.Future<BigInt?> versionNotifiers(
     int key1,
     _i5.VersionedLocation key2, {
     _i1.BlockHash? at,
@@ -262,7 +272,7 @@ class Queries {
 
   /// The target locations that are subscribed to our version changes, as well as the most recent
   /// of our versions we informed them of.
-  _i13.Future<_i6.Tuple3<BigInt, _i7.Weight, int>?> versionNotifyTargets(
+  _i14.Future<_i6.Tuple3<BigInt, _i7.Weight, int>?> versionNotifyTargets(
     int key1,
     _i5.VersionedLocation key2, {
     _i1.BlockHash? at,
@@ -284,7 +294,7 @@ class Queries {
   /// Destinations whose latest XCM version we would like to know. Duplicates not allowed, and
   /// the `u32` counter is the number of times that a send to the destination has been attempted,
   /// which is used as a prioritization.
-  _i13.Future<List<_i6.Tuple2<_i5.VersionedLocation, int>>>
+  _i14.Future<List<_i6.Tuple2<_i5.VersionedLocation, int>>>
       versionDiscoveryQueue({_i1.BlockHash? at}) async {
     final hashedKey = _versionDiscoveryQueue.hashedKey();
     final bytes = await __api.getStorage(
@@ -298,7 +308,7 @@ class Queries {
   }
 
   /// The current migration's stage, if any.
-  _i13.Future<_i8.VersionMigrationStage?> currentMigration(
+  _i14.Future<_i8.VersionMigrationStage?> currentMigration(
       {_i1.BlockHash? at}) async {
     final hashedKey = _currentMigration.hashedKey();
     final bytes = await __api.getStorage(
@@ -312,7 +322,7 @@ class Queries {
   }
 
   /// Fungible assets which we know are locked on a remote chain.
-  _i13.Future<_i11.RemoteLockedFungibleRecord?> remoteLockedFungibles(
+  _i14.Future<_i11.RemoteLockedFungibleRecord?> remoteLockedFungibles(
     int key1,
     _i9.AccountId32 key2,
     _i10.VersionedAssetId key3, {
@@ -334,7 +344,7 @@ class Queries {
   }
 
   /// Fungible assets which we know are locked on this chain.
-  _i13.Future<List<_i6.Tuple2<BigInt, _i5.VersionedLocation>>?> lockedFungibles(
+  _i14.Future<List<_i6.Tuple2<BigInt, _i5.VersionedLocation>>?> lockedFungibles(
     _i9.AccountId32 key1, {
     _i1.BlockHash? at,
   }) async {
@@ -350,7 +360,7 @@ class Queries {
   }
 
   /// Global suspension state of the XCM executor.
-  _i13.Future<bool> xcmExecutionSuspended({_i1.BlockHash? at}) async {
+  _i14.Future<bool> xcmExecutionSuspended({_i1.BlockHash? at}) async {
     final hashedKey = _xcmExecutionSuspended.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -369,7 +379,7 @@ class Queries {
   ///
   /// Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
   /// implementation in the XCM executor configuration.
-  _i13.Future<bool> shouldRecordXcm({_i1.BlockHash? at}) async {
+  _i14.Future<bool> shouldRecordXcm({_i1.BlockHash? at}) async {
     final hashedKey = _shouldRecordXcm.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -387,7 +397,7 @@ class Queries {
   ///
   /// Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
   /// implementation in the XCM executor configuration.
-  _i13.Future<_i12.Xcm?> recordedXcm({_i1.BlockHash? at}) async {
+  _i14.Future<_i12.Xcm?> recordedXcm({_i1.BlockHash? at}) async {
     final hashedKey = _recordedXcm.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -399,8 +409,26 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// Map of authorized aliasers of local origins. Each local location can authorize a list of
+  /// other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+  /// block number.
+  _i14.Future<_i13.AuthorizedAliasesEntry?> authorizedAliases(
+    _i5.VersionedLocation key1, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKey = _authorizedAliases.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _authorizedAliases.decodeValue(bytes);
+    }
+    return null; /* Nullable */
+  }
+
   /// The ongoing queries.
-  _i13.Future<List<_i3.QueryStatus?>> multiQueries(
+  _i14.Future<List<_i3.QueryStatus?>> multiQueries(
     List<BigInt> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -421,7 +449,7 @@ class Queries {
   ///
   /// Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
   /// times this pair has been trapped (usually just 1 if it exists at all).
-  _i13.Future<List<int>> multiAssetTraps(
+  _i14.Future<List<int>> multiAssetTraps(
     List<_i4.H256> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -440,7 +468,7 @@ class Queries {
   }
 
   /// Fungible assets which we know are locked on this chain.
-  _i13.Future<List<List<_i6.Tuple2<BigInt, _i5.VersionedLocation>>?>>
+  _i14.Future<List<List<_i6.Tuple2<BigInt, _i5.VersionedLocation>>?>>
       multiLockedFungibles(
     List<_i9.AccountId32> keys, {
     _i1.BlockHash? at,
@@ -459,32 +487,53 @@ class Queries {
     return []; /* Nullable */
   }
 
+  /// Map of authorized aliasers of local origins. Each local location can authorize a list of
+  /// other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+  /// block number.
+  _i14.Future<List<_i13.AuthorizedAliasesEntry?>> multiAuthorizedAliases(
+    List<_i5.VersionedLocation> keys, {
+    _i1.BlockHash? at,
+  }) async {
+    final hashedKeys =
+        keys.map((key) => _authorizedAliases.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes
+          .map((v) => _authorizedAliases.decodeValue(v.key))
+          .toList();
+    }
+    return []; /* Nullable */
+  }
+
   /// Returns the storage key for `queryCounter`.
-  _i14.Uint8List queryCounterKey() {
+  _i15.Uint8List queryCounterKey() {
     final hashedKey = _queryCounter.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `queries`.
-  _i14.Uint8List queriesKey(BigInt key1) {
+  _i15.Uint8List queriesKey(BigInt key1) {
     final hashedKey = _queries.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage key for `assetTraps`.
-  _i14.Uint8List assetTrapsKey(_i4.H256 key1) {
+  _i15.Uint8List assetTrapsKey(_i4.H256 key1) {
     final hashedKey = _assetTraps.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage key for `safeXcmVersion`.
-  _i14.Uint8List safeXcmVersionKey() {
+  _i15.Uint8List safeXcmVersionKey() {
     final hashedKey = _safeXcmVersion.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `supportedVersion`.
-  _i14.Uint8List supportedVersionKey(
+  _i15.Uint8List supportedVersionKey(
     int key1,
     _i5.VersionedLocation key2,
   ) {
@@ -496,7 +545,7 @@ class Queries {
   }
 
   /// Returns the storage key for `versionNotifiers`.
-  _i14.Uint8List versionNotifiersKey(
+  _i15.Uint8List versionNotifiersKey(
     int key1,
     _i5.VersionedLocation key2,
   ) {
@@ -508,7 +557,7 @@ class Queries {
   }
 
   /// Returns the storage key for `versionNotifyTargets`.
-  _i14.Uint8List versionNotifyTargetsKey(
+  _i15.Uint8List versionNotifyTargetsKey(
     int key1,
     _i5.VersionedLocation key2,
   ) {
@@ -520,19 +569,19 @@ class Queries {
   }
 
   /// Returns the storage key for `versionDiscoveryQueue`.
-  _i14.Uint8List versionDiscoveryQueueKey() {
+  _i15.Uint8List versionDiscoveryQueueKey() {
     final hashedKey = _versionDiscoveryQueue.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `currentMigration`.
-  _i14.Uint8List currentMigrationKey() {
+  _i15.Uint8List currentMigrationKey() {
     final hashedKey = _currentMigration.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `remoteLockedFungibles`.
-  _i14.Uint8List remoteLockedFungiblesKey(
+  _i15.Uint8List remoteLockedFungiblesKey(
     int key1,
     _i9.AccountId32 key2,
     _i10.VersionedAssetId key3,
@@ -546,62 +595,74 @@ class Queries {
   }
 
   /// Returns the storage key for `lockedFungibles`.
-  _i14.Uint8List lockedFungiblesKey(_i9.AccountId32 key1) {
+  _i15.Uint8List lockedFungiblesKey(_i9.AccountId32 key1) {
     final hashedKey = _lockedFungibles.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage key for `xcmExecutionSuspended`.
-  _i14.Uint8List xcmExecutionSuspendedKey() {
+  _i15.Uint8List xcmExecutionSuspendedKey() {
     final hashedKey = _xcmExecutionSuspended.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `shouldRecordXcm`.
-  _i14.Uint8List shouldRecordXcmKey() {
+  _i15.Uint8List shouldRecordXcmKey() {
     final hashedKey = _shouldRecordXcm.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `recordedXcm`.
-  _i14.Uint8List recordedXcmKey() {
+  _i15.Uint8List recordedXcmKey() {
     final hashedKey = _recordedXcm.hashedKey();
     return hashedKey;
   }
 
+  /// Returns the storage key for `authorizedAliases`.
+  _i15.Uint8List authorizedAliasesKey(_i5.VersionedLocation key1) {
+    final hashedKey = _authorizedAliases.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
   /// Returns the storage map key prefix for `queries`.
-  _i14.Uint8List queriesMapPrefix() {
+  _i15.Uint8List queriesMapPrefix() {
     final hashedKey = _queries.mapPrefix();
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `assetTraps`.
-  _i14.Uint8List assetTrapsMapPrefix() {
+  _i15.Uint8List assetTrapsMapPrefix() {
     final hashedKey = _assetTraps.mapPrefix();
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `supportedVersion`.
-  _i14.Uint8List supportedVersionMapPrefix(int key1) {
+  _i15.Uint8List supportedVersionMapPrefix(int key1) {
     final hashedKey = _supportedVersion.mapPrefix(key1);
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `versionNotifiers`.
-  _i14.Uint8List versionNotifiersMapPrefix(int key1) {
+  _i15.Uint8List versionNotifiersMapPrefix(int key1) {
     final hashedKey = _versionNotifiers.mapPrefix(key1);
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `versionNotifyTargets`.
-  _i14.Uint8List versionNotifyTargetsMapPrefix(int key1) {
+  _i15.Uint8List versionNotifyTargetsMapPrefix(int key1) {
     final hashedKey = _versionNotifyTargets.mapPrefix(key1);
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `lockedFungibles`.
-  _i14.Uint8List lockedFungiblesMapPrefix() {
+  _i15.Uint8List lockedFungiblesMapPrefix() {
     final hashedKey = _lockedFungibles.mapPrefix();
+    return hashedKey;
+  }
+
+  /// Returns the storage map key prefix for `authorizedAliases`.
+  _i15.Uint8List authorizedAliasesMapPrefix() {
+    final hashedKey = _authorizedAliases.mapPrefix();
     return hashedKey;
   }
 }
@@ -609,11 +670,11 @@ class Queries {
 class Txs {
   const Txs();
 
-  _i15.XcmPallet send({
+  _i16.XcmPallet send({
     required _i5.VersionedLocation dest,
-    required _i16.VersionedXcm message,
+    required _i17.VersionedXcm message,
   }) {
-    return _i15.XcmPallet(_i17.Send(
+    return _i16.XcmPallet(_i18.Send(
       dest: dest,
       message: message,
     ));
@@ -637,13 +698,13 @@ class Txs {
   ///  fee on the `dest` chain.
   /// - `fee_asset_item`: The index into `assets` of the item which should be used to pay
   ///  fees.
-  _i15.XcmPallet teleportAssets({
+  _i16.XcmPallet teleportAssets({
     required _i5.VersionedLocation dest,
     required _i5.VersionedLocation beneficiary,
-    required _i18.VersionedAssets assets,
+    required _i19.VersionedAssets assets,
     required int feeAssetItem,
   }) {
-    return _i15.XcmPallet(_i17.TeleportAssets(
+    return _i16.XcmPallet(_i18.TeleportAssets(
       dest: dest,
       beneficiary: beneficiary,
       assets: assets,
@@ -681,13 +742,13 @@ class Txs {
   ///  fee on the `dest` (and possibly reserve) chains.
   /// - `fee_asset_item`: The index into `assets` of the item which should be used to pay
   ///  fees.
-  _i15.XcmPallet reserveTransferAssets({
+  _i16.XcmPallet reserveTransferAssets({
     required _i5.VersionedLocation dest,
     required _i5.VersionedLocation beneficiary,
-    required _i18.VersionedAssets assets,
+    required _i19.VersionedAssets assets,
     required int feeAssetItem,
   }) {
-    return _i15.XcmPallet(_i17.ReserveTransferAssets(
+    return _i16.XcmPallet(_i18.ReserveTransferAssets(
       dest: dest,
       beneficiary: beneficiary,
       assets: assets,
@@ -703,11 +764,11 @@ class Txs {
   /// No more than `max_weight` will be used in its attempted execution. If this is less than
   /// the maximum amount of weight that the message could take to be executed, then no
   /// execution attempt will be made.
-  _i15.XcmPallet execute({
-    required _i19.VersionedXcm message,
+  _i16.XcmPallet execute({
+    required _i20.VersionedXcm message,
     required _i7.Weight maxWeight,
   }) {
-    return _i15.XcmPallet(_i17.Execute(
+    return _i16.XcmPallet(_i18.Execute(
       message: message,
       maxWeight: maxWeight,
     ));
@@ -719,11 +780,11 @@ class Txs {
   /// - `origin`: Must be an origin specified by AdminOrigin.
   /// - `location`: The destination that is being described.
   /// - `xcm_version`: The latest version of XCM that `location` supports.
-  _i15.XcmPallet forceXcmVersion({
-    required _i20.Location location,
+  _i16.XcmPallet forceXcmVersion({
+    required _i21.Location location,
     required int version,
   }) {
-    return _i15.XcmPallet(_i17.ForceXcmVersion(
+    return _i16.XcmPallet(_i18.ForceXcmVersion(
       location: location,
       version: version,
     ));
@@ -734,18 +795,18 @@ class Txs {
   ///
   /// - `origin`: Must be an origin specified by AdminOrigin.
   /// - `maybe_xcm_version`: The default XCM encoding version, or `None` to disable.
-  _i15.XcmPallet forceDefaultXcmVersion({int? maybeXcmVersion}) {
-    return _i15.XcmPallet(
-        _i17.ForceDefaultXcmVersion(maybeXcmVersion: maybeXcmVersion));
+  _i16.XcmPallet forceDefaultXcmVersion({int? maybeXcmVersion}) {
+    return _i16.XcmPallet(
+        _i18.ForceDefaultXcmVersion(maybeXcmVersion: maybeXcmVersion));
   }
 
   /// Ask a location to notify us regarding their XCM version and any changes to it.
   ///
   /// - `origin`: Must be an origin specified by AdminOrigin.
   /// - `location`: The location to which we should subscribe for XCM version notifications.
-  _i15.XcmPallet forceSubscribeVersionNotify(
+  _i16.XcmPallet forceSubscribeVersionNotify(
       {required _i5.VersionedLocation location}) {
-    return _i15.XcmPallet(_i17.ForceSubscribeVersionNotify(location: location));
+    return _i16.XcmPallet(_i18.ForceSubscribeVersionNotify(location: location));
   }
 
   /// Require that a particular destination should no longer notify us regarding any XCM
@@ -754,10 +815,10 @@ class Txs {
   /// - `origin`: Must be an origin specified by AdminOrigin.
   /// - `location`: The location to which we are currently subscribed for XCM version
   ///  notifications which we no longer desire.
-  _i15.XcmPallet forceUnsubscribeVersionNotify(
+  _i16.XcmPallet forceUnsubscribeVersionNotify(
       {required _i5.VersionedLocation location}) {
-    return _i15.XcmPallet(
-        _i17.ForceUnsubscribeVersionNotify(location: location));
+    return _i16.XcmPallet(
+        _i18.ForceUnsubscribeVersionNotify(location: location));
   }
 
   /// Transfer some assets from the local chain to the destination chain through their local,
@@ -790,14 +851,14 @@ class Txs {
   /// - `fee_asset_item`: The index into `assets` of the item which should be used to pay
   ///  fees.
   /// - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
-  _i15.XcmPallet limitedReserveTransferAssets({
+  _i16.XcmPallet limitedReserveTransferAssets({
     required _i5.VersionedLocation dest,
     required _i5.VersionedLocation beneficiary,
-    required _i18.VersionedAssets assets,
+    required _i19.VersionedAssets assets,
     required int feeAssetItem,
-    required _i21.WeightLimit weightLimit,
+    required _i22.WeightLimit weightLimit,
   }) {
-    return _i15.XcmPallet(_i17.LimitedReserveTransferAssets(
+    return _i16.XcmPallet(_i18.LimitedReserveTransferAssets(
       dest: dest,
       beneficiary: beneficiary,
       assets: assets,
@@ -824,14 +885,14 @@ class Txs {
   /// - `fee_asset_item`: The index into `assets` of the item which should be used to pay
   ///  fees.
   /// - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
-  _i15.XcmPallet limitedTeleportAssets({
+  _i16.XcmPallet limitedTeleportAssets({
     required _i5.VersionedLocation dest,
     required _i5.VersionedLocation beneficiary,
-    required _i18.VersionedAssets assets,
+    required _i19.VersionedAssets assets,
     required int feeAssetItem,
-    required _i21.WeightLimit weightLimit,
+    required _i22.WeightLimit weightLimit,
   }) {
-    return _i15.XcmPallet(_i17.LimitedTeleportAssets(
+    return _i16.XcmPallet(_i18.LimitedTeleportAssets(
       dest: dest,
       beneficiary: beneficiary,
       assets: assets,
@@ -844,8 +905,8 @@ class Txs {
   ///
   /// - `origin`: Must be an origin specified by AdminOrigin.
   /// - `suspended`: `true` to suspend, `false` to resume.
-  _i15.XcmPallet forceSuspension({required bool suspended}) {
-    return _i15.XcmPallet(_i17.ForceSuspension(suspended: suspended));
+  _i16.XcmPallet forceSuspension({required bool suspended}) {
+    return _i16.XcmPallet(_i18.ForceSuspension(suspended: suspended));
   }
 
   /// Transfer some assets from the local chain to the destination chain through their local,
@@ -881,14 +942,14 @@ class Txs {
   /// - `fee_asset_item`: The index into `assets` of the item which should be used to pay
   ///  fees.
   /// - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
-  _i15.XcmPallet transferAssets({
+  _i16.XcmPallet transferAssets({
     required _i5.VersionedLocation dest,
     required _i5.VersionedLocation beneficiary,
-    required _i18.VersionedAssets assets,
+    required _i19.VersionedAssets assets,
     required int feeAssetItem,
-    required _i21.WeightLimit weightLimit,
+    required _i22.WeightLimit weightLimit,
   }) {
-    return _i15.XcmPallet(_i17.TransferAssets(
+    return _i16.XcmPallet(_i18.TransferAssets(
       dest: dest,
       beneficiary: beneficiary,
       assets: assets,
@@ -903,11 +964,11 @@ class Txs {
   /// - `assets`: The exact assets that were trapped. Use the version to specify what version
   /// was the latest when they were trapped.
   /// - `beneficiary`: The location/account where the claimed assets will be deposited.
-  _i15.XcmPallet claimAssets({
-    required _i18.VersionedAssets assets,
+  _i16.XcmPallet claimAssets({
+    required _i19.VersionedAssets assets,
     required _i5.VersionedLocation beneficiary,
   }) {
-    return _i15.XcmPallet(_i17.ClaimAssets(
+    return _i16.XcmPallet(_i18.ClaimAssets(
       assets: assets,
       beneficiary: beneficiary,
     ));
@@ -961,16 +1022,16 @@ class Txs {
   /// - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
   ///  transfer, which also determines what happens to the assets on the destination chain.
   /// - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
-  _i15.XcmPallet transferAssetsUsingTypeAndThen({
+  _i16.XcmPallet transferAssetsUsingTypeAndThen({
     required _i5.VersionedLocation dest,
-    required _i18.VersionedAssets assets,
-    required _i22.TransferType assetsTransferType,
+    required _i19.VersionedAssets assets,
+    required _i23.TransferType assetsTransferType,
     required _i10.VersionedAssetId remoteFeesId,
-    required _i22.TransferType feesTransferType,
-    required _i16.VersionedXcm customXcmOnDest,
-    required _i21.WeightLimit weightLimit,
+    required _i23.TransferType feesTransferType,
+    required _i17.VersionedXcm customXcmOnDest,
+    required _i22.WeightLimit weightLimit,
   }) {
-    return _i15.XcmPallet(_i17.TransferAssetsUsingTypeAndThen(
+    return _i16.XcmPallet(_i18.TransferAssetsUsingTypeAndThen(
       dest: dest,
       assets: assets,
       assetsTransferType: assetsTransferType,
@@ -980,4 +1041,46 @@ class Txs {
       weightLimit: weightLimit,
     ));
   }
+
+  /// Authorize another `aliaser` location to alias into the local `origin` making this call.
+  /// The `aliaser` is only authorized until the provided `expiry` block number.
+  /// The call can also be used for a previously authorized alias in order to update its
+  /// `expiry` block number.
+  ///
+  /// Usually useful to allow your local account to be aliased into from a remote location
+  /// also under your control (like your account on another chain).
+  ///
+  /// WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+  /// their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+  /// `origin` in XCM programs executed on the local chain.
+  _i16.XcmPallet addAuthorizedAlias({
+    required _i5.VersionedLocation aliaser,
+    BigInt? expires,
+  }) {
+    return _i16.XcmPallet(_i18.AddAuthorizedAlias(
+      aliaser: aliaser,
+      expires: expires,
+    ));
+  }
+
+  /// Remove a previously authorized `aliaser` from the list of locations that can alias into
+  /// the local `origin` making this call.
+  _i16.XcmPallet removeAuthorizedAlias(
+      {required _i5.VersionedLocation aliaser}) {
+    return _i16.XcmPallet(_i18.RemoveAuthorizedAlias(aliaser: aliaser));
+  }
+
+  /// Remove all previously authorized `aliaser`s that can alias into the local `origin`
+  /// making this call.
+  _i16.XcmPallet removeAllAuthorizedAliases() {
+    return _i16.XcmPallet(_i18.RemoveAllAuthorizedAliases());
+  }
+}
+
+class Constants {
+  Constants();
+
+  /// The latest supported version that we advertise. Generally just set it to
+  /// `pallet_xcm::CurrentXcmVersion`.
+  final int advertisedXcmVersion = 5;
 }

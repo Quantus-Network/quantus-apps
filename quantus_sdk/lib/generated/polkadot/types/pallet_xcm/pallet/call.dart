@@ -36,7 +36,7 @@ abstract class Call {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, dynamic> toJson();
 }
 
 class $Call {
@@ -195,6 +195,25 @@ class $Call {
       weightLimit: weightLimit,
     );
   }
+
+  AddAuthorizedAlias addAuthorizedAlias({
+    required _i3.VersionedLocation aliaser,
+    BigInt? expires,
+  }) {
+    return AddAuthorizedAlias(
+      aliaser: aliaser,
+      expires: expires,
+    );
+  }
+
+  RemoveAuthorizedAlias removeAuthorizedAlias(
+      {required _i3.VersionedLocation aliaser}) {
+    return RemoveAuthorizedAlias(aliaser: aliaser);
+  }
+
+  RemoveAllAuthorizedAliases removeAllAuthorizedAliases() {
+    return RemoveAllAuthorizedAliases();
+  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -232,6 +251,12 @@ class $CallCodec with _i1.Codec<Call> {
         return ClaimAssets._decode(input);
       case 13:
         return TransferAssetsUsingTypeAndThen._decode(input);
+      case 14:
+        return AddAuthorizedAlias._decode(input);
+      case 15:
+        return RemoveAuthorizedAlias._decode(input);
+      case 16:
+        return const RemoveAllAuthorizedAliases();
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -285,6 +310,15 @@ class $CallCodec with _i1.Codec<Call> {
       case TransferAssetsUsingTypeAndThen:
         (value as TransferAssetsUsingTypeAndThen).encodeTo(output);
         break;
+      case AddAuthorizedAlias:
+        (value as AddAuthorizedAlias).encodeTo(output);
+        break;
+      case RemoveAuthorizedAlias:
+        (value as RemoveAuthorizedAlias).encodeTo(output);
+        break;
+      case RemoveAllAuthorizedAliases:
+        (value as RemoveAllAuthorizedAliases).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -322,6 +356,12 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ClaimAssets)._sizeHint();
       case TransferAssetsUsingTypeAndThen:
         return (value as TransferAssetsUsingTypeAndThen)._sizeHint();
+      case AddAuthorizedAlias:
+        return (value as AddAuthorizedAlias)._sizeHint();
+      case RemoveAuthorizedAlias:
+        return (value as RemoveAuthorizedAlias)._sizeHint();
+      case RemoveAllAuthorizedAliases:
+        return 1;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -1618,4 +1658,151 @@ class TransferAssetsUsingTypeAndThen extends Call {
         customXcmOnDest,
         weightLimit,
       );
+}
+
+/// Authorize another `aliaser` location to alias into the local `origin` making this call.
+/// The `aliaser` is only authorized until the provided `expiry` block number.
+/// The call can also be used for a previously authorized alias in order to update its
+/// `expiry` block number.
+///
+/// Usually useful to allow your local account to be aliased into from a remote location
+/// also under your control (like your account on another chain).
+///
+/// WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+/// their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+/// `origin` in XCM programs executed on the local chain.
+class AddAuthorizedAlias extends Call {
+  const AddAuthorizedAlias({
+    required this.aliaser,
+    this.expires,
+  });
+
+  factory AddAuthorizedAlias._decode(_i1.Input input) {
+    return AddAuthorizedAlias(
+      aliaser: _i3.VersionedLocation.codec.decode(input),
+      expires: const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).decode(input),
+    );
+  }
+
+  /// Box<VersionedLocation>
+  final _i3.VersionedLocation aliaser;
+
+  /// Option<u64>
+  final BigInt? expires;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'add_authorized_alias': {
+          'aliaser': aliaser.toJson(),
+          'expires': expires,
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i3.VersionedLocation.codec.sizeHint(aliaser);
+    size = size +
+        const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).sizeHint(expires);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i3.VersionedLocation.codec.encodeTo(
+      aliaser,
+      output,
+    );
+    const _i1.OptionCodec<BigInt>(_i1.U64Codec.codec).encodeTo(
+      expires,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AddAuthorizedAlias &&
+          other.aliaser == aliaser &&
+          other.expires == expires;
+
+  @override
+  int get hashCode => Object.hash(
+        aliaser,
+        expires,
+      );
+}
+
+/// Remove a previously authorized `aliaser` from the list of locations that can alias into
+/// the local `origin` making this call.
+class RemoveAuthorizedAlias extends Call {
+  const RemoveAuthorizedAlias({required this.aliaser});
+
+  factory RemoveAuthorizedAlias._decode(_i1.Input input) {
+    return RemoveAuthorizedAlias(
+        aliaser: _i3.VersionedLocation.codec.decode(input));
+  }
+
+  /// Box<VersionedLocation>
+  final _i3.VersionedLocation aliaser;
+
+  @override
+  Map<String, Map<String, Map<String, Map<String, dynamic>>>> toJson() => {
+        'remove_authorized_alias': {'aliaser': aliaser.toJson()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i3.VersionedLocation.codec.sizeHint(aliaser);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      15,
+      output,
+    );
+    _i3.VersionedLocation.codec.encodeTo(
+      aliaser,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is RemoveAuthorizedAlias && other.aliaser == aliaser;
+
+  @override
+  int get hashCode => aliaser.hashCode;
+}
+
+/// Remove all previously authorized `aliaser`s that can alias into the local `origin`
+/// making this call.
+class RemoveAllAuthorizedAliases extends Call {
+  const RemoveAllAuthorizedAliases();
+
+  @override
+  Map<String, dynamic> toJson() => {'remove_all_authorized_aliases': null};
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      16,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) => other is RemoveAllAuthorizedAliases;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
