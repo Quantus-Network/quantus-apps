@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
@@ -167,9 +168,8 @@ class _NavbarState extends State<Navbar> {
       children: [
         const WalletMain(),
         TransactionsScreen(manager: walletStateManager),
-        const Center(child: SettingsScreen()),
-        // Placeholder for Notifications Screen
-        const Center(child: Text('Notifications Screen')),
+        const SettingsScreen(),
+        NotificationsScreen(manager: walletStateManager),
       ],
     );
   }

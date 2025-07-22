@@ -1,0 +1,99 @@
+// import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/components/notification_group.dart';
+
+class NotificationService {
+  static final List<NotificationData> _activeNotifications = [];
+  static OverlayState? _overlayState;
+  static OverlayEntry? _groupOverlay;
+
+  static void initialize(OverlayState overlayState) {
+    _overlayState = overlayState;
+  }
+
+  static void showNotification({
+    required String title,
+    required String message,
+    Duration duration = const Duration(seconds: 4),
+    Color backgroundColor = Colors.black87,
+    IconData icon = Icons.info,
+  }) {
+    if (_overlayState == null) return;
+
+    final notificationData = NotificationData(
+      id: _activeNotifications.length.toString(),
+      title: title,
+      message: message,
+      backgroundColor: backgroundColor,
+      icon: icon,
+      timestamp: DateTime.now(),
+    );
+
+    _activeNotifications.add(notificationData);
+    _showGroupOverlay();
+
+    // // Auto-dismiss after duration
+    // Timer(duration, () {
+    //   _removeNotification(notificationData.id);
+    // });
+  }
+
+  static void _showGroupOverlay() {
+    if (_groupOverlay != null) {
+      _groupOverlay!.markNeedsBuild();
+      return;
+    }
+
+    _groupOverlay = OverlayEntry(
+      builder: (context) => NotificationGroup(
+        notifications: _activeNotifications,
+        onDismissAll: _dismissAll,
+        onDismissSingle: _removeNotification,
+      ),
+    );
+
+    _overlayState!.insert(_groupOverlay!);
+  }
+
+  static void _removeNotification(String id) {
+    _activeNotifications.removeWhere((data) => data.id == id);
+
+    if (_activeNotifications.isEmpty) {
+      _hideGroupOverlay();
+    } else {
+      _groupOverlay?.markNeedsBuild();
+    }
+  }
+
+  static void _dismissAll() {
+    _activeNotifications.clear();
+    _hideGroupOverlay();
+  }
+
+  static void _hideGroupOverlay() {
+    _groupOverlay?.remove();
+    _groupOverlay = null;
+  }
+
+  static void clearAll() {
+    _dismissAll();
+  }
+}
+
+class NotificationData {
+  final String id;
+  final String title;
+  final String message;
+  final Color backgroundColor;
+  final IconData icon;
+  final DateTime timestamp;
+
+  NotificationData({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.backgroundColor,
+    required this.icon,
+    required this.timestamp,
+  });
+}
