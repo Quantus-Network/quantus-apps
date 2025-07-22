@@ -32,8 +32,12 @@ class _MinerControlsState extends State<MinerControls> {
       print('Starting mining');
 
       // Check for all required files and binaries
-      final id = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p');
-      final rew = File('${await BinaryManager.getQuantusHomeDirectoryPath()}/rewards-address.txt');
+      final id = File(
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p',
+      );
+      final rew = File(
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/rewards-address.txt',
+      );
       final binPath = await BinaryManager.getNodeBinaryFilePath();
       final bin = File(binPath);
       final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
@@ -43,9 +47,11 @@ class _MinerControlsState extends State<MinerControls> {
       if (!await bin.exists()) {
         print('Node binary not found. Cannot start mining.');
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Node binary not found. Please run setup.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Node binary not found. Please run setup.'),
+            ),
+          );
         }
         setState(() => _isAttemptingToggle = false);
         return;
@@ -55,9 +61,13 @@ class _MinerControlsState extends State<MinerControls> {
       if (!await minerBin.exists()) {
         print('External miner binary not found. Cannot start mining.');
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('External miner binary not found. Please run setup.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'External miner binary not found. Please run setup.',
+              ),
+            ),
+          );
         }
         setState(() => _isAttemptingToggle = false);
         return;
@@ -92,7 +102,9 @@ class _MinerControlsState extends State<MinerControls> {
       } catch (e) {
         print('Error starting miner process: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error starting miner: ${e.toString()}')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error starting miner: ${e.toString()}')),
+          );
         }
         _proc = null;
         setState(() {
@@ -149,7 +161,11 @@ class _MinerControlsState extends State<MinerControls> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(statusText, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+        Text(
+          statusText,
+          style: Theme.of(context).textTheme.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 8),
         if (_proc != null && !_isSyncingNode && _hashrate != null)
           Text(
@@ -161,13 +177,20 @@ class _MinerControlsState extends State<MinerControls> {
             !_isSyncingNode &&
             _hashrate == null &&
             !_isSyncingNode) // Show fetching only if not syncing and proc started
-          Text('Hashrate: Fetching...', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+          Text(
+            'Hashrate: Fetching...',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
         const SizedBox(height: 20),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: _proc == null ? Colors.green : Colors.blue,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
             minimumSize: const Size(200, 50),
           ),
           onPressed: _isAttemptingToggle ? null : _toggle,

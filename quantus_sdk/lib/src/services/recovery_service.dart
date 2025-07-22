@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:polkadart/primitives/primitives.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
 import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
@@ -28,7 +29,9 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final friends = friendAddresses.map((addr) => crypto.ss58ToAccountId(s: addr)).toList();
+      final friends = friendAddresses
+          .map((addr) => crypto.ss58ToAccountId(s: addr))
+          .toList();
 
       // Create the call
       final call = resonanceApi.tx.recovery.createRecovery(
@@ -51,10 +54,14 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+      final lostAccount = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: lostAccountAddress),
+      );
 
       // Create the call
-      final call = resonanceApi.tx.recovery.initiateRecovery(account: lostAccount);
+      final call = resonanceApi.tx.recovery.initiateRecovery(
+        account: lostAccount,
+      );
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
@@ -71,11 +78,18 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
-      final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
+      final lostAccount = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: lostAccountAddress),
+      );
+      final rescuer = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: rescuerAddress),
+      );
 
       // Create the call
-      final call = resonanceApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
+      final call = resonanceApi.tx.recovery.vouchRecovery(
+        lost: lostAccount,
+        rescuer: rescuer,
+      );
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(friendAccount, call);
@@ -91,7 +105,9 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+      final lostAccount = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: lostAccountAddress),
+      );
 
       // Create the call
       final call = resonanceApi.tx.recovery.claimRecovery(account: lostAccount);
@@ -110,7 +126,9 @@ class RecoveryService {
   }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
+      final rescuer = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: rescuerAddress),
+      );
 
       // Create the call
       final call = resonanceApi.tx.recovery.closeRecovery(rescuer: rescuer);
@@ -123,7 +141,9 @@ class RecoveryService {
   }
 
   /// Remove recovery configuration from account
-  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({required Account senderAccount}) async {
+  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({
+    required Account senderAccount,
+  }) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
@@ -150,7 +170,10 @@ class RecoveryService {
       );
 
       // Create the call
-      final proxyCall = resonanceApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
+      final proxyCall = resonanceApi.tx.recovery.asRecovered(
+        account: recoveredAccount,
+        call: call,
+      );
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, proxyCall);
@@ -171,7 +194,9 @@ class RecoveryService {
       );
 
       // Create the call
-      final call = resonanceApi.tx.recovery.cancelRecovered(account: recoveredAccount);
+      final call = resonanceApi.tx.recovery.cancelRecovered(
+        account: recoveredAccount,
+      );
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
@@ -193,13 +218,19 @@ class RecoveryService {
   }
 
   /// Query active recovery process
-  Future<ActiveRecovery?> getActiveRecovery(String lostAccountAddress, String rescuerAddress) async {
+  Future<ActiveRecovery?> getActiveRecovery(
+    String lostAccountAddress,
+    String rescuerAddress,
+  ) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
       final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
       final rescuerId = crypto.ss58ToAccountId(s: rescuerAddress);
 
-      return await resonanceApi.query.recovery.activeRecoveries(lostAccountId, rescuerId);
+      return await resonanceApi.query.recovery.activeRecoveries(
+        lostAccountId,
+        rescuerId,
+      );
     } catch (e) {
       throw Exception('Failed to get active recovery: $e');
     }
@@ -211,10 +242,15 @@ class RecoveryService {
       final resonanceApi = Resonance(_substrateService.provider!);
       final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
-      final recoveredAccountId = await resonanceApi.query.recovery.proxy(proxyId);
+      final recoveredAccountId = await resonanceApi.query.recovery.proxy(
+        proxyId,
+      );
       return recoveredAccountId != null
           ? crypto.toAccountId(
-              obj: crypto.Keypair(publicKey: Uint8List.fromList(recoveredAccountId), secretKey: Uint8List(0)),
+              obj: crypto.Keypair(
+                publicKey: Uint8List.fromList(recoveredAccountId),
+                secretKey: Uint8List(0),
+              ),
             )
           : null;
     } catch (e) {
@@ -233,9 +269,15 @@ class RecoveryService {
   }
 
   /// Check if recovery process is active
-  Future<bool> isRecoveryActive(String lostAccountAddress, String rescuerAddress) async {
+  Future<bool> isRecoveryActive(
+    String lostAccountAddress,
+    String rescuerAddress,
+  ) async {
     try {
-      final activeRecovery = await getActiveRecovery(lostAccountAddress, rescuerAddress);
+      final activeRecovery = await getActiveRecovery(
+        lostAccountAddress,
+        rescuerAddress,
+      );
       return activeRecovery != null;
     } catch (e) {
       throw Exception('Failed to check recovery status: $e');
@@ -243,9 +285,15 @@ class RecoveryService {
   }
 
   /// Get recovery progress (how many vouches received vs threshold)
-  Future<Map<String, int>> getRecoveryProgress(String lostAccountAddress, String rescuerAddress) async {
+  Future<Map<String, int>> getRecoveryProgress(
+    String lostAccountAddress,
+    String rescuerAddress,
+  ) async {
     try {
-      final activeRecovery = await getActiveRecovery(lostAccountAddress, rescuerAddress);
+      final activeRecovery = await getActiveRecovery(
+        lostAccountAddress,
+        rescuerAddress,
+      );
       final config = await getRecoveryConfig(lostAccountAddress);
 
       if (activeRecovery == null || config == null) {
@@ -285,7 +333,10 @@ class RecoveryService {
     final resonanceApi = Resonance(_substrateService.provider!);
     final accountID = crypto.ss58ToAccountId(s: recipientAddress);
     final dest = const multi_address.$MultiAddress().id(accountID);
-    final call = resonanceApi.tx.balances.transferAllowDeath(dest: dest, value: amount);
+    final call = resonanceApi.tx.balances.transferAllowDeath(
+      dest: dest,
+      value: amount,
+    );
     return call;
   }
 

@@ -7,10 +7,18 @@ class Account {
   final String accountId; // address
   // balance will be fetched from the chain and not stored here.
 
-  const Account({required this.index, required this.name, required this.accountId});
+  const Account({
+    required this.index,
+    required this.name,
+    required this.accountId,
+  });
 
   factory Account.fromJson(Map<String, dynamic> json) {
-    return Account(index: json['index'] as int, name: json['name'] as String, accountId: json['accountId'] as String);
+    return Account(
+      index: json['index'] as int,
+      name: json['name'] as String,
+      accountId: json['accountId'] as String,
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -18,6 +26,10 @@ class Account {
   }
 
   Account copyWith({int? index, String? name, String? accountId}) {
-    return Account(index: index ?? this.index, name: name ?? this.name, accountId: accountId ?? this.accountId);
+    return Account(
+      index: index ?? this.index,
+      name: name ?? this.name,
+      accountId: accountId ?? this.accountId,
+    );
   }
 }

@@ -7,10 +7,10 @@ class MinerHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Quantus Miner')),
-        body: const Center(
-          // Added const
-          child: MinerControls(), // Use the new MinerControls widget
-        ),
-      );
+    appBar: AppBar(title: const Text('Quantus Miner')),
+    body: const Center(
+      // Added const
+      child: MinerControls(), // Use the new MinerControls widget
+    ),
+  );
 }

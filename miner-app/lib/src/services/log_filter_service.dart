@@ -40,7 +40,9 @@ class LogFilterService {
     final lowerLine = line.toLowerCase();
 
     // Always print critical messages, regardless of sync state (after initial burst)
-    if (criticalKeywordsDuringSync.any((keyword) => lowerLine.contains(keyword.toLowerCase()))) {
+    if (criticalKeywordsDuringSync.any(
+      (keyword) => lowerLine.contains(keyword.toLowerCase()),
+    )) {
       return true;
     }
 
@@ -50,7 +52,9 @@ class LogFilterService {
       return false;
     } else {
       // When synced (and after initial burst, and not critical), print if it matches normal keywords.
-      return keywordsToWatch.any((keyword) => lowerLine.contains(keyword.toLowerCase()));
+      return keywordsToWatch.any(
+        (keyword) => lowerLine.contains(keyword.toLowerCase()),
+      );
     }
   }
 }
