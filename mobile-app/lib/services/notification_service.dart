@@ -12,20 +12,19 @@ class NotificationService {
   }
 
   static void showNotification({
+    required String accountName,
     required String title,
     required String message,
-    Duration duration = const Duration(seconds: 4),
-    Color backgroundColor = Colors.black87,
-    IconData icon = Icons.info,
+    NotificationType type = NotificationType.info,
   }) {
     if (_overlayState == null) return;
 
     final notificationData = NotificationData(
       id: _activeNotifications.length.toString(),
+      accountName: accountName,
       title: title,
       message: message,
-      backgroundColor: backgroundColor,
-      icon: icon,
+      type: type,
       timestamp: DateTime.now(),
     );
 
@@ -82,18 +81,22 @@ class NotificationService {
 
 class NotificationData {
   final String id;
+  final NotificationType type;
+  final String accountName;
   final String title;
   final String message;
-  final Color backgroundColor;
-  final IconData icon;
+  final VoidCallback? onViewDetails;
   final DateTime timestamp;
 
   NotificationData({
     required this.id,
+    required this.timestamp,
+    this.type = NotificationType.info,
+    required this.accountName,
     required this.title,
     required this.message,
-    required this.backgroundColor,
-    required this.icon,
-    required this.timestamp,
+    this.onViewDetails,
   });
 }
+
+enum NotificationType { info, success, warning, error }
