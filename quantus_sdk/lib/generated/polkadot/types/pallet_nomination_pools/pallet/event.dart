@@ -2,12 +2,11 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i10;
+import 'package:quiver/collection.dart' as _i9;
 
 import '../../sp_arithmetic/per_things/perbill.dart' as _i6;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 import '../../tuples.dart' as _i5;
-import '../claim_permission.dart' as _i9;
 import '../commission_change_rate.dart' as _i7;
 import '../commission_claim_permission.dart' as _i8;
 import '../pool_state.dart' as _i4;
@@ -235,64 +234,6 @@ class $Event {
       amount: amount,
     );
   }
-
-  MemberClaimPermissionUpdated memberClaimPermissionUpdated({
-    required _i3.AccountId32 member,
-    required _i9.ClaimPermission permission,
-  }) {
-    return MemberClaimPermissionUpdated(
-      member: member,
-      permission: permission,
-    );
-  }
-
-  MetadataUpdated metadataUpdated({
-    required int poolId,
-    required _i3.AccountId32 caller,
-  }) {
-    return MetadataUpdated(
-      poolId: poolId,
-      caller: caller,
-    );
-  }
-
-  PoolNominationMade poolNominationMade({
-    required int poolId,
-    required _i3.AccountId32 caller,
-  }) {
-    return PoolNominationMade(
-      poolId: poolId,
-      caller: caller,
-    );
-  }
-
-  PoolNominatorChilled poolNominatorChilled({
-    required int poolId,
-    required _i3.AccountId32 caller,
-  }) {
-    return PoolNominatorChilled(
-      poolId: poolId,
-      caller: caller,
-    );
-  }
-
-  GlobalParamsUpdated globalParamsUpdated({
-    required BigInt minJoinBond,
-    required BigInt minCreateBond,
-    int? maxPools,
-    int? maxMembers,
-    int? maxMembersPerPool,
-    _i6.Perbill? globalMaxCommission,
-  }) {
-    return GlobalParamsUpdated(
-      minJoinBond: minJoinBond,
-      minCreateBond: minCreateBond,
-      maxPools: maxPools,
-      maxMembers: maxMembers,
-      maxMembersPerPool: maxMembersPerPool,
-      globalMaxCommission: globalMaxCommission,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -338,16 +279,6 @@ class $EventCodec with _i1.Codec<Event> {
         return MinBalanceDeficitAdjusted._decode(input);
       case 17:
         return MinBalanceExcessAdjusted._decode(input);
-      case 18:
-        return MemberClaimPermissionUpdated._decode(input);
-      case 19:
-        return MetadataUpdated._decode(input);
-      case 20:
-        return PoolNominationMade._decode(input);
-      case 21:
-        return PoolNominatorChilled._decode(input);
-      case 22:
-        return GlobalParamsUpdated._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -413,21 +344,6 @@ class $EventCodec with _i1.Codec<Event> {
       case MinBalanceExcessAdjusted:
         (value as MinBalanceExcessAdjusted).encodeTo(output);
         break;
-      case MemberClaimPermissionUpdated:
-        (value as MemberClaimPermissionUpdated).encodeTo(output);
-        break;
-      case MetadataUpdated:
-        (value as MetadataUpdated).encodeTo(output);
-        break;
-      case PoolNominationMade:
-        (value as PoolNominationMade).encodeTo(output);
-        break;
-      case PoolNominatorChilled:
-        (value as PoolNominatorChilled).encodeTo(output);
-        break;
-      case GlobalParamsUpdated:
-        (value as GlobalParamsUpdated).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -473,16 +389,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as MinBalanceDeficitAdjusted)._sizeHint();
       case MinBalanceExcessAdjusted:
         return (value as MinBalanceExcessAdjusted)._sizeHint();
-      case MemberClaimPermissionUpdated:
-        return (value as MemberClaimPermissionUpdated)._sizeHint();
-      case MetadataUpdated:
-        return (value as MetadataUpdated)._sizeHint();
-      case PoolNominationMade:
-        return (value as PoolNominationMade)._sizeHint();
-      case PoolNominatorChilled:
-        return (value as PoolNominatorChilled)._sizeHint();
-      case GlobalParamsUpdated:
-        return (value as GlobalParamsUpdated)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -547,7 +453,7 @@ class Created extends Event {
         other,
       ) ||
       other is Created &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.depositor,
             depositor,
           ) &&
@@ -639,7 +545,7 @@ class Bonded extends Event {
         other,
       ) ||
       other is Bonded &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.member,
             member,
           ) &&
@@ -724,7 +630,7 @@ class PaidOut extends Event {
         other,
       ) ||
       other is PaidOut &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.member,
             member,
           ) &&
@@ -839,7 +745,7 @@ class Unbonded extends Event {
         other,
       ) ||
       other is Unbonded &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.member,
             member,
           ) &&
@@ -942,7 +848,7 @@ class Withdrawn extends Event {
         other,
       ) ||
       other is Withdrawn &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.member,
             member,
           ) &&
@@ -1144,7 +1050,7 @@ class MemberRemoved extends Event {
       ) ||
       other is MemberRemoved &&
           other.poolId == poolId &&
-          _i10.listsEqual(
+          _i9.listsEqual(
             other.member,
             member,
           ) &&
@@ -1884,413 +1790,5 @@ class MinBalanceExcessAdjusted extends Event {
   int get hashCode => Object.hash(
         poolId,
         amount,
-      );
-}
-
-/// A pool member's claim permission has been updated.
-class MemberClaimPermissionUpdated extends Event {
-  const MemberClaimPermissionUpdated({
-    required this.member,
-    required this.permission,
-  });
-
-  factory MemberClaimPermissionUpdated._decode(_i1.Input input) {
-    return MemberClaimPermissionUpdated(
-      member: const _i1.U8ArrayCodec(32).decode(input),
-      permission: _i9.ClaimPermission.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 member;
-
-  /// ClaimPermission
-  final _i9.ClaimPermission permission;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'MemberClaimPermissionUpdated': {
-          'member': member.toList(),
-          'permission': permission.toJson(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(member);
-    size = size + _i9.ClaimPermission.codec.sizeHint(permission);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      18,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      member,
-      output,
-    );
-    _i9.ClaimPermission.codec.encodeTo(
-      permission,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MemberClaimPermissionUpdated &&
-          _i10.listsEqual(
-            other.member,
-            member,
-          ) &&
-          other.permission == permission;
-
-  @override
-  int get hashCode => Object.hash(
-        member,
-        permission,
-      );
-}
-
-/// A pool's metadata was updated.
-class MetadataUpdated extends Event {
-  const MetadataUpdated({
-    required this.poolId,
-    required this.caller,
-  });
-
-  factory MetadataUpdated._decode(_i1.Input input) {
-    return MetadataUpdated(
-      poolId: _i1.U32Codec.codec.decode(input),
-      caller: const _i1.U8ArrayCodec(32).decode(input),
-    );
-  }
-
-  /// PoolId
-  final int poolId;
-
-  /// T::AccountId
-  final _i3.AccountId32 caller;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'MetadataUpdated': {
-          'poolId': poolId,
-          'caller': caller.toList(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(poolId);
-    size = size + const _i3.AccountId32Codec().sizeHint(caller);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      19,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      poolId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      caller,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MetadataUpdated &&
-          other.poolId == poolId &&
-          _i10.listsEqual(
-            other.caller,
-            caller,
-          );
-
-  @override
-  int get hashCode => Object.hash(
-        poolId,
-        caller,
-      );
-}
-
-/// A pool's nominating account (or the pool's root account) has nominated a validator set
-/// on behalf of the pool.
-class PoolNominationMade extends Event {
-  const PoolNominationMade({
-    required this.poolId,
-    required this.caller,
-  });
-
-  factory PoolNominationMade._decode(_i1.Input input) {
-    return PoolNominationMade(
-      poolId: _i1.U32Codec.codec.decode(input),
-      caller: const _i1.U8ArrayCodec(32).decode(input),
-    );
-  }
-
-  /// PoolId
-  final int poolId;
-
-  /// T::AccountId
-  final _i3.AccountId32 caller;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'PoolNominationMade': {
-          'poolId': poolId,
-          'caller': caller.toList(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(poolId);
-    size = size + const _i3.AccountId32Codec().sizeHint(caller);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      20,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      poolId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      caller,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PoolNominationMade &&
-          other.poolId == poolId &&
-          _i10.listsEqual(
-            other.caller,
-            caller,
-          );
-
-  @override
-  int get hashCode => Object.hash(
-        poolId,
-        caller,
-      );
-}
-
-/// The pool is chilled i.e. no longer nominating.
-class PoolNominatorChilled extends Event {
-  const PoolNominatorChilled({
-    required this.poolId,
-    required this.caller,
-  });
-
-  factory PoolNominatorChilled._decode(_i1.Input input) {
-    return PoolNominatorChilled(
-      poolId: _i1.U32Codec.codec.decode(input),
-      caller: const _i1.U8ArrayCodec(32).decode(input),
-    );
-  }
-
-  /// PoolId
-  final int poolId;
-
-  /// T::AccountId
-  final _i3.AccountId32 caller;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'PoolNominatorChilled': {
-          'poolId': poolId,
-          'caller': caller.toList(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(poolId);
-    size = size + const _i3.AccountId32Codec().sizeHint(caller);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      poolId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      caller,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PoolNominatorChilled &&
-          other.poolId == poolId &&
-          _i10.listsEqual(
-            other.caller,
-            caller,
-          );
-
-  @override
-  int get hashCode => Object.hash(
-        poolId,
-        caller,
-      );
-}
-
-/// Global parameters regulating nomination pools have been updated.
-class GlobalParamsUpdated extends Event {
-  const GlobalParamsUpdated({
-    required this.minJoinBond,
-    required this.minCreateBond,
-    this.maxPools,
-    this.maxMembers,
-    this.maxMembersPerPool,
-    this.globalMaxCommission,
-  });
-
-  factory GlobalParamsUpdated._decode(_i1.Input input) {
-    return GlobalParamsUpdated(
-      minJoinBond: _i1.U128Codec.codec.decode(input),
-      minCreateBond: _i1.U128Codec.codec.decode(input),
-      maxPools: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
-      maxMembers: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
-      maxMembersPerPool:
-          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
-      globalMaxCommission:
-          const _i1.OptionCodec<_i6.Perbill>(_i6.PerbillCodec()).decode(input),
-    );
-  }
-
-  /// BalanceOf<T>
-  final BigInt minJoinBond;
-
-  /// BalanceOf<T>
-  final BigInt minCreateBond;
-
-  /// Option<u32>
-  final int? maxPools;
-
-  /// Option<u32>
-  final int? maxMembers;
-
-  /// Option<u32>
-  final int? maxMembersPerPool;
-
-  /// Option<Perbill>
-  final _i6.Perbill? globalMaxCommission;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'GlobalParamsUpdated': {
-          'minJoinBond': minJoinBond,
-          'minCreateBond': minCreateBond,
-          'maxPools': maxPools,
-          'maxMembers': maxMembers,
-          'maxMembersPerPool': maxMembersPerPool,
-          'globalMaxCommission': globalMaxCommission,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U128Codec.codec.sizeHint(minJoinBond);
-    size = size + _i1.U128Codec.codec.sizeHint(minCreateBond);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(maxPools);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(maxMembers);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec)
-            .sizeHint(maxMembersPerPool);
-    size = size +
-        const _i1.OptionCodec<_i6.Perbill>(_i6.PerbillCodec())
-            .sizeHint(globalMaxCommission);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      22,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      minJoinBond,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      minCreateBond,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      maxPools,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      maxMembers,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      maxMembersPerPool,
-      output,
-    );
-    const _i1.OptionCodec<_i6.Perbill>(_i6.PerbillCodec()).encodeTo(
-      globalMaxCommission,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is GlobalParamsUpdated &&
-          other.minJoinBond == minJoinBond &&
-          other.minCreateBond == minCreateBond &&
-          other.maxPools == maxPools &&
-          other.maxMembers == maxMembers &&
-          other.maxMembersPerPool == maxMembersPerPool &&
-          other.globalMaxCommission == globalMaxCommission;
-
-  @override
-  int get hashCode => Object.hash(
-        minJoinBond,
-        minCreateBond,
-        maxPools,
-        maxMembers,
-        maxMembersPerPool,
-        globalMaxCommission,
       );
 }

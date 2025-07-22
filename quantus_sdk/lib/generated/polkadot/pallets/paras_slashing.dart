@@ -6,8 +6,8 @@ import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i4;
 
 import '../types/polkadot_core_primitives/candidate_hash.dart' as _i2;
-import '../types/polkadot_primitives/vstaging/dispute_proof.dart' as _i8;
-import '../types/polkadot_primitives/vstaging/pending_slashes.dart' as _i3;
+import '../types/polkadot_primitives/v8/slashing/dispute_proof.dart' as _i8;
+import '../types/polkadot_primitives/v8/slashing/pending_slashes.dart' as _i3;
 import '../types/polkadot_runtime/runtime_call.dart' as _i7;
 import '../types/polkadot_runtime_parachains/disputes/slashing/pallet/call.dart'
     as _i10;

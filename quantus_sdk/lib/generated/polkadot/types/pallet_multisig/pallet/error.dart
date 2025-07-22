@@ -26,11 +26,10 @@ enum Error {
   /// The sender was contained in the other signatories; it shouldn't be.
   senderInSignatories('SenderInSignatories', 6),
 
-  /// Multisig operation not found in storage.
+  /// Multisig operation not found when attempting to cancel.
   notFound('NotFound', 7),
 
-  /// Only the account that originally created the multisig is able to cancel it or update
-  /// its deposits.
+  /// Only the account that originally created the multisig is able to cancel it.
   notOwner('NotOwner', 8),
 
   /// No timepoint was given, yet the multisig operation is already underway.

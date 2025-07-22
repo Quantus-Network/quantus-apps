@@ -180,16 +180,6 @@ class $Event {
   ControllerBatchDeprecated controllerBatchDeprecated({required int failures}) {
     return ControllerBatchDeprecated(failures: failures);
   }
-
-  CurrencyMigrated currencyMigrated({
-    required _i3.AccountId32 stash,
-    required BigInt forceWithdraw,
-  }) {
-    return CurrencyMigrated(
-      stash: stash,
-      forceWithdraw: forceWithdraw,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -235,8 +225,6 @@ class $EventCodec with _i1.Codec<Event> {
         return ForceEra._decode(input);
       case 17:
         return ControllerBatchDeprecated._decode(input);
-      case 18:
-        return CurrencyMigrated._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -302,9 +290,6 @@ class $EventCodec with _i1.Codec<Event> {
       case ControllerBatchDeprecated:
         (value as ControllerBatchDeprecated).encodeTo(output);
         break;
-      case CurrencyMigrated:
-        (value as CurrencyMigrated).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -350,8 +335,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as ForceEra)._sizeHint();
       case ControllerBatchDeprecated:
         return (value as ControllerBatchDeprecated)._sizeHint();
-      case CurrencyMigrated:
-        return (value as CurrencyMigrated)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -1447,75 +1430,4 @@ class ControllerBatchDeprecated extends Event {
 
   @override
   int get hashCode => failures.hashCode;
-}
-
-/// Staking balance migrated from locks to holds, with any balance that could not be held
-/// is force withdrawn.
-class CurrencyMigrated extends Event {
-  const CurrencyMigrated({
-    required this.stash,
-    required this.forceWithdraw,
-  });
-
-  factory CurrencyMigrated._decode(_i1.Input input) {
-    return CurrencyMigrated(
-      stash: const _i1.U8ArrayCodec(32).decode(input),
-      forceWithdraw: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 stash;
-
-  /// BalanceOf<T>
-  final BigInt forceWithdraw;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'CurrencyMigrated': {
-          'stash': stash.toList(),
-          'forceWithdraw': forceWithdraw,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(stash);
-    size = size + _i1.U128Codec.codec.sizeHint(forceWithdraw);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      18,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      stash,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      forceWithdraw,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CurrencyMigrated &&
-          _i8.listsEqual(
-            other.stash,
-            stash,
-          ) &&
-          other.forceWithdraw == forceWithdraw;
-
-  @override
-  int get hashCode => Object.hash(
-        stash,
-        forceWithdraw,
-      );
 }

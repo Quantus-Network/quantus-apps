@@ -148,10 +148,6 @@ class $Call {
       call: call,
     );
   }
-
-  PokeDeposit pokeDeposit() {
-    return PokeDeposit();
-  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -181,8 +177,6 @@ class $CallCodec with _i1.Codec<Call> {
         return RejectAnnouncement._decode(input);
       case 9:
         return ProxyAnnounced._decode(input);
-      case 10:
-        return const PokeDeposit();
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -224,9 +218,6 @@ class $CallCodec with _i1.Codec<Call> {
       case ProxyAnnounced:
         (value as ProxyAnnounced).encodeTo(output);
         break;
-      case PokeDeposit:
-        (value as PokeDeposit).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -256,8 +247,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as RejectAnnouncement)._sizeHint();
       case ProxyAnnounced:
         return (value as ProxyAnnounced)._sizeHint();
-      case PokeDeposit:
-        return 1;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -1120,32 +1109,4 @@ class ProxyAnnounced extends Call {
         forceProxyType,
         call,
       );
-}
-
-/// Poke / Adjust deposits made for proxies and announcements based on current values.
-/// This can be used by accounts to possibly lower their locked amount.
-///
-/// The dispatch origin for this call must be _Signed_.
-///
-/// The transaction fee is waived if the deposit amount has changed.
-///
-/// Emits `DepositPoked` if successful.
-class PokeDeposit extends Call {
-  const PokeDeposit();
-
-  @override
-  Map<String, dynamic> toJson() => {'poke_deposit': null};
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) => other is PokeDeposit;
-
-  @override
-  int get hashCode => runtimeType.hashCode;
 }

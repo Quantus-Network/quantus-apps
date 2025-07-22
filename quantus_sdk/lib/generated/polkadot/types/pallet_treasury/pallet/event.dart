@@ -699,10 +699,10 @@ class AssetSpendApproved extends Event {
   /// T::Beneficiary
   final _i5.VersionedLocation beneficiary;
 
-  /// BlockNumberFor<T, I>
+  /// BlockNumberFor<T>
   final int validFrom;
 
-  /// BlockNumberFor<T, I>
+  /// BlockNumberFor<T>
   final int expireAt;
 
   @override

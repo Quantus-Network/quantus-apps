@@ -1,16 +1,15 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i8;
-import 'dart:typed_data' as _i9;
+import 'dart:async' as _i7;
+import 'dart:typed_data' as _i8;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i3;
 
-import '../types/pallet_session/pallet/call.dart' as _i11;
-import '../types/polkadot_runtime/runtime_call.dart' as _i10;
+import '../types/pallet_session/pallet/call.dart' as _i10;
+import '../types/polkadot_runtime/runtime_call.dart' as _i9;
 import '../types/polkadot_runtime/session_keys.dart' as _i5;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
-import '../types/sp_core/crypto/key_type_id.dart' as _i7;
-import '../types/sp_staking/offence/offence_severity.dart' as _i6;
+import '../types/sp_core/crypto/key_type_id.dart' as _i6;
 import '../types/tuples.dart' as _i4;
 
 class Queries {
@@ -49,16 +48,11 @@ class Queries {
     )),
   );
 
-  final _i1.StorageValue<List<_i4.Tuple2<int, _i6.OffenceSeverity>>>
-      _disabledValidators =
-      const _i1.StorageValue<List<_i4.Tuple2<int, _i6.OffenceSeverity>>>(
+  final _i1.StorageValue<List<int>> _disabledValidators =
+      const _i1.StorageValue<List<int>>(
     prefix: 'Session',
     storage: 'DisabledValidators',
-    valueCodec: _i3.SequenceCodec<_i4.Tuple2<int, _i6.OffenceSeverity>>(
-        _i4.Tuple2Codec<int, _i6.OffenceSeverity>(
-      _i3.U32Codec.codec,
-      _i6.OffenceSeverityCodec(),
-    )),
+    valueCodec: _i3.U32SequenceCodec.codec,
   );
 
   final _i1.StorageMap<_i2.AccountId32, _i5.SessionKeys> _nextKeys =
@@ -69,21 +63,21 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.AccountId32Codec()),
   );
 
-  final _i1.StorageMap<_i4.Tuple2<_i7.KeyTypeId, List<int>>, _i2.AccountId32>
+  final _i1.StorageMap<_i4.Tuple2<_i6.KeyTypeId, List<int>>, _i2.AccountId32>
       _keyOwner = const _i1
-          .StorageMap<_i4.Tuple2<_i7.KeyTypeId, List<int>>, _i2.AccountId32>(
+          .StorageMap<_i4.Tuple2<_i6.KeyTypeId, List<int>>, _i2.AccountId32>(
     prefix: 'Session',
     storage: 'KeyOwner',
     valueCodec: _i2.AccountId32Codec(),
     hasher: _i1.StorageHasher.twoxx64Concat(
-        _i4.Tuple2Codec<_i7.KeyTypeId, List<int>>(
-      _i7.KeyTypeIdCodec(),
+        _i4.Tuple2Codec<_i6.KeyTypeId, List<int>>(
+      _i6.KeyTypeIdCodec(),
       _i3.U8SequenceCodec.codec,
     )),
   );
 
   /// The current set of validators.
-  _i8.Future<List<_i2.AccountId32>> validators({_i1.BlockHash? at}) async {
+  _i7.Future<List<_i2.AccountId32>> validators({_i1.BlockHash? at}) async {
     final hashedKey = _validators.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -96,7 +90,7 @@ class Queries {
   }
 
   /// Current index of the session.
-  _i8.Future<int> currentIndex({_i1.BlockHash? at}) async {
+  _i7.Future<int> currentIndex({_i1.BlockHash? at}) async {
     final hashedKey = _currentIndex.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -110,7 +104,7 @@ class Queries {
 
   /// True if the underlying economic identities or weighting behind the validators
   /// has changed in the queued validator set.
-  _i8.Future<bool> queuedChanged({_i1.BlockHash? at}) async {
+  _i7.Future<bool> queuedChanged({_i1.BlockHash? at}) async {
     final hashedKey = _queuedChanged.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -124,7 +118,7 @@ class Queries {
 
   /// The queued keys for the next session. When the next session begins, these keys
   /// will be used to determine the validator's session keys.
-  _i8.Future<List<_i4.Tuple2<_i2.AccountId32, _i5.SessionKeys>>> queuedKeys(
+  _i7.Future<List<_i4.Tuple2<_i2.AccountId32, _i5.SessionKeys>>> queuedKeys(
       {_i1.BlockHash? at}) async {
     final hashedKey = _queuedKeys.hashedKey();
     final bytes = await __api.getStorage(
@@ -142,8 +136,7 @@ class Queries {
   /// The vec is always kept sorted so that we can find whether a given validator is
   /// disabled using binary search. It gets cleared when `on_session_ending` returns
   /// a new set of identities.
-  _i8.Future<List<_i4.Tuple2<int, _i6.OffenceSeverity>>> disabledValidators(
-      {_i1.BlockHash? at}) async {
+  _i7.Future<List<int>> disabledValidators({_i1.BlockHash? at}) async {
     final hashedKey = _disabledValidators.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -152,11 +145,15 @@ class Queries {
     if (bytes != null) {
       return _disabledValidators.decodeValue(bytes);
     }
-    return []; /* Default */
+    return List<int>.filled(
+      0,
+      0,
+      growable: true,
+    ); /* Default */
   }
 
   /// The next session keys for a validator.
-  _i8.Future<_i5.SessionKeys?> nextKeys(
+  _i7.Future<_i5.SessionKeys?> nextKeys(
     _i2.AccountId32 key1, {
     _i1.BlockHash? at,
   }) async {
@@ -172,8 +169,8 @@ class Queries {
   }
 
   /// The owner of a key. The key is the `KeyTypeId` + the encoded key.
-  _i8.Future<_i2.AccountId32?> keyOwner(
-    _i4.Tuple2<_i7.KeyTypeId, List<int>> key1, {
+  _i7.Future<_i2.AccountId32?> keyOwner(
+    _i4.Tuple2<_i6.KeyTypeId, List<int>> key1, {
     _i1.BlockHash? at,
   }) async {
     final hashedKey = _keyOwner.hashedKeyFor(key1);
@@ -188,7 +185,7 @@ class Queries {
   }
 
   /// The next session keys for a validator.
-  _i8.Future<List<_i5.SessionKeys?>> multiNextKeys(
+  _i7.Future<List<_i5.SessionKeys?>> multiNextKeys(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -206,8 +203,8 @@ class Queries {
   }
 
   /// The owner of a key. The key is the `KeyTypeId` + the encoded key.
-  _i8.Future<List<_i2.AccountId32?>> multiKeyOwner(
-    List<_i4.Tuple2<_i7.KeyTypeId, List<int>>> keys, {
+  _i7.Future<List<_i2.AccountId32?>> multiKeyOwner(
+    List<_i4.Tuple2<_i6.KeyTypeId, List<int>>> keys, {
     _i1.BlockHash? at,
   }) async {
     final hashedKeys = keys.map((key) => _keyOwner.hashedKeyFor(key)).toList();
@@ -224,55 +221,55 @@ class Queries {
   }
 
   /// Returns the storage key for `validators`.
-  _i9.Uint8List validatorsKey() {
+  _i8.Uint8List validatorsKey() {
     final hashedKey = _validators.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `currentIndex`.
-  _i9.Uint8List currentIndexKey() {
+  _i8.Uint8List currentIndexKey() {
     final hashedKey = _currentIndex.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `queuedChanged`.
-  _i9.Uint8List queuedChangedKey() {
+  _i8.Uint8List queuedChangedKey() {
     final hashedKey = _queuedChanged.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `queuedKeys`.
-  _i9.Uint8List queuedKeysKey() {
+  _i8.Uint8List queuedKeysKey() {
     final hashedKey = _queuedKeys.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `disabledValidators`.
-  _i9.Uint8List disabledValidatorsKey() {
+  _i8.Uint8List disabledValidatorsKey() {
     final hashedKey = _disabledValidators.hashedKey();
     return hashedKey;
   }
 
   /// Returns the storage key for `nextKeys`.
-  _i9.Uint8List nextKeysKey(_i2.AccountId32 key1) {
+  _i8.Uint8List nextKeysKey(_i2.AccountId32 key1) {
     final hashedKey = _nextKeys.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage key for `keyOwner`.
-  _i9.Uint8List keyOwnerKey(_i4.Tuple2<_i7.KeyTypeId, List<int>> key1) {
+  _i8.Uint8List keyOwnerKey(_i4.Tuple2<_i6.KeyTypeId, List<int>> key1) {
     final hashedKey = _keyOwner.hashedKeyFor(key1);
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `nextKeys`.
-  _i9.Uint8List nextKeysMapPrefix() {
+  _i8.Uint8List nextKeysMapPrefix() {
     final hashedKey = _nextKeys.mapPrefix();
     return hashedKey;
   }
 
   /// Returns the storage map key prefix for `keyOwner`.
-  _i9.Uint8List keyOwnerMapPrefix() {
+  _i8.Uint8List keyOwnerMapPrefix() {
     final hashedKey = _keyOwner.mapPrefix();
     return hashedKey;
   }
@@ -290,11 +287,11 @@ class Txs {
   /// ## Complexity
   /// - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
   ///  fixed.
-  _i10.Session setKeys({
+  _i9.Session setKeys({
     required _i5.SessionKeys keys,
     required List<int> proof,
   }) {
-    return _i10.Session(_i11.SetKeys(
+    return _i9.Session(_i10.SetKeys(
       keys: keys,
       proof: proof,
     ));
@@ -312,7 +309,7 @@ class Txs {
   /// ## Complexity
   /// - `O(1)` in number of key types. Actual cost depends on the number of length of
   ///  `T::Keys::key_ids()` which is fixed.
-  _i10.Session purgeKeys() {
-    return _i10.Session(_i11.PurgeKeys());
+  _i9.Session purgeKeys() {
+    return _i9.Session(_i10.PurgeKeys());
   }
 }

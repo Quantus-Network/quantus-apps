@@ -66,10 +66,6 @@ class $Call {
   Freeze freeze({required int index}) {
     return Freeze(index: index);
   }
-
-  PokeDeposit pokeDeposit({required int index}) {
-    return PokeDeposit(index: index);
-  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -89,8 +85,6 @@ class $CallCodec with _i1.Codec<Call> {
         return ForceTransfer._decode(input);
       case 4:
         return Freeze._decode(input);
-      case 5:
-        return PokeDeposit._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -117,9 +111,6 @@ class $CallCodec with _i1.Codec<Call> {
       case Freeze:
         (value as Freeze).encodeTo(output);
         break;
-      case PokeDeposit:
-        (value as PokeDeposit).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -139,8 +130,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ForceTransfer)._sizeHint();
       case Freeze:
         return (value as Freeze)._sizeHint();
-      case PokeDeposit:
-        return (value as PokeDeposit)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -479,60 +468,6 @@ class Freeze extends Call {
         other,
       ) ||
       other is Freeze && other.index == index;
-
-  @override
-  int get hashCode => index.hashCode;
-}
-
-/// Poke the deposit reserved for an index.
-///
-/// The dispatch origin for this call must be _Signed_ and the signing account must have a
-/// non-frozen account `index`.
-///
-/// The transaction fees is waived if the deposit is changed after poking/reconsideration.
-///
-/// - `index`: the index whose deposit is to be poked/reconsidered.
-///
-/// Emits `DepositPoked` if successful.
-class PokeDeposit extends Call {
-  const PokeDeposit({required this.index});
-
-  factory PokeDeposit._decode(_i1.Input input) {
-    return PokeDeposit(index: _i1.U32Codec.codec.decode(input));
-  }
-
-  /// T::AccountIndex
-  final int index;
-
-  @override
-  Map<String, Map<String, int>> toJson() => {
-        'poke_deposit': {'index': index}
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(index);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PokeDeposit && other.index == index;
 
   @override
   int get hashCode => index.hashCode;

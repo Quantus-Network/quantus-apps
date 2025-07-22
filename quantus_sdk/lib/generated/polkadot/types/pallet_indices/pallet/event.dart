@@ -57,20 +57,6 @@ class $Event {
       who: who,
     );
   }
-
-  DepositPoked depositPoked({
-    required _i3.AccountId32 who,
-    required int index,
-    required BigInt oldDeposit,
-    required BigInt newDeposit,
-  }) {
-    return DepositPoked(
-      who: who,
-      index: index,
-      oldDeposit: oldDeposit,
-      newDeposit: newDeposit,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -86,8 +72,6 @@ class $EventCodec with _i1.Codec<Event> {
         return IndexFreed._decode(input);
       case 2:
         return IndexFrozen._decode(input);
-      case 3:
-        return DepositPoked._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -108,9 +92,6 @@ class $EventCodec with _i1.Codec<Event> {
       case IndexFrozen:
         (value as IndexFrozen).encodeTo(output);
         break;
-      case DepositPoked:
-        (value as DepositPoked).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -126,8 +107,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as IndexFreed)._sizeHint();
       case IndexFrozen:
         return (value as IndexFrozen)._sizeHint();
-      case DepositPoked:
-        return (value as DepositPoked)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -317,101 +296,5 @@ class IndexFrozen extends Event {
   int get hashCode => Object.hash(
         index,
         who,
-      );
-}
-
-/// A deposit to reserve an index has been poked/reconsidered.
-class DepositPoked extends Event {
-  const DepositPoked({
-    required this.who,
-    required this.index,
-    required this.oldDeposit,
-    required this.newDeposit,
-  });
-
-  factory DepositPoked._decode(_i1.Input input) {
-    return DepositPoked(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      index: _i1.U32Codec.codec.decode(input),
-      oldDeposit: _i1.U128Codec.codec.decode(input),
-      newDeposit: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 who;
-
-  /// T::AccountIndex
-  final int index;
-
-  /// BalanceOf<T>
-  final BigInt oldDeposit;
-
-  /// BalanceOf<T>
-  final BigInt newDeposit;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'DepositPoked': {
-          'who': who.toList(),
-          'index': index,
-          'oldDeposit': oldDeposit,
-          'newDeposit': newDeposit,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(who);
-    size = size + _i1.U32Codec.codec.sizeHint(index);
-    size = size + _i1.U128Codec.codec.sizeHint(oldDeposit);
-    size = size + _i1.U128Codec.codec.sizeHint(newDeposit);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      oldDeposit,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      newDeposit,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DepositPoked &&
-          _i4.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.index == index &&
-          other.oldDeposit == oldDeposit &&
-          other.newDeposit == newDeposit;
-
-  @override
-  int get hashCode => Object.hash(
-        who,
-        index,
-        oldDeposit,
-        newDeposit,
       );
 }

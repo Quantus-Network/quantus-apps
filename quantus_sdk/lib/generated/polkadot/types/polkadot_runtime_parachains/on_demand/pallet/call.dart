@@ -52,16 +52,6 @@ class $Call {
       paraId: paraId,
     );
   }
-
-  PlaceOrderWithCredits placeOrderWithCredits({
-    required BigInt maxAmount,
-    required _i3.Id paraId,
-  }) {
-    return PlaceOrderWithCredits(
-      maxAmount: maxAmount,
-      paraId: paraId,
-    );
-  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -75,8 +65,6 @@ class $CallCodec with _i1.Codec<Call> {
         return PlaceOrderAllowDeath._decode(input);
       case 1:
         return PlaceOrderKeepAlive._decode(input);
-      case 2:
-        return PlaceOrderWithCredits._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -94,9 +82,6 @@ class $CallCodec with _i1.Codec<Call> {
       case PlaceOrderKeepAlive:
         (value as PlaceOrderKeepAlive).encodeTo(output);
         break;
-      case PlaceOrderWithCredits:
-        (value as PlaceOrderWithCredits).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -110,8 +95,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as PlaceOrderAllowDeath)._sizeHint();
       case PlaceOrderKeepAlive:
         return (value as PlaceOrderKeepAlive)._sizeHint();
-      case PlaceOrderWithCredits:
-        return (value as PlaceOrderWithCredits)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -271,89 +254,6 @@ class PlaceOrderKeepAlive extends Call {
         other,
       ) ||
       other is PlaceOrderKeepAlive &&
-          other.maxAmount == maxAmount &&
-          other.paraId == paraId;
-
-  @override
-  int get hashCode => Object.hash(
-        maxAmount,
-        paraId,
-      );
-}
-
-/// Create a single on demand core order with credits.
-/// Will charge the owner's on-demand credit account the spot price for the current block.
-///
-/// Parameters:
-/// - `origin`: The sender of the call, on-demand credits will be withdrawn from this
-///  account.
-/// - `max_amount`: The maximum number of credits to spend from the origin to place an
-///  order.
-/// - `para_id`: A `ParaId` the origin wants to provide blockspace for.
-///
-/// Errors:
-/// - `InsufficientCredits`
-/// - `QueueFull`
-/// - `SpotPriceHigherThanMaxAmount`
-///
-/// Events:
-/// - `OnDemandOrderPlaced`
-class PlaceOrderWithCredits extends Call {
-  const PlaceOrderWithCredits({
-    required this.maxAmount,
-    required this.paraId,
-  });
-
-  factory PlaceOrderWithCredits._decode(_i1.Input input) {
-    return PlaceOrderWithCredits(
-      maxAmount: _i1.U128Codec.codec.decode(input),
-      paraId: _i1.U32Codec.codec.decode(input),
-    );
-  }
-
-  /// BalanceOf<T>
-  final BigInt maxAmount;
-
-  /// ParaId
-  final _i3.Id paraId;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'place_order_with_credits': {
-          'maxAmount': maxAmount,
-          'paraId': paraId,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U128Codec.codec.sizeHint(maxAmount);
-    size = size + const _i3.IdCodec().sizeHint(paraId);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      maxAmount,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      paraId,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PlaceOrderWithCredits &&
           other.maxAmount == maxAmount &&
           other.paraId == paraId;
 

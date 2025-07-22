@@ -3,7 +3,7 @@ import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
 
-import '../../../../polkadot_primitives/vstaging/dispute_proof.dart' as _i3;
+import '../../../../polkadot_primitives/v8/slashing/dispute_proof.dart' as _i3;
 import '../../../../sp_session/membership_proof.dart' as _i4;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
@@ -99,7 +99,7 @@ class ReportDisputeLostUnsigned extends Call {
     );
   }
 
-  /// Box<DisputeProofV2>
+  /// Box<DisputeProof>
   final _i3.DisputeProof disputeProof;
 
   /// T::KeyOwnerProof

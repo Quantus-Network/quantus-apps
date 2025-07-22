@@ -487,9 +487,8 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Stake funds with a pool. The amount to bond is delegated (or transferred based on
-/// [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-/// increases the pool's bond.
+/// Stake funds with a pool. The amount to bond is transferred from the member to the pool
+/// account and immediately increases the pools bond.
 ///
 /// The method of transferring the amount to the pool account is determined by
 /// [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -1128,13 +1127,13 @@ class CreateWithPoolId extends Call {
 /// The dispatch origin of this call must be signed by the pool nominator or the pool
 /// root role.
 ///
-/// This directly forwards the call to an implementation of `StakingInterface` (e.g.,
-/// `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+/// This directly forward the call to the staking pallet, on behalf of the pool bonded
+/// account.
 ///
 /// # Note
 ///
-/// In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
-/// have at least `depositor_min_bond` in the pool to start nominating.
+/// In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
+/// at least `depositor_min_bond` in the pool to start nominating.
 class Nominate extends Call {
   const Nominate({
     required this.poolId,
@@ -1588,18 +1587,17 @@ class UpdateRoles extends Call {
 /// The dispatch origin of this call can be signed by the pool nominator or the pool
 /// root role, same as [`Pallet::nominate`].
 ///
-/// This directly forwards the call to an implementation of `StakingInterface` (e.g.,
-/// `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
-///
 /// Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
 /// account).
 ///
 /// # Conditions for a permissionless dispatch:
-/// * When pool depositor has less than `MinNominatorBond` staked, otherwise pool members
+/// * When pool depositor has less than `MinNominatorBond` staked, otherwise  pool members
 ///  are unable to unbond.
 ///
 /// # Conditions for permissioned dispatch:
-/// * The caller is the pool's nominator or root.
+/// * The caller has a nominator or root role of the pool.
+/// This directly forward the call to the staking pallet, on behalf of the pool bonded
+/// account.
 class Chill extends Call {
   const Chill({required this.poolId});
 
@@ -2052,20 +2050,9 @@ class SetCommissionChangeRate extends Call {
 
 /// Claim pending commission.
 ///
-/// The `root` role of the pool is _always_ allowed to claim the pool's commission.
-///
-/// If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
-/// trigger the process of claiming the pool's commission.
-///
-/// If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
-/// accounts
-/// * `acc`, and
-/// * the pool's root account
-///
-/// may call this extrinsic on behalf of the pool.
-///
-/// Pending commissions are paid out and added to the total claimed commission.
-/// The total pending commission is reset to zero.
+/// The dispatch origin of this call must be signed by the `root` role of the pool. Pending
+/// commission is paid out and added to total claimed commission`. Total pending commission
+/// is reset to zero. the current.
 class ClaimCommission extends Call {
   const ClaimCommission({required this.poolId});
 

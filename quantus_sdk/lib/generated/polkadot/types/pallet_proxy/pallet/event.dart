@@ -2,13 +2,12 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i8;
+import 'package:quiver/collection.dart' as _i7;
 
 import '../../polkadot_runtime_constants/proxy/proxy_type.dart' as _i5;
 import '../../primitive_types/h256.dart' as _i6;
 import '../../sp_core/crypto/account_id32.dart' as _i4;
 import '../../sp_runtime/dispatch_error.dart' as _i3;
-import '../deposit_kind.dart' as _i7;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -96,20 +95,6 @@ class $Event {
       delay: delay,
     );
   }
-
-  DepositPoked depositPoked({
-    required _i4.AccountId32 who,
-    required _i7.DepositKind kind,
-    required BigInt oldDeposit,
-    required BigInt newDeposit,
-  }) {
-    return DepositPoked(
-      who: who,
-      kind: kind,
-      oldDeposit: oldDeposit,
-      newDeposit: newDeposit,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -129,8 +114,6 @@ class $EventCodec with _i1.Codec<Event> {
         return ProxyAdded._decode(input);
       case 4:
         return ProxyRemoved._decode(input);
-      case 5:
-        return DepositPoked._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -157,9 +140,6 @@ class $EventCodec with _i1.Codec<Event> {
       case ProxyRemoved:
         (value as ProxyRemoved).encodeTo(output);
         break;
-      case DepositPoked:
-        (value as DepositPoked).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -179,8 +159,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as ProxyAdded)._sizeHint();
       case ProxyRemoved:
         return (value as ProxyRemoved)._sizeHint();
-      case DepositPoked:
-        return (value as DepositPoked)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -324,11 +302,11 @@ class PureCreated extends Event {
         other,
       ) ||
       other is PureCreated &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.pure,
             pure,
           ) &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.who,
             who,
           ) &&
@@ -412,15 +390,15 @@ class Announced extends Event {
         other,
       ) ||
       other is Announced &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.real,
             real,
           ) &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.proxy,
             proxy,
           ) &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.callHash,
             callHash,
           );
@@ -512,11 +490,11 @@ class ProxyAdded extends Event {
         other,
       ) ||
       other is ProxyAdded &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.delegator,
             delegator,
           ) &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.delegatee,
             delegatee,
           ) &&
@@ -611,11 +589,11 @@ class ProxyRemoved extends Event {
         other,
       ) ||
       other is ProxyRemoved &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.delegator,
             delegator,
           ) &&
-          _i8.listsEqual(
+          _i7.listsEqual(
             other.delegatee,
             delegatee,
           ) &&
@@ -628,101 +606,5 @@ class ProxyRemoved extends Event {
         delegatee,
         proxyType,
         delay,
-      );
-}
-
-/// A deposit stored for proxies or announcements was poked / updated.
-class DepositPoked extends Event {
-  const DepositPoked({
-    required this.who,
-    required this.kind,
-    required this.oldDeposit,
-    required this.newDeposit,
-  });
-
-  factory DepositPoked._decode(_i1.Input input) {
-    return DepositPoked(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      kind: _i7.DepositKind.codec.decode(input),
-      oldDeposit: _i1.U128Codec.codec.decode(input),
-      newDeposit: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i4.AccountId32 who;
-
-  /// DepositKind
-  final _i7.DepositKind kind;
-
-  /// BalanceOf<T>
-  final BigInt oldDeposit;
-
-  /// BalanceOf<T>
-  final BigInt newDeposit;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'DepositPoked': {
-          'who': who.toList(),
-          'kind': kind.toJson(),
-          'oldDeposit': oldDeposit,
-          'newDeposit': newDeposit,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i4.AccountId32Codec().sizeHint(who);
-    size = size + _i7.DepositKind.codec.sizeHint(kind);
-    size = size + _i1.U128Codec.codec.sizeHint(oldDeposit);
-    size = size + _i1.U128Codec.codec.sizeHint(newDeposit);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i7.DepositKind.codec.encodeTo(
-      kind,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      oldDeposit,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      newDeposit,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DepositPoked &&
-          _i8.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.kind == kind &&
-          other.oldDeposit == oldDeposit &&
-          other.newDeposit == newDeposit;
-
-  @override
-  int get hashCode => Object.hash(
-        who,
-        kind,
-        oldDeposit,
-        newDeposit,
       );
 }

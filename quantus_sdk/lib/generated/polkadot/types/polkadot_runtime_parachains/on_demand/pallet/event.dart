@@ -50,16 +50,6 @@ class $Event {
   SpotPriceSet spotPriceSet({required BigInt spotPrice}) {
     return SpotPriceSet(spotPrice: spotPrice);
   }
-
-  AccountCredited accountCredited({
-    required _i4.AccountId32 who,
-    required BigInt amount,
-  }) {
-    return AccountCredited(
-      who: who,
-      amount: amount,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -73,8 +63,6 @@ class $EventCodec with _i1.Codec<Event> {
         return OnDemandOrderPlaced._decode(input);
       case 1:
         return SpotPriceSet._decode(input);
-      case 2:
-        return AccountCredited._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -92,9 +80,6 @@ class $EventCodec with _i1.Codec<Event> {
       case SpotPriceSet:
         (value as SpotPriceSet).encodeTo(output);
         break;
-      case AccountCredited:
-        (value as AccountCredited).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -108,8 +93,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as OnDemandOrderPlaced)._sizeHint();
       case SpotPriceSet:
         return (value as SpotPriceSet)._sizeHint();
-      case AccountCredited:
-        return (value as AccountCredited)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -243,74 +226,4 @@ class SpotPriceSet extends Event {
 
   @override
   int get hashCode => spotPrice.hashCode;
-}
-
-/// An account was given credits.
-class AccountCredited extends Event {
-  const AccountCredited({
-    required this.who,
-    required this.amount,
-  });
-
-  factory AccountCredited._decode(_i1.Input input) {
-    return AccountCredited(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i4.AccountId32 who;
-
-  /// BalanceOf<T>
-  final BigInt amount;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'AccountCredited': {
-          'who': who.toList(),
-          'amount': amount,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i4.AccountId32Codec().sizeHint(who);
-    size = size + _i1.U128Codec.codec.sizeHint(amount);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AccountCredited &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.amount == amount;
-
-  @override
-  int get hashCode => Object.hash(
-        who,
-        amount,
-      );
 }

@@ -173,20 +173,6 @@ class Txs {
   _i7.Indices freeze({required int index}) {
     return _i7.Indices(_i8.Freeze(index: index));
   }
-
-  /// Poke the deposit reserved for an index.
-  ///
-  /// The dispatch origin for this call must be _Signed_ and the signing account must have a
-  /// non-frozen account `index`.
-  ///
-  /// The transaction fees is waived if the deposit is changed after poking/reconsideration.
-  ///
-  /// - `index`: the index whose deposit is to be poked/reconsidered.
-  ///
-  /// Emits `DepositPoked` if successful.
-  _i7.Indices pokeDeposit({required int index}) {
-    return _i7.Indices(_i8.PokeDeposit(index: index));
-  }
 }
 
 class Constants {

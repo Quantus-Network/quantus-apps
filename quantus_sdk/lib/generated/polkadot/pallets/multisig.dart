@@ -226,31 +226,6 @@ class Txs {
       callHash: callHash,
     ));
   }
-
-  /// Poke the deposit reserved for an existing multisig operation.
-  ///
-  /// The dispatch origin for this call must be _Signed_ and must be the original depositor of
-  /// the multisig operation.
-  ///
-  /// The transaction fee is waived if the deposit amount has changed.
-  ///
-  /// - `threshold`: The total number of approvals needed for this multisig.
-  /// - `other_signatories`: The accounts (other than the sender) who are part of the
-  ///  multisig.
-  /// - `call_hash`: The hash of the call this deposit is reserved for.
-  ///
-  /// Emits `DepositPoked` if successful.
-  _i7.Multisig pokeDeposit({
-    required int threshold,
-    required List<_i2.AccountId32> otherSignatories,
-    required List<int> callHash,
-  }) {
-    return _i7.Multisig(_i8.PokeDeposit(
-      threshold: threshold,
-      otherSignatories: otherSignatories,
-      callHash: callHash,
-    ));
-  }
 }
 
 class Constants {
