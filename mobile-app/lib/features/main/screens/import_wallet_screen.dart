@@ -41,8 +41,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
         }
       }
 
-      print('discovering OG key! DEBUG.');
-      final key = HdWalletService().keyPairAtIndex(mnemonic, -1);
+      final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
       await _settingsService.addAccount(
         Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
