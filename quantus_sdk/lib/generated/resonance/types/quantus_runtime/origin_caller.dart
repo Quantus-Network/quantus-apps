@@ -51,7 +51,7 @@ class $OriginCallerCodec with _i1.Codec<OriginCaller> {
     switch (index) {
       case 0:
         return System._decode(input);
-      case 20:
+      case 19:
         return Origins._decode(input);
       default:
         throw Exception('OriginCaller: Invalid variant index: "$index"');
@@ -153,7 +153,7 @@ class Origins extends OriginCaller {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      20,
+      19,
       output,
     );
     _i4.Origin.codec.encodeTo(

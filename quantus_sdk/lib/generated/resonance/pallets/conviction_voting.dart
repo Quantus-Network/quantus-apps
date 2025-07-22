@@ -317,7 +317,7 @@ class Constants {
   ///
   /// Also used to compute weight, an overly large value can lead to extrinsics with large
   /// weight estimation: see `delegate` for instance.
-  final int maxVotes = 512;
+  final int maxVotes = 4096;
 
   /// The minimum period of vote locking.
   ///

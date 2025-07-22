@@ -427,7 +427,7 @@ class Constants {
 
   /// The maximum weight that may be scheduled per block for any dispatchables.
   final _i11.Weight maximumWeight = _i11.Weight(
-    refTime: BigInt.from(1600000000000),
+    refTime: BigInt.from(4800000000000),
     proofSize: BigInt.parse(
       '14757395258967641292',
       radix: 10,
@@ -444,5 +444,5 @@ class Constants {
   /// Precision of the timestamp buckets.
   ///
   /// Timestamp based dispatches are rounded to the nearest bucket of this precision.
-  final BigInt timestampBucketSize = BigInt.from(2000);
+  final BigInt timestampBucketSize = BigInt.from(40000);
 }
