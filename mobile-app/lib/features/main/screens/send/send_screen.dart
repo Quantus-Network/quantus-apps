@@ -11,7 +11,7 @@ import 'package:resonance_network_wallet/features/components/recent_address_list
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
-import 'package:resonance_network_wallet/shared/utilities/decimal_formatter.dart';
+import 'package:resonance_network_wallet/shared/extensions/decimal_input_filter.dart';
 
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key});
@@ -910,7 +910,7 @@ class SendScreenState extends State<SendScreen> {
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
-                              inputFormatters: [DecimalInputFormatter()],
+                              inputFormatters: [DecimalInputFilter()],
                               onChanged: _validateAmount,
                             ),
                           ),
