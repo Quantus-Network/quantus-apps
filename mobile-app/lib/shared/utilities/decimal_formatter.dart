@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 class DecimalInputFormatter extends TextInputFormatter {
-  final RegExp decimalRegex = RegExp(r'^(0|([1-9]\d*))([,.]\d*)?$|^$');
+  final RegExp decimalRegex = RegExp(r'^(0|([1-9]\d*))([,.]\d{0,12})?$|^$');
 
   @override
   TextEditingValue formatEditUpdate(
