@@ -22,7 +22,13 @@ class MinerProcess {
   final int minerCores;
   final int externalMinerPort;
 
-  final Function(bool isSyncing, int? currentBlock, int? targetBlock, double? hashrate)? onMetricsUpdate;
+  final Function(
+    bool isSyncing,
+    int? currentBlock,
+    int? targetBlock,
+    double? hashrate,
+  )?
+  onMetricsUpdate;
 
   MinerProcess(
     this.bin,
@@ -42,7 +48,8 @@ class MinerProcess {
     await BinaryManager.ensureNodeBinary();
 
     print('DEBUG: Ensuring external miner binary is available...');
-    final externalMinerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
+    final externalMinerBinPath =
+        await BinaryManager.getExternalMinerBinaryFilePath();
     print('DEBUG: External miner expected at: $externalMinerBinPath');
 
     await BinaryManager.ensureExternalMinerBinary();
@@ -50,19 +57,29 @@ class MinerProcess {
 
     print('DEBUG: Checking if external miner binary exists after ensure...');
     if (!await externalMinerBin.exists()) {
-      print('DEBUG: ERROR - External miner binary not found at $externalMinerBinPath');
-      throw Exception('External miner binary not found at $externalMinerBinPath');
+      print(
+        'DEBUG: ERROR - External miner binary not found at $externalMinerBinPath',
+      );
+      throw Exception(
+        'External miner binary not found at $externalMinerBinPath',
+      );
     } else {
       print('DEBUG: External miner binary found at $externalMinerBinPath');
 
       // Check if it's executable
       final stat = await externalMinerBin.stat();
-      print('DEBUG: External miner binary permissions: ${stat.mode.toRadixString(8)}');
+      print(
+        'DEBUG: External miner binary permissions: ${stat.mode.toRadixString(8)}',
+      );
     }
 
     // Start the external miner first
-    print('DEBUG: Starting external miner on port $externalMinerPort with $minerCores cores...');
-    print('DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --num-cores $minerCores');
+    print(
+      'DEBUG: Starting external miner on port $externalMinerPort with $minerCores cores...',
+    );
+    print(
+      'DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --num-cores $minerCores',
+    );
 
     try {
       _externalMinerProcess = await Process.start(externalMinerBin.path, [
@@ -71,20 +88,28 @@ class MinerProcess {
         '--num-cores',
         minerCores.toString(),
       ]);
-      print('DEBUG: External miner process started successfully with PID: ${_externalMinerProcess!.pid}');
+      print(
+        'DEBUG: External miner process started successfully with PID: ${_externalMinerProcess!.pid}',
+      );
     } catch (e) {
       print('DEBUG: ERROR - Failed to start external miner process: $e');
       throw Exception('Failed to start external miner: $e');
     }
 
     // Set up external miner log handling
-    _externalMinerProcess!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      print('[ext-miner] $line');
-    });
+    _externalMinerProcess!.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          print('[ext-miner] $line');
+        });
 
-    _externalMinerProcess!.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      print('[ext-miner-err] $line');
-    });
+    _externalMinerProcess!.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          print('[ext-miner-err] $line');
+        });
 
     // Monitor external miner process exit
     _externalMinerProcess!.exitCode.then((exitCode) {
@@ -142,18 +167,26 @@ class MinerProcess {
     }
 
     // Test if external miner is responding on the port
-    print('DEBUG: Testing if external miner is responding on port $externalMinerPort...');
+    print(
+      'DEBUG: Testing if external miner is responding on port $externalMinerPort...',
+    );
     try {
       final testClient = HttpClient();
       testClient.connectionTimeout = const Duration(seconds: 5);
-      final request = await testClient.getUrl(Uri.parse('http://127.0.0.1:$externalMinerPort'));
+      final request = await testClient.getUrl(
+        Uri.parse('http://127.0.0.1:$externalMinerPort'),
+      );
       final response = await request.close();
-      print('DEBUG: External miner test response status: ${response.statusCode}');
+      print(
+        'DEBUG: External miner test response status: ${response.statusCode}',
+      );
       await response.drain(); // Consume the response
       testClient.close();
       print('DEBUG: External miner is responding correctly!');
     } catch (e) {
-      print('DEBUG: External miner not responding on port $externalMinerPort: $e');
+      print(
+        'DEBUG: External miner not responding on port $externalMinerPort: $e',
+      );
       print('DEBUG: This might be normal if the miner is still starting up');
     }
 
@@ -166,16 +199,24 @@ class MinerProcess {
     final nodeKeyFileFromFileSystem = await BinaryManager.getNodeKeyFile();
     if (await nodeKeyFileFromFileSystem.exists()) {
       final content = await nodeKeyFileFromFileSystem.readAsString();
-      print('DEBUG: Content of nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}): $content');
+      print(
+        'DEBUG: Content of nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}): $content',
+      );
     } else {
-      print('DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) does not exist.');
+      print(
+        'DEBUG: nodeKeyFileFromFileSystem (${nodeKeyFileFromFileSystem.path}) does not exist.',
+      );
     }
 
     if (await identityPath.exists()) {
       final identityContent = await identityPath.readAsString();
-      print('DEBUG: Content of identityPath file (${identityPath.path}) to be used by node: $identityContent');
+      print(
+        'DEBUG: Content of identityPath file (${identityPath.path}) to be used by node: $identityContent',
+      );
     } else {
-      print('DEBUG: identityPath file (${identityPath.path}) to be used by node does not exist.');
+      print(
+        'DEBUG: identityPath file (${identityPath.path}) to be used by node does not exist.',
+      );
     }
 
     final List<String> args = [
@@ -214,19 +255,35 @@ class MinerProcess {
     onMetricsUpdate?.call(_isCurrentlySyncing, null, null, _currentHashrate);
 
     _syncStatusTimer?.cancel();
-    _syncStatusTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    _syncStatusTimer = Timer.periodic(const Duration(seconds: 10), (
+      timer,
+    ) async {
       PrometheusMetrics? metrics = await _prometheusService.fetchMetrics();
       if (metrics != null) {
         bool previousSyncState = _isCurrentlySyncing;
         _isCurrentlySyncing = metrics.isMajorSyncing;
 
         if (previousSyncState != _isCurrentlySyncing) {
-          print('DEBUG: Sync status changed: $previousSyncState -> $_isCurrentlySyncing');
+          print(
+            'DEBUG: Sync status changed: $previousSyncState -> $_isCurrentlySyncing',
+          );
         }
-        onMetricsUpdate?.call(_isCurrentlySyncing, metrics.bestBlock, metrics.targetBlock, _currentHashrate);
+        onMetricsUpdate?.call(
+          _isCurrentlySyncing,
+          metrics.bestBlock,
+          metrics.targetBlock,
+          _currentHashrate,
+        );
       } else {
-        print('WARNING: Failed to fetch Prometheus metrics. Keeping previous sync state: $_isCurrentlySyncing');
-        onMetricsUpdate?.call(_isCurrentlySyncing, null, null, _currentHashrate);
+        print(
+          'WARNING: Failed to fetch Prometheus metrics. Keeping previous sync state: $_isCurrentlySyncing',
+        );
+        onMetricsUpdate?.call(
+          _isCurrentlySyncing,
+          null,
+          null,
+          _currentHashrate,
+        );
       }
     });
 
@@ -238,15 +295,26 @@ class MinerProcess {
         final newHashrate = double.tryParse(match.group(1)!);
         if (newHashrate != null && newHashrate != _currentHashrate) {
           _currentHashrate = newHashrate;
-          onMetricsUpdate?.call(_isCurrentlySyncing, null, null, _currentHashrate);
+          onMetricsUpdate?.call(
+            _isCurrentlySyncing,
+            null,
+            null,
+            _currentHashrate,
+          );
         }
       }
 
       bool shouldPrint;
       if (streamType == 'stdout') {
-        shouldPrint = _stdoutFilter.shouldPrintLine(line, isNodeSyncing: _isCurrentlySyncing);
+        shouldPrint = _stdoutFilter.shouldPrintLine(
+          line,
+          isNodeSyncing: _isCurrentlySyncing,
+        );
       } else {
-        shouldPrint = _stderrFilter.shouldPrintLine(line, isNodeSyncing: _isCurrentlySyncing);
+        shouldPrint = _stderrFilter.shouldPrintLine(
+          line,
+          isNodeSyncing: _isCurrentlySyncing,
+        );
       }
 
       if (shouldPrint) {
@@ -254,13 +322,19 @@ class MinerProcess {
       }
     }
 
-    _nodeProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      processLogLine(line, 'stdout');
-    });
+    _nodeProcess.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          processLogLine(line, 'stdout');
+        });
 
-    _nodeProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
-      processLogLine(line, 'stderr');
-    });
+    _nodeProcess.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) {
+          processLogLine(line, 'stderr');
+        });
   }
 
   void stop() {

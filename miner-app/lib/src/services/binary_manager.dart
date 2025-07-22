@@ -18,7 +18,8 @@ class BinaryManager {
   // External miner constants
   static const _minerRepoName = 'quantus-miner';
   static const _minerBinary = 'external-miner';
-  static const _minerReleaseBinary = 'quantus-miner'; // The actual binary name in releases
+  static const _minerReleaseBinary =
+      'quantus-miner'; // The actual binary name in releases
 
   static Future<String> getQuantusHomeDirectoryPath() async {
     final dir = Directory(p.join(_home(), '.quantus'));
@@ -48,18 +49,26 @@ class BinaryManager {
     return File(binPath).exists();
   }
 
-  static Future<File> ensureNodeBinary({void Function(DownloadProgress progress)? onProgress}) async {
+  static Future<File> ensureNodeBinary({
+    void Function(DownloadProgress progress)? onProgress,
+  }) async {
     final binPath = await getNodeBinaryFilePath();
     final binFile = File(binPath);
 
     if (await binFile.exists()) {
       // If file exists, report 100% progress and return
-      onProgress?.call(DownloadProgress(1, 1)); // Simulate 100% if already downloaded
+      onProgress?.call(
+        DownloadProgress(1, 1),
+      ); // Simulate 100% if already downloaded
       return binFile;
     }
 
     // 2. find latest tag on GitHub
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
+    final rel = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest',
+      ),
+    );
     final tag = jsonDecode(rel.body)['tag_name'] as String;
 
     print('found latest tag: $tag');
@@ -67,7 +76,8 @@ class BinaryManager {
     // 3. pick asset name like the shell script
     final target = _targetTriple();
     final asset = '$_binary-$tag-$target.tar.gz';
-    final url = 'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
+    final url =
+        'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
 
     // 4. download
     final cacheDir = await _getCacheDir();
@@ -79,7 +89,9 @@ class BinaryManager {
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to download binary: ${response.statusCode} ${response.reasonPhrase}');
+        throw Exception(
+          'Failed to download binary: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
 
       final totalBytes = response.contentLength ?? -1;
@@ -118,7 +130,9 @@ class BinaryManager {
     return binFile;
   }
 
-  static Future<File> ensureExternalMinerBinary({void Function(DownloadProgress progress)? onProgress}) async {
+  static Future<File> ensureExternalMinerBinary({
+    void Function(DownloadProgress progress)? onProgress,
+  }) async {
     final binPath = await getExternalMinerBinaryFilePath();
     final binFile = File(binPath);
 
@@ -127,14 +141,19 @@ class BinaryManager {
     if (await binFile.exists()) {
       // If file exists, report 100% progress and return
       print('DEBUG: External miner binary already exists at $binPath');
-      onProgress?.call(DownloadProgress(1, 1)); // Simulate 100% if already downloaded
+      onProgress?.call(
+        DownloadProgress(1, 1),
+      ); // Simulate 100% if already downloaded
       return binFile;
     }
 
-    print('DEBUG: External miner binary not found, starting download process...');
+    print(
+      'DEBUG: External miner binary not found, starting download process...',
+    );
 
     // 2. find latest tag on GitHub
-    final releaseUrl = 'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
+    final releaseUrl =
+        'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
     print('DEBUG: Fetching latest release from: $releaseUrl');
 
     final rel = await http.get(Uri.parse(releaseUrl));
@@ -161,7 +180,8 @@ class BinaryManager {
       throw Exception('Unsupported platform: ${Platform.operatingSystem}');
     }
 
-    if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+    if (Platform.version.contains('arm64') ||
+        Platform.version.contains('aarch64')) {
       arch = 'aarch64';
     } else {
       arch = 'x86_64';
@@ -173,7 +193,8 @@ class BinaryManager {
 
     print('DEBUG: Looking for asset: $asset');
 
-    final url = 'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
+    final url =
+        'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
     // print('DEBUG: Download URL: $url');
 
     // Check if the asset exists in the release
@@ -205,7 +226,9 @@ class BinaryManager {
 
       print('DEBUG: Download response status: ${response.statusCode}');
       if (response.statusCode != 200) {
-        throw Exception('Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}');
+        throw Exception(
+          'Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
 
       final totalBytes = response.contentLength ?? -1;
@@ -226,7 +249,9 @@ class BinaryManager {
         }
       }
       await tempBinaryFile.writeAsBytes(allBytes);
-      print('DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}');
+      print(
+        'DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}',
+      );
 
       // Ensure 100% is reported at the end if not already due to chunking.
       if (totalBytes > 0 && downloadedBytes < totalBytes) {
@@ -264,8 +289,12 @@ class BinaryManager {
     if (await binFile.exists()) {
       print('DEBUG: External miner binary successfully created at $binPath');
     } else {
-      print('DEBUG: ERROR - External miner binary still not found at $binPath after download!');
-      throw Exception('External miner binary not found after download at $binPath');
+      print(
+        'DEBUG: ERROR - External miner binary still not found at $binPath after download!',
+      );
+      throw Exception(
+        'External miner binary not found after download at $binPath',
+      );
     }
 
     return binFile;
@@ -284,7 +313,8 @@ class BinaryManager {
     // A more robust check would be to try to parse it, but that's complex.
     if (await nodeKeyFile.exists()) {
       final content = await nodeKeyFile.readAsString();
-      if (content.trim().isNotEmpty && content.trim() != 'dummy_node_key_content_for_testing') {
+      if (content.trim().isNotEmpty &&
+          content.trim() != 'dummy_node_key_content_for_testing') {
         print('Node key file already exists and seems valid: $content');
         return nodeKeyFile;
       }
@@ -310,7 +340,8 @@ class BinaryManager {
         //   throw Exception(
         //       'Failed to generate node key: command output did not contain enough lines. Output: ${processResult.stdout}');
         // }
-        final nodeKey = outputLines.last.trim(); // The secret key is the last line
+        final nodeKey = outputLines.last
+            .trim(); // The secret key is the last line
 
         if (nodeKey.isEmpty) {
           throw Exception(
@@ -332,14 +363,20 @@ class BinaryManager {
   }
 
   /* helpers */
-  static Future<Directory> _getCacheDir() async =>
-      Directory(p.join(await getQuantusHomeDirectoryPath(), 'bin')).create(recursive: true);
+  static Future<Directory> _getCacheDir() async => Directory(
+    p.join(await getQuantusHomeDirectoryPath(), 'bin'),
+  ).create(recursive: true);
 
-  static String _home() => Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
+  static String _home() =>
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
 
   static String _targetTriple() {
     final os = Platform.isMacOS ? 'apple-darwin' : 'unknown-linux-gnu';
-    final arch = Platform.version.contains('arm64') || Platform.version.contains('aarch64') ? 'aarch64' : 'x86_64';
+    final arch =
+        Platform.version.contains('arm64') ||
+            Platform.version.contains('aarch64')
+        ? 'aarch64'
+        : 'x86_64';
     return '$arch-$os';
   }
 }

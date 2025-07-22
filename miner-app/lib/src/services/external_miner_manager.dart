@@ -18,18 +18,26 @@ class ExternalMinerManager {
     return File(binPath).exists();
   }
 
-  static Future<File> ensureExternalMinerBinary({void Function(DownloadProgress progress)? onProgress}) async {
+  static Future<File> ensureExternalMinerBinary({
+    void Function(DownloadProgress progress)? onProgress,
+  }) async {
     final binPath = await getExternalMinerBinaryFilePath();
     final binFile = File(binPath);
 
     if (await binFile.exists()) {
       // If file exists, report 100% progress and return
-      onProgress?.call(DownloadProgress(1, 1)); // Simulate 100% if already downloaded
+      onProgress?.call(
+        DownloadProgress(1, 1),
+      ); // Simulate 100% if already downloaded
       return binFile;
     }
 
     // 2. find latest tag on GitHub
-    final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
+    final rel = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest',
+      ),
+    );
     final tag = jsonDecode(rel.body)['tag_name'] as String;
 
     print('found latest external miner tag: $tag');
@@ -37,7 +45,8 @@ class ExternalMinerManager {
     // 3. pick asset name like the shell script
     final target = _targetTriple();
     final asset = '$_binary-$tag-$target.tar.gz';
-    final url = 'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
+    final url =
+        'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
 
     // 4. download
     final cacheDir = await _getCacheDir();
@@ -49,7 +58,9 @@ class ExternalMinerManager {
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}');
+        throw Exception(
+          'Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}',
+        );
       }
 
       final totalBytes = response.contentLength ?? -1;
@@ -103,11 +114,16 @@ class ExternalMinerManager {
     return dir.path;
   }
 
-  static String _home() => Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
+  static String _home() =>
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
 
   static String _targetTriple() {
     final os = Platform.isMacOS ? 'apple-darwin' : 'unknown-linux-gnu';
-    final arch = Platform.version.contains('arm64') || Platform.version.contains('aarch64') ? 'aarch64' : 'x86_64';
+    final arch =
+        Platform.version.contains('arm64') ||
+            Platform.version.contains('aarch64')
+        ? 'aarch64'
+        : 'x86_64';
     return '$arch-$os';
   }
 }
