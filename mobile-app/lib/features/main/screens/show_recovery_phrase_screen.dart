@@ -121,7 +121,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.useOpacity(0.9),
+                  color: Colors.black,
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: RevealOverlay(
