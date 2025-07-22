@@ -343,13 +343,13 @@ class Constants {
 
   final int difficultyAdjustPercentClamp = 10;
 
-  final BigInt targetBlockTime = BigInt.from(10000);
+  final BigInt targetBlockTime = BigInt.from(20000);
 
   final int adjustmentPeriod = 1;
 
-  final int blockTimeHistorySize = 10;
+  final int blockTimeHistorySize = 25;
 
-  final int maxReorgDepth = 10;
+  final int maxReorgDepth = 180;
 
   /// Fixed point scale for calculations (default: 10^18)
   final BigInt fixedU128Scale = BigInt.parse(

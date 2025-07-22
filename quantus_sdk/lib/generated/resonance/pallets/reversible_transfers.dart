@@ -477,5 +477,5 @@ class Constants {
   final int minDelayPeriodBlocks = 2;
 
   /// The minimum delay period allowed for reversible transactions, in milliseconds.
-  final BigInt minDelayPeriodMoment = BigInt.from(10000);
+  final BigInt minDelayPeriodMoment = BigInt.from(20000);
 }

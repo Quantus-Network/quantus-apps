@@ -4,16 +4,15 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
-import '../pallet_assets/pallet/event.dart' as _i23;
+import '../pallet_assets/pallet/event.dart' as _i22;
 import '../pallet_balances/pallet/event.dart' as _i4;
 import '../pallet_conviction_voting/pallet/event.dart' as _i16;
-import '../pallet_faucet/pallet/event.dart' as _i21;
 import '../pallet_merkle_airdrop/pallet/event.dart' as _i19;
 import '../pallet_mining_rewards/pallet/event.dart' as _i9;
 import '../pallet_preimage/pallet/event.dart' as _i11;
 import '../pallet_qpow/pallet/event.dart' as _i7;
 import '../pallet_ranked_collective/pallet/event.dart' as _i17;
-import '../pallet_recovery/pallet/event.dart' as _i22;
+import '../pallet_recovery/pallet/event.dart' as _i21;
 import '../pallet_referenda/pallet/event_1.dart' as _i14;
 import '../pallet_referenda/pallet/event_2.dart' as _i18;
 import '../pallet_reversible_transfers/pallet/event.dart' as _i15;
@@ -124,15 +123,11 @@ class $RuntimeEvent {
     return TreasuryPallet(value0);
   }
 
-  Faucet faucet(_i21.Event value0) {
-    return Faucet(value0);
-  }
-
-  Recovery recovery(_i22.Event value0) {
+  Recovery recovery(_i21.Event value0) {
     return Recovery(value0);
   }
 
-  Assets assets(_i23.Event value0) {
+  Assets assets(_i22.Event value0) {
     return Assets(value0);
   }
 }
@@ -180,11 +175,9 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return MerkleAirdrop._decode(input);
       case 18:
         return TreasuryPallet._decode(input);
-      case 19:
-        return Faucet._decode(input);
-      case 21:
+      case 20:
         return Recovery._decode(input);
-      case 22:
+      case 21:
         return Assets._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
@@ -251,9 +244,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case TreasuryPallet:
         (value as TreasuryPallet).encodeTo(output);
         break;
-      case Faucet:
-        (value as Faucet).encodeTo(output);
-        break;
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
@@ -305,8 +295,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as MerkleAirdrop)._sizeHint();
       case TreasuryPallet:
         return (value as TreasuryPallet)._sizeHint();
-      case Faucet:
-        return (value as Faucet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
       case Assets:
@@ -1089,19 +1077,19 @@ class TreasuryPallet extends RuntimeEvent {
   int get hashCode => value0.hashCode;
 }
 
-class Faucet extends RuntimeEvent {
-  const Faucet(this.value0);
+class Recovery extends RuntimeEvent {
+  const Recovery(this.value0);
 
-  factory Faucet._decode(_i1.Input input) {
-    return Faucet(_i21.Event.codec.decode(input));
+  factory Recovery._decode(_i1.Input input) {
+    return Recovery(_i21.Event.codec.decode(input));
   }
 
-  /// pallet_faucet::Event<Runtime>
+  /// pallet_recovery::Event<Runtime>
   final _i21.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Faucet': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>>>> toJson() =>
+      {'Recovery': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -1111,53 +1099,10 @@ class Faucet extends RuntimeEvent {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      19,
+      20,
       output,
     );
     _i21.Event.codec.encodeTo(
-      value0,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Faucet && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class Recovery extends RuntimeEvent {
-  const Recovery(this.value0);
-
-  factory Recovery._decode(_i1.Input input) {
-    return Recovery(_i22.Event.codec.decode(input));
-  }
-
-  /// pallet_recovery::Event<Runtime>
-  final _i22.Event value0;
-
-  @override
-  Map<String, Map<String, Map<String, List<int>>>> toJson() =>
-      {'Recovery': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i22.Event.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i22.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -1179,11 +1124,11 @@ class Assets extends RuntimeEvent {
   const Assets(this.value0);
 
   factory Assets._decode(_i1.Input input) {
-    return Assets(_i23.Event.codec.decode(input));
+    return Assets(_i22.Event.codec.decode(input));
   }
 
   /// pallet_assets::Event<Runtime>
-  final _i23.Event value0;
+  final _i22.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -1191,16 +1136,16 @@ class Assets extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i23.Event.codec.sizeHint(value0);
+    size = size + _i22.Event.codec.sizeHint(value0);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      22,
+      21,
       output,
     );
-    _i23.Event.codec.encodeTo(
+    _i22.Event.codec.encodeTo(
       value0,
       output,
     );

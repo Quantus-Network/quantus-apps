@@ -251,7 +251,7 @@ class Constants {
   Constants();
 
   /// The maximum number of proof elements allowed in a Merkle proof.
-  final int maxProofs = 100;
+  final int maxProofs = 4096;
 
   /// The pallet id, used for deriving its sovereign account ID.
   final _i9.PalletId palletId = const <int>[
