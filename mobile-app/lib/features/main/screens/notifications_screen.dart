@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
+import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/services/notification_service.dart'; // Ensure import
 
@@ -41,11 +42,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const Text(
                 'Notifications',
                 style: TextStyle(
-                  color: const Color(0xFFE6E6E6),
+                  color: Color(0xFFE6E6E6),
                   fontSize: 16,
                   fontFamily: 'Fira Code',
                   fontWeight: FontWeight.w400,
                 ),
+              ),
+              const SizedBox(height: 13),
+              DropdownSelect(
+                items: [
+                  Item(id: '1', label: 'All Accounts'),
+                  Item(id: '2', label: 'My account'),
+                  Item(id: '3', label: 'Your Accounts'),
+                  Item(id: '4', label: 'His Accounts'),
+                ],
+                onChanged: (selectedItem) {
+                  // Handle account selection if needed
+                  print('Selected account: ${selectedItem?.label}');
+                },
               ),
               const SizedBox(height: 24),
               ElevatedButton(
