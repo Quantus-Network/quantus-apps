@@ -8,7 +8,8 @@ class NodeIdentitySetupScreen extends StatefulWidget {
   const NodeIdentitySetupScreen({super.key});
 
   @override
-  State<NodeIdentitySetupScreen> createState() => _NodeIdentitySetupScreenState();
+  State<NodeIdentitySetupScreen> createState() =>
+      _NodeIdentitySetupScreenState();
 }
 
 class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
@@ -71,15 +72,13 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Node Identity Setup'),
-      ),
+      appBar: AppBar(title: const Text('Node Identity Setup')),
       body: Center(
         child: _isLoading
             ? const CircularProgressIndicator()
             : _isIdentitySet
-                ? _buildIdentitySetView()
-                : _buildIdentityNotSetView(),
+            ? _buildIdentitySetView()
+            : _buildIdentityNotSetView(),
       ),
     );
   }

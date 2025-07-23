@@ -811,7 +811,7 @@ class Constants {
       proofSize: BigInt.zero,
     ),
     maxBlock: _i15.Weight(
-      refTime: BigInt.from(2000000000000),
+      refTime: BigInt.from(6000000000000),
       proofSize: BigInt.parse(
         '18446744073709551615',
         radix: 10,
@@ -824,14 +824,14 @@ class Constants {
           proofSize: BigInt.zero,
         ),
         maxExtrinsic: _i15.Weight(
-          refTime: BigInt.from(1299891843000),
+          refTime: BigInt.from(3899891843000),
           proofSize: BigInt.parse(
             '11990383647911208550',
             radix: 10,
           ),
         ),
         maxTotal: _i15.Weight(
-          refTime: BigInt.from(1500000000000),
+          refTime: BigInt.from(4500000000000),
           proofSize: BigInt.parse(
             '13835058055282163711',
             radix: 10,
@@ -848,21 +848,21 @@ class Constants {
           proofSize: BigInt.zero,
         ),
         maxExtrinsic: _i15.Weight(
-          refTime: BigInt.from(1799891843000),
+          refTime: BigInt.from(5399891843000),
           proofSize: BigInt.parse(
             '16602069666338596454',
             radix: 10,
           ),
         ),
         maxTotal: _i15.Weight(
-          refTime: BigInt.from(2000000000000),
+          refTime: BigInt.from(6000000000000),
           proofSize: BigInt.parse(
             '18446744073709551615',
             radix: 10,
           ),
         ),
         reserved: _i15.Weight(
-          refTime: BigInt.from(500000000000),
+          refTime: BigInt.from(1500000000000),
           proofSize: BigInt.parse(
             '4611686018427387904',
             radix: 10,
@@ -890,7 +890,7 @@ class Constants {
   ));
 
   /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
-  final int blockHashCount = 2400;
+  final int blockHashCount = 4096;
 
   /// The weight of runtime database operations the runtime can invoke.
   final _i24.RuntimeDbWeight dbWeight = _i24.RuntimeDbWeight(
@@ -903,7 +903,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 102,
+    specVersion: 104,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(
@@ -994,19 +994,6 @@ class Constants {
           48,
           6,
           19,
-        ],
-        1,
-      ),
-      _i9.Tuple2<List<int>, int>(
-        <int>[
-          219,
-          178,
-          61,
-          46,
-          252,
-          153,
-          111,
-          122,
         ],
         1,
       ),

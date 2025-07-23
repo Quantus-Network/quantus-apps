@@ -1,8 +1,17 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AddressFormattingService {
-  static String formatAddress(String address, {int prefix = 5, String ellipses = '...', int postFix = 5}) {
-    return address.shortenedCryptoAddress(prefix: prefix, ellipses: ellipses, postFix: postFix);
+  static String formatAddress(
+    String address, {
+    int prefix = 5,
+    String ellipses = '...',
+    int postFix = 5,
+  }) {
+    return address.shortenedCryptoAddress(
+      prefix: prefix,
+      ellipses: ellipses,
+      postFix: postFix,
+    );
   }
 
   static List<String> splitIntoChunks(String text, {int chunkSize = 5}) {

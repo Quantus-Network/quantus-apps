@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class BalancesService {
@@ -21,8 +22,13 @@ class BalancesService {
   ) async {
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
-      final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(dest: multiDest, value: amount);
+      final multiDest = const multi_address.$MultiAddress().id(
+        crypto.ss58ToAccountId(s: targetAddress),
+      );
+      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(
+        dest: multiDest,
+        value: amount,
+      );
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(
         account,

@@ -1,12 +1,11 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i24;
+import 'dart:async' as _i23;
 
 import 'package:polkadart/polkadart.dart' as _i1;
 
 import 'pallets/assets.dart' as _i21;
 import 'pallets/balances.dart' as _i4;
 import 'pallets/conviction_voting.dart' as _i15;
-import 'pallets/faucet.dart' as _i23;
 import 'pallets/merkle_airdrop.dart' as _i18;
 import 'pallets/mining_rewards.dart' as _i9;
 import 'pallets/preimage.dart' as _i11;
@@ -125,8 +124,6 @@ class Extrinsics {
 
   final _i19.Txs treasuryPallet = _i19.Txs();
 
-  final _i23.Txs faucet = _i23.Txs();
-
   final _i20.Txs recovery = _i20.Txs();
 
   final _i21.Txs assets = _i21.Txs();
@@ -166,8 +163,6 @@ class Constants {
   final _i18.Constants merkleAirdrop = _i18.Constants();
 
   final _i19.Constants treasuryPallet = _i19.Constants();
-
-  final _i23.Constants faucet = _i23.Constants();
 
   final _i20.Constants recovery = _i20.Constants();
 
@@ -247,11 +242,11 @@ class Resonance {
 
   final Registry registry;
 
-  _i24.Future connect() async {
+  _i23.Future connect() async {
     return await _provider.connect();
   }
 
-  _i24.Future disconnect() async {
+  _i23.Future disconnect() async {
     return await _provider.disconnect();
   }
 }

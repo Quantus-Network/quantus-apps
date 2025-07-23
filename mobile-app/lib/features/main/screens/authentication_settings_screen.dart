@@ -48,14 +48,14 @@ class _AuthenticationSettingsScreenState
     }
   }
 
-  Future<void> _toggleAuthentication(bool value) async {
+  Future<void> _toggleAuthentication(bool enable) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
       // on enable, check if the device supports biometrics.
-      if (value) {
+      if (enable) {
         final isAvailable = await _localAuthService.isBiometricAvailable();
         debugPrint('Biometric available: $isAvailable');
 
@@ -77,7 +77,8 @@ class _AuthenticationSettingsScreenState
       debugPrint('Attempting to authenticate...');
       final didAuthenticate = await _localAuthService.authenticate(
         localizedReason:
-            'Authenticate to enable device authentication for your wallet',
+            'Authenticate to ${enable ? 'enable' : 'disable'} device '
+            'authentication for your wallet',
         biometricOnly: false, // Allow fallback to device PIN if needed
         forSetup: true, // This is a setup flow, so bypass the enabled check
       );
@@ -85,15 +86,15 @@ class _AuthenticationSettingsScreenState
       debugPrint('Authentication result: $didAuthenticate');
 
       if (didAuthenticate) {
-        _localAuthService.setLocalAuthEnabled(value);
+        _localAuthService.setLocalAuthEnabled(enable);
         if (mounted) {
           setState(() {
-            _isDeviceAuthEnabled = value;
+            _isDeviceAuthEnabled = enable;
             _isLoading = false;
           });
         }
         _showSnackBar(
-          'Device authentication ${value ? 'enabled' : 'disabled'} '
+          'Device authentication ${enable ? 'enabled' : 'disabled'} '
           'successfully',
           isSuccess: true,
         );
@@ -106,7 +107,7 @@ class _AuthenticationSettingsScreenState
         }
         _showSnackBar(
           'Authentication failed. Device authentication not '
-          '${value ? 'enabled' : 'disabled'}.',
+          '${enable ? 'enabled' : 'disabled'}.',
           isSuccess: false,
         );
       }

@@ -4,14 +4,13 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/call.dart' as _i3;
-import '../pallet_assets/pallet/call.dart' as _i21;
+import '../pallet_assets/pallet/call.dart' as _i20;
 import '../pallet_balances/pallet/call.dart' as _i5;
 import '../pallet_conviction_voting/pallet/call.dart' as _i14;
-import '../pallet_faucet/pallet/call.dart' as _i19;
 import '../pallet_merkle_airdrop/pallet/call.dart' as _i17;
 import '../pallet_preimage/pallet/call.dart' as _i9;
 import '../pallet_ranked_collective/pallet/call.dart' as _i15;
-import '../pallet_recovery/pallet/call.dart' as _i20;
+import '../pallet_recovery/pallet/call.dart' as _i19;
 import '../pallet_referenda/pallet/call_1.dart' as _i12;
 import '../pallet_referenda/pallet/call_2.dart' as _i16;
 import '../pallet_reversible_transfers/pallet/call.dart' as _i13;
@@ -114,15 +113,11 @@ class $RuntimeCall {
     return TreasuryPallet(value0);
   }
 
-  Faucet faucet(_i19.Call value0) {
-    return Faucet(value0);
-  }
-
-  Recovery recovery(_i20.Call value0) {
+  Recovery recovery(_i19.Call value0) {
     return Recovery(value0);
   }
 
-  Assets assets(_i21.Call value0) {
+  Assets assets(_i20.Call value0) {
     return Assets(value0);
   }
 }
@@ -166,11 +161,9 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return MerkleAirdrop._decode(input);
       case 18:
         return TreasuryPallet._decode(input);
-      case 19:
-        return Faucet._decode(input);
-      case 21:
+      case 20:
         return Recovery._decode(input);
-      case 22:
+      case 21:
         return Assets._decode(input);
       default:
         throw Exception('RuntimeCall: Invalid variant index: "$index"');
@@ -231,9 +224,6 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case TreasuryPallet:
         (value as TreasuryPallet).encodeTo(output);
         break;
-      case Faucet:
-        (value as Faucet).encodeTo(output);
-        break;
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
@@ -281,8 +271,6 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         return (value as MerkleAirdrop)._sizeHint();
       case TreasuryPallet:
         return (value as TreasuryPallet)._sizeHint();
-      case Faucet:
-        return (value as Faucet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
       case Assets:
@@ -996,20 +984,19 @@ class TreasuryPallet extends RuntimeCall {
   int get hashCode => value0.hashCode;
 }
 
-class Faucet extends RuntimeCall {
-  const Faucet(this.value0);
+class Recovery extends RuntimeCall {
+  const Recovery(this.value0);
 
-  factory Faucet._decode(_i1.Input input) {
-    return Faucet(_i19.Call.codec.decode(input));
+  factory Recovery._decode(_i1.Input input) {
+    return Recovery(_i19.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
-  ///::CallableCallFor<Faucet, Runtime>
+  ///::CallableCallFor<Recovery, Runtime>
   final _i19.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Faucet': value0.toJson()};
+  Map<String, Map<String, dynamic>> toJson() => {'Recovery': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -1019,53 +1006,10 @@ class Faucet extends RuntimeCall {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      19,
+      20,
       output,
     );
     _i19.Call.codec.encodeTo(
-      value0,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Faucet && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class Recovery extends RuntimeCall {
-  const Recovery(this.value0);
-
-  factory Recovery._decode(_i1.Input input) {
-    return Recovery(_i20.Call.codec.decode(input));
-  }
-
-  /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
-  ///::CallableCallFor<Recovery, Runtime>
-  final _i20.Call value0;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {'Recovery': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i20.Call.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i20.Call.codec.encodeTo(
       value0,
       output,
     );
@@ -1087,12 +1031,12 @@ class Assets extends RuntimeCall {
   const Assets(this.value0);
 
   factory Assets._decode(_i1.Input input) {
-    return Assets(_i21.Call.codec.decode(input));
+    return Assets(_i20.Call.codec.decode(input));
   }
 
   /// self::sp_api_hidden_includes_construct_runtime::hidden_include::dispatch
   ///::CallableCallFor<Assets, Runtime>
-  final _i21.Call value0;
+  final _i20.Call value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -1100,16 +1044,16 @@ class Assets extends RuntimeCall {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i21.Call.codec.sizeHint(value0);
+    size = size + _i20.Call.codec.sizeHint(value0);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      22,
+      21,
       output,
     );
-    _i21.Call.codec.encodeTo(
+    _i20.Call.codec.encodeTo(
       value0,
       output,
     );

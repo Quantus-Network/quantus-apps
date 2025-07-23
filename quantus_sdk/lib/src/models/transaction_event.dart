@@ -54,7 +54,9 @@ class TransferEvent extends TransactionEvent {
       to: json['to']?['id'] as String? ?? '',
       amount: BigInt.parse(json['amount'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
-      fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
+      fee: json['fee'] != null
+          ? BigInt.parse(json['fee'] as String)
+          : BigInt.zero,
       extrinsicHash: json['extrinsicHash'] as String?,
       blockNumber: blockHeight,
       blockHash: blockHash,

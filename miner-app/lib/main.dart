@@ -11,7 +11,10 @@ import 'src/services/binary_manager.dart';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
+Future<String?> initialRedirect(
+  BuildContext context,
+  GoRouterState state,
+) async {
   const storage = FlutterSecureStorage();
   final currentRoute = state.uri.toString();
 
@@ -35,7 +38,8 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   // Check 2: Node Identity Set
   bool isIdentitySet = false;
   try {
-    final identityPath = '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p';
+    final identityPath =
+        '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p';
     isIdentitySet = await File(identityPath).exists();
   } catch (e) {
     print('Error checking node identity status: $e');
@@ -43,15 +47,21 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
   }
 
   if (!isIdentitySet) {
-    return (currentRoute == '/node_identity_setup') ? null : '/node_identity_setup';
+    return (currentRoute == '/node_identity_setup')
+        ? null
+        : '/node_identity_setup';
   }
 
   // Check 3: Rewards Address Set
-  final rewardsAddressMnemonic = await storage.read(key: 'rewards_address_mnemonic');
+  final rewardsAddressMnemonic = await storage.read(
+    key: 'rewards_address_mnemonic',
+  );
   final isRewardsAddressSet = rewardsAddressMnemonic != null;
 
   if (!isRewardsAddressSet) {
-    return (currentRoute == '/rewards_address_setup') ? null : '/rewards_address_setup';
+    return (currentRoute == '/rewards_address_setup')
+        ? null
+        : '/rewards_address_setup';
   }
 
   // If all setup steps are complete, go to the miner dashboard
@@ -66,7 +76,8 @@ final _router = GoRouter(
       path: '/',
       // Builder is not strictly necessary if initialLocation and redirect handle it,
       // but can be a fallback or initial loading screen.
-      builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      builder: (context, state) =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
     ),
     GoRoute(
       path: '/node_setup',
@@ -105,8 +116,8 @@ class MinerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp.router(
-        title: 'Quantus Miner',
-        theme: ThemeData.dark(useMaterial3: true),
-        routerConfig: _router,
-      );
+    title: 'Quantus Miner',
+    theme: ThemeData.dark(useMaterial3: true),
+    routerConfig: _router,
+  );
 }
