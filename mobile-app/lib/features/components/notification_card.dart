@@ -105,66 +105,66 @@ class _NotificationCardState extends State<NotificationCard>
     super.dispose();
   }
 
-  void _handleSwipeDismiss() async {
-    if (_isDismissing) return;
+  // void _handleSwipeDismiss() async {
+  //   if (_isDismissing) return;
 
-    setState(() {
-      _isDismissing = true;
-    });
+  //   setState(() {
+  //     _isDismissing = true;
+  //   });
 
-    // Animate the swipe out
-    final swipeDirection = _swipeOffset > 0 ? 2.0 : -2.0;
-    _swipeAnimation = Tween<Offset>(
-      begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
-      end: Offset(swipeDirection, 0),
-    ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeIn));
+  //   // Animate the swipe out
+  //   final swipeDirection = _swipeOffset > 0 ? 2.0 : -2.0;
+  //   _swipeAnimation = Tween<Offset>(
+  //     begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
+  //     end: Offset(swipeDirection, 0),
+  //   ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeIn));
 
-    await _swipeController.forward();
-    widget.onDismiss();
-  }
+  //   await _swipeController.forward();
+  //   widget.onDismiss();
+  // }
 
-  void _handleSwipeUpdate(double delta) {
-    if (_isDismissing) return;
+  // void _handleSwipeUpdate(double delta) {
+  //   if (_isDismissing) return;
 
-    setState(() {
-      _swipeOffset += delta;
-      // Limit the swipe offset to prevent over-swiping
-      _swipeOffset = _swipeOffset.clamp(-150.0, 150.0);
-    });
-  }
+  //   setState(() {
+  //     _swipeOffset += delta;
+  //     // Limit the swipe offset to prevent over-swiping
+  //     _swipeOffset = _swipeOffset.clamp(-150.0, 150.0);
+  //   });
+  // }
 
-  void _handleSwipeEnd(double velocity) {
-    if (_isDismissing) return;
+  // void _handleSwipeEnd(double velocity) {
+  //   if (_isDismissing) return;
 
-    const double threshold = 80.0; // Threshold distance for dismissal
-    const double velocityThreshold =
-        500.0; // Velocity threshold for quick swipes
+  //   const double threshold = 80.0; // Threshold distance for dismissal
+  //   const double velocityThreshold =
+  //       500.0; // Velocity threshold for quick swipes
 
-    // Check if swipe meets dismissal criteria
-    bool shouldDismiss =
-        _swipeOffset.abs() > threshold || velocity.abs() > velocityThreshold;
+  //   // Check if swipe meets dismissal criteria
+  //   bool shouldDismiss =
+  //       _swipeOffset.abs() > threshold || velocity.abs() > velocityThreshold;
 
-    if (shouldDismiss) {
-      _handleSwipeDismiss();
-    } else {
-      // Animate back to original position
-      _resetSwipePosition();
-    }
-  }
+  //   if (shouldDismiss) {
+  //     _handleSwipeDismiss();
+  //   } else {
+  //     // Animate back to original position
+  //     _resetSwipePosition();
+  //   }
+  // }
 
-  void _resetSwipePosition() {
-    _swipeAnimation = Tween<Offset>(
-      begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
+  // void _resetSwipePosition() {
+  //   _swipeAnimation = Tween<Offset>(
+  //     begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
+  //     end: Offset.zero,
+  //   ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
 
-    _swipeController.forward().then((_) {
-      setState(() {
-        _swipeOffset = 0.0;
-      });
-      _swipeController.reset();
-    });
-  }
+  //   _swipeController.forward().then((_) {
+  //     setState(() {
+  //       _swipeOffset = 0.0;
+  //     });
+  //     _swipeController.reset();
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
