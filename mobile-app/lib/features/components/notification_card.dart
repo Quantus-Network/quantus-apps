@@ -27,7 +27,9 @@ class _NotificationCardState extends State<NotificationCard>
   late AnimationController _swipeController;
   late Animation<Offset> _slideAnimation;
   late Animation<Offset> _swipeAnimation;
+  // ignore: prefer_final_fields
   bool _isDismissing = false;
+  // ignore: prefer_final_fields
   double _swipeOffset = 0.0;
 
   Color get titleColor {
@@ -117,7 +119,9 @@ class _NotificationCardState extends State<NotificationCard>
   //   _swipeAnimation = Tween<Offset>(
   //     begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
   //     end: Offset(swipeDirection, 0),
-  //   ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeIn));
+  //   ).animate(
+  //CurvedAnimation(parent: _swipeController, curve: Curves.easeIn)
+  //  );
 
   //   await _swipeController.forward();
   //   widget.onDismiss();
@@ -156,7 +160,9 @@ class _NotificationCardState extends State<NotificationCard>
   //   _swipeAnimation = Tween<Offset>(
   //     begin: Offset(_swipeOffset / MediaQuery.of(context).size.width, 0),
   //     end: Offset.zero,
-  //   ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
+  //   ).animate(
+  //    CurvedAnimation(parent: _swipeController, curve: Curves.easeOut)
+  //  );
 
   //   _swipeController.forward().then((_) {
   //     setState(() {
@@ -287,6 +293,7 @@ class _NotificationCardState extends State<NotificationCard>
                                               ),
                                               TextSpan(
                                                 text:
+                                                    // ignore: lines_longer_than_80_chars
                                                     DatetimeFormattingService.format(
                                                       notification.timestamp,
                                                     ),
