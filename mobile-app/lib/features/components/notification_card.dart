@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/services/notification_service.dart';
 class NotificationCard extends StatefulWidget {
   final NotificationData notification;
   final VoidCallback onDismiss;
+  final VoidCallback? onDismissAll;
   final bool isTopNotification;
 
   const NotificationCard({
@@ -13,6 +14,7 @@ class NotificationCard extends StatefulWidget {
     required this.notification,
     required this.onDismiss,
     this.isTopNotification = false,
+    this.onDismissAll,
   });
 
   @override
@@ -170,16 +172,17 @@ class _NotificationCardState extends State<NotificationCard>
     final isNotTopNotification = !widget.isTopNotification;
 
     return GestureDetector(
-      onHorizontalDragUpdate: isNotTopNotification
-          ? (details) {
-              _handleSwipeUpdate(details.delta.dx);
-            }
-          : null,
-      onHorizontalDragEnd: isNotTopNotification
-          ? (details) {
-              _handleSwipeEnd(details.primaryVelocity ?? 0);
-            }
-          : null,
+      // TODO: fix rendering when using swipe not buggy build
+      // onHorizontalDragUpdate: isNotTopNotification
+      //     ? (details) {
+      //         _handleSwipeUpdate(details.delta.dx);
+      //       }
+      //     : null,
+      // onHorizontalDragEnd: isNotTopNotification
+      //     ? (details) {
+      //         _handleSwipeEnd(details.primaryVelocity ?? 0);
+      //       }
+      //     : null,
       child: SlideTransition(
         position: _slideAnimation,
         child: AnimatedBuilder(
@@ -309,15 +312,17 @@ class _NotificationCardState extends State<NotificationCard>
                                       ],
                                     ),
                                   ),
-                                  if (isNotTopNotification)
-                                    GestureDetector(
-                                      onTap: widget.onDismiss,
-                                      child: const Icon(
-                                        Icons.close,
-                                        color: Colors.white70,
-                                        size: 16,
-                                      ),
+
+                                  GestureDetector(
+                                    onTap: isNotTopNotification
+                                        ? widget.onDismiss
+                                        : widget.onDismissAll,
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white70,
+                                      size: 16,
                                     ),
+                                  ),
                                 ],
                               ),
                               if (notification.onViewDetails != null)

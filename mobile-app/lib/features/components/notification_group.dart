@@ -149,7 +149,8 @@ class _NotificationGroupState extends State<NotificationGroup>
   Widget build(BuildContext context) {
     if (widget.notifications.isEmpty) return const SizedBox.shrink();
 
-    final topNotification = widget.notifications.last;
+    final reveresedNotifications = widget.notifications.reversed;
+    final topNotification = reveresedNotifications.first;
     final notificationCount = widget.notifications.length;
 
     return Positioned(
@@ -157,12 +158,16 @@ class _NotificationGroupState extends State<NotificationGroup>
       left: 16,
       right: 16,
       child: GestureDetector(
-        onHorizontalDragUpdate: (details) {
-          _handleSwipeUpdate(details.delta.dx);
-        },
-        onHorizontalDragEnd: (details) {
-          _handleSwipeEnd(details.primaryVelocity ?? 0);
-        },
+        onHorizontalDragUpdate: !_isExpanded
+            ? (details) {
+                _handleSwipeUpdate(details.delta.dx);
+              }
+            : null,
+        onHorizontalDragEnd: !_isExpanded
+            ? (details) {
+                _handleSwipeEnd(details.primaryVelocity ?? 0);
+              }
+            : null,
         onTap: _toggleExpanded,
         child: SlideTransition(
           position: _slideAnimation,
@@ -195,16 +200,15 @@ class _NotificationGroupState extends State<NotificationGroup>
                                 notification: topNotification,
                                 onDismiss: () =>
                                     widget.onDismissSingle(topNotification.id),
-                                isTopNotification: true,
+                                onDismissAll: widget.onDismissAll,
+                                isTopNotification: !_isExpanded,
                               ),
 
                               Positioned(
                                 top: 8,
                                 right: 8,
                                 child: AnimatedOpacity(
-                                  opacity:
-                                      !_isExpanded &&
-                                          widget.notifications.length > 1
+                                  opacity: !_isExpanded && notificationCount > 1
                                       ? 1.0
                                       : 0.0,
                                   duration: const Duration(milliseconds: 300),
@@ -217,9 +221,10 @@ class _NotificationGroupState extends State<NotificationGroup>
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      '${widget.notifications.length}',
+                                      '$notificationCount',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 12,
@@ -241,7 +246,7 @@ class _NotificationGroupState extends State<NotificationGroup>
                             child: SingleChildScrollView(
                               child: Column(
                                 spacing: 24,
-                                children: widget.notifications.reversed
+                                children: reveresedNotifications
                                     .skip(1)
                                     .map(
                                       (notification) => NotificationCard(
