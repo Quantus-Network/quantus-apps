@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/high_security_account_data.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
-    as multi_address;
+import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
 import 'package:quantus_sdk/generated/resonance/types/primitive_types/h256.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/delay_policy.dart';
 import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
+import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+    as multi_address;
 import 'package:quantus_sdk/src/models/account.dart';
-import 'substrate_service.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+
+import 'substrate_service.dart';
 
 /// Service for managing reversible transfers for theft deterrence and ad hoc transfers
 class ReversibleTransfersService {
@@ -28,7 +28,6 @@ class ReversibleTransfersService {
   Future<StreamSubscription<ExtrinsicStatus>> setHighSecurity({
     required Account account,
     required BlockNumberOrTimestamp delay,
-    required DelayPolicy policy,
     String? reverserAddress,
   }) async {
     print('Not implemented - add reverser to params');
