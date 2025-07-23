@@ -54,8 +54,10 @@ class RecentTransactionsList extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: scheduled.length,
                 itemBuilder: (context, index) {
+                  final transaction = scheduled[index];
                   return TransactionListItem(
-                    transaction: scheduled[index],
+                    key: ValueKey(transaction.id),
+                    transaction: transaction,
                     currentWalletAddress: currentWalletAddress,
                   );
                 },
@@ -72,8 +74,10 @@ class RecentTransactionsList extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: others.length,
                 itemBuilder: (context, index) {
+                  final transaction = others[index];
                   return TransactionListItem(
-                    transaction: others[index],
+                    key: ValueKey(transaction.id),
+                    transaction: transaction,
                     currentWalletAddress: currentWalletAddress,
                   );
                 },
