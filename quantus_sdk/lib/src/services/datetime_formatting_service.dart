@@ -8,14 +8,19 @@ class DatetimeFormattingService {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
+    // Use padLeft to ensure that single-digit numbers have a leading zero.
+    String hour = dateTime.hour.toString().padLeft(2, '0');
+    String minute = dateTime.minute.toString().padLeft(2, '0');
+    String timeString = '$hour:$minute';
+
     // Handle future dates (e.g., "in 5 minutes")
     if (difference.isNegative) {
       final positiveDifference = dateTime.difference(now);
-      return _formatFuture(positiveDifference);
+      return '${_formatFuture(positiveDifference)} $timeString';
     }
 
     // Handle past dates (e.g., "5 minutes ago")
-    return _formatPast(difference);
+    return '${_formatPast(difference)} $timeString';
   }
 
   /// Helper function to format future durations.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
+import 'package:resonance_network_wallet/features/components/notification_group.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/services/notification_service.dart'; // Ensure import
 
@@ -14,23 +15,49 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void dispose() {
     super.dispose();
+    _notificationService.dispose();
+  }
+
+  void _addNotification() {
+    _notificationService.addNotification(
+      id: '1',
+      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      title: 'Notification Info',
+      message: 'This is info notification',
+    );
+
+    _notificationService.addNotification(
+      id: '2',
+      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      title: 'Notification Success',
+      message: 'This is success notification',
+      type: NotificationType.success,
+    );
+
+    _notificationService.addNotification(
+      id: '3',
+      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      title: 'Notification Warning',
+      message: 'This is warning notification',
+      type: NotificationType.warning,
+    );
+
+    _notificationService.addNotification(
+      id: '4',
+      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      title: 'Notification Error',
+      message: 'This is error notification',
+      type: NotificationType.error,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Initialize the notification service
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      NotificationService.initialize(Overlay.of(context));
-    });
-
     return BaseWithBackground(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -62,63 +89,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   print('Selected account: ${selectedItem?.label}');
                 },
               ),
+              const SizedBox(height: 13),
+              ElevatedButton(
+                onPressed: _addNotification,
+                child: const Text('Add Notification'),
+              ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  NotificationService.showNotification(
-                    accountName:
-                        widget.manager.walletData.data?.account.name ??
-                        'Unknown',
-                    title: 'Success!',
-                    message: 'Your action was completed successfully.',
-                    type: NotificationType.success,
-                  );
-                },
-                child: const Text('Show Success Notification'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  NotificationService.showNotification(
-                    accountName:
-                        widget.manager.walletData.data?.account.name ??
-                        'Unknown',
-                    title: 'Warning!',
-                    message: 'Please check your internet connection.',
-                    type: NotificationType.warning,
-                  );
-                },
-                child: const Text('Show Warning Notification'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  NotificationService.showNotification(
-                    accountName:
-                        widget.manager.walletData.data?.account.name ??
-                        'Unknown',
-                    title: 'Error!',
-                    message: 'Something went wrong. Please try again.',
-                    type: NotificationType.error,
-                  );
-                },
-                child: const Text('Show Error Notification'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  // Add multiple notifications quickly
-                  for (int i = 1; i <= 3; i++) {
-                    NotificationService.showNotification(
-                      accountName:
-                          widget.manager.walletData.data?.account.name ??
-                          'Unknown',
-                      title: 'Notification $i',
-                      message: 'This is notification number $i',
-                    );
+              // Notification overlay
+              ListenableBuilder(
+                listenable: _notificationService,
+                builder: (context, child) {
+                  if (_notificationService.activeNotifications.isEmpty) {
+                    return const SizedBox.shrink();
                   }
+
+                  return NotificationGroup(
+                    notifications: _notificationService.activeNotifications,
+                    onDismissAll: _notificationService.clearAll,
+                    onDismissSingle: _notificationService.removeNotification,
+                  );
                 },
-                child: const Text('Add Multiple Notifications'),
               ),
             ],
           ),

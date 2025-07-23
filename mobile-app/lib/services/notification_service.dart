@@ -1,81 +1,41 @@
-// import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/components/notification_group.dart';
 
-class NotificationService {
-  static final List<NotificationData> _activeNotifications = [];
-  static OverlayState? _overlayState;
-  static OverlayEntry? _groupOverlay;
+class NotificationService extends ChangeNotifier {
+  final List<NotificationData> _activeNotifications = [];
 
-  static void initialize(OverlayState overlayState) {
-    _overlayState = overlayState;
-  }
+  List<NotificationData> get activeNotifications =>
+      List.unmodifiable(_activeNotifications);
 
-  static void showNotification({
+  void addNotification({
+    String? id,
     required String accountName,
     required String title,
     required String message,
     NotificationType type = NotificationType.info,
+    VoidCallback? onViewDetails,
   }) {
-    if (_overlayState == null) return;
-
     final notificationData = NotificationData(
-      id: _activeNotifications.length.toString(),
+      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       accountName: accountName,
       title: title,
       message: message,
       type: type,
       timestamp: DateTime.now(),
+      onViewDetails: onViewDetails,
     );
 
     _activeNotifications.add(notificationData);
-    _showGroupOverlay();
-
-    // // Auto-dismiss after duration
-    // Timer(duration, () {
-    //   _removeNotification(notificationData.id);
-    // });
+    notifyListeners(); // This triggers UI updates
   }
 
-  static void _showGroupOverlay() {
-    if (_groupOverlay != null) {
-      _groupOverlay!.markNeedsBuild();
-      return;
-    }
-
-    _groupOverlay = OverlayEntry(
-      builder: (context) => NotificationGroup(
-        notifications: _activeNotifications,
-        onDismissAll: _dismissAll,
-        onDismissSingle: _removeNotification,
-      ),
-    );
-
-    _overlayState!.insert(_groupOverlay!);
-  }
-
-  static void _removeNotification(String id) {
+  void removeNotification(String id) {
     _activeNotifications.removeWhere((data) => data.id == id);
-
-    if (_activeNotifications.isEmpty) {
-      _hideGroupOverlay();
-    } else {
-      _groupOverlay?.markNeedsBuild();
-    }
+    notifyListeners();
   }
 
-  static void _dismissAll() {
+  void clearAll() {
     _activeNotifications.clear();
-    _hideGroupOverlay();
-  }
-
-  static void _hideGroupOverlay() {
-    _groupOverlay?.remove();
-    _groupOverlay = null;
-  }
-
-  static void clearAll() {
-    _dismissAll();
+    notifyListeners();
   }
 }
 
