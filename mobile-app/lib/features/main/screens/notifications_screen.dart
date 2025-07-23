@@ -50,6 +50,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(height: 13),
               DropdownSelect(
+                initialValue: '1',
                 items: [
                   Item(id: '1', label: 'All Accounts'),
                   Item(id: '2', label: 'My account'),
@@ -57,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Item(id: '4', label: 'His Accounts'),
                 ],
                 onChanged: (selectedItem) {
-                  // Handle account selection if needed
+                  // TODO: Handle account selection
                   print('Selected account: ${selectedItem?.label}');
                 },
               ),

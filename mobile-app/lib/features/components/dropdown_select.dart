@@ -17,7 +17,7 @@ class Item {
 
 class DropdownSelect extends StatefulWidget {
   final List<Item> items;
-  final Item? initialValue;
+  final String? initialValue;
   final Function(Item?)? onChanged;
   final double width;
 
@@ -42,7 +42,11 @@ class _DropdownSelectState extends State<DropdownSelect> {
   @override
   void initState() {
     super.initState();
-    selectedValue = widget.initialValue ?? widget.items.first;
+
+    selectedValue = widget.items.firstWhere(
+      (item) => item.id == widget.initialValue,
+      orElse: () => widget.items.first,
+    );
   }
 
   @override
