@@ -91,6 +91,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           ),
           SizedBox(height: 13),
           Text(
+            // ignore: lines_longer_than_80_chars
             'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
             // Anyone who has this phrase will have full access to this wallet,
             // your funds may be lost.',
@@ -192,6 +193,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 25),
       child: Text(
+        // ignore: lines_longer_than_80_chars
         'Do not share your Recovery Phrase with any 3rd party, person, website or application',
         style: TextStyle(
           color: Colors.white60,
