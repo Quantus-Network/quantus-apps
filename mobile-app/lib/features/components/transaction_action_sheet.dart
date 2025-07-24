@@ -25,8 +25,8 @@ enum _SheetState { initial, confirmCancel, cancelled }
 
 class _TransactionActionSheetState extends State<TransactionActionSheet> {
   _SheetState _sheetState = _SheetState.initial;
-  Timer? _timer;
-  Duration? _remainingTime;
+  late Timer _timer;
+  late Duration _remainingTime;
   bool _isCancelling = false;
   String? _errorMessage;
 
@@ -45,7 +45,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   void initState() {
     super.initState();
     _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
-    if (_remainingTime!.isNegative) {
+    if (_remainingTime.isNegative) {
       _remainingTime = Duration.zero;
     }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -54,10 +54,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         return;
       }
       setState(() {
-        if (_remainingTime! > Duration.zero) {
-          _remainingTime = _remainingTime! - const Duration(seconds: 1);
+        if (_remainingTime > Duration.zero) {
+          _remainingTime = _remainingTime - const Duration(seconds: 1);
         } else {
-          _timer?.cancel();
+          _timer.cancel();
           // Maybe close the sheet or show a different state when timer ends.
           // For now, just stopping the timer.
         }
@@ -67,7 +67,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
   }
 

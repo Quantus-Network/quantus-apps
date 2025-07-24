@@ -42,8 +42,8 @@ class DatetimeFormattingService {
     return '${_formatPast(difference)} $timeString';
   }
 
-  static FormattedDuration formatDuration(Duration? duration) {
-    if (duration == null || duration.isNegative) {
+  static FormattedDuration formatDuration(Duration duration) {
+    if (duration.isNegative) {
       return const FormattedDuration(
         hours: '00',
         minutes: '00',

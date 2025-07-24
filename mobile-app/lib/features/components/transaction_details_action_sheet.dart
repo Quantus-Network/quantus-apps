@@ -28,8 +28,8 @@ class TransactionDetailsActionSheet extends StatefulWidget {
 
 class _TransactionDetailsActionSheetState
     extends State<TransactionDetailsActionSheet> {
-  Timer? _timer;
-  Duration? _remainingTime;
+  late Timer _timer;
+  late Duration _remainingTime;
   Future<String> get _checksumFuture {
     final address = isSender ? widget.transaction.to : widget.transaction.from;
 
@@ -82,15 +82,15 @@ class _TransactionDetailsActionSheetState
     if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      if (_remainingTime!.isNegative) {
+      if (_remainingTime.isNegative) {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
-          if (_remainingTime! > Duration.zero) {
-            _remainingTime = _remainingTime! - const Duration(seconds: 1);
+          if (_remainingTime > Duration.zero) {
+            _remainingTime = _remainingTime - const Duration(seconds: 1);
           } else {
-            _timer?.cancel();
+            _timer.cancel();
           }
         });
       });
@@ -99,7 +99,7 @@ class _TransactionDetailsActionSheetState
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
   }
 

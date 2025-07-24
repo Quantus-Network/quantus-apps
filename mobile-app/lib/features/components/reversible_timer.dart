@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class ReversibleTimer extends StatelessWidget {
-  final Duration? remainingTime;
+  final Duration remainingTime;
 
   const ReversibleTimer({super.key, required this.remainingTime});
 
