@@ -25,16 +25,20 @@ class LoadingState<T> {
   Future<LoadingState<T>> load({bool quiet = false}) async {
     if (!quiet) {
       isLoading = true;
-    }
-    error = null;
-    try {
-      data = await loadData();
-    } catch (e) {
-      error = e.toString();
-      print('Load error: $e');
-    } finally {
-      if (!quiet) {
+      error = null;
+      try {
+        data = await loadData();
+      } catch (e) {
+        print('Load error $e');
+        error = e.toString();
+      } finally {
         isLoading = false;
+      }
+    } else {
+      try {
+        data = await loadData();
+      } catch (e) {
+        print('Load error (quiet - ignored): $e');
       }
     }
     return this;
