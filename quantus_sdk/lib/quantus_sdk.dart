@@ -22,6 +22,7 @@ export 'src/models/transaction_state.dart';
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
+export 'src/services/datetime_formatting_service.dart';
 export 'src/services/balances_service.dart';
 export 'src/services/chain_history_service.dart';
 export 'src/services/hd_wallet_service.dart';
