@@ -143,6 +143,10 @@ class WalletStateManager with ChangeNotifier {
     var transferList = txData.data?.combined ?? [];
     List<PendingTransactionEvent> toRemove = [];
     for (var pending in pendingTransactions) {
+      if (pending.transactionState == TransactionState.failed) {
+        toRemove.add(pending);
+        updated = true;
+      }
       if (pending.blockHash != null) {
         print('pending ${pending.amount} block hash: ${pending.blockHash}');
 
