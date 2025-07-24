@@ -52,18 +52,15 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
               const WalletAppBar(title: 'Your Recovery Phrase'),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 30),
                       _buildDescription(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 18),
                       _buildMnemonicContainer(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 18),
                       if (_isRevealed) _buildCopyToClipboard(),
-                      // const SizedBox(height: 30),
-                      // _buildWarning(),
-                      const SizedBox(height: 80), // Spacer for button
+                      const SizedBox(height: 30),
+                      if (!_isRevealed) _buildWarning(),
                     ],
                   ),
                 ),
@@ -72,117 +69,141 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: _buildDoneButton(context),
     );
   }
 
   Widget _buildDescription() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Keep your Recovery Phrase Safe',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 13),
-        Text(
-          'This is the only way to recover your wallet.'
-          ' Do not share with anyone.',
-          // Anyone who has this phrase will have full access to this wallet,
-          // your funds may be lost.',
-          style: TextStyle(
-            color: Colors.white60,
-            fontSize: 14,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMnemonicContainer() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.useOpacity(0.70),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 25.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          MnemonicGrid(words: _recoveryPhrase),
-          if (!_isRevealed)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: RevealOverlay(
-                  onReveal: () => setState(() => _isRevealed = true),
-                ),
-              ),
+          Text(
+            'Keep your Recovery Phrase Safe',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w500,
             ),
+          ),
+          SizedBox(height: 13),
+          Text(
+            // ignore: lines_longer_than_80_chars
+            'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
+            // Anyone who has this phrase will have full access to this wallet,
+            // your funds may be lost.',
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 14,
+              fontFamily: 'Fira Code',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCopyToClipboard() {
-    return InkWell(
-      onTap: () async {
-        await Clipboard.setData(ClipboardData(text: _recoveryPhrase.join(' ')));
-        if (!context.mounted) return;
-        showTopSnackBar(
-          // ignore: use_build_context_synchronously
-          context,
-          title: 'Copied',
-          message: 'Recovery phrase copied to clipboard.',
-          icon: buildCheckmarkIcon(),
-        );
-      },
-      child: const Opacity(
-        opacity: 0.80,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _buildMnemonicContainer() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.useOpacity(0.70),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Icon(Icons.copy, color: Colors.white, size: 24),
-            SizedBox(width: 8),
-            Text(
-              'Copy to Clipboard',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
+            MnemonicGrid(words: _recoveryPhrase),
+            if (!_isRevealed)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        Color.fromARGB(255, 170, 69, 22),
+                        Colors.black,
+                        Colors.black,
+                        Colors.black,
+                        Colors.black,
+                        Color.fromARGB(255, 33, 66, 136),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: RevealOverlay(
+                    onReveal: () => setState(() => _isRevealed = true),
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  // Widget _buildWarning() {
-  //   return const Text(
-  //     'Do not share your Recovery Phrase with any 3rd party, person, website
-  //or application',
-  //     textAlign: TextAlign.center,
-  //     style: TextStyle(
-  //       color: Colors.white60,
-  //       fontSize: 14,
-  //       fontFamily: 'Fira Code',
-  //       fontWeight: FontWeight.w400,
-  //     ),
-  //   );
-  // }
+  Widget _buildCopyToClipboard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
+      child: InkWell(
+        onTap: () async {
+          await Clipboard.setData(
+            ClipboardData(text: _recoveryPhrase.join(' ')),
+          );
+          if (!context.mounted) return;
+          showTopSnackBar(
+            // ignore: use_build_context_synchronously
+            context,
+            title: 'Copied',
+            message: 'Recovery phrase copied to clipboard.',
+            icon: buildCheckmarkIcon(),
+          );
+        },
+        child: const Opacity(
+          opacity: 0.80,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.copy, color: Colors.white, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Copy to Clipboard',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWarning() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 25),
+      child: Text(
+        // ignore: lines_longer_than_80_chars
+        'Do not share your Recovery Phrase with any 3rd party, person, website or application',
+        style: TextStyle(
+          color: Colors.white60,
+          fontSize: 14,
+          fontFamily: 'Fira Code',
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
 
   Widget _buildDoneButton(BuildContext context) {
     return Padding(
