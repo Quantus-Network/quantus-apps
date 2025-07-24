@@ -231,8 +231,9 @@ class WalletStateManager with ChangeNotifier {
     Account account,
     String targetAddress,
     BigInt amount,
-    BigInt feeEstimate,
-  ) async {
+    BigInt feeEstimate, {
+    int maxRetries = 3,
+  }) async {
     final pending = createPendingTransaction(
       from: _senderAddressFromAccount(account),
       to: targetAddress,
@@ -275,25 +276,37 @@ class WalletStateManager with ChangeNotifier {
       }
     }
 
-    try {
-      subscription = await BalancesService().balanceTransfer(
-        account,
-        targetAddress,
-        amount,
-        onStatus,
-      );
-      print('Subscribed to stream for ${pending.id} $subscription');
-    } catch (e, stackTrace) {
-      updatePendingTransaction(
-        pending.id,
-        TransactionState.failed,
-        error: e.toString(),
-      );
-      print('Failed to transfer balance: $e');
-      print('Failed to transfer balance: $stackTrace');
-      throw Exception('Failed to transfer balance: $e');
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        subscription = await BalancesService().balanceTransfer(
+          account,
+          targetAddress,
+          amount,
+          onStatus,
+        );
+        print('Subscribed to stream for ${pending.id} $subscription');
+        return pending.id;
+      } catch (e, stackTrace) {
+        attempts++;
+        if (attempts >= maxRetries) {
+          updatePendingTransaction(
+            pending.id,
+            TransactionState.failed,
+            error: e.toString(),
+          );
+          print('Failed to transfer balance after $maxRetries attempts: $e');
+          print('Stack trace: $stackTrace');
+          throw Exception(
+            'Failed to transfer balance after $maxRetries attempts: $e',
+          );
+        } else {
+          print('Transfer attempt $attempts failed: $e. Retrying...');
+        }
+      }
     }
-    return pending.id;
+    // This line should never be reached, but added for completeness
+    throw Exception('Unexpected error in balanceTransfer retry logic');
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
@@ -302,6 +315,7 @@ class WalletStateManager with ChangeNotifier {
     required BigInt amount,
     required int delaySeconds,
     required BigInt feeEstimate,
+    int maxRetries = 3,
   }) async {
     final pending = createPendingTransaction(
       from: _senderAddressFromAccount(account),
@@ -344,26 +358,44 @@ class WalletStateManager with ChangeNotifier {
       }
     }
 
-    try {
-      subscription = await ReversibleTransfersService()
-          .scheduleReversibleTransferWithDelaySeconds(
-            account: account,
-            recipientAddress: recipientAddress,
-            amount: amount,
-            delaySeconds: delaySeconds,
-            onStatus: onStatus,
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        subscription = await ReversibleTransfersService()
+            .scheduleReversibleTransferWithDelaySeconds(
+              account: account,
+              recipientAddress: recipientAddress,
+              amount: amount,
+              delaySeconds: delaySeconds,
+              onStatus: onStatus,
+            );
+        print('Subscribed to rev stream for ${pending.id} $subscription');
+        return;
+      } catch (e, stackTrace) {
+        attempts++;
+        if (attempts >= maxRetries) {
+          updatePendingTransaction(
+            pending.id,
+            TransactionState.failed,
+            error: e.toString(),
           );
-      print('Subscribed to rev stream for ${pending.id} $subscription');
-    } catch (e, stackTrace) {
-      updatePendingTransaction(
-        pending.id,
-        TransactionState.failed,
-        error: e.toString(),
-      );
-      print('Failed to send reversible: $e');
-      print('Failed to send reversible: $stackTrace');
-      throw Exception('Failed to send reversible transfer: $e');
+          print('Failed to send reversible after $maxRetries attempts: $e');
+          print('Stack trace: $stackTrace');
+          throw Exception(
+            'Failed to send reversible transfer after $maxRetries attempts: $e',
+          );
+        } else {
+          print(
+            'Reversible transfer attempt $attempts failed: $e. Retrying...',
+          );
+        }
+      }
     }
+    // This line should never be reached, but added for completeness
+    throw Exception(
+      'Unexpected error in scheduleReversibleTransferWithDelaySeconds'
+      ' retry logic',
+    );
   }
 
   void updatePendingTransaction(
