@@ -1,15 +1,17 @@
 import 'dart:ui';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class TransactionDetailsActionSheet extends StatelessWidget {
+class TransactionDetailsActionSheet extends StatefulWidget {
   final TransactionEvent transaction;
   final String currentWalletAddress;
 
@@ -19,36 +21,93 @@ class TransactionDetailsActionSheet extends StatelessWidget {
     required this.currentWalletAddress,
   });
 
+  @override
+  State<TransactionDetailsActionSheet> createState() =>
+      _TransactionDetailsActionSheetState();
+}
+
+class _TransactionDetailsActionSheetState
+    extends State<TransactionDetailsActionSheet> {
+  late Timer _timer;
+  late Duration _remainingTime;
   Future<String> get _checksumFuture {
-    final address = isSender ? transaction.to : transaction.from;
+    final address = isSender ? widget.transaction.to : widget.transaction.from;
 
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
 
+  bool get isReversibleScheduled =>
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status ==
+          ReversibleTransferStatus.SCHEDULED;
+
   bool get isReversibleExecuted =>
-      transaction is ReversibleTransferEvent &&
-      (transaction as ReversibleTransferEvent).status ==
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status ==
           ReversibleTransferStatus.EXECUTED;
+
   bool get isReversibleCancelled =>
-      transaction is ReversibleTransferEvent &&
-      (transaction as ReversibleTransferEvent).status ==
+      widget.transaction is ReversibleTransferEvent &&
+      (widget.transaction as ReversibleTransferEvent).status ==
           ReversibleTransferStatus.CANCELLED;
-  bool get isSender => transaction.from == currentWalletAddress;
+
+  bool get isSender => widget.transaction.from == widget.currentWalletAddress;
+
   bool get isFailed =>
-      transaction is PendingTransactionEvent &&
-      (transaction as PendingTransactionEvent).transactionState ==
+      widget.transaction is PendingTransactionEvent &&
+      (widget.transaction as PendingTransactionEvent).transactionState ==
           TransactionState.failed;
+
+  String get title {
+    if (isFailed) return 'TRANSACTION\nFAILED';
+    if (isReversibleCancelled) return 'TRANSACTION\nCANCELLED';
+    if (!isSender && isReversibleScheduled) return 'RECEIVING';
+    if (isSender) return 'SENT';
+    return 'RECEIVED';
+  }
+
+  String get detailText {
+    if (isFailed || (isSender && isReversibleCancelled)) return 'to';
+    if (!isSender && isReversibleScheduled) {
+      return 'received in';
+    }
+    if (!isSender && isReversibleCancelled) return 'from';
+    if (isSender) return 'was successfully sent to';
+    return 'received from';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (isReversibleScheduled) {
+      final tx = widget.transaction as ReversibleTransferEvent;
+      _remainingTime = tx.scheduledAt.difference(DateTime.now());
+      if (_remainingTime.isNegative) {
+        _remainingTime = Duration.zero;
+      }
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          if (_remainingTime > Duration.zero) {
+            _remainingTime = _remainingTime - const Duration(seconds: 1);
+          } else {
+            _timer.cancel();
+          }
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String accountId = isSender ? transaction.to : transaction.from;
-    final String title = isFailed
-        ? 'TRANSACTION\nFAILED'
-        : isReversibleCancelled
-        ? 'TRANSACTION\nCANCELLED'
-        : isSender
-        ? 'SENT'
-        : 'RECEIVED';
+    final String accountId = isSender
+        ? widget.transaction.to
+        : widget.transaction.from;
 
     return SafeArea(
       child: Stack(
@@ -257,7 +316,8 @@ class TransactionDetailsActionSheet extends StatelessWidget {
   }
 
   Widget _buildViewExplorer() {
-    String transactionType = (isReversibleExecuted || isReversibleCancelled)
+    String transactionType =
+        (isReversibleScheduled || isReversibleExecuted || isReversibleCancelled)
         ? 'reversible-transactions'
         : 'immediate-transactions';
 
@@ -266,9 +326,9 @@ class TransactionDetailsActionSheet extends StatelessWidget {
         const SizedBox(height: 20),
         GestureDetector(
           onTap: () async {
-            if (transaction.extrinsicHash != null) {
+            if (widget.transaction.extrinsicHash != null) {
               final Uri url = Uri.parse(
-                '${AppConstants.explorerEndpoint}/$transactionType/${transaction.extrinsicHash}',
+                '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.extrinsicHash}',
               );
               await launchUrl(url);
             }
@@ -304,16 +364,8 @@ class TransactionDetailsActionSheet extends StatelessWidget {
   Widget _buildDetails() {
     final NumberFormattingService formattingService = NumberFormattingService();
     final String formattedAmount = formattingService.formatBalance(
-      transaction.amount,
+      widget.transaction.amount,
     );
-
-    String detailText = isFailed || (isSender && isReversibleCancelled)
-        ? 'to'
-        : isReversibleCancelled
-        ? 'from'
-        : isSender
-        ? 'was successfully sent to'
-        : 'received from';
 
     return Column(
       spacing: 8,
@@ -353,6 +405,8 @@ class TransactionDetailsActionSheet extends StatelessWidget {
             fontWeight: FontWeight.w400,
           ),
         ),
+        if (!isSender && isReversibleScheduled)
+          ReversibleTimer(remainingTime: _remainingTime),
         FutureBuilder(
           future: _checksumFuture,
           builder: (context, snapshot) {
@@ -372,7 +426,7 @@ class TransactionDetailsActionSheet extends StatelessWidget {
           },
         ),
         Text(
-          isSender ? transaction.to : transaction.from,
+          isSender ? widget.transaction.to : widget.transaction.from,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,

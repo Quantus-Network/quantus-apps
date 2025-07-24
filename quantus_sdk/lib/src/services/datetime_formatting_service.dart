@@ -1,3 +1,22 @@
+class FormattedDuration {
+  final String hours;
+  final String minutes;
+  final String seconds;
+  final String formatted;
+
+  const FormattedDuration({
+    required this.hours,
+    required this.minutes,
+    required this.seconds,
+    required this.formatted,
+  });
+
+  // Optional: Override toString for easy printing
+  @override
+  String toString() =>
+      'FormattedDuration(hours: $hours, minutes: $minutes, seconds: $seconds, formatted: $formatted)';
+}
+
 // A utility class to format DateTime objects into human-readable "time ago" strings.
 class DatetimeFormattingService {
   /// Formats a given [dateTime] into a human-readable "time ago" string.
@@ -9,9 +28,9 @@ class DatetimeFormattingService {
     final difference = now.difference(dateTime);
 
     // Use padLeft to ensure that single-digit numbers have a leading zero.
-    String hour = dateTime.hour.toString().padLeft(2, '0');
-    String minute = dateTime.minute.toString().padLeft(2, '0');
-    String timeString = '$hour:$minute';
+    String hours = dateTime.hour.toString().padLeft(2, '0');
+    String minutes = dateTime.minute.toString().padLeft(2, '0');
+    String timeString = '$hours:$minutes';
 
     // Handle future dates (e.g., "in 5 minutes")
     if (difference.isNegative) {
@@ -21,6 +40,35 @@ class DatetimeFormattingService {
 
     // Handle past dates (e.g., "5 minutes ago")
     return '${_formatPast(difference)} $timeString';
+  }
+
+  static FormattedDuration formatDuration(Duration duration) {
+    if (duration.isNegative) {
+      return const FormattedDuration(
+        hours: '00',
+        minutes: '00',
+        seconds: '00',
+        formatted: '00:00:00',
+      );
+    }
+
+    // Use padLeft to ensure that single-digit numbers have a leading zero.
+    String hours = duration.inHours.toString().padLeft(2, '0');
+    String minutes = duration.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    String seconds = duration.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+
+    return FormattedDuration(
+      hours: hours,
+      minutes: minutes,
+      seconds: seconds,
+      formatted: '$hours:$minutes:$seconds',
+    );
   }
 
   /// Helper function to format future durations.

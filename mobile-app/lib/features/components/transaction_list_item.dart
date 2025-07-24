@@ -23,10 +23,11 @@ class TransactionListItem extends StatefulWidget {
 }
 
 class TransactionListItemState extends State<TransactionListItem> {
-  Timer? _timer;
-  Duration? _remainingTime;
+  late Timer _timer;
+  late Duration _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
-  bool get isPending => widget.transaction is PendingTransactionEvent;
+  bool get isPending =>
+      widget.transaction is PendingTransactionEvent || isReversibleScheduled;
   bool get isReversibleScheduled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status ==
@@ -36,21 +37,37 @@ class TransactionListItemState extends State<TransactionListItem> {
       (widget.transaction as ReversibleTransferEvent).status ==
           ReversibleTransferStatus.CANCELLED;
 
+  String get title {
+    if (isReversibleCancelled) return 'Cancelled';
+    if (isSent && isPending) return 'Sending';
+    if (!isSent && isPending) return 'Receiving';
+    if (isSent) return 'Sent';
+    return 'Received';
+  }
+
+  Color get titleColor {
+    if (isReversibleCancelled) return const Color(0xFFFF2D53);
+    if (isSent && isPending) return const Color(0xFF16CECE);
+    if (!isSent && isPending) return const Color(0xFFB259F2);
+    if (isSent) return const Color(0xFF16CECE);
+    return const Color(0xFFB259F2);
+  }
+
   @override
   void initState() {
     super.initState();
     if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      if (_remainingTime!.isNegative) {
+      if (_remainingTime.isNegative) {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
-          if (_remainingTime! > Duration.zero) {
-            _remainingTime = _remainingTime! - const Duration(seconds: 1);
+          if (_remainingTime > Duration.zero) {
+            _remainingTime = _remainingTime - const Duration(seconds: 1);
           } else {
-            _timer?.cancel();
+            _timer.cancel();
           }
         });
       });
@@ -59,16 +76,8 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
-  }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$hours:$minutes:$seconds';
   }
 
   final NumberFormattingService _formattingService = NumberFormattingService();
@@ -154,7 +163,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
     const textStyle = TextStyle(fontFamily: 'Fira Code', color: Colors.white);
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         _showActionSheet(context);
       },
@@ -167,24 +176,15 @@ class TransactionListItemState extends State<TransactionListItem> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (isReversibleCancelled)
-                  SvgPicture.asset(
-                    'assets/stop_icon.svg',
-                    width: 21,
-                    height: 17,
-                  )
+                  SvgPicture.asset('assets/stop_icon.svg', width: 21)
                 else if (isFailed)
-                  SvgPicture.asset(
-                    'assets/send_failed_icon.svg',
-                    width: 21,
-                    height: 17,
-                  )
+                  SvgPicture.asset('assets/send_failed_icon.svg', width: 21)
                 else
                   Image.asset(
                     isSent
                         ? 'assets/send_icon.png'
                         : 'assets/receive_icon_sm.png',
                     width: 21,
-                    height: 17,
                   ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -196,15 +196,9 @@ class TransactionListItemState extends State<TransactionListItem> {
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: isReversibleCancelled
-                                  ? 'Cancelled'
-                                  : isSent && isPending
-                                  ? 'Sending'
-                                  : isSent
-                                  ? 'Sent'
-                                  : 'Receive',
+                              text: title,
                               style: textStyle.copyWith(
-                                color: const Color(0xFF16CECE),
+                                color: titleColor,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -255,10 +249,11 @@ class TransactionListItemState extends State<TransactionListItem> {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
         case ReversibleTransferStatus.SCHEDULED:
-          if (_remainingTime != null && _remainingTime! > Duration.zero) {
+          if (_remainingTime > Duration.zero) {
             return _TimerDisplay(
-              duration: _remainingTime!,
-              formatDuration: _formatDuration,
+              duration: DatetimeFormattingService.formatDuration(
+                _remainingTime,
+              ).formatted,
               isSending: widget.transaction.from == widget.currentWalletAddress,
             );
           } else {
@@ -275,15 +270,10 @@ class TransactionListItemState extends State<TransactionListItem> {
 }
 
 class _TimerDisplay extends StatelessWidget {
-  final Duration duration;
-  final String Function(Duration) formatDuration;
+  final String duration;
   final bool isSending;
 
-  const _TimerDisplay({
-    required this.duration,
-    required this.formatDuration,
-    required this.isSending,
-  });
+  const _TimerDisplay({required this.duration, required this.isSending});
 
   @override
   Widget build(BuildContext context) {
@@ -302,7 +292,7 @@ class _TimerDisplay extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            formatDuration(duration),
+            duration,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
