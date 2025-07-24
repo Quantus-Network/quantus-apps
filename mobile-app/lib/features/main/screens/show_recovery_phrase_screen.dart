@@ -122,7 +122,18 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.black,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        Color.fromARGB(255, 170, 69, 22),
+                        Colors.black,
+                        Colors.black,
+                        Colors.black,
+                        Colors.black,
+                        Color.fromARGB(255, 33, 66, 136),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: RevealOverlay(
