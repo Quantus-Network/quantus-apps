@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 
 class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
@@ -32,6 +34,12 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   final SettingsService _settingsService = SettingsService();
   final ReversibleTransfersService _reversibleTransfersService =
       ReversibleTransfersService();
+
+  Future<String> get _checksumFuture {
+    final address = widget.transaction.to;
+
+    return HumanReadableChecksumService().getHumanReadableName(address);
+  }
 
   @override
   void initState() {
@@ -63,14 +71,6 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     super.dispose();
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$hours:$minutes:$seconds';
-  }
-
   String _formatAmount(BigInt amount) {
     return '${_formattingService.formatBalance(amount)} QUAN';
   }
@@ -78,42 +78,56 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
-        clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x0A0A0D12),
-              blurRadius: 8,
-              offset: Offset(0, 8),
-              spreadRadius: -4,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: Container(color: Colors.black.useOpacity(0.3)),
             ),
-            BoxShadow(
-              color: Color(0x190A0D12),
-              blurRadius: 24,
-              offset: Offset(0, 20),
-              spreadRadius: -4,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
+          ),
+          Container(
+            height:
+                MediaQuery.of(context).size.height *
+                AppConstants.sendingSheetHeightFraction,
+            padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
+            clipBehavior: Clip.antiAlias,
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0A0A0D12),
+                  blurRadius: 8,
+                  offset: Offset(0, 8),
+                  spreadRadius: -4,
+                ),
+                BoxShadow(
+                  color: Color(0x190A0D12),
+                  blurRadius: 24,
+                  offset: Offset(0, 20),
+                  spreadRadius: -4,
                 ),
               ],
             ),
-            // const SizedBox(height: 20.0),
-            _buildContent(),
-          ],
-        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                // const SizedBox(height: 20.0),
+                _buildContent(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -144,19 +158,22 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         ),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
+
+        const SizedBox(height: 12),
+        ReversibleTimer(remainingTime: _remainingTime),
+        const SizedBox(height: 12),
+
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.0),
+          child: Divider(color: Colors.white, thickness: 1),
+        ),
+        const SizedBox(height: 12),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              _buildTimer(),
-              const SizedBox(height: 12),
-              const Divider(color: Colors.white, thickness: 1),
-              const SizedBox(height: 12),
-              _buildTransactionDetails(),
-            ],
-          ),
+          child: _buildTransactionDetails(),
         ),
+
         const SizedBox(height: 22),
         const Divider(color: Colors.white, thickness: 1),
         SizedBox(height: verticalPadding),
@@ -255,56 +272,10 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
     );
   }
 
-  Widget _buildTimer() {
-    if (_remainingTime == null || _remainingTime!.isNegative) {
-      return const SizedBox.shrink();
-    }
-    final timeParts = _formatDuration(_remainingTime!).split(':');
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildTimePart(timeParts[0]),
-        _buildTimeSeparator(),
-        _buildTimePart(timeParts[1]),
-        _buildTimeSeparator(),
-        _buildTimePart(timeParts[2]),
-      ],
-    );
-  }
-
-  Widget _buildTimePart(String part) {
-    return Text(
-      part,
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 22,
-        fontFamily: 'Fira Code',
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.44,
-      ),
-    );
-  }
-
-  Widget _buildTimeSeparator() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      child: Text(
-        ':',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.44,
-        ),
-      ),
-    );
-  }
-
   Widget _buildTransactionDetails() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         _buildRecipientRow(widget.transaction.to),
         const SizedBox(height: 12),
@@ -340,6 +311,8 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   Widget _buildRecipientRow(String address) {
+    final formattedAddress = AddressFormattingService.formatAddress(address);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -358,11 +331,28 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
             ),
           ),
         ),
+        FutureBuilder(
+          future: _checksumFuture,
+          builder: (context, snapshot) {
+            String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
+            if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
+
+            return Text(
+              checkPhrase,
+              style: const TextStyle(
+                color: Color(0xFF16CECE),
+                fontSize: 14,
+                fontFamily: 'Fira Code',
+                fontWeight: FontWeight.w400,
+              ),
+            );
+          },
+        ),
         Text(
-          address,
+          formattedAddress,
           style: const TextStyle(
             color: Color(0xFFD9D9D9),
-            fontSize: 10,
+            fontSize: 12,
             fontFamily: 'Fira Code',
             fontWeight: FontWeight.w400,
           ),
