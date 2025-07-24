@@ -48,8 +48,6 @@ class _NotificationGroupState extends State<NotificationGroup>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.notifications.isEmpty) return const SizedBox.shrink();
-
     final reveresedNotifications = widget.notifications.reversed;
 
     return SlideTransition(
