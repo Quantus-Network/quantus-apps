@@ -26,7 +26,8 @@ class TransactionListItemState extends State<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
-  bool get isPending => widget.transaction is PendingTransactionEvent;
+  bool get isPending =>
+      widget.transaction is PendingTransactionEvent || isReversibleScheduled;
   bool get isReversibleScheduled =>
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status ==
@@ -35,6 +36,15 @@ class TransactionListItemState extends State<TransactionListItem> {
       widget.transaction is ReversibleTransferEvent &&
       (widget.transaction as ReversibleTransferEvent).status ==
           ReversibleTransferStatus.CANCELLED;
+
+  String get title {
+    print(isPending);
+    if (isReversibleCancelled) return 'Cancelled';
+    if (isSent && isPending) return 'Sending';
+    if (!isSent && isPending) return 'Receiving';
+    if (isSent) return 'Sent';
+    return 'Receive';
+  }
 
   @override
   void initState() {
@@ -196,13 +206,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: isReversibleCancelled
-                                  ? 'Cancelled'
-                                  : isSent && isPending
-                                  ? 'Sending'
-                                  : isSent
-                                  ? 'Sent'
-                                  : 'Receive',
+                              text: title,
                               style: textStyle.copyWith(
                                 color: const Color(0xFF16CECE),
                                 fontSize: 14,
