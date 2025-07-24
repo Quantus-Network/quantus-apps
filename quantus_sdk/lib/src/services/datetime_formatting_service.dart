@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class FormattedDuration {
   final String hours;
   final String minutes;
@@ -25,7 +27,7 @@ class DatetimeFormattingService {
   /// "2 days ago", "3 months ago", "1 year ago", "in 5 minutes", "in 2 days".
   static String format(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(dateTime.toLocal());
 
     // Use padLeft to ensure that single-digit numbers have a leading zero.
     String hours = dateTime.hour.toString().padLeft(2, '0');
@@ -69,6 +71,10 @@ class DatetimeFormattingService {
       seconds: seconds,
       formatted: '$hours:$minutes:$seconds',
     );
+  }
+
+  static String formatTimestamp(DateTime timestamp) {
+    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
   }
 
   /// Helper function to format future durations.
