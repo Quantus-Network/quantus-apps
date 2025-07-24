@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/base_with_background.dart';
+import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
 
@@ -86,24 +88,43 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
-        centerTitle: false,
-        title: const Text(
-          'Transaction History',
-          style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
+    return BaseWithBackground(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 27.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Transaction History',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 13),
+              DropdownSelect(
+                initialValue: '1',
+                items: [
+                  Item(id: '1', label: 'All Accounts'),
+                  Item(id: '2', label: 'My account'),
+                  Item(id: '3', label: 'Your Accounts'),
+                  Item(id: '4', label: 'His Accounts'),
+                ],
+                onChanged: (selectedItem) {
+                  // TODO: Handle account selection
+                  print('Selected account: ${selectedItem?.label}');
+                },
+              ),
+              const SizedBox(height: 13),
+              Expanded(child: _buildBody()),
+            ],
           ),
         ),
-        backgroundColor: const Color(0xFF0E0E0E),
-        elevation: 0,
       ),
-      backgroundColor: const Color(0xFF0E0E0E),
-      body: _buildBody(),
     );
   }
 
@@ -130,13 +151,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       child: ListView(
         controller: _scrollController,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: RecentTransactionsList(
-              transactions: _transactions!.combined,
-              currentWalletAddress:
-                  widget.manager.walletData.data!.account.accountId,
-            ),
+          RecentTransactionsList(
+            transactions: _transactions!.combined,
+            currentWalletAddress:
+                widget.manager.walletData.data!.account.accountId,
           ),
           if (_isLoading && _hasMore)
             const Padding(
