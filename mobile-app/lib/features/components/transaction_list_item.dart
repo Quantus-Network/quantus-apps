@@ -23,8 +23,8 @@ class TransactionListItem extends StatefulWidget {
 }
 
 class TransactionListItemState extends State<TransactionListItem> {
-  late Timer _timer;
-  late Duration _remainingTime;
+  Timer? _timer;
+  Duration? _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
   bool get isPending =>
       widget.transaction is PendingTransactionEvent || isReversibleScheduled;
@@ -59,15 +59,15 @@ class TransactionListItemState extends State<TransactionListItem> {
     if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      if (_remainingTime.isNegative) {
+      if (_remainingTime!.isNegative) {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
-          if (_remainingTime > Duration.zero) {
-            _remainingTime = _remainingTime - const Duration(seconds: 1);
+          if (_remainingTime != null && _remainingTime! > Duration.zero) {
+            _remainingTime = _remainingTime! - const Duration(seconds: 1);
           } else {
-            _timer.cancel();
+            timer.cancel();
           }
         });
       });
@@ -76,7 +76,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -249,10 +249,10 @@ class TransactionListItemState extends State<TransactionListItem> {
       final tx = widget.transaction as ReversibleTransferEvent;
       switch (tx.status) {
         case ReversibleTransferStatus.SCHEDULED:
-          if (_remainingTime > Duration.zero) {
+          if (_remainingTime != null && _remainingTime! > Duration.zero) {
             return _TimerDisplay(
               duration: DatetimeFormattingService.formatDuration(
-                _remainingTime,
+                _remainingTime!,
               ).formatted,
               isSending: widget.transaction.from == widget.currentWalletAddress,
             );
