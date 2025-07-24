@@ -274,7 +274,6 @@ class WalletStateManager with ChangeNotifier {
 
     int attempts = 0;
     while (attempts < maxRetries) {
-      print("attempt $attempts");
       try {
         subscription = await BalancesService().balanceTransfer(
           account,
@@ -390,7 +389,8 @@ class WalletStateManager with ChangeNotifier {
     }
     // This line should never be reached, but added for completeness
     throw Exception(
-      'Unexpected error in scheduleReversibleTransferWithDelaySeconds retry logic',
+      'Unexpected error in scheduleReversibleTransferWithDelaySeconds'
+      ' retry logic',
     );
   }
 

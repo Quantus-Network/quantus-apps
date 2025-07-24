@@ -368,11 +368,9 @@ class SubstrateService {
     ])).result.replaceAll('0x', '');
     final encodedCall = call.encode();
 
-    print("submit extrinsic");
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
-        print("retrying $retryCount");
         final block = await _provider!.send('chain_getBlock', []);
         final blockNumber = int.parse(
           block.result['block']['header']['number'],

@@ -85,7 +85,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Item(id: '4', label: 'His Accounts'),
                 ],
                 onChanged: (selectedItem) {
-                  // TODO: Handle account selection
                   print('Selected account: ${selectedItem?.label}');
                 },
               ),
