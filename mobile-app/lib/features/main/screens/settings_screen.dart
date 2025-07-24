@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/accounts_screen.d
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -146,7 +147,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Information'),
-        _buildSettingsItem(context, 'Help & Support', () {}, showArrow: false),
+        _buildSettingsItem(context, 'Help & Support', () {
+          final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
+          launchUrl(url);
+        }, showArrow: false),
         const SizedBox(height: 22),
         _buildSettingsItem(
           context,
@@ -155,7 +159,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: const Icon(Icons.share, color: Colors.white, size: 16),
         ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Term of Service', () {}, showArrow: false),
+        _buildSettingsItem(context, 'Term of Service', () {
+          final Uri url = Uri.parse(AppConstants.termsOfServiceUrl);
+          launchUrl(url);
+        }, showArrow: false),
       ],
     );
   }
