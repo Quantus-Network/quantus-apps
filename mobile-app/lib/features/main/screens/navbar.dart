@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
@@ -90,6 +91,7 @@ class Navbar extends StatefulWidget {
 
 class _NavbarState extends State<Navbar> {
   int _selectedIndex = 0;
+  final bool _notificationTestDisabled = true; // Flag for notifications
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -130,8 +132,8 @@ class _NavbarState extends State<Navbar> {
         ? _selectedIndex == index - 1
         : _selectedIndex == index;
 
+    // Floating action button item
     if (index == 2) {
-      // Floating action button item
       return SizedBox(
         height: 75,
         width: 70,
@@ -140,6 +142,29 @@ class _NavbarState extends State<Navbar> {
             Navigator.pushNamed(context, '/send');
           },
           child: item.onIcon,
+        ),
+      );
+    }
+
+    // Notification item with test flag
+    if (index == 4 && _notificationTestDisabled) {
+      return SizedBox(
+        height: 32,
+        width: 70,
+        child: GestureDetector(
+          onTap: null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset(
+                'assets/navbar/notifications_icon_off.svg',
+                colorFilter: const ColorFilter.mode(
+                  Colors.blueGrey,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -167,9 +192,8 @@ class _NavbarState extends State<Navbar> {
       children: [
         const WalletMain(),
         TransactionsScreen(manager: walletStateManager),
-        const Center(child: SettingsScreen()),
-        // Placeholder for Notifications Screen
-        const Center(child: Text('Notifications Screen')),
+        const SettingsScreen(),
+        NotificationsScreen(manager: walletStateManager),
       ],
     );
   }
