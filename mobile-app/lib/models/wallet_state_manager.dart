@@ -51,6 +51,7 @@ class WalletStateManager with ChangeNotifier {
 
   List<PendingTransactionEvent> pendingTransactions = [];
   Timer? _pollingTimer;
+  Timer? _historyPollTimer;
 
   WalletStateManager(
     this._chainHistoryService,
@@ -141,30 +142,33 @@ class WalletStateManager with ChangeNotifier {
   bool updatePendingTransactions() {
     bool updated = false;
     var transferList = txData.data?.combined ?? [];
-    List<PendingTransactionEvent> toRemove = [];
+    List<PendingTransactionEvent> newPending = [];
     for (var pending in pendingTransactions) {
       if (pending.transactionState == TransactionState.failed) {
-        toRemove.add(pending);
         updated = true;
+        continue;
       }
+
       if (pending.blockHash != null) {
         print('pending ${pending.amount} block hash: ${pending.blockHash}');
 
         for (var transfer in transferList) {
-          print(
-            'checking trasfer ${transfer.amount} with block hash: '
-            '${transfer.blockHash}',
-          );
+          // print(
+          //   'checking trasfer ${transfer.amount} with block hash: '
+          //   '${transfer.blockHash}',
+          // );
           if (transfer.blockHash == pending.blockHash) {
-            print('found item block hash - removing');
-            toRemove.add(pending);
+            // print('found item block hash - removing');
             updated = true;
+            continue;
           }
         }
       }
+
+      newPending.add(pending);
     }
-    if (toRemove.isNotEmpty) {
-      pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+    if (updated) {
+      pendingTransactions = newPending;
     }
     return updated;
   }
@@ -217,6 +221,7 @@ class WalletStateManager with ChangeNotifier {
   }
 
   void _startPolling() {
+    // I don't think we need this..
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
       if (pendingTransactions.isEmpty) return;
       notifyListeners();
@@ -385,8 +390,6 @@ class WalletStateManager with ChangeNotifier {
     }
     notifyListeners();
   }
-
-  Timer? _historyPollTimer;
 
   void _startPollingForHistory() {
     const pollInterval = Duration(seconds: 10);
