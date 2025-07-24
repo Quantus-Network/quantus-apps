@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
+import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
 enum SendOverlayState { confirm, progress, complete }
@@ -687,7 +687,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const WalletMain()),
+                MaterialPageRoute(builder: (context) => const Navbar()),
                 (route) => false,
               );
             },
