@@ -401,6 +401,9 @@ class SubstrateService {
           keypair: senderWallet,
           message: payload,
         );
+        // for testing failed transactions - use the bad signature.
+        // var badSignature = Uint8List(signature.length); // 0 list
+
         final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
           signature,
           senderWallet.publicKey,
