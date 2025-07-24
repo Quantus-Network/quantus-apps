@@ -70,6 +70,9 @@ class WalletStateManager with ChangeNotifier {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _historyPollTimer?.cancel();
+    _historyPollTimer = null;
     super.dispose();
   }
 
@@ -146,10 +149,10 @@ class WalletStateManager with ChangeNotifier {
   bool updatePendingTransactions() {
     bool updated = false;
     var transferList = txData.data?.combined ?? [];
-    List<PendingTransactionEvent> newPending = [];
+    List<PendingTransactionEvent> toRemove = [];
     for (var pending in pendingTransactions) {
       if (pending.transactionState == TransactionState.failed) {
-        updated = true;
+        toRemove.add(pending);
         continue;
       }
 
@@ -163,16 +166,15 @@ class WalletStateManager with ChangeNotifier {
           // );
           if (transfer.blockHash == pending.blockHash) {
             // print('found item block hash - removing');
-            updated = true;
+            toRemove.add(pending);
             continue;
           }
         }
       }
-
-      newPending.add(pending);
     }
-    if (updated) {
-      pendingTransactions = newPending;
+    if (toRemove.isNotEmpty) {
+      pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+      updated = true;
     }
     return updated;
   }
@@ -431,6 +433,11 @@ class WalletStateManager with ChangeNotifier {
     const pollInterval = Duration(seconds: 10);
 
     if (pendingTransactions.isEmpty) {
+      return;
+    }
+    if (_historyPollTimer != null) {
+      // just keep polling...
+      print('history poll timer already running');
       return;
     }
     _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
