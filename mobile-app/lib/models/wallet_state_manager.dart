@@ -7,6 +7,9 @@ import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:resonance_network_wallet/models/wallet_data.dart';
 
 class WalletStateManager with ChangeNotifier {
+  static const fastPollInterval = Duration(seconds: 10);
+  static const slowPollInterval = Duration(seconds: 60);
+
   final SettingsService _settingsService;
   final ChainHistoryService _chainHistoryService;
   final SubstrateService _substrateService;
@@ -37,22 +40,19 @@ class WalletStateManager with ChangeNotifier {
   final List<PendingTransactionEvent> _pendingTransactions = [];
 
   Timer? _pollingTimer;
-  Timer? _historyPollTimer;
 
   WalletStateManager(
     this._chainHistoryService,
     this._settingsService,
     this._substrateService,
   ) {
-    _startPolling();
+    _resetPollingTimer();
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    _historyPollTimer?.cancel();
-    _historyPollTimer = null;
     super.dispose();
   }
 
@@ -229,11 +229,21 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  void _startPolling() {
-    // I don't think we need this..
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-      if (_pendingTransactions.isEmpty) return;
-      notifyListeners();
+  void _resetPollingTimer() {
+    _pollingTimer?.cancel();
+
+    final pollInterval = _pendingTransactions.isNotEmpty
+        ? fastPollInterval
+        : slowPollInterval;
+
+    _pollingTimer = Timer(pollInterval, () async {
+      try {
+        await load(quiet: true);
+      } catch (e) {
+        print('error polling for history: $e');
+      } finally {
+        _resetPollingTimer();
+      }
     });
   }
 
@@ -319,29 +329,6 @@ class WalletStateManager with ChangeNotifier {
     notifyListeners();
   }
 
-  void _startPollingForHistory() {
-    const pollInterval = Duration(seconds: 10);
-
-    if (_pendingTransactions.isEmpty) {
-      return;
-    }
-    if (_historyPollTimer?.isActive ?? false) {
-      return;
-    }
-
-    _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
-      try {
-        await load(quiet: true);
-        if (_pendingTransactions.isEmpty) {
-          timer.cancel();
-          _historyPollTimer = null;
-        }
-      } catch (e) {
-        print('error polling for tx history: $e');
-      }
-    });
-  }
-
   void refreshActiveAccount() {
     load(); // async!
   }
@@ -383,7 +370,7 @@ class WalletStateManager with ChangeNotifier {
       updatePendingTransaction(pendingTx.id, newState, blockHash: hash);
 
       if (newState == TransactionState.inBlock && hash != null) {
-        _startPollingForHistory();
+        _resetPollingTimer();
         subscription?.cancel();
       }
     }
