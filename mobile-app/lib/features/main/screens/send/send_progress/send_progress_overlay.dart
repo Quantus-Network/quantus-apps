@@ -32,11 +32,11 @@ class SendConfirmationOverlay extends StatefulWidget {
 }
 
 class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
-  SendOverlayState _currentState = SendOverlayState.confirm;
+  SendOverlayState currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
 
-  void _goHome() {
+  void goHome() {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -46,7 +46,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   }
 
   void _handleDismiss() {
-    switch (_currentState) {
+    switch (currentState) {
       case SendOverlayState.confirm:
         widget.onClose();
         break;
@@ -54,7 +54,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         // do nothing
         break;
       case SendOverlayState.complete:
-        _goHome();
+        goHome();
         break;
     }
   }
@@ -86,7 +86,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
     setState(() {
       _isSending = true;
-      _currentState = SendOverlayState.progress;
+      currentState = SendOverlayState.progress;
       _errorMessage = null;
     });
 
@@ -132,7 +132,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
       if (mounted) {
         setState(() {
-          _currentState = SendOverlayState.complete;
+          currentState = SendOverlayState.complete;
           _isSending = false;
         });
       }
@@ -140,7 +140,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('Balance transfer failed: $e');
       if (mounted) {
         setState(() {
-          _currentState = SendOverlayState.confirm;
+          currentState = SendOverlayState.confirm;
           _errorMessage = 'Transfer failed: ${e.toString()}';
           _isSending = false;
         });
@@ -464,7 +464,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 GestureDetector(
-                  onTap: _goHome,
+                  onTap: goHome,
                   child: const SizedBox(
                     width: 24,
                     height: 24,
@@ -516,7 +516,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 GestureDetector(
-                  onTap: _goHome,
+                  onTap: goHome,
                   child: const SizedBox(
                     width: 24,
                     height: 24,
@@ -707,7 +707,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
           // Done Button
           GestureDetector(
-            onTap: _goHome,
+            onTap: goHome,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -737,7 +737,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   @override
   Widget build(BuildContext context) {
     Widget content;
-    switch (_currentState) {
+    switch (currentState) {
       case SendOverlayState.confirm:
         content = _buildConfirmState(context);
         break;
@@ -755,42 +755,31 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         if (didPop) return;
         _handleDismiss();
       },
-      child: GestureDetector(
-        onVerticalDragEnd: (DragEndDetails details) {
-          if (details.primaryVelocity != null &&
-              details.primaryVelocity! > 200) {
-            _handleDismiss();
-          }
-        },
-        child: SafeArea(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                  child: Container(color: Colors.black.useOpacity(0.3)),
+      child: SafeArea(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: Container(color: Colors.black.useOpacity(0.3)),
+              ),
+            ),
+            Container(
+              height:
+                  MediaQuery.of(context).size.height *
+                  AppConstants.sendingSheetHeightFraction,
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+              decoration: ShapeDecoration(
+                color: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(5),
                 ),
               ),
-              Container(
-                height:
-                    MediaQuery.of(context).size.height *
-                    AppConstants.sendingSheetHeightFraction,
-                width: MediaQuery.of(context).size.width,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 35,
-                  vertical: 16,
-                ),
-                decoration: ShapeDecoration(
-                  color: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: content,
-              ),
-            ],
-          ),
+              child: content,
+            ),
+          ],
         ),
       ),
     );

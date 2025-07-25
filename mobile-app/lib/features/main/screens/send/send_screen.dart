@@ -242,6 +242,10 @@ class SendScreenState extends State<SendScreen> {
   void _showSendConfirmation() {
     debugPrint('Showing confirmation for amount (BigInt): $_amount');
 
+    // Keep a reference to the overlay's state
+    final GlobalKey<SendConfirmationOverlayState> overlayKey =
+        GlobalKey<SendConfirmationOverlayState>();
+
     showModalBottomSheet(
       context: context,
       barrierColor: Colors.transparent,
@@ -269,6 +273,7 @@ class SendScreenState extends State<SendScreen> {
             left: 0,
             right: 0,
             child: SendConfirmationOverlay(
+              key: overlayKey,
               amount: _amount,
               recipientName: _savedAddressesLabel,
               recipientAddress: _recipientController.text,
@@ -279,7 +284,15 @@ class SendScreenState extends State<SendScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      // After the modal is dismissed, check its final state.
+      final currentState = overlayKey.currentState?.currentState;
+      if (currentState == SendOverlayState.complete ||
+          currentState == SendOverlayState.progress) {
+        // If the transaction was completed, navigate home.
+        overlayKey.currentState?.goHome();
+      }
+    });
   }
 
   Future<void> _scanQRCode() async {
