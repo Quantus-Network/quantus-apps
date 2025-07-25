@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,8 +28,8 @@ class TransactionDetailsActionSheet extends StatefulWidget {
 
 class _TransactionDetailsActionSheetState
     extends State<TransactionDetailsActionSheet> {
-  late Timer _timer;
-  late Duration _remainingTime;
+  Timer? _timer;
+  Duration? _remainingTime;
   Future<String> get _checksumFuture {
     final address = isSender ? widget.transaction.to : widget.transaction.from;
 
@@ -82,15 +82,15 @@ class _TransactionDetailsActionSheetState
     if (isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      if (_remainingTime.isNegative) {
+      if (_remainingTime != null && _remainingTime!.isNegative) {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
-          if (_remainingTime > Duration.zero) {
-            _remainingTime = _remainingTime - const Duration(seconds: 1);
+          if (_remainingTime != null && _remainingTime! > Duration.zero) {
+            _remainingTime = _remainingTime! - const Duration(seconds: 1);
           } else {
-            _timer.cancel();
+            timer.cancel();
           }
         });
       });
@@ -99,7 +99,7 @@ class _TransactionDetailsActionSheetState
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -406,7 +406,7 @@ class _TransactionDetailsActionSheetState
           ),
         ),
         if (!isSender && isReversibleScheduled)
-          ReversibleTimer(remainingTime: _remainingTime),
+          ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
         FutureBuilder(
           future: _checksumFuture,
           builder: (context, snapshot) {

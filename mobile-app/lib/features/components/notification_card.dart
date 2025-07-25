@@ -167,7 +167,6 @@ class _NotificationCardState extends State<NotificationCard>
     final notification = widget.notification;
 
     return GestureDetector(
-      // TODO: fix rendering when using swipe to not be buggy build
       onHorizontalDragUpdate: (details) {
         _handleSwipeUpdate(details.delta.dx);
       },

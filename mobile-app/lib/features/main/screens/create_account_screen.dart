@@ -275,7 +275,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SizedBox(height: 16),
         SizedBox(
           width: 311,
-          height: 20, // Set a fixed height to avoid layout jump
+          height: 50, // Set a fixed height to avoid layout jump
           child: FutureBuilder<String>(
             future: _checksumFuture,
             builder: (context, snapshot) {

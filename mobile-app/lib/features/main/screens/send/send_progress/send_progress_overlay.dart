@@ -36,6 +36,29 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
   String? _errorMessage;
   bool _isSending = false;
 
+  void _goHome() {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const Navbar()),
+      (route) => false,
+    );
+  }
+
+  void _handleDismiss() {
+    switch (_currentState) {
+      case SendOverlayState.confirm:
+        widget.onClose();
+        break;
+      case SendOverlayState.progress:
+        // do nothing
+        break;
+      case SendOverlayState.complete:
+        _goHome();
+        break;
+    }
+  }
+
   bool get _isReversible => widget.reversibleTimeSeconds > 0;
 
   final NumberFormattingService _formattingService = NumberFormattingService();
@@ -441,7 +464,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 GestureDetector(
-                  onTap: widget.onClose,
+                  onTap: _goHome,
                   child: const SizedBox(
                     width: 24,
                     height: 24,
@@ -493,7 +516,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 GestureDetector(
-                  onTap: widget.onClose,
+                  onTap: _goHome,
                   child: const SizedBox(
                     width: 24,
                     height: 24,
@@ -684,13 +707,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
 
           // Done Button
           GestureDetector(
-            onTap: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const Navbar()),
-                (route) => false,
-              );
-            },
+            onTap: _goHome,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -732,31 +749,49 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         break;
     }
 
-    return SafeArea(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-              child: Container(color: Colors.black.useOpacity(0.3)),
-            ),
-          ),
-          Container(
-            height:
-                MediaQuery.of(context).size.height *
-                AppConstants.sendingSheetHeightFraction,
-            width: MediaQuery.of(context).size.width,
-            padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
-            decoration: ShapeDecoration(
-              color: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        _handleDismiss();
+      },
+      child: GestureDetector(
+        onVerticalDragEnd: (DragEndDetails details) {
+          if (details.primaryVelocity != null &&
+              details.primaryVelocity! > 200) {
+            _handleDismiss();
+          }
+        },
+        child: SafeArea(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Container(color: Colors.black.useOpacity(0.3)),
+                ),
               ),
-            ),
-            child: content,
+              Container(
+                height:
+                    MediaQuery.of(context).size.height *
+                    AppConstants.sendingSheetHeightFraction,
+                width: MediaQuery.of(context).size.width,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 35,
+                  vertical: 16,
+                ),
+                decoration: ShapeDecoration(
+                  color: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                child: content,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
