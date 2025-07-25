@@ -63,13 +63,15 @@ class TransactionListItemState extends State<TransactionListItem> {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        setState(() {
-          if (_remainingTime != null && _remainingTime! > Duration.zero) {
-            _remainingTime = _remainingTime! - const Duration(seconds: 1);
-          } else {
-            timer.cancel();
-          }
-        });
+        final tx = widget.transaction as ReversibleTransferEvent;
+        final remaining = tx.scheduledAt.difference(DateTime.now());
+        if (remaining > Duration.zero) {
+          setState(() {
+            _remainingTime = remaining;
+          });
+        } else {
+          timer.cancel();
+        }
       });
     }
   }
