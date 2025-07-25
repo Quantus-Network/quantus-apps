@@ -55,17 +55,17 @@ class TransactionListItemState extends State<TransactionListItem> {
     if (widget.transaction.isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.remainingTime;
-      if (_remainingTime!.isNegative) {
-        _remainingTime = Duration.zero;
-      }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         final tx = widget.transaction as ReversibleTransferEvent;
         final remaining = tx.remainingTime;
-        if (remaining > Duration.zero) {
+        if (remaining >= const Duration(seconds: 1)) {
           setState(() {
             _remainingTime = remaining;
           });
         } else {
+          setState(() {
+            _remainingTime = Duration.zero;
+          });
           timer.cancel();
         }
       });
