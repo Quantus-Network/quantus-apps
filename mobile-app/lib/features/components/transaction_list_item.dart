@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
 class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
@@ -27,18 +28,11 @@ class TransactionListItemState extends State<TransactionListItem> {
   Duration? _remainingTime;
   bool get isSent => widget.transaction.from == widget.currentWalletAddress;
   bool get isPending =>
-      widget.transaction is PendingTransactionEvent || isReversibleScheduled;
-  bool get isReversibleScheduled =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status ==
-          ReversibleTransferStatus.SCHEDULED;
-  bool get isReversibleCancelled =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status ==
-          ReversibleTransferStatus.CANCELLED;
+      widget.transaction is PendingTransactionEvent ||
+      widget.transaction.isReversibleScheduled;
 
   String get title {
-    if (isReversibleCancelled) return 'Cancelled';
+    if (widget.transaction.isReversibleCancelled) return 'Cancelled';
     if (isSent && isPending) return 'Sending';
     if (!isSent && isPending) return 'Receiving';
     if (isSent) return 'Sent';
@@ -46,7 +40,9 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 
   Color get titleColor {
-    if (isReversibleCancelled) return const Color(0xFFFF2D53);
+    if (widget.transaction.isReversibleCancelled) {
+      return const Color(0xFFFF2D53);
+    }
     if (isSent && isPending) return const Color(0xFF16CECE);
     if (!isSent && isPending) return const Color(0xFFB259F2);
     if (isSent) return const Color(0xFF16CECE);
@@ -56,15 +52,15 @@ class TransactionListItemState extends State<TransactionListItem> {
   @override
   void initState() {
     super.initState();
-    if (isReversibleScheduled) {
+    if (widget.transaction.isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
-      _remainingTime = tx.scheduledAt.difference(DateTime.now());
+      _remainingTime = tx.remainingTime;
       if (_remainingTime!.isNegative) {
         _remainingTime = Duration.zero;
       }
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         final tx = widget.transaction as ReversibleTransferEvent;
-        final remaining = tx.scheduledAt.difference(DateTime.now());
+        final remaining = tx.remainingTime;
         if (remaining > Duration.zero) {
           setState(() {
             _remainingTime = remaining;
@@ -106,7 +102,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     String prefix =
         '${isSent ? 'to' : 'from'} '
         '${_formatAddress(address)}';
-    if (isReversibleScheduled) {
+    if (widget.transaction.isReversibleScheduled) {
       return prefix;
     }
     return '$prefix | ${_formatTimestamp(widget.transaction.timestamp)}';
@@ -115,7 +111,7 @@ class TransactionListItemState extends State<TransactionListItem> {
   void _showActionSheet(BuildContext context) {
     Widget sheet;
 
-    if (isReversibleScheduled && isSent) {
+    if (widget.transaction.isReversibleScheduled && isSent) {
       sheet = TransactionActionSheet(
         transaction: widget.transaction as ReversibleTransferEvent,
         currentWalletAddress: widget.currentWalletAddress,
@@ -177,7 +173,7 @@ class TransactionListItemState extends State<TransactionListItem> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (isReversibleCancelled)
+                if (widget.transaction.isReversibleCancelled)
                   SvgPicture.asset('assets/stop_icon.svg', width: 21)
                 else if (isFailed)
                   SvgPicture.asset('assets/send_failed_icon.svg', width: 21)
@@ -212,7 +208,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                               style: textStyle.copyWith(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                color: isReversibleCancelled
+                                color: widget.transaction.isReversibleCancelled
                                     ? const Color(0xFFD9D9D9)
                                     : textStyle.color,
                               ),
