@@ -39,9 +39,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   void _updateState() {
     setState(() {
-      _isLoading = widget.manager.txData.isLoading;
-      _error = widget.manager.txData.error;
-      _transactions = widget.manager.txData.data;
+      _isLoading = widget.manager.isTxHistoryLoading;
+      _error = widget.manager.txHistoryError;
+      _transactions = widget.manager.txHistory;
       if (_transactions != null && _offset == 0) {
         // On initial/refresh, update pagination info
         _offset = _transactions!.otherTransfers.length;
@@ -51,10 +51,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Future<void> _fetchMoreTransactions() async {
-    if (!_hasMore || _isLoading) return;
+    if (!_hasMore || _isLoading) {
+      return;
+    }
+
+    final walletData = widget.manager.walletData;
+    if (walletData == null) {
+      return;
+    }
 
     final oldLength = _transactions?.otherTransfers.length ?? 0;
-    final accountId = widget.manager.walletData.data!.account.accountId;
+    final accountId = walletData.account.accountId;
 
     await widget.manager.loadMoreTransactions(
       accountId: accountId,
@@ -135,7 +142,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: RecentTransactionsList(
               transactions: _transactions!.combined,
               currentWalletAddress:
-                  widget.manager.walletData.data!.account.accountId,
+                  widget.manager.walletData!.account.accountId,
             ),
           ),
           if (_isLoading && _hasMore)

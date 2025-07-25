@@ -109,7 +109,7 @@ class _WalletMainState extends State<WalletMain> {
   }
 
   Widget _buildHistorySection(WalletStateManager walletStateManager) {
-    if (walletStateManager.txData.isLoading) {
+    if (walletStateManager.isTxHistoryLoading) {
       return Container(
         width: 321,
         padding: const EdgeInsets.all(10),
@@ -128,7 +128,7 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    if (walletStateManager.txData.hasError) {
+    if (walletStateManager.txHistoryError != null) {
       return Container(
         width: 321,
         padding: const EdgeInsets.all(20),
@@ -141,7 +141,7 @@ class _WalletMainState extends State<WalletMain> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                walletStateManager.txData.error!,
+                walletStateManager.txHistoryError!,
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
@@ -155,7 +155,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
       );
     }
-    final activeAccount = walletStateManager.walletData.data?.account;
+    final activeAccount = walletStateManager.walletData?.account;
     if (activeAccount == null) {
       return const SizedBox.shrink(); // or a placeholder
     }
@@ -238,16 +238,16 @@ class _WalletMainState extends State<WalletMain> {
   @override
   Widget build(BuildContext context) {
     final walletStateManager = Provider.of<WalletStateManager>(context);
-    final balanceLoader = walletStateManager.walletData;
 
-    if (balanceLoader.isLoading) {
+    if (walletStateManager.isWalletLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF0E0E0E),
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
-    if (balanceLoader.hasError || !balanceLoader.hasData) {
+    final hasWalletData = walletStateManager.walletData != null;
+    if (walletStateManager.walletError != null || !hasWalletData) {
       return Scaffold(
         backgroundColor: const Color(0xFF0E0E0E),
         body: Column(
@@ -318,7 +318,7 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    final walletData = balanceLoader.data!;
+    final walletData = walletStateManager.walletData!;
     final activeAccount = walletData.account;
 
     return Scaffold(
