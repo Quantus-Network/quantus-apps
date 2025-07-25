@@ -1,150 +1,204 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/base_with_background.dart';
+import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
+import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class TransactionsScreen extends StatefulWidget {
-  final WalletStateManager manager;
-
-  const TransactionsScreen({super.key, required this.manager});
+  const TransactionsScreen({super.key});
 
   @override
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
+class _TransactionsScreenState extends State<TransactionsScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
-
-  SortedTransactionsList? _transactions;
-  bool _isLoading = true;
-  bool _hasMore = true;
-  int _offset = 0;
-  static const int _limit = 20;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    widget.manager.addListener(_updateState);
-    _updateState(); // Set initial state from manager
-    _scrollController.addListener(_onScroll);
-  }
+    WidgetsBinding.instance.addObserver(this);
 
-  @override
-  void dispose() {
-    widget.manager.removeListener(_updateState);
-    _scrollController.dispose();
-    super.dispose();
-  }
+    final provider = Provider.of<TransactionHistoryProvider>(
+      context,
+      listen: false,
+    );
+    provider.fetchInitialTransactions();
 
-  void _updateState() {
-    setState(() {
-      _isLoading = widget.manager.txData.isLoading;
-      _error = widget.manager.txData.error;
-      _transactions = widget.manager.txData.data;
-      if (_transactions != null && _offset == 0) {
-        // On initial/refresh, update pagination info
-        _offset = _transactions!.otherTransfers.length;
-        _hasMore = _transactions!.otherTransfers.length == _limit;
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        provider.fetchMoreTransactions();
       }
     });
   }
 
-  Future<void> _fetchMoreTransactions() async {
-    if (!_hasMore || _isLoading) return;
-
-    final oldLength = _transactions?.otherTransfers.length ?? 0;
-    final accountId = widget.manager.walletData.data!.account.accountId;
-
-    await widget.manager.loadMoreTransactions(
-      accountId: accountId,
-      limit: _limit,
-      offset: _offset,
-    );
-
-    // No need for setState; listener will trigger _updateState
-    // But calculate hasMore/offset here if needed (listener updates _transactions)
-    final added = _transactions!.otherTransfers.length - oldLength;
-    _offset += added;
-    _hasMore = added == _limit;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  Future<void> _refreshTransactions() async {
-    _offset = 0;
-    _hasMore = true;
-    _error = null;
-    await widget.manager.refreshTransactions();
-    // Listener will handle UI update
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _fetchMoreTransactions();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Provider.of<TransactionHistoryProvider>(
+        context,
+        listen: false,
+      ).refreshTransactions();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
-        centerTitle: false,
-        title: const Text(
-          'Transaction History',
-          style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
+    return BaseWithBackground(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 27.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Transaction History',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 13),
+              Row(
+                children: [
+                  Consumer<TransactionHistoryProvider>(
+                    builder: (context, provider, child) {
+                      return Expanded(
+                        child: DropdownSelect<String>(
+                          initialValue: '_all_',
+                          items: [
+                            Item<String>(value: '_all_', label: 'All Accounts'),
+                            ...provider.accounts.map((Account value) {
+                              return Item<String>(
+                                value: value.accountId,
+                                label: value.name,
+                              );
+                            }),
+                          ],
+                          onChanged: (selectedItem) {
+                            final provider =
+                                Provider.of<TransactionHistoryProvider>(
+                                  context,
+                                  listen: false,
+                                );
+
+                            if (selectedItem?.value == '_all_') {
+                              provider.setAccountIds(
+                                provider.accounts
+                                    .map((a) => a.accountId)
+                                    .toList(),
+                              );
+                            } else {
+                              provider.setAccountIds([selectedItem!.value]);
+                            }
+                          },
+                          disabled: provider.isLoading,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  Consumer<TransactionHistoryProvider>(
+                    builder: (context, provider, child) {
+                      return SizedBox(
+                        width: 75,
+                        child: DropdownSelect<int>(
+                          initialValue: provider.pageSize,
+                          items: AppConstants.pageSizeList.map((int value) {
+                            return Item<int>(value: value, label: '$value');
+                          }).toList(),
+                          onChanged: (selectedItem) {
+                            if (selectedItem != null) {
+                              provider.setPageSize(selectedItem.value);
+                            }
+                          },
+                          disabled: provider.isLoading,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 13),
+              Expanded(child: _buildBody()),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
-        backgroundColor: const Color(0xFF0E0E0E),
-        elevation: 0,
       ),
-      backgroundColor: const Color(0xFF0E0E0E),
-      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading && _transactions == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error != null) {
-      return Center(
-        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-      );
-    }
-    if (_transactions?.combined.isEmpty ?? true) {
-      return const Center(
-        child: Text(
-          'No transactions found.',
-          style: TextStyle(color: Colors.white),
-        ),
-      );
-    }
+    return Consumer<TransactionHistoryProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.transactions.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return RefreshIndicator(
-      onRefresh: _refreshTransactions,
-      child: ListView(
-        controller: _scrollController,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: RecentTransactionsList(
-              transactions: _transactions!.combined,
-              currentWalletAddress:
-                  widget.manager.walletData.data!.account.accountId,
+        if (provider.error != null) {
+          return Center(
+            child: Text(
+              provider.error!,
+              style: const TextStyle(color: Colors.red),
             ),
+          );
+        }
+
+        if (provider.transactions.isEmpty) {
+          return const Center(
+            child: Text(
+              'No transactions found.',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
+        }
+
+        final manager = Provider.of<WalletStateManager>(context, listen: false);
+
+        return RefreshIndicator(
+          onRefresh: () => provider.refreshTransactions(),
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: RecentTransactionsList(
+                  transactions: provider.transactions,
+                  currentWalletAddress:
+                      manager.walletData.data!.account.accountId,
+                ),
+              ),
+
+              if (provider.isLoading && provider.hasMore)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+
+              // Add bottom padding to ensure scroll can reach the threshold
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
           ),
-          if (_isLoading && _hasMore)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -76,13 +76,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
               const SizedBox(height: 13),
-              DropdownSelect(
+              DropdownSelect<String>(
                 initialValue: '1',
                 items: [
-                  Item(id: '1', label: 'All Accounts'),
-                  Item(id: '2', label: 'My account'),
-                  Item(id: '3', label: 'Your Accounts'),
-                  Item(id: '4', label: 'His Accounts'),
+                  Item(value: '1', label: 'All Accounts'),
+                  Item(value: '2', label: 'My account'),
+                  Item(value: '3', label: 'Your Accounts'),
+                  Item(value: '4', label: 'His Accounts'),
                 ],
                 onChanged: (selectedItem) {
                   print('Selected account: ${selectedItem?.label}');

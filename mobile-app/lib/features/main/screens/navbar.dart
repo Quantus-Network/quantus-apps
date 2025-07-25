@@ -187,15 +187,18 @@ class _NavbarState extends State<Navbar> {
   Widget _buildBody() {
     final walletStateManager = Provider.of<WalletStateManager>(context);
 
-    return IndexedStack(
-      index: _selectedIndex,
-      children: [
-        const WalletMain(),
-        TransactionsScreen(manager: walletStateManager),
-        const SettingsScreen(),
-        NotificationsScreen(manager: walletStateManager),
-      ],
-    );
+    switch (_selectedIndex) {
+      case 0:
+        return const WalletMain();
+      case 1:
+        return const TransactionsScreen();
+      case 2:
+        return const SettingsScreen();
+      case 3:
+        return NotificationsScreen(manager: walletStateManager);
+      default:
+        return const WalletMain();
+    }
   }
 
   Widget _buildBottomNavigationBar() {

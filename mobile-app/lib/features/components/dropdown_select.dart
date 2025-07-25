@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 
-class Item {
-  final String id;
+class Item<T> {
+  final T value;
   final String label;
 
-  Item({required this.id, required this.label});
+  Item({required this.value, required this.label});
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Item && runtimeType == other.runtimeType && id == other.id;
+      other is Item && runtimeType == other.runtimeType && value == other.value;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => value.hashCode;
 }
 
-class DropdownSelect extends StatefulWidget {
-  final List<Item> items;
-  final String? initialValue;
-  final Function(Item?)? onChanged;
+class DropdownSelect<T> extends StatefulWidget {
+  final List<Item<T>> items;
+  final T? initialValue;
+  final Function(Item<T>?)? onChanged;
   final double width;
+  final bool disabled;
 
   const DropdownSelect({
     super.key,
@@ -27,14 +28,15 @@ class DropdownSelect extends StatefulWidget {
     this.initialValue,
     this.onChanged,
     this.width = 200,
+    this.disabled = false,
   });
 
   @override
-  State<DropdownSelect> createState() => _DropdownSelectState();
+  State<DropdownSelect<T>> createState() => _DropdownSelectState<T>();
 }
 
-class _DropdownSelectState extends State<DropdownSelect> {
-  Item? selectedValue;
+class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
+  Item<T>? selectedValue;
   bool isOpen = false;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -43,10 +45,14 @@ class _DropdownSelectState extends State<DropdownSelect> {
   void initState() {
     super.initState();
 
-    selectedValue = widget.items.firstWhere(
-      (item) => item.id == widget.initialValue,
-      orElse: () => widget.items.first,
-    );
+    if (widget.initialValue != null) {
+      selectedValue = widget.items.firstWhere(
+        (item) => item.value == widget.initialValue,
+        orElse: () => widget.items.first,
+      );
+    } else if (widget.items.isNotEmpty) {
+      selectedValue = widget.items.first;
+    }
   }
 
   @override
@@ -121,7 +127,7 @@ class _DropdownSelectState extends State<DropdownSelect> {
                       child: Text(
                         item.label,
                         style: TextStyle(
-                          color: selectedValue?.id == item.id
+                          color: selectedValue?.value == item.value
                               ? Theme.of(context).primaryColor
                               : Colors.white,
                           fontSize: 14,
@@ -145,12 +151,14 @@ class _DropdownSelectState extends State<DropdownSelect> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
-        onTap: _toggleDropdown,
+        onTap: widget.disabled ? null : _toggleDropdown,
         child: Container(
           width: widget.width,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: ShapeDecoration(
-            color: Colors.black.withValues(alpha: 0.50),
+            color: widget.disabled
+                ? Colors.grey.withValues(alpha: 0.50)
+                : Colors.black.withValues(alpha: 0.50),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
@@ -163,8 +171,8 @@ class _DropdownSelectState extends State<DropdownSelect> {
               Expanded(
                 child: Text(
                   selectedValue?.label ?? 'Select...',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: widget.disabled ? Colors.grey : Colors.white,
                     fontSize: 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w600,

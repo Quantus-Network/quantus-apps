@@ -37,7 +37,7 @@ class ChainHistoryService {
   ChainHistoryService();
 
   final String _scheduledTransfersQuery = r'''
-query ScheduledTransfersByAccount($account: String!) {
+query ScheduledTransfersByAccount($accountIds: [String!]) {
   events(
     where: {
       reversibleTransfer: {
@@ -45,8 +45,8 @@ query ScheduledTransfersByAccount($account: String!) {
           { status_eq: SCHEDULED },
           {
             OR: [
-              { from: { id_eq: $account } },
-              { to: { id_eq: $account } }
+              { from: { id_in: $accountIds } },
+              { to: { id_in: $accountIds } }
             ]
           }
         ]
@@ -81,7 +81,7 @@ query ScheduledTransfersByAccount($account: String!) {
 
   // GraphQL query to fetch transfers for a specific account
   final String _eventsQuery = r'''
-query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
+query EventsByAccount($accountIds: [String!], $limit: Int!, $offset: Int!) {
   events(
     limit: $limit
     offset: $offset
@@ -91,8 +91,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
         { OR: [
             { transfer: {
                 OR: [
-                  { from: { id_eq: $account } }
-                  { to:   { id_eq: $account } }
+                  { from: { id_in: $accountIds } }
+                  { to:   { id_in: $accountIds } }
                 ]}
             }
             { reversibleTransfer: {
@@ -100,8 +100,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                 { status_not_eq: SCHEDULED },
                 {
                   OR: [
-                    { from: { id_eq: $account } },
-                    { to: { id_eq: $account } }
+                    { from: { id_in: $accountIds } },
+                    { to: { id_in: $accountIds } }
                   ]
                 }
               ]
@@ -158,13 +158,13 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   ''';
 
   Future<SortedTransactionsList> fetchAllTransactionTypes({
-    required String accountId,
+    required List<String> accountIds,
     int limit = 10,
     int offset = 0,
   }) async {
-    final scheduled = await fetchScheduledTransfers(accountId: accountId);
+    final scheduled = await fetchScheduledTransfers(accountIds: accountIds);
     final other = await _fetchOtherTransfers(
-      accountId: accountId,
+      accountIds: accountIds,
       limit: limit,
       offset: offset,
     );
@@ -176,12 +176,12 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   }
 
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
-    required String accountId,
+    required List<String> accountIds,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _scheduledTransfersQuery,
-      'variables': {'account': accountId},
+      'variables': {'accountIds': accountIds},
     };
 
     try {
@@ -224,20 +224,20 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
 
   // Method to fetch transfers using http
   Future<TransferList> _fetchOtherTransfers({
-    required String accountId,
+    required List<String> accountIds,
     int limit = 10,
     int offset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
-      'fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)',
+      'fetchTransfers for accountIds: $accountIds from $uri (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _eventsQuery,
       'variables': <String, dynamic>{
-        'account': accountId,
+        'accountIds': accountIds,
         'limit': limit,
         'offset': offset,
       },

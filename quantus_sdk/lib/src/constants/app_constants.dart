@@ -31,4 +31,7 @@ class AppConstants {
 
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
+
+  static const int defaultPageSize = 20;
+  static const List<int> pageSizeList = [10, 20, 50, 100];
 }

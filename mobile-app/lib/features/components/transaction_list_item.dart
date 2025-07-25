@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
@@ -93,19 +92,26 @@ class TransactionListItemState extends State<TransactionListItem> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
+  String _getSubtitle() {
+    if (widget.transaction.isReversibleScheduled) {
+      String address = isSent ? widget.transaction.to : widget.transaction.from;
+      String prefix =
+          '${isSent ? 'to' : 'from'} '
+          '${_formatAddress(address)}';
+
+      return prefix;
+    } else {
+      String senderAddress = _formatAddress(widget.transaction.from);
+      String receiverAddress = _formatAddress(widget.transaction.to);
+
+      return 'from $senderAddress to $receiverAddress';
+    }
   }
 
-  String _getSubtitle(TransactionEvent transaction) {
-    String address = isSent ? widget.transaction.to : widget.transaction.from;
-    String prefix =
-        '${isSent ? 'to' : 'from'} '
-        '${_formatAddress(address)}';
-    if (widget.transaction.isReversibleScheduled) {
-      return prefix;
-    }
-    return '$prefix | ${_formatTimestamp(widget.transaction.timestamp)}';
+  String _getTimestampString() {
+    return DatetimeFormattingService.formatTimestamp(
+      widget.transaction.timestamp,
+    );
   }
 
   void _showActionSheet(BuildContext context) {
@@ -218,12 +224,24 @@ class TransactionListItemState extends State<TransactionListItem> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        _getSubtitle(widget.transaction),
-                        style: textStyle.copyWith(
+                        _getSubtitle(),
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 11,
+                          fontFamily: 'Fira Code',
                           fontWeight: FontWeight.w300,
                         ),
                       ),
+                      if (!widget.transaction.isReversibleScheduled)
+                        Text(
+                          _getTimestampString(),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.60),
+                            fontSize: 11,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
                     ],
                   ),
                 ),
