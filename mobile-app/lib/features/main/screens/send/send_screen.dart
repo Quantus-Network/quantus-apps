@@ -287,7 +287,8 @@ class SendScreenState extends State<SendScreen> {
     ).then((_) {
       // After the modal is dismissed, check its final state.
       final currentState = overlayKey.currentState?.currentState;
-      if (currentState == SendOverlayState.complete) {
+      if (currentState == SendOverlayState.complete ||
+          currentState == SendOverlayState.progress) {
         // If the transaction was completed, navigate home.
         overlayKey.currentState?.goHome();
       }
