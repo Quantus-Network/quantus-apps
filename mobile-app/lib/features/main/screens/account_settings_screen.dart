@@ -151,14 +151,22 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              AddressFormattingService.formatAddress(widget.account.accountId),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Fira Code',
+            const Expanded(child: SizedBox()),
+            SizedBox(
+              width: 170,
+              child: Text(
+                AddressFormattingService.splitIntoChunks(
+                  widget.account.accountId,
+                ).join(' '),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                ),
               ),
             ),
+            const Expanded(child: SizedBox()),
             IconButton(
               icon: const Icon(Icons.copy, color: Colors.white, size: 22),
               onPressed: _showReceiveModal,
@@ -178,18 +186,18 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           color: const Color(0xFF313131),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Icon(Icons.lock_outline, color: Colors.white, size: 25),
-                SizedBox(width: 12),
-                Column(
+                SvgPicture.asset('assets/lock_icon.svg'),
+                const SizedBox(width: 12),
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'High Security',
+                      'High Security Features',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -197,18 +205,18 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       ),
                     ),
                     Text(
-                      'OFF', // TBD
+                      'COMING SOON',
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: Color(0xFFFADC34),
                         fontSize: 12,
                         fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ],
             ),
-            Icon(Icons.arrow_forward_ios, color: Colors.white, size: 17),
           ],
         ),
       ),
