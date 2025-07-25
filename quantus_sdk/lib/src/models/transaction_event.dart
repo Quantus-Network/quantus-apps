@@ -1,4 +1,4 @@
-import 'package:quantus_sdk/src/models/reversible_transfer_status.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 // Base class for different transaction types
 abstract class TransactionEvent {
@@ -109,8 +109,15 @@ class ReversibleTransferEvent extends TransactionEvent {
     );
   }
 
+  // guaranteed to be positive or zero
+  Duration get remainingTime => scheduledAt.difference(DateTime.now()).positive;
+
   @override
   String toString() {
     return 'ReversibleTransfer{id: $id, from: $from, to: $to, amount: $amount, timestamp: $timestamp, txId: $txId, status: $status, scheduledAt: $scheduledAt, extrinsicHash: $extrinsicHash, blockNumber: $blockNumber}';
   }
+}
+
+extension PositiveDuration on Duration {
+  Duration get positive => isNegative ? Duration.zero : this;
 }
