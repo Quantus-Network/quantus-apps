@@ -181,7 +181,7 @@ class _WalletMainState extends State<WalletMain> {
               .toList(),
           currentWalletAddress: activeAccount.accountId,
         ),
-        if (true)
+        if (walletStateManager.combinedTransactions.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, right: 12.0),
             child: Align(
@@ -501,7 +501,11 @@ class _WalletMainState extends State<WalletMain> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: _buildHistorySection(walletStateManager),
+                    child: Consumer<WalletStateManager>(
+                      builder: (context, walletStateManager, child) {
+                        return _buildHistorySection(walletStateManager);
+                      },
+                    ),
                   ),
                 ],
               ),

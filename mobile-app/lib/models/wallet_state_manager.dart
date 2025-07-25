@@ -35,8 +35,6 @@ class WalletStateManager with ChangeNotifier {
   String? _txHistoryError;
 
   // --- Pending Transactions State ---
-  List<PendingTransactionEvent> get pendingTransactions =>
-      List.unmodifiable(_pendingTransactions);
   final List<PendingTransactionEvent> _pendingTransactions = [];
 
   Timer? _pollingTimer;
@@ -60,7 +58,6 @@ class WalletStateManager with ChangeNotifier {
     if (!quiet) {
       _isTxHistoryLoading = true;
       _txHistoryError = null;
-      notifyListeners();
     }
 
     try {
@@ -87,7 +84,6 @@ class WalletStateManager with ChangeNotifier {
     if (!quiet) {
       _isWalletLoading = true;
       _walletError = null;
-      notifyListeners();
     }
 
     try {
@@ -185,7 +181,10 @@ class WalletStateManager with ChangeNotifier {
     }
 
     if (toRemove.isNotEmpty) {
-      pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+      _pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+    }
+    if (updated) {
+      notifyListeners();
     }
     return updated;
   }
@@ -243,6 +242,8 @@ class WalletStateManager with ChangeNotifier {
     final pollInterval = _pendingTransactions.isNotEmpty
         ? fastPollInterval
         : slowPollInterval;
+
+    print('polling at $pollInterval');
 
     _pollingTimer = Timer(pollInterval, () async {
       try {
