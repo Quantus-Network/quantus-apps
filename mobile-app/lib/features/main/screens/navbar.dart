@@ -151,7 +151,7 @@ class _NavbarState extends State<Navbar> {
       return SizedBox(
         height: 32,
         width: 70,
-        child: GestureDetector(
+        child: InkWell(
           onTap: null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -169,13 +169,13 @@ class _NavbarState extends State<Navbar> {
       );
     }
 
-    return SizedBox(
-      height: 32,
-      width: 70,
-      child: GestureDetector(
-        onTap: () {
-          _onItemTapped(index);
-        },
+    return InkWell(
+      onTap: () {
+        _onItemTapped(index);
+      },
+      child: SizedBox(
+        height: 32,
+        width: 70,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [isSelected ? item.onIcon : item.offIcon],
