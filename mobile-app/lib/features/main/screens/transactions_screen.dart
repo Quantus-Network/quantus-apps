@@ -193,7 +193,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   ),
                 ),
 
-              // Add some bottom padding to ensure scroll can reach the threshold
+              // Add bottom padding to ensure scroll can reach the threshold
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
