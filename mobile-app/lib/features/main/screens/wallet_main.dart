@@ -191,8 +191,7 @@ class _WalletMainState extends State<WalletMain> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          TransactionsScreen(manager: walletStateManager),
+                      builder: (context) => const TransactionsScreen(),
                     ),
                   );
                 },
