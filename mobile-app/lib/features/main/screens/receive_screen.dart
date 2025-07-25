@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});
@@ -53,29 +54,56 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   void _copyAddress() {
-    if (_accountId != null && _checksum != null) {
-      Clipboard.setData(ClipboardData(text: '$_accountId\n$_checksum'));
-
-      showTopSnackBar(
-        context,
-        icon: Container(
-          width: 36,
-          height: 36,
-          decoration: const ShapeDecoration(
-            color: Color(0xFF494949), // Default grey background
-            shape: OvalBorder(), // Use OvalBorder for circle
-          ),
-          alignment: Alignment.center,
-          child: SvgPicture.asset(
-            'assets/copy_icon.svg',
-            width: 16,
-            height: 16,
-          ),
-        ),
-        title: 'Copied!',
-        message: 'Address and checkphrase copied to clipboard',
+    if (_accountId != null) {
+      _copyAndShowNotification(
+        text: _accountId!,
+        message: 'Address copied to clipboard',
       );
     }
+  }
+
+  void _copyChecksum() {
+    if (_checksum != null) {
+      _copyAndShowNotification(
+        text: _checksum!,
+        message: 'Checkphrase copied to clipboard',
+      );
+    }
+  }
+
+  void _share() {
+    if (_accountId != null && _checksum != null) {
+      final textToShare = '$_accountId\n$_checksum';
+      SharePlus.instance.share(
+        ShareParams(text: textToShare, subject: 'Receive'),
+      );
+    }
+  }
+
+  Widget _buildIcon() {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: const ShapeDecoration(
+        color: Color(0xFF494949), // Default grey background
+        shape: OvalBorder(), // Use OvalBorder for circle
+      ),
+      alignment: Alignment.center,
+      child: SvgPicture.asset('assets/copy_icon.svg', width: 16, height: 16),
+    );
+  }
+
+  void _copyAndShowNotification({
+    required String text,
+    required String message,
+  }) {
+    Clipboard.setData(ClipboardData(text: text));
+    showTopSnackBar(
+      context,
+      icon: _buildIcon(),
+      title: 'Copied!',
+      message: message,
+    );
   }
 
   void _closeSheet() {
@@ -208,7 +236,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Loading name...',
+                                'Loading checkphrase...',
                                 style: TextStyle(
                                   color: Colors.white54,
                                   fontSize: 12,
@@ -258,18 +286,20 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           spacing: 7,
                           children: [
-                            Text(
-                              snapshot.data!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
+                            Flexible(
+                              child: Text(
+                                snapshot.data!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontFamily: 'Fira Code',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                             InkWell(
-                              onTap: _copyAddress,
+                              onTap: _copyChecksum,
                               child: SvgPicture.asset(
                                 'assets/copy_icon.svg',
                                 width: 16,
@@ -323,7 +353,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                 width: 305,
                 height: 44,
                 child: ElevatedButton(
-                  onPressed: _copyAddress,
+                  onPressed: _share,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(

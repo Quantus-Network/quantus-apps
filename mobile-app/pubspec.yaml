@@ -41,6 +41,7 @@ dependencies:
       path: dart
   provider: ^6.1.5
   polkadart: ^0.7.1
+  share_plus: ^11.0.0
 
 dev_dependencies:
   flutter_test:
