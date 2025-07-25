@@ -8,7 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
+import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailsActionSheet extends StatefulWidget {
@@ -36,63 +36,53 @@ class _TransactionDetailsActionSheetState
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
 
-  bool get isReversibleScheduled =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status ==
-          ReversibleTransferStatus.SCHEDULED;
-
-  bool get isReversibleExecuted =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status ==
-          ReversibleTransferStatus.EXECUTED;
-
-  bool get isReversibleCancelled =>
-      widget.transaction is ReversibleTransferEvent &&
-      (widget.transaction as ReversibleTransferEvent).status ==
-          ReversibleTransferStatus.CANCELLED;
-
   bool get isSender => widget.transaction.from == widget.currentWalletAddress;
 
-  bool get isFailed =>
-      widget.transaction is PendingTransactionEvent &&
-      (widget.transaction as PendingTransactionEvent).transactionState ==
-          TransactionState.failed;
-
   String get title {
-    if (isFailed) return 'TRANSACTION\nFAILED';
-    if (isReversibleCancelled) return 'TRANSACTION\nCANCELLED';
-    if (!isSender && isReversibleScheduled) return 'RECEIVING';
-    if (isSender) return 'SENT';
+    if (widget.transaction.isFailed) return 'TRANSACTION\nFAILED';
+    if (widget.transaction.isReversibleCancelled) {
+      return 'TRANSACTION\nCANCELLED';
+    }
+    if (!isSender && widget.transaction.isReversibleScheduled) {
+      return 'RECEIVING';
+    }
+    if (isSender) {
+      return 'SENT';
+    }
     return 'RECEIVED';
   }
 
   String get detailText {
-    if (isFailed || (isSender && isReversibleCancelled)) return 'to';
-    if (!isSender && isReversibleScheduled) {
+    if (widget.transaction.isFailed ||
+        (isSender && widget.transaction.isReversibleCancelled)) {
+      return 'to';
+    }
+    if (!isSender && widget.transaction.isReversibleScheduled) {
       return 'received in';
     }
-    if (!isSender && isReversibleCancelled) return 'from';
-    if (isSender) return 'was successfully sent to';
+    if (!isSender && widget.transaction.isReversibleCancelled) {
+      return 'from';
+    }
+    if (isSender) {
+      return 'was successfully sent to';
+    }
     return 'received from';
   }
 
   @override
   void initState() {
     super.initState();
-    if (isReversibleScheduled) {
-      final tx = widget.transaction as ReversibleTransferEvent;
-      _remainingTime = tx.scheduledAt.difference(DateTime.now());
-      if (_remainingTime != null && _remainingTime!.isNegative) {
-        _remainingTime = Duration.zero;
-      }
+    if (widget.transaction.isReversibleScheduled) {
+      _remainingTime = widget.transaction.timeRemaining;
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        setState(() {
-          if (_remainingTime != null && _remainingTime! > Duration.zero) {
-            _remainingTime = _remainingTime! - const Duration(seconds: 1);
-          } else {
-            timer.cancel();
-          }
-        });
+        final remaining = widget.transaction.timeRemaining;
+        if (remaining > Duration.zero) {
+          setState(() {
+            _remainingTime = remaining;
+          });
+        } else {
+          timer.cancel();
+        }
       });
     }
   }
@@ -159,13 +149,13 @@ class _TransactionDetailsActionSheetState
                   const SizedBox(height: 50),
 
                   // Display transaction icon based on type and status
-                  if (isFailed)
+                  if (widget.transaction.isFailed)
                     SvgPicture.asset(
                       'assets/send_failed_icon.svg',
                       width: 51,
                       height: 42,
                     )
-                  else if (isReversibleCancelled)
+                  else if (widget.transaction.isReversibleCancelled)
                     SvgPicture.asset(
                       'assets/stop_icon.svg',
                       width: 51,
@@ -263,8 +253,8 @@ class _TransactionDetailsActionSheetState
                     ),
                   ),
 
-                  if (isFailed) _buildRetryButton(),
-                  if (!isFailed) _buildViewExplorer(),
+                  if (widget.transaction.isFailed) _buildRetryButton(),
+                  if (!widget.transaction.isFailed) _buildViewExplorer(),
                 ],
               ),
             ),
@@ -317,7 +307,9 @@ class _TransactionDetailsActionSheetState
 
   Widget _buildViewExplorer() {
     String transactionType =
-        (isReversibleScheduled || isReversibleExecuted || isReversibleCancelled)
+        (widget.transaction.isReversibleScheduled ||
+            widget.transaction.isReversibleExecuted ||
+            widget.transaction.isReversibleCancelled)
         ? 'reversible-transactions'
         : 'immediate-transactions';
 
@@ -405,7 +397,7 @@ class _TransactionDetailsActionSheetState
             fontWeight: FontWeight.w400,
           ),
         ),
-        if (!isSender && isReversibleScheduled)
+        if (!isSender && widget.transaction.isReversibleScheduled)
           ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
         FutureBuilder(
           future: _checksumFuture,
