@@ -1,9 +1,9 @@
+import 'dart:convert'; // Required for jsonEncode and jsonDecode
+
+import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/src/models/sorted_transactions.dart';
 
 import '../constants/app_constants.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert'; // Required for jsonEncode and jsonDecode
-
 import '../models/transaction_event.dart';
 
 class TransferList {
@@ -214,9 +214,6 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
           )
           .toList();
 
-      for (var transfer in result) {
-        print('Transfer: ${transfer.scheduledAt} ${transfer.status}');
-      }
       return result;
     } catch (e, stackTrace) {
       print('Error fetching scheduled transfers: $e');
