@@ -6,102 +6,111 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:resonance_network_wallet/models/wallet_data.dart';
 
-class LoadingState<T> {
-  T? data;
-  bool isLoading;
-  String? error;
-  Future<T> Function() loadData;
-
-  bool get hasData => data != null;
-  bool get hasError => error != null;
-
-  LoadingState({
-    this.data,
-    this.isLoading = false,
-    this.error,
-    required this.loadData,
-  });
-
-  Future<LoadingState<T>> load({bool quiet = false}) async {
-    if (!quiet) {
-      isLoading = true;
-      error = null;
-      try {
-        data = await loadData();
-      } catch (e) {
-        print('Load error $e');
-        error = e.toString();
-      } finally {
-        isLoading = false;
-      }
-    } else {
-      try {
-        data = await loadData();
-      } catch (e) {
-        print('Load error (quiet - ignored): $e');
-      }
-    }
-    return this;
-  }
-}
-
 class WalletStateManager with ChangeNotifier {
+  static const fastPollInterval = Duration(seconds: 10);
+  static const slowPollInterval = Duration(seconds: 60);
+
   final SettingsService _settingsService;
   final ChainHistoryService _chainHistoryService;
   final SubstrateService _substrateService;
 
-  late LoadingState<SortedTransactionsList?> txData;
-  late LoadingState<WalletData?> walletData;
+  // --- Wallet Data State ---
+  WalletData? _walletData;
+  WalletData? get walletData => _walletData;
 
-  List<PendingTransactionEvent> pendingTransactions = [];
+  bool get isWalletLoading => _isWalletLoading;
+  bool _isWalletLoading = false;
+
+  String? get walletError => _walletError;
+  String? _walletError;
+
+  // --- Transaction History State ---
+  SortedTransactionsList? get txHistory => _txHistory;
+  SortedTransactionsList? _txHistory;
+
+  bool get isTxHistoryLoading => _isTxHistoryLoading;
+  bool _isTxHistoryLoading = false;
+
+  String? get txHistoryError => _txHistoryError;
+  String? _txHistoryError;
+
+  // --- Pending Transactions State ---
+  final List<PendingTransactionEvent> _pendingTransactions = [];
+
   Timer? _pollingTimer;
-  Timer? _historyPollTimer;
 
   WalletStateManager(
     this._chainHistoryService,
     this._settingsService,
     this._substrateService,
   ) {
-    txData = LoadingState(loadData: _fetchTransactionHistory);
-    walletData = LoadingState(loadData: _fetchBalance);
-    _startPolling();
+    _resetPollingTimer();
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    _historyPollTimer?.cancel();
-    _historyPollTimer = null;
     super.dispose();
   }
 
-  Future<SortedTransactionsList?> _fetchTransactionHistory() async {
-    final account = await _settingsService.getActiveAccount();
-    final result = await _chainHistoryService.fetchAllTransactionTypes(
-      accountId: account.accountId,
-      limit: 20,
-      offset: 0,
-    );
-    return result;
+  Future<void> _updateTransactionHistory({bool quiet = false}) async {
+    if (!quiet) {
+      _isTxHistoryLoading = true;
+      _txHistoryError = null;
+    }
+
+    try {
+      final account = await _settingsService.getActiveAccount();
+      _txHistory = await _chainHistoryService.fetchAllTransactionTypes(
+        accountId: account.accountId,
+        limit: 20,
+        offset: 0,
+      );
+    } catch (e) {
+      print('Load tx history error: $e');
+      if (!quiet) {
+        _txHistoryError = e.toString();
+      }
+    } finally {
+      if (!quiet) {
+        _isTxHistoryLoading = false;
+      }
+    }
   }
 
-  Future<WalletData?> _fetchBalance() async {
+  Future<void> _updateBalance({bool quiet = false}) async {
     const Duration networkTimeout = Duration(seconds: 15);
-    final account = await _settingsService.getActiveAccount();
-    final balance = await _substrateService
-        .queryBalance(account.accountId)
-        .timeout(networkTimeout);
-    return WalletData(account: account, balance: balance);
+    if (!quiet) {
+      _isWalletLoading = true;
+      _walletError = null;
+    }
+
+    try {
+      final account = await _settingsService.getActiveAccount();
+      final balance = await _substrateService
+          .queryBalance(account.accountId)
+          .timeout(networkTimeout);
+      _walletData = WalletData(account: account, balance: balance);
+    } catch (e) {
+      print('Load balance error: $e');
+      if (!quiet) {
+        _walletError = e.toString();
+      }
+    } finally {
+      if (!quiet) {
+        _isWalletLoading = false;
+      }
+    }
   }
 
   BigInt get estimatedBalance {
-    if (!walletData.hasData) return BigInt.zero;
-    BigInt base = walletData.data!.balance;
-    for (var tx in pendingTransactions) {
+    if (_walletData == null) return BigInt.zero;
+    BigInt base = _walletData!.balance;
+    for (var tx in _pendingTransactions) {
       if (tx.transactionState != TransactionState.inHistory &&
           tx.transactionState != TransactionState.failed) {
-        final isSend = tx.from == walletData.data!.account.accountId;
+        final isSend = tx.from == _walletData!.account.accountId;
         final adjustment = isSend ? -tx.amount : tx.amount;
         base += adjustment;
         if (isSend && tx.fee != null) {
@@ -113,8 +122,8 @@ class WalletStateManager with ChangeNotifier {
   }
 
   List<TransactionEvent> get combinedTransactions {
-    final fetched = txData.data?.combined ?? [];
-    final all = [...fetched, ...pendingTransactions];
+    final fetched = _txHistory?.combined ?? [];
+    final all = [...fetched, ..._pendingTransactions];
     all.sort((a, b) {
       final tsA = a.timestamp;
       final tsB = b.timestamp;
@@ -125,8 +134,8 @@ class WalletStateManager with ChangeNotifier {
 
   Future<void> load({bool quiet = false}) async {
     await Future.wait([
-      txData.load(quiet: quiet),
-      walletData.load(quiet: quiet),
+      _updateTransactionHistory(quiet: quiet),
+      _updateBalance(quiet: quiet),
     ]);
     updatePendingTransactions();
     notifyListeners();
@@ -134,12 +143,11 @@ class WalletStateManager with ChangeNotifier {
 
   Future<void> switchAccount(Account account) async {
     await _settingsService.setActiveAccount(account);
-    load();
-    notifyListeners();
+    await load();
   }
 
   Future<void> refreshTransactions({bool quiet = false}) async {
-    await txData.load(quiet: quiet);
+    await _updateTransactionHistory(quiet: quiet);
     updatePendingTransactions();
     notifyListeners();
   }
@@ -148,9 +156,9 @@ class WalletStateManager with ChangeNotifier {
   // list, and remove them accordingly as they are coming in with chain history.
   bool updatePendingTransactions() {
     bool updated = false;
-    var transferList = txData.data?.combined ?? [];
+    var transferList = _txHistory?.combined ?? [];
     List<PendingTransactionEvent> toRemove = [];
-    for (var pending in pendingTransactions) {
+    for (var pending in _pendingTransactions) {
       if (pending.transactionState == TransactionState.failed) {
         toRemove.add(pending);
         updated = true;
@@ -171,8 +179,12 @@ class WalletStateManager with ChangeNotifier {
         }
       }
     }
+
     if (toRemove.isNotEmpty) {
-      pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+      _pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
+    }
+    if (updated) {
+      notifyListeners();
     }
     return updated;
   }
@@ -187,10 +199,10 @@ class WalletStateManager with ChangeNotifier {
       limit: limit,
       offset: offset,
     );
-    if (txData.data == null) {
-      txData.data = result;
+    if (_txHistory == null) {
+      _txHistory = result;
     } else {
-      txData.data!.otherTransfers.addAll(result.otherTransfers);
+      _txHistory!.otherTransfers.addAll(result.otherTransfers);
     }
     notifyListeners();
   }
@@ -220,15 +232,27 @@ class WalletStateManager with ChangeNotifier {
   }
 
   void addPendingTransaction(PendingTransactionEvent pending) {
-    pendingTransactions.add(pending);
+    _pendingTransactions.add(pending);
     notifyListeners();
   }
 
-  void _startPolling() {
-    // I don't think we need this..
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-      if (pendingTransactions.isEmpty) return;
-      notifyListeners();
+  void _resetPollingTimer() {
+    _pollingTimer?.cancel();
+
+    final pollInterval = _pendingTransactions.isNotEmpty
+        ? fastPollInterval
+        : slowPollInterval;
+
+    print('polling at $pollInterval');
+
+    _pollingTimer = Timer(pollInterval, () async {
+      try {
+        await load(quiet: true);
+      } catch (e) {
+        print('error polling for history: $e');
+      } finally {
+        _resetPollingTimer();
+      }
     });
   }
 
@@ -249,8 +273,84 @@ class WalletStateManager with ChangeNotifier {
       amount: amount,
       fee: feeEstimate,
     );
-    addPendingTransaction(pending);
 
+    await _submitAndTrackTransaction(
+      submission: (onStatus) => BalancesService().balanceTransfer(
+        account,
+        targetAddress,
+        amount,
+        onStatus,
+      ),
+      pendingTx: pending,
+      maxRetries: maxRetries,
+    );
+
+    return pending.id;
+  }
+
+  Future<void> scheduleReversibleTransferWithDelaySeconds({
+    required Account account,
+    required String recipientAddress,
+    required BigInt amount,
+    required int delaySeconds,
+    required BigInt feeEstimate,
+    int maxRetries = 3,
+  }) async {
+    final pending = createPendingTransaction(
+      from: _senderAddressFromAccount(account),
+      to: recipientAddress,
+      amount: amount,
+      fee: feeEstimate,
+      isReversible: true,
+    );
+
+    await _submitAndTrackTransaction(
+      submission: (onStatus) => ReversibleTransfersService()
+          .scheduleReversibleTransferWithDelaySeconds(
+            account: account,
+            recipientAddress: recipientAddress,
+            amount: amount,
+            delaySeconds: delaySeconds,
+            onStatus: onStatus,
+          ),
+      pendingTx: pending,
+      maxRetries: maxRetries,
+    );
+  }
+
+  void updatePendingTransaction(
+    String id,
+    TransactionState newState, {
+    String? blockHash,
+    String? error,
+  }) {
+    final tx = _pendingTransactions.firstWhere(
+      (tx) => tx.id == id,
+      orElse: () => throw Exception('Pending TX not found'),
+    );
+    tx.transactionState = newState;
+    if (blockHash != null) {
+      tx.blockHash = blockHash;
+    }
+    if (error != null) {
+      tx.error = error;
+    }
+    notifyListeners();
+  }
+
+  void refreshActiveAccount() {
+    load(); // async!
+  }
+
+  Future<void> _submitAndTrackTransaction({
+    required Future<StreamSubscription<ExtrinsicStatus>> Function(
+      void Function(ExtrinsicStatus) onStatus,
+    )
+    submission,
+    required PendingTransactionEvent pendingTx,
+    int maxRetries = 3,
+  }) async {
+    addPendingTransaction(pendingTx);
     StreamSubscription<ExtrinsicStatus>? subscription;
 
     void onStatus(ExtrinsicStatus status) {
@@ -268,19 +368,18 @@ class WalletStateManager with ChangeNotifier {
           hash = status.value;
           break;
         case 'finalized':
-          print('unexpected finalized status.');
-          // we want to stop listening to history tx long before this.
+          // This status is not expected here because we should unsubscribe
+          // after 'inBlock' to let the history poller take over.
           newState = TransactionState.inBlock;
           break;
         default:
-          print('Error: unexpected status ${status.type}');
           newState = TransactionState.failed;
-          pending.error = 'Unknown status ${status.type}';
+          pendingTx.error = 'Unknown status: ${status.type}';
       }
-      updatePendingTransaction(pending.id, newState, blockHash: hash);
+      updatePendingTransaction(pendingTx.id, newState, blockHash: hash);
+
       if (newState == TransactionState.inBlock && hash != null) {
-        _startPollingForHistory();
-        print('Cancel stream subscription for ${pending.id} $subscription');
+        _resetPollingTimer();
         subscription?.cancel();
       }
     }
@@ -288,172 +387,24 @@ class WalletStateManager with ChangeNotifier {
     int attempts = 0;
     while (attempts < maxRetries) {
       try {
-        subscription = await BalancesService().balanceTransfer(
-          account,
-          targetAddress,
-          amount,
-          onStatus,
-        );
-        print('Subscribed to stream for ${pending.id} $subscription');
-        return pending.id;
+        subscription = await submission(onStatus);
+        return; // Success, exit the retry loop.
       } catch (e, stackTrace) {
         attempts++;
         if (attempts >= maxRetries) {
           updatePendingTransaction(
-            pending.id,
+            pendingTx.id,
             TransactionState.failed,
             error: e.toString(),
           );
-          print('Failed to transfer balance after $maxRetries attempts: $e');
+          print('Failed to submit transaction after $maxRetries attempts: $e');
           print('Stack trace: $stackTrace');
-          throw Exception(
-            'Failed to transfer balance after $maxRetries attempts: $e',
-          );
+          rethrow;
         } else {
-          print('Transfer attempt $attempts failed: $e. Retrying...');
+          print('Transaction attempt $attempts failed: $e. Retrying...');
+          await Future.delayed(const Duration(seconds: 2));
         }
       }
     }
-    // This line should never be reached, but added for completeness
-    throw Exception('Unexpected error in balanceTransfer retry logic');
-  }
-
-  Future<void> scheduleReversibleTransferWithDelaySeconds({
-    required Account account,
-    required String recipientAddress,
-    required BigInt amount,
-    required int delaySeconds,
-    required BigInt feeEstimate,
-    int maxRetries = 3,
-  }) async {
-    final pending = createPendingTransaction(
-      from: _senderAddressFromAccount(account),
-      to: recipientAddress,
-      amount: amount,
-      fee: feeEstimate,
-    );
-    addPendingTransaction(pending);
-    StreamSubscription<ExtrinsicStatus>? subscription;
-
-    // update function for the ephemeral pending event
-    void onStatus(ExtrinsicStatus status) {
-      String? blockHash;
-      TransactionState newState;
-      switch (status.type) {
-        case 'ready':
-          newState = TransactionState.ready;
-          break;
-        case 'broadcast':
-          newState = TransactionState.broadcast;
-          break;
-        case 'inBlock':
-          newState = TransactionState.inBlock;
-          blockHash = status.value;
-          break;
-        case 'finalized':
-          print('unexpected finalized status.');
-          // we want to stop listening to history tx long before this.
-          newState = TransactionState.inBlock;
-          break;
-        default:
-          newState = TransactionState.failed;
-          pending.error = 'Unknown status';
-      }
-      updatePendingTransaction(pending.id, newState, blockHash: blockHash);
-      if (newState == TransactionState.inBlock) {
-        _startPollingForHistory();
-        print('Cancel rev stream subscription for ${pending.id} $subscription');
-        subscription?.cancel();
-      }
-    }
-
-    int attempts = 0;
-    while (attempts < maxRetries) {
-      try {
-        subscription = await ReversibleTransfersService()
-            .scheduleReversibleTransferWithDelaySeconds(
-              account: account,
-              recipientAddress: recipientAddress,
-              amount: amount,
-              delaySeconds: delaySeconds,
-              onStatus: onStatus,
-            );
-        print('Subscribed to rev stream for ${pending.id} $subscription');
-        return;
-      } catch (e, stackTrace) {
-        attempts++;
-        if (attempts >= maxRetries) {
-          updatePendingTransaction(
-            pending.id,
-            TransactionState.failed,
-            error: e.toString(),
-          );
-          print('Failed to send reversible after $maxRetries attempts: $e');
-          print('Stack trace: $stackTrace');
-          throw Exception(
-            'Failed to send reversible transfer after $maxRetries attempts: $e',
-          );
-        } else {
-          print(
-            'Reversible transfer attempt $attempts failed: $e. Retrying...',
-          );
-        }
-      }
-    }
-    // This line should never be reached, but added for completeness
-    throw Exception(
-      'Unexpected error in scheduleReversibleTransferWithDelaySeconds'
-      ' retry logic',
-    );
-  }
-
-  void updatePendingTransaction(
-    String id,
-    TransactionState newState, {
-    String? blockHash,
-    String? error,
-  }) {
-    final tx = pendingTransactions.firstWhere(
-      (tx) => tx.id == id,
-      orElse: () => throw Exception('Pending TX not found'),
-    );
-    tx.transactionState = newState;
-    if (blockHash != null) {
-      tx.blockHash = blockHash;
-    }
-    if (error != null) {
-      tx.error = error;
-    }
-    notifyListeners();
-  }
-
-  void _startPollingForHistory() {
-    const pollInterval = Duration(seconds: 10);
-
-    if (pendingTransactions.isEmpty) {
-      return;
-    }
-    if (_historyPollTimer != null) {
-      // just keep polling...
-      print('history poll timer already running');
-      return;
-    }
-    _historyPollTimer = Timer.periodic(pollInterval, (timer) async {
-      try {
-        print('polling history');
-        await load(quiet: true);
-        if (pendingTransactions.isEmpty) {
-          print('no more pending tx, ending history polling');
-          _historyPollTimer?.cancel();
-          _historyPollTimer = null;
-        }
-      } catch (e) {
-        print('error fetching transaction history: $e');
-      }
-    });
-  }
-
-  void refreshActiveAccount() {
-    load(); // async!
   }
 }

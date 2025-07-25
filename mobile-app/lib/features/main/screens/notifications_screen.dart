@@ -26,14 +26,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _addNotification() {
     _notificationService.addNotification(
       id: '1',
-      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
       title: 'Notification Info',
       message: 'This is info notification',
     );
 
     _notificationService.addNotification(
       id: '2',
-      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
       title: 'Notification Success',
       message: 'This is success notification',
       type: NotificationType.success,
@@ -41,7 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     _notificationService.addNotification(
       id: '3',
-      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
       title: 'Notification Warning',
       message: 'This is warning notification',
       type: NotificationType.warning,
@@ -49,7 +49,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     _notificationService.addNotification(
       id: '4',
-      accountName: widget.manager.walletData.data?.account.name ?? 'Unknown',
+      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
       title: 'Notification Error',
       message: 'This is error notification',
       type: NotificationType.error,
