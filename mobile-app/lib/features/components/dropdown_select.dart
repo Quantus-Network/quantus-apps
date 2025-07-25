@@ -20,6 +20,7 @@ class DropdownSelect<T> extends StatefulWidget {
   final T? initialValue;
   final Function(Item<T>?)? onChanged;
   final double width;
+  final bool disabled;
 
   const DropdownSelect({
     super.key,
@@ -27,6 +28,7 @@ class DropdownSelect<T> extends StatefulWidget {
     this.initialValue,
     this.onChanged,
     this.width = 200,
+    this.disabled = false,
   });
 
   @override
@@ -43,10 +45,14 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
   void initState() {
     super.initState();
 
-    selectedValue = widget.items.firstWhere(
-      (item) => item.value == widget.initialValue,
-      orElse: () => widget.items.first,
-    );
+    if (widget.initialValue != null) {
+      selectedValue = widget.items.firstWhere(
+        (item) => item.value == widget.initialValue,
+        orElse: () => widget.items.first,
+      );
+    } else if (widget.items.isNotEmpty) {
+      selectedValue = widget.items.first;
+    }
   }
 
   @override
@@ -145,12 +151,14 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
-        onTap: _toggleDropdown,
+        onTap: widget.disabled ? null : _toggleDropdown,
         child: Container(
           width: widget.width,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: ShapeDecoration(
-            color: Colors.black.withValues(alpha: 0.50),
+            color: widget.disabled
+                ? Colors.grey.withValues(alpha: 0.50)
+                : Colors.black.withValues(alpha: 0.50),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
@@ -163,8 +171,8 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
               Expanded(
                 child: Text(
                   selectedValue?.label ?? 'Select...',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: widget.disabled ? Colors.grey : Colors.white,
                     fontSize: 14,
                     fontFamily: 'Fira Code',
                     fontWeight: FontWeight.w600,
