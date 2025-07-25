@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
-class Item {
-  final String id;
+class Item<T> {
+  final T value;
   final String label;
 
-  Item({required this.id, required this.label});
+  Item({required this.value, required this.label});
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Item && runtimeType == other.runtimeType && id == other.id;
+      other is Item && runtimeType == other.runtimeType && value == other.value;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => value.hashCode;
 }
 
-class DropdownSelect extends StatefulWidget {
-  final List<Item> items;
-  final String? initialValue;
-  final Function(Item?)? onChanged;
+class DropdownSelect<T> extends StatefulWidget {
+  final List<Item<T>> items;
+  final T? initialValue;
+  final Function(Item<T>?)? onChanged;
   final double width;
 
   const DropdownSelect({
@@ -30,11 +30,11 @@ class DropdownSelect extends StatefulWidget {
   });
 
   @override
-  State<DropdownSelect> createState() => _DropdownSelectState();
+  State<DropdownSelect<T>> createState() => _DropdownSelectState<T>();
 }
 
-class _DropdownSelectState extends State<DropdownSelect> {
-  Item? selectedValue;
+class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
+  Item<T>? selectedValue;
   bool isOpen = false;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -44,7 +44,7 @@ class _DropdownSelectState extends State<DropdownSelect> {
     super.initState();
 
     selectedValue = widget.items.firstWhere(
-      (item) => item.id == widget.initialValue,
+      (item) => item.value == widget.initialValue,
       orElse: () => widget.items.first,
     );
   }
@@ -121,7 +121,7 @@ class _DropdownSelectState extends State<DropdownSelect> {
                       child: Text(
                         item.label,
                         style: TextStyle(
-                          color: selectedValue?.id == item.id
+                          color: selectedValue?.value == item.value
                               ? Theme.of(context).primaryColor
                               : Colors.white,
                           fontSize: 14,
