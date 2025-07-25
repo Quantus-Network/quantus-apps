@@ -153,28 +153,26 @@ class WalletStateManager with ChangeNotifier {
     for (var pending in pendingTransactions) {
       if (pending.transactionState == TransactionState.failed) {
         toRemove.add(pending);
-        continue;
+        updated = true;
       }
-
       if (pending.blockHash != null) {
         print('pending ${pending.amount} block hash: ${pending.blockHash}');
 
         for (var transfer in transferList) {
-          // print(
-          //   'checking trasfer ${transfer.amount} with block hash: '
-          //   '${transfer.blockHash}',
-          // );
+          print(
+            'checking trasfer ${transfer.amount} with block hash: '
+            '${transfer.blockHash}',
+          );
           if (transfer.blockHash == pending.blockHash) {
-            // print('found item block hash - removing');
+            print('found item block hash - removing');
             toRemove.add(pending);
-            continue;
+            updated = true;
           }
         }
       }
     }
     if (toRemove.isNotEmpty) {
       pendingTransactions.removeWhere((tx) => toRemove.contains(tx));
-      updated = true;
     }
     return updated;
   }
