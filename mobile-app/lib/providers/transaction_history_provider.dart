@@ -53,7 +53,7 @@ class TransactionHistoryProvider with ChangeNotifier {
   List<String> _accoundIds = [];
 
   Future<void> fetchInitialTransactions() async {
-    if (_walletStateManager.walletData.data == null) {
+    if (_walletStateManager.walletData == null) {
       await _walletStateManager.load();
     }
 
