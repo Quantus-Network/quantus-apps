@@ -18,32 +18,6 @@ import 'package:ss58/ss58.dart';
 
 enum ConnectionStatus { connecting, connected, disconnected, error }
 
-class DilithiumWalletInfo {
-  final crypto.Keypair keypair;
-  final String accountId;
-  final String? mnemonic;
-  final String walletName;
-  DilithiumWalletInfo({
-    required this.keypair,
-    required this.accountId,
-    this.mnemonic,
-    required this.walletName,
-  });
-
-  factory DilithiumWalletInfo.fromKeyPair(
-    crypto.Keypair keypair, {
-    required String walletName,
-    String? mnemonic,
-  }) {
-    return DilithiumWalletInfo(
-      keypair: keypair,
-      accountId: keypair.ss58Address,
-      mnemonic: mnemonic,
-      walletName: walletName,
-    );
-  }
-}
-
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
 const crystalCharlie = '//Crystal Charlie';
@@ -165,23 +139,13 @@ class SubstrateService {
       final specVersion = runtimeVersion.specVersion;
       final transactionVersion = runtimeVersion.transactionVersion;
 
-      final block = await _provider!.send('chain_getBlock', []);
-      final blockNumber = int.parse(block.result['block']['header']['number']);
-
-      final blockHash = (await _provider!.send(
-        'chain_getBlockHash',
-        [],
-      )).result.replaceAll('0x', '');
-      final genesisHash = (await _provider!.send('chain_getBlockHash', [
-        0,
-      ])).result.replaceAll('0x', '');
-
-      // Get the next nonce for the sender
-      final nonceResult = await _provider!.send('system_accountNextIndex', [
-        senderWallet.ss58Address,
+      // Get chain block data and next nonce for the sender
+      final [blockNumber, blockHash, genesisHash, nonce] = await Future.wait([
+        _getBlockNumber(),
+        _getBlockHash(),
+        _getGenesisHash(),
+        _getNextAccountNonce(senderWallet),
       ]);
-      print('nonceResult: ${nonceResult.result} ${senderWallet.ss58Address}');
-      final nonce = int.parse(nonceResult.result.toString());
 
       // Create the call for fee estimation
       final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(
@@ -267,21 +231,21 @@ class SubstrateService {
     return keypair;
   }
 
-  @Deprecated('Use Account.getKeypair() instead')
-  Future<DilithiumWalletInfo> generateWalletFromSeed(
-    String seedPhrase,
-    Account account,
-  ) async {
-    try {
-      final keypair = HdWalletService().keyPairAtIndex(
-        seedPhrase,
-        account.index,
-      );
-      return DilithiumWalletInfo.fromKeyPair(keypair, walletName: 'Account 1');
-    } catch (e) {
-      throw Exception('Failed to generate wallet: $e');
-    }
-  }
+  // @Deprecated('Use Account.getKeypair() instead')
+  // Future<DilithiumWalletInfo> generateWalletFromSeed(
+  //   String seedPhrase,
+  //   Account account,
+  // ) async {
+  //   try {
+  //     final keypair = HdWalletService().keyPairAtIndex(
+  //       seedPhrase,
+  //       account.index,
+  //     );
+  //     return DilithiumWalletInfo.fromKeyPair(keypair, walletName: 'Account 1');
+  //   } catch (e) {
+  //     throw Exception('Failed to generate wallet: $e');
+  //   }
+  // }
 
   // Fetch balance of current user
   Future<BigInt> queryUserBalance() async {
@@ -363,26 +327,17 @@ class SubstrateService {
     final runtimeVersion = await _stateApi!.getRuntimeVersion();
     final specVersion = runtimeVersion.specVersion;
     final transactionVersion = runtimeVersion.transactionVersion;
-    final genesisHash = (await _provider!.send('chain_getBlockHash', [
-      0,
-    ])).result.replaceAll('0x', '');
+    var genesisHash = await _getGenesisHash();
     final encodedCall = call.encode();
 
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
-        final block = await _provider!.send('chain_getBlock', []);
-        final blockNumber = int.parse(
-          block.result['block']['header']['number'],
-        );
-        final blockHash = (await _provider!.send(
-          'chain_getBlockHash',
-          [],
-        )).result.replaceAll('0x', '');
-        final nonceResult = await _provider!.send('system_accountNextIndex', [
-          senderWallet.ss58Address,
+        final [blockNumber, blockHash, nonce] = await Future.wait([
+          _getBlockNumber(),
+          _getBlockHash(),
+          _getNextAccountNonce(senderWallet),
         ]);
-        final nonce = int.parse(nonceResult.result.toString());
 
         final payloadToSign = SigningPayload(
           method: encodedCall,
@@ -437,6 +392,32 @@ class SubstrateService {
       }
     }
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
+  }
+
+  Future<int> _getNextAccountNonce(Keypair senderWallet) async {
+    final nonceResult = await _provider!.send('system_accountNextIndex', [
+      senderWallet.ss58Address,
+    ]);
+    final nonce = int.parse(nonceResult.result.toString());
+    return nonce;
+  }
+
+  Future<dynamic> _getBlockHash() async {
+    final result = await _provider!.send('chain_getBlockHash', []);
+    final blockHash = result.result;
+    return blockHash.replaceAll('0x', '');
+  }
+
+  Future<dynamic> _getGenesisHash() async {
+    final result = await _provider!.send('chain_getBlockHash', [0]);
+    final genesisHash = result.result;
+    return genesisHash.replaceAll('0x', '');
+  }
+
+  Future<int> _getBlockNumber() async {
+    final blockHeader = await _provider!.send('chain_getHeader', []);
+    final blockNumber = int.parse(blockHeader.result['number']);
+    return blockNumber;
   }
 
   // Getter for provider (for services that need direct access)
