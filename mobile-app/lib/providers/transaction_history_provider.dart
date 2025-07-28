@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 
+enum TransactionRole { sender, receiver, both }
+
 class TransactionHistoryProvider with ChangeNotifier {
   final ChainHistoryService _chainHistoryService;
   final SettingsService _settingsService;
@@ -21,6 +23,13 @@ class TransactionHistoryProvider with ChangeNotifier {
        _walletStateManager = walletStateManager {
     // Listen to account changes
     _accountsSubscription = _settingsService.accountsStream.listen((accounts) {
+      final accountIdSet = <String>{};
+
+      for (var a in _accounts) {
+        accountIdSet.add(a.accountId);
+      }
+
+      _accountSet = accountIdSet;
       _accounts = accounts;
       notifyListeners();
     });
@@ -35,6 +44,7 @@ class TransactionHistoryProvider with ChangeNotifier {
   }
 
   List<Account> _accounts = [];
+  Set<String> _accountSet = <String>{};
   List<Account> get accounts => _accounts;
 
   List<TransactionEvent> _transactions = [];
@@ -89,6 +99,20 @@ class TransactionHistoryProvider with ChangeNotifier {
     }
   }
 
+  TransactionRole getTransactionRole(TransactionEvent transaction) {
+    final from = transaction.from;
+    final to = transaction.to;
+
+    if ((_accountSet.contains(from) && _accountSet.contains(to)) ||
+        from == to) {
+      return TransactionRole.both;
+    } else if (_accountSet.contains(from)) {
+      return TransactionRole.sender;
+    } else {
+      return TransactionRole.receiver;
+    }
+  }
+
   void startPolling() {
     stopPolling(); // Ensure no multiple timers are running
     _pollingTimer = Timer.periodic(
@@ -110,7 +134,16 @@ class TransactionHistoryProvider with ChangeNotifier {
 
     if (_accounts.isEmpty) {
       _accounts = await _settingsService.getAccounts();
-      _accoundIds = _accounts.map((a) => a.accountId).toList();
+      final accountIdList = <String>[];
+      final accountIdSet = <String>{};
+
+      for (var a in _accounts) {
+        accountIdList.add(a.accountId);
+        accountIdSet.add(a.accountId);
+      }
+
+      _accoundIds = accountIdList;
+      _accountSet = accountIdSet;
     }
 
     _offset = 0;
