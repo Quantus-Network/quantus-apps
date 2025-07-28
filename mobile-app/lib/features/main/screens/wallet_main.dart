@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class WalletMain extends StatefulWidget {
   const WalletMain({super.key});
@@ -23,10 +24,17 @@ class _WalletMainState extends State<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
+  late TransactionHistoryProvider _transactionHistoryProvider;
 
   @override
   void initState() {
     super.initState();
+
+    _transactionHistoryProvider = Provider.of<TransactionHistoryProvider>(
+      context,
+      listen: false,
+    );
+
     // Access the WalletStateManager from the provider without listening to
     // changes
     final walletStateManager = Provider.of<WalletStateManager>(
@@ -180,7 +188,7 @@ class _WalletMainState extends State<WalletMain> {
           transactions: walletStateManager.combinedTransactions
               .take(4)
               .toList(),
-          currentWalletAddress: activeAccount.accountId,
+          provider: _transactionHistoryProvider,
         ),
         if (walletStateManager.combinedTransactions.isNotEmpty)
           Padding(

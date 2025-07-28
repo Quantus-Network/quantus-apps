@@ -4,7 +4,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
 import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -182,8 +181,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           );
         }
 
-        final manager = Provider.of<WalletStateManager>(context, listen: false);
-
         return RefreshIndicator(
           onRefresh: () => provider.refreshTransactions(),
           child: CustomScrollView(
@@ -193,7 +190,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               SliverToBoxAdapter(
                 child: RecentTransactionsList(
                   transactions: provider.transactions,
-                  currentWalletAddress: manager.walletData!.account.accountId,
+                  provider: _transactionHistoryProvider,
                 ),
               ),
 

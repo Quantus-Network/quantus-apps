@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
-  final String currentWalletAddress;
+  final TransactionHistoryProvider provider;
   final bool Function(TransactionEvent)? filter;
 
   const RecentTransactionsList({
     super.key,
     required this.transactions,
-    required this.currentWalletAddress,
+    required this.provider,
     this.filter,
   });
 
@@ -60,7 +61,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      currentWalletAddress: currentWalletAddress,
+                      provider: provider,
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
@@ -80,7 +81,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      currentWalletAddress: currentWalletAddress,
+                      provider: provider,
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
