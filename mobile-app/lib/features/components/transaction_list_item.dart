@@ -34,11 +34,11 @@ class TransactionListItemState extends State<TransactionListItem> {
   String get title {
     if (widget.transaction.isReversibleCancelled) return 'Cancelled';
 
-    if (role == TransactionRole.both && isPending) return 'Self Transferring';
+    if (role == TransactionRole.both && isPending) return 'Sending';
     if (role == TransactionRole.sender && isPending) return 'Sending';
     if (role == TransactionRole.receiver && isPending) return 'Receiving';
 
-    if (role == TransactionRole.both) return 'Self Transferred';
+    if (role == TransactionRole.both) return 'Sent';
     if (role == TransactionRole.sender) return 'Sent';
     return 'Received';
   }

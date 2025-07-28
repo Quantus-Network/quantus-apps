@@ -50,7 +50,7 @@ class _TransactionDetailsActionSheetState
     }
 
     if (widget.role == TransactionRole.both) {
-      return 'SELF TRANSFERRED';
+      return 'SENT';
     }
     if (widget.role == TransactionRole.sender) {
       return 'SENT';

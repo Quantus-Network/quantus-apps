@@ -103,7 +103,11 @@ class TransactionHistoryProvider with ChangeNotifier {
     final from = transaction.from;
     final to = transaction.to;
 
-    if ((_accountSet.contains(from) && _accountSet.contains(to)) ||
+    if (_walletStateManager.walletData?.account.accountId == from) {
+      return TransactionRole.sender;
+    } else if (_walletStateManager.walletData?.account.accountId == to) {
+      return TransactionRole.receiver;
+    } else if ((_accountSet.contains(from) && _accountSet.contains(to)) ||
         from == to) {
       return TransactionRole.both;
     } else if (_accountSet.contains(from)) {
