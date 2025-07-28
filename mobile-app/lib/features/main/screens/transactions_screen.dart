@@ -180,8 +180,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               SliverToBoxAdapter(
                 child: RecentTransactionsList(
                   transactions: provider.transactions,
-                  currentWalletAddress:
-                      manager.walletData.data!.account.accountId,
+                  currentWalletAddress: manager.walletData!.account.accountId,
                 ),
               ),
 

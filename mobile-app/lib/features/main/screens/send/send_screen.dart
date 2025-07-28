@@ -149,7 +149,6 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = false;
-        _networkFee = BigInt.zero;
       });
       return;
     }
@@ -160,10 +159,11 @@ class SendScreenState extends State<SendScreen> {
       setState(() {
         _amount = BigInt.zero;
         _hasAmountError = true;
-        _networkFee = BigInt.zero;
       });
     } else {
       setState(() {
+        // if we don't have fee, we will need to load it
+        _isFetchingFee = !_haveNetworkFee;
         _amount = parsedAmount;
         // Simplified check; full check including fee happens after fetching fee
         _hasAmountError =
@@ -173,9 +173,11 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
+  bool get _haveNetworkFee => _networkFee > BigInt.zero;
+
   void _debounceFetchFee() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 200), () {
       _fetchNetworkFee();
     });
   }
@@ -184,7 +186,7 @@ class SendScreenState extends State<SendScreen> {
     final recipient = _recipientController.text.trim();
     if (!_isValidSS58Address(recipient) ||
         _amount <= BigInt.zero ||
-        (_networkFee > BigInt.zero)) {
+        (_haveNetworkFee)) {
       setState(() {
         _networkFee = _networkFee;
         _isFetchingFee = false;
@@ -193,6 +195,9 @@ class SendScreenState extends State<SendScreen> {
       });
       return;
     }
+    setState(() {
+      _isFetchingFee = true;
+    });
 
     try {
       final account = await _settingsService.getActiveAccount();
@@ -211,9 +216,8 @@ class SendScreenState extends State<SendScreen> {
         _hasAmountError = (_amount + _networkFee) > _maxBalance;
       });
     } catch (e) {
-      debugPrint('Error fetching network fee: $e');
+      print('Error fetching network fee: $e');
       setState(() {
-        _networkFee = BigInt.zero;
         _isFetchingFee = false;
         _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
       });

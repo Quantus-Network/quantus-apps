@@ -134,9 +134,15 @@ class _AccountsScreenState extends State<AccountsScreen> {
           SafeArea(
             child: Column(
               children: [
+                // Row 1: App Bar (takes needed space)
                 _buildAppBar(),
+                // Row 2: Accounts List (takes remaining space, scrollable)
                 Expanded(child: _buildAccountsList()),
-                // _buildFooter(),
+                // Row 3: Create Button (takes needed space)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildCreateNewAccountButton(),
+                ),
               ],
             ),
           ),
@@ -186,28 +192,19 @@ class _AccountsScreenState extends State<AccountsScreen> {
     }
 
     if (_accountDetails.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'No accounts found.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 25),
-            _buildCreateNewAccountButton(),
-          ],
+      return const Center(
+        child: Text(
+          'No accounts found.',
+          style: TextStyle(color: Colors.white70),
         ),
       );
     }
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      itemCount: _accountDetails.length + 1,
+      itemCount: _accountDetails.length,
       separatorBuilder: (context, index) => const SizedBox(height: 25),
       itemBuilder: (context, index) {
-        if (index == _accountDetails.length) {
-          return _buildCreateNewAccountButton();
-        }
         final details = _accountDetails[index];
         final bool isActive =
             details.account.accountId == _activeAccount?.accountId;
@@ -250,23 +247,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
       ),
     );
   }
-
-  // Widget _buildTag(String text, Color color) {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-  //     decoration: ShapeDecoration(
-  //       color: color,
-  //       shape: RoundedRectangleBorder(borderRadius:
-  // BorderRadius.circular(2)),
-  //     ),
-  //     child: Text(
-  //       text,
-  //       textAlign: TextAlign.center,
-  //       style: const TextStyle(color: Colors.black, fontSize: 10, fontFamily:
-  // 'Fira Code', fontWeight: FontWeight.w400),
-  //     ),
-  //   );
-  // }
 
   Widget _buildAccountListItem(
     AccountDetails details,
@@ -337,24 +317,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // demo code for tags bug not yet implemented,
-                            // they look good though.
-                            // if (!isActive && index == 1) ...[
-                            //   Row(
-                            //     children: [
-                            //       _buildTag(
-                            //         'Recovery',
-                            //         const Color(0xFF16CECE),
-                            //       ),
-                            //       const SizedBox(width: 8),
-                            //       _buildTag(
-                            //         'Anti-Theft',
-                            //         const Color(0xFFFADC34),
-                            //       ),
-                            //     ],
-                            //   ),
-                            //   const SizedBox(height: 6),
-                            // ],
                             Text(
                               account.name,
                               style: TextStyle(
