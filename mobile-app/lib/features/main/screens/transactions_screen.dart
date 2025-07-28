@@ -17,22 +17,26 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen>
     with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
+  late TransactionHistoryProvider _transactionHistoryProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    final provider = Provider.of<TransactionHistoryProvider>(
+    _transactionHistoryProvider = Provider.of<TransactionHistoryProvider>(
       context,
       listen: false,
     );
-    provider.fetchInitialTransactions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _transactionHistoryProvider.fetchInitialTransactions();
+    });
+    _transactionHistoryProvider.startPolling();
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
-        provider.fetchMoreTransactions();
+        _transactionHistoryProvider.fetchMoreTransactions();
       }
     });
   }
@@ -40,17 +44,26 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _transactionHistoryProvider.stopPolling();
     _scrollController.dispose();
+
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final provider = Provider.of<TransactionHistoryProvider>(
+      context,
+      listen: false,
+    );
+
     if (state == AppLifecycleState.resumed) {
-      Provider.of<TransactionHistoryProvider>(
-        context,
-        listen: false,
-      ).refreshTransactions();
+      // App is back in the foreground, refresh and resume polling
+      provider.refreshTransactions();
+      provider.startPolling();
+    } else if (state == AppLifecycleState.paused) {
+      // App is in the background, stop polling to save resources
+      provider.stopPolling();
     }
   }
 

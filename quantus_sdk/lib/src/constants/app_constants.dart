@@ -34,4 +34,6 @@ class AppConstants {
 
   static const int defaultPageSize = 20;
   static const List<int> pageSizeList = [10, 20, 50, 100];
+
+  static const int pollingIntervalSeconds = 30;
 }

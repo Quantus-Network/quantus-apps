@@ -8,6 +8,7 @@ class TransactionHistoryProvider with ChangeNotifier {
   final ChainHistoryService _chainHistoryService;
   final SettingsService _settingsService;
   final WalletStateManager _walletStateManager;
+  Timer? _pollingTimer;
 
   StreamSubscription<List<Account>>? _accountsSubscription;
 
@@ -28,6 +29,8 @@ class TransactionHistoryProvider with ChangeNotifier {
   @override
   void dispose() {
     _accountsSubscription?.cancel();
+    _pollingTimer?.cancel();
+
     super.dispose();
   }
 
@@ -51,6 +54,54 @@ class TransactionHistoryProvider with ChangeNotifier {
   int get pageSize => _pageSize;
 
   List<String> _accoundIds = [];
+
+  Future<void> _pollForNewTransactions() async {
+    // Don't poll if a fetch is already in progress or wallet is not ready
+    if (_isLoading ||
+        _walletStateManager.walletData == null ||
+        _accoundIds.isEmpty) {
+      return;
+    }
+
+    try {
+      final result = await _chainHistoryService.fetchAllTransactionTypes(
+        accountIds: _accoundIds,
+        limit: _pageSize, // Fetch one page to check for new items
+        offset: 0,
+      );
+
+      if (result.combined.isNotEmpty) {
+        final existingTxIds = _transactions.map((tx) => tx.id).toSet();
+        final trulyNewTransactions = result.combined
+            .where((tx) => !existingTxIds.contains(tx.id))
+            .toList();
+
+        if (trulyNewTransactions.isNotEmpty) {
+          _transactions.insertAll(0, trulyNewTransactions);
+          _offset +=
+              trulyNewTransactions.length; // Adjust offset for pagination
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      // Silently ignore polling errors to not disturb the user
+      print('Error during transaction polling: $e');
+    }
+  }
+
+  void startPolling() {
+    stopPolling(); // Ensure no multiple timers are running
+    _pollingTimer = Timer.periodic(
+      const Duration(seconds: AppConstants.pollingIntervalSeconds),
+      (_) {
+        _pollForNewTransactions();
+      },
+    );
+  }
+
+  void stopPolling() {
+    _pollingTimer?.cancel();
+  }
 
   Future<void> fetchInitialTransactions() async {
     if (_walletStateManager.walletData == null) {
