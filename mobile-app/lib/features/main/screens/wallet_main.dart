@@ -33,8 +33,9 @@ class _WalletMainState extends State<WalletMain> {
       context,
       listen: false,
     );
+
     // Initial data load
-    walletStateManager.load();
+    walletStateManager.load(quiet: walletStateManager.walletData != null);
   }
 
   @override
@@ -177,7 +178,7 @@ class _WalletMainState extends State<WalletMain> {
         ),
         RecentTransactionsList(
           transactions: walletStateManager.combinedTransactions
-              .take(5)
+              .take(4)
               .toList(),
           currentWalletAddress: activeAccount.accountId,
         ),
