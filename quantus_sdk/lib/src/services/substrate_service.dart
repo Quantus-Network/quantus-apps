@@ -291,16 +291,10 @@ class SubstrateService {
     return result;
   }
 
-  @Deprecated('Use Account.getKeypair() instead')
-  crypto.Keypair dilithiumKeypairFromMnemonic(String senderSeed) {
-    // This method is now simplified to support legacy calls or testing.
-    // It defaults to deriving the key for account index 0.
-    // For specific accounts, use HdWalletService().keyPairAtIndex(mnemonic, index).
-    if (senderSeed.startsWith('//')) {
-      // Handle test seeds
-      return crypto.generateKeypair(mnemonicStr: senderSeed);
-    }
-    return HdWalletService().keyPairAtIndex(senderSeed, 0);
+  // Legacy method - supports CLI addresses and Miner App
+  // The mobile app should use @HdWalletService for everything.
+  crypto.Keypair nonHDdilithiumKeypairFromMnemonic(String senderSeed) {
+    return crypto.generateKeypair(mnemonicStr: senderSeed);
   }
 
   Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(

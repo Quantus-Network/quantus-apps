@@ -53,7 +53,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
       if (mnemonic != null) {
         // Derive keypair from mnemonic using SubstrateService (exported by quantus_sdk)
         // ignore: deprecated_member_use
-        final keypair = SubstrateService().dilithiumKeypairFromMnemonic(
+        final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
           mnemonic,
         );
         // Use toAccountId function to get the SS58 address (exported by quantus_sdk)

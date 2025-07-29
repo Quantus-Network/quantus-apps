@@ -111,7 +111,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     try {
       // Derive seed from mnemonic and securely store it
       // ignore: deprecated_member_use
-      SubstrateService().dilithiumKeypairFromMnemonic(
+      SubstrateService().nonHDdilithiumKeypairFromMnemonic(
         mnemonic,
       ); // Validate mnemonic by trying to derive keypair
       await _securelyStoreMnemonic(mnemonic);

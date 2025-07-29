@@ -28,6 +28,7 @@ class AccountsService {
       index: nextIndex,
       name: 'Account ${nextIndex + 1}', // Default name
       accountId: keypair.ss58Address,
+      uiPosition: nextIndex,
     );
     return newAccount;
   }

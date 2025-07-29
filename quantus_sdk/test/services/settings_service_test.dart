@@ -7,9 +7,24 @@ void main() {
     late SettingsService settingsService;
 
     // Accounts for testing
-    const account1 = Account(index: 0, name: 'Account 1', accountId: 'id_1');
-    const account2 = Account(index: 1, name: 'Account 2', accountId: 'id_2');
-    const account3 = Account(index: 2, name: 'Account 3', accountId: 'id_3');
+    const account1 = Account(
+      index: 0,
+      name: 'Account 1',
+      accountId: 'id_1',
+      uiPosition: 0,
+    );
+    const account2 = Account(
+      index: 1,
+      name: 'Account 2',
+      accountId: 'id_2',
+      uiPosition: 1,
+    );
+    const account3 = Account(
+      index: 2,
+      name: 'Account 3',
+      accountId: 'id_3',
+      uiPosition: 2,
+    );
 
     setUp(() async {
       // Set up mock values for SharedPreferences
@@ -20,7 +35,10 @@ void main() {
 
     test('Migration: should migrate from old single-account format', () async {
       // Arrange: Set up old format keys
-      SharedPreferences.setMockInitialValues({'account_id': 'old_id', 'wallet_name': 'Old Wallet'});
+      SharedPreferences.setMockInitialValues({
+        'account_id': 'old_id',
+        'wallet_name': 'Old Wallet',
+      });
       settingsService = SettingsService();
       await settingsService.initialize();
 
@@ -46,7 +64,13 @@ void main() {
       // Act & Assert
       expect(
         () async => await settingsService.getAccounts(),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Wallet is logged out'))),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Wallet is logged out'),
+          ),
+        ),
       );
     });
 
@@ -68,8 +92,16 @@ void main() {
 
       // Act & Assert
       expect(
-        () async => await settingsService.addAccount(account1.copyWith(accountId: 'new_id')),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Account already exists'))),
+        () async => await settingsService.addAccount(
+          account1.copyWith(accountId: 'new_id'),
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Account already exists'),
+          ),
+        ),
       );
     });
 
@@ -86,17 +118,20 @@ void main() {
       expect(accounts.first.name, 'Updated Name');
     });
 
-    test('setActiveAccount and getActiveAccount should work correctly', () async {
-      // Arrange
-      await settingsService.saveAccounts([account1, account2]);
+    test(
+      'setActiveAccount and getActiveAccount should work correctly',
+      () async {
+        // Arrange
+        await settingsService.saveAccounts([account1, account2]);
 
-      // Act
-      await settingsService.setActiveAccount(account2);
-      final activeAccount = await settingsService.getActiveAccount();
+        // Act
+        await settingsService.setActiveAccount(account2);
+        final activeAccount = await settingsService.getActiveAccount();
 
-      // Assert
-      expect(activeAccount.accountId, account2.accountId);
-    });
+        // Assert
+        expect(activeAccount.accountId, account2.accountId);
+      },
+    );
 
     test('setActiveAccount should throw for a non-existent account', () async {
       // Arrange
@@ -105,7 +140,13 @@ void main() {
       // Act & Assert
       expect(
         () async => await settingsService.setActiveAccount(account2),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Account index does not exist'))),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Account index does not exist'),
+          ),
+        ),
       );
     });
 
@@ -129,27 +170,39 @@ void main() {
       // Act & Assert
       expect(
         () async => await settingsService.removeAccount(account1),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Cant remove last account'))),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Cant remove last account'),
+          ),
+        ),
       );
     });
 
-    test('removeAccount should change active account if active is removed', () async {
-      // Arrange
-      await settingsService.saveAccounts([account1, account2, account3]);
-      await settingsService.setActiveAccount(account2);
+    test(
+      'removeAccount should change active account if active is removed',
+      () async {
+        // Arrange
+        await settingsService.saveAccounts([account1, account2, account3]);
+        await settingsService.setActiveAccount(account2);
 
-      // Act
-      await settingsService.removeAccount(account2);
-      final activeAccount = await settingsService.getActiveAccount();
+        // Act
+        await settingsService.removeAccount(account2);
+        final activeAccount = await settingsService.getActiveAccount();
 
-      // Assert
-      // It should fall back to the first account in the remaining list
-      expect(activeAccount.accountId, account1.accountId);
-    });
+        // Assert
+        // It should fall back to the first account in the remaining list
+        expect(activeAccount.accountId, account1.accountId);
+      },
+    );
 
     test('getNextFreeAccountIndex should return correct next index', () async {
       // Arrange
-      await settingsService.saveAccounts([account1, account3]); // Indices 0 and 2
+      await settingsService.saveAccounts([
+        account1,
+        account3,
+      ]); // Indices 0 and 2
 
       // Act
       final nextIndex = await settingsService.getNextFreeAccountIndex();

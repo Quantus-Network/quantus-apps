@@ -14,8 +14,35 @@ class ImportWalletScreen extends StatefulWidget {
 class ImportWalletScreenState extends State<ImportWalletScreen> {
   final TextEditingController _mnemonicController = TextEditingController();
   bool _isLoading = false;
+  bool _isDiscovering = false;
   String _errorMessage = '';
   final SettingsService _settingsService = SettingsService();
+  final AccountDiscoveryService _accountDiscoveryService =
+      AccountDiscoveryService(HdWalletService(), SubstrateService());
+
+  Future<void> _discoverAccounts(String mnemonic) async {
+    if (!mounted) return;
+    setState(() {
+      _isDiscovering = true;
+    });
+
+    try {
+      final discoveredAccounts = await _accountDiscoveryService
+          .discoverAccounts(mnemonic: mnemonic);
+
+      for (final account in discoveredAccounts) {
+        await _settingsService.addAccount(account);
+      }
+    } catch (e) {
+      debugPrint('Error discovering accounts: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDiscovering = false;
+        });
+      }
+    }
+  }
 
   Future<void> _importWallet() async {
     setState(() {
@@ -44,8 +71,15 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
       await _settingsService.addAccount(
-        Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
+        Account(
+          index: 0,
+          name: 'Account 1',
+          accountId: key.ss58Address,
+          uiPosition: 0,
+        ),
       );
+
+      await _discoverAccounts(mnemonic);
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -239,11 +273,26 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
                     ),
                   ),
                 const Spacer(), // Add Spacer to push the button down
-                GradientActionButton(
-                  label: 'Import Wallet',
-                  onPressed: _importWallet,
-                  isLoading: _isLoading,
-                ),
+                if (_isDiscovering)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 50.0),
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: 16),
+                        Text(
+                          'Discovering existing accounts...',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  GradientActionButton(
+                    label: 'Import Wallet',
+                    onPressed: _importWallet,
+                    isLoading: _isLoading,
+                  ),
                 const SizedBox(
                   height: 24,
                 ), // Consistent bottom padding like CreateWalletScreen

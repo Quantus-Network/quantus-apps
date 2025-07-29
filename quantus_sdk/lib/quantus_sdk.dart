@@ -11,6 +11,7 @@ export 'src/extensions/color_extensions.dart';
 export 'src/extensions/decimal_input_filter.dart';
 export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/string_extensions.dart';
+// UI-related exports
 export 'src/models/account.dart';
 export 'src/models/event_type.dart';
 export 'src/models/reversible_transfer_status.dart';
@@ -20,11 +21,12 @@ export 'src/models/transaction_state.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
+export 'src/services/account_discovery_service.dart';
 export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
-export 'src/services/datetime_formatting_service.dart';
 export 'src/services/balances_service.dart';
 export 'src/services/chain_history_service.dart';
+export 'src/services/datetime_formatting_service.dart';
 export 'src/services/hd_wallet_service.dart';
 export 'src/services/human_readable_checksum_service.dart';
 export 'src/services/number_formatting_service.dart';

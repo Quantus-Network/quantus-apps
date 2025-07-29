@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await QuantusSdk.init();
   });
 
@@ -28,7 +30,7 @@ void main() {
       // Verify account ID format (should be a valid SS58 address)
       expect(accountId, isNotEmpty);
       expect(
-        accountId.startsWith('5'),
+        accountId.startsWith('qz'),
         isTrue,
       ); // SS58 addresses typically start with '5'
 
@@ -47,6 +49,20 @@ void main() {
       );
 
       expect(isValid, isTrue);
+    });
+
+    test('Test CLI compatibility with known value', () {
+      // This is a valid BIP39 mnemonic phrase - DO NOT use for real wallets
+      const testMnemonic =
+          'ten tone sniff segment glance worth defense delay december boring catch thrive noodle radar exhibit dish whale hub couch audit usual certain dance clever';
+
+      // Generate keypair from mnemonic
+      final keypair = generateKeypair(mnemonicStr: testMnemonic);
+      // Convert to account ID
+      final accountId = toAccountId(obj: keypair);
+
+      // Verify account ID format (should be a valid SS58 address)
+      expect(accountId, 'qzo18PGwLjXx8GzKtPDqh5Qver9tHS2MDZPthyTyXnMRGW6Uz');
     });
 
     test('should generate different keypairs for different mnemonics', () {
