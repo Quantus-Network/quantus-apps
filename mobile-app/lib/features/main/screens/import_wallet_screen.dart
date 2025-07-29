@@ -71,12 +71,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
       await _settingsService.addAccount(
-        Account(
-          index: 0,
-          name: 'Account 1',
-          accountId: key.ss58Address,
-          uiPosition: 0,
-        ),
+        Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
       );
 
       await _discoverAccounts(mnemonic);

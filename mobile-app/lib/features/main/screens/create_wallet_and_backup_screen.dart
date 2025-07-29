@@ -75,12 +75,7 @@ class CreateWalletAndBackupScreenState
       if (accounts.isEmpty) {
         final key = HdWalletService().keyPairAtIndex(_mnemonic, 0);
         await _settingsService.addAccount(
-          Account(
-            index: 0,
-            name: 'Account 1',
-            accountId: key.ss58Address,
-            uiPosition: 0,
-          ),
+          Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
         );
       }
 

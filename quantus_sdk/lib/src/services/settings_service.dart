@@ -46,7 +46,6 @@ class SettingsService {
         index: 0,
         name: oldWalletName,
         accountId: oldAccountId,
-        uiPosition: 0,
       );
       await saveAccounts([account]);
       await setActiveAccount(account);

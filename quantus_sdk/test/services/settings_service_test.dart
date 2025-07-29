@@ -11,19 +11,16 @@ void main() {
       index: 0,
       name: 'Account 1',
       accountId: 'id_1',
-      uiPosition: 0,
     );
     const account2 = Account(
       index: 1,
       name: 'Account 2',
       accountId: 'id_2',
-      uiPosition: 1,
     );
     const account3 = Account(
       index: 2,
       name: 'Account 3',
       accountId: 'id_3',
-      uiPosition: 2,
     );
 
     setUp(() async {

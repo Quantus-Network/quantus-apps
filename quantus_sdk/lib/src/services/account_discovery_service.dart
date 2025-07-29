@@ -36,7 +36,6 @@ class AccountDiscoveryService {
       index: -1, //  indicator for a raw account
       name: 'Primary Account',
       accountId: rawKeyPair.ss58Address,
-      uiPosition: -1,
     );
     allPossibleAccounts.add(rawAccount);
 
@@ -47,7 +46,6 @@ class AccountDiscoveryService {
         index: i,
         name: 'Account ${i + 1}',
         accountId: keyPair.ss58Address,
-        uiPosition: i,
       );
       allPossibleAccounts.add(account);
     }
@@ -59,8 +57,6 @@ class AccountDiscoveryService {
       'query': _accountsQuery,
       'variables': {'ids': accountIds},
     };
-
-    print("discovering accounts: $accountIds");
 
     try {
       final response = await http.post(
@@ -83,8 +79,6 @@ class AccountDiscoveryService {
       final List<dynamic>? foundAccountsData =
           responseBody['data']?['accounts'];
 
-      print("found accounts data: $foundAccountsData");
-
       if (foundAccountsData == null) {
         return [];
       }
@@ -92,8 +86,6 @@ class AccountDiscoveryService {
       final foundAccountIds = foundAccountsData
           .map((a) => a['id'] as String)
           .toSet();
-
-      print("found accounts: $foundAccountIds");
 
       return allPossibleAccounts
           .where((account) => foundAccountIds.contains(account.accountId))
