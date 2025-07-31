@@ -41,4 +41,40 @@ class PendingTransactionEvent extends TransactionEvent {
         'extrinsicHash: $extrinsicHash, blockNumber: $blockNumber, '
         'error: $error}';
   }
+
+  PendingTransactionEvent copyWith({
+    String? id,
+    String? from,
+    String? to,
+    BigInt? amount,
+    DateTime? timestamp,
+    String? blockHash,
+    TransactionState? transactionState,
+    bool? isReversible,
+    String? txId,
+    ReversibleTransferStatus? status,
+    DateTime? scheduledAtTime,
+    BigInt? fee,
+    String? extrinsicHash,
+    int? blockNumber,
+    String? error,
+  }) {
+    return PendingTransactionEvent(
+      tempId: id ?? this.id,
+      from: from ?? this.from,
+      to: to ?? this.to,
+      amount: amount ?? this.amount,
+      timestamp: timestamp ?? this.timestamp,
+      blockHash: blockHash ?? this.blockHash,
+      transactionState: transactionState ?? this.transactionState,
+      isReversible: isReversible ?? this.isReversible,
+      txId: txId ?? this.txId,
+      status: status ?? this.status,
+      scheduledAtTime: scheduledAtTime ?? this.scheduledAtTime,
+      fee: fee ?? this.fee,
+      extrinsicHash: extrinsicHash ?? this.extrinsicHash,
+      blockNumber: blockNumber ?? this.blockNumber,
+      error: error ?? this.error,
+    );
+  }
 }
