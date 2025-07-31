@@ -1,5 +1,3 @@
-// New PendingTransactionEvent class (single type, mirroring TransactionEvent
-// with reversible fields optional)
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class PendingTransactionEvent extends TransactionEvent {

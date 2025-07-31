@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:resonance_network_wallet/models/wallet_data.dart';
 
 class WalletStateManager with ChangeNotifier {

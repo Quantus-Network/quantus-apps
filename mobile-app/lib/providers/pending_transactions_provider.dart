@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 
 /// Notifier to manage the list of pending transactions.
 class PendingTransactionsNotifier

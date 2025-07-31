@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
 class TransactionListItem extends StatefulWidget {

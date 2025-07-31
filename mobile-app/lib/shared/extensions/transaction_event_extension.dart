@@ -1,5 +1,4 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/pending_transfer_event.dart';
 
 extension TransactionEventExtension on TransactionEvent {
   bool get isReversibleScheduled =>
