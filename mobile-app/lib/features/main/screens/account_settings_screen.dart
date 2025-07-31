@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 
@@ -44,6 +45,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
+      appBar: const WalletAppBar(title: 'Account Settings'),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -55,7 +57,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(),
               const SizedBox(height: 20),
               _buildAccountHeader(),
               const SizedBox(height: 40),
@@ -65,30 +66,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const Text(
-            'Account Settings',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-            ),
-          ),
-          const SizedBox(width: 48), // To balance the back button
-        ],
       ),
     );
   }

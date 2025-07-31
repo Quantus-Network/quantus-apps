@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
@@ -120,6 +121,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
+      appBar: const WalletAppBar(title: 'Your Accounts'),
       body: Stack(
         children: [
           Container(
@@ -134,8 +136,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Row 1: App Bar (takes needed space)
-                _buildAppBar(),
                 // Row 2: Accounts List (takes remaining space, scrollable)
                 Expanded(child: _buildAccountsList()),
                 // Row 3: Create Button (takes needed space)
@@ -146,39 +146,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              const Text(
-                'Your Accounts',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 48), // to balance the back button
         ],
       ),
     );

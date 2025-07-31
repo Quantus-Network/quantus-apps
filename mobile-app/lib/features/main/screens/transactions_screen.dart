@@ -1,157 +1,96 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart'; // Ensure import
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/transactions_provider.dart';
 
-class TransactionsScreen extends StatefulWidget {
-  final WalletStateManager manager;
-
-  const TransactionsScreen({super.key, required this.manager});
+class TransactionsScreen extends ConsumerStatefulWidget {
+  const TransactionsScreen({super.key});
 
   @override
-  State<TransactionsScreen> createState() => _TransactionsScreenState();
+  ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   final ScrollController _scrollController = ScrollController();
-
-  SortedTransactionsList? _transactions;
-  bool _isLoading = true;
-  bool _hasMore = true;
-  int _offset = 0;
-  static const int _limit = 20;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    widget.manager.addListener(_updateState);
-    _updateState(); // Set initial state from manager
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    widget.manager.removeListener(_updateState);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _updateState() {
-    setState(() {
-      _isLoading = widget.manager.isTxHistoryLoading;
-      _error = widget.manager.txHistoryError;
-      _transactions = widget.manager.txHistory;
-      if (_transactions != null && _offset == 0) {
-        // On initial/refresh, update pagination info
-        _offset = _transactions!.otherTransfers.length;
-        _hasMore = _transactions!.otherTransfers.length == _limit;
-      }
-    });
-  }
-
-  Future<void> _fetchMoreTransactions() async {
-    if (!_hasMore || _isLoading) {
-      return;
-    }
-
-    final walletData = widget.manager.walletData;
-    if (walletData == null) {
-      return;
-    }
-
-    final oldLength = _transactions?.otherTransfers.length ?? 0;
-    final accountId = walletData.account.accountId;
-
-    await widget.manager.loadMoreTransactions(
-      accountId: accountId,
-      limit: _limit,
-      offset: _offset,
-    );
-
-    // No need for setState; listener will trigger _updateState
-    // But calculate hasMore/offset here if needed (listener updates _transactions)
-    final added = _transactions!.otherTransfers.length - oldLength;
-    _offset += added;
-    _hasMore = added == _limit;
-  }
-
-  Future<void> _refreshTransactions() async {
-    _offset = 0;
-    _hasMore = true;
-    _error = null;
-    await widget.manager.refreshTransactions();
-    // Listener will handle UI update
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      _fetchMoreTransactions();
+      ref.read(paginatedTransactionsProvider.notifier).fetchMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Color(0xFFE6E6E6)),
-        centerTitle: false,
-        title: const Text(
-          'Transaction History',
-          style: TextStyle(
-            color: Color(0xFFE6E6E6),
-            fontSize: 16,
-            fontFamily: 'Fira Code',
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        backgroundColor: const Color(0xFF0E0E0E),
-        elevation: 0,
-      ),
+      appBar: const WalletAppBar(title: 'Transaction History'),
       backgroundColor: const Color(0xFF0E0E0E),
-      body: _buildBody(),
+      body: SafeArea(child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading && _transactions == null) {
+    final historyAsync = ref.watch(paginatedTransactionsProvider);
+    final activeAccountAsync = ref.watch(activeAccountProvider);
+
+    if (activeAccountAsync.value == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
-      return Center(
-        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-      );
-    }
-    if (_transactions?.combined.isEmpty ?? true) {
-      return const Center(
-        child: Text(
-          'No transactions found.',
-          style: TextStyle(color: Colors.white),
-        ),
-      );
-    }
 
-    return RefreshIndicator(
-      onRefresh: _refreshTransactions,
-      child: ListView(
-        controller: _scrollController,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: RecentTransactionsList(
-              transactions: _transactions!.combined,
-              currentWalletAddress:
-                  widget.manager.walletData!.account.accountId,
-            ),
-          ),
-          if (_isLoading && _hasMore)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-        ],
+    final activeAccount = activeAccountAsync.value!;
+
+    return historyAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          error.toString(),
+          style: const TextStyle(color: Colors.red),
+        ),
       ),
+      data: (transactions) {
+        if (transactions.combined.isEmpty) {
+          return const Center(
+            child: Text(
+              'No transactions found.',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () async => ref.invalidate(paginatedTransactionsProvider),
+          child: ListView(
+            controller: _scrollController,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: RecentTransactionsList(
+                  transactions: transactions.combined,
+                  currentWalletAddress: activeAccount.accountId,
+                ),
+              ),
+              if (ref.watch(paginatedTransactionsProvider.notifier).hasMore)
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

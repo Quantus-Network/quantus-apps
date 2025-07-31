@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/snackbar_helper.dar
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -132,13 +133,12 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   alignment: Alignment.centerRight,
                   child: InkWell(
                     onTap: () {
-                      print("TBD show history");
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const TransactionsScreen(),
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TransactionsScreen(),
+                        ),
+                      );
                     },
                     child: Text(
                       'Transaction History →',
@@ -270,8 +270,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       const SizedBox(height: 10),
                       Text(
                         activeAccountAsync.error?.toString() ??
-                            'Could not load wallet data. Please check your network '
-                                'connection and try again.',
+                            'Could not load wallet data. Please check your '
+                                'network connection and try again.',
                         style: TextStyle(
                           color: Colors.white.useOpacity(0.7),
                           fontSize: 14,

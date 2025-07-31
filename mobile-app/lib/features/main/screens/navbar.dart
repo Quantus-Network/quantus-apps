@@ -191,7 +191,7 @@ class _NavbarState extends State<Navbar> {
       index: _selectedIndex,
       children: [
         const WalletMain(),
-        TransactionsScreen(manager: walletStateManager),
+        const TransactionsScreen(),
         const SettingsScreen(),
         NotificationsScreen(manager: walletStateManager),
       ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
+import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   final Account? accountToEdit;
@@ -138,6 +139,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
+      appBar: WalletAppBar(
+        title: _isEditMode ? 'Edit Account' : 'Create New Account',
+      ),
       body: Stack(
         children: [
           Container(
@@ -154,7 +158,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : Column(
                     children: [
-                      _buildAppBar(),
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -173,34 +176,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       const SizedBox(height: 40),
                     ],
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          Text(
-            _isEditMode ? 'Edit Account' : 'Create New Account',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w400,
-            ),
           ),
         ],
       ),
