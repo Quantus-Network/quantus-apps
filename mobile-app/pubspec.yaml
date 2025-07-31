@@ -42,6 +42,8 @@ dependencies:
   provider: ^6.1.5
   polkadart: ^0.7.1
   share_plus: ^11.0.0
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +51,10 @@ dev_dependencies:
   flutter_lints:
   integration_test:
     sdk: flutter
+  riverpod_generator: ^2.6.5
+  build_runner: ^2.5.4
+  custom_lint: ^0.7.6
+  riverpod_lint: ^2.6.5
 
 flutter:
   uses-material-design: true
