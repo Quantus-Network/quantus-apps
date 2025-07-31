@@ -182,18 +182,23 @@ class SendScreenState extends State<SendScreen> {
     });
   }
 
-  Future<void> _fetchNetworkFee() async {
+  Future<BigInt> _fetchNetworkFee({bool isMaxSend = false}) async {
     final recipient = _recipientController.text.trim();
-    if (!_isValidSS58Address(recipient) ||
-        _amount <= BigInt.zero ||
-        (_haveNetworkFee)) {
+    final isInvalidMaxSend = isMaxSend && _maxBalance <= BigInt.zero;
+    final isInvalidAmount = _amount <= BigInt.zero && !isMaxSend;
+    final isInvalidAddress = !_isValidSS58Address(recipient);
+
+    if (isInvalidAddress ||
+        isInvalidAmount ||
+        isInvalidMaxSend ||
+        _haveNetworkFee) {
       setState(() {
         _networkFee = _networkFee;
         _isFetchingFee = false;
         _hasAmountError =
             _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
       });
-      return;
+      return _networkFee;
     }
     setState(() {
       _isFetchingFee = true;
@@ -204,17 +209,19 @@ class SendScreenState extends State<SendScreen> {
       final dummyAmountForFee =
           BigInt.from(1) *
           NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
-      final estimatedFee = await SubstrateService().getFee(
+      final estimatedFee = (await SubstrateService().getFee(
         account.accountId,
         recipient,
         dummyAmountForFee,
-      );
+      ));
 
       setState(() {
         _networkFee = estimatedFee;
         _isFetchingFee = false;
         _hasAmountError = (_amount + _networkFee) > _maxBalance;
       });
+
+      return estimatedFee;
     } catch (e) {
       print('Error fetching network fee: $e');
       setState(() {
@@ -229,10 +236,14 @@ class SendScreenState extends State<SendScreen> {
         );
       }
     }
+
+    return _networkFee;
   }
 
-  void _setMaxAmount() {
-    final maxSendableAmount = _maxBalance - _networkFee;
+  void _setMaxAmount() async {
+    final networkFee = await _fetchNetworkFee(isMaxSend: true);
+    final maxSendableAmount = _maxBalance - networkFee;
+
     if (maxSendableAmount > BigInt.zero) {
       final formattedMax = _formattingService.formatBalance(maxSendableAmount);
       _amountController.text = formattedMax;
