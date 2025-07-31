@@ -423,43 +423,44 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                               ),
                             ),
                             const SizedBox(height: 7),
-                            balanceAsync.when(
-                              data: (balance) => Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: _formattingService.formatBalance(
-                                        balance,
+                            Container(
+                              height: 50,
+                              alignment: Alignment.center,
+                              child: balanceAsync.when(
+                                data: (balance) => Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: _formattingService.formatBalance(
+                                          balance,
+                                        ),
+                                        style: const TextStyle(
+                                          color: Color(0xFFE6E6E6),
+                                          fontSize: 40,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                      style: const TextStyle(
-                                        color: Color(0xFFE6E6E6),
-                                        fontSize: 40,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
+                                      const TextSpan(
+                                        text: ' ${AppConstants.tokenSymbol}',
+                                        style: TextStyle(
+                                          color: Color(0xFFE6E6E6),
+                                          fontSize: 20,
+                                          fontFamily: 'Fira Code',
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                    ),
-                                    const TextSpan(
-                                      text: ' ${AppConstants.tokenSymbol}',
-                                      style: TextStyle(
-                                        color: Color(0xFFE6E6E6),
-                                        fontSize: 20,
-                                        fontFamily: 'Fira Code',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                              loading: () => const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: CircularProgressIndicator(
+                                loading: () => const CircularProgressIndicator(
                                   color: Colors.white,
                                 ),
-                              ),
-                              error: (err, stack) => const Text(
-                                'Error',
-                                style: TextStyle(color: Colors.red),
+                                error: (err, stack) => const Text(
+                                  'Error',
+                                  style: TextStyle(color: Colors.red),
+                                ),
                               ),
                             ),
                           ],
