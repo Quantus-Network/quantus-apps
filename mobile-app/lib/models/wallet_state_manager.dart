@@ -63,7 +63,7 @@ class WalletStateManager with ChangeNotifier {
     try {
       final account = await _settingsService.getActiveAccount();
       _txHistory = await _chainHistoryService.fetchAllTransactionTypes(
-        accountId: account.accountId,
+        accountIds: [account.accountId],
         limit: 20,
         offset: 0,
       );
@@ -195,7 +195,7 @@ class WalletStateManager with ChangeNotifier {
     required int offset,
   }) async {
     final result = await _chainHistoryService.fetchAllTransactionTypes(
-      accountId: accountId,
+      accountIds: [accountId],
       limit: limit,
       offset: offset,
     );

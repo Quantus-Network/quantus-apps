@@ -37,16 +37,18 @@ class ChainHistoryService {
   ChainHistoryService();
 
   final String _scheduledTransfersQuery = r'''
-query ScheduledTransfersByAccount($account: String!) {
+query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   events(
+    limit: $limit
+    offset: $offset
     where: {
       reversibleTransfer: {
-        AND:[
+        AND: [
           { status_eq: SCHEDULED },
           {
             OR: [
-              { from: { id_eq: $account } },
-              { to: { id_eq: $account } }
+              { from: { id_in: $accounts } },
+              { to: { id_in: $accounts } }
             ]
           }
         ]
@@ -76,12 +78,11 @@ query ScheduledTransfersByAccount($account: String!) {
       timestamp
     }
   }
-}
-''';
+}''';
 
   // GraphQL query to fetch transfers for a specific account
-  final String _eventsQuery = r'''
-query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
+  final String _eventsByAccountsQuery = r'''
+query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   events(
     limit: $limit
     offset: $offset
@@ -91,8 +92,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
         { OR: [
             { transfer: {
                 OR: [
-                  { from: { id_eq: $account } }
-                  { to:   { id_eq: $account } }
+                  { from: { id_in: $accounts } }
+                  { to:   { id_in: $accounts } }
                 ]}
             }
             { reversibleTransfer: {
@@ -100,8 +101,8 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
                 { status_not_eq: SCHEDULED },
                 {
                   OR: [
-                    { from: { id_eq: $account } },
-                    { to: { id_eq: $account } }
+                    { from: { id_in: $accounts } },
+                    { to: { id_in: $accounts } }
                   ]
                 }
               ]
@@ -155,16 +156,16 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     extrinsicHash
   }
 }
-  ''';
+''';
 
   Future<SortedTransactionsList> fetchAllTransactionTypes({
-    required String accountId,
-    int limit = 10,
+    required List<String> accountIds,
+    int limit = 20,
     int offset = 0,
   }) async {
-    final scheduled = await fetchScheduledTransfers(accountId: accountId);
+    final scheduled = await fetchScheduledTransfers(accountIds: accountIds);
     final other = await _fetchOtherTransfers(
-      accountId: accountId,
+      accountIds: accountIds,
       limit: limit,
       offset: offset,
     );
@@ -176,12 +177,14 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
   }
 
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
-    required String accountId,
+    required List<String> accountIds,
+    int limit = 10,
+    int offset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _scheduledTransfersQuery,
-      'variables': {'account': accountId},
+      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
     };
 
     try {
@@ -222,22 +225,21 @@ query EventsByAccount($account: String!, $limit: Int!, $offset: Int!) {
     }
   }
 
-  // Method to fetch transfers using http
   Future<TransferList> _fetchOtherTransfers({
-    required String accountId,
+    required List<String> accountIds,
     int limit = 10,
     int offset = 0,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
-      'fetchTransfers for account: $accountId from $uri (limit: $limit, offset: $offset)',
+      'fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
-      'query': _eventsQuery,
+      'query': _eventsByAccountsQuery,
       'variables': <String, dynamic>{
-        'account': accountId,
+        'accounts': accountIds,
         'limit': limit,
         'offset': offset,
       },
