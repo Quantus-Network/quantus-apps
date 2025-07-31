@@ -11,10 +11,10 @@ class ResonanceWalletApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final balance = ref.watch(balanceProvider);
-    final history = ref.watch(historyProvider);
+    final history = ref.watch(activeAccountHistoryProvider);
 
     balance.when(
-      data: (value) => print('Balance: $value'),
+      data: (value) => print('Service Balance: $value'),
       loading: () => print('Loading balance...'),
       error: (err, stack) => print('Error loading balance: $err'),
     );

@@ -1,41 +1,28 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-class WalletMain extends StatefulWidget {
+class WalletMain extends ConsumerStatefulWidget {
   const WalletMain({super.key});
 
   @override
-  State<WalletMain> createState() => _WalletMainState();
+  ConsumerState<WalletMain> createState() => _WalletMainState();
 }
 
-class _WalletMainState extends State<WalletMain> {
+class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Access the WalletStateManager from the provider without listening to
-    // changes
-    final walletStateManager = Provider.of<WalletStateManager>(
-      context,
-      listen: false,
-    );
-    // Initial data load
-    walletStateManager.load();
-  }
 
   @override
   void dispose() {
@@ -108,9 +95,67 @@ class _WalletMainState extends State<WalletMain> {
     );
   }
 
-  Widget _buildHistorySection(WalletStateManager walletStateManager) {
-    if (walletStateManager.isTxHistoryLoading) {
-      return Container(
+  Widget _buildHistorySection(
+    AsyncValue<SortedTransactionsList> historyAsync,
+    Account activeAccount,
+  ) {
+    return historyAsync.when(
+      data: (history) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
+              child: Text(
+                'Recent Transactions',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 14,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (historyAsync.isRefreshing)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(child: LinearProgressIndicator()),
+              ),
+            RecentTransactionsList(
+              transactions: history.combined.take(5).toList(),
+              currentWalletAddress: activeAccount.accountId,
+            ),
+            if (history.combined.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0, right: 12.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: () {
+                      print("TBD show history");
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => const TransactionsScreen(),
+                      //   ),
+                      // );
+                    },
+                    child: Text(
+                      'Transaction History →',
+                      style: TextStyle(
+                        color: Colors.white.useOpacity(0.80),
+                        fontSize: 12,
+                        fontFamily: 'Fira Code',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+      loading: () => Container(
         width: 321,
         padding: const EdgeInsets.all(10),
         decoration: ShapeDecoration(
@@ -125,11 +170,8 @@ class _WalletMainState extends State<WalletMain> {
             ),
           ),
         ),
-      );
-    }
-
-    if (walletStateManager.txHistoryError != null) {
-      return Container(
+      ),
+      error: (error, stack) => Container(
         width: 321,
         padding: const EdgeInsets.all(20),
         decoration: ShapeDecoration(
@@ -141,74 +183,19 @@ class _WalletMainState extends State<WalletMain> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                walletStateManager.txHistoryError!,
+                error.toString(),
                 style: const TextStyle(color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: walletStateManager.load,
+                onPressed: () => ref.invalidate(activeAccountHistoryProvider),
                 child: const Text('Retry'),
               ),
             ],
           ),
         ),
-      );
-    }
-    final activeAccount = walletStateManager.walletData?.account;
-    if (activeAccount == null) {
-      return const SizedBox.shrink(); // or a placeholder
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 10.0, bottom: 10.0),
-          child: Text(
-            'Recent Transactions',
-            style: TextStyle(
-              color: Color(0xFFE6E6E6),
-              fontSize: 14,
-              fontFamily: 'Fira Code',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        RecentTransactionsList(
-          transactions: walletStateManager.combinedTransactions
-              .take(5)
-              .toList(),
-          currentWalletAddress: activeAccount.accountId,
-        ),
-        if (walletStateManager.combinedTransactions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0, right: 12.0),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          TransactionsScreen(manager: walletStateManager),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Transaction History →',
-                  style: TextStyle(
-                    color: Colors.white.useOpacity(0.80),
-                    fontSize: 12,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 
@@ -237,17 +224,23 @@ class _WalletMainState extends State<WalletMain> {
 
   @override
   Widget build(BuildContext context) {
-    final walletStateManager = Provider.of<WalletStateManager>(context);
+    final activeAccountAsync = ref.watch(activeAccountProvider);
+    final balanceAsync = ref.watch(balanceProvider);
+    final historyAsync = ref.watch(activeAccountHistoryProvider);
 
-    if (walletStateManager.isWalletLoading) {
+    if (activeAccountAsync.isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF0E0E0E),
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
-    final hasWalletData = walletStateManager.walletData != null;
-    if (walletStateManager.walletError != null || !hasWalletData) {
+    final hasError =
+        activeAccountAsync.hasError && !activeAccountAsync.hasValue;
+    final noAccount =
+        activeAccountAsync.hasValue && activeAccountAsync.value == null;
+
+    if (hasError || noAccount) {
       return Scaffold(
         backgroundColor: const Color(0xFF0E0E0E),
         body: Column(
@@ -276,8 +269,9 @@ class _WalletMainState extends State<WalletMain> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Could not load wallet data. Please check your network '
-                        'connection and try again.',
+                        activeAccountAsync.error?.toString() ??
+                            'Could not load wallet data. Please check your network '
+                                'connection and try again.',
                         style: TextStyle(
                           color: Colors.white.useOpacity(0.7),
                           fontSize: 14,
@@ -296,7 +290,11 @@ class _WalletMainState extends State<WalletMain> {
                 children: [
                   _buildFullWidthActionButton(
                     label: 'Retry',
-                    onTap: () => walletStateManager.load(),
+                    onTap: () {
+                      ref.invalidate(activeAccountProvider);
+                      ref.invalidate(balanceProvider);
+                      ref.invalidate(activeAccountHistoryProvider);
+                    },
                     gradient: const LinearGradient(
                       begin: Alignment(0.50, 0.00),
                       end: Alignment(0.50, 1.00),
@@ -318,8 +316,7 @@ class _WalletMainState extends State<WalletMain> {
       );
     }
 
-    final walletData = walletStateManager.walletData!;
-    final activeAccount = walletData.account;
+    final activeAccount = activeAccountAsync.value!;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0E0E0E),
@@ -335,7 +332,10 @@ class _WalletMainState extends State<WalletMain> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: RefreshIndicator(
-              onRefresh: () => walletStateManager.load(),
+              onRefresh: () async {
+                ref.invalidate(balanceProvider);
+                ref.invalidate(activeAccountHistoryProvider);
+              },
               color: const Color(0xFF0CE6ED),
               backgroundColor: Colors.black,
               child: CustomScrollView(
@@ -423,32 +423,44 @@ class _WalletMainState extends State<WalletMain> {
                               ),
                             ),
                             const SizedBox(height: 7),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: _formattingService.formatBalance(
-                                      walletStateManager.estimatedBalance,
+                            balanceAsync.when(
+                              data: (balance) => Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: _formattingService.formatBalance(
+                                        balance,
+                                      ),
+                                      style: const TextStyle(
+                                        color: Color(0xFFE6E6E6),
+                                        fontSize: 40,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                    style: const TextStyle(
-                                      color: Color(0xFFE6E6E6),
-                                      fontSize: 40,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w600,
+                                    const TextSpan(
+                                      text: ' ${AppConstants.tokenSymbol}',
+                                      style: TextStyle(
+                                        color: Color(0xFFE6E6E6),
+                                        fontSize: 20,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  ),
-                                  const TextSpan(
-                                    text: ' ${AppConstants.tokenSymbol}',
-                                    style: TextStyle(
-                                      color: Color(0xFFE6E6E6),
-                                      fontSize: 20,
-                                      fontFamily: 'Fira Code',
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
+                              loading: () => const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              error: (err, stack) => const Text(
+                                'Error',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ),
                           ],
                         ),
@@ -501,11 +513,7 @@ class _WalletMainState extends State<WalletMain> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Consumer<WalletStateManager>(
-                      builder: (context, walletStateManager, child) {
-                        return _buildHistorySection(walletStateManager);
-                      },
-                    ),
+                    child: _buildHistorySection(historyAsync, activeAccount),
                   ),
                 ],
               ),
