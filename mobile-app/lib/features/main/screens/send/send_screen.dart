@@ -269,8 +269,6 @@ class SendScreenState extends State<SendScreen> {
         recipient,
         _maxBalance,
       );
-      print("max balance: $_maxBalance");
-      print("estimated fee: $estimatedFee");
 
       final maxSendableAmount = _maxBalance - estimatedFee;
 
