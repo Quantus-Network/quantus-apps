@@ -260,7 +260,10 @@ class SendScreenState extends State<SendScreen> {
     }
 
     try {
-      BigInt estimatedFee = await getNetworkFeeForAmount(recipient, _amount);
+      BigInt estimatedFee = await getNetworkFeeForAmount(
+        recipient,
+        _maxBalance,
+      );
 
       final maxSendableAmount = _maxBalance - estimatedFee;
 
