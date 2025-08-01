@@ -45,14 +45,68 @@ class TransactionSubmissionService {
     await _submitAndTrack(submissionCall, pendingTx);
   }
 
+  Future<void> scheduleReversibleTransferWithDelaySeconds({
+    required Account account,
+    required String recipientAddress,
+    required BigInt amount,
+    required int delaySeconds,
+    required BigInt feeEstimate,
+    int maxRetries = 3,
+  }) async {
+    final pending = createPendingTransaction(
+      from: account.accountId,
+      to: recipientAddress,
+      amount: amount,
+      fee: feeEstimate,
+      isReversible: true,
+    );
+
+    await _submitAndTrack(
+      (onStatus) => ReversibleTransfersService()
+          .scheduleReversibleTransferWithDelaySeconds(
+            account: account,
+            recipientAddress: recipientAddress,
+            amount: amount,
+            delaySeconds: delaySeconds,
+            onStatus: onStatus,
+          ),
+      pending,
+    );
+  }
+
+  PendingTransactionEvent createPendingTransaction({
+    required String from,
+    required String to,
+    required BigInt amount,
+    DateTime? scheduledAt,
+    bool isOutgoing = true,
+    bool isReversible = false,
+    required BigInt fee,
+  }) {
+    final tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
+    final timestamp = DateTime.now();
+    final pending = PendingTransactionEvent(
+      tempId: tempId,
+      from: from,
+      to: to,
+      amount: amount,
+      timestamp: timestamp,
+      isReversible: isReversible,
+      fee: fee,
+      scheduledAtTime: scheduledAt,
+    );
+    return pending;
+  }
+
   // This is the generic tracking logic, extracted from WalletStateManager
   Future<void> _submitAndTrack(
     Future<StreamSubscription<p.ExtrinsicStatus>> Function(
       void Function(p.ExtrinsicStatus),
     )
     submission,
-    PendingTransactionEvent pendingTx,
-  ) async {
+    PendingTransactionEvent pendingTx, {
+    int maxRetries = 3,
+  }) async {
     void onStatus(p.ExtrinsicStatus status) {
       String? hash;
       TransactionState newState;
@@ -86,7 +140,32 @@ class TransactionSubmissionService {
           );
     }
 
-    // ... retry logic ...
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        await submission(onStatus);
+        return; // Success, exit the retry loop.
+      } catch (e, stackTrace) {
+        attempts++;
+        if (attempts >= maxRetries) {
+          // TODO the UI should show an alert that the tx failed, and then remove
+          // the failed tx from pending.
+          _ref
+              .read(pendingTransactionsProvider.notifier)
+              .updateState(
+                pendingTx.id,
+                TransactionState.failed,
+                error: e.toString(),
+              );
+          print('Failed to submit transaction after $maxRetries attempts: $e');
+          print('Stack trace: $stackTrace');
+          rethrow;
+        } else {
+          print('Transaction attempt $attempts failed: $e. Retrying...');
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      }
+    }
     await submission(onStatus);
   }
 }

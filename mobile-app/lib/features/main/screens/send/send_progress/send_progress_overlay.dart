@@ -1,15 +1,15 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
-class SendConfirmationOverlay extends StatefulWidget {
+class SendConfirmationOverlay extends ConsumerStatefulWidget {
   final BigInt amount;
   final String recipientName;
   final String recipientAddress;
@@ -31,7 +31,8 @@ class SendConfirmationOverlay extends StatefulWidget {
   SendConfirmationOverlayState createState() => SendConfirmationOverlayState();
 }
 
-class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
+class SendConfirmationOverlayState
+    extends ConsumerState<SendConfirmationOverlay> {
   SendOverlayState currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
@@ -98,11 +99,7 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
         return;
       }
 
-      final walletStateManager = Provider.of<WalletStateManager>(
-        // ignore: use_build_context_synchronously
-        context,
-        listen: false,
-      );
+      final submissionService = ref.read(transactionSubmissionServiceProvider);
 
       debugPrint('Attempting balance transfer...');
       debugPrint('  Recipient: ${widget.recipientAddress}');
@@ -111,14 +108,14 @@ class SendConfirmationOverlayState extends State<SendConfirmationOverlay> {
       debugPrint('  Reversible time: ${widget.reversibleTimeSeconds}');
 
       if (widget.reversibleTimeSeconds <= 0) {
-        await walletStateManager.balanceTransfer(
+        await submissionService.balanceTransfer(
           account,
           widget.recipientAddress,
           widget.amount,
           widget.fee,
         );
       } else {
-        await walletStateManager.scheduleReversibleTransferWithDelaySeconds(
+        await submissionService.scheduleReversibleTransferWithDelaySeconds(
           account: account,
           recipientAddress: widget.recipientAddress,
           amount: widget.amount,
