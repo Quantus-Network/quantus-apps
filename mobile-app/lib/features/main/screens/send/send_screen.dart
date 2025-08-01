@@ -184,9 +184,7 @@ class SendScreenState extends State<SendScreen> {
 
   Future<void> _fetchNetworkFee() async {
     final recipient = _recipientController.text.trim();
-    if (!_isValidSS58Address(recipient) ||
-        _amount <= BigInt.zero ||
-        (_haveNetworkFee)) {
+    if (!_isValidSS58Address(recipient) || _amount <= BigInt.zero) {
       setState(() {
         _networkFee = _networkFee;
         _isFetchingFee = false;
@@ -201,14 +199,22 @@ class SendScreenState extends State<SendScreen> {
 
     try {
       final account = await _settingsService.getActiveAccount();
-      final dummyAmountForFee =
-          BigInt.from(1) *
-          NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
-      final estimatedFee = await SubstrateService().getFee(
-        account.accountId,
-        recipient,
-        dummyAmountForFee,
-      );
+      BigInt estimatedFee;
+      if (_reversibleTimeSeconds > 0) {
+        estimatedFee = await ReversibleTransfersService()
+            .getReversibleTransferWithDelayFeeEstimate(
+              account: account,
+              recipientAddress: recipient,
+              amount: _amount,
+              delaySeconds: _reversibleTimeSeconds,
+            );
+      } else {
+        estimatedFee = await BalancesService().getBalanceTransferFee(
+          account,
+          recipient,
+          _amount,
+        );
+      }
 
       setState(() {
         _networkFee = estimatedFee;
