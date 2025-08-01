@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
-    as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
@@ -119,82 +115,8 @@ class SubstrateService {
     }
   }
 
-  Future<BigInt> getFee(
-    String senderAddress,
-    String recipientAddress,
-    BigInt amount,
-  ) async {
+  Future<BigInt> getFee(Uint8List signedExtrinsic) async {
     try {
-      final resonanceApi = Resonance(_provider!);
-      final multiDest = const multi_address.$MultiAddress().id(
-        getAccountId32(recipientAddress),
-      );
-
-      // Retrieve sender's mnemonic and generate keypair
-      // Assuming senderAddress corresponds to the current wallet's account ID
-      crypto.Keypair senderWallet = await _getUserWallet();
-
-      // Get necessary info for the transaction (similar to balanceTransfer)
-      final runtimeVersion = await _stateApi!.getRuntimeVersion();
-      final specVersion = runtimeVersion.specVersion;
-      final transactionVersion = runtimeVersion.transactionVersion;
-
-      // Get chain block data and next nonce for the sender
-      final [blockNumber, blockHash, genesisHash, nonce] = await Future.wait([
-        _getBlockNumber(),
-        _getBlockHash(),
-        _getGenesisHash(),
-        _getNextAccountNonce(senderWallet),
-      ]);
-
-      // Create the call for fee estimation
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(
-        dest: multiDest,
-        value: amount,
-      );
-      final transferCall = runtimeCall.encode();
-
-      // Create and sign a dummy payload for fee estimation
-      final payloadToSign = SigningPayload(
-        method: transferCall,
-        specVersion: specVersion,
-        transactionVersion: transactionVersion,
-        genesisHash: genesisHash,
-        blockHash: blockHash,
-        blockNumber: blockNumber,
-        eraPeriod: 64, // Use a reasonable era period
-        nonce: nonce,
-        tip: 0, // Assuming no tip for fee estimation
-      );
-
-      final payload = payloadToSign.encode(resonanceApi.registry);
-      final signature = crypto.signMessage(
-        keypair: senderWallet,
-        message: payload,
-      );
-
-      // Construct the signed extrinsic payload (Resonance specific)
-      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
-        signature,
-        senderWallet.publicKey,
-      ); // Reuse helper
-
-      final signedExtrinsic =
-          ResonanceExtrinsicPayload(
-            signer: Uint8List.fromList(
-              senderWallet.addressBytes,
-            ), // Use signer address bytes
-            method: transferCall, // The encoded call method
-            signature: signatureWithPublicKeyBytes, // The signature
-            eraPeriod: 64, // Must match SigningPayload
-            blockNumber: blockNumber, // Must match SigningPayload
-            nonce: nonce, // Must match SigningPayload
-            tip: 0, // Must match SigningPayload
-          ).encodeResonance(
-            resonanceApi.registry,
-            ResonanceSignatureType.resonance,
-          );
-
       // Convert encoded signed extrinsic to hex string
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
 
@@ -207,7 +129,6 @@ class SubstrateService {
       // Parse the result to get the partialFee
       // The result structure is typically {'partialFee': '...'} for this RPC
       final partialFeeString = result.result['partialFee'] as String;
-      print('partialFeeString: $partialFeeString');
       final partialFee = BigInt.parse(partialFeeString);
 
       print('partialFee: $partialFee');
@@ -282,12 +203,6 @@ class SubstrateService {
     final result = Uint8List(signature.length + pubkey.length);
     result.setAll(0, signature);
     result.setAll(signature.length, pubkey);
-
-    // Calculate and print signature checksum
-    final signatureHash = sha256.convert(signature).bytes;
-    final signatureChecksum = base64.encode(signatureHash).substring(0, 8);
-    print('Signature checksum: $signatureChecksum');
-
     return result;
   }
 
@@ -295,6 +210,11 @@ class SubstrateService {
   // The mobile app should use @HdWalletService for everything.
   crypto.Keypair nonHDdilithiumKeypairFromMnemonic(String senderSeed) {
     return crypto.generateKeypair(mnemonicStr: senderSeed);
+  }
+
+  Future<BigInt> getFeeForCall(Account account, RuntimeCall call) async {
+    final extrinsic = await getExtrinsicPayload(account, call);
+    return getFee(extrinsic);
   }
 
   Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(
@@ -307,70 +227,10 @@ class SubstrateService {
       await initialize();
     }
 
-    final mnemonic = await account.getMnemonic();
-    if (mnemonic == null) {
-      throw Exception('Mnemonic not found for signing.');
-    }
-    final senderWallet = HdWalletService().keyPairAtIndex(
-      mnemonic,
-      account.index,
-    );
-
-    final resonanceApi = Resonance(_provider!);
-
-    final runtimeVersion = await _stateApi!.getRuntimeVersion();
-    final specVersion = runtimeVersion.specVersion;
-    final transactionVersion = runtimeVersion.transactionVersion;
-    var genesisHash = await _getGenesisHash();
-    final encodedCall = call.encode();
-
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
-        final [blockNumber, blockHash, nonce] = await Future.wait([
-          _getBlockNumber(),
-          _getBlockHash(),
-          _getNextAccountNonce(senderWallet),
-        ]);
-
-        final payloadToSign = SigningPayload(
-          method: encodedCall,
-          specVersion: specVersion,
-          transactionVersion: transactionVersion,
-          genesisHash: genesisHash,
-          blockHash: blockHash,
-          blockNumber: blockNumber,
-          eraPeriod: 64,
-          nonce: nonce,
-          tip: 0,
-        );
-
-        final payload = payloadToSign.encode(resonanceApi.registry);
-        final signature = crypto.signMessage(
-          keypair: senderWallet,
-          message: payload,
-        );
-        // for testing failed transactions - use the bad signature.
-        // var badSignature = Uint8List(signature.length); // 0 list
-
-        final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
-          signature,
-          senderWallet.publicKey,
-        );
-
-        final extrinsic =
-            ResonanceExtrinsicPayload(
-              signer: Uint8List.fromList(senderWallet.addressBytes),
-              method: encodedCall,
-              signature: signatureWithPublicKeyBytes,
-              eraPeriod: 64,
-              blockNumber: blockNumber,
-              nonce: nonce,
-              tip: 0,
-            ).encodeResonance(
-              resonanceApi.registry,
-              ResonanceSignatureType.resonance,
-            );
+        Uint8List extrinsic = await getExtrinsicPayload(account, call);
 
         return _authorApi!.submitAndWatchExtrinsic(
           extrinsic,
@@ -386,6 +246,67 @@ class SubstrateService {
       }
     }
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
+  }
+
+  Future<Uint8List> getExtrinsicPayload(
+    Account account,
+    RuntimeCall call,
+  ) async {
+    final resonanceApi = Resonance(_provider!);
+    final mnemonic = await account.getMnemonic();
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found for signing.');
+    }
+    final senderWallet = HdWalletService().keyPairAtIndex(
+      mnemonic,
+      account.index,
+    );
+    final runtimeVersion = await _stateApi!.getRuntimeVersion();
+    final specVersion = runtimeVersion.specVersion;
+    final transactionVersion = runtimeVersion.transactionVersion;
+    var genesisHash = await _getGenesisHash();
+    final encodedCall = call.encode();
+    final [blockNumber, blockHash, nonce] = await Future.wait([
+      _getBlockNumber(),
+      _getBlockHash(),
+      _getNextAccountNonce(senderWallet),
+    ]);
+
+    final payloadToSign = SigningPayload(
+      method: encodedCall,
+      specVersion: specVersion,
+      transactionVersion: transactionVersion,
+      genesisHash: genesisHash,
+      blockHash: blockHash,
+      blockNumber: blockNumber,
+      eraPeriod: 64,
+      nonce: nonce,
+      tip: 0,
+    );
+
+    final payload = payloadToSign.encode(resonanceApi.registry);
+    final signature = crypto.signMessage(
+      keypair: senderWallet,
+      message: payload,
+    );
+    // for testing failed transactions - use the bad signature.
+    // var badSignature = Uint8List(signature.length); // 0 list
+
+    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
+      signature,
+      senderWallet.publicKey,
+    );
+
+    final extrinsic = ResonanceExtrinsicPayload(
+      signer: Uint8List.fromList(senderWallet.addressBytes),
+      method: encodedCall,
+      signature: signatureWithPublicKeyBytes,
+      eraPeriod: 64,
+      blockNumber: blockNumber,
+      nonce: nonce,
+      tip: 0,
+    ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+    return extrinsic;
   }
 
   Future<int> _getNextAccountNonce(Keypair senderWallet) async {
