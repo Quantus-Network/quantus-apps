@@ -68,6 +68,7 @@ class SendScreenState extends State<SendScreen> {
   Future<void> _saveReversibleTimeSetting(int seconds) async {
     try {
       await _settingsService.setReversibleTimeSeconds(seconds);
+      _fetchNetworkFee();
     } catch (e) {
       debugPrint('Error saving reversible time setting: $e');
     }
@@ -276,6 +277,7 @@ class SendScreenState extends State<SendScreen> {
       if (maxSendableAmount > BigInt.zero) {
         final formattedMax = _formattingService.formatBalance(
           maxSendableAmount,
+          addThousandsSeparators: false,
         );
         _amountController.text = formattedMax;
         _setSendAmount(maxSendableAmount);
@@ -363,8 +365,6 @@ class SendScreenState extends State<SendScreen> {
 
     if (scannedAddress != null && mounted) {
       _recipientController.text = scannedAddress;
-      // Add a small delay to ensure the text controller has updated
-      // await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
         _lookupIdentity();
       }
