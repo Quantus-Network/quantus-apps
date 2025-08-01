@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class BalancesService {
@@ -21,14 +21,7 @@ class BalancesService {
     void Function(ExtrinsicStatus)? onStatus,
   ) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
-      final multiDest = const multi_address.$MultiAddress().id(
-        crypto.ss58ToAccountId(s: targetAddress),
-      );
-      final runtimeCall = resonanceApi.tx.balances.transferKeepAlive(
-        dest: multiDest,
-        value: amount,
-      );
+      Balances runtimeCall = getBalanceTransferCall(targetAddress, amount);
       // Submit the extrinsic and return its result
       return await _substrateService.submitExtrinsic(
         account,
@@ -44,5 +37,33 @@ class BalancesService {
       print('Failed to transfer balance: $stackTrace');
       throw Exception('Failed to transfer balance: $e');
     }
+  }
+
+  Future<BigInt> getBalanceTransferFee(
+    Account account,
+    String targetAddress,
+    BigInt amount,
+  ) async {
+    try {
+      Balances runtimeCall = getBalanceTransferCall(targetAddress, amount);
+      // Submit the extrinsic and return its result
+      return await _substrateService.getFeeForCall(account, runtimeCall);
+    } catch (e, stackTrace) {
+      print('Failed to transfer balance: $e');
+      print('Failed to transfer balance: $stackTrace');
+      throw Exception('Failed to transfer balance: $e');
+    }
+  }
+
+  Balances getBalanceTransferCall(String targetAddress, BigInt amount) {
+    final resonanceApi = Resonance(_substrateService.provider!);
+    final multiDest = const multi_address.$MultiAddress().id(
+      crypto.ss58ToAccountId(s: targetAddress),
+    );
+    final runtimeCall = resonanceApi.tx.balances.transferAllowDeath(
+      dest: multiDest,
+      value: amount,
+    );
+    return runtimeCall;
   }
 }

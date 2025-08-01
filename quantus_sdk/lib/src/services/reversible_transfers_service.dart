@@ -5,7 +5,9 @@ import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/high_security_account_data.dart';
 import 'package:quantus_sdk/generated/resonance/types/pallet_reversible_transfers/pending_transfer.dart';
 import 'package:quantus_sdk/generated/resonance/types/primitive_types/h256.dart';
-import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart';
+import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart'
+    as qp;
+import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
@@ -27,7 +29,7 @@ class ReversibleTransfersService {
   /// Used for theft deterrence - enables all future transfers to be reversible
   Future<StreamSubscription<ExtrinsicStatus>> setHighSecurity({
     required Account account,
-    required BlockNumberOrTimestamp delay,
+    required qp.BlockNumberOrTimestamp delay,
     String? reverserAddress,
   }) async {
     print('Not implemented - add reverser to params');
@@ -85,9 +87,41 @@ class ReversibleTransfersService {
     required Account account,
     required String recipientAddress,
     required BigInt amount,
-    required BlockNumberOrTimestamp delay,
+    required qp.BlockNumberOrTimestamp delay,
     void Function(ExtrinsicStatus)? onStatus,
   }) {
+    ReversibleTransfers call = getReversibleTransferCall(
+      recipientAddress,
+      amount,
+      delay,
+    );
+
+    // Submit the transaction using substrate service
+    return _substrateService.submitExtrinsic(account, call, onStatus: onStatus);
+  }
+
+  Future<BigInt> getReversibleTransferWithDelayFeeEstimate({
+    required Account account,
+    required String recipientAddress,
+    required BigInt amount,
+    required int delaySeconds,
+  }) {
+    final delay = qp.Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
+    ReversibleTransfers call = getReversibleTransferCall(
+      recipientAddress,
+      amount,
+      delay,
+    );
+
+    // Submit the transaction using substrate service
+    return _substrateService.getFeeForCall(account, call);
+  }
+
+  ReversibleTransfers getReversibleTransferCall(
+    String recipientAddress,
+    BigInt amount,
+    qp.BlockNumberOrTimestamp delay,
+  ) {
     final resonanceApi = Resonance(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(
       crypto.ss58ToAccountId(s: recipientAddress),
@@ -98,9 +132,7 @@ class ReversibleTransfersService {
       amount: amount,
       delay: delay,
     );
-
-    // Submit the transaction using substrate service
-    return _substrateService.submitExtrinsic(account, call, onStatus: onStatus);
+    return call;
   }
 
   /// Schedule a reversible transfer with custom delay in seconds
@@ -113,7 +145,7 @@ class ReversibleTransfersService {
     void Function(ExtrinsicStatus)? onStatus,
   }) {
     // convert seconds to milliseconds for runtime
-    final delay = Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
+    final delay = qp.Timestamp(BigInt.from(delaySeconds) * BigInt.from(1000));
     return scheduleReversibleTransferWithDelay(
       account: account,
       recipientAddress: recipientAddress,
@@ -241,13 +273,13 @@ class ReversibleTransfersService {
   }
 
   /// Helper method to create delay from milliseconds
-  static BlockNumberOrTimestamp delayFromMilliseconds(int milliseconds) {
-    return Timestamp(BigInt.from(milliseconds));
+  static qp.BlockNumberOrTimestamp delayFromMilliseconds(int milliseconds) {
+    return qp.Timestamp(BigInt.from(milliseconds));
   }
 
   /// Helper method to create delay from block number
-  static BlockNumberOrTimestamp delayFromBlocks(int blocks) {
-    return BlockNumber(blocks);
+  static qp.BlockNumberOrTimestamp delayFromBlocks(int blocks) {
+    return qp.BlockNumber(blocks);
   }
 
   /// Get constants related to reversible transfers
