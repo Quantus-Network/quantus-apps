@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
@@ -205,11 +203,6 @@ class SubstrateService {
     final result = Uint8List(signature.length + pubkey.length);
     result.setAll(0, signature);
     result.setAll(signature.length, pubkey);
-
-    // Calculate and print signature checksum
-    final signatureHash = sha256.convert(signature).bytes;
-    final signatureChecksum = base64.encode(signatureHash).substring(0, 8);
-
     return result;
   }
 
