@@ -111,7 +111,7 @@ class WalletStateManager with ChangeNotifier {
       if (tx.transactionState != TransactionState.inHistory &&
           tx.transactionState != TransactionState.failed) {
         final isSend = tx.from == _walletData!.account.accountId;
-        final adjustment = isSend ? -tx.amount : tx.amount;
+        final adjustment = isSend ? -tx.amount : BigInt.zero;
         base += adjustment;
         if (isSend && tx.fee != null) {
           base -= tx.fee!;
