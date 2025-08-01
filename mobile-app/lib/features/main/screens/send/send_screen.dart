@@ -93,6 +93,12 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
+  // return recipient or null if recipient is invalid
+  String? _getValidRecipient() {
+    final recipient = _recipientController.text.trim();
+    return _isValidSS58Address(recipient) ? recipient : null;
+  }
+
   Future<void> _lookupIdentity() async {
     if (!mounted) return; // Add early return if not mounted
     final recipient = _recipientController.text.trim();
@@ -198,23 +204,7 @@ class SendScreenState extends State<SendScreen> {
     });
 
     try {
-      final account = await _settingsService.getActiveAccount();
-      BigInt estimatedFee;
-      if (_reversibleTimeSeconds > 0) {
-        estimatedFee = await ReversibleTransfersService()
-            .getReversibleTransferWithDelayFeeEstimate(
-              account: account,
-              recipientAddress: recipient,
-              amount: _amount,
-              delaySeconds: _reversibleTimeSeconds,
-            );
-      } else {
-        estimatedFee = await BalancesService().getBalanceTransferFee(
-          account,
-          recipient,
-          _amount,
-        );
-      }
+      BigInt estimatedFee = await getNetworkFeeForAmount(recipient, _amount);
 
       setState(() {
         _networkFee = estimatedFee;
@@ -237,15 +227,62 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
-  void _setMaxAmount() {
-    final maxSendableAmount = _maxBalance - _networkFee;
-    if (maxSendableAmount > BigInt.zero) {
-      final formattedMax = _formattingService.formatBalance(maxSendableAmount);
-      _amountController.text = formattedMax;
-      _validateAmount(formattedMax);
+  Future<BigInt> getNetworkFeeForAmount(String recipient, BigInt amount) async {
+    final account = await _settingsService.getActiveAccount();
+    BigInt estimatedFee;
+    if (_reversibleTimeSeconds > 0) {
+      estimatedFee = await ReversibleTransfersService()
+          .getReversibleTransferWithDelayFeeEstimate(
+            account: account,
+            recipientAddress: recipient,
+            amount: amount,
+            delaySeconds: _reversibleTimeSeconds,
+          );
     } else {
-      _amountController.text = '0';
-      _validateAmount('0');
+      estimatedFee = await BalancesService().getBalanceTransferFee(
+        account,
+        recipient,
+        amount,
+      );
+    }
+    return estimatedFee;
+  }
+
+  Future<void> _setMaxAmount() async {
+    String? recipient = _getValidRecipient();
+    if (recipient == null) {
+      showTopSnackBar(
+        context,
+        title: 'Error',
+        message: 'Invalid recipient address',
+      );
+      return;
+    }
+
+    try {
+      BigInt estimatedFee = await getNetworkFeeForAmount(recipient, _amount);
+
+      final maxSendableAmount = _maxBalance - estimatedFee;
+
+      if (maxSendableAmount > BigInt.zero) {
+        final formattedMax = _formattingService.formatBalance(
+          maxSendableAmount,
+        );
+        _amountController.text = formattedMax;
+        _validateAmount(formattedMax);
+      } else {
+        _amountController.text = '0';
+        _validateAmount('0');
+      }
+    } catch (e, s) {
+      print('Error setting max amount: $e');
+      print('Error setting max amount stack trace: $s');
+      showTopSnackBar(
+        // ignore: use_build_context_synchronously
+        context,
+        title: 'Error',
+        message: 'Error setting max amount: $e',
+      );
     }
   }
 
