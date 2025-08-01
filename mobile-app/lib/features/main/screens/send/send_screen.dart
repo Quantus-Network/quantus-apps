@@ -38,7 +38,7 @@ class SendScreenState extends State<SendScreen> {
 
   late Future<BigInt> _balanceFuture;
 
-  bool get _hasBalance => _maxBalance <= BigInt.zero;
+  bool get _hasBalance => _maxBalance > BigInt.zero;
   bool get _haveNetworkFee => _networkFee != null;
 
   @override
@@ -178,8 +178,6 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<BigInt?> _fetchNetworkFee() async {
-    if (_haveNetworkFee) return _networkFee!;
-
     final recipient = _recipientController.text.trim();
     final isInvalidAddress = !_isValidSS58Address(recipient);
 
