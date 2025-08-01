@@ -244,20 +244,12 @@ class SendScreenState extends State<SendScreen> {
     final networkFee = await _fetchNetworkFee();
     if (networkFee == null) return;
 
-    print('max balance: $_maxBalance');
-    print('network fee: $networkFee');
-
     final maxSendableAmount = _maxBalance - networkFee;
-
-    print('max send: $maxSendableAmount');
-    print(maxSendableAmount + networkFee == _maxBalance);
-
     if (maxSendableAmount > BigInt.zero) {
-      setState(() {
-        _amount = maxSendableAmount;
-      });
       final formattedMax = _formattingService.formatBalance(maxSendableAmount);
+
       _amountController.text = formattedMax;
+      _validateAmount(formattedMax);
     }
   }
 
