@@ -1,7 +1,9 @@
 // Keep for potential future use (grouping)
+import 'dart:io';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
+import 'package:intl/intl.dart';
 
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;
@@ -70,9 +72,12 @@ class NumberFormattingService {
     if (formattedAmount.isEmpty) return null;
 
     try {
-      final sanitizedText = formattedAmount.replaceAll(',', '.');
+      final systemLocale = Platform.localeName;
+      final formatter = NumberFormat.decimalPattern(systemLocale);
+      final sanitizedText = formatter.parse(formattedAmount).toString();
 
       final decimalAmount = Decimal.parse(sanitizedText);
+
       // Check if input precision exceeds chain precision
       if (decimalAmount.scale > decimals) {
         // Option 1: Truncate (like toBigInt does)
