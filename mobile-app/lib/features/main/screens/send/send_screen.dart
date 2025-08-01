@@ -25,7 +25,7 @@ class SendScreenState extends State<SendScreen> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
   BigInt _maxBalance = BigInt.zero;
-  BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
+  BigInt? _networkFee; // Actual network fee fetched from chain
   bool _isFetchingFee = false;
   BigInt _amount = BigInt.zero;
   bool _hasAddressError = false;
@@ -38,14 +38,14 @@ class SendScreenState extends State<SendScreen> {
 
   late Future<BigInt> _balanceFuture;
 
+  bool get _hasBalance => _maxBalance <= BigInt.zero;
+  bool get _haveNetworkFee => _networkFee != null;
+
   @override
   void initState() {
     super.initState();
     _balanceFuture = _loadBalance();
     _loadReversibleTimeSetting();
-    // Listen for changes in recipient and amount to update fee
-    _recipientController.addListener(_debounceFetchFee);
-    _amountController.addListener(_debounceFetchFee);
   }
 
   @override
@@ -94,10 +94,8 @@ class SendScreenState extends State<SendScreen> {
   }
 
   Future<void> _lookupIdentity() async {
-    if (!mounted) return; // Add early return if not mounted
     final recipient = _recipientController.text.trim();
     if (recipient.isEmpty) {
-      if (!mounted) return; // Check mounted before setState
       setState(() {
         _savedAddressesLabel = '';
         _hasAddressError = false;
@@ -107,7 +105,6 @@ class SendScreenState extends State<SendScreen> {
 
     try {
       final isValid = _isValidSS58Address(recipient);
-      if (!mounted) return; // Check mounted before setState
       setState(() {
         _hasAddressError = !isValid;
       });
@@ -117,20 +114,20 @@ class SendScreenState extends State<SendScreen> {
         final humanReadableName = await HumanReadableChecksumService()
             .getHumanReadableName(recipient);
         print('Final humanReadableName: $humanReadableName');
-        if (!mounted) return; // Check mounted before setState
+
         setState(() {
           _savedAddressesLabel = humanReadableName;
         });
-        _debounceFetchFee();
+
+        if (_amount > BigInt.zero) _debounceFetchFee();
       } else {
-        if (!mounted) return; // Check mounted before setState
         setState(() {
           _savedAddressesLabel = '';
         });
       }
     } catch (e) {
       debugPrint('Error in identity lookup: $e');
-      if (!mounted) return; // Check mounted before setState
+
       setState(() {
         _savedAddressesLabel = '';
         _hasAddressError = true;
@@ -173,8 +170,6 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
-  bool get _haveNetworkFee => _networkFee > BigInt.zero;
-
   void _debounceFetchFee() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 200), () {
@@ -182,24 +177,21 @@ class SendScreenState extends State<SendScreen> {
     });
   }
 
-  Future<BigInt> _fetchNetworkFee({bool isMaxSend = false}) async {
+  Future<BigInt?> _fetchNetworkFee() async {
+    if (_haveNetworkFee) return _networkFee!;
+
     final recipient = _recipientController.text.trim();
-    final isInvalidMaxSend = isMaxSend && _maxBalance <= BigInt.zero;
-    final isInvalidAmount = _amount <= BigInt.zero && !isMaxSend;
     final isInvalidAddress = !_isValidSS58Address(recipient);
 
-    if (isInvalidAddress ||
-        isInvalidAmount ||
-        isInvalidMaxSend ||
-        _haveNetworkFee) {
+    if (isInvalidAddress) {
       setState(() {
-        _networkFee = _networkFee;
         _isFetchingFee = false;
-        _hasAmountError =
-            _amount > BigInt.zero && (_amount + _networkFee) > _maxBalance;
+        _hasAddressError = true;
       });
-      return _networkFee;
+
+      return null;
     }
+
     setState(() {
       _isFetchingFee = true;
     });
@@ -209,16 +201,18 @@ class SendScreenState extends State<SendScreen> {
       final dummyAmountForFee =
           BigInt.from(1) *
           NumberFormattingService.scaleFactorBigInt; // Use a minimal amount
-      final estimatedFee = (await SubstrateService().getFee(
-        account.accountId,
-        recipient,
-        dummyAmountForFee,
-      ));
+      final estimatedFee =
+          (await SubstrateService().getFee(
+            account.accountId,
+            recipient,
+            dummyAmountForFee,
+          )) *
+          BigInt.from(2);
 
       setState(() {
         _networkFee = estimatedFee;
         _isFetchingFee = false;
-        _hasAmountError = (_amount + _networkFee) > _maxBalance;
+        _hasAmountError = (_amount + estimatedFee) > _maxBalance;
       });
 
       return estimatedFee;
@@ -226,7 +220,7 @@ class SendScreenState extends State<SendScreen> {
       print('Error fetching network fee: $e');
       setState(() {
         _isFetchingFee = false;
-        _hasAmountError = _amount <= BigInt.zero || _amount > _maxBalance;
+        _hasAmountError = _amount > _maxBalance;
       });
       if (mounted) {
         showTopSnackBar(
@@ -241,16 +235,23 @@ class SendScreenState extends State<SendScreen> {
   }
 
   void _setMaxAmount() async {
-    final networkFee = await _fetchNetworkFee(isMaxSend: true);
+    final networkFee = await _fetchNetworkFee();
+    if (networkFee == null) return;
+
+    print('max balance: $_maxBalance');
+    print('network fee: $networkFee');
+
     final maxSendableAmount = _maxBalance - networkFee;
 
+    print('max send: $maxSendableAmount');
+    print(maxSendableAmount + networkFee == _maxBalance);
+
     if (maxSendableAmount > BigInt.zero) {
+      setState(() {
+        _amount = maxSendableAmount;
+      });
       final formattedMax = _formattingService.formatBalance(maxSendableAmount);
       _amountController.text = formattedMax;
-      _validateAmount(formattedMax);
-    } else {
-      _amountController.text = '0';
-      _validateAmount('0');
     }
   }
 
@@ -292,7 +293,7 @@ class SendScreenState extends State<SendScreen> {
               amount: _amount,
               recipientName: _savedAddressesLabel,
               recipientAddress: _recipientController.text,
-              fee: _networkFee,
+              fee: _networkFee!,
               reversibleTimeSeconds: _reversibleTimeSeconds,
               onClose: () => Navigator.pop(context),
             ),
@@ -983,7 +984,7 @@ class SendScreenState extends State<SendScreen> {
                           ),
                         ),
                         child: GestureDetector(
-                          onTap: _setMaxAmount,
+                          onTap: _hasBalance ? _setMaxAmount : null,
                           child: const Text(
                             'Max',
                             style: TextStyle(
@@ -1059,8 +1060,10 @@ class SendScreenState extends State<SendScreen> {
                           Row(
                             children: [
                               Text(
-                                // ignore: lines_longer_than_80_chars
-                                '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
+                                _networkFee != null
+                                    // ignore: lines_longer_than_80_chars
+                                    ? '${_formattingService.formatBalance(_networkFee!)} ${AppConstants.tokenSymbol}'
+                                    : '---',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,

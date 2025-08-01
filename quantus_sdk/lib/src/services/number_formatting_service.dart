@@ -67,9 +67,7 @@ class NumberFormattingService {
   ///
   /// Returns null if the input string is invalid.
   BigInt? parseAmount(String formattedAmount) {
-    if (formattedAmount.isEmpty) {
-      return BigInt.zero;
-    }
+    if (formattedAmount.isEmpty) return null;
 
     try {
       final sanitizedText = formattedAmount.replaceAll(',', '.');
