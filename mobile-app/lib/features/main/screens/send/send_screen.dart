@@ -161,6 +161,10 @@ class SendScreenState extends State<SendScreen> {
 
     final parsedAmount = _formattingService.parseAmount(value);
 
+    _setSendAmount(parsedAmount);
+  }
+
+  void _setSendAmount(BigInt? parsedAmount) {
     if (parsedAmount == null) {
       setState(() {
         _amount = BigInt.zero;
@@ -264,6 +268,8 @@ class SendScreenState extends State<SendScreen> {
         recipient,
         _maxBalance,
       );
+      print("max balance: $_maxBalance");
+      print("estimated fee: $estimatedFee");
 
       final maxSendableAmount = _maxBalance - estimatedFee;
 
@@ -272,10 +278,10 @@ class SendScreenState extends State<SendScreen> {
           maxSendableAmount,
         );
         _amountController.text = formattedMax;
-        _validateAmount(formattedMax);
+        _setSendAmount(maxSendableAmount);
       } else {
         _amountController.text = '0';
-        _validateAmount('0');
+        _setSendAmount(BigInt.zero);
       }
     } catch (e, s) {
       print('Error setting max amount: $e');
