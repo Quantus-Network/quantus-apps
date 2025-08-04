@@ -42,7 +42,7 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
     // Prevent multiple auth checks at the same time
     if (_isAuthenticating) return;
 
-    final shouldAuth = await _localAuthService.shouldRequireAuthentication();
+    final shouldAuth = _localAuthService.shouldRequireAuthentication();
 
     if (shouldAuth) {
       if (mounted) {

@@ -167,7 +167,7 @@ class LocalAuthService {
   }
 
   /// Check if authentication is required (based on app lifecycle and settings)
-  Future<bool> shouldRequireAuthentication() async {
+  bool shouldRequireAuthentication() {
     try {
       final bool isEnabled = isLocalAuthEnabled();
       if (!isEnabled) return false;

@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class ResonanceWalletApp extends ConsumerWidget {
   const ResonanceWalletApp({super.key});
@@ -30,7 +31,12 @@ class ResonanceWalletApp extends ConsumerWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthenticationWrapper(),
-        '/send': (context) => const SendScreen(),
+        // The send route is really just an internal thing and not accessible
+        // to the outside. So no fancy auth logic, it just doesn't work from
+        // outside the app when not authenticated.
+        '/send': (context) => LocalAuthService().shouldRequireAuthentication()
+            ? const AuthenticationWrapper()
+            : const SendScreen(),
       },
       theme: ThemeData(
         primaryColor: const Color(0xFF6B46C1), // Deep purple
