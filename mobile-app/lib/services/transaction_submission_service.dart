@@ -58,6 +58,7 @@ class TransactionSubmissionService {
       to: recipientAddress,
       amount: amount,
       fee: feeEstimate,
+      delaySeconds: delaySeconds,
       isReversible: true,
     );
 
@@ -81,7 +82,7 @@ class TransactionSubmissionService {
     required String from,
     required String to,
     required BigInt amount,
-    DateTime? scheduledAt,
+    int delaySeconds = 0,
     bool isOutgoing = true,
     bool isReversible = false,
     required BigInt fee,
@@ -95,7 +96,7 @@ class TransactionSubmissionService {
       timestamp: DateTime.now(),
       isReversible: isReversible,
       fee: fee,
-      scheduledAtTime: scheduledAt,
+      delaySeconds: delaySeconds,
     );
     return pending;
   }
@@ -141,11 +142,21 @@ class TransactionSubmissionService {
           activeSubscription?.cancel();
           activeSubscription = null;
       }
+
+      if (pendingTx.isReversible &&
+          pendingTx.delaySeconds > 0 &&
+          newState == TransactionState.inBlock) {
+        // Get a more accurate timer by setting pending tx timer
+        pendingTx.scheduledAtTime = DateTime.now().add(
+          Duration(seconds: pendingTx.delaySeconds),
+        );
+      }
       _ref
           .read(pendingTransactionsProvider.notifier)
           .updateState(
             pendingTx.id,
             newState,
+            scheduledAtTime: pendingTx.scheduledAtTime,
             blockHash: hash,
             error: pendingTx.error,
           );

@@ -80,6 +80,60 @@ query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset:
   }
 }''';
 
+  // GraphQL query to fetch transactions by their hash
+  final String _transactionsByHashQuery = r'''
+query TransactionsByHash($transactionHashes: [String!]!, $limit: Int!, $offset: Int!) {
+  events(
+    limit: $limit
+    offset: $offset
+    where: {
+      extrinsicHash_in: $transactionHashes
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    transfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      block {
+        height
+        hash
+      }
+      extrinsicHash
+      timestamp
+      fee
+    }
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      txId
+      scheduledAt
+      status
+      block {
+        height
+        hash
+      }
+      extrinsicHash
+      timestamp
+    }
+    extrinsicHash
+  }
+}''';
+
   // GraphQL query to fetch transfers for a specific account
   final String _eventsByAccountsQuery = r'''
 query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
@@ -174,6 +228,93 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       reversibleTransfers: scheduled,
       otherTransfers: other.transfers,
     );
+  }
+
+  // Make a graphQL query for specific transaction hashes, get the results back
+  // Mostly to check if reversibles have been executed or failed.
+  Future<List<TransactionEvent>> fetchTransactionsByTransactionHash({
+    required List<String> transactionHashes,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    if (transactionHashes.isEmpty) {
+      return [];
+    }
+
+    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+
+    print(
+      'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
+    );
+
+    final Map<String, dynamic> requestBody = {
+      'query': _transactionsByHashQuery,
+      'variables': {
+        'transactionHashes': transactionHashes,
+        'limit': limit,
+        'offset': offset,
+      },
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        print('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final Map<String, dynamic>? data = responseBody['data'];
+      if (data == null) {
+        throw Exception('GraphQL response data is null.');
+      }
+
+      final List<dynamic>? events = data['events'];
+
+      if (events == null || events.isEmpty) {
+        print('No transactions found for hashes: $transactionHashes');
+        return [];
+      }
+
+      final List<TransactionEvent> transactions = [];
+      for (var eventJson in events) {
+        final event = eventJson as Map<String, dynamic>;
+
+        if (event['transfer'] != null) {
+          final transferData = event['transfer'] as Map<String, dynamic>;
+          transferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(TransferEvent.fromJson(transferData));
+        } else if (event['reversibleTransfer'] != null) {
+          final reversibleTransferData =
+              event['reversibleTransfer'] as Map<String, dynamic>;
+          reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(
+            ReversibleTransferEvent.fromJson(reversibleTransferData),
+          );
+        }
+      }
+
+      print(
+        'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
+      );
+      return transactions;
+    } catch (e, stackTrace) {
+      print('Error fetching transactions by hash: $e');
+      print(stackTrace);
+      rethrow;
+    }
   }
 
   Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({

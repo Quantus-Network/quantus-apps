@@ -24,6 +24,7 @@ class PendingTransactionsNotifier
   void updateState(
     String id,
     TransactionState newState, {
+    DateTime? scheduledAtTime,
     String? blockHash,
     String? error,
   }) {
@@ -33,6 +34,7 @@ class PendingTransactionsNotifier
           tx.copyWith(
             transactionState: newState,
             blockHash: blockHash,
+            scheduledAtTime: scheduledAtTime,
             error: error,
           )
         else

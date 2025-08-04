@@ -157,6 +157,57 @@ class PaginationController extends StateNotifier<PaginationState> {
       print('Silent refresh failed: $e, $st');
     }
   }
+
+  /// Update a reversible transfer status to executed inline without full
+  /// refresh.
+  /// Moves the transfer from reversibleTransfers to the top of items list.
+  void updateReversibleTransferToExecuted(
+    String extrinsicHash,
+    ReversibleTransferStatus newStatus,
+  ) {
+    print('Updating reversible transfer to executed: $extrinsicHash');
+
+    // Find the reversible transfer with the matching hash
+    final reversibleTransfer = state.reversibleTransfers
+        .where((transfer) => transfer.extrinsicHash == extrinsicHash)
+        .firstOrNull;
+
+    if (reversibleTransfer == null) {
+      print('Reversible transfer not found for hash: $extrinsicHash');
+      return;
+    }
+
+    // Create executed version by copying with EXECUTED status
+    final executedTransfer = ReversibleTransferEvent(
+      id: reversibleTransfer.id,
+      amount: reversibleTransfer.amount,
+      timestamp: reversibleTransfer.timestamp,
+      from: reversibleTransfer.from,
+      to: reversibleTransfer.to,
+      txId: reversibleTransfer.txId,
+      scheduledAt: reversibleTransfer.scheduledAt,
+      status: newStatus,
+      blockNumber: reversibleTransfer.blockNumber,
+      blockHash: reversibleTransfer.blockHash,
+      extrinsicHash: reversibleTransfer.extrinsicHash,
+    );
+
+    // Remove from reversible transfers
+    final updatedReversibleTransfers = state.reversibleTransfers
+        .where((transfer) => transfer.extrinsicHash != extrinsicHash)
+        .toList();
+
+    // Add executed transfer to the top of items list
+    final updatedItems = [executedTransfer, ...state.items];
+
+    // Update state
+    state = state.copyWith(
+      items: updatedItems,
+      reversibleTransfers: updatedReversibleTransfers,
+    );
+
+    print('Successfully moved transfer from reversible to executed');
+  }
 }
 
 // State for pagination

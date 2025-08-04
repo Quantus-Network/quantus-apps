@@ -124,7 +124,6 @@ class SendConfirmationOverlayState
         );
       }
 
-      debugPrint('Balance transfer successful.');
       RecentAddressesService().addAddress(widget.recipientAddress);
 
       if (mounted) {
@@ -134,7 +133,7 @@ class SendConfirmationOverlayState
         });
       }
     } catch (e) {
-      debugPrint('Balance transfer failed: $e');
+      print('Balance transfer failed: $e');
       if (mounted) {
         setState(() {
           currentState = SendOverlayState.confirm;
