@@ -1,7 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Notifier to manage the list of pending transactions.
+// Pending transaction event lifecycle:
+//
+// 1. Create PendingTransactionEvent
+// 2. Add to pendingTransactionsProvider     ← Shows in UI immediately
+// 3. _submitAndTrack begins
+// 4. onStatus updates: ready → broadcast → inBlock
+// 5. History poller finds it in blockchain
+// 6. Transaction moves to inHistory
+// 7. Then removed from pending
+
 class PendingTransactionsNotifier
     extends StateNotifier<List<PendingTransactionEvent>> {
   PendingTransactionsNotifier() : super([]);

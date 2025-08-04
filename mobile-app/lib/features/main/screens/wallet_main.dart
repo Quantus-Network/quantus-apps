@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class WalletMain extends ConsumerStatefulWidget {
@@ -97,11 +98,19 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   }
 
   Widget _buildHistorySection(
-    AsyncValue<SortedTransactionsList> historyAsync,
+    AsyncValue<CombinedTransactionsList> allTransactionsAsync,
     Account activeAccount,
   ) {
-    return historyAsync.when(
-      data: (history) {
+    return allTransactionsAsync.when(
+      data: (combinedData) {
+        // Combine all transaction types into a single list
+        // Pending transactions first, then reversible, then others
+        final allTransactions = <TransactionEvent>[
+          ...combinedData.pendingTransactions.cast<TransactionEvent>(),
+          ...combinedData.reversibleTransfers.cast<TransactionEvent>(),
+          ...combinedData.otherTransfers,
+        ];
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -117,16 +126,16 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                 ),
               ),
             ),
-            if (historyAsync.isRefreshing)
+            if (allTransactionsAsync.isRefreshing)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
                 child: Center(child: LinearProgressIndicator()),
               ),
             RecentTransactionsList(
-              transactions: history.combined.take(5).toList(),
+              transactions: allTransactions.take(5).toList(),
               currentWalletAddress: activeAccount.accountId,
             ),
-            if (history.combined.isNotEmpty)
+            if (allTransactions.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 12.0, right: 12.0),
                 child: Align(
@@ -226,7 +235,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
-    final historyAsync = ref.watch(activeAccountHistoryProvider);
+    final allTransactionsAsync = ref.watch(allTransactionsProvider);
 
     if (activeAccountAsync.isLoading) {
       return const Scaffold(
@@ -514,7 +523,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: _buildHistorySection(historyAsync, activeAccount),
+                    child: _buildHistorySection(
+                      allTransactionsAsync,
+                      activeAccount,
+                    ),
                   ),
                 ],
               ),

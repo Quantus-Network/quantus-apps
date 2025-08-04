@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/history_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -30,7 +31,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      ref.read(historyTransactionsProvider.notifier).fetchMore();
+      ref.read(paginationControllerProvider.notifier).fetchMore();
     }
   }
 
@@ -44,7 +45,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   Widget _buildBody() {
-    final historyAsync = ref.watch(historyTransactionsProvider);
+    final allTransactionsAsync = ref.watch(allTransactionsProvider);
     final activeAccountAsync = ref.watch(activeAccountProvider);
 
     if (activeAccountAsync.value == null) {
@@ -53,7 +54,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     final activeAccount = activeAccountAsync.value!;
 
-    return historyAsync.when(
+    return allTransactionsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
         child: Text(
@@ -61,8 +62,15 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           style: const TextStyle(color: Colors.red),
         ),
       ),
-      data: (transactions) {
-        if (transactions.combined.isEmpty) {
+      data: (combinedData) {
+        // Combine all transaction types for display
+        final allTransactions = <TransactionEvent>[
+          ...combinedData.pendingTransactions.cast<TransactionEvent>(),
+          ...combinedData.reversibleTransfers.cast<TransactionEvent>(),
+          ...combinedData.otherTransfers,
+        ];
+
+        if (allTransactions.isEmpty) {
           return const Center(
             child: Text(
               'No transactions found.',
@@ -71,18 +79,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           );
         }
         return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(historyTransactionsProvider),
+          onRefresh: () async => ref.invalidate(allTransactionsProvider),
           child: ListView(
             controller: _scrollController,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: RecentTransactionsList(
-                  transactions: transactions.combined,
+                  transactions: allTransactions,
                   currentWalletAddress: activeAccount.accountId,
                 ),
               ),
-              if (ref.watch(historyTransactionsProvider.notifier).hasMore)
+              if (ref.watch(paginationControllerProvider).hasMore)
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Center(child: CircularProgressIndicator()),
