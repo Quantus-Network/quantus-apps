@@ -44,6 +44,8 @@ class HistoryPollingManager {
 
   /// Trigger a manual refresh of all data
   Future<void> triggerManualRefresh() async {
+    print('History polling manager: Manual Refresh!');
+
     await _globalPoller.triggerManualRefresh();
     await _transactionTracker.forceCheckAllTrackedTransactions();
   }

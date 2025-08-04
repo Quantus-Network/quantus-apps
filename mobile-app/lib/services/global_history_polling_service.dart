@@ -82,7 +82,7 @@ class GlobalHistoryPollingService {
 
   /// Manually trigger a history refresh (useful for pull-to-refresh)
   Future<void> triggerManualRefresh() async {
-    print('Manual history refresh triggered');
+    print('Global polling manager: Manual Refresh!');
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
   }
 

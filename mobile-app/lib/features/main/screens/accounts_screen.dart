@@ -1,113 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-class AccountDetails {
-  final Account account;
-  final Future<Map<String, dynamic>> detailsFuture;
-
-  AccountDetails({required this.account, required this.detailsFuture});
-}
-
-class AccountsScreen extends StatefulWidget {
+class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
 
   @override
-  State<AccountsScreen> createState() => _AccountsScreenState();
+  ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
 }
 
-class _AccountsScreenState extends State<AccountsScreen> {
-  final SettingsService _settingsService = SettingsService();
-  final SubstrateService _substrateService = SubstrateService();
+class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
   final NumberFormattingService _formattingService = NumberFormattingService();
 
-  List<AccountDetails> _accountDetails = [];
-  Account? _activeAccount;
-  bool _isLoading = true;
   bool _isCreatingAccount = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAccounts();
-  }
-
-  Future<void> _loadAccounts() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final accounts = await _settingsService.getAccounts();
-      final activeAccount = await _settingsService.getActiveAccount();
-
-      final detailsFutures = accounts.map((account) {
-        try {
-          final detailsFuture =
-              Future.wait([
-                _substrateService.queryBalance(account.accountId),
-                _checksumService.getHumanReadableName(account.accountId),
-              ]).then(
-                (results) => {
-                  'balance': results[0] as BigInt,
-                  'checksumName': results[1] as String,
-                },
-              );
-          return AccountDetails(account: account, detailsFuture: detailsFuture);
-        } catch (e) {
-          print('Error fetching details for ${account.accountId}: $e');
-          // Return with default/error values if a single account fails
-          return AccountDetails(
-            account: account,
-            detailsFuture: Future.value({
-              'balance': BigInt.zero,
-              'checksumName': 'Unavailable',
-            }),
-          );
-        }
-      }).toList();
-
-      if (mounted) {
-        setState(() {
-          _accountDetails = detailsFutures;
-          _activeAccount = activeAccount;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load accounts: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Future<void> _createNewAccount() async {
     setState(() {
       _isCreatingAccount = true;
     });
     try {
-      final created = await Navigator.push<bool?>(
+      await Navigator.push<bool?>(
         context,
         MaterialPageRoute(builder: (context) => const CreateAccountScreen()),
       );
-      if (created == true) {
-        await _loadAccounts(); // Reload accounts to show the new one
-      }
+      // Providers will automatically refresh when a new account is added
     } finally {
       if (mounted) {
         setState(() {
@@ -152,30 +78,55 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 
   Widget _buildAccountsList() {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
+    final accountsAsync = ref.watch(accountsProvider);
+    final activeAccountAsync = ref.watch(activeAccountProvider);
 
-    if (_accountDetails.isEmpty) {
-      return const Center(
+    return accountsAsync.when(
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
+      error: (error, _) => Center(
         child: Text(
-          'No accounts found.',
-          style: TextStyle(color: Colors.white70),
+          'Failed to load accounts: $error',
+          style: const TextStyle(color: Colors.white70),
         ),
-      );
-    }
+      ),
+      data: (accounts) {
+        if (accounts.isEmpty) {
+          return const Center(
+            child: Text(
+              'No accounts found.',
+              style: TextStyle(color: Colors.white70),
+            ),
+          );
+        }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      itemCount: _accountDetails.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 25),
-      itemBuilder: (context, index) {
-        final details = _accountDetails[index];
-        final bool isActive =
-            details.account.accountId == _activeAccount?.accountId;
-        return _buildAccountListItem(details, isActive, index);
+        return activeAccountAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+          error: (error, _) => Center(
+            child: Text(
+              'Failed to load active account: $error',
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ),
+          data: (activeAccount) {
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 16.0,
+              ),
+              itemCount: accounts.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 25),
+              itemBuilder: (context, index) {
+                final account = accounts[index];
+                final bool isActive =
+                    account.accountId == activeAccount?.accountId;
+                return _buildAccountListItem(account, isActive, index);
+              },
+            );
+          },
+        );
       },
     );
   }
@@ -215,21 +166,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 
-  Widget _buildAccountListItem(
-    AccountDetails details,
-    bool isActive,
-    int index,
-  ) {
-    final account = details.account;
-
+  Widget _buildAccountListItem(Account account, bool isActive, int index) {
     return InkWell(
       onTap: () async {
         if (!isActive) {
-          final walletStateManager = Provider.of<WalletStateManager>(
-            context,
-            listen: false,
-          );
-          await walletStateManager.switchAccount(account);
+          await ref
+              .read(activeAccountProvider.notifier)
+              .setActiveAccount(account);
           if (mounted) Navigator.pop(context);
         }
       },
@@ -259,111 +202,104 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: FutureBuilder<Map<String, dynamic>>(
-                      future: details.detailsFuture,
-                      builder: (context, snapshot) {
-                        String formattedBalance;
-                        String humanChecksum;
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          formattedBalance = 'loading balance...';
-                          humanChecksum = '';
-                        } else {
-                          final balance =
-                              snapshot.data?['balance'] as BigInt? ??
-                              BigInt.zero;
-                          final checksumName =
-                              snapshot.data?['checksumName'] as String? ??
-                              'Unavailable';
-                          formattedBalance = _formattingService.formatBalance(
-                            balance,
-                          );
-                          humanChecksum = checksumName;
-                        }
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final balanceAsync = ref.watch(
+                          balanceProviderFamily(account.accountId),
+                        );
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              account.name,
-                              style: TextStyle(
-                                color: isActive ? Colors.black : Colors.white,
-                                fontSize: 14,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            Text(
-                              humanChecksum,
-                              style: TextStyle(
-                                color: isActive
-                                    ? const Color(0xFF06A8A8)
-                                    : const Color(0xFF16CECE),
-                                fontSize: 12,
-                                fontFamily: 'Fira Code',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            Row(
+                        return FutureBuilder<String>(
+                          future: _checksumService.getHumanReadableName(
+                            account.accountId,
+                          ),
+                          builder: (context, checksumSnapshot) {
+                            final humanChecksum = checksumSnapshot.data ?? '';
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  AddressFormattingService.formatAddress(
-                                    account.accountId,
-                                  ),
+                                  account.name,
                                   style: TextStyle(
                                     color: isActive
-                                        ? const Color(0xFF313131)
-                                        : Colors.white.useOpacity(0.99),
-                                    fontSize: 10,
+                                        ? Colors.black
+                                        : Colors.white,
+                                    fontSize: 14,
                                     fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w300,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                const SizedBox(width: 5),
-                                InkWell(
-                                  onTap: () {
-                                    Clipboard.setData(
-                                      ClipboardData(text: account.accountId),
-                                    );
-
-                                    showTopSnackBar(
-                                      context,
-                                      icon: Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: const ShapeDecoration(
-                                          color: Color(0xFF494949),
-                                          shape: OvalBorder(),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: SvgPicture.asset(
-                                          'assets/copy_icon.svg',
-                                          width: 16,
-                                          height: 16,
-                                        ),
-                                      ),
-                                      title: 'Copied!',
-                                      message:
-                                          'Address '
-                                          'copied to clipboard',
-                                    );
-                                  },
-                                  child: Icon(
-                                    Icons.copy,
-                                    size: 14,
+                                Text(
+                                  humanChecksum,
+                                  style: TextStyle(
                                     color: isActive
-                                        ? const Color(0xFF313131)
-                                        : Colors.white.useOpacity(0.6),
+                                        ? const Color(0xFF06A8A8)
+                                        : const Color(0xFF16CECE),
+                                    fontSize: 12,
+                                    fontFamily: 'Fira Code',
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: formattedBalance,
+                                Row(
+                                  children: [
+                                    Text(
+                                      AddressFormattingService.formatAddress(
+                                        account.accountId,
+                                      ),
+                                      style: TextStyle(
+                                        color: isActive
+                                            ? const Color(0xFF313131)
+                                            : Colors.white.useOpacity(0.99),
+                                        fontSize: 10,
+                                        fontFamily: 'Fira Code',
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    InkWell(
+                                      onTap: () {
+                                        Clipboard.setData(
+                                          ClipboardData(
+                                            text: account.accountId,
+                                          ),
+                                        );
+
+                                        showTopSnackBar(
+                                          context,
+                                          icon: Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: const ShapeDecoration(
+                                              color: Color(0xFF494949),
+                                              shape: OvalBorder(),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: SvgPicture.asset(
+                                              'assets/copy_icon.svg',
+                                              width: 16,
+                                              height: 16,
+                                            ),
+                                          ),
+                                          title: 'Copied!',
+                                          message:
+                                              'Address '
+                                              'copied to clipboard',
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.copy,
+                                        size: 14,
+                                        color: isActive
+                                            ? const Color(0xFF313131)
+                                            : Colors.white.useOpacity(0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                balanceAsync.when(
+                                  loading: () => Text(
+                                    'loading balance...',
                                     style: TextStyle(
                                       color: isActive
                                           ? const Color(0xFF313131)
@@ -373,21 +309,50 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  TextSpan(
-                                    text: ' ${AppConstants.tokenSymbol}',
+                                  error: (error, _) => Text(
+                                    'error loading',
                                     style: TextStyle(
                                       color: isActive
                                           ? const Color(0xFF313131)
                                           : const Color(0xFFE6E6E6),
-                                      fontSize: 10,
+                                      fontSize: 12,
                                       fontFamily: 'Fira Code',
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
+                                  data: (balance) => Text.rich(
+                                    TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: _formattingService
+                                              .formatBalance(balance),
+                                          style: TextStyle(
+                                            color: isActive
+                                                ? const Color(0xFF313131)
+                                                : const Color(0xFFE6E6E6),
+                                            fontSize: 12,
+                                            fontFamily: 'Fira Code',
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: ' ${AppConstants.tokenSymbol}',
+                                          style: TextStyle(
+                                            color: isActive
+                                                ? const Color(0xFF313131)
+                                                : const Color(0xFFE6E6E6),
+                                            fontSize: 10,
+                                            fontFamily: 'Fira Code',
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
                     ),
@@ -410,31 +375,38 @@ class _AccountsScreenState extends State<AccountsScreen> {
               ),
             ),
             onPressed: () async {
-              final accountDetails = await details.detailsFuture;
-              final checksumName = accountDetails['checksumName'] as String;
-              final balance = accountDetails['balance'] as BigInt;
-              if (!mounted) return;
-              final result = await Navigator.push<bool?>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AccountSettingsScreen(
-                    account: account,
-                    balance:
-                        // ignore: lines_longer_than_80_chars
-                        '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
-                    checksumName: checksumName,
-                  ),
-                ),
+              // Get current data from providers
+              final balanceAsync = ref.read(
+                balanceProviderFamily(account.accountId),
               );
-              if (result == true) {
-                _loadAccounts();
-                if (mounted) {
-                  Provider.of<WalletStateManager>(
+              final checksumName = await _checksumService.getHumanReadableName(
+                account.accountId,
+              );
+
+              balanceAsync.when(
+                loading: () {
+                  // Show loading or handle appropriately
+                },
+                error: (error, _) {
+                  // Handle error
+                },
+                data: (balance) async {
+                  if (!mounted) return;
+                  await Navigator.push<bool?>(
                     context,
-                    listen: false,
-                  ).refreshActiveAccount();
-                }
-              }
+                    MaterialPageRoute(
+                      builder: (context) => AccountSettingsScreen(
+                        account: account,
+                        balance:
+                            '${_formattingService.formatBalance(balance)}'
+                            ' ${AppConstants.tokenSymbol}',
+                        checksumName: checksumName,
+                      ),
+                    ),
+                  );
+                  // Providers will automatically refresh if needed
+                },
+              );
             },
           ),
         ],

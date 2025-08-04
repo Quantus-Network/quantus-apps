@@ -94,6 +94,8 @@ class PaginationController extends StateNotifier<PaginationState> {
   }
 
   Future<void> fetchMore() async {
+    print('Pagination Controller: Fetch more');
+
     if (state.isFetching || !state.hasMore) return;
     final accounts = ref.read(accountsProvider).value;
     if (accounts == null || accounts.isEmpty) return;
@@ -103,6 +105,7 @@ class PaginationController extends StateNotifier<PaginationState> {
   /// Refresh data silently without showing loading indicators.
   /// Used for automatic polling to update data in background.
   Future<void> silentRefresh() async {
+    print('Pagination Controller: Silent refresh called');
     if (state.isFetching) return;
     final accounts = ref.read(accountsProvider).value;
     if (accounts == null || accounts.isEmpty) return;
@@ -113,6 +116,8 @@ class PaginationController extends StateNotifier<PaginationState> {
   /// Refresh data with loading indicators.
   /// Used for user-initiated refreshes like pull-to-refresh.
   Future<void> loadingRefresh() async {
+    print('Pagination Controller: Loading Refresh');
+
     final accounts = ref.read(accountsProvider).value;
     if (accounts == null || accounts.isEmpty) {
       state = PaginationState.initial().copyWith(hasMore: false);

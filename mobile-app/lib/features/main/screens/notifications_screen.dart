@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
-import 'package:resonance_network_wallet/models/wallet_state_manager.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/notification_service.dart'; // Ensure import
 
-class NotificationsScreen extends StatefulWidget {
-  final WalletStateManager manager;
-
-  const NotificationsScreen({super.key, required this.manager});
+class NotificationsScreen extends ConsumerStatefulWidget {
+  const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   final NotificationService _notificationService = NotificationService();
 
   @override
@@ -24,16 +24,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _addNotification() {
+    final activeAccount = ref.read(activeAccountProvider).value;
+    final accountName = activeAccount?.name ?? 'Unknown';
+
     _notificationService.addNotification(
       id: '1',
-      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
+      accountName: accountName,
       title: 'Notification Info',
       message: 'This is info notification',
     );
 
     _notificationService.addNotification(
       id: '2',
-      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
+      accountName: accountName,
       title: 'Notification Success',
       message: 'This is success notification',
       type: NotificationType.success,
@@ -41,7 +44,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     _notificationService.addNotification(
       id: '3',
-      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
+      accountName: accountName,
       title: 'Notification Warning',
       message: 'This is warning notification',
       type: NotificationType.warning,
@@ -49,7 +52,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     _notificationService.addNotification(
       id: '4',
-      accountName: widget.manager.walletData?.account.name ?? 'Unknown',
+      accountName: accountName,
       title: 'Notification Error',
       message: 'This is error notification',
       type: NotificationType.error,
