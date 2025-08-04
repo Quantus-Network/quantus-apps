@@ -107,6 +107,8 @@ class TransactionSubmissionService {
     PendingTransactionEvent pendingTx, {
     int maxRetries = 3,
   }) async {
+    StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
+
     void onStatus(p.ExtrinsicStatus status) {
       String? hash;
       TransactionState newState;
@@ -120,15 +122,22 @@ class TransactionSubmissionService {
         case 'inBlock':
           newState = TransactionState.inBlock;
           hash = status.value;
+          // Unsubscribe after inBlock to let the history poller take over
+          activeSubscription?.cancel();
+          activeSubscription = null;
           break;
         case 'finalized':
           // This status is not expected here because we should unsubscribe
           // after 'inBlock' to let the history poller take over.
           newState = TransactionState.inBlock;
+          activeSubscription?.cancel();
+          activeSubscription = null;
           break;
         default:
           newState = TransactionState.failed;
           pendingTx.error = 'Unknown status: ${status.type}';
+          activeSubscription?.cancel();
+          activeSubscription = null;
       }
       _ref
           .read(pendingTransactionsProvider.notifier)
@@ -143,12 +152,16 @@ class TransactionSubmissionService {
     int attempts = 0;
     while (attempts < maxRetries) {
       try {
-        await submission(onStatus);
+        activeSubscription = await submission(onStatus);
         return; // Success, exit the retry loop.
       } catch (e, stackTrace) {
         attempts++;
+        activeSubscription?.cancel();
+        activeSubscription = null;
+
         if (attempts >= maxRetries) {
-          // TODO the UI should show an alert that the tx failed, and then remove
+          // TODO the UI should show an alert that
+          //the tx failed, and then remove
           // the failed tx from pending.
           _ref
               .read(pendingTransactionsProvider.notifier)
@@ -166,7 +179,6 @@ class TransactionSubmissionService {
         }
       }
     }
-    await submission(onStatus);
   }
 }
 

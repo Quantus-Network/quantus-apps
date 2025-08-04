@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/history_transactions_provider.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -30,7 +30,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      ref.read(paginatedTransactionsProvider.notifier).fetchMore();
+      ref.read(historyTransactionsProvider.notifier).fetchMore();
     }
   }
 
@@ -44,7 +44,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   Widget _buildBody() {
-    final historyAsync = ref.watch(paginatedTransactionsProvider);
+    final historyAsync = ref.watch(historyTransactionsProvider);
     final activeAccountAsync = ref.watch(activeAccountProvider);
 
     if (activeAccountAsync.value == null) {
@@ -71,7 +71,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           );
         }
         return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(paginatedTransactionsProvider),
+          onRefresh: () async => ref.invalidate(historyTransactionsProvider),
           child: ListView(
             controller: _scrollController,
             children: [
@@ -82,7 +82,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   currentWalletAddress: activeAccount.accountId,
                 ),
               ),
-              if (ref.watch(paginatedTransactionsProvider.notifier).hasMore)
+              if (ref.watch(historyTransactionsProvider.notifier).hasMore)
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Center(child: CircularProgressIndicator()),

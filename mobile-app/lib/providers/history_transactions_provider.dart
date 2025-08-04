@@ -104,7 +104,7 @@ class PaginatedTransactionsNotifier
   }
 }
 
-final paginatedTransactionsProvider =
+final historyTransactionsProvider =
     StateNotifierProvider<
       PaginatedTransactionsNotifier,
       AsyncValue<SortedTransactionsList>

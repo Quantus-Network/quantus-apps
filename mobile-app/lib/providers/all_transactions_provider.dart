@@ -156,7 +156,7 @@ final paginationControllerProvider =
     );
 
 // Combined provider that reacts to both pending and paginated data
-final combinedTransactionsProvider =
+final allTransactionsProvider =
     Provider<AsyncValue<CombinedTransactionsList>>((ref) {
       final pending = ref.watch(pendingTransactionsProvider);
       final pagination = ref.watch(paginationControllerProvider);
