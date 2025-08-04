@@ -152,7 +152,8 @@ class PaginationController extends StateNotifier<PaginationState> {
         stackTrace: null,
       );
     } catch (e, st) {
-      // Silently handle errors - don't update UI state for automatic polling failures
+      // Silently handle errors - don't update UI state for automatic polling
+      // failures
       print('Silent refresh failed: $e, $st');
     }
   }

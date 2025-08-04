@@ -61,6 +61,9 @@ class TransactionSubmissionService {
       isReversible: true,
     );
 
+    // Add to pending transactions so UI can show it immediately
+    _ref.read(pendingTransactionsProvider.notifier).add(pending);
+
     await _submitAndTrack(
       (onStatus) => ReversibleTransfersService()
           .scheduleReversibleTransferWithDelaySeconds(
@@ -159,16 +162,7 @@ class TransactionSubmissionService {
         activeSubscription = null;
 
         if (attempts >= maxRetries) {
-          // TODO the UI should show an alert that
-          //the tx failed, and then remove
-          // the failed tx from pending.
-          _ref
-              .read(pendingTransactionsProvider.notifier)
-              .updateState(
-                pendingTx.id,
-                TransactionState.failed,
-                error: e.toString(),
-              );
+          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
           print('Failed to submit transaction after $maxRetries attempts: $e');
           print('Stack trace: $stackTrace');
           rethrow;

@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-/// Service that tracks individual transactions after they enter 'inBlock' state.
+/// Service that tracks individual transactions after they enter 'inBlock' state
 /// It polls the blockchain until the transaction appears in history, then
 /// updates the transaction state and removes it from pending transactions.
 class TransactionTrackingService {
@@ -41,7 +41,6 @@ class TransactionTrackingService {
       _startTrackingTransaction(tx);
     }
 
-    // Stop tracking transactions that are no longer in the list or changed state
     final trackersToRemove = <String>[];
 
     for (final id in _activeTrackers.keys) {
@@ -128,7 +127,8 @@ class TransactionTrackingService {
     }
   }
 
-  /// Finds a matching transaction in the history based on the pending transaction.
+  /// Finds a matching transaction in the history based on the pending
+  /// transaction.
   /// This matches by amount, from/to addresses, and proximity in time.
   TransactionEvent? _findMatchingTransaction(
     PendingTransactionEvent pendingTx,
@@ -155,7 +155,7 @@ class TransactionTrackingService {
     PendingTransactionEvent pendingTx,
     TransactionEvent historyTx,
   ) {
-    print("matching history for ${pendingTx.id}");
+    print('matching history for ${pendingTx.id}');
     // Match by amount
     if (pendingTx.amount != historyTx.amount) return false;
 
@@ -167,6 +167,9 @@ class TransactionTrackingService {
 
     // If we have a block hash, try to match it
     if (pendingTx.blockHash != null && historyTx.blockHash != null) {
+      if (pendingTx.blockHash == historyTx.blockHash) {
+        print('found block hash ${pendingTx.id}');
+      }
       return pendingTx.blockHash == historyTx.blockHash;
     }
 

@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/transaction_tracking_service.dart';
 
-/// Manager that coordinates both global history polling and transaction tracking.
+/// Manager that coordinates both global history polling and transaction
+/// tracking.
 /// This ensures both services are properly initialized and managed together.
 class HistoryPollingManager {
   final Ref _ref;
@@ -18,7 +19,6 @@ class HistoryPollingManager {
   /// This should be called early in the app lifecycle.
   void initialize() {
     print('Initializing history polling manager...');
-    // Services auto-start based on account availability, but we ensure they're created
     _globalPoller;
     _transactionTracker;
     print('History polling manager initialized');

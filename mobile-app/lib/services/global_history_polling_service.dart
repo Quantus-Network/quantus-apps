@@ -17,7 +17,7 @@ class GlobalHistoryPollingService {
   /// This should be called when the app starts and accounts are available.
   void startPolling() {
     if (_isPolling) return;
-    
+
     _isPolling = true;
     _scheduleNextPoll();
     print('Global history polling started');
@@ -65,10 +65,10 @@ class GlobalHistoryPollingService {
       }
 
       print('Performing global history poll...');
-      
+
       // Silently refresh without showing loading indicators
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      
+
       print('Global history poll completed');
     } catch (e) {
       print('Error during global history poll: $e');
@@ -92,26 +92,27 @@ class GlobalHistoryPollingService {
 }
 
 /// Provider for the global history polling service
-final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService>((ref) {
-  final service = GlobalHistoryPollingService(ref);
-  
-  // Automatically start polling when accounts become available
-  ref.listen(accountsProvider, (previous, next) {
-    next.when(
-      data: (accounts) {
-        if (accounts.isNotEmpty) {
-          service.startPolling();
-        } else {
-          service.stopPolling();
-        }
-      },
-      loading: () => service.stopPolling(),
-      error: (_, __) => service.stopPolling(),
-    );
-  });
-  
-  // Clean up when provider is disposed
-  ref.onDispose(() => service.dispose());
-  
-  return service;
-});
+final globalHistoryPollingServiceProvider =
+    Provider<GlobalHistoryPollingService>((ref) {
+      final service = GlobalHistoryPollingService(ref);
+
+      // Automatically start polling when accounts become available
+      ref.listen(accountsProvider, (previous, next) {
+        next.when(
+          data: (accounts) {
+            if (accounts.isNotEmpty) {
+              service.startPolling();
+            } else {
+              service.stopPolling();
+            }
+          },
+          loading: () => service.stopPolling(),
+          error: (_, _) => service.stopPolling(),
+        );
+      });
+
+      // Clean up when provider is disposed
+      ref.onDispose(() => service.dispose());
+
+      return service;
+    });
