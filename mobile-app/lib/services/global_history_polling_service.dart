@@ -1,0 +1,117 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+
+/// Service that handles global history polling - refreshes transaction history
+/// every minute to keep the UI up to date with the latest blockchain state.
+class GlobalHistoryPollingService {
+  final Ref _ref;
+  Timer? _pollingTimer;
+  bool _isPolling = false;
+
+  GlobalHistoryPollingService(this._ref);
+
+  /// Starts the global history polling.
+  /// This should be called when the app starts and accounts are available.
+  void startPolling() {
+    if (_isPolling) return;
+    
+    _isPolling = true;
+    _scheduleNextPoll();
+    print('Global history polling started');
+  }
+
+  /// Stops the global history polling.
+  /// This should be called when the app is disposed or user logs out.
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPolling = false;
+    print('Global history polling stopped');
+  }
+
+  /// Pauses polling temporarily (e.g., when app goes to background)
+  void pausePolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    print('Global history polling paused');
+  }
+
+  /// Resumes polling if it was previously started
+  void resumePolling() {
+    if (_isPolling && _pollingTimer == null) {
+      _scheduleNextPoll();
+      print('Global history polling resumed');
+    }
+  }
+
+  void _scheduleNextPoll() {
+    _pollingTimer = Timer(const Duration(minutes: 1), () {
+      _performPoll();
+    });
+  }
+
+  Future<void> _performPoll() async {
+    if (!_isPolling) return;
+
+    try {
+      // Check if we have accounts available
+      final accountsState = _ref.read(accountsProvider);
+      if (accountsState.value?.isEmpty ?? true) {
+        _scheduleNextPoll();
+        return;
+      }
+
+      print('Performing global history poll...');
+      
+      // Silently refresh without showing loading indicators
+      await _ref.read(paginationControllerProvider.notifier).silentRefresh();
+      
+      print('Global history poll completed');
+    } catch (e) {
+      print('Error during global history poll: $e');
+    } finally {
+      // Schedule the next poll regardless of success/failure
+      if (_isPolling) {
+        _scheduleNextPoll();
+      }
+    }
+  }
+
+  /// Manually trigger a history refresh (useful for pull-to-refresh)
+  Future<void> triggerManualRefresh() async {
+    print('Manual history refresh triggered');
+    await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
+  }
+
+  void dispose() {
+    stopPolling();
+  }
+}
+
+/// Provider for the global history polling service
+final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService>((ref) {
+  final service = GlobalHistoryPollingService(ref);
+  
+  // Automatically start polling when accounts become available
+  ref.listen(accountsProvider, (previous, next) {
+    next.when(
+      data: (accounts) {
+        if (accounts.isNotEmpty) {
+          service.startPolling();
+        } else {
+          service.stopPolling();
+        }
+      },
+      loading: () => service.stopPolling(),
+      error: (_, __) => service.stopPolling(),
+    );
+  });
+  
+  // Clean up when provider is disposed
+  ref.onDispose(() => service.dispose());
+  
+  return service;
+});

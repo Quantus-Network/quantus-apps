@@ -99,6 +99,58 @@ class PaginationController extends StateNotifier<PaginationState> {
     if (accounts == null || accounts.isEmpty) return;
     await _fetchPage(accounts.map((e) => e.accountId).toList());
   }
+
+  /// Refresh data silently without showing loading indicators.
+  /// Used for automatic polling to update data in background.
+  Future<void> silentRefresh() async {
+    if (state.isFetching) return;
+    final accounts = ref.read(accountsProvider).value;
+    if (accounts == null || accounts.isEmpty) return;
+
+    await _silentFetchFirstPage(accounts.map((e) => e.accountId).toList());
+  }
+
+  /// Refresh data with loading indicators.
+  /// Used for user-initiated refreshes like pull-to-refresh.
+  Future<void> loadingRefresh() async {
+    final accounts = ref.read(accountsProvider).value;
+    if (accounts == null || accounts.isEmpty) {
+      state = PaginationState.initial().copyWith(hasMore: false);
+      return;
+    }
+
+    // Reset to initial state to show loading
+    state = PaginationState.initial();
+    await _fetchPage(accounts.map((e) => e.accountId).toList());
+  }
+
+  Future<void> _silentFetchFirstPage(List<String> accountIds) async {
+    try {
+      // Fetch without setting isFetching to avoid loading indicators
+      final newTransactions = await ref
+          .read(chainHistoryServiceProvider)
+          .fetchAllTransactionTypes(
+            accountIds: accountIds,
+            limit: _limit,
+            offset: 0,
+          );
+
+      final newItems = newTransactions.otherTransfers;
+
+      // Replace existing items with fresh data
+      state = state.copyWith(
+        items: newItems,
+        reversibleTransfers: newTransactions.reversibleTransfers,
+        offset: newItems.length,
+        hasMore: newItems.length == _limit,
+        error: null,
+        stackTrace: null,
+      );
+    } catch (e, st) {
+      // Silently handle errors - don't update UI state for automatic polling failures
+      print('Silent refresh failed: $e, $st');
+    }
+  }
 }
 
 // State for pagination
@@ -156,23 +208,24 @@ final paginationControllerProvider =
     );
 
 // Combined provider that reacts to both pending and paginated data
-final allTransactionsProvider =
-    Provider<AsyncValue<CombinedTransactionsList>>((ref) {
-      final pending = ref.watch(pendingTransactionsProvider);
-      final pagination = ref.watch(paginationControllerProvider);
+final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
+  ref,
+) {
+  final pending = ref.watch(pendingTransactionsProvider);
+  final pagination = ref.watch(paginationControllerProvider);
 
-      if (pagination.error != null) {
-        return AsyncValue.error(pagination.error!, pagination.stackTrace!);
-      }
-      if (pagination.isFetching && pagination.items.isEmpty) {
-        return const AsyncValue.loading();
-      }
+  if (pagination.error != null) {
+    return AsyncValue.error(pagination.error!, pagination.stackTrace!);
+  }
+  if (pagination.isFetching && pagination.items.isEmpty) {
+    return const AsyncValue.loading();
+  }
 
-      return AsyncValue.data(
-        CombinedTransactionsList(
-          pendingTransactions: pending,
-          reversibleTransfers: pagination.reversibleTransfers,
-          otherTransfers: pagination.items,
-        ),
-      );
-    });
+  return AsyncValue.data(
+    CombinedTransactionsList(
+      pendingTransactions: pending,
+      reversibleTransfers: pagination.reversibleTransfers,
+      otherTransfers: pagination.items,
+    ),
+  );
+});

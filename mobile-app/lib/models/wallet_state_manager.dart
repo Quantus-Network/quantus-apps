@@ -5,7 +5,7 @@ import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/wallet_data.dart';
 
-class WalletStateManager with ChangeNotifier {
+class WalletStateManagerDisabled with ChangeNotifier {
   static const fastPollInterval = Duration(seconds: 10);
   static const slowPollInterval = Duration(seconds: 60);
 
@@ -38,7 +38,7 @@ class WalletStateManager with ChangeNotifier {
 
   Timer? _pollingTimer;
 
-  WalletStateManager(
+  WalletStateManagerDisabled(
     this._chainHistoryService,
     this._settingsService,
     this._substrateService,
