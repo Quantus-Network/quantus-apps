@@ -9,6 +9,8 @@ import 'package:resonance_network_wallet/providers/pending_transactions_provider
 
 class TransactionSubmissionService {
   final Ref _ref;
+  StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
+
   TransactionSubmissionService(this._ref);
 
   Future<void> balanceTransfer(
@@ -31,18 +33,13 @@ class TransactionSubmissionService {
     // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    // C. Define the function that performs the submission
-    // ignore: prefer_function_declarations_over_variables
-    final submissionCall = (Function(p.ExtrinsicStatus) onStatus) =>
-        BalancesService().balanceTransfer(
-          account,
-          targetAddress,
-          amount,
-          onStatus,
-        );
+    // C. Define the builder function that creates fresh submissions on each retry
+    final submissionBuilder = () =>
+        (Function(p.ExtrinsicStatus) onStatus) => BalancesService()
+            .balanceTransfer(account, targetAddress, amount, onStatus);
 
     // D. Submit and track the transaction
-    await _submitAndTrack(submissionCall, pendingTx);
+    await _submitAndTrack(submissionBuilder, pendingTx);
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
@@ -65,17 +62,18 @@ class TransactionSubmissionService {
     // Add to pending transactions so UI can show it immediately
     _ref.read(pendingTransactionsProvider.notifier).add(pending);
 
-    await _submitAndTrack(
-      (onStatus) => ReversibleTransfersService()
-          .scheduleReversibleTransferWithDelaySeconds(
-            account: account,
-            recipientAddress: recipientAddress,
-            amount: amount,
-            delaySeconds: delaySeconds,
-            onStatus: onStatus,
-          ),
-      pending,
-    );
+    // Define the builder function that creates fresh submissions on each retry
+    final submissionBuilder = () =>
+        (onStatus) => ReversibleTransfersService()
+            .scheduleReversibleTransferWithDelaySeconds(
+              account: account,
+              recipientAddress: recipientAddress,
+              amount: amount,
+              delaySeconds: delaySeconds,
+              onStatus: onStatus,
+            );
+
+    await _submitAndTrack(submissionBuilder, pending);
   }
 
   PendingTransactionEvent createPendingTransaction({
@@ -102,84 +100,182 @@ class TransactionSubmissionService {
   }
 
   // This is the generic tracking logic, extracted from WalletStateManager
+  /// Submits a transaction and tracks its status. Returns immediately without
+  /// waiting.
+  /// Handles retries in the background for 'invalid' status.
+  /// submissionBuilder: Function that creates fresh submission on each retry
   Future<void> _submitAndTrack(
     Future<StreamSubscription<p.ExtrinsicStatus>> Function(
       void Function(p.ExtrinsicStatus),
     )
-    submission,
+    Function()
+    submissionBuilder,
     PendingTransactionEvent pendingTx, {
     int maxRetries = 3,
   }) async {
-    StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
+    // Start the submission process but don't wait for it to complete
+    // This allows the UI to continue immediately
+    _submitAndTrackBackground(
+      submissionBuilder,
+      pendingTx,
+      maxRetries: maxRetries,
+    );
+  }
 
-    void onStatus(p.ExtrinsicStatus status) {
-      String? hash;
-      TransactionState newState;
-      switch (status.type) {
-        case 'ready':
-          newState = TransactionState.ready;
-          break;
-        case 'broadcast':
-          newState = TransactionState.broadcast;
-          break;
-        case 'inBlock':
-          newState = TransactionState.inBlock;
-          hash = status.value;
-          // Unsubscribe after inBlock to let the history poller take over
-          activeSubscription?.cancel();
-          activeSubscription = null;
-          break;
-        case 'finalized':
-          // This status is not expected here because we should unsubscribe
-          // after 'inBlock' to let the history poller take over.
-          newState = TransactionState.inBlock;
-          activeSubscription?.cancel();
-          activeSubscription = null;
-          break;
-        default:
-          newState = TransactionState.failed;
-          pendingTx.error = 'Unknown status: ${status.type}';
-          activeSubscription?.cancel();
-          activeSubscription = null;
+  /// Background submission with retry logic - runs asynchronously
+  void _submitAndTrackBackground(
+    Future<StreamSubscription<p.ExtrinsicStatus>> Function(
+      void Function(p.ExtrinsicStatus),
+    )
+    Function()
+    submissionBuilder,
+    PendingTransactionEvent pendingTx, {
+    required int maxRetries,
+    int attempt = 1,
+  }) async {
+    try {
+      print(
+        'Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}',
+      );
+
+      void onStatus(p.ExtrinsicStatus status) {
+        String? hash;
+        TransactionState newState;
+
+        switch (status.type) {
+          case 'ready':
+            newState = TransactionState.ready;
+            break;
+          case 'broadcast':
+            newState = TransactionState.broadcast;
+            break;
+          case 'inBlock':
+            newState = TransactionState.inBlock;
+            hash = status.value;
+            // Unsubscribe after inBlock to let the history poller take over
+            activeSubscription?.cancel();
+            activeSubscription = null;
+            break;
+          case 'finalized':
+            // This status is not expected here because we should unsubscribe
+            // after 'inBlock' to let the history poller take over.
+            newState = TransactionState.inBlock;
+            activeSubscription?.cancel();
+            activeSubscription = null;
+            break;
+
+          case 'invalid':
+            print('tx invalid: ${status.type} ${status.value}');
+            print('Invalid status detected - transaction data is stale');
+            activeSubscription?.cancel();
+            activeSubscription = null;
+
+            // Retry in background if we haven't exceeded max attempts
+            if (attempt < maxRetries) {
+              print(
+                'Retrying transaction with fresh data, attempt ${attempt + 1}/$maxRetries',
+              );
+              // Brief delay to let blockchain state update
+              Timer(Duration(seconds: 1), () {
+                _submitAndTrackBackground(
+                  submissionBuilder,
+                  pendingTx,
+                  maxRetries: maxRetries,
+                  attempt: attempt + 1,
+                );
+              });
+            } else {
+              print(
+                'Max retry attempts reached, marking transaction as failed',
+              );
+              pendingTx.error =
+                  'Transaction failed after $maxRetries attempts due to stale data';
+              _ref
+                  .read(pendingTransactionsProvider.notifier)
+                  .updateState(
+                    pendingTx.id,
+                    TransactionState.failed,
+                    error: pendingTx.error,
+                  );
+
+              // Remove after delay
+              Timer(const Duration(seconds: 3), () {
+                _ref
+                    .read(pendingTransactionsProvider.notifier)
+                    .remove(pendingTx.id);
+                print(
+                  'Removed failed transaction from pending: ${pendingTx.id}',
+                );
+              });
+            }
+            return; // Don't update state for retries
+
+          default:
+            print('unknown status: ${status.type} ${status.value}');
+            newState = TransactionState.failed;
+            pendingTx.error = 'Unknown status: ${status.type}';
+            activeSubscription?.cancel();
+            activeSubscription = null;
+        }
+
+        // Update state for all non-retry cases
+        _ref
+            .read(pendingTransactionsProvider.notifier)
+            .updateState(
+              pendingTx.id,
+              newState,
+              blockHash: hash,
+              error: pendingTx.error,
+            );
+
+        // Remove failed transactions after a delay to let user see the failure
+        if (newState == TransactionState.failed) {
+          Timer(const Duration(seconds: 3), () {
+            _ref
+                .read(pendingTransactionsProvider.notifier)
+                .remove(pendingTx.id);
+            print('Removed failed transaction from pending: ${pendingTx.id}');
+          });
+        }
       }
 
-      _ref
-          .read(pendingTransactionsProvider.notifier)
-          .updateState(
-            pendingTx.id,
-            newState,
-            blockHash: hash,
-            error: pendingTx.error,
-          );
+      // Build a fresh submission for this attempt (gets fresh nonce, block headers, etc.)
+      final submission = submissionBuilder();
+      activeSubscription = await submission(onStatus);
+    } catch (e, stackTrace) {
+      print('Failed submitting transaction attempt $attempt: $e');
 
-      // Remove failed transactions after a delay to let user see the failure
-      if (newState == TransactionState.failed) {
+      if (attempt < maxRetries) {
+        print(
+          'Retrying due to submission error, attempt ${attempt + 1}/$maxRetries',
+        );
+        // Brief delay before retry
+        Timer(Duration(seconds: 2), () {
+          _submitAndTrackBackground(
+            submissionBuilder,
+            pendingTx,
+            maxRetries: maxRetries,
+            attempt: attempt + 1,
+          );
+        });
+      } else {
+        print('Failed to submit transaction after $maxRetries attempts: $e');
+        print('Stack trace: $stackTrace');
+
+        // Mark as permanently failed
+        _ref
+            .read(pendingTransactionsProvider.notifier)
+            .updateState(
+              pendingTx.id,
+              TransactionState.failed,
+              error: 'Failed to submit after $maxRetries attempts: $e',
+            );
+
+        // Remove after delay
         Timer(const Duration(seconds: 3), () {
           _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
           print('Removed failed transaction from pending: ${pendingTx.id}');
         });
-      }
-    }
-
-    int attempts = 0;
-    while (attempts < maxRetries) {
-      try {
-        activeSubscription = await submission(onStatus);
-        return; // Success, exit the retry loop.
-      } catch (e, stackTrace) {
-        attempts++;
-        activeSubscription?.cancel();
-        activeSubscription = null;
-
-        if (attempts >= maxRetries) {
-          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-          print('Failed to submit transaction after $maxRetries attempts: $e');
-          print('Stack trace: $stackTrace');
-          rethrow;
-        } else {
-          print('Transaction attempt $attempts failed: $e. Retrying...');
-          await Future.delayed(const Duration(seconds: 2));
-        }
       }
     }
   }
