@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Quantus Wallet';
-  static const String tokenSymbol = 'QUAN';
+  static const String tokenSymbol = 'RES'; // fetch this from chain eventually
 
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
   // static const String graphQlEndpoint = 'http://127.0.0.1:4350'; // local testing
