@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/services/transaction_tracking_service.dart';
@@ -51,9 +54,44 @@ class HistoryPollingManager {
   Future<void> triggerManualRefresh() async {
     print('History polling manager: Manual Refresh!');
 
+    // Refresh balance (with loading indicators)
+    _refreshBalance(showLoading: true);
+
     await _globalPoller.triggerManualRefresh();
     await _transactionTracker.forceCheckAllTrackedTransactions();
     await _reversibleMonitor.forceCheckAllMonitoredTransfers();
+  }
+
+  /// Trigger a silent refresh of all data (no loading indicators)
+  Future<void> triggerSilentRefresh() async {
+    print('History polling manager: Silent Refresh!');
+
+    // Refresh balance silently (no loading indicators)
+    _refreshBalance(showLoading: false);
+
+    // Use silent refresh for background updates
+    await _ref.read(paginationControllerProvider.notifier).silentRefresh();
+    await _transactionTracker.forceCheckAllTrackedTransactions();
+    await _reversibleMonitor.forceCheckAllMonitoredTransfers();
+  }
+
+  /// Helper method to refresh balance with or without loading indicators
+  void _refreshBalance({required bool showLoading}) {
+    if (showLoading) {
+      // For manual refresh - invalidate balance providers to show loading
+      final activeAccount = _ref.read(activeAccountProvider).value;
+      if (activeAccount != null) {
+        _ref.invalidate(balanceProviderFamily);
+      }
+      _ref.invalidate(
+        balanceProviderRaw,
+      ); // Invalidate raw balance for loading state
+      // balanceProvider (effective) will auto-update when raw balance changes
+    } else {
+      // For silent refresh - just invalidate family to refresh data silently
+      _ref.invalidate(balanceProviderFamily);
+      // balanceProvider (effective) will auto-update when raw balance changes
+    }
   }
 
   void dispose() {

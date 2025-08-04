@@ -309,6 +309,11 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       print(
         'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
       );
+      for (final t in transactions) {
+        print(
+          '${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}',
+        );
+      }
       return transactions;
     } catch (e, stackTrace) {
       print('Error fetching transactions by hash: $e');

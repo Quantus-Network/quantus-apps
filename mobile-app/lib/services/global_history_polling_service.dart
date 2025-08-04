@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -65,6 +66,9 @@ class GlobalHistoryPollingService {
       }
 
       print('Performing global history poll...');
+
+      // Refresh balance silently (transactions might have changed balance)
+      _ref.invalidate(balanceProviderFamily);
 
       // Silently refresh without showing loading indicators
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();

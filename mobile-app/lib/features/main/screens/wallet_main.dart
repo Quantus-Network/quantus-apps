@@ -350,7 +350,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   // cache
                   ref.invalidate(balanceProviderFamily);
                 }
-                ref.invalidate(balanceProvider);
+                ref.invalidate(
+                  balanceProviderRaw,
+                ); // Invalidate raw balance for loading
+                // balanceProvider (effective) will auto-update
                 await ref
                     .read(paginationControllerProvider.notifier)
                     .loadingRefresh();

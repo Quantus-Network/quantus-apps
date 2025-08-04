@@ -147,6 +147,9 @@ class ReversibleTransferMonitoringService {
               status,
             );
 
+        // Refresh balance since transfer execution changes balance
+        _ref.invalidate(balanceProviderFamily);
+
         print('Updated transfer status inline - moved to done list');
       }
     } catch (e) {

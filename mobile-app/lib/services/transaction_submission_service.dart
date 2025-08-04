@@ -143,23 +143,22 @@ class TransactionSubmissionService {
           activeSubscription = null;
       }
 
-      if (pendingTx.isReversible &&
-          pendingTx.delaySeconds > 0 &&
-          newState == TransactionState.inBlock) {
-        // Get a more accurate timer by setting pending tx timer
-        pendingTx.scheduledAtTime = DateTime.now().add(
-          Duration(seconds: pendingTx.delaySeconds),
-        );
-      }
       _ref
           .read(pendingTransactionsProvider.notifier)
           .updateState(
             pendingTx.id,
             newState,
-            scheduledAtTime: pendingTx.scheduledAtTime,
             blockHash: hash,
             error: pendingTx.error,
           );
+
+      // Remove failed transactions after a delay to let user see the failure
+      if (newState == TransactionState.failed) {
+        Timer(const Duration(seconds: 3), () {
+          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+          print('Removed failed transaction from pending: ${pendingTx.id}');
+        });
+      }
     }
 
     int attempts = 0;

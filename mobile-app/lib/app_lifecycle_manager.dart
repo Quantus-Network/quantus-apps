@@ -42,8 +42,8 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
       case AppLifecycleState.resumed:
         // Resume polling when app comes back to foreground
         pollingManager.resumePolling();
-        // Trigger a manual refresh to catch up on any missed updates
-        pollingManager.triggerManualRefresh();
+        // Trigger a silent refresh to catch up on any missed updates
+        pollingManager.triggerSilentRefresh();
         break;
 
       case AppLifecycleState.detached:

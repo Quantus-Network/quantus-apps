@@ -118,6 +118,9 @@ class TransactionTrackingService {
         // Stop tracking this transaction
         _stopTrackingTransaction(pendingTx.id);
 
+        // Refresh balance since transaction completion changes balance
+        _ref.invalidate(balanceProviderFamily);
+
         // Silently refresh history to show the new transaction
         await _ref.read(paginationControllerProvider.notifier).silentRefresh();
       }
