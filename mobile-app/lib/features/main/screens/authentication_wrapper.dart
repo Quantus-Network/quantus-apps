@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
+import 'package:resonance_network_wallet/services/auth_state_service.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
 class AuthenticationWrapper extends StatefulWidget {
@@ -15,20 +16,28 @@ class AuthenticationWrapper extends StatefulWidget {
 class _AuthenticationWrapperState extends State<AuthenticationWrapper>
     with WidgetsBindingObserver {
   final LocalAuthService _localAuthService = LocalAuthService();
-  bool _isAuthenticated = false;
+  final AuthStateService _authStateService = AuthStateService();
   bool _isAuthenticating = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _authStateService.addListener(_onAuthStateChanged);
     _checkAuthentication();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _authStateService.removeListener(_onAuthStateChanged);
     super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -45,18 +54,10 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
     final shouldAuth = await _localAuthService.shouldRequireAuthentication();
 
     if (shouldAuth) {
-      if (mounted) {
-        setState(() {
-          _isAuthenticated = false;
-        });
-      }
+      _authStateService.setAuthenticated(false);
       _authenticate();
     } else {
-      if (mounted) {
-        setState(() {
-          _isAuthenticated = true;
-        });
-      }
+      _authStateService.setAuthenticated(true);
     }
   }
 
@@ -75,9 +76,9 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
     if (mounted) {
       setState(() {
-        _isAuthenticated = didAuthenticate;
         _isAuthenticating = false;
       });
+      _authStateService.setAuthenticated(didAuthenticate);
     }
 
     if (!didAuthenticate) {
@@ -92,7 +93,9 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
 
   @override
   Widget build(BuildContext context) {
-    return _isAuthenticated ? const WalletInitializer() : _buildLockScreen();
+    return _authStateService.isAuthenticated
+        ? const WalletInitializer()
+        : _buildLockScreen();
   }
 
   Widget _buildLockScreen() {

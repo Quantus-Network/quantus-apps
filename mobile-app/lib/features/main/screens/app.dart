@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/auth_guard.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 
@@ -13,7 +14,7 @@ class ResonanceWalletApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthenticationWrapper(),
-        '/send': (context) => const SendScreen(),
+        '/send': (context) => const AuthGuard(child: SendScreen()),
       },
       theme: ThemeData(
         primaryColor: const Color(0xFF6B46C1), // Deep purple
