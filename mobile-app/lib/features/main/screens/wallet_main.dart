@@ -342,8 +342,18 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: RefreshIndicator(
               onRefresh: () async {
+                // Force refresh balance by invalidating the family provider
+                // first
+                final activeAccount = ref.read(activeAccountProvider).value;
+                if (activeAccount != null) {
+                  // Try invalidating the entire family provider to clear all
+                  // cache
+                  ref.invalidate(balanceProviderFamily);
+                }
                 ref.invalidate(balanceProvider);
-                ref.invalidate(activeAccountHistoryProvider);
+                await ref
+                    .read(paginationControllerProvider.notifier)
+                    .loadingRefresh();
               },
               color: const Color(0xFF0CE6ED),
               backgroundColor: Colors.black,

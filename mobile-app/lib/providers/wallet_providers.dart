@@ -19,21 +19,22 @@ final balanceProviderFamily = FutureProvider.family<BigInt, String>((
   accountId,
 ) async {
   final substrateService = ref.watch(substrateServiceProvider);
+  print('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
 });
 
-final balanceProvider = FutureProvider<BigInt>((ref) async {
+final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final activeAccountAsyncValue = ref.watch(activeAccountProvider);
 
   return activeAccountAsyncValue.when(
     data: (activeAccount) {
       if (activeAccount == null) {
-        return BigInt.zero;
+        return AsyncValue.data(BigInt.zero);
       }
-      return ref.watch(balanceProviderFamily(activeAccount.accountId).future);
+      return ref.watch(balanceProviderFamily(activeAccount.accountId));
     },
-    loading: () => BigInt.zero, // Or a suitable loading state
-    error: (err, stack) => BigInt.zero, // Or handle the error appropriately
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
   );
 });
 
@@ -43,6 +44,7 @@ final historyProviderFamily =
       accountIds,
     ) async {
       final chainHistoryService = ref.watch(chainHistoryServiceProvider);
+
       return await chainHistoryService.fetchAllTransactionTypes(
         accountIds: accountIds,
       );
