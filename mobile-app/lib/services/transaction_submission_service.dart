@@ -84,13 +84,12 @@ class TransactionSubmissionService {
     required BigInt fee,
   }) {
     final tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
-    final timestamp = DateTime.now();
     final pending = PendingTransactionEvent(
       tempId: tempId,
       from: from,
       to: to,
       amount: amount,
-      timestamp: timestamp,
+      timestamp: DateTime.now(),
       isReversible: isReversible,
       fee: fee,
       scheduledAtTime: scheduledAt,

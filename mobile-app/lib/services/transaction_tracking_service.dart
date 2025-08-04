@@ -155,6 +155,7 @@ class TransactionTrackingService {
     PendingTransactionEvent pendingTx,
     TransactionEvent historyTx,
   ) {
+    print("matching history for ${pendingTx.id}");
     // Match by amount
     if (pendingTx.amount != historyTx.amount) return false;
 
@@ -164,14 +165,14 @@ class TransactionTrackingService {
     // Match by to address
     if (pendingTx.to != historyTx.to) return false;
 
-    // Match by timestamp (within reasonable range - 5 minutes)
-    final timeDiff = pendingTx.timestamp.difference(historyTx.timestamp).abs();
-    if (timeDiff > const Duration(minutes: 5)) return false;
-
     // If we have a block hash, try to match it
     if (pendingTx.blockHash != null && historyTx.blockHash != null) {
       return pendingTx.blockHash == historyTx.blockHash;
     }
+
+    // Match by timestamp (within reasonable range
+    final timeDiff = pendingTx.timestamp.difference(historyTx.timestamp).abs();
+    if (timeDiff > const Duration(minutes: 10)) return false;
 
     // If all other criteria match, consider it a match
     return true;
