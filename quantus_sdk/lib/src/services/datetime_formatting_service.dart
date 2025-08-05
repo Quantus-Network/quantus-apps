@@ -27,7 +27,7 @@ class DatetimeFormattingService {
   /// "2 days ago", "3 months ago", "1 year ago", "in 5 minutes", "in 2 days".
   static String format(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(dateTime.toLocal());
+    final difference = now.difference(dateTime);
 
     // Use padLeft to ensure that single-digit numbers have a leading zero.
     String hours = dateTime.hour.toString().padLeft(2, '0');
