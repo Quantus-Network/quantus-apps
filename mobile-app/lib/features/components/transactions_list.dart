@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
@@ -15,26 +16,16 @@ class RecentTransactionsList extends StatelessWidget {
     this.filter,
   });
 
-  /// Determines which account "owns" a transaction for display purposes
-  String _getOwnerAccountId(TransactionEvent transaction) {
-    // If showing only one account, it's always the owner
-    if (accountIds.length == 1) {
-      return accountIds.first;
+  TransactionRole _getTransactionRole(TransactionEvent transaction) {
+    final isFrom = accountIds.contains(transaction.from);
+    final isTo = accountIds.contains(transaction.to);
+    if (isFrom && isTo) {
+      return TransactionRole.both;
+    } else if (isFrom) {
+      return TransactionRole.sender;
+    } else {
+      return TransactionRole.receiver;
     }
-
-    // For multiple accounts (All Accounts view), prefer the sender if it's in
-    // our list
-    if (accountIds.contains(transaction.from)) {
-      return transaction.from;
-    }
-
-    // Otherwise use the receiver if it's in our list
-    if (accountIds.contains(transaction.to)) {
-      return transaction.to;
-    }
-
-    // Fallback to first account (shouldn't happen in normal cases)
-    return accountIds.first;
   }
 
   @override
@@ -83,7 +74,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      ownerAccountId: _getOwnerAccountId(transaction),
+                      role: _getTransactionRole(transaction),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
@@ -103,7 +94,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      ownerAccountId: _getOwnerAccountId(transaction),
+                      role: _getTransactionRole(transaction),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),

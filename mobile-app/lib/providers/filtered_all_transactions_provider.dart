@@ -5,7 +5,8 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-/// Provider for filtered transactions that can handle account-specific filtering
+/// Provider for filtered transactions that can handle
+/// account-specific filtering
 /// with pagination support similar to allTransactionsProvider
 class FilteredPaginationController extends StateNotifier<PaginationState> {
   FilteredPaginationController(this.ref, this.accountIds)
@@ -82,7 +83,8 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
     await _fetchPage(accountIds);
   }
 
-  /// Update a reversible transfer status to executed inline without full refresh
+  /// Update a reversible transfer status to executed inline without full
+  /// refresh
   void updateReversibleTransferToExecuted(
     String extrinsicHash,
     ReversibleTransferStatus newStatus,
@@ -130,7 +132,8 @@ final filteredPaginationControllerProviderFamily =
       List<String>?
     >((ref, accountIds) => FilteredPaginationController(ref, accountIds!));
 
-/// Combined provider for filtered transactions (similar to allTransactionsProvider)
+/// Combined provider for filtered transactions (similar to
+/// allTransactionsProvider)
 final filteredTransactionsProviderFamily =
     Provider.family<AsyncValue<CombinedTransactionsList>, List<String>?>((
       ref,

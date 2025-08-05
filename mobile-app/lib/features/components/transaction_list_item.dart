@@ -10,12 +10,12 @@ import 'package:resonance_network_wallet/shared/extensions/transaction_event_ext
 
 class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
-  final String ownerAccountId;
+  final TransactionRole role;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
-    required this.ownerAccountId,
+    required this.role,
   });
 
   @override
@@ -26,20 +26,29 @@ class TransactionListItemState extends State<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
 
-  bool get isSender => widget.transaction.from == widget.ownerAccountId;
-  bool get isPending => widget.transaction.isPending;
-
-  TransactionRole get role =>
-      isSender ? TransactionRole.sender : TransactionRole.receiver;
+  bool get isPending =>
+      widget.transaction.isPending || widget.transaction.isReversibleScheduled;
+  TransactionRole get role => widget.role;
 
   String get title {
     if (widget.transaction.isReversibleCancelled) return 'Cancelled';
-
-    if (role == TransactionRole.sender && isPending) return 'Sending';
-    if (role == TransactionRole.receiver && isPending) return 'Receiving';
-
-    if (role == TransactionRole.sender) return 'Sent';
-    return 'Received';
+    switch (role) {
+      case TransactionRole.sender:
+        if (isPending) {
+          return 'Sending';
+        }
+        return 'Sent';
+      case TransactionRole.receiver:
+        if (isPending) {
+          return 'Receiving';
+        }
+        return 'Received';
+      case TransactionRole.both:
+        if (isPending) {
+          return 'Sending/Receiving';
+        }
+        return 'Sent/Received';
+    }
   }
 
   Color get titleColor {

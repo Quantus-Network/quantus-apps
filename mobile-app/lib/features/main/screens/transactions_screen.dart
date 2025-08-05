@@ -148,6 +148,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                   if (_selectedAccountIds != null) {
                                     ref
                                         .read(
+                                          // ignore: lines_longer_than_80_chars
                                           filteredPaginationControllerProviderFamily(
                                             _selectedAccountIds,
                                           ).notifier,
