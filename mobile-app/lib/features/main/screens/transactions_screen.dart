@@ -24,50 +24,69 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   final ScrollController _scrollController = ScrollController();
-  List<String>?
-  _selectedAccountIds; // List of account IDs to show transactions for
+  List<String>? _selectedAccountIds;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize selection based on widget parameters
-    if (widget.fixedAccountId != null) {
-      _selectedAccountIds = [widget.fixedAccountId!];
-    } else if (!widget.showAccountFilter) {
-      // If not showing filter, use active account
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final activeAccount = ref.read(activeAccountProvider).value;
-        if (activeAccount != null && mounted) {
-          setState(() {
-            _selectedAccountIds = [activeAccount.accountId];
-          });
-        }
-      });
-    } else {
-      // If showing account filter, initialize with all accounts
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final accounts = ref.read(accountsProvider).value;
-        if (accounts != null && accounts.isNotEmpty && mounted) {
-          setState(() {
-            _selectedAccountIds = accounts.map((a) => a.accountId).toList();
-          });
-        }
-      });
-    }
-
     _scrollController.addListener(_onScroll);
+  }
+
+  void _initialize(BuildContext context, WidgetRef ref) {
+    if (_isInitialized) return;
+
+    final accountsValue = ref.watch(accountsProvider);
+    accountsValue.when(
+      data: (accounts) {
+        if (!_isInitialized) {
+          List<String> accountIds;
+          if (widget.fixedAccountId != null) {
+            accountIds = [widget.fixedAccountId!];
+          } else if (!widget.showAccountFilter) {
+            final activeAccount = ref.read(activeAccountProvider).value;
+            accountIds = activeAccount != null ? [activeAccount.accountId] : [];
+          } else {
+            accountIds = accounts.map((a) => a.accountId).toList();
+          }
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _selectedAccountIds = accountIds;
+              _isInitialized = true;
+            });
+            ref
+                .read(
+                  filteredPaginationControllerProviderFamily(
+                    accountIds,
+                  ).notifier,
+                )
+                .loadingRefresh();
+          });
+        }
+      },
+      loading: () {},
+      error: (error, stack) {
+        if (!_isInitialized) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _isInitialized = true;
+              _selectedAccountIds = [];
+            });
+          });
+        }
+      },
+    );
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      // Use the current filter state
       if (_selectedAccountIds != null) {
         ref
             .read(
               filteredPaginationControllerProviderFamily(
-                _selectedAccountIds,
+                _selectedAccountIds!,
               ).notifier,
             )
             .fetchMore();
@@ -83,203 +102,189 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _initialize(context, ref);
+
+    if (!_isInitialized) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0E0E0E),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_selectedAccountIds == null) {
+      // Handles the case where initialization is complete but there are no accounts
+      return widget.showAccountFilter
+          ? _buildFilterableScaffold()
+          : _buildSimpleScaffold();
+    }
+
     if (widget.showAccountFilter) {
-      // Full transactions screen with dropdown (accessed via navbar)
-      return BaseWithBackground(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 27.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Transaction History',
-                  style: TextStyle(
-                    color: Color(0xFFE6E6E6),
-                    fontSize: 16,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 13),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ref
-                          .watch(accountsProvider)
-                          .when(
-                            loading: () => const CircularProgressIndicator(),
-                            error: (error, stack) => Text('Error: $error'),
-                            data: (accounts) => DropdownSelect<String>(
-                              initialValue: '_all_',
-                              items: [
-                                Item<String>(
-                                  value: '_all_',
-                                  label: 'All Accounts',
-                                ),
-                                ...accounts.map((Account account) {
-                                  return Item<String>(
-                                    value: account.accountId,
-                                    label: account.name,
-                                  );
-                                }),
-                              ],
-                              onChanged: (selectedItem) {
-                                final accounts = ref
-                                    .read(accountsProvider)
-                                    .value;
-                                if (accounts == null) return;
-
-                                setState(() {
-                                  if (selectedItem?.value == '_all_') {
-                                    _selectedAccountIds = accounts
-                                        .map((a) => a.accountId)
-                                        .toList();
-                                  } else {
-                                    _selectedAccountIds = [selectedItem!.value];
-                                  }
-                                });
-
-                                // Immediately refresh data for new selection
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  if (_selectedAccountIds != null) {
-                                    ref
-                                        .read(
-                                          // ignore: lines_longer_than_80_chars
-                                          filteredPaginationControllerProviderFamily(
-                                            _selectedAccountIds,
-                                          ).notifier,
-                                        )
-                                        .loadingRefresh();
-                                  }
-                                });
-                              },
-                              disabled: false,
-                            ),
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 13),
-                Expanded(child: _buildBody()),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      );
+      return _buildFilterableScaffold();
     } else {
-      // Simple transactions screen with back button (accessed from main screen)
-      return Scaffold(
-        appBar: const WalletAppBar(title: 'Transaction History'),
-        backgroundColor: const Color(0xFF0E0E0E),
-        body: SafeArea(child: _buildBody()),
-      );
+      return _buildSimpleScaffold();
     }
   }
 
-  Widget _buildBody() {
+  Widget _buildSimpleScaffold() {
+    return Scaffold(
+      appBar: const WalletAppBar(title: 'Transaction History'),
+      backgroundColor: const Color(0xFF0E0E0E),
+      body: SafeArea(child: _buildBody()),
+    );
+  }
+
+  Widget _buildFilterableScaffold() {
     final accountsAsync = ref.watch(accountsProvider);
 
-    return accountsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text(
-          'Error loading accounts: $error',
-          style: const TextStyle(color: Colors.red),
+    return BaseWithBackground(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 27.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Transaction History',
+                style: TextStyle(
+                  color: Color(0xFFE6E6E6),
+                  fontSize: 16,
+                  fontFamily: 'Fira Code',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 13),
+              accountsAsync.when(
+                data: (accounts) {
+                  if (accounts.isEmpty) {
+                    return const Text('No accounts found.');
+                  }
+                  return _buildAccountDropdown();
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => const Text('Error loading accounts.'),
+              ),
+              const SizedBox(height: 13),
+              Expanded(child: _buildBody()),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
-      data: (accounts) {
-        if (accounts.isEmpty) {
+    );
+  }
+
+  Widget _buildAccountDropdown() {
+    final accounts = ref.read(accountsProvider).value!;
+    final allAccountsSelected =
+        _selectedAccountIds != null &&
+        _selectedAccountIds!.length == accounts.length;
+
+    return DropdownSelect<String>(
+      initialValue: allAccountsSelected
+          ? '_all_'
+          : _selectedAccountIds?.firstOrNull,
+      items: [
+        Item<String>(value: '_all_', label: 'All Accounts'),
+        ...accounts.map(
+          (account) =>
+              Item<String>(value: account.accountId, label: account.name),
+        ),
+      ],
+      onChanged: (selectedItem) {
+        if (selectedItem == null) return;
+        final newSelectedIds = selectedItem.value == '_all_'
+            ? accounts.map((a) => a.accountId).toList()
+            : [selectedItem.value];
+
+        setState(() {
+          _selectedAccountIds = newSelectedIds;
+        });
+
+        ref
+            .read(
+              filteredPaginationControllerProviderFamily(
+                newSelectedIds,
+              ).notifier,
+            )
+            .loadingRefresh();
+      },
+      disabled: false,
+    );
+  }
+
+  Widget _buildBody() {
+    if (_selectedAccountIds == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_selectedAccountIds!.isEmpty) {
+      return const Center(
+        child: Text(
+          'No accounts selected.',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    final accountIds = _selectedAccountIds!;
+    final filteredTransactionsAsync = ref.watch(
+      filteredTransactionsProviderFamily(accountIds),
+    );
+    final paginationState = ref.watch(
+      filteredPaginationControllerProviderFamily(accountIds),
+    );
+
+    return filteredTransactionsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
+      ),
+      data: (combinedData) {
+        final allTransactions = <TransactionEvent>[
+          ...combinedData.pendingTransactions,
+          ...combinedData.reversibleTransfers,
+          ...combinedData.otherTransfers,
+        ];
+
+        if (allTransactions.isEmpty && !paginationState.isFetching) {
           return const Center(
             child: Text(
-              'No accounts found.',
+              'No transactions found.',
               style: TextStyle(color: Colors.white),
             ),
           );
         }
 
-        // Use the current account selection
-        if (_selectedAccountIds == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Watch the filtered transactions provider
-        final filteredTransactionsAsync = ref.watch(
-          filteredTransactionsProviderFamily(_selectedAccountIds),
-        );
-        final paginationState = ref.watch(
-          filteredPaginationControllerProviderFamily(_selectedAccountIds),
-        );
-
-        return filteredTransactionsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text(
-              'Error: $error',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-          data: (combinedData) {
-            // Combine all transaction types for display
-            final allTransactions = <TransactionEvent>[
-              ...combinedData.pendingTransactions.cast<TransactionEvent>(),
-              ...combinedData.reversibleTransfers.cast<TransactionEvent>(),
-              ...combinedData.otherTransfers,
-            ];
-
-            if (allTransactions.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No transactions found.',
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            }
-
-            return RefreshIndicator(
-              onRefresh: () async {
-                await ref
-                    .read(
-                      filteredPaginationControllerProviderFamily(
-                        _selectedAccountIds,
-                      ).notifier,
-                    )
-                    .loadingRefresh();
-              },
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: RecentTransactionsList(
-                      transactions: allTransactions,
-                      accountIds: _selectedAccountIds!,
-                    ),
+        return RefreshIndicator(
+          onRefresh: () => ref
+              .read(
+                filteredPaginationControllerProviderFamily(accountIds).notifier,
+              )
+              .loadingRefresh(),
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              if (allTransactions.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: RecentTransactionsList(
+                    transactions: allTransactions,
+                    accountIds: accountIds,
                   ),
-
-                  // Show loading indicator when fetching more
-                  if (paginationState.hasMore)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Center(
-                          child: paginationState.isFetching
-                              ? const CircularProgressIndicator()
-                              : const SizedBox.shrink(),
-                        ),
-                      ),
-                    ),
-
-                  // Add bottom padding to ensure scroll can reach the threshold
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                ],
-              ),
-            );
-          },
+                ),
+              if (paginationState.isFetching && allTransactions.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              if (paginationState.hasMore && paginationState.isFetching)
+                SliverToBoxAdapter(
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          ),
         );
       },
     );

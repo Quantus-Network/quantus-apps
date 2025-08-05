@@ -11,11 +11,13 @@ import 'package:resonance_network_wallet/shared/extensions/transaction_event_ext
 class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
   final TransactionRole role;
+  final bool showFromAndTo;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
     required this.role,
+    this.showFromAndTo = true,
   });
 
   @override
@@ -115,7 +117,13 @@ class TransactionListItemState extends State<TransactionListItem> {
   String _getSubtitle() {
     String senderAddress = _formatAddress(widget.transaction.from);
     String receiverAddress = _formatAddress(widget.transaction.to);
-    return 'from $senderAddress to $receiverAddress';
+    if (widget.showFromAndTo) {
+      return 'from $senderAddress to $receiverAddress';
+    } else {
+      return role == TransactionRole.sender
+          ? 'to $receiverAddress'
+          : 'from $senderAddress';
+    }
   }
 
   String _getTimestampString() {
@@ -231,7 +239,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         _getSubtitle(),
                         style: const TextStyle(

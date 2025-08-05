@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -10,42 +9,18 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 /// with pagination support similar to allTransactionsProvider
 class FilteredPaginationController extends StateNotifier<PaginationState> {
   FilteredPaginationController(this.ref, this.accountIds)
-    : super(PaginationState.initial()) {
-    _init();
-  }
+    : super(PaginationState.initial());
 
   final Ref ref;
   final List<String>
   accountIds; // List of account IDs to fetch transactions for
   static const int _limit = 20;
 
-  Future<void> _init() async {
-    try {
-      final accountsState = await ref
-          .read(accountsProvider.notifier)
-          .stream
-          .firstWhere((state) => !state.isLoading);
-
-      accountsState.when(
-        data: (accounts) async {
-          if (accounts.isEmpty) {
-            state = state.copyWith(hasMore: false);
-            return;
-          }
-
-          // Use the provided accountIds
-          await _fetchPage(accountIds);
-        },
-        error: (e, st) => state = state.copyWith(error: e, stackTrace: st),
-        loading: () {},
-      );
-    } catch (e, st) {
-      state = state.copyWith(error: e, stackTrace: st);
-    }
-  }
-
   Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
+      print(
+        'FilteredPaginationController: Fetching page for accounts: $targetAccountIds, offset: ${state.offset}',
+      );
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
@@ -56,6 +31,9 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
           );
 
       final newItems = newTransactions.otherTransfers;
+      print(
+        'FilteredPaginationController: Fetched ${newItems.length} transactions, ${newTransactions.reversibleTransfers.length} reversible',
+      );
       state = state.copyWith(
         items: [...state.items, ...newItems],
         reversibleTransfers: state.offset == 0
@@ -80,6 +58,10 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
   Future<void> loadingRefresh() async {
     // Reset to initial state to show loading
     state = PaginationState.initial();
+    if (accountIds.isEmpty) {
+      state = state.copyWith(hasMore: false, isFetching: false);
+      return;
+    }
     await _fetchPage(accountIds);
   }
 
@@ -129,13 +111,13 @@ final filteredPaginationControllerProviderFamily =
     StateNotifierProvider.family<
       FilteredPaginationController,
       PaginationState,
-      List<String>?
-    >((ref, accountIds) => FilteredPaginationController(ref, accountIds!));
+      List<String>
+    >((ref, accountIds) => FilteredPaginationController(ref, accountIds));
 
 /// Combined provider for filtered transactions (similar to
 /// allTransactionsProvider)
 final filteredTransactionsProviderFamily =
-    Provider.family<AsyncValue<CombinedTransactionsList>, List<String>?>((
+    Provider.family<AsyncValue<CombinedTransactionsList>, List<String>>((
       ref,
       accountIds,
     ) {
@@ -145,6 +127,7 @@ final filteredTransactionsProviderFamily =
       );
 
       if (pagination.error != null) {
+        print('FilteredTransactionsProvider: Error: ${pagination.error}');
         return AsyncValue.error(pagination.error!, pagination.stackTrace!);
       }
       if (pagination.isFetching && pagination.items.isEmpty) {
@@ -152,15 +135,11 @@ final filteredTransactionsProviderFamily =
       }
 
       // Filter pending transactions based on account selection
-      final filteredPending = accountIds == null
-          ? pending // All accounts - show all pending
-          : pending
-                .where(
-                  (tx) =>
-                      accountIds.contains(tx.from) ||
-                      accountIds.contains(tx.to),
-                )
-                .toList();
+      final filteredPending = pending
+          .where(
+            (tx) => accountIds.contains(tx.from) || accountIds.contains(tx.to),
+          )
+          .toList();
 
       return AsyncValue.data(
         CombinedTransactionsList(

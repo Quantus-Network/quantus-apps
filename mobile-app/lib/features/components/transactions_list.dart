@@ -75,6 +75,7 @@ class RecentTransactionsList extends StatelessWidget {
                       key: ValueKey(transaction.id),
                       transaction: transaction,
                       role: _getTransactionRole(transaction),
+                      showFromAndTo: accountIds.length > 1,
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
@@ -95,6 +96,7 @@ class RecentTransactionsList extends StatelessWidget {
                       key: ValueKey(transaction.id),
                       transaction: transaction,
                       role: _getTransactionRole(transaction),
+                      showFromAndTo: accountIds.length > 1,
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
