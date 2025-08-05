@@ -33,7 +33,10 @@ class TransactionSubmissionService {
     // B. Immediately add it to the state so the UI can update
     _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
 
-    // C. Define the builder function that creates fresh submissions on each retry
+    // C. Define the builder function that creates fresh submissions on each
+    // retry
+
+    // ignore: prefer_function_declarations_over_variables
     final submissionBuilder = () =>
         (Function(p.ExtrinsicStatus) onStatus) => BalancesService()
             .balanceTransfer(account, targetAddress, amount, onStatus);
@@ -63,6 +66,8 @@ class TransactionSubmissionService {
     _ref.read(pendingTransactionsProvider.notifier).add(pending);
 
     // Define the builder function that creates fresh submissions on each retry
+
+    // ignore: prefer_function_declarations_over_variables
     final submissionBuilder = () =>
         (onStatus) => ReversibleTransfersService()
             .scheduleReversibleTransferWithDelaySeconds(
@@ -176,7 +181,7 @@ class TransactionSubmissionService {
                 'Retrying transaction with fresh data, attempt ${attempt + 1}/$maxRetries',
               );
               // Brief delay to let blockchain state update
-              Timer(Duration(seconds: 1), () {
+              Timer(const Duration(seconds: 1), () {
                 _submitAndTrackBackground(
                   submissionBuilder,
                   pendingTx,
@@ -188,8 +193,7 @@ class TransactionSubmissionService {
               print(
                 'Max retry attempts reached, marking transaction as failed',
               );
-              pendingTx.error =
-                  'Transaction failed after $maxRetries attempts due to stale data';
+              pendingTx.error = 'Transaction failed after $maxRetries';
               _ref
                   .read(pendingTransactionsProvider.notifier)
                   .updateState(
@@ -239,7 +243,8 @@ class TransactionSubmissionService {
         }
       }
 
-      // Build a fresh submission for this attempt (gets fresh nonce, block headers, etc.)
+      // Build a fresh submission for this attempt (gets fresh nonce,
+      // block headers, etc.)
       final submission = submissionBuilder();
       activeSubscription = await submission(onStatus);
     } catch (e, stackTrace) {
@@ -250,7 +255,7 @@ class TransactionSubmissionService {
           'Retrying due to submission error, attempt ${attempt + 1}/$maxRetries',
         );
         // Brief delay before retry
-        Timer(Duration(seconds: 2), () {
+        Timer(const Duration(seconds: 2), () {
           _submitAndTrackBackground(
             submissionBuilder,
             pendingTx,
