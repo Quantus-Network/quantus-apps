@@ -30,6 +30,13 @@ class TransferResult {
   });
 }
 
+class BlockQueryResponse {
+  final bool blockExists;
+  final List<TransactionEvent> transactions;
+
+  BlockQueryResponse({required this.blockExists, required this.transactions});
+}
+
 class ChainHistoryService {
   final String _graphQlEndpoint = AppConstants.graphQlEndpoint;
 
@@ -212,16 +219,96 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
 }
 ''';
 
+  final String _reversibleTransactionsInBlockQuery = r'''
+query TransactionsAndBlockInBlock(
+  $blockHash: String!,
+  $from: String!,
+  $to: String!
+) {
+  blocks(where: { hash_eq: $blockHash }, limit: 1) {
+    id
+  }
+  events(
+    limit: 500
+    offset: 0
+    where: {
+      block: { hash_eq: $blockHash },
+      reversibleTransfer: {
+        from: { id_eq: $from },
+        to: { id_eq: $to }
+      }
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    reversibleTransfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      txId
+      scheduledAt
+      status
+      block { height hash }
+      extrinsicHash
+      timestamp
+    }
+    extrinsicHash
+  }
+}
+''';
+
+  final String _transferInBlockQuery = r'''
+query TransactionsAndBlockInBlock(
+  $blockHash: String!,
+  $from: String!,
+  $to: String!
+) {
+  blocks(where: { hash_eq: $blockHash }, limit: 1) {
+    id
+  }
+  events(
+    limit: 500
+    offset: 0
+    where: {
+      block: { hash_eq: $blockHash },
+      transfer: {
+        from: { id_eq: $from },
+        to: { id_eq: $to }
+      }
+    }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    transfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      block { height hash }
+      extrinsicHash
+      timestamp
+      fee
+    }
+    extrinsicHash
+  }
+}
+''';
+
   Future<SortedTransactionsList> fetchAllTransactionTypes({
     required List<String> accountIds,
     int limit = 20,
     int offset = 0,
+    String? printName,
   }) async {
     final scheduled = await fetchScheduledTransfers(accountIds: accountIds);
     final other = await _fetchOtherTransfers(
       accountIds: accountIds,
       limit: limit,
       offset: offset,
+      printName: printName,
     );
 
     return SortedTransactionsList(
@@ -375,10 +462,12 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
     required List<String> accountIds,
     int limit = 10,
     int offset = 0,
+    String? printName,
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
-      'fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
+      '${printName ?? ''} '
+      ' fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
@@ -456,4 +545,85 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
   }
 
   // Add other methods for fetching historical data as needed
+
+  Future<BlockQueryResponse> getTransactionsInBlock({
+    required String blockHash,
+    required String from,
+    required String to,
+    required bool isReversible,
+  }) async {
+    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+
+    print('Fetching transactions in block: $blockHash');
+
+    final Map<String, dynamic> requestBody = {
+      'query': isReversible
+          ? _reversibleTransactionsInBlockQuery
+          : _transferInBlockQuery,
+      'variables': {'blockHash': blockHash, 'from': from, 'to': to},
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        print('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final Map<String, dynamic>? data = responseBody['data'];
+      if (data == null) {
+        throw Exception('GraphQL response data is null.');
+      }
+
+      final List<dynamic>? blocks = data['blocks'];
+      final bool blockExists = blocks != null && blocks.isNotEmpty;
+
+      final List<dynamic>? events = data['events'];
+
+      if (events == null || events.isEmpty) {
+        return BlockQueryResponse(blockExists: blockExists, transactions: []);
+      }
+
+      final List<TransactionEvent> transactions = [];
+      for (var eventJson in events) {
+        final event = eventJson as Map<String, dynamic>;
+
+        if (event['transfer'] != null) {
+          final transferData = event['transfer'] as Map<String, dynamic>;
+          transferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(TransferEvent.fromJson(transferData));
+        } else if (event['reversibleTransfer'] != null) {
+          final reversibleTransferData =
+              event['reversibleTransfer'] as Map<String, dynamic>;
+          reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(
+            ReversibleTransferEvent.fromJson(reversibleTransferData),
+          );
+        }
+      }
+
+      print('Found ${transactions.length} transactions in block $blockHash');
+      return BlockQueryResponse(
+        blockExists: blockExists,
+        transactions: transactions,
+      );
+    } catch (e, stackTrace) {
+      print('Error fetching transactions by block hash: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
 }

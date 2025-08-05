@@ -172,6 +172,7 @@ class SubstrateService {
   Future<BigInt> queryUserBalance() async {
     final keyPair = await _getUserWallet();
     final balance = await queryBalance(keyPair.ss58Address);
+    print('user balance: $balance');
     return balance;
   }
 
@@ -184,6 +185,8 @@ class SubstrateService {
 
       // Retrieve Account Balance
       final accountInfo = await resonanceApi.query.system.account(accountID);
+
+      print('user balance $address: ${accountInfo.data.free}');
 
       // Get the free balance
       return accountInfo.data.free;

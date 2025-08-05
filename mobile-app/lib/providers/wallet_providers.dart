@@ -102,6 +102,7 @@ final historyProviderFamily =
 
       return await chainHistoryService.fetchAllTransactionTypes(
         accountIds: accountIds,
+        printName: 'historyProviderFamily',
       );
     });
 

@@ -55,6 +55,7 @@ class PaginatedTransactionsNotifier
             accountIds: accountIds,
             limit: _limit,
             offset: _offset,
+            printName: 'historyTx - fetchPage',
           );
 
       final newItems = newTransactions.otherTransfers;

@@ -29,6 +29,7 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
             accountIds: targetAccountIds,
             limit: _limit,
             offset: state.offset,
+            printName: 'filteredTx - fetchPage',
           );
 
       final newItems = newTransactions.otherTransfers;
