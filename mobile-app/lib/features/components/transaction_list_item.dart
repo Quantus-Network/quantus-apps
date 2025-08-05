@@ -28,25 +28,24 @@ class TransactionListItemState extends State<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
 
-  bool get isPending =>
-      widget.transaction.isPending || widget.transaction.isReversibleScheduled;
+  bool get isPendingOrScheduled => widget.transaction.isPendingOrScheduled;
   TransactionRole get role => widget.role;
 
   String get title {
     if (widget.transaction.isReversibleCancelled) return 'Cancelled';
     switch (role) {
       case TransactionRole.sender:
-        if (isPending) {
+        if (isPendingOrScheduled) {
           return 'Sending';
         }
         return 'Sent';
       case TransactionRole.receiver:
-        if (isPending) {
+        if (isPendingOrScheduled) {
           return 'Receiving';
         }
         return 'Received';
       case TransactionRole.both:
-        if (isPending) {
+        if (isPendingOrScheduled) {
           return 'Sending/Receiving';
         }
         return 'Sent/Received';
@@ -58,10 +57,10 @@ class TransactionListItemState extends State<TransactionListItem> {
       return const Color(0xFFFF2D53);
     }
 
-    if (role == TransactionRole.sender && isPending) {
+    if (role == TransactionRole.sender && isPendingOrScheduled) {
       return const Color(0xFF16CECE);
     }
-    if (role == TransactionRole.receiver && isPending) {
+    if (role == TransactionRole.receiver && isPendingOrScheduled) {
       return const Color(0xFFB259F2);
     }
 

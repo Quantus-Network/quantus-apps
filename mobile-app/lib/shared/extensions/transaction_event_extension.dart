@@ -21,7 +21,7 @@ extension TransactionEventExtension on TransactionEvent {
       (this as PendingTransactionEvent).transactionState ==
           TransactionState.failed;
 
-  bool get isPending =>
+  bool get isPendingOrScheduled =>
       this is PendingTransactionEvent || isReversibleScheduled;
 
   // this is guaranteed to be positive
