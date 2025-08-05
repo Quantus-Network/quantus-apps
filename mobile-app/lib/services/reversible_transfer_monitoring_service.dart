@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
@@ -16,12 +18,19 @@ class ReversibleTransferMonitoringService {
   static const Duration _pollInterval = Duration(
     seconds: 5,
   ); // Aggressive polling
-  static const Duration _timeBuffer = Duration(
-    seconds: 30,
-  ); // Start monitoring the timer x seconds before
 
   ReversibleTransferMonitoringService(this._ref) {
-    _listenToTransactions();
+    _ref.listen(appLifecycleStateProvider, (previous, next) {
+      if (next == AppLifecycleState.resumed) {
+        _listenToTransactions();
+      } else {
+        dispose();
+      }
+    });
+
+    if (_ref.read(appLifecycleStateProvider) == AppLifecycleState.resumed) {
+      _listenToTransactions();
+    }
   }
 
   void _listenToTransactions() {
@@ -44,14 +53,16 @@ class ReversibleTransferMonitoringService {
         .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
         .toList();
 
+    print(
+      // ignore: lines_longer_than_80_chars
+      'monitoring setvice: watching ${scheduledTransfers.length} reversible transfers!',
+    );
+
     // Start monitoring transfers approaching execution
     for (final transfer in scheduledTransfers) {
-      final remainingTime = transfer.remainingTime;
-
-      // If we're not already monitoring this transfer and it's close
-      // to execution
-      if (!_timers.containsKey(transfer.id) && remainingTime <= _timeBuffer) {
-        _startMonitoringTransfer(transfer);
+      // If we're not already monitoring this transfer
+      if (!_timers.containsKey(transfer.id)) {
+        _scheduleExecutionPolling(transfer);
       }
     }
 
@@ -66,38 +77,31 @@ class ReversibleTransferMonitoringService {
     }
   }
 
-  void _startMonitoringTransfer(ReversibleTransferEvent transfer) {
-    print('Starting to monitor reversible transfer timer: ${transfer.id}');
-
-    // Create a timer that checks remaining time every second
-    final timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _checkTransferTimer(transfer);
-    });
-
-    _timers[transfer.id] = timer;
-
-    // Check immediately in case it's already at zero
-    _checkTransferTimer(transfer);
-  }
-
-  void _checkTransferTimer(ReversibleTransferEvent transfer) {
+  void _scheduleExecutionPolling(ReversibleTransferEvent transfer) {
     final remainingTime = transfer.remainingTime;
 
-    // If timer hit zero and we're not already polling for execution
-    if (remainingTime <= Duration.zero &&
-        !_executionPollers.containsKey(transfer.id)) {
-      print(
-        'Reversible transfer timer hit zero: ${transfer.id} - '
-        'starting execution polling',
-      );
-      _startExecutionPolling(transfer);
+    print(
+      'Scheduling execution poll for ${transfer.id} '
+      'in $remainingTime',
+    );
 
-      // Stop the timer monitoring since we're now polling for execution
-      _stopTimerMonitoring(transfer.id);
+    if (remainingTime <= Duration.zero) {
+      // If time is already up, start polling immediately
+      _startExecutionPolling(transfer);
+    } else {
+      // Set a timer for when the remaining time is up
+      final timer = Timer(remainingTime, () {
+        _startExecutionPolling(transfer);
+        _timers.remove(transfer.id); // Timer has fired, remove it
+      });
+      _timers[transfer.id] = timer;
     }
   }
 
   void _startExecutionPolling(ReversibleTransferEvent transfer) {
+    if (_executionPollers.containsKey(transfer.id)) {
+      return; // Already polling
+    }
     print('Starting execution polling for: ${transfer.id}');
 
     // Create aggressive polling timer
@@ -182,11 +186,6 @@ class ReversibleTransferMonitoringService {
     return null;
   }
 
-  void _stopTimerMonitoring(String transferId) {
-    final timer = _timers.remove(transferId);
-    timer?.cancel();
-  }
-
   void _stopExecutionPolling(String transferId) {
     final poller = _executionPollers.remove(transferId);
     poller?.cancel();
@@ -194,7 +193,8 @@ class ReversibleTransferMonitoringService {
   }
 
   void _stopMonitoringTransfer(String transferId) {
-    _stopTimerMonitoring(transferId);
+    final timer = _timers.remove(transferId);
+    timer?.cancel();
     _stopExecutionPolling(transferId);
     print('Stopped monitoring transfer: $transferId');
   }
@@ -226,7 +226,7 @@ final reversibleTransferMonitoringServiceProvider =
       final service = ReversibleTransferMonitoringService(ref);
 
       // Clean up when provider is disposed
-      ref.onDispose(() => service.dispose());
+      ref.onDispose(service.dispose);
 
       return service;
     });
