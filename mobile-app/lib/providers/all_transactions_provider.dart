@@ -76,6 +76,7 @@ class PaginationController extends StateNotifier<PaginationState> {
             accountIds: accountIds,
             limit: _limit,
             offset: state.offset,
+            printName: 'allTx - fetchPage',
           );
 
       final newItems = newTransactions.otherTransfers;
@@ -107,10 +108,10 @@ class PaginationController extends StateNotifier<PaginationState> {
   Future<void> silentRefresh() async {
     print('Pagination Controller: Silent refresh called');
     if (state.isFetching) return;
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null || accounts.isEmpty) return;
+    final activeAccount = ref.read(activeAccountProvider).value;
+    if (activeAccount == null) return;
 
-    await _silentFetchFirstPage(accounts.map((e) => e.accountId).toList());
+    await _silentFetchFirstPage([activeAccount.accountId]);
   }
 
   /// Refresh data with loading indicators.
@@ -138,6 +139,7 @@ class PaginationController extends StateNotifier<PaginationState> {
             accountIds: accountIds,
             limit: _limit,
             offset: 0,
+            printName: 'silentFetchFirstPage',
           );
 
       final newItems = newTransactions.otherTransfers;
