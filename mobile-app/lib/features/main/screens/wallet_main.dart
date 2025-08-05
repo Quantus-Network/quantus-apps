@@ -133,7 +133,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               ),
             RecentTransactionsList(
               transactions: allTransactions.take(5).toList(),
-              currentWalletAddress: activeAccount.accountId,
+              accountIds: [activeAccount.accountId],
             ),
             if (allTransactions.isNotEmpty)
               Padding(
@@ -145,7 +145,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TransactionsScreen(),
+                          builder: (context) => TransactionsScreen(
+                            showAccountFilter: false,
+                            fixedAccountId: activeAccount.accountId,
+                          ),
                         ),
                       );
                     },

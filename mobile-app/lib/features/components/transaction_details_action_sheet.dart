@@ -8,7 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,9 +58,6 @@ class _TransactionDetailsActionSheetState
       return 'RECEIVING';
     }
 
-    if (widget.role == TransactionRole.both) {
-      return 'SENT';
-    }
     if (widget.role == TransactionRole.sender) {
       return 'SENT';
     }
@@ -80,9 +77,6 @@ class _TransactionDetailsActionSheetState
     if (widget.role == TransactionRole.receiver &&
         widget.transaction.isReversibleCancelled) {
       return 'from';
-    }
-    if (widget.role == TransactionRole.both) {
-      return 'was successfully sent to';
     }
     if (widget.role == TransactionRole.sender) {
       return 'was successfully sent to';
@@ -184,8 +178,7 @@ class _TransactionDetailsActionSheetState
                     )
                   else
                     Image.asset(
-                      widget.role == TransactionRole.sender ||
-                              widget.role == TransactionRole.both
+                      widget.role == TransactionRole.sender
                           ? 'assets/send_icon.png'
                           : 'assets/receive_icon_sm.png',
                       width: 51,

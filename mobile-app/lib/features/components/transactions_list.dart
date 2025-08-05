@@ -1,19 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
-import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
-  final TransactionHistoryProvider provider;
+  final List<String>
+  accountIds; // List of account IDs we're showing transactions for
   final bool Function(TransactionEvent)? filter;
 
   const RecentTransactionsList({
     super.key,
     required this.transactions,
-    required this.provider,
+    required this.accountIds,
     this.filter,
   });
+
+  /// Determines which account "owns" a transaction for display purposes
+  String _getOwnerAccountId(TransactionEvent transaction) {
+    // If showing only one account, it's always the owner
+    if (accountIds.length == 1) {
+      return accountIds.first;
+    }
+
+    // For multiple accounts (All Accounts view), prefer the sender if it's in
+    // our list
+    if (accountIds.contains(transaction.from)) {
+      return transaction.from;
+    }
+
+    // Otherwise use the receiver if it's in our list
+    if (accountIds.contains(transaction.to)) {
+      return transaction.to;
+    }
+
+    // Fallback to first account (shouldn't happen in normal cases)
+    return accountIds.first;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +83,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      provider: provider,
+                      ownerAccountId: _getOwnerAccountId(transaction),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
@@ -81,7 +103,7 @@ class RecentTransactionsList extends StatelessWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      provider: provider,
+                      ownerAccountId: _getOwnerAccountId(transaction),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
