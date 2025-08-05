@@ -61,12 +61,12 @@ class TransactionListItemState extends State<TransactionListItem> {
       return context.themeColors.error;
     }
     if (role == TransactionRole.sender && isPendingOrScheduled) {
-      return const Color(0xFF16CECE);
+      return context.themeColors.checksum;
     }
     if (role == TransactionRole.receiver && isPendingOrScheduled) {
-      return const Color(0xFFB259F2);
+      return context.themeColors.purple;
     }
-    if (role == TransactionRole.sender) return const Color(0xFF16CECE);
+    if (role == TransactionRole.sender) return context.themeColors.checksum;
     return context.themeColors.purple;
   }
 
@@ -242,15 +242,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        _getSubtitle(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
+                      Text(_getSubtitle(), style: context.themeText.tiny),
                       if (!widget.transaction.isReversibleScheduled)
                         Text(
                           _getTimestampString(),
