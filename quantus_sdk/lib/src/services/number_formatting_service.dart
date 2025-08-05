@@ -14,7 +14,11 @@ class NumberFormattingService {
   /// user-readable string with a specified number of decimal places.
   ///
   /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4)
-  String formatBalance(BigInt balance, {int maxDecimals = 4}) {
+  String formatBalance(
+    BigInt balance, {
+    int maxDecimals = 4,
+    bool addThousandsSeparators = true,
+  }) {
     if (balance == BigInt.zero) {
       return '0';
     }
@@ -48,17 +52,20 @@ class NumberFormattingService {
       }
     }
 
-    // 5. Manually add thousand separators to the integer part.
-    final parts = asString.split('.');
-    final integerPart = parts[0];
-    final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
+    if (addThousandsSeparators) {
+      // 5. Manually add thousand separators to the integer part.
+      final parts = asString.split('.');
+      final integerPart = parts[0];
+      final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
 
-    final formattedInteger = integerPart.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-
-    return formattedInteger + decimalPart;
+      final formattedInteger = integerPart.replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
+      return formattedInteger + decimalPart;
+    } else {
+      return asString;
+    }
   }
 
   /// Parses a user-entered formatted string amount (e.g., "1.23" or "1,23"
