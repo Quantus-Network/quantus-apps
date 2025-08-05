@@ -13,13 +13,8 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
-  final String currentWalletAddress;
 
-  const TransactionActionSheet({
-    super.key,
-    required this.transaction,
-    required this.currentWalletAddress,
-  });
+  const TransactionActionSheet({super.key, required this.transaction});
 
   @override
   State<TransactionActionSheet> createState() => _TransactionActionSheetState();

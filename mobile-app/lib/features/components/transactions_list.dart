@@ -2,18 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
-  final String currentWalletAddress;
+  final List<String>
+  accountIds; // List of account IDs we're showing transactions for
   final bool Function(TransactionEvent)? filter;
 
   const RecentTransactionsList({
     super.key,
     required this.transactions,
-    required this.currentWalletAddress,
+    required this.accountIds,
     this.filter,
   });
+
+  TransactionRole _getTransactionRole(TransactionEvent transaction) {
+    final isFrom = accountIds.contains(transaction.from);
+    final isTo = accountIds.contains(transaction.to);
+    if (isFrom && isTo) {
+      return TransactionRole.both;
+    } else if (isFrom) {
+      return TransactionRole.sender;
+    } else {
+      return TransactionRole.receiver;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,60 +53,58 @@ class RecentTransactionsList extends StatelessWidget {
         color: const Color(0x3F000000), // black w/ alpha
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (transactionsToShow.isEmpty)
-            SizedBox(
-              width: double.infinity,
-              height: 42,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'No transactions yet.',
-                  style: context.themeText.smallParagraph,
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (transactionsToShow.isEmpty)
+              Text(
+                'No transactions yet.',
+                style: context.themeText.smallParagraph,
+              )
+            else ...[
+              if (scheduled.isNotEmpty)
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: scheduled.length,
+                  itemBuilder: (context, index) {
+                    final transaction = scheduled[index];
+                    return TransactionListItem(
+                      key: ValueKey(transaction.id),
+                      transaction: transaction,
+                      role: _getTransactionRole(transaction),
+                      showFromAndTo: accountIds.length > 1,
+                    );
+                  },
+                  separatorBuilder: (context, index) => const _Divider(),
                 ),
-              ),
-            )
-          else ...[
-            if (scheduled.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: scheduled.length,
-                itemBuilder: (context, index) {
-                  final transaction = scheduled[index];
-                  return TransactionListItem(
-                    key: ValueKey(transaction.id),
-                    transaction: transaction,
-                    currentWalletAddress: currentWalletAddress,
-                  );
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
-            if (scheduled.isNotEmpty && others.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Divider(color: Colors.white, thickness: 1),
-              ),
-            if (others.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: others.length,
-                itemBuilder: (context, index) {
-                  final transaction = others[index];
-                  return TransactionListItem(
-                    key: ValueKey(transaction.id),
-                    transaction: transaction,
-                    currentWalletAddress: currentWalletAddress,
-                  );
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
+              if (scheduled.isNotEmpty && others.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12.0),
+                  child: Divider(color: Colors.white, thickness: 1),
+                ),
+              if (others.isNotEmpty)
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: others.length,
+                  itemBuilder: (context, index) {
+                    final transaction = others[index];
+                    return TransactionListItem(
+                      key: ValueKey(transaction.id),
+                      transaction: transaction,
+                      role: _getTransactionRole(transaction),
+                      showFromAndTo: accountIds.length > 1,
+                    );
+                  },
+                  separatorBuilder: (context, index) => const _Divider(),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

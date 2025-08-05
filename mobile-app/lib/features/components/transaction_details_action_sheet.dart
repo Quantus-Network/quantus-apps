@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/features/components/reversible_timer.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
@@ -16,12 +17,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 class TransactionDetailsActionSheet extends StatefulWidget {
   final TransactionEvent transaction;
-  final String currentWalletAddress;
+  final TransactionRole role;
 
   const TransactionDetailsActionSheet({
     super.key,
     required this.transaction,
-    required this.currentWalletAddress,
+    required this.role,
   });
 
   @override
@@ -34,12 +35,12 @@ class _TransactionDetailsActionSheetState
   Timer? _timer;
   Duration? _remainingTime;
   Future<String> get _checksumFuture {
-    final address = isSender ? widget.transaction.to : widget.transaction.from;
+    final address = widget.role == TransactionRole.sender
+        ? widget.transaction.to
+        : widget.transaction.from;
 
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
-
-  bool get isSender => widget.transaction.from == widget.currentWalletAddress;
 
   String get title {
     if (widget.transaction.isFailed) {
@@ -55,10 +56,12 @@ class _TransactionDetailsActionSheetState
     if (widget.transaction.isReversibleCancelled) {
       return 'TRANSACTION\nCANCELLED';
     }
-    if (!isSender && widget.transaction.isReversibleScheduled) {
+    if (widget.role == TransactionRole.receiver &&
+        widget.transaction.isReversibleScheduled) {
       return 'RECEIVING';
     }
-    if (isSender) {
+
+    if (widget.role == TransactionRole.sender) {
       return 'SENT';
     }
     return 'RECEIVED';
@@ -66,16 +69,19 @@ class _TransactionDetailsActionSheetState
 
   String get detailText {
     if (widget.transaction.isFailed ||
-        (isSender && widget.transaction.isReversibleCancelled)) {
+        (widget.role == TransactionRole.sender &&
+            widget.transaction.isReversibleCancelled)) {
       return 'to';
     }
-    if (!isSender && widget.transaction.isReversibleScheduled) {
+    if (widget.role == TransactionRole.receiver &&
+        widget.transaction.isReversibleScheduled) {
       return 'received in';
     }
-    if (!isSender && widget.transaction.isReversibleCancelled) {
+    if (widget.role == TransactionRole.receiver &&
+        widget.transaction.isReversibleCancelled) {
       return 'from';
     }
-    if (isSender) {
+    if (widget.role == TransactionRole.sender) {
       return 'was successfully sent to';
     }
     return 'received from';
@@ -107,7 +113,7 @@ class _TransactionDetailsActionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final String accountId = isSender
+    final String accountId = widget.role == TransactionRole.sender
         ? widget.transaction.to
         : widget.transaction.from;
 
@@ -177,7 +183,7 @@ class _TransactionDetailsActionSheetState
                     )
                   else
                     Image.asset(
-                      isSender
+                      widget.role == TransactionRole.sender
                           ? 'assets/send_icon.png'
                           : 'assets/receive_icon_sm.png',
                       height: context.themeSize.txDetailsIconHeight,
@@ -362,7 +368,8 @@ class _TransactionDetailsActionSheetState
             color: context.themeColors.textMuted,
           ),
         ),
-        if (!isSender && widget.transaction.isReversibleScheduled)
+        if (widget.role == TransactionRole.receiver &&
+            widget.transaction.isReversibleScheduled)
           ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
         FutureBuilder(
           future: _checksumFuture,
@@ -378,7 +385,9 @@ class _TransactionDetailsActionSheetState
           },
         ),
         Text(
-          isSender ? widget.transaction.to : widget.transaction.from,
+          widget.role == TransactionRole.sender
+              ? widget.transaction.to
+              : widget.transaction.from,
           textAlign: TextAlign.center,
           style: context.themeText.tiny,
         ),

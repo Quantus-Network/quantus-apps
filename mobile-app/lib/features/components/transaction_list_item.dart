@@ -2,24 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/transaction_details_action_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
 class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
-  final String currentWalletAddress;
+  final TransactionRole role;
+  final bool showFromAndTo;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
-    required this.currentWalletAddress,
+    required this.role,
+    this.showFromAndTo = true,
   });
 
   @override
@@ -29,32 +31,49 @@ class TransactionListItem extends StatefulWidget {
 class TransactionListItemState extends State<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
-  bool get isSent => widget.transaction.from == widget.currentWalletAddress;
-  bool get isPending =>
-      widget.transaction is PendingTransactionEvent ||
-      widget.transaction.isReversibleScheduled;
+
+  bool get isPendingOrScheduled => widget.transaction.isPendingOrScheduled;
+  TransactionRole get role => widget.role;
 
   String get title {
     if (widget.transaction.isReversibleCancelled) return 'Cancelled';
-    if (isSent && isPending) return 'Sending';
-    if (!isSent && isPending) return 'Receiving';
-    if (isSent) return 'Sent';
-    return 'Received';
+    switch (role) {
+      case TransactionRole.sender:
+        if (isPendingOrScheduled) {
+          return 'Sending';
+        }
+        return 'Sent';
+      case TransactionRole.receiver:
+        if (isPendingOrScheduled) {
+          return 'Receiving';
+        }
+        return 'Received';
+      case TransactionRole.both:
+        if (isPendingOrScheduled) {
+          return 'Sending/Receiving';
+        }
+        return 'Sent/Received';
+    }
   }
 
   Color get titleColor {
     if (widget.transaction.isReversibleCancelled) {
       return context.themeColors.error;
     }
-    if (isSent && isPending) return context.themeColors.checksum;
-    if (!isSent && isPending) return context.themeColors.purple;
-    if (isSent) return context.themeColors.checksum;
+    if (role == TransactionRole.sender && isPendingOrScheduled) {
+      return const Color(0xFF16CECE);
+    }
+    if (role == TransactionRole.receiver && isPendingOrScheduled) {
+      return const Color(0xFFB259F2);
+    }
+    if (role == TransactionRole.sender) return const Color(0xFF16CECE);
     return context.themeColors.purple;
   }
 
   @override
   void initState() {
     super.initState();
+
     if (widget.transaction.isReversibleScheduled) {
       final tx = widget.transaction as ReversibleTransferEvent;
       _remainingTime = tx.remainingTime;
@@ -96,33 +115,36 @@ class TransactionListItemState extends State<TransactionListItem> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
+  String _getSubtitle() {
+    String senderAddress = _formatAddress(widget.transaction.from);
+    String receiverAddress = _formatAddress(widget.transaction.to);
+    if (widget.showFromAndTo) {
+      return 'from $senderAddress to $receiverAddress';
+    } else {
+      return role == TransactionRole.sender
+          ? 'to $receiverAddress'
+          : 'from $senderAddress';
+    }
   }
 
-  String _getSubtitle(TransactionEvent transaction) {
-    String address = isSent ? widget.transaction.to : widget.transaction.from;
-    String prefix =
-        '${isSent ? 'to' : 'from'} '
-        '${_formatAddress(address)}';
-    if (widget.transaction.isReversibleScheduled) {
-      return prefix;
-    }
-    return '$prefix | ${_formatTimestamp(widget.transaction.timestamp)}';
+  String _getTimestampString() {
+    return DatetimeFormattingService.formatTimestamp(
+      widget.transaction.timestamp,
+    );
   }
 
   void _showActionSheet(BuildContext context) {
     Widget sheet;
 
-    if (widget.transaction.isReversibleScheduled && isSent) {
+    if (widget.transaction.isReversibleScheduled &&
+        role == TransactionRole.sender) {
       sheet = TransactionActionSheet(
         transaction: widget.transaction as ReversibleTransferEvent,
-        currentWalletAddress: widget.currentWalletAddress,
       );
     } else {
       sheet = TransactionDetailsActionSheet(
         transaction: widget.transaction,
-        currentWalletAddress: widget.currentWalletAddress,
+        role: role,
       );
     }
 
@@ -157,8 +179,10 @@ class TransactionListItemState extends State<TransactionListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final isSent = widget.transaction.from == widget.currentWalletAddress;
-    final isFailed = widget.transaction.isFailed;
+    final isFailed =
+        widget.transaction is PendingTransactionEvent &&
+        (widget.transaction as PendingTransactionEvent).transactionState ==
+            TransactionState.failed;
 
     return InkWell(
       onTap: () {
@@ -184,7 +208,7 @@ class TransactionListItemState extends State<TransactionListItem> {
                   )
                 else
                   Image.asset(
-                    isSent
+                    role == TransactionRole.sender
                         ? 'assets/send_icon.png'
                         : 'assets/receive_icon_sm.png',
                     width: context.themeSize.txListItemIconWidth,
@@ -217,11 +241,26 @@ class TransactionListItemState extends State<TransactionListItem> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
-                        _getSubtitle(widget.transaction),
-                        style: context.themeText.tiny,
+                        _getSubtitle(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontFamily: 'Fira Code',
+                          fontWeight: FontWeight.w300,
+                        ),
                       ),
+                      if (!widget.transaction.isReversibleScheduled)
+                        Text(
+                          _getTimestampString(),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.60),
+                            fontSize: 11,
+                            fontFamily: 'Fira Code',
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -250,7 +289,7 @@ class TransactionListItemState extends State<TransactionListItem> {
               duration: DatetimeFormattingService.formatDuration(
                 _remainingTime!,
               ).formatted,
-              isSending: widget.transaction.from == widget.currentWalletAddress,
+              isSending: role == TransactionRole.sender,
             );
           } else {
             return const _StatusDisplay(status: 'Pending');

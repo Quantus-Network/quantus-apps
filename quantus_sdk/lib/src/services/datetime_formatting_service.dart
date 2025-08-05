@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class FormattedDuration {
   final String hours;
   final String minutes;
@@ -69,6 +71,10 @@ class DatetimeFormattingService {
       seconds: seconds,
       formatted: '$hours:$minutes:$seconds',
     );
+  }
+
+  static String formatTimestamp(DateTime timestamp) {
+    return DateFormat('dd-MM-yyyy HH:mm:ss').format(timestamp.toLocal());
   }
 
   /// Helper function to format future durations.
