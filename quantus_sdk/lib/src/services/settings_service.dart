@@ -14,11 +14,6 @@ class SettingsService {
   final _secureStorage = const FlutterSecureStorage();
   bool _initialized = false;
 
-  // Stream controller for account changes
-  final StreamController<List<Account>> _accountsController =
-      StreamController<List<Account>>.broadcast();
-  Stream<List<Account>> get accountsStream => _accountsController.stream;
-
   // New keys for multi-account support
   static const String _accountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
@@ -69,9 +64,6 @@ class SettingsService {
         .map((a) => a.toJson())
         .toList();
     await _prefs.setString(_accountsKey, jsonEncode(jsonData));
-
-    // Notify listeners of the change
-    _accountsController.add(accounts);
   }
 
   Future<void> addAccount(Account account) async {
