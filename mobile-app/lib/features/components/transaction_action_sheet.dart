@@ -9,13 +9,8 @@ import 'package:resonance_network_wallet/features/components/reversible_timer.da
 
 class TransactionActionSheet extends StatefulWidget {
   final ReversibleTransferEvent transaction;
-  final String currentWalletAddress;
 
-  const TransactionActionSheet({
-    super.key,
-    required this.transaction,
-    required this.currentWalletAddress,
-  });
+  const TransactionActionSheet({super.key, required this.transaction});
 
   @override
   State<TransactionActionSheet> createState() => _TransactionActionSheetState();

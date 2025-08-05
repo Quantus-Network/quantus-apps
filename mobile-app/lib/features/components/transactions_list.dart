@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
+import 'package:resonance_network_wallet/providers/transaction_history_provider.dart';
 
 class RecentTransactionsList extends StatelessWidget {
   final List<TransactionEvent> transactions;
-  final String currentWalletAddress;
+  final TransactionHistoryProvider provider;
   final bool Function(TransactionEvent)? filter;
 
   const RecentTransactionsList({
     super.key,
     required this.transactions,
-    required this.currentWalletAddress,
+    required this.provider,
     this.filter,
   });
 
@@ -38,53 +39,56 @@ class RecentTransactionsList extends StatelessWidget {
         color: const Color(0x3F000000), // black w/ alpha
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (transactionsToShow.isEmpty)
-            const Text(
-              'No transactions yet.',
-              style: TextStyle(color: Colors.white, fontFamily: 'Fira Code'),
-            )
-          else ...[
-            if (scheduled.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: scheduled.length,
-                itemBuilder: (context, index) {
-                  final transaction = scheduled[index];
-                  return TransactionListItem(
-                    key: ValueKey(transaction.id),
-                    transaction: transaction,
-                    currentWalletAddress: currentWalletAddress,
-                  );
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
-            if (scheduled.isNotEmpty && others.isNotEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: Divider(color: Colors.white, thickness: 1),
-              ),
-            if (others.isNotEmpty)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: others.length,
-                itemBuilder: (context, index) {
-                  final transaction = others[index];
-                  return TransactionListItem(
-                    key: ValueKey(transaction.id),
-                    transaction: transaction,
-                    currentWalletAddress: currentWalletAddress,
-                  );
-                },
-                separatorBuilder: (context, index) => const _Divider(),
-              ),
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (transactionsToShow.isEmpty)
+              const Text(
+                'No transactions yet.',
+                style: TextStyle(color: Colors.white, fontFamily: 'Fira Code'),
+              )
+            else ...[
+              if (scheduled.isNotEmpty)
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: scheduled.length,
+                  itemBuilder: (context, index) {
+                    final transaction = scheduled[index];
+                    return TransactionListItem(
+                      key: ValueKey(transaction.id),
+                      transaction: transaction,
+                      provider: provider,
+                    );
+                  },
+                  separatorBuilder: (context, index) => const _Divider(),
+                ),
+              if (scheduled.isNotEmpty && others.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12.0),
+                  child: Divider(color: Colors.white, thickness: 1),
+                ),
+              if (others.isNotEmpty)
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: others.length,
+                  itemBuilder: (context, index) {
+                    final transaction = others[index];
+                    return TransactionListItem(
+                      key: ValueKey(transaction.id),
+                      transaction: transaction,
+                      provider: provider,
+                    );
+                  },
+                  separatorBuilder: (context, index) => const _Divider(),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
