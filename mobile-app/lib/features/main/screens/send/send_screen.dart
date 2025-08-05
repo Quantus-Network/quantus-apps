@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
+    as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
@@ -248,6 +250,9 @@ class SendScreenState extends State<SendScreen> {
             amount: amount,
             delaySeconds: _reversibleTimeSeconds,
           );
+
+      // Can't send more than existentia deposit with a reversible transfer
+      estimatedFee = estimatedFee + balances.Constants().existentialDeposit;
     } else {
       estimatedFee = await BalancesService().getBalanceTransferFee(
         account,
@@ -276,6 +281,8 @@ class SendScreenState extends State<SendScreen> {
       );
 
       final maxSendableAmount = _maxBalance - estimatedFee;
+
+      print('max sendable amount: $maxSendableAmount');
 
       if (maxSendableAmount > BigInt.zero) {
         final formattedMax = _formattingService.formatBalance(
@@ -1027,8 +1034,10 @@ class SendScreenState extends State<SendScreen> {
                           Row(
                             children: [
                               Text(
-                                // ignore: lines_longer_than_80_chars
-                                '${_formattingService.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
+                                _formattingService.formatBalance(
+                                  _networkFee,
+                                  addSymbol: true,
+                                ),
                                 style: context.themeText.detail?.copyWith(
                                   color: context.themeColors.textMuted,
                                   fontWeight: FontWeight.w600,
@@ -1093,7 +1102,7 @@ class SendScreenState extends State<SendScreen> {
                               : _hasAmountError
                               ? 'Insufficient Balance'
                               // ignore: lines_longer_than_80_chars
-                              : 'Send ${_formattingService.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
+                              : 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}',
                           textAlign: TextAlign.center,
                           style: context.themeText.smallTitle?.copyWith(
                             color: context.themeColors.textSecondary,

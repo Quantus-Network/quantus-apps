@@ -101,9 +101,11 @@ class TransactionTrackingService {
         return;
       }
 
-      // If the block *is* indexed, but our transaction is not in it, mark as failed.
+      // If the block is indexed, but our transaction is not in it,
+      // mark as failed.
       if (response.transactions.isEmpty) {
         print(
+          // ignore: lines_longer_than_80_chars
           'Transaction ${pendingTx.id} not found in block $blockHash. Marking as failed.',
         );
         _ref
