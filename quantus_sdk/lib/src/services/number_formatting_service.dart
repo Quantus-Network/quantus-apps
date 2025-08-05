@@ -18,6 +18,7 @@ class NumberFormattingService {
     BigInt balance, {
     int maxDecimals = 4,
     bool addThousandsSeparators = true,
+    bool addSymbol = false,
   }) {
     if (balance == BigInt.zero) {
       return '0';
@@ -52,6 +53,8 @@ class NumberFormattingService {
       }
     }
 
+    String resultString = asString;
+
     if (addThousandsSeparators) {
       // 5. Manually add thousand separators to the integer part.
       final parts = asString.split('.');
@@ -62,10 +65,13 @@ class NumberFormattingService {
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (Match m) => '${m[1]},',
       );
-      return formattedInteger + decimalPart;
-    } else {
-      return asString;
+      resultString = formattedInteger + decimalPart;
     }
+
+    if (addSymbol) {
+      resultString = '$resultString ${AppConstants.tokenSymbol}';
+    }
+    return resultString;
   }
 
   /// Parses a user-entered formatted string amount (e.g., "1.23" or "1,23"

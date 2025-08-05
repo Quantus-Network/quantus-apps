@@ -107,7 +107,7 @@ class TransactionListItemState extends State<TransactionListItem> {
   final NumberFormattingService _formattingService = NumberFormattingService();
 
   String _formatAmount(BigInt amount) {
-    return '${_formattingService.formatBalance(amount)} QUAN';
+    return _formattingService.formatBalance(amount, addSymbol: true);
   }
 
   String _formatAddress(String address) {

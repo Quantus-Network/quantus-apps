@@ -369,9 +369,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     MaterialPageRoute(
                       builder: (context) => AccountSettingsScreen(
                         account: account,
-                        balance:
-                            '${_formattingService.formatBalance(balance)}'
-                            ' ${AppConstants.tokenSymbol}',
+                        balance: _formattingService.formatBalance(
+                          balance,
+                          addSymbol: true,
+                        ),
                         checksumName: checksumName,
                       ),
                     ),

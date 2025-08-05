@@ -68,8 +68,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
         setState(() {
           // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-          _walletBalance =
-              '${NumberFormattingService().formatBalance(balance)} ${AppConstants.tokenSymbol}';
+          _walletBalance = NumberFormattingService().formatBalance(
+            balance,
+            addSymbol: true,
+          );
           _walletAddress = address;
         });
       } else {

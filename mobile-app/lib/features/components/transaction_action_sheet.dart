@@ -71,7 +71,7 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
   }
 
   String _formatAmount(BigInt amount) {
-    return '${_formattingService.formatBalance(amount)} QUAN';
+    return _formattingService.formatBalance(amount, addSymbol: true);
   }
 
   @override
