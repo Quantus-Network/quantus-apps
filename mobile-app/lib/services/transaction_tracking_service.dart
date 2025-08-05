@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -79,23 +78,52 @@ class TransactionTrackingService {
     PendingTransactionEvent pendingTx,
   ) async {
     try {
-      // Get the accounts to search in
-      final accountsState = _ref.read(accountsProvider);
-      final accounts = accountsState.value;
-      if (accounts == null || accounts.isEmpty) return;
-
-      final accountIds = accounts.map((a) => a.accountId).toList();
-
-      // Fetch recent history to see if our transaction appears
       final historyService = _ref.read(chainHistoryServiceProvider);
-      final recentHistory = await historyService.fetchAllTransactionTypes(
-        accountIds: accountIds,
-        limit: 50, // Check more recent transactions
-        offset: 0,
+      final blockHash = pendingTx.blockHash;
+      if (blockHash == null) {
+        print(
+          'Error: blockHash is null for pending transaction ${pendingTx.id}',
+        );
+        return;
+      }
+
+      // Query for the block and transaction in one go
+      final response = await historyService.getTransactionsInBlock(
+        blockHash: blockHash,
+        from: pendingTx.from,
+        to: pendingTx.to,
+        isReversible: pendingTx.isReversible,
       );
 
-      // Check if our pending transaction appears in the history
-      final foundInHistory = _findMatchingTransaction(pendingTx, recentHistory);
+      // If block is not yet indexed, just wait for the next poll cycle.
+      if (!response.blockExists) {
+        print('Block $blockHash not indexed yet, waiting for next poll.');
+        return;
+      }
+
+      // If the block *is* indexed, but our transaction is not in it, mark as failed.
+      if (response.transactions.isEmpty) {
+        print(
+          'Transaction ${pendingTx.id} not found in block $blockHash. Marking as failed.',
+        );
+        _ref
+            .read(pendingTransactionsProvider.notifier)
+            .updateState(
+              pendingTx.id,
+              TransactionState.failed,
+              blockHash: pendingTx.blockHash,
+            );
+        Timer(const Duration(seconds: 2), () {
+          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        });
+        _stopTrackingTransaction(pendingTx.id);
+        return;
+      }
+
+      final foundInHistory = _findMatchingTransaction(
+        pendingTx,
+        response.transactions,
+      );
 
       if (foundInHistory != null) {
         print('Transaction found in history: ${pendingTx.id}');
@@ -135,16 +163,10 @@ class TransactionTrackingService {
   /// This matches by amount, from/to addresses, and proximity in time.
   TransactionEvent? _findMatchingTransaction(
     PendingTransactionEvent pendingTx,
-    SortedTransactionsList history,
+    List<TransactionEvent> history,
   ) {
-    // Combine all history transactions
-    final allHistoryTxs = [
-      ...history.otherTransfers,
-      ...history.reversibleTransfers,
-    ];
-
     // Look for transactions that match our pending transaction
-    for (final historyTx in allHistoryTxs) {
+    for (final historyTx in history) {
       if (_isMatchingTransaction(pendingTx, historyTx)) {
         return historyTx;
       }
@@ -158,7 +180,7 @@ class TransactionTrackingService {
     PendingTransactionEvent pendingTx,
     TransactionEvent historyTx,
   ) {
-    print('matching history for ${pendingTx.id}');
+    print('matching history for ${pendingTx.id} ${pendingTx.blockHash}');
     // Match by amount
     if (pendingTx.amount != historyTx.amount) return false;
 
@@ -168,6 +190,7 @@ class TransactionTrackingService {
     // Match by to address
     if (pendingTx.to != historyTx.to) return false;
 
+    print('checking block hash ${pendingTx.blockHash}');
     // If we have a block hash, try to match it
     if (pendingTx.blockHash != null && historyTx.blockHash != null) {
       if (pendingTx.blockHash == historyTx.blockHash) {
