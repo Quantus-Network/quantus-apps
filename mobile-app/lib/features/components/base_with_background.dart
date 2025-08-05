@@ -3,7 +3,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 
 class BaseWithBackground extends StatelessWidget {
   final Widget child;
-  final AppBar? appBar;
+  final PreferredSizeWidget? appBar;
 
   const BaseWithBackground({super.key, required this.child, this.appBar});
 

@@ -66,7 +66,7 @@ class TransactionListItemState extends State<TransactionListItem> {
     if (role == TransactionRole.receiver && isPendingOrScheduled) {
       return context.themeColors.purple;
     }
-    if (role == TransactionRole.sender) return context.themeColors.checksum;
+
     return context.themeColors.purple;
   }
 

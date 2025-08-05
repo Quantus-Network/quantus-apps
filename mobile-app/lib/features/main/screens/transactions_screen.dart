@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/dropdown_select.dar
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 
@@ -140,26 +141,26 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     return BaseWithBackground(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 27.0),
+        padding: const EdgeInsets.only(left: 27.0, right: 27.0, top: 21.0),
         child: SizedBox(
           width: double.infinity,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Transaction History',
-                style: TextStyle(
-                  color: Color(0xFFE6E6E6),
-                  fontSize: 16,
-                  fontFamily: 'Fira Code',
-                  fontWeight: FontWeight.w400,
+                style: context.themeText.largeTag?.copyWith(
+                  color: context.themeColors.light,
                 ),
               ),
               const SizedBox(height: 13),
               accountsAsync.when(
                 data: (accounts) {
                   if (accounts.isEmpty) {
-                    return const Text('No accounts found.');
+                    return Text(
+                      'No accounts found.',
+                      style: context.themeText.smallParagraph,
+                    );
                   }
                   return _buildAccountDropdown();
                 },
@@ -223,10 +224,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_selectedAccountIds!.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No accounts selected.',
-          style: TextStyle(color: Colors.white),
+          style: context.themeText.smallParagraph,
         ),
       );
     }
@@ -252,10 +253,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ];
 
         if (allTransactions.isEmpty && !paginationState.isFetching) {
-          return const Center(
+          return Center(
             child: Text(
               'No transactions found.',
-              style: TextStyle(color: Colors.white),
+              style: context.themeText.smallParagraph,
             ),
           );
         }
