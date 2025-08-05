@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
+/// Provider that holds the current app lifecycle state
+final appLifecycleStateProvider = StateProvider<AppLifecycleState>(
+  (ref) => AppLifecycleState.resumed,
+);
+
 /// App lifecycle listener that manages polling based on app state
 class AppLifecycleManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -19,6 +24,9 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Set initial state
+    ref.read(appLifecycleStateProvider.notifier).state =
+        WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
   }
 
   @override
@@ -29,11 +37,14 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    ref.read(appLifecycleStateProvider.notifier).state = state;
+
     final pollingManager = ref.read(historyPollingManagerProvider);
 
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
         // Pause global polling when app goes to background
         // Transaction tracking continues for pending transactions
         pollingManager.pausePolling();
@@ -50,11 +61,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
         // App is being terminated
         pollingManager.stopPolling();
         break;
-
-      case AppLifecycleState.hidden:
-        // App is hidden but still running
-        pollingManager.pausePolling();
-        break;
     }
   }
 
@@ -63,22 +69,3 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     return widget.child;
   }
 }
-
-/// Usage example for your main app:
-/// 
-/// ```dart
-/// class MyApp extends StatelessWidget {
-///   @override
-///   Widget build(BuildContext context) {
-///     return ProviderScope(
-///       child: AppInitializer(
-///         child: AppLifecycleManager(
-///           child: MaterialApp(
-///             // Your app content here
-///           ),
-///         ),
-///       ),
-///     );
-///   }
-/// }
-/// ```
