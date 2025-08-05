@@ -19,7 +19,8 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
   Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
       print(
-        'FilteredPaginationController: Fetching page for accounts: $targetAccountIds, offset: ${state.offset}',
+        'FilteredPaginationController: Fetching page for accounts:'
+        ' $targetAccountIds, offset: ${state.offset}',
       );
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
@@ -32,7 +33,9 @@ class FilteredPaginationController extends StateNotifier<PaginationState> {
 
       final newItems = newTransactions.otherTransfers;
       print(
-        'FilteredPaginationController: Fetched ${newItems.length} transactions, ${newTransactions.reversibleTransfers.length} reversible',
+        'FilteredPaginationController: Fetched ${newItems.length} '
+        'transactions, ${newTransactions.reversibleTransfers.length} '
+        'reversible',
       );
       state = state.copyWith(
         items: [...state.items, ...newItems],

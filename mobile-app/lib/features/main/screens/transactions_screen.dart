@@ -111,7 +111,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       );
     }
     if (_selectedAccountIds == null) {
-      // Handles the case where initialization is complete but there are no accounts
+      // Handles the case where initialization is complete but there are no
+      // accounts
       return widget.showAccountFilter
           ? _buildFilterableScaffold()
           : _buildSimpleScaffold();
@@ -276,8 +277,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
               if (paginationState.hasMore && paginationState.isFetching)
-                SliverToBoxAdapter(
-                  child: const Padding(
+                const SliverToBoxAdapter(
+                  child: Padding(
                     padding: EdgeInsets.all(8),
                     child: Center(child: CircularProgressIndicator()),
                   ),
