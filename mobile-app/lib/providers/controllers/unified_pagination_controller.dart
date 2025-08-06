@@ -1,18 +1,36 @@
-// Notifier for pagination control (fetchMore, offset, etc.)
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-class PaginationController extends StateNotifier<PaginationState> {
-  PaginationController(this.ref) : super(PaginationState.initial()) {
-    _init();
+/// Unified pagination controller that handles both all-accounts and filtered-accounts scenarios
+class UnifiedPaginationController extends StateNotifier<PaginationState> {
+  UnifiedPaginationController(this.ref, {this.accountIds})
+    : super(PaginationState.initial()) {
+    if (accountIds == null) {
+      // Auto-initialize for all accounts scenario
+      _init();
+    } else {
+      // Auto-initialize for filtered accounts scenario
+      _initFiltered();
+    }
+  }
+
+  /// Initialize for filtered accounts scenario
+  Future<void> _initFiltered() async {
+    if (accountIds == null || accountIds!.isEmpty) {
+      state = state.copyWith(hasMore: false, isFetching: false);
+      return;
+    }
+    await _fetchPage(accountIds!);
   }
 
   final Ref ref;
+  final List<String>? accountIds; // If null, load all accounts from provider
   static const int _limit = 20;
 
+  /// Initialize by loading accounts from provider (used when accountIds is null)
   Future<void> _init() async {
     try {
       final accountsState = await ref
@@ -36,18 +54,35 @@ class PaginationController extends StateNotifier<PaginationState> {
     }
   }
 
-  Future<void> _fetchPage(List<String> accountIds) async {
+  /// Get the account IDs to use for fetching
+  List<String> _getAccountIds() {
+    if (accountIds != null) return accountIds!;
+
+    final accounts = ref.read(accountsProvider).value;
+    return accounts?.map((e) => e.accountId).toList() ?? [];
+  }
+
+  Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
+      print(
+        'UnifiedPaginationController: Fetching page for accounts:'
+        ' $targetAccountIds, offset: ${state.offset}',
+      );
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(
-            accountIds: accountIds,
+            accountIds: targetAccountIds,
             limit: _limit,
             offset: state.offset,
           );
 
       final newItems = newTransactions.otherTransfers;
+      print(
+        'UnifiedPaginationController: Fetched ${newItems.length} '
+        'transactions, ${newTransactions.reversibleTransfers.length} '
+        'reversible',
+      );
       state = state.copyWith(
         items: [...state.items, ...newItems],
         reversibleTransfers: state.offset == 0
@@ -63,48 +98,51 @@ class PaginationController extends StateNotifier<PaginationState> {
   }
 
   Future<void> fetchMore() async {
-    print('Pagination Controller: Fetch more');
+    print('UnifiedPaginationController: Fetch more');
 
     if (state.isFetching || !state.hasMore) return;
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null || accounts.isEmpty) return;
-    await _fetchPage(accounts.map((e) => e.accountId).toList());
+
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) return;
+
+    await _fetchPage(targetAccountIds);
   }
 
   /// Refresh data silently without showing loading indicators.
   /// Used for automatic polling to update data in background.
   Future<void> silentRefresh() async {
-    print('Pagination Controller: Silent refresh called');
+    print('UnifiedPaginationController: Silent refresh called');
     if (state.isFetching) return;
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null || accounts.isEmpty) return;
 
-    await _silentFetchFirstPage(accounts.map((e) => e.accountId).toList());
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) return;
+
+    await _silentFetchFirstPage(targetAccountIds);
   }
 
   /// Refresh data with loading indicators.
   /// Used for user-initiated refreshes like pull-to-refresh.
   Future<void> loadingRefresh() async {
-    print('Pagination Controller: Loading Refresh');
+    print('UnifiedPaginationController: Loading Refresh');
 
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null || accounts.isEmpty) {
+    final targetAccountIds = _getAccountIds();
+    if (targetAccountIds.isEmpty) {
       state = PaginationState.initial().copyWith(hasMore: false);
       return;
     }
 
     // Reset to initial state to show loading
     state = PaginationState.initial();
-    await _fetchPage(accounts.map((e) => e.accountId).toList());
+    await _fetchPage(targetAccountIds);
   }
 
-  Future<void> _silentFetchFirstPage(List<String> accountIds) async {
+  Future<void> _silentFetchFirstPage(List<String> targetAccountIds) async {
     try {
       // Fetch without setting isFetching to avoid loading indicators
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(
-            accountIds: accountIds,
+            accountIds: targetAccountIds,
             limit: _limit,
             offset: 0,
           );

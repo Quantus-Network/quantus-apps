@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/models/pagination_state.dart';
-import 'package:resonance_network_wallet/providers/controllers/pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
 final paginationControllerProvider =
-    StateNotifierProvider<PaginationController, PaginationState>(
-      (ref) => PaginationController(ref),
+    StateNotifierProvider<UnifiedPaginationController, PaginationState>(
+      (ref) => UnifiedPaginationController(ref),
     );
 
 // Combined provider that reacts to both pending and paginated data
