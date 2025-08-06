@@ -4,7 +4,8 @@ import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-/// Unified pagination controller that handles both all-accounts and filtered-accounts scenarios
+/// Unified pagination controller that handles both all-accounts and
+/// filtered-accounts scenarios
 class UnifiedPaginationController extends StateNotifier<PaginationState> {
   UnifiedPaginationController(this.ref, {this.accountIds})
     : super(PaginationState.initial()) {
@@ -30,7 +31,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   final List<String>? accountIds; // If null, load all accounts from provider
   static const int _limit = 20;
 
-  /// Initialize by loading accounts from provider (used when accountIds is null)
+  /// Initialize by loading accounts from provider (when accountIds is null)
   Future<void> _init() async {
     try {
       final accountsState = await ref
