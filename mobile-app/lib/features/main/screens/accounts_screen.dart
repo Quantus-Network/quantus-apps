@@ -175,12 +175,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   Widget _buildAccountListItem(Account account, bool isActive, int index) {
     return InkWell(
       onTap: () async {
-        if (!isActive) {
-          await ref
-              .read(activeAccountProvider.notifier)
-              .setActiveAccount(account);
-          if (mounted) Navigator.pop(context);
-        }
+        await ref
+            .read(activeAccountProvider.notifier)
+            .setActiveAccount(account);
+        if (mounted) Navigator.pop(context);
       },
       child: Row(
         children: [
