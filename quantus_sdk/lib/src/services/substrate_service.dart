@@ -249,11 +249,10 @@ class SubstrateService {
   /// The type will be changed to Extrinsic later
   /// Copied from author API...
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
-    print('submitting extr');
     final List<dynamic> params = ['0x${hex.encode(extrinsic)}'];
 
     final response = await _provider!.send('author_submitExtrinsic', params);
-    print('submitExtrinsic response: $response');
+    // same hash - not the final extrinsic hash
     print('submitExtrinsic response: ${response.result}');
 
     if (response.error != null) {

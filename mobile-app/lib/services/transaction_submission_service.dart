@@ -151,7 +151,7 @@ class TransactionSubmissionService {
 
       // Convert to hex string for better readability
       final hexString = hex.encode(extrinsicHash);
-      print('submission ext hash (hex): 0x$hexString');
+      print('submission hash: 0x$hexString');
 
       final newState = TransactionState.broadcast;
       // Update state for all non-retry cases
