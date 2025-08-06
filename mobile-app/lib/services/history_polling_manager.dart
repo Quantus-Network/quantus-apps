@@ -4,7 +4,6 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
-import 'package:resonance_network_wallet/services/transaction_tracking_service.dart';
 
 /// Manager that coordinates all polling services: global history, transaction
 /// tracking,
@@ -13,12 +12,10 @@ import 'package:resonance_network_wallet/services/transaction_tracking_service.d
 class HistoryPollingManager {
   final Ref _ref;
   late final GlobalHistoryPollingService _globalPoller;
-  late final TransactionTrackingService _transactionTracker;
   late final ReversibleTransferMonitoringService _reversibleMonitor;
 
   HistoryPollingManager(this._ref) {
     _globalPoller = _ref.read(globalHistoryPollingServiceProvider);
-    _transactionTracker = _ref.read(transactionTrackingServiceProvider);
     _reversibleMonitor = _ref.read(reversibleTransferMonitoringServiceProvider);
   }
 
@@ -27,7 +24,6 @@ class HistoryPollingManager {
   void initialize() {
     print('Initializing history polling manager...');
     _globalPoller;
-    _transactionTracker;
     _reversibleMonitor;
     print('History polling manager initialized');
   }
@@ -58,7 +54,6 @@ class HistoryPollingManager {
     _refreshBalance(showLoading: true);
 
     await _globalPoller.triggerManualRefresh();
-    await _transactionTracker.forceCheckAllTrackedTransactions();
     await _reversibleMonitor.forceCheckAllMonitoredTransfers();
   }
 
@@ -71,7 +66,6 @@ class HistoryPollingManager {
 
     // Use silent refresh for background updates
     await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-    await _transactionTracker.forceCheckAllTrackedTransactions();
     await _reversibleMonitor.forceCheckAllMonitoredTransfers();
   }
 
@@ -96,7 +90,6 @@ class HistoryPollingManager {
 
   void dispose() {
     _globalPoller.dispose();
-    _transactionTracker.dispose();
     _reversibleMonitor.dispose();
   }
 }

@@ -5,13 +5,15 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:polkadart/polkadart.dart' as p;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
   final Map<String, Timer> _broadcastSearchTimers = {};
-  static const Duration _searchInterval = Duration(seconds: 10);
+  static const Duration _searchInterval = Duration(seconds: 5);
 
   TransactionSubmissionService(this._ref);
 
@@ -375,6 +377,9 @@ class TransactionSubmissionService {
         // Stop searching since we found it
         _stopSearchingForBroadcastTransaction(pendingTx.id);
 
+        // Trigger silent refresh of history to include the new transaction
+        _triggerSilentHistoryRefresh();
+
         // Update to inHistory state
         _ref
             .read(pendingTransactionsProvider.notifier)
@@ -398,6 +403,25 @@ class TransactionSubmissionService {
       }
     } catch (e, stackTrace) {
       print('Error searching for broadcast transaction ${pendingTx.id}: $e');
+      print('Stack trace: $stackTrace');
+    }
+  }
+
+  /// Triggers silent refresh on all relevant history providers
+  void _triggerSilentHistoryRefresh() {
+    print('Triggering silent history refresh for found transaction');
+
+    try {
+      // Trigger silent refresh on the main pagination controller (all accounts)
+      _ref.read(paginationControllerProvider.notifier).silentRefresh();
+
+      // Invalidate the filtered pagination controller family
+      // This will cause all active filtered instances to refresh automatically
+      _ref.invalidate(filteredPaginationControllerProviderFamily);
+
+      print('Silent history refresh triggered successfully');
+    } catch (e, stackTrace) {
+      print('Error triggering silent history refresh: $e');
       print('Stack trace: $stackTrace');
     }
   }
