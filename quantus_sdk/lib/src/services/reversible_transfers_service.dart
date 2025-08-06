@@ -100,7 +100,7 @@ class ReversibleTransfersService {
     return _substrateService.submitExtrinsic(account, call, onStatus: onStatus);
   }
 
-  Future<BigInt> getReversibleTransferWithDelayFeeEstimate({
+  Future<ExtrinsicFeeData> getReversibleTransferWithDelayFeeEstimate({
     required Account account,
     required String recipientAddress,
     required BigInt amount,

@@ -8,8 +8,8 @@ import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 enum SendOverlayState { confirm, progress, complete }
 
@@ -20,6 +20,7 @@ class SendConfirmationOverlay extends ConsumerStatefulWidget {
   final VoidCallback onClose;
   final BigInt fee;
   final int reversibleTimeSeconds;
+  final int blockHeight;
 
   const SendConfirmationOverlay({
     required this.amount,
@@ -28,6 +29,7 @@ class SendConfirmationOverlay extends ConsumerStatefulWidget {
     required this.onClose,
     required this.fee,
     required this.reversibleTimeSeconds,
+    required this.blockHeight,
     super.key,
   });
 
@@ -117,6 +119,7 @@ class SendConfirmationOverlayState
           widget.recipientAddress,
           widget.amount,
           widget.fee,
+          widget.blockHeight,
         );
       } else {
         await submissionService.scheduleReversibleTransferWithDelaySeconds(
@@ -125,6 +128,7 @@ class SendConfirmationOverlayState
           amount: widget.amount,
           delaySeconds: widget.reversibleTimeSeconds,
           feeEstimate: widget.fee,
+          blockHeight: widget.blockHeight,
         );
       }
 

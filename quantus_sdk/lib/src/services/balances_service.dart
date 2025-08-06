@@ -39,7 +39,7 @@ class BalancesService {
     }
   }
 
-  Future<BigInt> getBalanceTransferFee(
+  Future<ExtrinsicFeeData> getBalanceTransferFee(
     Account account,
     String targetAddress,
     BigInt amount,

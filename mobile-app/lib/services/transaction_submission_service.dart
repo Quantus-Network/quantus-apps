@@ -6,9 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:polkadart/polkadart.dart' as p;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
+  final Map<String, Timer> _broadcastSearchTimers = {};
+  static const Duration _searchInterval = Duration(seconds: 10);
 
   TransactionSubmissionService(this._ref);
 
@@ -17,6 +20,7 @@ class TransactionSubmissionService {
     String targetAddress,
     BigInt amount,
     BigInt fee,
+    int blockHeight,
   ) async {
     // A. Create the initial pending transaction event
     final pendingTx = PendingTransactionEvent(
@@ -27,6 +31,7 @@ class TransactionSubmissionService {
       timestamp: DateTime.now(),
       transactionState: TransactionState.created,
       fee: fee,
+      blockNumber: blockHeight,
     );
 
     // B. Immediately add it to the state so the UI can update
@@ -51,6 +56,7 @@ class TransactionSubmissionService {
     required int delaySeconds,
     required BigInt feeEstimate,
     int maxRetries = 3,
+    required int blockHeight,
   }) async {
     final pending = createPendingTransaction(
       from: account.accountId,
@@ -59,6 +65,7 @@ class TransactionSubmissionService {
       fee: feeEstimate,
       delaySeconds: delaySeconds,
       isReversible: true,
+      blockHeight: blockHeight,
     );
 
     // Add to pending transactions so UI can show it immediately
@@ -84,6 +91,7 @@ class TransactionSubmissionService {
     required String from,
     required String to,
     required BigInt amount,
+    required int blockHeight,
     int delaySeconds = 0,
     bool isOutgoing = true,
     bool isReversible = false,
@@ -99,6 +107,7 @@ class TransactionSubmissionService {
       isReversible: isReversible,
       fee: fee,
       delaySeconds: delaySeconds,
+      blockNumber: blockHeight,
     );
     return pending;
   }
@@ -126,6 +135,8 @@ class TransactionSubmissionService {
     );
   }
 
+  StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
+
   /// Background submission with retry logic - runs asynchronously
   void _submitAndTrackBackground(
     Future<StreamSubscription<p.ExtrinsicStatus>> Function(
@@ -141,8 +152,6 @@ class TransactionSubmissionService {
       print(
         'Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}',
       );
-
-      StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
 
       void onStatus(p.ExtrinsicStatus status) {
         String? hash;
@@ -160,10 +169,14 @@ class TransactionSubmissionService {
             break;
           case 'broadcast':
             newState = TransactionState.broadcast;
+            // Start searching for the transaction in blockchain history
+            _startSearchingForBroadcastTransaction(pendingTx);
             break;
           case 'inBlock':
             newState = TransactionState.inBlock;
             hash = status.value;
+            // Stop searching since we got inBlock status
+            _stopSearchingForBroadcastTransaction(pendingTx.id);
             // Unsubscribe after inBlock to let the history poller take over
             activeSubscription?.cancel();
             activeSubscription = null;
@@ -179,6 +192,7 @@ class TransactionSubmissionService {
           case 'invalid':
             print('tx invalid: ${status.type} ${status.value}');
             print('Invalid status detected - transaction data is stale');
+            _stopSearchingForBroadcastTransaction(pendingTx.id);
             activeSubscription?.cancel();
             activeSubscription = null;
 
@@ -225,6 +239,7 @@ class TransactionSubmissionService {
             print('unknown status: ${status.type} ${status.value}');
             newState = TransactionState.failed;
             pendingTx.error = 'Unknown status: ${status.type}';
+            _stopSearchingForBroadcastTransaction(pendingTx.id);
             activeSubscription?.cancel();
             activeSubscription = null;
         }
@@ -296,10 +311,112 @@ class TransactionSubmissionService {
       }
     }
   }
+
+  /// Starts searching for a broadcast transaction in blockchain history
+  void _startSearchingForBroadcastTransaction(
+    PendingTransactionEvent pendingTx,
+  ) {
+    print('Starting broadcast search for transaction: ${pendingTx.id}');
+
+    if (pendingTx.blockNumber == 0) {
+      print(
+        'No block number available for transaction ${pendingTx.id}, cannot search',
+      );
+      return;
+    }
+
+    // Cancel any existing timer for this transaction
+    _stopSearchingForBroadcastTransaction(pendingTx.id);
+
+    // Start periodic search
+    final timer = Timer.periodic(_searchInterval, (_) {
+      _searchForBroadcastTransaction(pendingTx);
+    });
+
+    _broadcastSearchTimers[pendingTx.id] = timer;
+
+    // Also search immediately
+    _searchForBroadcastTransaction(pendingTx);
+  }
+
+  /// Stops searching for a broadcast transaction
+  void _stopSearchingForBroadcastTransaction(String transactionId) {
+    final timer = _broadcastSearchTimers.remove(transactionId);
+    if (timer != null) {
+      timer.cancel();
+      print('Stopped broadcast search for transaction: $transactionId');
+    }
+  }
+
+  /// Searches for a broadcast transaction in blockchain history
+  Future<void> _searchForBroadcastTransaction(
+    PendingTransactionEvent pendingTx,
+  ) async {
+    try {
+      print(
+        'Searching blockchain history for broadcast transaction: ${pendingTx.id}',
+      );
+
+      final historyService = _ref.read(chainHistoryServiceProvider);
+      final results = await historyService.searchForPendingTransaction(
+        from: pendingTx.from,
+        to: pendingTx.to,
+        amount: pendingTx.amount,
+        isReversible: pendingTx.isReversible,
+        blockHeightAfter: pendingTx.blockNumber,
+        limit: 5,
+      );
+
+      if (results.isNotEmpty) {
+        print('Found matching transaction in blockchain for ${pendingTx.id}!');
+        final matchedTx = results.first;
+
+        // Stop searching since we found it
+        _stopSearchingForBroadcastTransaction(pendingTx.id);
+
+        // Update to inHistory state
+        _ref
+            .read(pendingTransactionsProvider.notifier)
+            .updateState(
+              pendingTx.id,
+              TransactionState.inHistory,
+              blockHash: matchedTx.blockHash,
+            );
+
+        // Remove after a short delay to show completion
+        Timer(const Duration(seconds: 2), () {
+          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        });
+
+        // Refresh balance since transaction was completed
+        _ref.invalidate(balanceProviderFamily);
+
+        print('Successfully completed broadcast transaction: ${pendingTx.id}');
+      } else {
+        print('No matching transaction found yet for ${pendingTx.id}');
+      }
+    } catch (e, stackTrace) {
+      print('Error searching for broadcast transaction ${pendingTx.id}: $e');
+      print('Stack trace: $stackTrace');
+    }
+  }
+
+  /// Cleanup method to stop all searches
+  void dispose() {
+    for (final timer in _broadcastSearchTimers.values) {
+      timer.cancel();
+    }
+    _broadcastSearchTimers.clear();
+  }
 }
 
 // Provider for the service
 final transactionSubmissionServiceProvider =
     Provider<TransactionSubmissionService>((ref) {
-      return TransactionSubmissionService(ref);
+      final service = TransactionSubmissionService(ref);
+
+      // Clean up when provider is disposed
+      ref.onDispose(() => service.dispose());
+
+      return service;
     });

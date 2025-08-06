@@ -39,6 +39,7 @@ class SendScreenState extends State<SendScreen> {
   bool _hasAmountError = false;
   String _savedAddressesLabel = '';
   Timer? _debounce;
+  int? _blockHeight;
 
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
@@ -216,10 +217,14 @@ class SendScreenState extends State<SendScreen> {
     });
 
     try {
-      BigInt estimatedFee = await getNetworkFeeForAmount(recipient, _amount);
+      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(
+        recipient,
+        _amount,
+      );
 
       setState(() {
-        _networkFee = estimatedFee;
+        _networkFee = estimatedFee.fee;
+        _blockHeight = estimatedFee.extrinsicData.blockNumber;
         _isFetchingFee = false;
         _hasAmountError = (_amount + _networkFee) > _maxBalance;
       });
@@ -239,9 +244,12 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
-  Future<BigInt> getNetworkFeeForAmount(String recipient, BigInt amount) async {
+  Future<ExtrinsicFeeData> getNetworkFeeForAmount(
+    String recipient,
+    BigInt amount,
+  ) async {
     final account = await _settingsService.getActiveAccount();
-    BigInt estimatedFee;
+    ExtrinsicFeeData estimatedFee;
     if (_reversibleTimeSeconds > 0) {
       estimatedFee = await ReversibleTransfersService()
           .getReversibleTransferWithDelayFeeEstimate(
@@ -252,7 +260,11 @@ class SendScreenState extends State<SendScreen> {
           );
 
       // Can't send more than existentia deposit with a reversible transfer
-      estimatedFee = estimatedFee + balances.Constants().existentialDeposit;
+      // Note this will have to be fixed later on..
+      estimatedFee = ExtrinsicFeeData(
+        fee: estimatedFee.fee + balances.Constants().existentialDeposit,
+        extrinsicData: estimatedFee.extrinsicData,
+      );
     } else {
       estimatedFee = await BalancesService().getBalanceTransferFee(
         account,
@@ -275,12 +287,17 @@ class SendScreenState extends State<SendScreen> {
     }
 
     try {
-      BigInt estimatedFee = await getNetworkFeeForAmount(
+      ExtrinsicFeeData estimatedFee = await getNetworkFeeForAmount(
         recipient,
         _maxBalance,
       );
 
-      final maxSendableAmount = _maxBalance - estimatedFee;
+      // we keep track of block number so we can set it on pending transactions
+      setState(() {
+        _blockHeight = estimatedFee.extrinsicData.blockNumber;
+      });
+
+      final maxSendableAmount = _maxBalance - estimatedFee.fee;
 
       print('max sendable amount: $maxSendableAmount');
 
@@ -348,6 +365,7 @@ class SendScreenState extends State<SendScreen> {
               recipientAddress: _recipientController.text,
               fee: _networkFee,
               reversibleTimeSeconds: _reversibleTimeSeconds,
+              blockHeight: _blockHeight ?? 0,
               onClose: () => Navigator.pop(context),
             ),
           ),
