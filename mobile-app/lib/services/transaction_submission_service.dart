@@ -147,6 +147,7 @@ class TransactionSubmissionService {
         String? hash;
         TransactionState newState;
 
+        print('got status ${status.type} value: ${status.value} full $status');
         switch (status.type) {
           case 'ready':
             newState = TransactionState.ready;
