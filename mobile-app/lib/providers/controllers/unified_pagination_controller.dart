@@ -7,58 +7,63 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 /// Unified pagination controller that handles both all-accounts and
 /// filtered-accounts scenarios
 class UnifiedPaginationController extends StateNotifier<PaginationState> {
-  UnifiedPaginationController(this.ref, {this.accountIds})
-    : super(PaginationState.initial()) {
+  UnifiedPaginationController(this.ref, {this.accountIds, int pageLimit = 20})
+    : _limit = pageLimit,
+      super(PaginationState.initial()) {
     if (accountIds == null) {
-      // Auto-initialize for all accounts scenario
-      _init();
-    } else {
-      // Auto-initialize for filtered accounts scenario
-      _initFiltered();
+      _listenToAccounts();
     }
-  }
-
-  /// Initialize for filtered accounts scenario
-  Future<void> _initFiltered() async {
-    if (accountIds == null || accountIds!.isEmpty) {
-      state = state.copyWith(hasMore: false, isFetching: false);
-      return;
-    }
-    await _fetchPage(accountIds!);
+    _init();
   }
 
   final Ref ref;
   final List<String>? accountIds; // If null, load all accounts from provider
-  static const int _limit = 20;
+  final int _limit;
 
-  /// Initialize by loading accounts from provider (when accountIds is null)
-  Future<void> _init() async {
-    try {
-      final accountsState = await ref
-          .read(accountsProvider.notifier)
-          .stream
-          .firstWhere((state) => !state.isLoading);
-
-      accountsState.when(
-        data: (accounts) async {
-          if (accounts.isEmpty) {
-            state = state.copyWith(hasMore: false);
-            return;
-          }
-          await _fetchPage(accounts.map((e) => e.accountId).toList());
-        },
-        error: (e, st) => state = state.copyWith(error: e, stackTrace: st),
-        loading: () {},
-      );
-    } catch (e, st) {
-      state = state.copyWith(error: e, stackTrace: st);
-    }
+  void _listenToAccounts() {
+    ref.listen(accountsProvider, (previous, next) {
+      if (next != previous && !next.isLoading) {
+        loadingRefresh();
+      }
+    });
   }
 
-  /// Get the account IDs to use for fetching
+  Future<void> _init() async {
+    List<String> ids;
+    try {
+      ids = await _getAccountIdsAsync();
+    } catch (e, st) {
+      print('Initialization failed: $e\n$st');
+      state = state.copyWith(error: e, stackTrace: st);
+      return;
+    }
+
+    if (ids.isEmpty) {
+      state = state.copyWith(hasMore: false, isFetching: false);
+      return;
+    }
+
+    await _fetchPage(ids);
+  }
+
+  Future<List<String>> _getAccountIdsAsync() async {
+    if (accountIds != null) {
+      return accountIds!;
+    }
+
+    final accountsState = await ref
+        .read(accountsProvider.notifier)
+        .stream
+        .firstWhere((state) => !state.isLoading);
+
+    return accountsState.maybeWhen(
+      data: (accounts) => accounts.map((e) => e.accountId).toList(),
+      orElse: () => throw Exception('Failed to load accounts'),
+    );
+  }
+
   List<String> _getAccountIds() {
     if (accountIds != null) return accountIds!;
-
     final accounts = ref.read(accountsProvider).value;
     return accounts?.map((e) => e.accountId).toList() ?? [];
   }
@@ -92,8 +97,11 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         offset: state.offset + newItems.length,
         hasMore: newItems.length == _limit,
         isFetching: false,
+        error: null,
+        stackTrace: null,
       );
     } catch (e, st) {
+      print('Fetch page failed: $e\n$st');
       state = state.copyWith(error: e, stackTrace: st, isFetching: false);
     }
   }
