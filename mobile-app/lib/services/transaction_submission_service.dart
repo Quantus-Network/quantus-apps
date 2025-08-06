@@ -320,7 +320,8 @@ class TransactionSubmissionService {
 
     if (pendingTx.blockNumber == 0) {
       print(
-        'No block number available for transaction ${pendingTx.id}, cannot search',
+        'No block number available for transaction ${pendingTx.id},'
+        ' cannot search',
       );
       return;
     }
@@ -354,11 +355,12 @@ class TransactionSubmissionService {
   ) async {
     try {
       print(
-        'Searching blockchain history for broadcast transaction: ${pendingTx.id}',
+        'Searching blockchain history for broadcast transaction:'
+        ' ${pendingTx.id}',
       );
 
       final historyService = _ref.read(chainHistoryServiceProvider);
-      final results = await historyService.searchForPendingTransaction(
+      final result = await historyService.searchForPendingTransaction(
         from: pendingTx.from,
         to: pendingTx.to,
         amount: pendingTx.amount,
@@ -367,9 +369,8 @@ class TransactionSubmissionService {
         limit: 5,
       );
 
-      if (results.isNotEmpty) {
+      if (result != null) {
         print('Found matching transaction in blockchain for ${pendingTx.id}!');
-        final matchedTx = results.first;
 
         // Stop searching since we found it
         _stopSearchingForBroadcastTransaction(pendingTx.id);
@@ -380,7 +381,7 @@ class TransactionSubmissionService {
             .updateState(
               pendingTx.id,
               TransactionState.inHistory,
-              blockHash: matchedTx.blockHash,
+              blockHash: result.blockHash,
             );
 
         // Remove after a short delay to show completion
