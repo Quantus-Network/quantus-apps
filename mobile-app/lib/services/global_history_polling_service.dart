@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -73,6 +74,10 @@ class GlobalHistoryPollingService {
       // Silently refresh without showing loading indicators
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
 
+      // Reconcile pending transactions with confirmed transactions
+      await _ref.read(pendingTransactionReconciliationServiceProvider)
+          .reconcilePendingTransactions();
+
       print('Global history poll completed');
     } catch (e) {
       print('Error during global history poll: $e');
@@ -88,6 +93,10 @@ class GlobalHistoryPollingService {
   Future<void> triggerManualRefresh() async {
     print('Global polling manager: Manual Refresh!');
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
+    
+    // Also reconcile pending transactions during manual refresh
+    await _ref.read(pendingTransactionReconciliationServiceProvider)
+        .reconcilePendingTransactions();
   }
 
   void dispose() {

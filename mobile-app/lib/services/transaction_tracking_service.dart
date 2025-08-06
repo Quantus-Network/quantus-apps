@@ -106,19 +106,14 @@ class TransactionTrackingService {
       if (response.transactions.isEmpty) {
         print(
           // ignore: lines_longer_than_80_chars
-          'Transaction ${pendingTx.id} not found in block $blockHash. Marking as failed.',
+          'Transaction ${pendingTx.id} not found in block $blockHash. This transaction may be reconciled by the reconciliation service instead of being marked as failed immediately.',
         );
-        _ref
-            .read(pendingTransactionsProvider.notifier)
-            .updateState(
-              pendingTx.id,
-              TransactionState.failed,
-              blockHash: pendingTx.blockHash,
-            );
-        Timer(const Duration(seconds: 2), () {
-          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-        });
-        _stopTrackingTransaction(pendingTx.id);
+
+        // Don't immediately mark as failed - let the reconciliation service handle it
+        // This allows for transactions that might appear in different blocks or take longer to be indexed
+        print(
+          'Continuing to track transaction ${pendingTx.id} for potential reconciliation',
+        );
         return;
       }
 
