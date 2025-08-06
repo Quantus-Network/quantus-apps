@@ -1,9 +1,10 @@
 import 'dart:typed_data';
+
+import 'package:convert/convert.dart';
 import 'package:polkadart/extrinsic/signed_extensions/signed_extensions_abstract.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:polkadart/scale_codec.dart';
 import 'package:polkadart/substrate/era.dart';
-import 'package:convert/convert.dart';
 
 /// This is a modified version of the ExtrinsicPayload class from polkadart
 /// It adds a method to encode the extrinsic payload with all our signature types
@@ -13,10 +14,7 @@ import 'package:convert/convert.dart';
 /// the signature type. Instead, it is redefining the original sig type.
 
 enum ResonanceSignatureType {
-  ed25519(0),
-  sr25519(1),
-  ecdsa(2),
-  resonance(3);
+  resonance(0);
 
   final int type;
   const ResonanceSignatureType(this.type);

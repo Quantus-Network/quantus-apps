@@ -10,7 +10,11 @@ enum Error {
   verificationFailed('VerificationFailed', 2),
   invalidPublicInputs('InvalidPublicInputs', 3),
   nullifierAlreadyUsed('NullifierAlreadyUsed', 4),
-  verifierNotAvailable('VerifierNotAvailable', 5);
+  verifierNotAvailable('VerifierNotAvailable', 5),
+  invalidStorageRoot('InvalidStorageRoot', 6),
+  storageRootMismatch('StorageRootMismatch', 7),
+  blockNotFound('BlockNotFound', 8),
+  invalidBlockNumber('InvalidBlockNumber', 9);
 
   const Error(
     this.variantName,
@@ -52,6 +56,14 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.nullifierAlreadyUsed;
       case 5:
         return Error.verifierNotAvailable;
+      case 6:
+        return Error.invalidStorageRoot;
+      case 7:
+        return Error.storageRootMismatch;
+      case 8:
+        return Error.blockNotFound;
+      case 9:
+        return Error.invalidBlockNumber;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

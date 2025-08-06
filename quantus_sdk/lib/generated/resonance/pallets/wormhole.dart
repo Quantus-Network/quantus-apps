@@ -71,8 +71,14 @@ class Queries {
 class Txs {
   const Txs();
 
-  _i5.Wormhole verifyWormholeProof({required List<int> proofBytes}) {
-    return _i5.Wormhole(_i6.VerifyWormholeProof(proofBytes: proofBytes));
+  _i5.Wormhole verifyWormholeProof({
+    required List<int> proofBytes,
+    required int blockNumber,
+  }) {
+    return _i5.Wormhole(_i6.VerifyWormholeProof(
+      proofBytes: proofBytes,
+      blockNumber: blockNumber,
+    ));
   }
 }
 

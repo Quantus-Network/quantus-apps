@@ -4,18 +4,18 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i3;
 
-class ResonanceSignatureWithPublic {
-  const ResonanceSignatureWithPublic({required this.bytes});
+class DilithiumSignatureWithPublic {
+  const DilithiumSignatureWithPublic({required this.bytes});
 
-  factory ResonanceSignatureWithPublic.decode(_i1.Input input) {
+  factory DilithiumSignatureWithPublic.decode(_i1.Input input) {
     return codec.decode(input);
   }
 
   /// [u8; Self::TOTAL_LEN]
   final List<int> bytes;
 
-  static const $ResonanceSignatureWithPublicCodec codec =
-      $ResonanceSignatureWithPublicCodec();
+  static const $DilithiumSignatureWithPublicCodec codec =
+      $DilithiumSignatureWithPublicCodec();
 
   _i2.Uint8List encode() {
     return codec.encode(this);
@@ -29,7 +29,7 @@ class ResonanceSignatureWithPublic {
         this,
         other,
       ) ||
-      other is ResonanceSignatureWithPublic &&
+      other is DilithiumSignatureWithPublic &&
           _i3.listsEqual(
             other.bytes,
             bytes,
@@ -39,13 +39,13 @@ class ResonanceSignatureWithPublic {
   int get hashCode => bytes.hashCode;
 }
 
-class $ResonanceSignatureWithPublicCodec
-    with _i1.Codec<ResonanceSignatureWithPublic> {
-  const $ResonanceSignatureWithPublicCodec();
+class $DilithiumSignatureWithPublicCodec
+    with _i1.Codec<DilithiumSignatureWithPublic> {
+  const $DilithiumSignatureWithPublicCodec();
 
   @override
   void encodeTo(
-    ResonanceSignatureWithPublic obj,
+    DilithiumSignatureWithPublic obj,
     _i1.Output output,
   ) {
     const _i1.U8ArrayCodec(7219).encodeTo(
@@ -55,13 +55,13 @@ class $ResonanceSignatureWithPublicCodec
   }
 
   @override
-  ResonanceSignatureWithPublic decode(_i1.Input input) {
-    return ResonanceSignatureWithPublic(
+  DilithiumSignatureWithPublic decode(_i1.Input input) {
+    return DilithiumSignatureWithPublic(
         bytes: const _i1.U8ArrayCodec(7219).decode(input));
   }
 
   @override
-  int sizeHint(ResonanceSignatureWithPublic obj) {
+  int sizeHint(DilithiumSignatureWithPublic obj) {
     int size = 0;
     size = size + const _i1.U8ArrayCodec(7219).sizeHint(obj.bytes);
     return size;

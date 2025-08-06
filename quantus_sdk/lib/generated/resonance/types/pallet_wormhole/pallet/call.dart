@@ -26,14 +26,20 @@ abstract class Call {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, List<int>>> toJson();
+  Map<String, Map<String, dynamic>> toJson();
 }
 
 class $Call {
   const $Call();
 
-  VerifyWormholeProof verifyWormholeProof({required List<int> proofBytes}) {
-    return VerifyWormholeProof(proofBytes: proofBytes);
+  VerifyWormholeProof verifyWormholeProof({
+    required List<int> proofBytes,
+    required int blockNumber,
+  }) {
+    return VerifyWormholeProof(
+      proofBytes: proofBytes,
+      blockNumber: blockNumber,
+    );
   }
 }
 
@@ -79,24 +85,36 @@ class $CallCodec with _i1.Codec<Call> {
 }
 
 class VerifyWormholeProof extends Call {
-  const VerifyWormholeProof({required this.proofBytes});
+  const VerifyWormholeProof({
+    required this.proofBytes,
+    required this.blockNumber,
+  });
 
   factory VerifyWormholeProof._decode(_i1.Input input) {
     return VerifyWormholeProof(
-        proofBytes: _i1.U8SequenceCodec.codec.decode(input));
+      proofBytes: _i1.U8SequenceCodec.codec.decode(input),
+      blockNumber: _i1.U32Codec.codec.decode(input),
+    );
   }
 
   /// Vec<u8>
   final List<int> proofBytes;
 
+  /// BlockNumberFor<T>
+  final int blockNumber;
+
   @override
-  Map<String, Map<String, List<int>>> toJson() => {
-        'verify_wormhole_proof': {'proofBytes': proofBytes}
+  Map<String, Map<String, dynamic>> toJson() => {
+        'verify_wormhole_proof': {
+          'proofBytes': proofBytes,
+          'blockNumber': blockNumber,
+        }
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U8SequenceCodec.codec.sizeHint(proofBytes);
+    size = size + _i1.U32Codec.codec.sizeHint(blockNumber);
     return size;
   }
 
@@ -107,6 +125,10 @@ class VerifyWormholeProof extends Call {
     );
     _i1.U8SequenceCodec.codec.encodeTo(
       proofBytes,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      blockNumber,
       output,
     );
   }
@@ -121,8 +143,12 @@ class VerifyWormholeProof extends Call {
           _i3.listsEqual(
             other.proofBytes,
             proofBytes,
-          );
+          ) &&
+          other.blockNumber == blockNumber;
 
   @override
-  int get hashCode => proofBytes.hashCode;
+  int get hashCode => Object.hash(
+        proofBytes,
+        blockNumber,
+      );
 }

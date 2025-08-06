@@ -34,6 +34,25 @@ Uint8List getAccountId32(String ss58Address) {
   return Address.decode(ss58Address).addressBytes;
 }
 
+class ExtrinsicData {
+  Uint8List payload;
+  int blockNumber;
+  String blockHash;
+  int nonce;
+  ExtrinsicData({
+    required this.payload,
+    required this.blockHash,
+    required this.blockNumber,
+    required this.nonce,
+  });
+}
+
+class ExtrinsicFeeData {
+  BigInt fee;
+  ExtrinsicData extrinsicData;
+  ExtrinsicFeeData({required this.fee, required this.extrinsicData});
+}
+
 class SubstrateService {
   static final SubstrateService _instance = SubstrateService._internal();
   factory SubstrateService() => _instance;
@@ -128,6 +147,7 @@ class SubstrateService {
 
       // Parse the result to get the partialFee
       // The result structure is typically {'partialFee': '...'} for this RPC
+      print('getFee: $result');
       final partialFeeString = result.result['partialFee'] as String;
       final partialFee = BigInt.parse(partialFeeString);
 
@@ -215,9 +235,13 @@ class SubstrateService {
     return crypto.generateKeypair(mnemonicStr: senderSeed);
   }
 
-  Future<BigInt> getFeeForCall(Account account, RuntimeCall call) async {
+  Future<ExtrinsicFeeData> getFeeForCall(
+    Account account,
+    RuntimeCall call,
+  ) async {
     final extrinsic = await getExtrinsicPayload(account, call);
-    return getFee(extrinsic);
+    final fee = await getFee(extrinsic.payload);
+    return ExtrinsicFeeData(fee: fee, extrinsicData: extrinsic);
   }
 
   Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(
@@ -233,12 +257,16 @@ class SubstrateService {
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
-        Uint8List extrinsic = await getExtrinsicPayload(account, call);
+        final extrinsicData = await getExtrinsicPayload(account, call);
+        Uint8List extrinsic = extrinsicData.payload;
 
-        return _authorApi!.submitAndWatchExtrinsic(
-          extrinsic,
-          onStatus ?? (data) {},
-        );
+        return _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) {
+          print('author on status: ${data.type}');
+          if (data.type == 'inBlock') {
+            print('inBlock: ${data.value}');
+          }
+          onStatus?.call(data);
+        });
       } catch (e) {
         retryCount++;
         if (retryCount >= maxRetries) {
@@ -251,7 +279,7 @@ class SubstrateService {
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
-  Future<Uint8List> getExtrinsicPayload(
+  Future<ExtrinsicData> getExtrinsicPayload(
     Account account,
     RuntimeCall call,
   ) async {
@@ -309,7 +337,13 @@ class SubstrateService {
       nonce: nonce,
       tip: 0,
     ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
-    return extrinsic;
+
+    return ExtrinsicData(
+      payload: extrinsic,
+      blockNumber: blockNumber,
+      blockHash: blockHash,
+      nonce: nonce,
+    );
   }
 
   Future<int> _getNextAccountNonce(Keypair senderWallet) async {

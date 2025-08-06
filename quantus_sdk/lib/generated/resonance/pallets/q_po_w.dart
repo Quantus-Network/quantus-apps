@@ -347,7 +347,7 @@ class Constants {
 
   final int adjustmentPeriod = 1;
 
-  final int blockTimeHistorySize = 25;
+  final int blockTimeHistorySize = 10;
 
   final int maxReorgDepth = 180;
 

@@ -1,4 +1,4 @@
-#! /bin/bash
+./r#! /bin/bash
 
 echo "Generating Rust bindings..."
 flutter_rust_bridge_codegen generate
