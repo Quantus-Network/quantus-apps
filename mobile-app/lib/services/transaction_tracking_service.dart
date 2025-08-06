@@ -90,7 +90,7 @@ class TransactionTrackingService {
       final historyService = _ref.read(chainHistoryServiceProvider);
       final recentHistory = await historyService.fetchAllTransactionTypes(
         accountIds: accountIds,
-        limit: 20, // Check more recent transactions
+        limit: 50, // Check more recent transactions
         offset: 0,
       );
 

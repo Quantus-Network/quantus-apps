@@ -216,14 +216,12 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
     required List<String> accountIds,
     int limit = 20,
     int offset = 0,
-    String? printName,
   }) async {
     final scheduled = await fetchScheduledTransfers(accountIds: accountIds);
     final other = await _fetchOtherTransfers(
       accountIds: accountIds,
       limit: limit,
       offset: offset,
-      printName: printName ?? '',
     );
 
     return SortedTransactionsList(
@@ -377,11 +375,10 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
     required List<String> accountIds,
     int limit = 10,
     int offset = 0,
-    String printName = '',
   }) async {
     final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
-      '$printName fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
+      'fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
