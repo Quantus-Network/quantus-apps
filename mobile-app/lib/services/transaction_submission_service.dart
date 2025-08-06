@@ -177,9 +177,6 @@ class TransactionSubmissionService {
           case 'inBlock':
             newState = TransactionState.inBlock;
             hash = status.value;
-            // Stop searching since we got inBlock status
-            _stopSearchingForBroadcastTransaction(pendingTx.id);
-            // Unsubscribe after inBlock to let the history poller take over
             activeSubscription?.cancel();
             activeSubscription = null;
             break;
