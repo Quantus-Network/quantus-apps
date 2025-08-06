@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/providers/pending_transactions_provider
 
 class TransactionSubmissionService {
   final Ref _ref;
-  StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
 
   TransactionSubmissionService(this._ref);
 
@@ -69,7 +68,7 @@ class TransactionSubmissionService {
 
     // ignore: prefer_function_declarations_over_variables
     final submissionBuilder = () =>
-        (onStatus) => ReversibleTransfersService()
+        (Function(p.ExtrinsicStatus) onStatus) => ReversibleTransfersService()
             .scheduleReversibleTransferWithDelaySeconds(
               account: account,
               recipientAddress: recipientAddress,
@@ -143,9 +142,16 @@ class TransactionSubmissionService {
         'Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}',
       );
 
+      StreamSubscription<p.ExtrinsicStatus>? activeSubscription;
+
       void onStatus(p.ExtrinsicStatus status) {
         String? hash;
         TransactionState newState;
+
+        print('got status ${status.type} value: ${status.value} - $status');
+        print(
+          ' activeSubscription for ${pendingTx.id}: ${identityHashCode(activeSubscription)}',
+        );
 
         switch (status.type) {
           case 'ready':
@@ -223,6 +229,7 @@ class TransactionSubmissionService {
         }
 
         // Update state for all non-retry cases
+        print('updating tx ${pendingTx.amount} to $newState');
         _ref
             .read(pendingTransactionsProvider.notifier)
             .updateState(
@@ -247,6 +254,9 @@ class TransactionSubmissionService {
       // block headers, etc.)
       final submission = submissionBuilder();
       activeSubscription = await submission(onStatus);
+      print(
+        'Assigned activeSubscription for ${pendingTx.id}: ${identityHashCode(activeSubscription)}',
+      );
     } catch (e, stackTrace) {
       print('Failed submitting transaction attempt $attempt: $e');
 
