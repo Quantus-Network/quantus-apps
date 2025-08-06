@@ -224,4 +224,36 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     print('Successfully moved transfer from reversible to executed');
   }
+
+  /// Adds a newly found transaction to the top of the history list.
+  /// This is used when a broadcast transaction is found in blockchain history.
+  void addTransactionToHistory(TransactionEvent transaction) {
+    print('Adding transaction to history: ${transaction.id}');
+
+    // Check if transaction already exists to avoid duplicates
+    final existsInItems = state.items.any((item) => item.id == transaction.id);
+    final existsInReversible = state.reversibleTransfers.any(
+      (item) => item.id == transaction.id,
+    );
+
+    if (existsInItems || existsInReversible) {
+      print('Transaction ${transaction.id} already exists in history');
+      return;
+    }
+
+    if (transaction is ReversibleTransferEvent) {
+      // Add to reversible transfers list
+      final updatedReversibleTransfers = [
+        transaction,
+        ...state.reversibleTransfers,
+      ];
+      state = state.copyWith(reversibleTransfers: updatedReversibleTransfers);
+    } else {
+      // Add to regular transactions list at the top
+      final updatedItems = [transaction, ...state.items];
+      state = state.copyWith(items: updatedItems);
+    }
+
+    print('Successfully added transaction ${transaction.id} to history');
+  }
 }
