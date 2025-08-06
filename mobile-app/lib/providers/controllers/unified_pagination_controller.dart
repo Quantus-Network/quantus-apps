@@ -75,6 +75,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
             accountIds: targetAccountIds,
             limit: _limit,
             offset: state.offset,
+            printName: 'paginationController',
           );
 
       final newItems = newTransactions.otherTransfers;
@@ -145,6 +146,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
             accountIds: targetAccountIds,
             limit: _limit,
             offset: 0,
+            printName: '_silentFetchFirstPage',
           );
 
       final newItems = newTransactions.otherTransfers;
