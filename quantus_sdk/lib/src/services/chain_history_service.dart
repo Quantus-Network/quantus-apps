@@ -780,8 +780,6 @@ query SearchPendingTransaction(
       }
 
       final List<dynamic>? events = data['events'];
-      print('result $data');
-      print('events $events');
 
       if (events == null || events.isEmpty) {
         print('No matching transactions found for pending transaction');

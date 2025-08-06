@@ -395,8 +395,6 @@ class TransactionSubmissionService {
         _ref.invalidate(balanceProviderFamily);
 
         print('Successfully completed broadcast transaction: ${pendingTx.id}');
-      } else {
-        print('No matching transaction found yet for ${pendingTx.id}');
       }
     } catch (e, stackTrace) {
       print('Error searching for broadcast transaction ${pendingTx.id}: $e');

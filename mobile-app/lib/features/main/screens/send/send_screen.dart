@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
     as balances;
@@ -17,16 +18,45 @@ import 'package:resonance_network_wallet/features/main/screens/send/send_progres
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class SendScreen extends StatefulWidget {
+// Local provider for existential deposit toggle in send screen
+final _existentialDepositToggleProvider = StateProvider<bool>((ref) => true);
+
+// Provider that combines balance with existential deposit toggle
+final _effectiveMaxBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final existentialDeposit = balances.Constants().existentialDeposit;
+  final balanceAsyncValue = ref.watch(balanceProvider);
+  final includeExistentialDeposit = ref.watch(
+    _existentialDepositToggleProvider,
+  );
+
+  return balanceAsyncValue.when(
+    data: (balance) {
+      if (includeExistentialDeposit) {
+        return AsyncValue.data(
+          balance > existentialDeposit
+              ? balance - existentialDeposit
+              : BigInt.zero,
+        );
+      } else {
+        return AsyncValue.data(balance);
+      }
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stack) => AsyncValue.error(error, stack),
+  );
+});
+
+class SendScreen extends ConsumerStatefulWidget {
   const SendScreen({super.key});
 
   @override
   SendScreenState createState() => SendScreenState();
 }
 
-class SendScreenState extends State<SendScreen> {
+class SendScreenState extends ConsumerState<SendScreen> {
   final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
@@ -44,12 +74,9 @@ class SendScreenState extends State<SendScreen> {
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
 
-  late Future<BigInt> _balanceFuture;
-
   @override
   void initState() {
     super.initState();
-    _balanceFuture = _loadBalance();
     _loadReversibleTimeSetting();
     // Listen for changes in recipient and amount to update fee
     _recipientController.addListener(_debounceFetchFee);
@@ -68,10 +95,17 @@ class SendScreenState extends State<SendScreen> {
     final savedTime =
         (await _settingsService.getReversibleTimeSeconds()) ??
         AppConstants.defaultReversibleTimeSeconds;
-    setState(() {
-      _reversibleTimeSeconds = savedTime;
-    });
+    _setReversibleTimeSeconds(savedTime);
   }
+
+  void _setReversibleTimeSeconds(int seconds) {
+    setState(() {
+      _reversibleTimeSeconds = seconds;
+    });
+    _toggleExistentialDeposit(isReversible);
+  }
+
+  bool get isReversible => _reversibleTimeSeconds > 0;
 
   Future<void> _saveReversibleTimeSetting(int seconds) async {
     try {
@@ -82,23 +116,18 @@ class SendScreenState extends State<SendScreen> {
     }
   }
 
+  // Method to toggle existential deposit calculation
+  void _toggleExistentialDeposit(bool includeExistentialDeposit) {
+    ref.read(_existentialDepositToggleProvider.notifier).state =
+        includeExistentialDeposit;
+  }
+
   bool _isValidSS58Address(String address) {
     try {
       return SubstrateService().isValidSS58Address(address);
     } catch (e) {
       debugPrint('Error validating address: $e');
       return false;
-    }
-  }
-
-  Future<BigInt> _loadBalance() async {
-    try {
-      final account = await _settingsService.getActiveAccount();
-      final balance = await SubstrateService().queryBalance(account.accountId);
-      return balance;
-    } catch (e) {
-      debugPrint('Error loading balance: $e');
-      rethrow;
     }
   }
 
@@ -250,7 +279,7 @@ class SendScreenState extends State<SendScreen> {
   ) async {
     final account = await _settingsService.getActiveAccount();
     ExtrinsicFeeData estimatedFee;
-    if (_reversibleTimeSeconds > 0) {
+    if (isReversible) {
       estimatedFee = await ReversibleTransfersService()
           .getReversibleTransferWithDelayFeeEstimate(
             account: account,
@@ -258,13 +287,6 @@ class SendScreenState extends State<SendScreen> {
             amount: amount,
             delaySeconds: _reversibleTimeSeconds,
           );
-
-      // Can't send more than existentia deposit with a reversible transfer
-      // Note this will have to be fixed later on..
-      estimatedFee = ExtrinsicFeeData(
-        fee: estimatedFee.fee + balances.Constants().existentialDeposit,
-        extrinsicData: estimatedFee.extrinsicData,
-      );
     } else {
       estimatedFee = await BalancesService().getBalanceTransferFee(
         account,
@@ -659,9 +681,7 @@ class SendScreenState extends State<SendScreen> {
                           (selectedDays * 86400) +
                           (selectedHours * 3600) +
                           (selectedMinutes * 60);
-                      setState(() {
-                        _reversibleTimeSeconds = newTimeSeconds;
-                      });
+                      _setReversibleTimeSeconds(newTimeSeconds);
                       _saveReversibleTimeSetting(newTimeSeconds);
                       Navigator.pop(context);
                     },
@@ -764,384 +784,378 @@ class SendScreenState extends State<SendScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseWithBackground(
-      child: FutureBuilder<BigInt>(
-        future: _balanceFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+      child: Consumer(
+        builder: (context, ref, child) {
+          final balanceAsyncValue = ref.watch(_effectiveMaxBalanceProvider);
+          final includeExistentialDeposit = ref.watch(
+            _existentialDepositToggleProvider,
+          );
+
+          return balanceAsyncValue.when(
+            data: (balance) {
+              _maxBalance = balance;
+
+              return _buildSendContent(context, ref, includeExistentialDeposit);
+            },
+            loading: () => Center(
               child: CircularProgressIndicator(
                 color: context.themeColors.circularLoader,
               ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
+            ),
+            error: (error, stack) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
-                  'Error loading balance: ${snapshot.error}',
+                  'Error loading balance: $error',
                   style: context.themeText.paragraph?.copyWith(
                     color: context.themeColors.textError,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
-            );
-          }
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-          if (snapshot.hasData) {
-            _maxBalance = snapshot.data!;
-
-            return Column(
-              children: [
-                const WalletAppBar(title: 'Send'),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          GestureDetector(
-                            onTap: () async {
-                              final data = await Clipboard.getData(
-                                'text/plain',
-                              );
-                              if (data != null && data.text != null) {
-                                _recipientController.text = data.text!;
-                                _lookupIdentity();
-                              }
-                            },
-                            child: _buildIconButton('assets/paste_icon_1.svg'),
-                          ),
-                          const SizedBox(width: 9),
-                          GestureDetector(
-                            onTap: _scanQRCode,
-                            child: _buildIconButton('assets/scan_1.svg'),
-                          ),
-                          const SizedBox(width: 9),
-                          GestureDetector(
-                            onTap: _showRecentAddresses,
-                            child: _buildHistoryIconButton(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('To:', style: context.themeText.smallParagraph),
-                          Container(
-                            width: 1,
-                            height: context.isTablet ? 31 : 17,
-                            color: Colors.white,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextField(
-                                  controller: _recipientController,
-                                  style: context.themeText.detail,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    enabledBorder: _hasAddressError
-                                        ? const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color: Colors.red,
-                                              width: 1,
-                                            ),
-                                          )
-                                        : InputBorder.none,
-                                    focusedBorder: _hasAddressError
-                                        ? const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color: Colors.red,
-                                              width: 1,
-                                            ),
-                                          )
-                                        : InputBorder.none,
-                                    hintText:
-                                        '${AppConstants.tokenSymbol} '
-                                        'address',
-                                    hintStyle: context.themeText.detail
-                                        ?.copyWith(
-                                          color: context.themeColors.textMuted,
-                                        ),
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    filled: true,
-                                    fillColor: Colors.transparent,
-                                  ),
-                                  autocorrect: false,
-                                  enableSuggestions: false,
-                                  enableInteractiveSelection: true,
-                                  keyboardType: TextInputType.text,
-                                  textCapitalization: TextCapitalization.none,
-                                  onChanged: (value) {
-                                    if (_debounce?.isActive ?? false) {
-                                      _debounce?.cancel();
-                                    }
-                                    _debounce = Timer(
-                                      const Duration(milliseconds: 300),
-                                      () {
-                                        _lookupIdentity();
-                                      },
-                                    );
-                                  },
-                                ),
-                                if (_savedAddressesLabel.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      _savedAddressesLabel,
-                                      style: context.themeText.detail?.copyWith(
-                                        color: context.themeColors.checksum,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+  Widget _buildSendContent(
+    BuildContext context,
+    WidgetRef ref,
+    bool includeExistentialDeposit,
+  ) {
+    return Column(
+      children: [
+        const WalletAppBar(title: 'Send'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final data = await Clipboard.getData('text/plain');
+                      if (data != null && data.text != null) {
+                        _recipientController.text = data.text!;
+                        _lookupIdentity();
+                      }
+                    },
+                    child: _buildIconButton('assets/paste_icon_1.svg'),
                   ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
+                  const SizedBox(width: 9),
+                  GestureDetector(
+                    onTap: _scanQRCode,
+                    child: _buildIconButton('assets/scan_1.svg'),
+                  ),
+                  const SizedBox(width: 9),
+                  GestureDetector(
+                    onTap: _showRecentAddresses,
+                    child: _buildHistoryIconButton(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('To:', style: context.themeText.smallParagraph),
+                  Container(
+                    width: 1,
+                    height: context.isTablet ? 31 : 17,
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        LimitedBox(
-                          maxWidth: MediaQuery.of(context).size.width * 0.8,
-                          child: IntrinsicWidth(
-                            child: TextField(
-                              controller: _amountController,
-                              textAlign: TextAlign.end,
-                              style: context.themeText.extraLargeTitle,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                enabledBorder: _hasAmountError
-                                    ? OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: context.themeColors.error,
-                                          width: 1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(5),
-                                      )
-                                    : InputBorder.none,
-                                focusedBorder: _hasAmountError
-                                    ? OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: context.themeColors.error,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(5),
-                                      )
-                                    : InputBorder.none,
-                                hintText: '0',
-                                hintStyle: context.themeText.extraLargeTitle
-                                    ?.copyWith(
-                                      color: context.themeColors.textMuted,
+                        TextField(
+                          controller: _recipientController,
+                          style: context.themeText.detail,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            enabledBorder: _hasAddressError
+                                ? const OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.red,
+                                      width: 1,
                                     ),
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                filled: true,
-                                fillColor: Colors.transparent,
+                                  )
+                                : InputBorder.none,
+                            focusedBorder: _hasAddressError
+                                ? const OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.red,
+                                      width: 1,
+                                    ),
+                                  )
+                                : InputBorder.none,
+                            hintText:
+                                '${AppConstants.tokenSymbol} '
+                                'address',
+                            hintStyle: context.themeText.detail?.copyWith(
+                              color: context.themeColors.textMuted,
+                            ),
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            filled: true,
+                            fillColor: Colors.transparent,
+                          ),
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          enableInteractiveSelection: true,
+                          keyboardType: TextInputType.text,
+                          textCapitalization: TextCapitalization.none,
+                          onChanged: (value) {
+                            if (_debounce?.isActive ?? false) {
+                              _debounce?.cancel();
+                            }
+                            _debounce = Timer(
+                              const Duration(milliseconds: 300),
+                              () {
+                                _lookupIdentity();
+                              },
+                            );
+                          },
+                        ),
+                        if (_savedAddressesLabel.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              _savedAddressesLabel,
+                              style: context.themeText.detail?.copyWith(
+                                color: context.themeColors.checksum,
                               ),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [DecimalInputFilter()],
-                              onChanged: _validateAmount,
                             ),
                           ),
-                        ),
-                        Text(
-                          ' ${AppConstants.tokenSymbol}',
-                          style: context.themeText.smallTitle,
-                        ),
                       ],
                     ),
                   ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LimitedBox(
+                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+                  child: IntrinsicWidth(
+                    child: TextField(
+                      controller: _amountController,
+                      textAlign: TextAlign.end,
+                      style: context.themeText.extraLargeTitle,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        enabledBorder: _hasAmountError
+                            ? OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: context.themeColors.error,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(5),
+                              )
+                            : InputBorder.none,
+                        focusedBorder: _hasAmountError
+                            ? OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: context.themeColors.error,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(5),
+                              )
+                            : InputBorder.none,
+                        hintText: '0',
+                        hintStyle: context.themeText.extraLargeTitle?.copyWith(
+                          color: context.themeColors.textMuted,
+                        ),
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        filled: true,
+                        fillColor: Colors.transparent,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [DecimalInputFilter()],
+                      onChanged: _validateAmount,
+                    ),
+                  ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Text(
+                  ' ${AppConstants.tokenSymbol}',
+                  style: context.themeText.smallTitle,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available: '
+                // ignore: lines_longer_than_80_chars
+                '${_formattingService.formatBalance(_maxBalance)}',
+                style: context.themeText.smallParagraph?.copyWith(
+                  color: context.themeColors.checksum,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: ShapeDecoration(
+                  color: Colors.white.useOpacity(0.15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                child: GestureDetector(
+                  onTap: _setMaxAmount,
+                  child: Text('Max', style: context.themeText.detail),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GestureDetector(
+            onTap: _showTimePickerModal,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: ShapeDecoration(
+                color: const Color(0xFF313131),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Reversible for: ${_formatReversibleTime()}',
+                    style: context.themeText.smallParagraph,
+                  ),
+                  Icon(
+                    Icons.edit,
+                    color: Colors.white70,
+                    size: context.isTablet ? 22 : 14,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Network fee',
+                    style: context.themeText.detail?.copyWith(
+                      color: context.themeColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Row(
                     children: [
                       Text(
-                        'Available: '
-                        // ignore: lines_longer_than_80_chars
-                        '${_formattingService.formatBalance(_maxBalance)}',
-                        style: context.themeText.smallParagraph?.copyWith(
-                          color: context.themeColors.checksum,
+                        _formattingService.formatBalance(
+                          _networkFee,
+                          addSymbol: true,
+                        ),
+                        style: context.themeText.detail?.copyWith(
+                          color: context.themeColors.textMuted,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: Colors.white.useOpacity(0.15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        child: GestureDetector(
-                          onTap: _setMaxAmount,
-                          child: Text('Max', style: context.themeText.detail),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GestureDetector(
-                    onTap: _showTimePickerModal,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF313131),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Reversible for: ${_formatReversibleTime()}',
-                            style: context.themeText.smallParagraph,
-                          ),
-                          Icon(
-                            Icons.edit,
-                            color: Colors.white70,
-                            size: context.isTablet ? 22 : 14,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Network fee',
-                            style: context.themeText.detail?.copyWith(
-                              color: context.themeColors.textMuted,
-                              fontWeight: FontWeight.w600,
+                      if (_isFetchingFee)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: context.themeColors.circularLoader,
                             ),
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                _formattingService.formatBalance(
-                                  _networkFee,
-                                  addSymbol: true,
-                                ),
-                                style: context.themeText.detail?.copyWith(
-                                  color: context.themeColors.textMuted,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (_isFetchingFee)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: context.themeColors.circularLoader,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      _buildIconButton('assets/settings_icon.svg'),
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GestureDetector(
-                    onTap:
-                        (_hasAddressError ||
-                            _hasAmountError ||
-                            _recipientController.text.isEmpty ||
-                            _amount <= BigInt.zero ||
-                            _isFetchingFee)
-                        ? null
-                        : _showSendConfirmation,
-                    child: Opacity(
-                      opacity:
-                          (_hasAddressError ||
-                              _hasAmountError ||
-                              _recipientController.text.isEmpty ||
-                              _amount <= BigInt.zero ||
-                              _isFetchingFee)
-                          ? 0.3
-                          : 1.0,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: ShapeDecoration(
-                          color: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                        child: Text(
-                          (_hasAddressError ||
-                                  _recipientController.text.isEmpty)
-                              ? 'Enter Address'
-                              : (_amount <= BigInt.zero)
-                              ? 'Enter Amount'
-                              : _hasAmountError
-                              ? 'Insufficient Balance'
-                              // ignore: lines_longer_than_80_chars
-                              : 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}',
-                          textAlign: TextAlign.center,
-                          style: context.themeText.smallTitle?.copyWith(
-                            color: context.themeColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
+                ],
+              ),
+              _buildIconButton('assets/settings_icon.svg'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GestureDetector(
+            onTap:
+                (_hasAddressError ||
+                    _hasAmountError ||
+                    _recipientController.text.isEmpty ||
+                    _amount <= BigInt.zero ||
+                    _isFetchingFee)
+                ? null
+                : _showSendConfirmation,
+            child: Opacity(
+              opacity:
+                  (_hasAddressError ||
+                      _hasAmountError ||
+                      _recipientController.text.isEmpty ||
+                      _amount <= BigInt.zero ||
+                      _isFetchingFee)
+                  ? 0.3
+                  : 1.0,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: ShapeDecoration(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
-            );
-          }
-
-          return const SizedBox();
-        },
-      ),
+                child: Text(
+                  (_hasAddressError || _recipientController.text.isEmpty)
+                      ? 'Enter Address'
+                      : (_amount <= BigInt.zero)
+                      ? 'Enter Amount'
+                      : _hasAmountError
+                      ? 'Insufficient Balance'
+                      // ignore: lines_longer_than_80_chars
+                      : 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}',
+                  textAlign: TextAlign.center,
+                  style: context.themeText.smallTitle?.copyWith(
+                    color: context.themeColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
