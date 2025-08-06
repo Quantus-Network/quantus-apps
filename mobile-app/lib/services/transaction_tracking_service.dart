@@ -109,10 +109,13 @@ class TransactionTrackingService {
           'Transaction ${pendingTx.id} not found in block $blockHash. This transaction may be reconciled by the reconciliation service instead of being marked as failed immediately.',
         );
 
-        // Don't immediately mark as failed - let the reconciliation service handle it
-        // This allows for transactions that might appear in different blocks or take longer to be indexed
+        // Don't immediately mark as failed - let the reconciliation service
+        //handle it
+        // This allows for transactions that might appear in different blocks
+        // or take longer to be indexed
         print(
-          'Continuing to track transaction ${pendingTx.id} for potential reconciliation',
+          'Continuing to track transaction ${pendingTx.id} for potential '
+          'reconciliation',
         );
         return;
       }

@@ -150,7 +150,8 @@ class TransactionSubmissionService {
 
         print('got status ${status.type} value: ${status.value} - $status');
         print(
-          ' activeSubscription for ${pendingTx.id}: ${identityHashCode(activeSubscription)}',
+          ' activeSubscription for ${pendingTx.id}: '
+          '${identityHashCode(activeSubscription)}',
         );
 
         switch (status.type) {
@@ -255,7 +256,8 @@ class TransactionSubmissionService {
       final submission = submissionBuilder();
       activeSubscription = await submission(onStatus);
       print(
-        'Assigned activeSubscription for ${pendingTx.id}: ${identityHashCode(activeSubscription)}',
+        'Assigned activeSubscription for ${pendingTx.id}: '
+        '${identityHashCode(activeSubscription)}',
       );
     } catch (e, stackTrace) {
       print('Failed submitting transaction attempt $attempt: $e');

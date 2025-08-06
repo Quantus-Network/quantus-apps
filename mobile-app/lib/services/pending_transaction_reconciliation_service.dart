@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +31,8 @@ class PendingTransactionReconciliationService {
   }
 
   /// Reconciles pending transactions with confirmed transactions from history.
-  /// This should be called during history polling to clean up stale pending transactions.
+  /// This should be called during history polling to clean up stale pending
+  /// transactions.
   Future<void> reconcilePendingTransactions() async {
     try {
       final pendingTxs = _ref.read(pendingTransactionsProvider);
@@ -37,7 +40,8 @@ class PendingTransactionReconciliationService {
       if (pendingTxs.isEmpty) return;
 
       print(
-        'PendingReconciliation: Checking ${pendingTxs.length} pending transactions',
+        'PendingReconciliation: Checking ${pendingTxs.length} '
+        'pending transactions',
       );
 
       // Get recent history to match against
@@ -49,7 +53,7 @@ class PendingTransactionReconciliationService {
           ...transactions.reversibleTransfers,
         ],
         loading: () => <TransactionEvent>[],
-        error: (_, __) => <TransactionEvent>[],
+        error: (_, _) => <TransactionEvent>[],
       );
 
       if (confirmedTransactions.isEmpty) {
@@ -70,7 +74,8 @@ class PendingTransactionReconciliationService {
       }
 
       print(
-        'PendingReconciliation: Found ${stalePendingTxs.length} stale pending transactions',
+        'PendingReconciliation: Found ${stalePendingTxs.length} stale '
+        'pending transactions',
       );
 
       // Check each stale pending transaction for matches
@@ -87,7 +92,8 @@ class PendingTransactionReconciliationService {
     }
   }
 
-  /// Determines if a pending transaction is stale and should be checked for reconciliation
+  /// Determines if a pending transaction is stale and should be checked for
+  /// reconciliation
   bool _isStalePendingTransaction(
     PendingTransactionEvent pendingTx,
     DateTime now,
@@ -95,13 +101,15 @@ class PendingTransactionReconciliationService {
     final age = now.difference(pendingTx.timestamp);
 
     print(
-      'PendingReconciliation: Checking tx ${pendingTx.id}: age=${age.inMinutes}min, state=${pendingTx.transactionState}',
+      'PendingReconciliation: Checking tx ${pendingTx.id}: '
+      'age=${age.inMinutes}min, state=${pendingTx.transactionState}',
     );
 
     // Check if transaction has been pending for too long
     if (age > _maxPendingAge) {
       print(
-        'PendingReconciliation: Transaction ${pendingTx.id} is too old (${age.inMinutes} minutes), will be removed',
+        'PendingReconciliation: Transaction ${pendingTx.id} is too '
+        'old (${age.inMinutes} minutes), will be removed',
       );
       return true;
     }
@@ -111,13 +119,16 @@ class PendingTransactionReconciliationService {
         (pendingTx.transactionState == TransactionState.broadcast ||
             pendingTx.transactionState == TransactionState.inBlock)) {
       print(
-        'PendingReconciliation: Transaction ${pendingTx.id} is stale (${age.inMinutes} minutes in ${pendingTx.transactionState} state)',
+        'PendingReconciliation: Transaction ${pendingTx.id} is'
+        ' stale (${age.inMinutes} minutes in ${pendingTx.transactionState} '
+        'state)',
       );
       return true;
     }
 
     print(
-      'PendingReconciliation: Transaction ${pendingTx.id} not considered stale yet',
+      'PendingReconciliation: Transaction ${pendingTx.id} not '
+      'considered stale yet',
     );
     return false;
   }
@@ -134,7 +145,8 @@ class PendingTransactionReconciliationService {
       // If transaction is extremely old, just remove it
       if (age > _maxPendingAge) {
         print(
-          'PendingReconciliation: Removing expired transaction ${pendingTx.id} (age: ${age.inMinutes} minutes)',
+          'PendingReconciliation: Removing expired transaction'
+          ' ${pendingTx.id} (age: ${age.inMinutes} minutes)',
         );
         await _removePendingTransaction(
           pendingTx,
@@ -151,7 +163,8 @@ class PendingTransactionReconciliationService {
 
       if (matchingTransaction != null) {
         print(
-          'PendingReconciliation: Found matching confirmed transaction for ${pendingTx.id}',
+          'PendingReconciliation: Found matching confirmed transaction for'
+          ' ${pendingTx.id}',
         );
         print(
           '  Pending: ${pendingTx.from} → ${pendingTx.to}, amount: ${pendingTx.amount}',
