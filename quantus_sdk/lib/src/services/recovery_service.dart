@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:polkadart/primitives/primitives.dart';
+
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
+import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
+import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
-import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
-import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+
 import 'substrate_service.dart';
 
 /// Service for managing account recovery functionality
@@ -21,7 +22,7 @@ class RecoveryService {
 
   /// Create a recovery configuration for an account
   /// This makes the account recoverable by trusted friends
-  Future<StreamSubscription<ExtrinsicStatus>> createRecoveryConfig({
+  Future<Uint8List> createRecoveryConfig({
     required Account account,
     required List<String> friendAddresses,
     required int threshold,
@@ -48,7 +49,7 @@ class RecoveryService {
   }
 
   /// Initiate recovery process for a lost account
-  Future<StreamSubscription<ExtrinsicStatus>> initiateRecovery({
+  Future<Uint8List> initiateRecovery({
     required Account rescuerAccount,
     required String lostAccountAddress,
   }) async {
@@ -71,7 +72,7 @@ class RecoveryService {
   }
 
   /// Vouch for an active recovery process (called by friends)
-  Future<StreamSubscription<ExtrinsicStatus>> vouchForRecovery({
+  Future<Uint8List> vouchForRecovery({
     required Account friendAccount,
     required String lostAccountAddress,
     required String rescuerAddress,
@@ -99,7 +100,7 @@ class RecoveryService {
   }
 
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
-  Future<StreamSubscription<ExtrinsicStatus>> claimRecovery({
+  Future<Uint8List> claimRecovery({
     required Account rescuerAccount,
     required String lostAccountAddress,
   }) async {
@@ -120,7 +121,7 @@ class RecoveryService {
   }
 
   /// Close an active recovery process (called by the lost account owner)
-  Future<StreamSubscription<ExtrinsicStatus>> closeRecovery({
+  Future<Uint8List> closeRecovery({
     required Account lostAccount,
     required String rescuerAddress,
   }) async {
@@ -141,7 +142,7 @@ class RecoveryService {
   }
 
   /// Remove recovery configuration from account
-  Future<StreamSubscription<ExtrinsicStatus>> removeRecoveryConfig({
+  Future<Uint8List> removeRecoveryConfig({
     required Account senderAccount,
   }) async {
     try {
@@ -158,7 +159,7 @@ class RecoveryService {
   }
 
   /// Call a function as a recovered account (proxy call)
-  Future<StreamSubscription<ExtrinsicStatus>> callAsRecovered({
+  Future<Uint8List> callAsRecovered({
     required Account rescuerAccount,
     required String recoveredAccountAddress,
     required RuntimeCall call,
@@ -183,7 +184,7 @@ class RecoveryService {
   }
 
   /// Cancel the ability to use a recovered account
-  Future<StreamSubscription<ExtrinsicStatus>> cancelRecovered({
+  Future<Uint8List> cancelRecovered({
     required Account rescuerAccount,
     required String recoveredAccountAddress,
   }) async {
@@ -341,7 +342,7 @@ class RecoveryService {
   }
 
   /// Convenience method to transfer balance as recovered account
-  Future<StreamSubscription<ExtrinsicStatus>> transferAsRecovered({
+  Future<Uint8List> transferAsRecovered({
     required Account rescuerAccount,
     required String recoveredAccountAddress,
     required String recipientAddress,

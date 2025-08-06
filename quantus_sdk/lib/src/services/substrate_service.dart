@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
+import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
@@ -244,10 +245,28 @@ class SubstrateService {
     return ExtrinsicFeeData(fee: fee, extrinsicData: extrinsic);
   }
 
-  Future<StreamSubscription<ExtrinsicStatus>> submitExtrinsic(
+  /// Submit a fully formatted extrinsic for block inclusion.
+  /// The type will be changed to Extrinsic later
+  /// Copied from author API...
+  Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
+    print('submitting extr');
+    final List<dynamic> params = ['0x${hex.encode(extrinsic)}'];
+
+    final response = await _provider!.send('author_submitExtrinsic', params);
+    print('submitExtrinsic response: $response');
+    print('submitExtrinsic response: ${response.result}');
+
+    if (response.error != null) {
+      throw Exception(response.error.toString());
+    }
+
+    final data = response.result as String;
+    return Uint8List.fromList(hex.decode(data.substring(2)));
+  }
+
+  Future<Uint8List> submitExtrinsic(
     Account account,
     RuntimeCall call, {
-    void Function(ExtrinsicStatus)? onStatus,
     int maxRetries = 3,
   }) async {
     if (_provider == null) {
@@ -260,13 +279,12 @@ class SubstrateService {
         final extrinsicData = await getExtrinsicPayload(account, call);
         Uint8List extrinsic = extrinsicData.payload;
 
-        return _authorApi!.submitAndWatchExtrinsic(extrinsic, (data) {
-          print('author on status: ${data.type}');
-          if (data.type == 'inBlock') {
-            print('inBlock: ${data.value}');
-          }
-          onStatus?.call(data);
-        });
+        // final result = await _authorApi!.submitExtrinsic(extrinsic);
+        final result = await _submitExtrinsic(extrinsic);
+
+        print('result: $result');
+
+        return result;
       } catch (e) {
         retryCount++;
         if (retryCount >= maxRetries) {

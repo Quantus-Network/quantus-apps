@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
 
-import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
@@ -14,24 +14,15 @@ class BalancesService {
 
   final SubstrateService _substrateService = SubstrateService();
 
-  Future<StreamSubscription<ExtrinsicStatus>> balanceTransfer(
+  Future<Uint8List> balanceTransfer(
     Account account,
     String targetAddress,
     BigInt amount,
-    void Function(ExtrinsicStatus)? onStatus,
   ) async {
     try {
       Balances runtimeCall = getBalanceTransferCall(targetAddress, amount);
       // Submit the extrinsic and return its result
-      return await _substrateService.submitExtrinsic(
-        account,
-        runtimeCall,
-        onStatus:
-            onStatus ??
-            (data) async {
-              print('type: ${data.type}, value: ${data.value}');
-            },
-      );
+      return await _substrateService.submitExtrinsic(account, runtimeCall);
     } catch (e, stackTrace) {
       print('Failed to transfer balance: $e');
       print('Failed to transfer balance: $stackTrace');

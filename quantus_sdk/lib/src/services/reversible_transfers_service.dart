@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/resonance/resonance.dart';
@@ -27,7 +28,7 @@ class ReversibleTransfersService {
 
   /// Enable reversibility for the calling account with specified delay and policy
   /// Used for theft deterrence - enables all future transfers to be reversible
-  Future<StreamSubscription<ExtrinsicStatus>> setHighSecurity({
+  Future<Uint8List> setHighSecurity({
     required Account account,
     required qp.BlockNumberOrTimestamp delay,
     String? reverserAddress,
@@ -57,7 +58,7 @@ class ReversibleTransfersService {
   }
 
   /// Schedule a reversible transfer using account's default settings
-  Future<StreamSubscription<ExtrinsicStatus>> scheduleReversibleTransfer({
+  Future<Uint8List> scheduleReversibleTransfer({
     required Account account,
     required String recipientAddress,
     required BigInt amount,
@@ -73,6 +74,7 @@ class ReversibleTransfersService {
         dest: multiDest,
         amount: amount,
       );
+      call.hashCode;
 
       // Submit the transaction using substrate service
       return _substrateService.submitExtrinsic(account, call);
@@ -82,8 +84,7 @@ class ReversibleTransfersService {
   }
 
   /// Schedule a reversible transfer with custom delay (ad hoc transfer)
-  Future<StreamSubscription<ExtrinsicStatus>>
-  scheduleReversibleTransferWithDelay({
+  Future<Uint8List> scheduleReversibleTransferWithDelay({
     required Account account,
     required String recipientAddress,
     required BigInt amount,
@@ -97,7 +98,7 @@ class ReversibleTransfersService {
     );
 
     // Submit the transaction using substrate service
-    return _substrateService.submitExtrinsic(account, call, onStatus: onStatus);
+    return _substrateService.submitExtrinsic(account, call);
   }
 
   Future<ExtrinsicFeeData> getReversibleTransferWithDelayFeeEstimate({
@@ -136,8 +137,7 @@ class ReversibleTransfersService {
   }
 
   /// Schedule a reversible transfer with custom delay in seconds
-  Future<StreamSubscription<ExtrinsicStatus>>
-  scheduleReversibleTransferWithDelaySeconds({
+  Future<Uint8List> scheduleReversibleTransferWithDelaySeconds({
     required Account account,
     required String recipientAddress,
     required BigInt amount,
@@ -156,7 +156,7 @@ class ReversibleTransfersService {
   }
 
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
-  Future<StreamSubscription<ExtrinsicStatus>> cancelReversibleTransfer({
+  Future<Uint8List> cancelReversibleTransfer({
     required Account account,
     required H256 transactionId,
   }) async {
@@ -176,7 +176,7 @@ class ReversibleTransfersService {
   }
 
   /// Execute a scheduled transfer (typically called by the scheduler)
-  Future<StreamSubscription<ExtrinsicStatus>> executeTransfer({
+  Future<Uint8List> executeTransfer({
     required Account account,
     required H256 transactionId,
   }) async {
