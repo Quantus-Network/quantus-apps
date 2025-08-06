@@ -5,8 +5,13 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class RecentAddressList extends StatefulWidget {
   final Function(String) onAddressSelected;
+  final String currentAddress;
 
-  const RecentAddressList({super.key, required this.onAddressSelected});
+  const RecentAddressList({
+    super.key,
+    required this.currentAddress,
+    required this.onAddressSelected,
+  });
 
   @override
   State<RecentAddressList> createState() => _RecentAddressListState();
@@ -45,6 +50,8 @@ class _RecentAddressListState extends State<RecentAddressList> {
         }
 
         final addresses = snapshot.data!;
+        addresses.remove(widget.currentAddress);
+
         return ListView.separated(
           itemCount: addresses.length,
           separatorBuilder: (context, index) => const SizedBox(height: 20),

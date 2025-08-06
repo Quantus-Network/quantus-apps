@@ -677,8 +677,11 @@ class SendScreenState extends State<SendScreen> {
   }
 
   // NEW: Method to show the recent addresses modal bottom sheet
-  void _showRecentAddresses() {
+  void _showRecentAddresses() async {
+    final activeAccount = await _settingsService.getActiveAccount();
+
     showAppModalBottomSheet(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (context) => Container(
         height:
@@ -723,6 +726,7 @@ class SendScreenState extends State<SendScreen> {
                   const SizedBox(height: 20), // Spacing from Figma
                   Expanded(
                     child: RecentAddressList(
+                      currentAddress: activeAccount.accountId,
                       onAddressSelected: (address) {
                         _recipientController.text = address;
                         _lookupIdentity();
