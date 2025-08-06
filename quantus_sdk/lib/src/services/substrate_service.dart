@@ -61,7 +61,6 @@ class SubstrateService {
 
   Provider? _provider;
   StateApi? _stateApi;
-  AuthorApi? _authorApi;
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   final SettingsService _settingsService = SettingsService();
 
@@ -80,7 +79,6 @@ class SubstrateService {
       _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
       // Initialize APIs with the new provider
       _stateApi = StateApi(_provider!);
-      _authorApi = AuthorApi(_provider!);
     }
 
     // Attempt to connect
@@ -112,7 +110,6 @@ class SubstrateService {
 
     // Re-initialize APIs with the new provider
     _stateApi = StateApi(_provider!);
-    _authorApi = AuthorApi(_provider!);
 
     // Attempt to connect the new provider with timeout
     try {
@@ -247,7 +244,7 @@ class SubstrateService {
 
   /// Submit a fully formatted extrinsic for block inclusion.
   /// The type will be changed to Extrinsic later
-  /// Copied from author API...
+  /// Note: Copied from author API
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
     final List<dynamic> params = ['0x${hex.encode(extrinsic)}'];
 
