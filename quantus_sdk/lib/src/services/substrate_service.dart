@@ -187,14 +187,14 @@ class SubstrateService {
 
       // Get the free balance
       return accountInfo.data.free;
-    } catch (e) {
+    } catch (e, st) {
       // If a network error occurs here, update the connection status
       if (e.toString().contains('WebSocketChannelException') ||
           e is SocketException ||
           e is TimeoutException) {
         _connectionStatusController.add(ConnectionStatus.disconnected);
       }
-      print('Error querying balance: $e');
+      print('Error querying balance: $e, $st');
       throw Exception('Failed to query balance: $e');
     }
   }
