@@ -924,10 +924,46 @@ class SendScreenState extends ConsumerState<SendScreen> {
                         if (_savedAddressesLabel.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              _savedAddressesLabel,
-                              style: context.themeText.detail?.copyWith(
-                                color: context.themeColors.checksum,
+                            child: GestureDetector(
+                              onTap: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: _savedAddressesLabel),
+                                );
+                                // Haptic feedback for copy action
+                                HapticFeedback.lightImpact();
+                                // Show feedback to user
+                                if (mounted) {
+                                  showTopSnackBar(
+                                    // ignore: use_build_context_synchronously
+                                    context,
+                                    title: 'Copied',
+                                    message: 'Check phrase copied to clipboard',
+                                  );
+                                }
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _savedAddressesLabel,
+                                      style: context.themeText.detail?.copyWith(
+                                        color: context.themeColors.checksum,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 1.0),
+                                    child: Icon(
+                                      Icons.copy,
+                                      size: 14,
+                                      color: context.themeColors.checksum
+                                          .useOpacity(0.7),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
