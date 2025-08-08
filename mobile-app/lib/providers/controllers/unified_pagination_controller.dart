@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/pagination_state.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
@@ -57,7 +58,8 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         .firstWhere((state) => !state.isLoading);
 
     return accountsState.maybeWhen(
-      data: (accounts) => accounts.map((e) => e.accountId).toList(),
+      data: (accounts) =>
+          AccountIdListCache.get(accounts.map((e) => e.accountId).toList()),
       orElse: () => throw Exception('Failed to load accounts'),
     );
   }
@@ -65,7 +67,9 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   List<String> _getAccountIds() {
     if (accountIds != null) return accountIds!;
     final accounts = ref.read(accountsProvider).value;
-    return accounts?.map((e) => e.accountId).toList() ?? [];
+    final List<String> filteredAccountIds =
+        accounts?.map((e) => e.accountId).toList() ?? [];
+    return AccountIdListCache.get(filteredAccountIds);
   }
 
   Future<void> _fetchPage(List<String> targetAccountIds) async {

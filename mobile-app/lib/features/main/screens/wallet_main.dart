@@ -15,7 +15,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -242,7 +242,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
-    final allTransactionsAsync = ref.watch(allTransactionsProvider);
+    final allTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
 
     if (activeAccountAsync.isLoading) {
       return Scaffold(
@@ -312,7 +312,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                     onTap: () {
                       ref.invalidate(activeAccountProvider);
                       ref.invalidate(balanceProvider);
-                      ref.invalidate(activeAccountHistoryProvider);
+                      ref.invalidate(activeAccountTransactionsProvider);
                     },
                     gradient: const LinearGradient(
                       begin: Alignment(0.50, 0.00),
@@ -365,9 +365,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   balanceProviderRaw,
                 ); // Invalidate raw balance for loading
                 // balanceProvider (effective) will auto-update
-                await ref
-                    .read(paginationControllerProvider.notifier)
-                    .loadingRefresh();
+                ref.invalidate(activeAccountTransactionsProvider);
               },
               color: const Color(0xFF0CE6ED),
               backgroundColor: Colors.black,

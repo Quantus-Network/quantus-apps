@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
@@ -116,7 +117,11 @@ final activeAccountHistoryProvider = FutureProvider<SortedTransactionsList>((
       if (activeAccount == null) {
         return SortedTransactionsList.empty;
       }
-      return ref.watch(historyProviderFamily([activeAccount.accountId]).future);
+      return ref.watch(
+        historyProviderFamily(
+          AccountIdListCache.get([activeAccount.accountId]),
+        ).future,
+      );
     },
     loading: () => SortedTransactionsList.empty,
     error: (err, stack) => SortedTransactionsList.empty,
@@ -134,7 +139,9 @@ final allAccountsHistoryProvider = FutureProvider<SortedTransactionsList>((
         return SortedTransactionsList.empty;
       }
       final accountIds = accounts.map((e) => e.accountId).toList();
-      return ref.watch(historyProviderFamily(accountIds).future);
+      return ref.watch(
+        historyProviderFamily(AccountIdListCache.get(accountIds)).future,
+      );
     },
     loading: () => SortedTransactionsList.empty,
     error: (err, stack) => SortedTransactionsList.empty,

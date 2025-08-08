@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 
@@ -23,11 +24,11 @@ final activeAccountTransactionsProvider =
               ),
             );
           }
-
-          // Create a stable list reference for the active account
-          final accountIds = [activeAccount.accountId];
-
-          return ref.watch(filteredTransactionsProviderFamily(accountIds));
+          return ref.watch(
+            filteredTransactionsProviderFamily(
+              AccountIdListCache.get([activeAccount.accountId]),
+            ),
+          );
         },
         loading: () => const AsyncValue.loading(),
         error: (err, stack) => AsyncValue.error(err, stack),
