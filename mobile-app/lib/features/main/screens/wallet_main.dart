@@ -243,7 +243,9 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
-    final allTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
+    final activeAccountTransactionsAsync = ref.watch(
+      activeAccountTransactionsProvider,
+    );
 
     if (activeAccountAsync.isLoading) {
       return Scaffold(
@@ -541,7 +543,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                   ),
                   SliverToBoxAdapter(
                     child: _buildHistorySection(
-                      allTransactionsAsync,
+                      activeAccountTransactionsAsync,
                       activeAccount,
                     ),
                   ),
