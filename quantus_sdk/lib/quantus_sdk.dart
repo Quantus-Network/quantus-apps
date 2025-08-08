@@ -15,6 +15,7 @@ export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/models/account.dart';
 export 'src/models/event_type.dart';
+export 'src/models/miner_reward_event.dart';
 export 'src/models/pending_transfer_event.dart';
 export 'src/models/reversible_transfer_status.dart';
 export 'src/models/sorted_transactions.dart';

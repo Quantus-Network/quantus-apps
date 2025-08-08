@@ -35,6 +35,11 @@ class _TransactionDetailsActionSheetState
   Timer? _timer;
   Duration? _remainingTime;
   Future<String> get _checksumFuture {
+    // Miner reward does not have a real address as the counterpart
+    if (widget.transaction is MinerRewardEvent) {
+      return Future.value('');
+    }
+
     final address = widget.role == TransactionRole.sender
         ? widget.transaction.to
         : widget.transaction.from;
@@ -76,6 +81,9 @@ class _TransactionDetailsActionSheetState
     if (widget.role == TransactionRole.receiver &&
         widget.transaction.isReversibleScheduled) {
       return 'received in';
+    }
+    if (widget.transaction is MinerRewardEvent) {
+      return '💰';
     }
     if (widget.role == TransactionRole.receiver &&
         widget.transaction.isReversibleCancelled) {
@@ -286,14 +294,15 @@ class _TransactionDetailsActionSheetState
   }
 
   Widget _buildViewExplorer() {
-    String transactionType =
-        (widget.transaction.isReversibleScheduled ||
-            widget.transaction.isReversibleExecuted ||
-            widget.transaction.isReversibleCancelled)
+    final isMinerReward = widget.transaction.isMinerReward;
+    final hasExtrinsicHash = widget.transaction.extrinsicHash != null;
+    String transactionType = isMinerReward
+        ? 'miner-rewards'
+        : (widget.transaction.isReversibleScheduled ||
+              widget.transaction.isReversibleExecuted ||
+              widget.transaction.isReversibleCancelled)
         ? 'reversible-transactions'
         : 'immediate-transactions';
-
-    final hasExtrinsicHash = widget.transaction.extrinsicHash != null;
 
     return Column(
       children: [
@@ -304,6 +313,13 @@ class _TransactionDetailsActionSheetState
               final Uri url = Uri.parse(
                 '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.extrinsicHash}',
               );
+              print('url: $url');
+              await launchUrl(url);
+            } else if (isMinerReward) {
+              final Uri url = Uri.parse(
+                '${AppConstants.explorerEndpoint}/$transactionType/${widget.transaction.blockHash}',
+              );
+              print('miner url: $url');
               await launchUrl(url);
             }
           },
@@ -371,26 +387,34 @@ class _TransactionDetailsActionSheetState
         if (widget.role == TransactionRole.receiver &&
             widget.transaction.isReversibleScheduled)
           ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
-        FutureBuilder(
-          future: _checksumFuture,
-          builder: (context, snapshot) {
-            String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
-            if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
+        if (!(widget.transaction is MinerRewardEvent)) ...[
+          FutureBuilder(
+            future: _checksumFuture,
+            builder: (context, snapshot) {
+              String checkPhrase = snapshot.data ?? 'Loading checkphrase...';
+              if (snapshot.hasError) checkPhrase = 'Error loading checkphrase';
 
-            return Text(
-              checkPhrase,
-              textAlign: TextAlign.center,
-              style: context.themeText.paragraph,
-            );
-          },
-        ),
-        Text(
-          widget.role == TransactionRole.sender
-              ? widget.transaction.to
-              : widget.transaction.from,
-          textAlign: TextAlign.center,
-          style: context.themeText.tiny,
-        ),
+              return Text(
+                checkPhrase,
+                textAlign: TextAlign.center,
+                style: context.themeText.paragraph,
+              );
+            },
+          ),
+          Text(
+            widget.role == TransactionRole.sender
+                ? widget.transaction.to
+                : widget.transaction.from,
+            textAlign: TextAlign.center,
+            style: context.themeText.tiny,
+          ),
+        ] else ...[
+          Text(
+            'Mining Reward',
+            textAlign: TextAlign.center,
+            style: context.themeText.paragraph,
+          ),
+        ],
       ],
     );
   }

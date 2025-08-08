@@ -120,6 +120,11 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 
   String _getSubtitle() {
+    // Special handling for mining rewards
+    if (widget.transaction is MinerRewardEvent) {
+      return 'Mining Reward';
+    }
+
     String senderAddress = _formatAddress(widget.transaction.from);
     String receiverAddress = _formatAddress(widget.transaction.to);
     if (widget.showFromAndTo) {

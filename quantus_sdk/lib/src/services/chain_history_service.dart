@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/src/models/sorted_transactions.dart';
 
 import '../constants/app_constants.dart';
+import '../models/miner_reward_event.dart';
 import '../models/transaction_event.dart';
 
 class TransferList {
@@ -141,38 +142,47 @@ query TransactionsByHash($transactionHashes: [String!]!, $limit: Int!, $offset: 
   }
 }''';
 
-  // GraphQL query to fetch transfers for a specific account
-  final String _eventsByAccountsQuery = r'''
-query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
+  // Events for accounts including transfers, reversible transfers and miner rewards.
+  final String _eventsByAccountsWithRewardsQuery = r'''
+query EventsByAccounts(
+  $accounts: [String!]!,
+  $limit: Int!,
+  $offset: Int!
+) {
   events(
-    limit: $limit
-    offset: $offset
+    limit: $limit,
+    offset: $offset,
     where: {
-      AND: [
-        { extrinsicHash_isNull: false } 
-        { OR: [
+      OR: [
+        {
+          AND: [
+            { extrinsicHash_isNull: false },
             { transfer: {
                 OR: [
-                  { from: { id_in: $accounts } }
-                  { to:   { id_in: $accounts } }
-                ]}
-            }
-            { reversibleTransfer: {
-              AND: [
-                { status_not_eq: SCHEDULED },
-                {
-                  OR: [
-                    { from: { id_in: $accounts } },
-                    { to: { id_in: $accounts } }
-                  ]
-                }
-              ]
-              }
-            }
+                  { from: { id_in: $accounts } },
+                  { to: { id_in: $accounts } }
+                ]
+              } }
           ]
-        }
+        },
+        {
+          AND: [
+            { extrinsicHash_isNull: false },
+            { reversibleTransfer: {
+                AND: [
+                  { status_not_eq: SCHEDULED },
+                  { OR: [
+                      { from: { id_in: $accounts } },
+                      { to: { id_in: $accounts } }
+                    ]
+                  }
+                ]
+              } }
+          ]
+        },
+        { minerReward: { miner: { id_in: $accounts } } }
       ]
-    }
+    },
     orderBy: timestamp_DESC
   ) {
     id
@@ -180,16 +190,9 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       id
       amount
       timestamp
-      from {
-        id
-      }
-      to {
-        id
-      }
-      block {
-        height
-        hash
-      }
+      from { id }
+      to { id }
+      block { height hash }
       extrinsicHash
       timestamp
       fee
@@ -198,21 +201,21 @@ query EventsByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       id
       amount
       timestamp
-      from {
-        id
-      }
-      to {
-        id
-      }
+      from { id }
+      to { id }
       txId
       scheduledAt
       status
-      block {
-        height
-        hash
-      }
+      block { height hash }
       extrinsicHash
       timestamp
+    }
+    minerReward {
+      id
+      reward
+      timestamp
+      miner { id }
+      block { height hash }
     }
     extrinsicHash
   }
@@ -486,6 +489,10 @@ query SearchPendingTransaction(
           transactions.add(
             ReversibleTransferEvent.fromJson(reversibleTransferData),
           );
+        } else if (event['minerReward'] != null) {
+          final minerRewardData = event['minerReward'] as Map<String, dynamic>;
+          minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(MinerRewardEvent.fromJson(minerRewardData));
         }
       }
 
@@ -568,7 +575,7 @@ query SearchPendingTransaction(
 
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
-      'query': _eventsByAccountsQuery,
+      'query': _eventsByAccountsWithRewardsQuery,
       'variables': <String, dynamic>{
         'accounts': accountIds,
         'limit': limit,
@@ -622,6 +629,10 @@ query SearchPendingTransaction(
           transactions.add(
             ReversibleTransferEvent.fromJson(reversibleTransferData),
           );
+        } else if (event['minerReward'] != null) {
+          final minerRewardData = event['minerReward'] as Map<String, dynamic>;
+          minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(MinerRewardEvent.fromJson(minerRewardData));
         }
       }
 
@@ -708,6 +719,10 @@ query SearchPendingTransaction(
           transactions.add(
             ReversibleTransferEvent.fromJson(reversibleTransferData),
           );
+        } else if (event['minerReward'] != null) {
+          final minerRewardData = event['minerReward'] as Map<String, dynamic>;
+          minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
+          transactions.add(MinerRewardEvent.fromJson(minerRewardData));
         }
       }
 
