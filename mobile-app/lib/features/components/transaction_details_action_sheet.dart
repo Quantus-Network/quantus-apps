@@ -387,7 +387,8 @@ class _TransactionDetailsActionSheetState
         if (widget.role == TransactionRole.receiver &&
             widget.transaction.isReversibleScheduled)
           ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
-        if (!(widget.transaction is MinerRewardEvent)) ...[
+        if (widget.transaction is! MinerRewardEvent) ...[
+          // Normal Events
           FutureBuilder(
             future: _checksumFuture,
             builder: (context, snapshot) {
@@ -409,6 +410,7 @@ class _TransactionDetailsActionSheetState
             style: context.themeText.tiny,
           ),
         ] else ...[
+          // Mining Reward Events
           Text(
             'Mining Reward',
             textAlign: TextAlign.center,
