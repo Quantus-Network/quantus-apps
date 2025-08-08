@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class WalletMain extends ConsumerStatefulWidget {
   const WalletMain({super.key});
@@ -111,13 +112,13 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   ) {
     return allTransactionsAsync.when(
       data: (combinedData) {
-        // Combine all transaction types into a single list
-        // Pending transactions first, then reversible, then others
-        final allTransactions = <TransactionEvent>[
-          ...combinedData.pendingTransactions.cast<TransactionEvent>(),
-          ...combinedData.reversibleTransfers.cast<TransactionEvent>(),
-          ...combinedData.otherTransfers,
-        ];
+        // Combine and deduplicate all transaction types
+        final allTransactions =
+            TransactionUtils.combineAndDeduplicateTransactions(
+              pendingTransactions: combinedData.pendingTransactions,
+              reversibleTransfers: combinedData.reversibleTransfers,
+              otherTransfers: combinedData.otherTransfers,
+            );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

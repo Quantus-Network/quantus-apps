@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
@@ -9,6 +8,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
@@ -246,11 +246,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
       ),
       data: (combinedData) {
-        final allTransactions = <TransactionEvent>[
-          ...combinedData.pendingTransactions,
-          ...combinedData.reversibleTransfers,
-          ...combinedData.otherTransfers,
-        ];
+        final allTransactions =
+            TransactionUtils.combineAndDeduplicateTransactions(
+              pendingTransactions: combinedData.pendingTransactions,
+              reversibleTransfers: combinedData.reversibleTransfers,
+              otherTransfers: combinedData.otherTransfers,
+            );
 
         if (allTransactions.isEmpty && !paginationState.isFetching) {
           return Center(
