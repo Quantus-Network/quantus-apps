@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class CreateAccountScreen extends StatefulWidget {
+class CreateAccountScreen extends ConsumerStatefulWidget {
   final Account? accountToEdit;
 
   const CreateAccountScreen({super.key, this.accountToEdit});
 
   @override
-  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() =>
+      _CreateAccountScreenState();
 }
 
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
+class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final AccountsService _accountsService = AccountsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
@@ -103,11 +106,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
           _provisionalAccount,
           _nameController.text,
         );
+        // Invalidate the accounts provider to reload the entire list
+        ref.invalidate(accountsProvider);
       } else {
         final accountToSave = _provisionalAccount.copyWith(
           name: _nameController.text,
         );
         await _accountsService.addAccount(accountToSave);
+        // Invalidate the accounts provider to reload the entire list
+        ref.invalidate(accountsProvider);
       }
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
