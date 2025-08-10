@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/transactions_list.d
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/utils/transaction_utils.dart';
@@ -60,7 +61,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ref
                 .read(
                   filteredPaginationControllerProviderFamily(
-                    accountIds,
+                    AccountIdListCache.get(accountIds),
                   ).notifier,
                 )
                 .loadingRefresh();
@@ -88,7 +89,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ref
             .read(
               filteredPaginationControllerProviderFamily(
-                _selectedAccountIds!,
+                AccountIdListCache.get(_selectedAccountIds!),
               ).notifier,
             )
             .fetchMore();
@@ -210,7 +211,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ref
             .read(
               filteredPaginationControllerProviderFamily(
-                newSelectedIds,
+                AccountIdListCache.get(newSelectedIds),
               ).notifier,
             )
             .loadingRefresh();
@@ -234,10 +235,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
     final accountIds = _selectedAccountIds!;
     final filteredTransactionsAsync = ref.watch(
-      filteredTransactionsProviderFamily(accountIds),
+      filteredTransactionsProviderFamily(AccountIdListCache.get(accountIds)),
     );
     final paginationState = ref.watch(
-      filteredPaginationControllerProviderFamily(accountIds),
+      filteredPaginationControllerProviderFamily(
+        AccountIdListCache.get(accountIds),
+      ),
     );
 
     return filteredTransactionsAsync.when(
@@ -265,7 +268,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         return RefreshIndicator(
           onRefresh: () => ref
               .read(
-                filteredPaginationControllerProviderFamily(accountIds).notifier,
+                filteredPaginationControllerProviderFamily(
+                  AccountIdListCache.get(accountIds),
+                ).notifier,
               )
               .loadingRefresh(),
           child: CustomScrollView(
