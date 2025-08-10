@@ -221,10 +221,7 @@ class ReversibleTransferMonitoringService {
   /// Manually trigger a check for all monitored transfers (useful for testing)
   Future<void> forceCheckAllMonitoredTransfers() async {
     if (_executionPollers.isNotEmpty) {
-      // We have monitored transfers, trigger a silent refresh to avoid UI flicker
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-
-      // Also refresh the filtered controller for the active account if present
       final active = _ref.read(activeAccountProvider).value;
       if (active != null) {
         await _ref

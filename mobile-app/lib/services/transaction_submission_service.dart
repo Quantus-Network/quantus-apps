@@ -301,7 +301,6 @@ class TransactionSubmissionService {
       // Trigger silent refresh on the main pagination controller (all accounts)
       _ref.read(paginationControllerProvider.notifier).silentRefresh();
 
-      // Also trigger silent refresh on filtered controllers for affected accounts
       final targets = <String>{...?(affectedAccountIds)};
       final active = _ref.read(activeAccountProvider).value;
       if (active != null) {

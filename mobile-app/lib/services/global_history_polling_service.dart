@@ -73,7 +73,8 @@ class GlobalHistoryPollingService {
       // Refresh balance silently (transactions might have changed balance)
       _ref.invalidate(balanceProviderFamily);
 
-      // Silently refresh without showing loading indicators for global and active filtered
+      // Silently refresh without showing loading indicators for global
+      // and active filtered
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
       final active = _ref.read(activeAccountProvider).value;
       if (active != null) {

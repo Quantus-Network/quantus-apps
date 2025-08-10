@@ -363,7 +363,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                 final activeAccount = ref.read(activeAccountProvider).value;
                 if (activeAccount != null) {
                   ref.invalidate(balanceProviderFamily);
-                  // Trigger a loading refresh on the filtered controller used by active transactions
+                  // Trigger a loading refresh on the filtered controller
+                  // used by active transactions
                   await ref
                       .read(
                         filteredPaginationControllerProviderFamily(
