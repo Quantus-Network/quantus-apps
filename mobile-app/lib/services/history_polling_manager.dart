@@ -46,7 +46,7 @@ class HistoryPollingManager {
     // Transaction tracker automatically stops when no accounts
   }
 
-  /// Trigger a manual refresh of all data
+  /// Trigger a manual refresh of all data // This is not called from anywhere!
   Future<void> triggerManualRefresh() async {
     print('History polling manager: Manual Refresh!');
 
