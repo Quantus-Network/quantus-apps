@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 
@@ -71,11 +73,22 @@ class GlobalHistoryPollingService {
       // Refresh balance silently (transactions might have changed balance)
       _ref.invalidate(balanceProviderFamily);
 
-      // Silently refresh without showing loading indicators
+      // Silently refresh without showing loading indicators for global and active filtered
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
+      final active = _ref.read(activeAccountProvider).value;
+      if (active != null) {
+        await _ref
+            .read(
+              filteredPaginationControllerProviderFamily(
+                AccountIdListCache.get([active.accountId]),
+              ).notifier,
+            )
+            .silentRefresh();
+      }
 
       // Reconcile pending transactions with confirmed transactions
-      await _ref.read(pendingTransactionReconciliationServiceProvider)
+      await _ref
+          .read(pendingTransactionReconciliationServiceProvider)
           .reconcilePendingTransactions();
 
       print('Global history poll completed');
@@ -93,9 +106,20 @@ class GlobalHistoryPollingService {
   Future<void> triggerManualRefresh() async {
     print('Global polling manager: Manual Refresh!');
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
-    
+    final active = _ref.read(activeAccountProvider).value;
+    if (active != null) {
+      await _ref
+          .read(
+            filteredPaginationControllerProviderFamily(
+              AccountIdListCache.get([active.accountId]),
+            ).notifier,
+          )
+          .loadingRefresh();
+    }
+
     // Also reconcile pending transactions during manual refresh
-    await _ref.read(pendingTransactionReconciliationServiceProvider)
+    await _ref
+        .read(pendingTransactionReconciliationServiceProvider)
         .reconcilePendingTransactions();
   }
 

@@ -22,8 +22,10 @@ class TransactionUtils {
 
     // Add reversible transfers (medium priority)
     for (final transaction in reversibleTransfers) {
-      if (seenIds.add(transaction.id)) {
-        result.add(transaction);
+      if (transaction.status == ReversibleTransferStatus.SCHEDULED) {
+        if (seenIds.add(transaction.id)) {
+          result.add(transaction);
+        }
       }
     }
 

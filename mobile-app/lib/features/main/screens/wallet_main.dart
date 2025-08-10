@@ -14,8 +14,10 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/transaction_utils.dart';
@@ -206,7 +208,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               ),
               const SizedBox(height: 10),
               TextButton(
-                onPressed: () => ref.invalidate(activeAccountHistoryProvider),
+                onPressed: () =>
+                    ref.invalidate(activeAccountTransactionsProvider),
                 child: Text('Retry', style: context.themeText.smallParagraph),
               ),
             ],
@@ -356,18 +359,21 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: RefreshIndicator(
               onRefresh: () async {
-                // Force refresh balance by invalidating the family provider
-                // first
+                // Refresh balances with loading indicator
                 final activeAccount = ref.read(activeAccountProvider).value;
                 if (activeAccount != null) {
-                  // Try invalidating the entire family provider to clear all
-                  // cache
                   ref.invalidate(balanceProviderFamily);
+                  // Trigger a loading refresh on the filtered controller used by active transactions
+                  await ref
+                      .read(
+                        filteredPaginationControllerProviderFamily(
+                          AccountIdListCache.get([activeAccount.accountId]),
+                        ).notifier,
+                      )
+                      .loadingRefresh();
                 }
-                ref.invalidate(
-                  balanceProviderRaw,
-                ); // Invalidate raw balance for loading
-                // balanceProvider (effective) will auto-update
+                ref.invalidate(balanceProviderRaw);
+                // Invalidate combined active account provider to recompute
                 ref.invalidate(activeAccountTransactionsProvider);
               },
               color: const Color(0xFF0CE6ED),

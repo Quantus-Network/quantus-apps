@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
@@ -94,56 +93,4 @@ BigInt _calculatePendingOutgoing(
   return totalOutgoing;
 }
 
-final historyProviderFamily =
-    FutureProvider.family<SortedTransactionsList, List<String>>((
-      ref,
-      accountIds,
-    ) async {
-      final chainHistoryService = ref.watch(chainHistoryServiceProvider);
-
-      return await chainHistoryService.fetchAllTransactionTypes(
-        accountIds: accountIds,
-        printName: 'historyProviderFamily',
-      );
-    });
-
-final activeAccountHistoryProvider = FutureProvider<SortedTransactionsList>((
-  ref,
-) async {
-  final activeAccountAsyncValue = ref.watch(activeAccountProvider);
-
-  return activeAccountAsyncValue.when(
-    data: (activeAccount) {
-      if (activeAccount == null) {
-        return SortedTransactionsList.empty;
-      }
-      return ref.watch(
-        historyProviderFamily(
-          AccountIdListCache.get([activeAccount.accountId]),
-        ).future,
-      );
-    },
-    loading: () => SortedTransactionsList.empty,
-    error: (err, stack) => SortedTransactionsList.empty,
-  );
-});
-
-final allAccountsHistoryProvider = FutureProvider<SortedTransactionsList>((
-  ref,
-) async {
-  final accountsValue = ref.watch(accountsProvider);
-
-  return accountsValue.when(
-    data: (accounts) {
-      if (accounts.isEmpty) {
-        return SortedTransactionsList.empty;
-      }
-      final accountIds = accounts.map((e) => e.accountId).toList();
-      return ref.watch(
-        historyProviderFamily(AccountIdListCache.get(accountIds)).future,
-      );
-    },
-    loading: () => SortedTransactionsList.empty,
-    error: (err, stack) => SortedTransactionsList.empty,
-  );
-});
+// Deprecated legacy history providers removed in favor of unified pagination

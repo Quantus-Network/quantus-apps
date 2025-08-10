@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 /// Service that monitors reversible transfers approaching execution time
@@ -143,13 +146,29 @@ class ReversibleTransferMonitoringService {
         _stopExecutionPolling(transfer.id);
 
         // Update the transfer status inline - move from reversible
-        // to executed list
+        // to executed list for both global and filtered controllers
         _ref
             .read(paginationControllerProvider.notifier)
             .updateReversibleTransferToExecuted(
               transfer.extrinsicHash!,
               status,
             );
+
+        // Also update filtered controllers for affected accounts so
+        // active-account views reflect the change immediately
+        final affectedAccounts = <String>{transfer.from, transfer.to};
+        for (final accountId in affectedAccounts) {
+          _ref
+              .read(
+                filteredPaginationControllerProviderFamily(
+                  AccountIdListCache.get([accountId]),
+                ).notifier,
+              )
+              .updateReversibleTransferToExecuted(
+                transfer.extrinsicHash!,
+                status,
+              );
+        }
 
         // Refresh balance since transfer execution changes balance
         _ref.invalidate(balanceProviderFamily);
@@ -202,8 +221,20 @@ class ReversibleTransferMonitoringService {
   /// Manually trigger a check for all monitored transfers (useful for testing)
   Future<void> forceCheckAllMonitoredTransfers() async {
     if (_executionPollers.isNotEmpty) {
-      // We have monitored transfers, trigger a general refresh
-      _ref.invalidate(paginationControllerProvider);
+      // We have monitored transfers, trigger a silent refresh to avoid UI flicker
+      await _ref.read(paginationControllerProvider.notifier).silentRefresh();
+
+      // Also refresh the filtered controller for the active account if present
+      final active = _ref.read(activeAccountProvider).value;
+      if (active != null) {
+        await _ref
+            .read(
+              filteredPaginationControllerProviderFamily(
+                AccountIdListCache.get([active.accountId]),
+              ).notifier,
+            )
+            .silentRefresh();
+      }
     }
   }
 
