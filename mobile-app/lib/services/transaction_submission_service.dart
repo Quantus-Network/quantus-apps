@@ -6,6 +6,8 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
@@ -262,7 +264,9 @@ class TransactionSubmissionService {
         _stopSearchingForBroadcastTransaction(pendingTx.id);
 
         // Trigger silent refresh of history to include the new transaction
-        _triggerSilentHistoryRefresh();
+        _triggerSilentHistoryRefresh(
+          affectedAccountIds: {pendingTx.from, pendingTx.to},
+        );
 
         // Update to inHistory state
         _ref
@@ -289,17 +293,30 @@ class TransactionSubmissionService {
     }
   }
 
-  /// Triggers silent refresh on all relevant history providers
-  void _triggerSilentHistoryRefresh() {
+  /// Triggers silent refresh on relevant history providers
+  void _triggerSilentHistoryRefresh({Set<String>? affectedAccountIds}) {
     print('Triggering silent history refresh for found transaction');
 
     try {
       // Trigger silent refresh on the main pagination controller (all accounts)
       _ref.read(paginationControllerProvider.notifier).silentRefresh();
 
-      // Invalidate the filtered pagination controller family
-      // This will cause all active filtered instances to refresh automatically
-      _ref.invalidate(filteredPaginationControllerProviderFamily);
+      // Also trigger silent refresh on filtered controllers for affected accounts
+      final targets = <String>{...?(affectedAccountIds)};
+      final active = _ref.read(activeAccountProvider).value;
+      if (active != null) {
+        targets.add(active.accountId);
+      }
+
+      for (final accountId in targets) {
+        _ref
+            .read(
+              filteredPaginationControllerProviderFamily(
+                AccountIdListCache.get([accountId]),
+              ).notifier,
+            )
+            .silentRefresh();
+      }
 
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {
