@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/models/pagination_state.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
@@ -24,7 +25,9 @@ final filteredTransactionsProviderFamily =
     ) {
       final pending = ref.watch(pendingTransactionsProvider);
       final pagination = ref.watch(
-        filteredPaginationControllerProviderFamily(accountIds),
+        filteredPaginationControllerProviderFamily(
+          AccountIdListCache.get(accountIds),
+        ),
       );
 
       if (pagination.error != null) {
