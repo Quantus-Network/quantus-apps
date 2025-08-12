@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
@@ -108,6 +109,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         );
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
+        TelemetryService().sendEvent('edit_account');
       } else {
         final accountToSave = _provisionalAccount.copyWith(
           name: _nameController.text,
@@ -115,12 +117,22 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         await _accountsService.addAccount(accountToSave);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);
+        TelemetryService().sendEvent('create_account');
       }
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e, s) {
       print('Exception on _createAccount: $e $s');
+
+      TelemetryService().sendEvent(
+        'error',
+        parameters: {
+          'action': _isEditMode ? 'edit_account' : 'create_account',
+          'error': e.toString(),
+        },
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

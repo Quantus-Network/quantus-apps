@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:video_player/video_player.dart';
-import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -126,6 +126,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
+                          settings: const RouteSettings(name: 'create_wallet'),
                           builder: (context) =>
                               const CreateWalletAndBackupScreen(),
                         ),
@@ -153,6 +154,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
+                          settings: const RouteSettings(name: 'import_wallet'),
                           builder: (context) => const ImportWalletScreen(),
                         ),
                       );

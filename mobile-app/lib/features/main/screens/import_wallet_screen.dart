@@ -81,7 +81,10 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const Navbar()),
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'navbar'),
+            builder: (context) => const Navbar(),
+          ),
           (route) => false,
         );
       }

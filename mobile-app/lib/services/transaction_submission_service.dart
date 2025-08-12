@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
@@ -49,6 +50,8 @@ class TransactionSubmissionService {
     final submissionBuilder = () =>
         BalancesService().balanceTransfer(account, targetAddress, amount);
 
+    TelemetryService().sendEvent('send_transfer');
+
     // D. Submit and track the transaction
     await _submitAndTrack(submissionBuilder, pendingTx);
   }
@@ -85,6 +88,8 @@ class TransactionSubmissionService {
           amount: amount,
           delaySeconds: delaySeconds,
         );
+
+    TelemetryService().sendEvent('send_reversible');
 
     await _submitAndTrack(submissionBuilder, pending, maxRetries: maxRetries);
   }

@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/main/screens/transactions_scre
 import 'package:resonance_network_wallet/features/main/screens/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class NavItem {
@@ -105,6 +106,7 @@ class Navbar extends ConsumerStatefulWidget {
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final bool _notificationTestDisabled = true; // Flag for notifications
+  final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -135,9 +137,23 @@ class _NavbarState extends ConsumerState<Navbar> {
   ];
 
   void _onItemTapped(int index) {
+    final newIndex = index > 2 ? index - 1 : index;
+
+    // Track tab navigation centrally
+    final toLabel = _labelForIndex(newIndex);
+    _telemetry.trackScreenView('tab:$toLabel');
+
     setState(() {
-      _selectedIndex = index > 2 ? index - 1 : index;
+      _selectedIndex = newIndex;
     });
+  }
+
+  String _labelForIndex(int index) {
+    // Since index 2 is the floating send button and not part of the tabs,
+    // our _selectedIndex never equals 2. The _navItems labels map as below:
+    // 0 -> Home, 1 -> History, 3 -> Settings, 4 -> Notifications
+    final effectiveIndex = index >= 2 ? index + 1 : index;
+    return _navItems[effectiveIndex].label;
   }
 
   Widget _buildNavItem(int index, NavItem item) {

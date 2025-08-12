@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/features/components/reveal_overlay.dart
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
@@ -145,11 +146,14 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
-        onTap: () => ClipboardExtensions.copyTextWithSnackbar(
-          context,
-          _recoveryPhrase.join(' '),
-          message: 'Checkphrase copied to clipboard',
-        ),
+        onTap: () {
+          ClipboardExtensions.copyTextWithSnackbar(
+            context,
+            _recoveryPhrase.join(' '),
+            message: 'Recovery phrase copied to clipboard',
+          );
+          TelemetryService().sendEvent('settings_copy_recovery_phrase');
+        },
         child: Opacity(
           opacity: 0.80,
           child: Row(

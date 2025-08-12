@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 class CreateWalletAndBackupScreen extends StatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
@@ -24,6 +25,7 @@ class CreateWalletAndBackupScreenState
   bool _hasSavedMnemonic = false;
   String? _error;
   final SettingsService _settingsService = SettingsService();
+  final TelemetryService _telemetry = TelemetryService();
 
   @override
   void initState() {
@@ -86,7 +88,10 @@ class CreateWalletAndBackupScreenState
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const Navbar()),
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'navbar'),
+            builder: (context) => const Navbar(),
+          ),
           (route) => false,
         );
       }
@@ -196,6 +201,9 @@ class CreateWalletAndBackupScreenState
                                 context,
                                 title: 'Copied!',
                                 message: 'Recovery phrase copied to clipboard',
+                              );
+                              _telemetry.sendEvent(
+                                'onboarding_copy_recovery_phrase',
                               );
                             },
                             child: Opacity(

@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 
 class ResonanceWalletApp extends ConsumerWidget {
   const ResonanceWalletApp({super.key});
@@ -29,6 +30,7 @@ class ResonanceWalletApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'Quantus Wallet',
+      navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
       routes: {
         '/': (context) => const AuthenticationWrapper(),
