@@ -13,7 +13,8 @@ void main() async {
   Telemetrydecksdk.start(
     const TelemetryManagerConfiguration(
       appID: '098B4397-8426-4054-B379-0E4C53D2CA63',
-      debug: true,
+      salt: 'QDay',
+      // debug: true,
     ),
   );
 
