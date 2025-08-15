@@ -3,15 +3,15 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
-  final SettingsService _settingsService;
+  final AccountsService _accountsService;
 
-  AccountsNotifier(this._settingsService) : super(const AsyncValue.loading()) {
+  AccountsNotifier(this._accountsService) : super(const AsyncValue.loading()) {
     _loadAccounts();
   }
 
   Future<void> _loadAccounts() async {
     try {
-      final accounts = await _settingsService.getAccounts();
+      final accounts = await _accountsService.getAccounts();
       state = AsyncValue.data(accounts);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -21,7 +21,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   Future<void> addAccount(Account account) async {
     state.whenData((accounts) async {
       try {
-        await _settingsService.addAccount(account);
+        await _accountsService.addAccount(account);
         state = AsyncValue.data([...accounts, account]);
       } catch (e, st) {
         print('error adding account $e $st');
@@ -33,7 +33,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   Future<void> removeAccount(Account account) async {
     state.whenData((accounts) async {
       try {
-        await _settingsService.removeAccount(account);
+        await _accountsService.removeAccount(account);
         final newAccounts = accounts
             .where((a) => a.index != account.index)
             .toList();
@@ -47,8 +47,8 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
 
 final accountsProvider =
     StateNotifierProvider<AccountsNotifier, AsyncValue<List<Account>>>((ref) {
-      final settingsService = ref.watch(settingsServiceProvider);
-      return AccountsNotifier(settingsService);
+      final accountsService = ref.watch(accountsServiceProvider);
+      return AccountsNotifier(accountsService);
     });
 
 class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {

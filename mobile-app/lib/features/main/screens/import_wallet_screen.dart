@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 
-class ImportWalletScreen extends StatefulWidget {
+class ImportWalletScreen extends ConsumerStatefulWidget {
   const ImportWalletScreen({super.key});
 
   @override
   ImportWalletScreenState createState() => ImportWalletScreenState();
 }
 
-class ImportWalletScreenState extends State<ImportWalletScreen> {
+class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   final TextEditingController _mnemonicController = TextEditingController();
   bool _isLoading = false;
   bool _isDiscovering = false;
   String _errorMessage = '';
   final SettingsService _settingsService = SettingsService();
+  final AccountsService _accountsService = AccountsService();
   final AccountDiscoveryService _accountDiscoveryService =
       AccountDiscoveryService(HdWalletService(), SubstrateService());
 
@@ -33,8 +36,9 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
           .discoverAccounts(mnemonic: mnemonic);
 
       for (final account in discoveredAccounts) {
-        await _settingsService.addAccount(account);
+        await _accountsService.addAccount(account);
       }
+      ref.invalidate(accountsProvider);
     } catch (e) {
       debugPrint('Error discovering accounts: $e');
     } finally {
@@ -72,7 +76,7 @@ class ImportWalletScreenState extends State<ImportWalletScreen> {
 
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
-      await _settingsService.addAccount(
+      await _accountsService.addAccount(
         Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
       );
 

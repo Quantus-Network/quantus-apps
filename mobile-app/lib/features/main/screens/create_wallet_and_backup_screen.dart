@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/gradient_action_button.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
@@ -8,9 +9,10 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
-class CreateWalletAndBackupScreen extends StatefulWidget {
+class CreateWalletAndBackupScreen extends ConsumerStatefulWidget {
   const CreateWalletAndBackupScreen({super.key});
 
   @override
@@ -19,12 +21,13 @@ class CreateWalletAndBackupScreen extends StatefulWidget {
 }
 
 class CreateWalletAndBackupScreenState
-    extends State<CreateWalletAndBackupScreen> {
+    extends ConsumerState<CreateWalletAndBackupScreen> {
   String _mnemonic = '';
   bool _isLoading = true;
   bool _hasSavedMnemonic = false;
   String? _error;
   final SettingsService _settingsService = SettingsService();
+  final AccountsService _accountsService = AccountsService();
   final TelemetryService _telemetry = TelemetryService();
 
   @override
@@ -80,10 +83,11 @@ class CreateWalletAndBackupScreenState
       final accounts = await _settingsService.getAccounts();
       if (accounts.isEmpty) {
         final key = HdWalletService().keyPairAtIndex(_mnemonic, 0);
-        await _settingsService.addAccount(
+        await _accountsService.addAccount(
           Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
         );
       }
+      ref.invalidate(accountsProvider);
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(

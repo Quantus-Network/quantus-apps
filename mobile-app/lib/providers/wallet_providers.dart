@@ -7,6 +7,10 @@ final settingsServiceProvider = Provider<SettingsService>((ref) {
   return SettingsService();
 });
 
+final accountsServiceProvider = Provider<AccountsService>((ref) {
+  return AccountsService();
+});
+
 final chainHistoryServiceProvider = Provider<ChainHistoryService>((ref) {
   return ChainHistoryService();
 });

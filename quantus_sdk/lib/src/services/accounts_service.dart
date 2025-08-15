@@ -16,6 +16,7 @@ class AccountsService {
   AccountsService._internal();
 
   final SettingsService _settingsService = SettingsService();
+  void Function()? onAccountsChanged;
 
   Future<Account> createNewAccount() async {
     final mnemonic = await _settingsService.getMnemonic();
@@ -35,9 +36,20 @@ class AccountsService {
   Future<void> updateAccountName(Account account, String name) async {
     final updatedAccount = account.copyWith(name: name);
     await _settingsService.updateAccount(updatedAccount);
+    onAccountsChanged?.call();
   }
 
   Future<void> addAccount(Account newAccount) async {
     await _settingsService.addAccount(newAccount);
+    onAccountsChanged?.call();
+  }
+
+  Future<List<Account>> getAccounts() async {
+    return _settingsService.getAccounts();
+  }
+
+  Future<void> removeAccount(Account account) async {
+    await _settingsService.removeAccount(account);
+    onAccountsChanged?.call();
   }
 }
