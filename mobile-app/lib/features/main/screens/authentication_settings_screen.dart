@@ -208,7 +208,7 @@ class _AuthenticationSettingsScreenState
                               onChanged: _toggleAuthentication,
                               activeTrackColor: const Color(0xFF16CECE),
                               inactiveTrackColor: const Color(0xFFD9D9D9),
-                              activeColor: Colors.white,
+                              activeThumbColor: Colors.white,
                               inactiveThumbColor: Colors.white,
                             ),
                     ],
