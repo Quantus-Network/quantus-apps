@@ -109,20 +109,83 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   AppColorsTheme copyWith({
     Color? primary,
     Color? secondary,
+    Color? purple,
     Color? background,
     Color? surface,
+    Color? surfaceActive,
     Color? error,
     Color? textPrimary,
     Color? textSecondary,
     Color? textError,
-    Color? textWelcomeTitle,
+    Color? light,
+    Color? circularLoader,
+    Color? authButtonBg,
+    Color? textMuted,
+    Color? border,
+    Color? borderLight,
+    Color? buttonDisabled,
+    Color? navbarBg,
+    Color? checksum,
+    Color? checksumDarker,
+    Color? darkGray,
   }) {
-    throw Exception('Copy With is unimplemented');
+    return AppColorsTheme(
+      primary: primary ?? this.primary,
+      secondary: secondary ?? this.secondary,
+      purple: purple ?? this.purple,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceActive: surfaceActive ?? this.surfaceActive,
+      error: error ?? this.error,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textError: textError ?? this.textError,
+      light: light ?? this.light,
+      circularLoader: circularLoader ?? this.circularLoader,
+      authButtonBg: authButtonBg ?? this.authButtonBg,
+      textMuted: textMuted ?? this.textMuted,
+      border: border ?? this.border,
+      borderLight: borderLight ?? this.borderLight,
+      buttonDisabled: buttonDisabled ?? this.buttonDisabled,
+      navbarBg: navbarBg ?? this.navbarBg,
+      checksum: checksum ?? this.checksum,
+      checksumDarker: checksumDarker ?? this.checksumDarker,
+      darkGray: darkGray ?? this.darkGray,
+    );
   }
 
   @override
   AppColorsTheme lerp(AppColorsTheme? other, double t) {
-    throw Exception('Lerp is unimplemented');
+    if (other is! AppColorsTheme) return this;
+    return AppColorsTheme(
+      primary: Color.lerp(primary, other.primary, t) ?? primary,
+      secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
+      purple: Color.lerp(purple, other.purple, t) ?? purple,
+      background: Color.lerp(background, other.background, t) ?? background,
+      surface: Color.lerp(surface, other.surface, t) ?? surface,
+      surfaceActive:
+          Color.lerp(surfaceActive, other.surfaceActive, t) ?? surfaceActive,
+      error: Color.lerp(error, other.error, t) ?? error,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
+      textSecondary:
+          Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
+      textError: Color.lerp(textError, other.textError, t) ?? textError,
+      light: Color.lerp(light, other.light, t) ?? light,
+      circularLoader:
+          Color.lerp(circularLoader, other.circularLoader, t) ?? circularLoader,
+      authButtonBg:
+          Color.lerp(authButtonBg, other.authButtonBg, t) ?? authButtonBg,
+      textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
+      border: Color.lerp(border, other.border, t) ?? border,
+      borderLight: Color.lerp(borderLight, other.borderLight, t) ?? borderLight,
+      buttonDisabled:
+          Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
+      navbarBg: Color.lerp(navbarBg, other.navbarBg, t) ?? navbarBg,
+      checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,
+      checksumDarker:
+          Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
+      darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
+    );
   }
 }
 

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
-import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 
@@ -13,21 +11,6 @@ class ResonanceWalletApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final balance = ref.watch(balanceProvider);
-    final history = ref.watch(activeAccountTransactionsProvider);
-
-    balance.when(
-      data: (value) => print('Service Balance: $value'),
-      loading: () => print('Loading balance...'),
-      error: (err, stack) => print('Error loading balance: $err'),
-    );
-
-    history.when(
-      data: (value) => print('History: $value'),
-      loading: () => print('Loading history...'),
-      error: (err, stack) => print('Error loading history: $err'),
-    );
-
     return MaterialApp(
       title: 'Quantus Wallet',
       navigatorObservers: [TelemetryNavigatorObserver()],

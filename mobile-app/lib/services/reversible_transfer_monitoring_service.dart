@@ -56,10 +56,12 @@ class ReversibleTransferMonitoringService {
         .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
         .toList();
 
-    print(
-      // ignore: lines_longer_than_80_chars
-      'monitoring setvice: watching ${scheduledTransfers.length} reversible transfers!',
-    );
+    if (scheduledTransfers.isNotEmpty) {
+      print(
+        // ignore: lines_longer_than_80_chars
+        'monitoring setvice: watching ${scheduledTransfers.length} reversible transfers!',
+      );
+    }
 
     // Start monitoring transfers approaching execution
     for (final transfer in scheduledTransfers) {

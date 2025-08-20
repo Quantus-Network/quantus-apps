@@ -30,6 +30,9 @@ class GlobalHistoryPollingService {
   /// Stops the global history polling.
   /// This should be called when the app is disposed or user logs out.
   void stopPolling() {
+    if (!_isPolling && _pollingTimer == null) {
+      return;
+    }
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _isPolling = false;

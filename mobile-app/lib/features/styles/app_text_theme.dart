@@ -181,41 +181,55 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   @override
   AppTextTheme copyWith({
     TextStyle? lockTitle,
+    TextStyle? extraLargeTitle,
+    TextStyle? largeTitle,
+    TextStyle? mediumTitle,
     TextStyle? smallTitle,
     TextStyle? paragraph,
     TextStyle? smallParagraph,
     TextStyle? largeTag,
+    TextStyle? tag,
+    TextStyle? timer,
     TextStyle? detail,
     TextStyle? tiny,
   }) {
-    throw Exception('Copy With is unimplemented');
-
-    // return AppTextTheme(
-    //   lockTitle: lockTitle ?? this.lockTitle,
-    //   smallTitle: smallTitle ?? this.smallTitle,
-    //   paragraph: paragraph ?? this.paragraph,
-    //   smallParagraph: smallParagraph ?? this.smallParagraph,
-    //   largeTag: largeTag ?? this.largeTag,
-    //   detail: detail ?? this.detail,
-    //   tiny: tiny ?? this.tiny,
-    // );
+    return AppTextTheme(
+      lockTitle: lockTitle ?? this.lockTitle,
+      extraLargeTitle: extraLargeTitle ?? this.extraLargeTitle,
+      largeTitle: largeTitle ?? this.largeTitle,
+      mediumTitle: mediumTitle ?? this.mediumTitle,
+      smallTitle: smallTitle ?? this.smallTitle,
+      paragraph: paragraph ?? this.paragraph,
+      smallParagraph: smallParagraph ?? this.smallParagraph,
+      largeTag: largeTag ?? this.largeTag,
+      tag: tag ?? this.tag,
+      timer: timer ?? this.timer,
+      detail: detail ?? this.detail,
+      tiny: tiny ?? this.tiny,
+    );
   }
 
   @override
   AppTextTheme lerp(AppTextTheme? other, double t) {
-    throw Exception('Lerp is unimplemented');
-
-    //   if (other is! AppTextTheme) return this;
-    //   return AppTextTheme(
-    //     lockTitle: TextStyle.lerp(lockTitle, other.lockTitle, t),
-    //     smallTitle: TextStyle.lerp(smallTitle, other.smallTitle, t),
-    //     paragraph: TextStyle.lerp(paragraph, other.paragraph, t),
-    //     smallParagraph: TextStyle.lerp(
-    //smallParagraph, other.smallParagraph, t),
-    //     largeTag: TextStyle.lerp(largeTag, other.largeTag, t),
-    //     detail: TextStyle.lerp(detail, other.detail, t),
-    //     tiny: TextStyle.lerp(tiny, other.tiny, t),
-    //   );
+    if (other is! AppTextTheme) return this;
+    return AppTextTheme(
+      lockTitle: TextStyle.lerp(lockTitle, other.lockTitle, t),
+      extraLargeTitle: TextStyle.lerp(
+        extraLargeTitle,
+        other.extraLargeTitle,
+        t,
+      ),
+      largeTitle: TextStyle.lerp(largeTitle, other.largeTitle, t),
+      mediumTitle: TextStyle.lerp(mediumTitle, other.mediumTitle, t),
+      smallTitle: TextStyle.lerp(smallTitle, other.smallTitle, t),
+      paragraph: TextStyle.lerp(paragraph, other.paragraph, t),
+      smallParagraph: TextStyle.lerp(smallParagraph, other.smallParagraph, t),
+      largeTag: TextStyle.lerp(largeTag, other.largeTag, t),
+      tag: TextStyle.lerp(tag, other.tag, t),
+      timer: TextStyle.lerp(timer, other.timer, t),
+      detail: TextStyle.lerp(detail, other.detail, t),
+      tiny: TextStyle.lerp(tiny, other.tiny, t),
+    );
   }
 }
 

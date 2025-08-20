@@ -13,6 +13,7 @@ class HistoryPollingManager {
   final Ref _ref;
   late final GlobalHistoryPollingService _globalPoller;
   late final ReversibleTransferMonitoringService _reversibleMonitor;
+  bool _initialized = false;
 
   HistoryPollingManager(this._ref) {
     _globalPoller = _ref.read(globalHistoryPollingServiceProvider);
@@ -23,9 +24,11 @@ class HistoryPollingManager {
   /// This should be called early in the app lifecycle.
   void initialize() {
     print('Initializing history polling manager...');
+    if (_initialized) return;
     _globalPoller;
     _reversibleMonitor;
     print('History polling manager initialized');
+    _initialized = true;
   }
 
   /// Pause all polling (useful when app goes to background)

@@ -99,13 +99,113 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       );
 
   @override
-  AppSizeTheme copyWith() {
-    throw Exception('Copy With is unimplemented');
+  AppSizeTheme copyWith({
+    double? logoHeight,
+    double? mainMenuHeight,
+    double? mainMenuWidth,
+    double? mainMenuIconSize,
+    double? navbarHeight,
+    double? navbarItemHeight,
+    double? navbarItemWidth,
+    double? navbarIconWidth,
+    double? floatingBtnHeight,
+    double? floatingBtnWidth,
+    double? settingMenuIconSize,
+    double? settingMenuShareIconSize,
+    double? accountListItemHeight,
+    double? accountListItemLogoWidth,
+    double? appbarIconSize,
+    double? sendOverlayContainerWidth,
+    double? overlayCloseIconSize,
+    double? mnemonicCellDesiredHeight,
+    double? txListItemIconWidth,
+    double? txDetailsIconHeight,
+    double? txDetailsIconWidth,
+  }) {
+    return AppSizeTheme(
+      logoHeight: logoHeight ?? this.logoHeight,
+      mainMenuHeight: mainMenuHeight ?? this.mainMenuHeight,
+      mainMenuWidth: mainMenuWidth ?? this.mainMenuWidth,
+      mainMenuIconSize: mainMenuIconSize ?? this.mainMenuIconSize,
+      navbarHeight: navbarHeight ?? this.navbarHeight,
+      navbarItemHeight: navbarItemHeight ?? this.navbarItemHeight,
+      navbarItemWidth: navbarItemWidth ?? this.navbarItemWidth,
+      navbarIconWidth: navbarIconWidth ?? this.navbarIconWidth,
+      floatingBtnHeight: floatingBtnHeight ?? this.floatingBtnHeight,
+      floatingBtnWidth: floatingBtnWidth ?? this.floatingBtnWidth,
+      settingMenuIconSize: settingMenuIconSize ?? this.settingMenuIconSize,
+      settingMenuShareIconSize:
+          settingMenuShareIconSize ?? this.settingMenuShareIconSize,
+      accountListItemHeight:
+          accountListItemHeight ?? this.accountListItemHeight,
+      accountListItemLogoWidth:
+          accountListItemLogoWidth ?? this.accountListItemLogoWidth,
+      appbarIconSize: appbarIconSize ?? this.appbarIconSize,
+      sendOverlayContainerWidth:
+          sendOverlayContainerWidth ?? this.sendOverlayContainerWidth,
+      overlayCloseIconSize: overlayCloseIconSize ?? this.overlayCloseIconSize,
+      mnemonicCellDesiredHeight:
+          mnemonicCellDesiredHeight ?? this.mnemonicCellDesiredHeight,
+      txListItemIconWidth: txListItemIconWidth ?? this.txListItemIconWidth,
+      txDetailsIconHeight: txDetailsIconHeight ?? this.txDetailsIconHeight,
+      txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
+    );
   }
 
   @override
   AppSizeTheme lerp(AppSizeTheme? other, double t) {
-    throw Exception('Lerp is unimplemented');
+    if (other is! AppSizeTheme) return this;
+    return AppSizeTheme(
+      logoHeight: logoHeight + (other.logoHeight - logoHeight) * t,
+      mainMenuHeight:
+          mainMenuHeight + (other.mainMenuHeight - mainMenuHeight) * t,
+      mainMenuWidth: mainMenuWidth + (other.mainMenuWidth - mainMenuWidth) * t,
+      mainMenuIconSize:
+          mainMenuIconSize + (other.mainMenuIconSize - mainMenuIconSize) * t,
+      navbarHeight: navbarHeight + (other.navbarHeight - navbarHeight) * t,
+      navbarItemHeight:
+          navbarItemHeight + (other.navbarItemHeight - navbarItemHeight) * t,
+      navbarItemWidth:
+          navbarItemWidth + (other.navbarItemWidth - navbarItemWidth) * t,
+      navbarIconWidth:
+          navbarIconWidth + (other.navbarIconWidth - navbarIconWidth) * t,
+      floatingBtnHeight:
+          floatingBtnHeight + (other.floatingBtnHeight - floatingBtnHeight) * t,
+      floatingBtnWidth:
+          floatingBtnWidth + (other.floatingBtnWidth - floatingBtnWidth) * t,
+      settingMenuIconSize:
+          settingMenuIconSize +
+          (other.settingMenuIconSize - settingMenuIconSize) * t,
+      settingMenuShareIconSize:
+          settingMenuShareIconSize +
+          (other.settingMenuShareIconSize - settingMenuShareIconSize) * t,
+      accountListItemHeight:
+          accountListItemHeight +
+          (other.accountListItemHeight - accountListItemHeight) * t,
+      accountListItemLogoWidth:
+          accountListItemLogoWidth +
+          (other.accountListItemLogoWidth - accountListItemLogoWidth) * t,
+      appbarIconSize:
+          appbarIconSize + (other.appbarIconSize - appbarIconSize) * t,
+      sendOverlayContainerWidth:
+          sendOverlayContainerWidth +
+          (other.sendOverlayContainerWidth - sendOverlayContainerWidth) * t,
+      overlayCloseIconSize:
+          overlayCloseIconSize +
+          (other.overlayCloseIconSize - overlayCloseIconSize) * t,
+      mnemonicCellDesiredHeight:
+          mnemonicCellDesiredHeight +
+          (other.mnemonicCellDesiredHeight - mnemonicCellDesiredHeight) * t,
+      txListItemIconWidth:
+          txListItemIconWidth +
+          (other.txListItemIconWidth - txListItemIconWidth) * t,
+      txDetailsIconHeight:
+          txDetailsIconHeight +
+          (other.txDetailsIconHeight - txDetailsIconHeight) * t,
+      txDetailsIconWidth:
+          txDetailsIconWidth +
+          (other.txDetailsIconWidth - txDetailsIconWidth) * t,
+    );
   }
 }
 
