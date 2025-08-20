@@ -35,8 +35,14 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       final discoveredAccounts = await _accountDiscoveryService
           .discoverAccounts(mnemonic: mnemonic);
 
+      final existingAccountsSet = (await _accountsService.getAccounts())
+          .map((e) => e.accountId)
+          .toSet();
+
       for (final account in discoveredAccounts) {
-        await _accountsService.addAccount(account);
+        if (!existingAccountsSet.contains(account.accountId)) {
+          await _accountsService.addAccount(account);
+        }
       }
       ref.invalidate(accountsProvider);
     } catch (e) {
