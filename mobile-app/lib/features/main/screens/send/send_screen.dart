@@ -278,7 +278,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     String recipient,
     BigInt amount,
   ) async {
-    final account = await _settingsService.getActiveAccount();
+    final account = _settingsService.getActiveAccount()!;
     ExtrinsicFeeData estimatedFee;
     if (isReversible) {
       estimatedFee = await ReversibleTransfersService()
@@ -717,7 +717,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   // NEW: Method to show the recent addresses modal bottom sheet
   void _showRecentAddresses() async {
-    final activeAccount = await _settingsService.getActiveAccount();
+    final activeAccount = _settingsService.getActiveAccount()!;
 
     showAppModalBottomSheet(
       // ignore: use_build_context_synchronously

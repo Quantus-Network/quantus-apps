@@ -46,6 +46,11 @@ class PendingTransactionsNotifier
   void remove(String id) {
     state = state.where((tx) => tx.id != id).toList();
   }
+
+  /// Clears all pending transactions (e.g., on logout)
+  void clear() {
+    state = [];
+  }
 }
 
 /// Provider that exposes the PendingTransactionsNotifier.

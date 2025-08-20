@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
@@ -10,17 +11,19 @@ import 'package:resonance_network_wallet/features/main/screens/welcome_screen.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SettingsService _settingsService = SettingsService();
 
   void _resetAndClearData() {
@@ -30,7 +33,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _logout() async {
     try {
+      print('settings screen logout');
       await SubstrateService().logout();
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
+      ref.read(pendingTransactionsProvider.notifier).clear();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,

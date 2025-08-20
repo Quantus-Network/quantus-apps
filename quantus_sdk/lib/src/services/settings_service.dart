@@ -30,31 +30,13 @@ class SettingsService {
 
   // --- Multi-Account Methods ---
 
-  Future<List<Account>> getAccounts() async {
+  List<Account> getAccounts() {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
       return decoded.map((e) => Account.fromJson(e)).toList()
         ..sort((a, b) => a.index.compareTo(b.index));
     }
-
-    // Migration for existing single-account users
-    final oldAccountId = _prefs.getString('account_id');
-    if (oldAccountId != null) {
-      final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(
-        index: 0,
-        name: oldWalletName,
-        accountId: oldAccountId,
-      );
-      await saveAccounts([account]);
-      await setActiveAccount(account);
-      // Clean up old keys after migration
-      await _prefs.remove('account_id');
-      await _prefs.remove('wallet_name');
-      return [account];
-    }
-
     return []; // No accounts found;
   }
 
@@ -66,20 +48,24 @@ class SettingsService {
   }
 
   Future<void> addAccount(Account account) async {
-    final accounts = await getAccounts();
+    final accounts = getAccounts();
     // Check for duplicates by index or accountId before adding
     if (!accounts.any(
       (a) => a.index == account.index || a.accountId == account.accountId,
     )) {
       accounts.add(account);
       await saveAccounts(accounts);
+      if (accounts.length == 1) {
+        // make sure that active account is always a valid account
+        await setActiveAccount(account);
+      }
     } else {
       throw Exception('Account already exists');
     }
   }
 
   Future<void> updateAccount(Account account) async {
-    final accounts = await getAccounts();
+    final accounts = getAccounts();
     final index = accounts.indexWhere((a) => a.index == account.index);
     if (index != -1) {
       accounts[index] = account;
@@ -88,7 +74,7 @@ class SettingsService {
   }
 
   Future<void> removeAccount(Account account) async {
-    final accounts = await getAccounts();
+    final accounts = getAccounts();
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
@@ -103,7 +89,7 @@ class SettingsService {
   }
 
   Future<void> setActiveAccount(Account account) async {
-    final exists = (await getAccount(account.index)) != null;
+    final exists = getAccount(account.index) != null;
     if (exists) {
       _setActiveAccountIndex(account.index);
     } else {
@@ -112,34 +98,29 @@ class SettingsService {
   }
 
   int _getActiveAccountIndex() {
-    return _prefs.getInt(_activeAccountIndexKey) ?? 0;
+    return _prefs.getInt(_activeAccountIndexKey) ?? -1;
   }
 
   void _setActiveAccountIndex(int index) {
     final oldIndex = _getActiveAccountIndex();
     if (index != oldIndex) {
       _prefs.setInt(_activeAccountIndexKey, index);
-      notifyActiveAccountChanged();
     }
   }
 
-  Future<void> notifyActiveAccountChanged() async {
-    print('TBD: notify listeners that active account has changed');
-  }
-
-  Future<Account> getActiveAccount() async {
+  Account? getActiveAccount() {
     final activeIndex = _getActiveAccountIndex();
-    return (await getAccount(activeIndex))!;
+    return getAccount(activeIndex);
   }
 
-  Future<Account?> getAccount(int index) async {
-    final accounts = await getAccounts();
+  Account? getAccount(int index) {
+    final accounts = getAccounts();
     final ix = accounts.indexWhere((a) => a.index == index);
     return ix != -1 ? accounts[ix] : null;
   }
 
   Future<int> getNextFreeAccountIndex() async {
-    final accounts = await getAccounts();
+    final accounts = getAccounts();
     final maxIndex = accounts
         .map((a) => a.index)
         .reduce((a, b) => a > b ? a : b);
@@ -149,7 +130,7 @@ class SettingsService {
   // --- End Multi-Account Methods ---
 
   Future<bool> getHasWallet() async {
-    final accounts = await getAccounts();
+    final accounts = getAccounts();
     return accounts.isNotEmpty;
   }
 

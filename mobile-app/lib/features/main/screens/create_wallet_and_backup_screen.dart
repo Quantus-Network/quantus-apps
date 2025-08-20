@@ -80,7 +80,7 @@ class CreateWalletAndBackupScreenState
 
     try {
       await _settingsService.setMnemonic(_mnemonic);
-      final accounts = await _settingsService.getAccounts();
+      final accounts = _settingsService.getAccounts();
       if (accounts.isEmpty) {
         final key = HdWalletService().keyPairAtIndex(_mnemonic, 0);
         await _accountsService.addAccount(
@@ -88,6 +88,7 @@ class CreateWalletAndBackupScreenState
         );
       }
       ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(

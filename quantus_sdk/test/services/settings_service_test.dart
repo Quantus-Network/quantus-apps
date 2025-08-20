@@ -7,21 +7,9 @@ void main() {
     late SettingsService settingsService;
 
     // Accounts for testing
-    const account1 = Account(
-      index: 0,
-      name: 'Account 1',
-      accountId: 'id_1',
-    );
-    const account2 = Account(
-      index: 1,
-      name: 'Account 2',
-      accountId: 'id_2',
-    );
-    const account3 = Account(
-      index: 2,
-      name: 'Account 3',
-      accountId: 'id_3',
-    );
+    const account1 = Account(index: 0, name: 'Account 1', accountId: 'id_1');
+    const account2 = Account(index: 1, name: 'Account 2', accountId: 'id_2');
+    const account3 = Account(index: 2, name: 'Account 3', accountId: 'id_3');
 
     setUp(() async {
       // Set up mock values for SharedPreferences
@@ -40,8 +28,8 @@ void main() {
       await settingsService.initialize();
 
       // Act
-      final accounts = await settingsService.getAccounts();
-      final activeAccount = await settingsService.getActiveAccount();
+      final accounts = settingsService.getAccounts();
+      final activeAccount = settingsService.getActiveAccount()!;
 
       // Assert
       expect(accounts.length, 1);
@@ -60,7 +48,7 @@ void main() {
       // Arrange (no keys set)
       // Act & Assert
       expect(
-        () async => await settingsService.getAccounts(),
+        () async => settingsService.getAccounts(),
         throwsA(
           isA<Exception>().having(
             (e) => e.toString(),
@@ -76,7 +64,7 @@ void main() {
       await settingsService.addAccount(account1);
 
       // Act
-      final accounts = await settingsService.getAccounts();
+      final accounts = settingsService.getAccounts();
 
       // Assert
       expect(accounts.length, 1);
@@ -109,7 +97,7 @@ void main() {
       // Act
       final updatedAccount = account1.copyWith(name: 'Updated Name');
       await settingsService.updateAccount(updatedAccount);
-      final accounts = await settingsService.getAccounts();
+      final accounts = settingsService.getAccounts();
 
       // Assert
       expect(accounts.first.name, 'Updated Name');
@@ -123,7 +111,7 @@ void main() {
 
         // Act
         await settingsService.setActiveAccount(account2);
-        final activeAccount = await settingsService.getActiveAccount();
+        final activeAccount = settingsService.getActiveAccount()!;
 
         // Assert
         expect(activeAccount.accountId, account2.accountId);
@@ -153,7 +141,7 @@ void main() {
 
       // Act
       await settingsService.removeAccount(account1);
-      final accounts = await settingsService.getAccounts();
+      final accounts = settingsService.getAccounts();
 
       // Assert
       expect(accounts.length, 1);
@@ -186,7 +174,7 @@ void main() {
 
         // Act
         await settingsService.removeAccount(account2);
-        final activeAccount = await settingsService.getActiveAccount();
+        final activeAccount = settingsService.getActiveAccount()!;
 
         // Assert
         // It should fall back to the first account in the remaining list

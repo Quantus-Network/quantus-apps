@@ -45,6 +45,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
         }
       }
       ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
     } catch (e) {
       debugPrint('Error discovering accounts: $e');
     } finally {

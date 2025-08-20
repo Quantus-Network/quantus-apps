@@ -1,15 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -31,7 +27,6 @@ class WalletMain extends ConsumerStatefulWidget {
 
 class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
-  final SubstrateService _substrateService = SubstrateService();
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -219,29 +214,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     );
   }
 
-  Future<void> _logout() async {
-    try {
-      await _substrateService.logout();
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      print('Error during logout: $e');
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Logout failed: ${e.toString()}',
-          icon: buildErrorIcon(),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
@@ -262,10 +234,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
       );
     }
 
-    final hasError =
-        activeAccountAsync.hasError && !activeAccountAsync.hasValue;
-    final noAccount =
-        activeAccountAsync.hasValue && activeAccountAsync.value == null;
+    final hasError = activeAccountAsync.hasError;
+    final noAccount = activeAccountAsync.value == null;
+
+    print('error: $hasError, noAccount: $noAccount');
 
     if (hasError || noAccount) {
       return Scaffold(
@@ -325,13 +297,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       end: Alignment(0.50, 1.00),
                       colors: [Color(0xFF0CE6ED), Color(0xFF8AF9A8)],
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  _buildFullWidthActionButton(
-                    label: 'Logout',
-                    onTap: _logout,
-                    backgroundColor: Colors.white.useOpacity(0.2),
-                    textColor: Colors.white.useOpacity(0.8),
                   ),
                 ],
               ),
@@ -568,7 +533,6 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     required VoidCallback onTap,
     Gradient? gradient,
     Color? backgroundColor,
-    Color? textColor,
   }) {
     return GestureDetector(
       onTap: onTap,

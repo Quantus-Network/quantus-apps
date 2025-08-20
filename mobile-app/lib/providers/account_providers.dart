@@ -61,9 +61,11 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
 
   Future<void> _loadActiveAccount() async {
     try {
-      final account = await _settingsService.getActiveAccount();
+      final account = _settingsService.getActiveAccount();
+      print('loaded active account: ${account?.index} ${account?.name}');
       state = AsyncValue.data(account);
     } catch (e, st) {
+      print('error loading acctive account: $e $st');
       state = AsyncValue.error(e, st);
     }
   }
