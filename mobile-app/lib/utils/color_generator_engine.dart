@@ -34,7 +34,7 @@ class AccountGradient {
 AccountGradient buildAccountGradient(
   String accountKey, {
   ColorEngine engine = ColorEngine.oklch,
-  HueStrategy hueStrategy = HueStrategy.golden,
+  HueStrategy hueStrategy = HueStrategy.crystal,
   GradientOptions options = const GradientOptions(),
 }) {
   final colors = switch (engine) {
@@ -100,14 +100,13 @@ class GradientOptions {
     this.radius = 0.9,
     this.midStop = 0.58,
     this.midLerp = 0.60,
-    this.linearAngleDeg = 180,
-
+    this.linearAngleDeg = 90, // 90 is top to bottom gradient
     // HSV default look (good on dark UI)
-    this.hsvSaturation = 0.55,
+    this.hsvSaturation = 0.65,
     this.hsvValueTop = 0.96,
-    this.hsvValueBottom = 0.90,
-    this.hsvMinSpreadDeg = 50,
-    this.hsvMaxSpreadDeg = 80,
+    this.hsvValueBottom = 0.80,
+    this.hsvMinSpreadDeg = 40,
+    this.hsvMaxSpreadDeg = 90,
 
     // OKLCH defaults: vivid but safe; pleasant lightness split
     this.oklchChromaMin = 0.20,
@@ -278,13 +277,13 @@ Color _oklchToColor(_OKLCH c) {
   }
 
   // Gentle gamut clip by reducing C a few steps if needed
-  double Cw = C;
-  Color out = convert(L, Cw, hRad);
+  double chromaWorking = C;
+  Color out = convert(L, chromaWorking, hRad);
   for (int i = 0; i < 6; i++) {
-    final test = convert(L, Cw, hRad);
-    if (test.value == out.value) break;
+    final test = convert(L, chromaWorking, hRad);
+    if (test == out) break;
     out = test;
-    Cw *= 0.92;
+    chromaWorking *= 0.92;
   }
   return out;
 }
@@ -302,26 +301,27 @@ Color _oklchToColor(_OKLCH c) {
       opt.oklchChromaMin +
       rng.next() * (opt.oklchChromaMax - opt.oklchChromaMin);
 
-  final L1 =
+  final lightTop =
       opt.oklchLightTopMin +
       rng.next() * (opt.oklchLightTopMax - opt.oklchLightTopMin);
-  final L2 =
+  final lightBottom =
       opt.oklchLightBotMin +
       rng.next() * (opt.oklchLightBotMax - opt.oklchLightBotMin);
 
-  final a = _oklchToColor(_OKLCH(L1, C, h1));
-  final b = _oklchToColor(_OKLCH(L2, C, h2));
+  final a = _oklchToColor(_OKLCH(lightTop, C, h1));
+  final b = _oklchToColor(_OKLCH(lightBottom, C, h2));
   return (a, b);
 }
 
 /// ---------------- Utilities ----------------
 
 double _relativeLuminance(Color c) {
-  double lin(int ch) {
-    final v = ch / 255.0;
+  double linFromNormalized(double v) {
     return v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
   }
 
-  final r = lin(c.red), g = lin(c.green), b = lin(c.blue);
+  final r = linFromNormalized(c.r);
+  final g = linFromNormalized(c.g);
+  final b = linFromNormalized(c.b);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

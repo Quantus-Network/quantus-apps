@@ -12,7 +12,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/utils/oklch.dart';
+import 'package:resonance_network_wallet/utils/color_generator_engine.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -207,7 +207,12 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     height: context.themeSize.accountListItemLogoWidth,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: linearAccountGradient(account.accountId),
+                      gradient: buildAccountGradient(
+                        account.accountId,
+                        engine: ColorEngine.hsv,
+                        hueStrategy: HueStrategy.crystal,
+                      ).linear,
+                      // gradient: linearAccountGradient(account.accountId),
                     ),
                   ),
                   const SizedBox(width: 16),
