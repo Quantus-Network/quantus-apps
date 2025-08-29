@@ -209,8 +209,25 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                       shape: BoxShape.circle,
                       gradient: buildAccountGradient(
                         account.accountId,
-                        engine: ColorEngine.hsv,
-                        hueStrategy: HueStrategy.crystal,
+                        engine: ColorEngine.oklch,
+                        hueStrategy: HueStrategy.golden,
+                        options: const GradientOptions(
+                          // hue spread from min to max
+                          oklchMinSpreadDeg: 45,
+                          oklchMaxSpreadDeg: 65,
+
+                          // lightness top
+                          oklchLightTopMin: 0.78,
+                          oklchLightTopMax: 0.86,
+
+                          // lightness bottom
+                          oklchLightBotMin: 0.55,
+                          oklchLightBotMax: 0.65,
+
+                          // Chroma for 'pop'
+                          oklchChromaMin: 0.32,
+                          oklchChromaMax: 0.45,
+                        ),
                       ).linear,
                       // gradient: linearAccountGradient(account.accountId),
                     ),
