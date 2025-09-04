@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
@@ -69,10 +70,24 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final accountId = activeAccount?.accountId ?? 'unknown';
 
     final notifier = ref.read(notificationProvider.notifier);
+
+    // Create sample transaction data for demonstration
+    final transactionData = TransactionData(
+      id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+      from: accountId,
+      to: 'recipient_address',
+      amount: BigInt.from(1000000), // 1 QNT
+      fee: BigInt.from(10000), // 0.01 QNT
+      error: 'Insufficient balance',
+      timestamp: DateTime.now(),
+      state: TransactionState.failed,
+    );
+
     notifier.addTransactionFailed(
       accountName: accountName,
-      transactionId: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+      transactionId: transactionData.id,
       errorMessage: 'Transaction failed due to insufficient balance',
+      transactionData: transactionData,
     );
   }
 

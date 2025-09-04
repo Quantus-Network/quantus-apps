@@ -168,11 +168,13 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     required String accountName,
     required String transactionId,
     required String errorMessage,
+    TransactionData? transactionData,
   }) {
     final notification = NotificationTemplates.transactionFailed(
       accountName: accountName,
       transactionId: transactionId,
       errorMessage: errorMessage,
+      transactionData: transactionData,
     );
     addNotification(notification);
   }
