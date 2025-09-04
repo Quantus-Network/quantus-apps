@@ -135,7 +135,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                 child: Center(child: LinearProgressIndicator()),
               ),
             RecentTransactionsList(
-              transactions: allTransactions.take(5).toList(),
+              transactions: allTransactions.take(4).toList(),
               accountIds: [activeAccount.accountId],
             ),
             if (allTransactions.isNotEmpty)
@@ -354,9 +354,18 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            SvgPicture.asset(
-                              'assets/quantus_logo_hz.svg',
-                              height: context.isTablet ? 60 : 40,
+                            Row(
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/logo/logo.svg',
+                                  height: context.isTablet ? 45 : 25,
+                                ),
+                                const SizedBox(width: 9.0),
+                                SvgPicture.asset(
+                                  'assets/logo/logo-name.svg',
+                                  height: context.isTablet ? 35.6 : 15.6,
+                                ),
+                              ],
                             ),
                             Row(
                               children: [

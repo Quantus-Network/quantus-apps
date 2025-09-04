@@ -86,6 +86,7 @@ flutter:
     - assets/settings_icon_off.svg
     - assets/navbar/
     - assets/notification/
+    - assets/logo/
 
   fonts:
     - family: Fira Code

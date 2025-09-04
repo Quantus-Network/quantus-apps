@@ -209,26 +209,9 @@ class SendConfirmationOverlayState
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Amount with token icon
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: context.isTablet ? 40 : 25,
-                    height: context.isTablet ? 40 : 25,
-                    decoration: ShapeDecoration(
-                      color: context.themeColors.light,
-                      shape: const OvalBorder(),
-                    ),
-                    child: Center(
-                      child: SvgPicture.asset(
-                        'assets/res_icon.svg',
-                        width: context.isTablet ? 26 : 11,
-                        height: context.isTablet ? 34 : 19,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 13),
                   Text.rich(
                     TextSpan(
                       children: [
@@ -438,9 +421,9 @@ class SendConfirmationOverlayState
             spacing: 18,
             children: [
               SizedBox(
-                width: context.isTablet ? 105 : 85,
+                width: context.isTablet ? 111 : 91,
                 height: context.isTablet ? 105 : 85,
-                child: SvgPicture.asset('assets/res_icon.svg'),
+                child: SvgPicture.asset('assets/logo/logo.svg'),
               ),
               Text(
                 'TRANSACTION \nIN PROGRESS',
@@ -514,22 +497,6 @@ class SendConfirmationOverlayState
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: context.isTablet ? 40 : 25,
-                    height: context.isTablet ? 40 : 25,
-                    decoration: const ShapeDecoration(
-                      color: Color(0xFFE6E6E6),
-                      shape: OvalBorder(),
-                    ),
-                    child: Center(
-                      child: SvgPicture.asset(
-                        'assets/res_icon.svg',
-                        width: context.isTablet ? 26 : 11,
-                        height: context.isTablet ? 34 : 19,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 13),
                   Text.rich(
                     TextSpan(
                       children: [

@@ -252,14 +252,17 @@ class _NavbarState extends ConsumerState<Navbar> {
               isTablet: context.isTablet,
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _navItems.asMap().entries.map((entry) {
-              int index = entry.key;
-              NavItem item = entry.value;
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _navItems.asMap().entries.map((entry) {
+                int index = entry.key;
+                NavItem item = entry.value;
 
-              return _buildNavItem(index, item);
-            }).toList(),
+                return _buildNavItem(index, item);
+              }).toList(),
+            ),
           ),
         ],
       ),
