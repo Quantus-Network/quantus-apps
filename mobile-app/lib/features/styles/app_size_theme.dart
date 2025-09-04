@@ -50,7 +50,7 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
 
   const AppSizeTheme.defaultTheme()
     : this(
-        logoHeight: 130.0,
+        logoHeight: 158.0,
         mainMenuHeight: 20,
         mainMenuWidth: 20,
         mainMenuIconSize: 21.0,

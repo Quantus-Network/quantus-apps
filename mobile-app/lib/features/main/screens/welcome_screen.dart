@@ -5,45 +5,9 @@ import 'package:resonance_network_wallet/features/main/screens/import_wallet_scr
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:video_player/video_player.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
-
-  @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
-}
-
-class _WelcomeScreenState extends State<WelcomeScreen> {
-  late VideoPlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize the controller
-    _controller = VideoPlayerController.asset('assets/intro_bg_video.mp4')
-      ..initialize()
-          .then((_) {
-            // Ensure the first frame is shown after the video is initialized
-            // and immediately play and loop
-            if (!mounted) return; // Check if widget is still mounted
-            _controller.play();
-            _controller.setLooping(true);
-            // Trigger a rebuild once initialized to show the video
-            setState(() {});
-          })
-          .catchError((error) {
-            // Handle initialization error
-            debugPrint('Video player initialization error: $error');
-          });
-  }
-
-  @override
-  void dispose() {
-    // Ensure disposing of the VideoPlayerController to free up resources.
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,21 +16,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       backgroundColor: context.themeColors.background,
       body: Stack(
         children: <Widget>[
-          // Video Player Background
+          // Static Image Background
           SizedBox.expand(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: _controller.value.isInitialized
-                  ? SizedBox(
-                      width: _controller.value.size.width,
-                      height: _controller.value.size.height,
-                      child: VideoPlayer(_controller),
-                    )
-                  : Container(
-                      // Placeholder while video loads
-                      color: context.themeColors.background,
-                    ),
-            ),
+            child: Image.asset('assets/background.png', fit: BoxFit.cover),
           ),
 
           Positioned(
@@ -84,18 +36,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       SvgPicture.asset(
                         'assets/quantus_logo.svg',
                         height: context.themeSize.logoHeight,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.fitHeight,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 80),
+                const SizedBox(height: 18),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: Text(
-                    'Quantum safe\n from the ground up',
+                    'Quantum-Secure your crypto',
                     textAlign: TextAlign.center,
-                    style: context.themeText.mediumTitle,
+                    style: context.themeText.smallTitle,
                   ),
                 ),
                 const SizedBox(height: 27),

@@ -72,7 +72,6 @@ flutter:
     - assets/scan_1.svg
     - assets/main_wallet_title_logo.svg
     - assets/account_list_icon.svg
-    - assets/intro_bg_video.mp4
     - assets/paste_icon_1.svg
     - assets/active_dot.png
     - assets/send_line.svg
@@ -86,6 +85,7 @@ flutter:
     - assets/navbar/
     - assets/notification/
     - assets/logo/
+    - assets/background.png
 
   fonts:
     - family: Fira Code
