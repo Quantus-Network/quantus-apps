@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/features/components/notification_group.
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/services/feature_flags.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -17,6 +18,44 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  List<String>? _selectedAccountIds;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAccounts();
+  }
+
+  void _initializeAccounts() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final accountsValue = ref.read(accountsProvider);
+        accountsValue.when(
+          data: (accounts) {
+            if (!_isInitialized) {
+              // Default to all accounts
+              final accountIds = accounts.map((a) => a.accountId).toList();
+              setState(() {
+                _selectedAccountIds = accountIds;
+                _isInitialized = true;
+              });
+            }
+          },
+          loading: () {},
+          error: (error, stack) {
+            if (!_isInitialized) {
+              setState(() {
+                _selectedAccountIds = [];
+                _isInitialized = true;
+              });
+            }
+          },
+        );
+      }
+    });
+  }
+
   void _addNotification() {
     final activeAccount = ref.read(activeAccountProvider).value;
     final accountName = activeAccount?.name ?? 'Unknown';
@@ -147,58 +186,71 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
             ),
             const SizedBox(height: 13),
-            DropdownSelect<String>(
-              initialValue: '1',
-              items: [
-                Item(value: '1', label: 'All Accounts'),
-                Item(value: '2', label: 'My account'),
-                Item(value: '3', label: 'Your Accounts'),
-                Item(value: '4', label: 'His Accounts'),
-              ],
-              onChanged: (selectedItem) {
-                print('Selected account: ${selectedItem?.label}');
+            Consumer(
+              builder: (context, ref, child) {
+                final accountsAsync = ref.watch(accountsProvider);
+                return accountsAsync.when(
+                  data: (accounts) {
+                    if (accounts.isEmpty) {
+                      return const Text(
+                        'No accounts found.',
+                        style: TextStyle(color: Colors.white70),
+                      );
+                    }
+                    return _buildAccountDropdown(accounts);
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, st) => const Text(
+                    'Error loading accounts.',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 13),
-            // Make buttons scrollable in a constrained height
-            SizedBox(
-              height: 200, // Fixed height for buttons section
-              child: SingleChildScrollView(
-                child: Column(
-                  spacing: 8,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _addNotification,
-                      child: const Text('Add Test Notifications'),
-                    ),
-                    ElevatedButton(
-                      onPressed: _addTransactionFailed,
-                      child: const Text('Simulate Transaction Failed'),
-                    ),
-                    ElevatedButton(
-                      onPressed: _addBalanceAlert,
-                      child: const Text('Simulate Balance Alert'),
-                    ),
-                    ElevatedButton(
-                      onPressed: _addAccountSuccess,
-                      child: const Text('Simulate Account Added'),
-                    ),
-                    ElevatedButton(
-                      onPressed: _addReversibleReminder,
-                      child: const Text('Simulate Reversible Reminder'),
-                    ),
-                  ],
+            // Show test buttons only if feature flag is enabled
+            if (FeatureFlags.enableTestButtons) ...[
+              SizedBox(
+                height: 200, // Fixed height for buttons section
+                child: SingleChildScrollView(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _addNotification,
+                        child: const Text('Add Test Notifications'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addTransactionFailed,
+                        child: const Text('Simulate Transaction Failed'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addBalanceAlert,
+                        child: const Text('Simulate Balance Alert'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addAccountSuccess,
+                        child: const Text('Simulate Account Added'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addReversibleReminder,
+                        child: const Text('Simulate Reversible Reminder'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 24),
+            ],
             const SizedBox(height: 24),
             // Notification overlay - use Expanded to take remaining space
             Expanded(
               child: Consumer(
                 builder: (context, ref, child) {
-                  final notifications = ref.watch(notificationProvider);
+                  final allNotifications = ref.watch(notificationProvider);
+                  final filteredNotifications = _filterNotificationsByAccounts(allNotifications);
 
-                  if (notifications.isEmpty) {
+                  if (filteredNotifications.isEmpty) {
                     return const Center(
                       child: Text(
                         'No notifications',
@@ -212,8 +264,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   }
 
                   return NotificationGroup(
-                    notifications: notifications,
-                    onDismissAll: () => ref.read(notificationProvider.notifier).clearAll(),
+                    notifications: filteredNotifications,
+                    onDismissAll: () => ref.read(notificationProvider.notifier)
+                      .clearAll(),
                     onDismissSingle: (id) => ref.read(notificationProvider.notifier).removeNotification(id),
                   );
                 },
@@ -223,5 +276,53 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildAccountDropdown(List<Account> accounts) {
+    final allAccountsSelected =
+        _selectedAccountIds != null &&
+        _selectedAccountIds!.length == accounts.length;
+
+    return DropdownSelect<String>(
+      initialValue: allAccountsSelected
+          ? '_all_'
+          : _selectedAccountIds?.firstOrNull,
+      items: [
+        Item<String>(value: '_all_', label: 'All Accounts'),
+        ...accounts.map(
+          (account) =>
+              Item<String>(value: account.accountId, label: account.name),
+        ),
+      ],
+      onChanged: (selectedItem) {
+        if (selectedItem == null) return;
+        final newSelectedIds = selectedItem.value == '_all_'
+            ? accounts.map((a) => a.accountId).toList()
+            : [selectedItem.value];
+
+        setState(() {
+          _selectedAccountIds = newSelectedIds;
+        });
+      },
+      disabled: false,
+    );
+  }
+
+  List<NotificationData> _filterNotificationsByAccounts(List<NotificationData> notifications) {
+    if (_selectedAccountIds == null || _selectedAccountIds!.isEmpty) {
+      return notifications;
+    }
+
+    // If "All Accounts" is selected, show all notifications
+    if (_selectedAccountIds!.length == ref.read(accountsProvider).value?.length) {
+      return notifications;
+    }
+
+    // Filter notifications by selected account IDs
+    return notifications.where((notification) {
+      // Check if notification has account metadata
+      final accountId = notification.metadata?['accountId'] as String?;
+      return accountId != null && _selectedAccountIds!.contains(accountId);
+    }).toList();
   }
 }
