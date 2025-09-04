@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/services/notification_service.dart';
+import 'package:resonance_network_wallet/models/notification_models.dart';
 
 class NotificationCard extends StatefulWidget {
   final NotificationData notification;
@@ -32,7 +32,7 @@ class _NotificationCardState extends State<NotificationCard>
         return const Color(0xFF8AF9A8); // Green
       case NotificationType.warning:
         return const Color(0xFFFADC34); // Yellow
-      case NotificationType.error:
+      case NotificationType.alert:
         return const Color(0xFFFF2D54); // Red
       default:
         return const Color(0xFF16CECE); // Info
@@ -53,7 +53,7 @@ class _NotificationCardState extends State<NotificationCard>
           width: 21,
           height: 20,
         );
-      case NotificationType.error:
+      case NotificationType.alert:
         return SvgPicture.asset(
           'assets/notification/red_alert_icon.svg',
           width: 21,

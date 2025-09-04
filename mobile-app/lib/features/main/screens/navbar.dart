@@ -105,7 +105,7 @@ class Navbar extends ConsumerStatefulWidget {
 
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
-  final bool _notificationTestDisabled = true; // Flag for notifications
+  final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [

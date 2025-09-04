@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/components/notification_card.dart';
-import 'package:resonance_network_wallet/services/notification_service.dart';
+import 'package:resonance_network_wallet/models/notification_models.dart';
 
 class NotificationGroup extends StatefulWidget {
   final List<NotificationData> notifications;
@@ -53,28 +53,25 @@ class _NotificationGroupState extends State<NotificationGroup>
     return SlideTransition(
       position: _slideAnimation,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: InkWell(
-                  onTap: widget.onDismissAll,
-                  child: const Text(
-                    'Dismiss All',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
+          // Dismiss All button
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: widget.onDismissAll,
+              child: const Text(
+                'Dismiss All',
+                style: TextStyle(color: Colors.red),
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height - 380,
+          const SizedBox(height: 16),
+          // Notifications list - flexible height
+          Flexible(
             child: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 spacing: 24,
                 children: reveresedNotifications
                     .map(
