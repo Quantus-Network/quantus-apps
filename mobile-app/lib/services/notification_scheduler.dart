@@ -4,9 +4,8 @@ import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Stub service for scheduling local push notifications
-/// TODO: Implement with flutter_local_notifications when ready
 class NotificationScheduler {
-  static final NotificationScheduler _instance = NotificationScheduler._internal();
+  static final _instance = NotificationScheduler._internal();
   factory NotificationScheduler() => _instance;
   NotificationScheduler._internal();
 
@@ -37,7 +36,7 @@ class NotificationScheduler {
     });
 
     _scheduledTimers[notification.id] = timer;
-    print('Scheduled notification: ${notification.title} for ${scheduledDate}');
+    print('Scheduled notification: ${notification.title} for $scheduledDate');
   }
 
   /// Cancel a scheduled notification

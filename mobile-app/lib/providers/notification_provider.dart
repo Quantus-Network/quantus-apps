@@ -7,10 +7,10 @@ import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/services/notification_scheduler.dart';
 
 /// Maximum number of notifications to keep (FIFO)
-const int MAX_NOTIFICATIONS = 64;
+const int maxNotifications = 64;
 
 /// Key for storing notifications in shared preferences
-const String NOTIFICATIONS_STORAGE_KEY = 'notifications';
+const String notificationsStorageKey = 'notifications';
 
 /// Notification provider that manages the notification state
 final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
@@ -56,7 +56,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   Future<void> _loadPersistedNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final notificationsJson = prefs.getStringList(NOTIFICATIONS_STORAGE_KEY) ?? [];
+      final notificationsJson = prefs.getStringList(notificationsStorageKey) ?? [];
 
       final notifications = notificationsJson
           .map((json) => NotificationData.fromJson(jsonDecode(json)))
@@ -79,7 +79,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
           .map((notification) => jsonEncode(notification.toJson()))
           .toList();
 
-      await prefs.setStringList(NOTIFICATIONS_STORAGE_KEY, notificationsJson);
+      await prefs.setStringList(notificationsStorageKey, notificationsJson);
     } catch (e) {
       // Silently fail if saving fails
     }
@@ -88,7 +88,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   /// Add a new notification
   void addNotification(NotificationData notification) {
     // Enforce 64 notification limit (FIFO)
-    if (state.length >= MAX_NOTIFICATIONS) {
+    if (state.length >= maxNotifications) {
       // Remove oldest notification
       state = state.sublist(1);
     }
@@ -216,7 +216,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Stub for remote notifications (to be implemented later)
   void addRemoteNotification(NotificationData notification) {
-    // TODO: Implement remote notification handling
     // This is a placeholder for future Firebase/APNs integration
     addNotification(notification.copyWith(source: NotificationSource.remote));
   }

@@ -209,39 +209,52 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             ),
             const SizedBox(height: 13),
             // Show test buttons only if feature flag is enabled
-            if (FeatureFlags.enableTestButtons) ...[
-              SizedBox(
-                height: 200, // Fixed height for buttons section
-                child: SingleChildScrollView(
-                  child: Column(
-                    spacing: 8,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _addNotification,
-                        child: const Text('Add Test Notifications'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _addTransactionFailed,
-                        child: const Text('Simulate Transaction Failed'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _addBalanceAlert,
-                        child: const Text('Simulate Balance Alert'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _addAccountSuccess,
-                        child: const Text('Simulate Account Added'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _addReversibleReminder,
-                        child: const Text('Simulate Reversible Reminder'),
-                      ),
-                    ],
+            Consumer(
+              builder: (context, ref, child) {
+                final featureFlags = ref.watch(featureFlagsProvider);
+                final enableTestButtons = featureFlags.isEnabled('test_buttons');
+
+                if (!enableTestButtons) return const SizedBox.shrink();
+
+                return SizedBox(
+                  height: 200, // Fixed height for buttons section
+                  child: SingleChildScrollView(
+                    child: Column(
+                      spacing: 8,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _addNotification,
+                          child: const Text('Add Test Notifications'),
+                        ),
+                        ElevatedButton(
+                          onPressed: _addTransactionFailed,
+                          child: const Text('Simulate Transaction Failed'),
+                        ),
+                        ElevatedButton(
+                          onPressed: _addBalanceAlert,
+                          child: const Text('Simulate Balance Alert'),
+                        ),
+                        ElevatedButton(
+                          onPressed: _addAccountSuccess,
+                          child: const Text('Simulate Account Added'),
+                        ),
+                        ElevatedButton(
+                          onPressed: _addReversibleReminder,
+                          child: const Text('Simulate Reversible Reminder'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                );
+              },
+            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final featureFlags = ref.watch(featureFlagsProvider);
+                final enableTestButtons = featureFlags.isEnabled('test_buttons');
+                return enableTestButtons ? const SizedBox(height: 24) : const SizedBox.shrink();
+              },
+            ),
             const SizedBox(height: 24),
             // Notification overlay - use Expanded to take remaining space
             Expanded(

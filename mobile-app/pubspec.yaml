@@ -45,6 +45,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
   telemetrydecksdk: ^2.5.0
+  async: ^2.13.0
 
 dev_dependencies:
   flutter_test:

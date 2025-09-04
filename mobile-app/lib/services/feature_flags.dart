@@ -8,13 +8,19 @@ class FeatureFlags {
 
   static const bool enableTestButtons = false; // Only show in debug mode
 
-  static bool isEnabled(String featureName) {
+  /// Instance method for provider usage
+  bool isEnabled(String featureName) {
     switch (featureName) {
       case 'test_buttons':
         return enableTestButtons;
       default:
         return false;
     }
+  }
+
+  /// Static method for backward compatibility
+  static bool isFeatureEnabled(String featureName) {
+    return FeatureFlags().isEnabled(featureName);
   }
 }
 
