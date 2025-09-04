@@ -61,7 +61,6 @@ class NotificationScheduler {
     print('   Message: ${notification.message}');
     print('   Account: ${notification.accountName}');
 
-    // TODO: Replace with actual local notification when package is added
     // For now, this just prints to console
   }
 
@@ -73,7 +72,6 @@ class NotificationScheduler {
     print('   Message: ${notification.message}');
     print('   Account: ${notification.accountName}');
 
-    // TODO: Replace with actual local notification when package is added
   }
 
   /// Get list of scheduled notification IDs
