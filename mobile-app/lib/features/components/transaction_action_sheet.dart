@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,20 +10,26 @@ import 'package:resonance_network_wallet/features/components/reversible_timer.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class TransactionActionSheet extends StatefulWidget {
+class TransactionActionSheet extends ConsumerStatefulWidget {
   final ReversibleTransferEvent transaction;
 
   const TransactionActionSheet({super.key, required this.transaction});
 
   @override
-  State<TransactionActionSheet> createState() => _TransactionActionSheetState();
+  ConsumerState<TransactionActionSheet> createState() =>
+      _TransactionActionSheetState();
 }
 
 enum _SheetState { initial, confirmCancel, cancelled }
 
-class _TransactionActionSheetState extends State<TransactionActionSheet> {
+class _TransactionActionSheetState
+    extends ConsumerState<TransactionActionSheet> {
   _SheetState _sheetState = _SheetState.initial;
   Timer? _timer;
   Duration? _remainingTime;
@@ -488,7 +495,47 @@ class _TransactionActionSheetState extends State<TransactionActionSheet> {
         transactionId: transactionId,
       );
 
+      // Update providers/UI and start polling to reflect cancellation quickly
+      try {
+        // 1) Optimistically update lists using extrinsic hash (always present)
+        final extrinsicHash = widget.transaction.extrinsicHash!;
+        // Global (all-accounts) controller
+        ref
+            .read(paginationControllerProvider.notifier)
+            .updateReversibleTransferToExecuted(
+              extrinsicHash,
+              ReversibleTransferStatus.CANCELLED,
+            );
+
+        // Filtered controllers for involved accounts
+        final affectedAccounts = <String>{
+          widget.transaction.from,
+          widget.transaction.to,
+        };
+        for (final accountId in affectedAccounts) {
+          ref
+              .read(
+                filteredPaginationControllerProviderFamily(
+                  AccountIdListCache.get([accountId]),
+                ).notifier,
+              )
+              .updateReversibleTransferToExecuted(
+                extrinsicHash,
+                ReversibleTransferStatus.CANCELLED,
+              );
+        }
+
+        // 2) Start the aggressive poller to confirm final status promptly
+        ref
+            .read(reversibleTransferMonitoringServiceProvider)
+            .startImmediatePollingForTransfer(widget.transaction);
+      } catch (_) {
+        // Swallow provider update errors; UI will still show cancelled state below
+      }
+
+      _timer?.cancel();
       setState(() {
+        _remainingTime = Duration.zero;
         _sheetState = _SheetState.cancelled;
       });
     } catch (e) {

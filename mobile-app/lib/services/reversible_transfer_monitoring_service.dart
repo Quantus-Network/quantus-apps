@@ -36,6 +36,13 @@ class ReversibleTransferMonitoringService {
     }
   }
 
+  /// Public API to immediately start execution/cancellation polling for a
+  /// specific reversible transfer. This reuses the same aggressive polling
+  /// logic used when the timer hits zero.
+  void startImmediatePollingForTransfer(ReversibleTransferEvent transfer) {
+    _startExecutionPolling(transfer);
+  }
+
   void _listenToTransactions() {
     _ref.listen(allTransactionsProvider, (previous, current) {
       current.when(
