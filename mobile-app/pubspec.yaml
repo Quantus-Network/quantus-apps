@@ -79,7 +79,6 @@ flutter:
     - assets/receive_line.svg
     - assets/bridge_icon.svg
     - assets/quantus_logo.svg
-    - assets/quantus_logo_hz.svg
     - assets/stop_icon.svg
     - assets/receive_icon_sm.png
     - assets/hourglass.svg
