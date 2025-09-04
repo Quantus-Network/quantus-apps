@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
@@ -11,7 +12,6 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/utils/color_generator_engine.dart';
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -201,35 +201,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               child: Row(
                 children: [
                   const SizedBox(width: 8),
-                  Container(
+                  AccountGradientImage(
+                    accountId: account.accountId,
                     width: context.themeSize.accountListItemLogoWidth,
                     height: context.themeSize.accountListItemLogoWidth,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: buildAccountGradient(
-                        account.accountId,
-                        engine: ColorEngine.oklch,
-                        hueStrategy: HueStrategy.golden,
-                        options: const GradientOptions(
-                          // hue spread from min to max
-                          oklchMinSpreadDeg: 45,
-                          oklchMaxSpreadDeg: 65,
-
-                          // lightness top
-                          oklchLightTopMin: 0.78,
-                          oklchLightTopMax: 0.86,
-
-                          // lightness bottom
-                          oklchLightBotMin: 0.55,
-                          oklchLightBotMax: 0.65,
-
-                          // Chroma for 'pop'
-                          oklchChromaMin: 0.32,
-                          oklchChromaMax: 0.45,
-                        ),
-                      ).linear,
-                      // gradient: linearAccountGradient(account.accountId),
-                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(

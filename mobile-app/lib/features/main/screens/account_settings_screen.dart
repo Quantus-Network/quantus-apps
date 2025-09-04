@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -74,9 +75,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Column(
       children: [
         // Placeholder for account icon
-        SvgPicture.asset(
-          'assets/res_icon.svg',
-          width: context.isTablet ? 80 : 60,
+        AccountGradientImage(
+          accountId: widget.account.accountId,
+          width: context.isTablet ? 80.0 : 60.0,
+          height: context.isTablet ? 80.0 : 60.0,
         ),
         const SizedBox(height: 10),
         InkWell(
