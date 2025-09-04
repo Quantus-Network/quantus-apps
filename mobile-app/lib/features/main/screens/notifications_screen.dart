@@ -62,45 +62,53 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     final notifier = ref.read(notificationProvider.notifier);
 
-    notifier.addNotification(NotificationData(
-      id: '1',
-      type: NotificationType.info,
-      source: NotificationSource.local,
-      title: 'Notification Info',
-      message: 'This is info notification',
-      accountName: accountName,
-      timestamp: DateTime.now(),
-    ));
+    notifier.addNotification(
+      NotificationData(
+        id: '1',
+        type: NotificationType.info,
+        source: NotificationSource.local,
+        title: 'Notification Info',
+        message: 'This is info notification',
+        accountName: accountName,
+        timestamp: DateTime.now(),
+      ),
+    );
 
-    notifier.addNotification(NotificationData(
-      id: '2',
-      type: NotificationType.success,
-      source: NotificationSource.local,
-      title: 'Notification Success',
-      message: 'This is success notification',
-      accountName: accountName,
-      timestamp: DateTime.now(),
-    ));
+    notifier.addNotification(
+      NotificationData(
+        id: '2',
+        type: NotificationType.success,
+        source: NotificationSource.local,
+        title: 'Notification Success',
+        message: 'This is success notification',
+        accountName: accountName,
+        timestamp: DateTime.now(),
+      ),
+    );
 
-    notifier.addNotification(NotificationData(
-      id: '3',
-      type: NotificationType.warning,
-      source: NotificationSource.local,
-      title: 'Notification Warning',
-      message: 'This is warning notification',
-      accountName: accountName,
-      timestamp: DateTime.now(),
-    ));
+    notifier.addNotification(
+      NotificationData(
+        id: '3',
+        type: NotificationType.warning,
+        source: NotificationSource.local,
+        title: 'Notification Warning',
+        message: 'This is warning notification',
+        accountName: accountName,
+        timestamp: DateTime.now(),
+      ),
+    );
 
-    notifier.addNotification(NotificationData(
-      id: '4',
-      type: NotificationType.alert,
-      source: NotificationSource.local,
-      title: 'Notification Alert',
-      message: 'This is alert notification',
-      accountName: accountName,
-      timestamp: DateTime.now(),
-    ));
+    notifier.addNotification(
+      NotificationData(
+        id: '4',
+        type: NotificationType.alert,
+        source: NotificationSource.local,
+        title: 'Notification Alert',
+        message: 'This is alert notification',
+        accountName: accountName,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   void _addTransactionFailed() {
@@ -136,10 +144,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final accountId = activeAccount?.accountId ?? 'unknown';
 
     final notifier = ref.read(notificationProvider.notifier);
-    notifier.addBalanceLow(
-      accountName: accountName,
-      accountId: accountId,
-    );
+    notifier.addBalanceLow(accountName: accountName, accountId: accountId);
   }
 
   void _addAccountSuccess() {
@@ -148,10 +153,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final accountId = activeAccount?.accountId ?? 'unknown';
 
     final notifier = ref.read(notificationProvider.notifier);
-    notifier.addAccountAdded(
-      accountName: accountName,
-      accountId: accountId,
-    );
+    notifier.addAccountAdded(accountName: accountName, accountId: accountId);
   }
 
   void _addReversibleReminder() {
@@ -212,7 +214,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final featureFlags = ref.watch(featureFlagsProvider);
-                final enableTestButtons = featureFlags.isEnabled('test_buttons');
+                final enableTestButtons = featureFlags.isEnabled(
+                  'test_buttons',
+                );
 
                 if (!enableTestButtons) return const SizedBox.shrink();
 
@@ -251,8 +255,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final featureFlags = ref.watch(featureFlagsProvider);
-                final enableTestButtons = featureFlags.isEnabled('test_buttons');
-                return enableTestButtons ? const SizedBox(height: 24) : const SizedBox.shrink();
+                final enableTestButtons = featureFlags.isEnabled(
+                  'test_buttons',
+                );
+                return enableTestButtons
+                    ? const SizedBox(height: 24)
+                    : const SizedBox.shrink();
               },
             ),
             const SizedBox(height: 24),
@@ -261,7 +269,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               child: Consumer(
                 builder: (context, ref, child) {
                   final allNotifications = ref.watch(notificationProvider);
-                  final filteredNotifications = _filterNotificationsByAccounts(allNotifications);
+                  final filteredNotifications = _filterNotificationsByAccounts(
+                    allNotifications,
+                  );
 
                   if (filteredNotifications.isEmpty) {
                     return const Center(
@@ -278,9 +288,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
                   return NotificationGroup(
                     notifications: filteredNotifications,
-                    onDismissAll: () => ref.read(notificationProvider.notifier)
-                      .clearAll(),
-                    onDismissSingle: (id) => ref.read(notificationProvider.notifier).removeNotification(id),
+                    onDismissAll: () =>
+                        ref.read(notificationProvider.notifier).clearAll(),
+                    onDismissSingle: (id) => ref
+                        .read(notificationProvider.notifier)
+                        .removeNotification(id),
                   );
                 },
               ),
@@ -321,13 +333,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  List<NotificationData> _filterNotificationsByAccounts(List<NotificationData> notifications) {
+  List<NotificationData> _filterNotificationsByAccounts(
+    List<NotificationData> notifications,
+  ) {
     if (_selectedAccountIds == null || _selectedAccountIds!.isEmpty) {
       return notifications;
     }
 
     // If "All Accounts" is selected, show all notifications
-    if (_selectedAccountIds!.length == ref.read(accountsProvider).value?.length) {
+    if (_selectedAccountIds!.length ==
+        ref.read(accountsProvider).value?.length) {
       return notifications;
     }
 

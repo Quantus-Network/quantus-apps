@@ -314,13 +314,16 @@ class _NotificationCardState extends State<NotificationCard>
                                   ),
                                 ],
                               ),
-                              if (notification.onViewDetails != null || 
-                                notification.transactionData != null)
+                              if (notification.onViewDetails != null ||
+                                  notification.transactionData != null)
                                 _buildViewDetailsButton(
-                                  notification.onViewDetails ?? () {
-                                    print('TODO View transaction details:'
-                                    ' ${notification.transactionData?.id}');
-                                  },
+                                  notification.onViewDetails ??
+                                      () {
+                                        print(
+                                          'TODO View transaction details:'
+                                          ' ${notification.transactionData?.id}',
+                                        );
+                                      },
                                 ),
                             ],
                           ),

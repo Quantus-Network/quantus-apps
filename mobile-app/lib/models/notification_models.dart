@@ -3,18 +3,18 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Notification types as specified in requirements
 enum NotificationType {
-  warning,    // Transaction failed
-  alert,      // Account balance is 0
-  success,    // New account added
-  reminder,   // Reversible transaction reminder
-  info,       // General information
+  warning, // Transaction failed
+  alert, // Account balance is 0
+  success, // New account added
+  reminder, // Reversible transaction reminder
+  info, // General information
 }
 
 /// Source of the notification
 enum NotificationSource {
-  local,      // App-generated alerts
-  push,       // Local push notifications
-  remote,     // Server push notifications (stub for future)
+  local, // App-generated alerts
+  push, // Local push notifications
+  remote, // Server push notifications (stub for future)
 }
 
 /// Transaction data for failed transaction notifications
@@ -80,11 +80,11 @@ class NotificationData {
   final String message;
   final String accountName;
   final DateTime timestamp;
-  final DateTime? scheduledTime;  // For reminders
-  final DateTime? expiryTime;     // When notification should auto-delete
+  final DateTime? scheduledTime; // For reminders
+  final DateTime? expiryTime; // When notification should auto-delete
   final Map<String, dynamic>? metadata; // For actions/deep links
   final TransactionData? transactionData; // For failed transaction details
-  final bool persistent;         // Should survive app restart
+  final bool persistent; // Should survive app restart
   final VoidCallback? onViewDetails;
 
   const NotificationData({
@@ -178,7 +178,9 @@ class NotificationData {
           : null,
       metadata: json['metadata'] as Map<String, dynamic>?,
       transactionData: json['transactionData'] != null
-          ? TransactionData.fromJson(json['transactionData'] as Map<String, dynamic>)
+          ? TransactionData.fromJson(
+              json['transactionData'] as Map<String, dynamic>,
+            )
           : null,
       persistent: json['persistent'] as bool? ?? true,
     );
@@ -267,7 +269,10 @@ class NotificationTemplates {
       scheduledTime: reminderTime,
       expiryTime: executionTime,
       persistent: true,
-      metadata: {'transactionId': transactionId, 'executionTime': executionTime.toIso8601String()},
+      metadata: {
+        'transactionId': transactionId,
+        'executionTime': executionTime.toIso8601String(),
+      },
     );
   }
 }

@@ -71,7 +71,6 @@ class NotificationScheduler {
     print('🔔 IMMEDIATE NOTIFICATION: ${notification.title}');
     print('   Message: ${notification.message}');
     print('   Account: ${notification.accountName}');
-
   }
 
   /// Get list of scheduled notification IDs
