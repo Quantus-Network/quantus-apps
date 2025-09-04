@@ -282,22 +282,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                             : context.themeColors.textMuted,
                                       ),
                                     ),
-                                    const SizedBox(width: 5),
-                                    InkWell(
-                                      onTap: () =>
-                                          // ignore: lines_longer_than_80_chars
-                                          ClipboardExtensions.copyTextWithSnackbar(
-                                            context,
-                                            account.accountId,
-                                          ),
-                                      child: Icon(
-                                        Icons.copy,
-                                        size: context.isTablet ? 20 : 14,
-                                        color: isActive
-                                            ? context.themeColors.darkGray
-                                            : context.themeColors.textMuted,
-                                      ),
-                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 2),
