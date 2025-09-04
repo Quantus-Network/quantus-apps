@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:async/async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/services/notification_scheduler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
 const int maxNotifications = 64;
@@ -13,9 +14,10 @@ const int maxNotifications = 64;
 const String notificationsStorageKey = 'notifications';
 
 /// Notification provider that manages the notification state
-final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
-  return NotificationNotifier();
-});
+final notificationProvider =
+    StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
+      return NotificationNotifier();
+    });
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
@@ -24,9 +26,12 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   }
 
   // Stream controllers for different notification sources
-  final StreamController<NotificationData> _localAlertController = StreamController.broadcast();
-  final StreamController<NotificationData> _localPushController = StreamController.broadcast();
-  final StreamController<NotificationData> _remotePushController = StreamController.broadcast();
+  final StreamController<NotificationData> _localAlertController =
+      StreamController.broadcast();
+  final StreamController<NotificationData> _localPushController =
+      StreamController.broadcast();
+  final StreamController<NotificationData> _remotePushController =
+      StreamController.broadcast();
 
   // Timer for periodic cleanup of expired notifications
   Timer? _cleanupTimer;
@@ -56,7 +61,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   Future<void> _loadPersistedNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final notificationsJson = prefs.getStringList(notificationsStorageKey) ?? [];
+      final notificationsJson =
+          prefs.getStringList(notificationsStorageKey) ?? [];
 
       final notifications = notificationsJson
           .map((json) => NotificationData.fromJson(jsonDecode(json)))
@@ -72,17 +78,13 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Save notifications to shared preferences
   Future<void> _saveNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final notificationsJson = state
-          .where((notification) => notification.persistent)
-          .map((notification) => jsonEncode(notification.toJson()))
-          .toList();
+    final prefs = await SharedPreferences.getInstance();
+    final notificationsJson = state
+        .where((notification) => notification.persistent)
+        .map((notification) => jsonEncode(notification.toJson()))
+        .toList();
 
-      await prefs.setStringList(notificationsStorageKey, notificationsJson);
-    } catch (e) {
-      // Silently fail if saving fails
-    }
+    await prefs.setStringList(notificationsStorageKey, notificationsJson);
   }
 
   /// Add a new notification
@@ -122,8 +124,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Get notifications for a specific account
   List<NotificationData> getNotificationsForAccount(String accountId) {
-    return state.where((notification) =>
-        notification.metadata?['accountId'] == accountId).toList();
+    return state
+        .where(
+          (notification) => notification.metadata?['accountId'] == accountId,
+        )
+        .toList();
   }
 
   /// Get notifications by type
@@ -152,13 +157,16 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     final expiredIds = <String>[];
 
     for (final notification in state) {
-      if (notification.expiryTime != null && notification.expiryTime!.isBefore(now)) {
+      if (notification.expiryTime != null &&
+          notification.expiryTime!.isBefore(now)) {
         expiredIds.add(notification.id);
       }
     }
 
     if (expiredIds.isNotEmpty) {
-      state = state.where((notification) => !expiredIds.contains(notification.id)).toList();
+      state = state
+          .where((notification) => !expiredIds.contains(notification.id))
+          .toList();
       _saveNotifications();
     }
   }
@@ -179,10 +187,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     addNotification(notification);
   }
 
-  void addBalanceLow({
-    required String accountName,
-    required String accountId,
-  }) {
+  void addBalanceLow({required String accountName, required String accountId}) {
     final notification = NotificationTemplates.balanceLow(
       accountName: accountName,
       accountId: accountId,
