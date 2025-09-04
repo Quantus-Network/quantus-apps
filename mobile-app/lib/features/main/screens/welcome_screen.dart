@@ -82,7 +82,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.asset(
-                        'assets/quantus_logo.svg', // Changed from res_logo_main.svg
+                        'assets/quantus_logo.svg',
                         height: context.themeSize.logoHeight,
                         fit: BoxFit.contain,
                       ),
@@ -98,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     style: context.themeText.mediumTitle,
                   ),
                 ),
-                const SizedBox(height: 27), // Spacing from Figma
+                const SizedBox(height: 27),
               ],
             ),
           ),
