@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
+    as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
-import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
@@ -46,8 +48,8 @@ class NotificationIntegrationService {
     _ref.listen<AsyncValue<BigInt>>(balanceProvider, (previous, next) {
       next.whenData((balance) {
         // Check if balance is at or near existential deposit
-        // This is a simplified check - you might want more sophisticated logic
-        if (balance <= BigInt.from(1000000)) {
+        final existentialDeposit = balances.Constants().existentialDeposit;
+        if (balance <= existentialDeposit) {
           // Example threshold
           final activeAccount = _ref.read(activeAccountProvider).value;
           if (activeAccount != null) {
