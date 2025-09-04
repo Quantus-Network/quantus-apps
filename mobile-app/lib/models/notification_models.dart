@@ -257,13 +257,15 @@ class NotificationTemplates {
     required String transactionId,
     required DateTime executionTime,
   }) {
-    final reminderTime = executionTime.subtract(const Duration(hours: 2));
+    const reminderDuration = Duration(hours: 2);
+    final reminderTime = executionTime.subtract(reminderDuration);
     return NotificationData(
       id: 'reversible_reminder_${transactionId}_${DateTime.now().millisecondsSinceEpoch}',
       type: NotificationType.reminder,
       source: NotificationSource.push,
       title: 'Reversible Transaction Reminder',
-      message: 'Your reversible transaction will execute in 2 hours.',
+      message:
+          'Your reversible transaction will execute in ${reminderDuration.inHours} hours.',
       accountName: accountName,
       timestamp: DateTime.now(),
       scheduledTime: reminderTime,
