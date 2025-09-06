@@ -40,6 +40,8 @@ class MinerProcess {
   bool _isCurrentlySyncing = true;
   double? _currentHashrate;
   final int minerCores;
+
+  double? get currentHashrate => _currentHashrate;
   final int externalMinerPort;
 
   // Stream for logs

@@ -160,209 +160,676 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quantus Miner'),
-        actions: [
-          PopupMenuButton<_MenuValues>(
-            onSelected: (_MenuValues item) async {
-              switch (item) {
-                case _MenuValues.logout: // Updated to logout
-                  await _performLogout(); // Call the new logout method
-                  break;
-              }
-            },
-            itemBuilder: (BuildContext context) =>
-                <PopupMenuEntry<_MenuValues>>[
-                  const PopupMenuItem<_MenuValues>(
-                    value: _MenuValues.logout, // Updated to logout
-                    child: Text('Logout (Full Reset)'), // Updated text
-                  ),
-                ],
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: const Color(0xFF0A0A0A), // Deep space black
+      body: SafeArea(
+        child: Stack(
           children: [
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Wallet Balance Section (Left)
-                  Expanded(
-                    flex: 2,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'Wallet Balance:',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.refresh),
-                                  tooltip: 'Reload Balance',
-                                  onPressed: _fetchWalletBalance,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _walletBalance,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (_walletAddress != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  _walletAddress!,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white70,
-                                    fontFamily: 'Fira Code',
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Mine Button Section (Right)
-                  Expanded(
-                    flex: 1,
-                    child: MinerControls(
-                      onMinerProcessChanged: _onMinerProcessChanged,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Stats Panel (Below)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'Mining Stats:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (_miningStats != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _miningStats!.isSyncing
-                                  ? Colors.orange
-                                  : Colors.green,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _miningStats!.status,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_miningStats != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.people,
-                                size: 16,
-                                color: Colors.blue,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Peers: ${_miningStats!.peerCount}',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              const SizedBox(width: 24),
-                              const Icon(
-                                Icons.block,
-                                size: 16,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Block: ${_miningStats!.currentBlock}/${_miningStats!.targetBlock}',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.speed,
-                                size: 16,
-                                color: Colors.orange,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Hashrate: ${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ],
-                      )
-                    else
-                      const Text(
-                        'Loading mining stats...',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                  ],
+            // Subtle background gradient
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0A0A0A), Color(0xFF1A1A1A)],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Logs Panel
-            Expanded(
-              child: LogsWidget(
-                minerProcess: _currentMinerProcess,
-                maxLines: 200,
-              ),
+            // Main content
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Custom app bar with glass effect
+                SliverAppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  floating: true,
+                  pinned: false,
+                  flexibleSpace: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                    child: BackdropFilter(
+                      filter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.1),
+                        BlendMode.srcOver,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                          ),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.white.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              // Logo/Title area
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFF00D4FF),
+                                          Color(0xFF0099FF),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Quantus Miner',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              // Menu button with glass effect
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.white.withOpacity(0.1),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: PopupMenuButton<_MenuValues>(
+                                  color: const Color(0xFF1A1A1A),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  onSelected: (_MenuValues item) async {
+                                    switch (item) {
+                                      case _MenuValues.logout:
+                                        await _performLogout();
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) =>
+                                      <PopupMenuEntry<_MenuValues>>[
+                                        PopupMenuItem<_MenuValues>(
+                                          value: _MenuValues.logout,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.logout,
+                                                color: Colors.red.withOpacity(
+                                                  0.8,
+                                                ),
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                'Logout (Full Reset)',
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withOpacity(0.9),
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Icon(
+                                      Icons.more_vert,
+                                      color: Colors.white.withOpacity(0.7),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Main content
+                SliverPadding(
+                  padding: const EdgeInsets.all(20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Status indicator
+                      if (_miningStats != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: _miningStats!.isSyncing
+                                        ? [
+                                            const Color(0xFFFF6B35),
+                                            const Color(0xFFFF8F65),
+                                          ]
+                                        : [
+                                            const Color(
+                                              0xFF6366F1,
+                                            ), // Deep purple
+                                            const Color(
+                                              0xFF1E3A8A,
+                                            ), // Deep blue
+                                          ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          (_miningStats!.isSyncing
+                                                  ? const Color(0xFFFF6B35)
+                                                  : const Color(0xFF6366F1))
+                                              .withOpacity(0.3),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _miningStats!.isSyncing
+                                          ? Icons.sync
+                                          : Icons.check_circle,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _miningStats!.status.toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Wallet Balance Card - Premium design
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 20,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF6366F1), // Deep purple
+                                          Color(0xFF1E3A8A), // Deep blue
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.account_balance_wallet,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Wallet Balance',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white.withOpacity(0.1),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        Icons.refresh,
+                                        color: Colors.white.withOpacity(0.7),
+                                        size: 20,
+                                      ),
+                                      tooltip: 'Reload Balance',
+                                      onPressed: _fetchWalletBalance,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                _walletBalance,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF6366F1), // Deep purple
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                              if (_walletAddress != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.link,
+                                        color: Colors.white.withOpacity(0.5),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _walletAddress!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white.withOpacity(
+                                              0.6,
+                                            ),
+                                            fontFamily: 'Fira Code',
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.copy,
+                                          color: Colors.white.withOpacity(0.5),
+                                          size: 16,
+                                        ),
+                                        onPressed: () {
+                                          // Copy to clipboard
+                                        },
+                                        constraints: const BoxConstraints(),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Mining Stats Card - Compact Professional Design
+                      if (_miningStats != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.1),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 20,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header with icon
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF6366F1), // Deep purple
+                                            Color(0xFF1E3A8A), // Deep blue
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: const Icon(
+                                        Icons.analytics,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Text(
+                                      'Mining Performance',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                // Stats grid in 2x2 layout
+                                Row(
+                                  children: [
+                                    // Left column
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          _buildCompactStat(
+                                            icon: Icons.people,
+                                            label: 'Peers',
+                                            value: '${_miningStats!.peerCount}',
+                                          ),
+                                          const SizedBox(height: 16),
+                                          _buildCompactStat(
+                                            icon: Icons.block,
+                                            label: 'Current',
+                                            value:
+                                                '${_miningStats!.currentBlock}',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 32),
+                                    // Right column
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          _buildCompactStat(
+                                            icon: Icons.speed,
+                                            label: 'Hashrate',
+                                            value:
+                                                '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                                          ),
+                                          const SizedBox(height: 16),
+                                          _buildCompactStat(
+                                            icon: Icons.sync,
+                                            label: 'Target',
+                                            value:
+                                                '${_miningStats!.targetBlock}',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.all(40),
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withOpacity(0.6),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                'Loading mining stats...',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Mining Controls
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: MinerControls(
+                          onMinerProcessChanged: _onMinerProcessChanged,
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Logs Section
+                      Container(
+                        height: 300,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            // Logs header
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.terminal,
+                                    color: Colors.white.withOpacity(0.7),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Live Logs',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'AUTO-SCROLL',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Logs content
+                            Expanded(
+                              child: LogsWidget(
+                                minerProcess: _currentMinerProcess,
+                                maxLines: 200,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCompactStat({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF6366F1), // Deep purple
+                Color(0xFF1E3A8A), // Deep blue
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

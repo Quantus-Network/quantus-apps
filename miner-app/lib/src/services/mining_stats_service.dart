@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+import 'miner_process.dart';
+
 class MiningStats {
   final int peerCount;
   final int currentBlock;
@@ -29,13 +31,27 @@ class MiningStatsService {
   final SubstrateService _substrateService = SubstrateService();
   Timer? _statsTimer;
   MiningStats? _lastStats;
+  MinerProcess? _minerProcess; // Reference to miner process for hashrate
 
   final _statsController = StreamController<MiningStats>.broadcast();
   Stream<MiningStats> get statsStream => _statsController.stream;
 
   MiningStats? get lastStats => _lastStats;
 
+  void setMinerProcess(MinerProcess? minerProcess) {
+    _minerProcess = minerProcess;
+  }
+
   Future<void> startMonitoring() async {
+    // Initialize the SubstrateService first
+    try {
+      await _substrateService.initialize();
+      print('MiningStatsService: Initialized Substrate service');
+    } catch (e) {
+      print('MiningStatsService: Failed to initialize Substrate service: $e');
+      return; // Don't start monitoring if initialization fails
+    }
+
     // Start periodic stats fetching
     _statsTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchStats();
@@ -87,6 +103,10 @@ class MiningStatsService {
 
   Future<int> _getPeerCount() async {
     try {
+      if (_substrateService.provider == null) {
+        print('Provider not available for peer count');
+        return 0;
+      }
       final result = await _substrateService.provider!.send('system_peers', []);
       if (result.result == null) {
         print('Peer count result is null');
@@ -102,6 +122,10 @@ class MiningStatsService {
 
   Future<int> _getCurrentBlock() async {
     try {
+      if (_substrateService.provider == null) {
+        print('Provider not available for current block');
+        return 0;
+      }
       final result = await _substrateService.provider!.send(
         'chain_getHeader',
         [],
@@ -132,13 +156,19 @@ class MiningStatsService {
   }
 
   Future<double> _getHashrate() async {
-    // This would typically come from the external miner or node metrics
-    // For now, return a placeholder value
+    // Get hashrate from MinerProcess if available
+    if (_minerProcess != null) {
+      return _minerProcess!.currentHashrate ?? 0.0;
+    }
     return 0.0;
   }
 
   Future<bool> _getSyncStatus() async {
     try {
+      if (_substrateService.provider == null) {
+        print('Provider not available for sync status');
+        return false;
+      }
       final result = await _substrateService.provider!.send(
         'system_syncState',
         [],
