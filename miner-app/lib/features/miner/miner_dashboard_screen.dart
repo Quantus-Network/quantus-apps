@@ -191,7 +191,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                     ),
                     child: BackdropFilter(
                       filter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.1),
+                        Colors.black.useOpacity(0.1),
                         BlendMode.srcOver,
                       ),
                       child: Container(
@@ -200,13 +200,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.white.withOpacity(0.05),
+                              Colors.white.useOpacity(0.1),
+                              Colors.white.useOpacity(0.05),
                             ],
                           ),
                           border: Border(
                             bottom: BorderSide(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.useOpacity(0.1),
                               width: 1,
                             ),
                           ),
@@ -251,9 +251,9 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.useOpacity(0.1),
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.useOpacity(0.2),
                                     width: 1,
                                   ),
                                 ),
@@ -277,7 +277,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                             children: [
                                               Icon(
                                                 Icons.logout,
-                                                color: Colors.red.withOpacity(
+                                                color: Colors.red.useOpacity(
                                                   0.8,
                                                 ),
                                                 size: 20,
@@ -287,7 +287,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                                 'Logout (Full Reset)',
                                                 style: TextStyle(
                                                   color: Colors.white
-                                                      .withOpacity(0.9),
+                                                      .useOpacity(0.9),
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -299,7 +299,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                     padding: const EdgeInsets.all(12),
                                     child: Icon(
                                       Icons.more_vert,
-                                      color: Colors.white.withOpacity(0.7),
+                                      color: Colors.white.useOpacity(0.7),
                                       size: 20,
                                     ),
                                   ),
@@ -353,7 +353,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                           (_miningStats!.isSyncing
                                                   ? const Color(0xFFFF6B35)
                                                   : const Color(0xFF6366F1))
-                                              .withOpacity(0.3),
+                                              .useOpacity(0.3),
                                       blurRadius: 8,
                                       spreadRadius: 1,
                                     ),
@@ -393,18 +393,18 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.white.withOpacity(0.05),
+                              Colors.white.useOpacity(0.1),
+                              Colors.white.useOpacity(0.05),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.useOpacity(0.1),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.useOpacity(0.2),
                               blurRadius: 20,
                               spreadRadius: 1,
                               offset: const Offset(0, 8),
@@ -441,19 +441,19 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.useOpacity(0.9),
                                     ),
                                   ),
                                   const Spacer(),
                                   Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.useOpacity(0.1),
                                     ),
                                     child: IconButton(
                                       icon: Icon(
                                         Icons.refresh,
-                                        color: Colors.white.withOpacity(0.7),
+                                        color: Colors.white.useOpacity(0.7),
                                         size: 20,
                                       ),
                                       tooltip: 'Reload Balance',
@@ -477,10 +477,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
+                                    color: Colors.white.useOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.useOpacity(0.1),
                                       width: 1,
                                     ),
                                   ),
@@ -488,7 +488,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                     children: [
                                       Icon(
                                         Icons.link,
-                                        color: Colors.white.withOpacity(0.5),
+                                        color: Colors.white.useOpacity(0.5),
                                         size: 16,
                                       ),
                                       const SizedBox(width: 8),
@@ -497,9 +497,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                           _walletAddress!,
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.white.withOpacity(
-                                              0.6,
-                                            ),
+                                            color: Colors.white.useOpacity(0.6),
                                             fontFamily: 'Fira Code',
                                             letterSpacing: 0.5,
                                           ),
@@ -508,7 +506,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       IconButton(
                                         icon: Icon(
                                           Icons.copy,
-                                          color: Colors.white.withOpacity(0.5),
+                                          color: Colors.white.useOpacity(0.5),
                                           size: 16,
                                         ),
                                         onPressed: () {
@@ -535,18 +533,18 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withOpacity(0.1),
-                                Colors.white.withOpacity(0.05),
+                                Colors.white.useOpacity(0.1),
+                                Colors.white.useOpacity(0.05),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.useOpacity(0.1),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.useOpacity(0.2),
                                 blurRadius: 20,
                                 spreadRadius: 1,
                                 offset: const Offset(0, 8),
@@ -584,7 +582,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.useOpacity(0.9),
                                       ),
                                     ),
                                   ],
@@ -644,7 +642,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           padding: const EdgeInsets.all(40),
                           margin: const EdgeInsets.only(bottom: 20),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
+                            color: Colors.white.useOpacity(0.05),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -656,7 +654,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white.withOpacity(0.6),
+                                    Colors.white.useOpacity(0.6),
                                   ),
                                 ),
                               ),
@@ -664,7 +662,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               Text(
                                 'Loading mining stats...',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
+                                  color: Colors.white.useOpacity(0.6),
                                   fontSize: 16,
                                 ),
                               ),
@@ -682,13 +680,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.white.withOpacity(0.05),
+                              Colors.white.useOpacity(0.1),
+                              Colors.white.useOpacity(0.05),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.useOpacity(0.1),
                             width: 1,
                           ),
                         ),
@@ -703,10 +701,10 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                       Container(
                         height: 300,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.useOpacity(0.05),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.useOpacity(0.1),
                             width: 1,
                           ),
                         ),
@@ -718,7 +716,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                               decoration: BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
-                                    color: Colors.white.withOpacity(0.1),
+                                    color: Colors.white.useOpacity(0.1),
                                     width: 1,
                                   ),
                                 ),
@@ -727,14 +725,14 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                 children: [
                                   Icon(
                                     Icons.terminal,
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.useOpacity(0.7),
                                     size: 20,
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     'Live Logs',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.useOpacity(0.9),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -746,13 +744,13 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.useOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       'AUTO-SCROLL',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.6),
+                                        color: Colors.white.useOpacity(0.6),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.5,
@@ -821,7 +819,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.useOpacity(0.6),
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.5,
                 ),
