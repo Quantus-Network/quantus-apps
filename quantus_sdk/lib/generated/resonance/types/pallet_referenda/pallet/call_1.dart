@@ -214,7 +214,7 @@ class Submit extends Call {
   /// BoundedCallOf<T, I>
   final _i4.Bounded proposal;
 
-  /// DispatchTime<BlockNumberFor<T>>
+  /// DispatchTime<BlockNumberFor<T, I>>
   final _i5.DispatchTime enactmentMoment;
 
   @override

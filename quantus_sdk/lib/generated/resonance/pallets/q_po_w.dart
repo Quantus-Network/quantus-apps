@@ -20,13 +20,6 @@ class Queries {
     hasher: _i1.StorageHasher.twoxx64Concat(_i3.U32Codec.codec),
   );
 
-  final _i1.StorageValue<List<int>> _latestNonce =
-      const _i1.StorageValue<List<int>>(
-    prefix: 'QPoW',
-    storage: 'LatestNonce',
-    valueCodec: _i3.U8ArrayCodec(64),
-  );
-
   final _i1.StorageValue<BigInt> _lastBlockTime =
       const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
@@ -98,18 +91,6 @@ class Queries {
       BigInt.zero,
       growable: false,
     ); /* Default */
-  }
-
-  _i4.Future<List<int>?> latestNonce({_i1.BlockHash? at}) async {
-    final hashedKey = _latestNonce.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
-    if (bytes != null) {
-      return _latestNonce.decodeValue(bytes);
-    }
-    return null; /* Nullable */
   }
 
   _i4.Future<BigInt> lastBlockTime({_i1.BlockHash? at}) async {
@@ -265,12 +246,6 @@ class Queries {
   /// Returns the storage key for `blockDistanceThresholds`.
   _i5.Uint8List blockDistanceThresholdsKey(int key1) {
     final hashedKey = _blockDistanceThresholds.hashedKeyFor(key1);
-    return hashedKey;
-  }
-
-  /// Returns the storage key for `latestNonce`.
-  _i5.Uint8List latestNonceKey() {
-    final hashedKey = _latestNonce.hashedKey();
     return hashedKey;
   }
 

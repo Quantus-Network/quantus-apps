@@ -2,9 +2,10 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i4;
+import 'package:quiver/collection.dart' as _i5;
 
 import '../../sp_core/crypto/account_id32.dart' as _i3;
+import '../deposit_kind.dart' as _i4;
 
 /// Events type.
 abstract class Event {
@@ -28,7 +29,7 @@ abstract class Event {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, List<int>>> toJson();
+  Map<String, Map<String, dynamic>> toJson();
 }
 
 class $Event {
@@ -83,6 +84,20 @@ class $Event {
   RecoveryRemoved recoveryRemoved({required _i3.AccountId32 lostAccount}) {
     return RecoveryRemoved(lostAccount: lostAccount);
   }
+
+  DepositPoked depositPoked({
+    required _i3.AccountId32 who,
+    required _i4.DepositKind kind,
+    required BigInt oldDeposit,
+    required BigInt newDeposit,
+  }) {
+    return DepositPoked(
+      who: who,
+      kind: kind,
+      oldDeposit: oldDeposit,
+      newDeposit: newDeposit,
+    );
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -104,6 +119,8 @@ class $EventCodec with _i1.Codec<Event> {
         return AccountRecovered._decode(input);
       case 5:
         return RecoveryRemoved._decode(input);
+      case 6:
+        return DepositPoked._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -133,6 +150,9 @@ class $EventCodec with _i1.Codec<Event> {
       case RecoveryRemoved:
         (value as RecoveryRemoved).encodeTo(output);
         break;
+      case DepositPoked:
+        (value as DepositPoked).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -154,6 +174,8 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as AccountRecovered)._sizeHint();
       case RecoveryRemoved:
         return (value as RecoveryRemoved)._sizeHint();
+      case DepositPoked:
+        return (value as DepositPoked)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -201,7 +223,7 @@ class RecoveryCreated extends Event {
         other,
       ) ||
       other is RecoveryCreated &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.account,
             account,
           );
@@ -267,11 +289,11 @@ class RecoveryInitiated extends Event {
         other,
       ) ||
       other is RecoveryInitiated &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.lostAccount,
             lostAccount,
           ) &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.rescuerAccount,
             rescuerAccount,
           );
@@ -351,15 +373,15 @@ class RecoveryVouched extends Event {
         other,
       ) ||
       other is RecoveryVouched &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.lostAccount,
             lostAccount,
           ) &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.rescuerAccount,
             rescuerAccount,
           ) &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.sender,
             sender,
           );
@@ -429,11 +451,11 @@ class RecoveryClosed extends Event {
         other,
       ) ||
       other is RecoveryClosed &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.lostAccount,
             lostAccount,
           ) &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.rescuerAccount,
             rescuerAccount,
           );
@@ -502,11 +524,11 @@ class AccountRecovered extends Event {
         other,
       ) ||
       other is AccountRecovered &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.lostAccount,
             lostAccount,
           ) &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.rescuerAccount,
             rescuerAccount,
           );
@@ -559,11 +581,107 @@ class RecoveryRemoved extends Event {
         other,
       ) ||
       other is RecoveryRemoved &&
-          _i4.listsEqual(
+          _i5.listsEqual(
             other.lostAccount,
             lostAccount,
           );
 
   @override
   int get hashCode => lostAccount.hashCode;
+}
+
+/// A deposit has been updated.
+class DepositPoked extends Event {
+  const DepositPoked({
+    required this.who,
+    required this.kind,
+    required this.oldDeposit,
+    required this.newDeposit,
+  });
+
+  factory DepositPoked._decode(_i1.Input input) {
+    return DepositPoked(
+      who: const _i1.U8ArrayCodec(32).decode(input),
+      kind: _i4.DepositKind.codec.decode(input),
+      oldDeposit: _i1.U128Codec.codec.decode(input),
+      newDeposit: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::AccountId
+  final _i3.AccountId32 who;
+
+  /// DepositKind<T>
+  final _i4.DepositKind kind;
+
+  /// BalanceOf<T>
+  final BigInt oldDeposit;
+
+  /// BalanceOf<T>
+  final BigInt newDeposit;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+        'DepositPoked': {
+          'who': who.toList(),
+          'kind': kind.toJson(),
+          'oldDeposit': oldDeposit,
+          'newDeposit': newDeposit,
+        }
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(who);
+    size = size + _i4.DepositKind.codec.sizeHint(kind);
+    size = size + _i1.U128Codec.codec.sizeHint(oldDeposit);
+    size = size + _i1.U128Codec.codec.sizeHint(newDeposit);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      6,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      who,
+      output,
+    );
+    _i4.DepositKind.codec.encodeTo(
+      kind,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      oldDeposit,
+      output,
+    );
+    _i1.U128Codec.codec.encodeTo(
+      newDeposit,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is DepositPoked &&
+          _i5.listsEqual(
+            other.who,
+            who,
+          ) &&
+          other.kind == kind &&
+          other.oldDeposit == oldDeposit &&
+          other.newDeposit == newDeposit;
+
+  @override
+  int get hashCode => Object.hash(
+        who,
+        kind,
+        oldDeposit,
+        newDeposit,
+      );
 }

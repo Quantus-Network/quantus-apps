@@ -219,7 +219,7 @@ class Txs {
     return _i9.Preimage(_i10.UnrequestPreimage(hash: hash));
   }
 
-  /// Ensure that the a bulk of pre-images is upgraded.
+  /// Ensure that the bulk of pre-images is upgraded.
   ///
   /// The caller pays no fee if at least 90% of pre-images were successfully updated.
   _i9.Preimage ensureUpdated({required List<_i2.H256> hashes}) {

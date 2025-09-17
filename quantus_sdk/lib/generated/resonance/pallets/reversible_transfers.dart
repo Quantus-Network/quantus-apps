@@ -164,7 +164,8 @@ class Queries {
   }
 
   /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an interceptor.
+  /// This allows the UI to efficiently query all accounts for which a given account is an
+  /// interceptor.
   _i7.Future<List<_i2.AccountId32>> interceptorIndex(
     _i2.AccountId32 key1, {
     _i1.BlockHash? at,
@@ -297,7 +298,8 @@ class Queries {
   }
 
   /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an interceptor.
+  /// This allows the UI to efficiently query all accounts for which a given account is an
+  /// interceptor.
   _i7.Future<List<List<_i2.AccountId32>>> multiInterceptorIndex(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,

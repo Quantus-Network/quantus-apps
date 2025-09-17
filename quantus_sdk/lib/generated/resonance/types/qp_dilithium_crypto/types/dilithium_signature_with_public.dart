@@ -11,7 +11,7 @@ class DilithiumSignatureWithPublic {
     return codec.decode(input);
   }
 
-  /// [u8; Self::TOTAL_LEN]
+  /// [u8; DilithiumSignatureWithPublic::TOTAL_LEN]
   final List<int> bytes;
 
   static const $DilithiumSignatureWithPublicCodec codec =

@@ -1,5 +1,5 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i13;
+import 'dart:async' as _i14;
 import 'dart:typed_data' as _i16;
 
 import 'package:polkadart/polkadart.dart' as _i1;
@@ -17,14 +17,14 @@ import '../types/frame_system/limits/block_weights.dart' as _i19;
 import '../types/frame_system/limits/weights_per_class.dart' as _i21;
 import '../types/frame_system/pallet/call.dart' as _i18;
 import '../types/frame_system/phase.dart' as _i11;
-import '../types/pallet_balances/types/account_data.dart' as _i14;
+import '../types/pallet_balances/types/account_data.dart' as _i15;
 import '../types/primitive_types/h256.dart' as _i6;
 import '../types/quantus_runtime/runtime_call.dart' as _i17;
 import '../types/sp_core/crypto/account_id32.dart' as _i2;
 import '../types/sp_runtime/generic/digest/digest.dart' as _i7;
 import '../types/sp_version/runtime_version.dart' as _i25;
 import '../types/sp_weights/runtime_db_weight.dart' as _i24;
-import '../types/sp_weights/weight_v2/weight.dart' as _i15;
+import '../types/sp_weights/weight_v2/weight.dart' as _i13;
 import '../types/tuples.dart' as _i9;
 
 class Queries {
@@ -161,8 +161,15 @@ class Queries {
     valueCodec: _i12.CodeUpgradeAuthorization.codec,
   );
 
+  final _i1.StorageValue<_i13.Weight> _extrinsicWeightReclaimed =
+      const _i1.StorageValue<_i13.Weight>(
+    prefix: 'System',
+    storage: 'ExtrinsicWeightReclaimed',
+    valueCodec: _i13.Weight.codec,
+  );
+
   /// The full account information for a particular account ID.
-  _i13.Future<_i3.AccountInfo> account(
+  _i14.Future<_i3.AccountInfo> account(
     _i2.AccountId32 key1, {
     _i1.BlockHash? at,
   }) async {
@@ -179,7 +186,7 @@ class Queries {
       consumers: 0,
       providers: 0,
       sufficients: 0,
-      data: _i14.AccountData(
+      data: _i15.AccountData(
         free: BigInt.zero,
         reserved: BigInt.zero,
         frozen: BigInt.zero,
@@ -192,7 +199,7 @@ class Queries {
   }
 
   /// Total extrinsics count for the current block.
-  _i13.Future<int?> extrinsicCount({_i1.BlockHash? at}) async {
+  _i14.Future<int?> extrinsicCount({_i1.BlockHash? at}) async {
     final hashedKey = _extrinsicCount.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -205,7 +212,7 @@ class Queries {
   }
 
   /// Whether all inherents have been applied.
-  _i13.Future<bool> inherentsApplied({_i1.BlockHash? at}) async {
+  _i14.Future<bool> inherentsApplied({_i1.BlockHash? at}) async {
     final hashedKey = _inherentsApplied.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -218,7 +225,7 @@ class Queries {
   }
 
   /// The current weight for the block.
-  _i13.Future<_i5.PerDispatchClass> blockWeight({_i1.BlockHash? at}) async {
+  _i14.Future<_i5.PerDispatchClass> blockWeight({_i1.BlockHash? at}) async {
     final hashedKey = _blockWeight.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -228,15 +235,15 @@ class Queries {
       return _blockWeight.decodeValue(bytes);
     }
     return _i5.PerDispatchClass(
-      normal: _i15.Weight(
+      normal: _i13.Weight(
         refTime: BigInt.zero,
         proofSize: BigInt.zero,
       ),
-      operational: _i15.Weight(
+      operational: _i13.Weight(
         refTime: BigInt.zero,
         proofSize: BigInt.zero,
       ),
-      mandatory: _i15.Weight(
+      mandatory: _i13.Weight(
         refTime: BigInt.zero,
         proofSize: BigInt.zero,
       ),
@@ -244,7 +251,7 @@ class Queries {
   }
 
   /// Total length (in bytes) for all extrinsics put together, for the current block.
-  _i13.Future<int?> allExtrinsicsLen({_i1.BlockHash? at}) async {
+  _i14.Future<int?> allExtrinsicsLen({_i1.BlockHash? at}) async {
     final hashedKey = _allExtrinsicsLen.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -257,7 +264,7 @@ class Queries {
   }
 
   /// Map of block numbers to block hashes.
-  _i13.Future<_i6.H256> blockHash(
+  _i14.Future<_i6.H256> blockHash(
     int key1, {
     _i1.BlockHash? at,
   }) async {
@@ -277,7 +284,7 @@ class Queries {
   }
 
   /// Extrinsics data for the current block (maps an extrinsic's index to its data).
-  _i13.Future<List<int>> extrinsicData(
+  _i14.Future<List<int>> extrinsicData(
     int key1, {
     _i1.BlockHash? at,
   }) async {
@@ -297,7 +304,7 @@ class Queries {
   }
 
   /// The current block number being processed. Set by `execute_block`.
-  _i13.Future<int> number({_i1.BlockHash? at}) async {
+  _i14.Future<int> number({_i1.BlockHash? at}) async {
     final hashedKey = _number.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -310,7 +317,7 @@ class Queries {
   }
 
   /// Hash of the previous block.
-  _i13.Future<_i6.H256> parentHash({_i1.BlockHash? at}) async {
+  _i14.Future<_i6.H256> parentHash({_i1.BlockHash? at}) async {
     final hashedKey = _parentHash.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -327,7 +334,7 @@ class Queries {
   }
 
   /// Digest of the current block, also part of the block header.
-  _i13.Future<_i7.Digest> digest({_i1.BlockHash? at}) async {
+  _i14.Future<_i7.Digest> digest({_i1.BlockHash? at}) async {
     final hashedKey = _digest.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -346,7 +353,7 @@ class Queries {
   ///
   /// Events have a large in-memory size. Box the events to not go out-of-memory
   /// just in case someone still reads them from within the runtime.
-  _i13.Future<List<_i8.EventRecord>> events({_i1.BlockHash? at}) async {
+  _i14.Future<List<_i8.EventRecord>> events({_i1.BlockHash? at}) async {
     final hashedKey = _events.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -359,7 +366,7 @@ class Queries {
   }
 
   /// The number of events in the `Events<T>` list.
-  _i13.Future<int> eventCount({_i1.BlockHash? at}) async {
+  _i14.Future<int> eventCount({_i1.BlockHash? at}) async {
     final hashedKey = _eventCount.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -381,7 +388,7 @@ class Queries {
   /// The value has the type `(BlockNumberFor<T>, EventIndex)` because if we used only just
   /// the `EventIndex` then in case if the topic has the same contents on the next block
   /// no notification will be triggered thus the event might be lost.
-  _i13.Future<List<_i9.Tuple2<int, int>>> eventTopics(
+  _i14.Future<List<_i9.Tuple2<int, int>>> eventTopics(
     _i6.H256 key1, {
     _i1.BlockHash? at,
   }) async {
@@ -397,7 +404,7 @@ class Queries {
   }
 
   /// Stores the `spec_version` and `spec_name` of when the last runtime upgrade happened.
-  _i13.Future<_i10.LastRuntimeUpgradeInfo?> lastRuntimeUpgrade(
+  _i14.Future<_i10.LastRuntimeUpgradeInfo?> lastRuntimeUpgrade(
       {_i1.BlockHash? at}) async {
     final hashedKey = _lastRuntimeUpgrade.hashedKey();
     final bytes = await __api.getStorage(
@@ -411,7 +418,7 @@ class Queries {
   }
 
   /// True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
-  _i13.Future<bool> upgradedToU32RefCount({_i1.BlockHash? at}) async {
+  _i14.Future<bool> upgradedToU32RefCount({_i1.BlockHash? at}) async {
     final hashedKey = _upgradedToU32RefCount.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -425,7 +432,7 @@ class Queries {
 
   /// True if we have upgraded so that AccountInfo contains three types of `RefCount`. False
   /// (default) if not.
-  _i13.Future<bool> upgradedToTripleRefCount({_i1.BlockHash? at}) async {
+  _i14.Future<bool> upgradedToTripleRefCount({_i1.BlockHash? at}) async {
     final hashedKey = _upgradedToTripleRefCount.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -438,7 +445,7 @@ class Queries {
   }
 
   /// The execution phase of the block.
-  _i13.Future<_i11.Phase?> executionPhase({_i1.BlockHash? at}) async {
+  _i14.Future<_i11.Phase?> executionPhase({_i1.BlockHash? at}) async {
     final hashedKey = _executionPhase.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -451,7 +458,7 @@ class Queries {
   }
 
   /// `Some` if a code upgrade has been authorized.
-  _i13.Future<_i12.CodeUpgradeAuthorization?> authorizedUpgrade(
+  _i14.Future<_i12.CodeUpgradeAuthorization?> authorizedUpgrade(
       {_i1.BlockHash? at}) async {
     final hashedKey = _authorizedUpgrade.hashedKey();
     final bytes = await __api.getStorage(
@@ -464,8 +471,30 @@ class Queries {
     return null; /* Nullable */
   }
 
+  /// The weight reclaimed for the extrinsic.
+  ///
+  /// This information is available until the end of the extrinsic execution.
+  /// More precisely this information is removed in `note_applied_extrinsic`.
+  ///
+  /// Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+  /// reduction.
+  _i14.Future<_i13.Weight> extrinsicWeightReclaimed({_i1.BlockHash? at}) async {
+    final hashedKey = _extrinsicWeightReclaimed.hashedKey();
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
+    if (bytes != null) {
+      return _extrinsicWeightReclaimed.decodeValue(bytes);
+    }
+    return _i13.Weight(
+      refTime: BigInt.zero,
+      proofSize: BigInt.zero,
+    ); /* Default */
+  }
+
   /// The full account information for a particular account ID.
-  _i13.Future<List<_i3.AccountInfo>> multiAccount(
+  _i14.Future<List<_i3.AccountInfo>> multiAccount(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -485,7 +514,7 @@ class Queries {
               consumers: 0,
               providers: 0,
               sufficients: 0,
-              data: _i14.AccountData(
+              data: _i15.AccountData(
                 free: BigInt.zero,
                 reserved: BigInt.zero,
                 frozen: BigInt.zero,
@@ -499,7 +528,7 @@ class Queries {
   }
 
   /// Map of block numbers to block hashes.
-  _i13.Future<List<_i6.H256>> multiBlockHash(
+  _i14.Future<List<_i6.H256>> multiBlockHash(
     List<int> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -523,7 +552,7 @@ class Queries {
   }
 
   /// Extrinsics data for the current block (maps an extrinsic's index to its data).
-  _i13.Future<List<List<int>>> multiExtrinsicData(
+  _i14.Future<List<List<int>>> multiExtrinsicData(
     List<int> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -557,7 +586,7 @@ class Queries {
   /// The value has the type `(BlockNumberFor<T>, EventIndex)` because if we used only just
   /// the `EventIndex` then in case if the topic has the same contents on the next block
   /// no notification will be triggered thus the event might be lost.
-  _i13.Future<List<List<_i9.Tuple2<int, int>>>> multiEventTopics(
+  _i14.Future<List<List<_i9.Tuple2<int, int>>>> multiEventTopics(
     List<_i6.H256> keys, {
     _i1.BlockHash? at,
   }) async {
@@ -684,6 +713,12 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `extrinsicWeightReclaimed`.
+  _i16.Uint8List extrinsicWeightReclaimedKey() {
+    final hashedKey = _extrinsicWeightReclaimed.hashedKey();
+    return hashedKey;
+  }
+
   /// Returns the storage map key prefix for `account`.
   _i16.Uint8List accountMapPrefix() {
     final hashedKey = _account.mapPrefix();
@@ -806,11 +841,11 @@ class Constants {
 
   /// Block & extrinsics weights: base values and limits.
   final _i19.BlockWeights blockWeights = _i19.BlockWeights(
-    baseBlock: _i15.Weight(
+    baseBlock: _i13.Weight(
       refTime: BigInt.from(431614000),
       proofSize: BigInt.zero,
     ),
-    maxBlock: _i15.Weight(
+    maxBlock: _i13.Weight(
       refTime: BigInt.from(6000000000000),
       proofSize: BigInt.parse(
         '18446744073709551615',
@@ -819,49 +854,49 @@ class Constants {
     ),
     perClass: _i20.PerDispatchClass(
       normal: _i21.WeightsPerClass(
-        baseExtrinsic: _i15.Weight(
+        baseExtrinsic: _i13.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
         ),
-        maxExtrinsic: _i15.Weight(
+        maxExtrinsic: _i13.Weight(
           refTime: BigInt.from(3899891843000),
           proofSize: BigInt.parse(
             '11990383647911208550',
             radix: 10,
           ),
         ),
-        maxTotal: _i15.Weight(
+        maxTotal: _i13.Weight(
           refTime: BigInt.from(4500000000000),
           proofSize: BigInt.parse(
             '13835058055282163711',
             radix: 10,
           ),
         ),
-        reserved: _i15.Weight(
+        reserved: _i13.Weight(
           refTime: BigInt.zero,
           proofSize: BigInt.zero,
         ),
       ),
       operational: _i21.WeightsPerClass(
-        baseExtrinsic: _i15.Weight(
+        baseExtrinsic: _i13.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
         ),
-        maxExtrinsic: _i15.Weight(
+        maxExtrinsic: _i13.Weight(
           refTime: BigInt.from(5399891843000),
           proofSize: BigInt.parse(
             '16602069666338596454',
             radix: 10,
           ),
         ),
-        maxTotal: _i15.Weight(
+        maxTotal: _i13.Weight(
           refTime: BigInt.from(6000000000000),
           proofSize: BigInt.parse(
             '18446744073709551615',
             radix: 10,
           ),
         ),
-        reserved: _i15.Weight(
+        reserved: _i13.Weight(
           refTime: BigInt.from(1500000000000),
           proofSize: BigInt.parse(
             '4611686018427387904',
@@ -870,7 +905,7 @@ class Constants {
         ),
       ),
       mandatory: _i21.WeightsPerClass(
-        baseExtrinsic: _i15.Weight(
+        baseExtrinsic: _i13.Weight(
           refTime: BigInt.from(108157000),
           proofSize: BigInt.zero,
         ),
@@ -903,7 +938,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 106,
+    specVersion: 108,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(

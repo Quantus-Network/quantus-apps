@@ -5,8 +5,8 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 import 'curve.dart' as _i2;
 
-class TrackInfo {
-  const TrackInfo({
+class TrackDetails {
+  const TrackDetails({
     required this.name,
     required this.maxDeciding,
     required this.decisionDeposit,
@@ -18,11 +18,11 @@ class TrackInfo {
     required this.minSupport,
   });
 
-  factory TrackInfo.decode(_i1.Input input) {
+  factory TrackDetails.decode(_i1.Input input) {
     return codec.decode(input);
   }
 
-  /// &'static str
+  /// Name
   final String name;
 
   /// u32
@@ -49,7 +49,7 @@ class TrackInfo {
   /// Curve
   final _i2.Curve minSupport;
 
-  static const $TrackInfoCodec codec = $TrackInfoCodec();
+  static const $TrackDetailsCodec codec = $TrackDetailsCodec();
 
   _i3.Uint8List encode() {
     return codec.encode(this);
@@ -73,7 +73,7 @@ class TrackInfo {
         this,
         other,
       ) ||
-      other is TrackInfo &&
+      other is TrackDetails &&
           other.name == name &&
           other.maxDeciding == maxDeciding &&
           other.decisionDeposit == decisionDeposit &&
@@ -98,12 +98,12 @@ class TrackInfo {
       );
 }
 
-class $TrackInfoCodec with _i1.Codec<TrackInfo> {
-  const $TrackInfoCodec();
+class $TrackDetailsCodec with _i1.Codec<TrackDetails> {
+  const $TrackDetailsCodec();
 
   @override
   void encodeTo(
-    TrackInfo obj,
+    TrackDetails obj,
     _i1.Output output,
   ) {
     _i1.StrCodec.codec.encodeTo(
@@ -145,8 +145,8 @@ class $TrackInfoCodec with _i1.Codec<TrackInfo> {
   }
 
   @override
-  TrackInfo decode(_i1.Input input) {
-    return TrackInfo(
+  TrackDetails decode(_i1.Input input) {
+    return TrackDetails(
       name: _i1.StrCodec.codec.decode(input),
       maxDeciding: _i1.U32Codec.codec.decode(input),
       decisionDeposit: _i1.U128Codec.codec.decode(input),
@@ -160,7 +160,7 @@ class $TrackInfoCodec with _i1.Codec<TrackInfo> {
   }
 
   @override
-  int sizeHint(TrackInfo obj) {
+  int sizeHint(TrackDetails obj) {
     int size = 0;
     size = size + _i1.StrCodec.codec.sizeHint(obj.name);
     size = size + _i1.U32Codec.codec.sizeHint(obj.maxDeciding);

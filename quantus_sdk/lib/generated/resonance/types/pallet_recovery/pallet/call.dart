@@ -97,6 +97,10 @@ class $Call {
   CancelRecovered cancelRecovered({required _i3.MultiAddress account}) {
     return CancelRecovered(account: account);
   }
+
+  PokeDeposit pokeDeposit({_i3.MultiAddress? maybeAccount}) {
+    return PokeDeposit(maybeAccount: maybeAccount);
+  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -124,6 +128,8 @@ class $CallCodec with _i1.Codec<Call> {
         return const RemoveRecovery();
       case 8:
         return CancelRecovered._decode(input);
+      case 9:
+        return PokeDeposit._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -162,6 +168,9 @@ class $CallCodec with _i1.Codec<Call> {
       case CancelRecovered:
         (value as CancelRecovered).encodeTo(output);
         break;
+      case PokeDeposit:
+        (value as PokeDeposit).encodeTo(output);
+        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -189,6 +198,8 @@ class $CallCodec with _i1.Codec<Call> {
         return 1;
       case CancelRecovered:
         return (value as CancelRecovered)._sizeHint();
+      case PokeDeposit:
+        return (value as PokeDeposit)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -268,7 +279,7 @@ class AsRecovered extends Call {
       );
 }
 
-/// Allow ROOT to bypass the recovery process and set an a rescuer account
+/// Allow ROOT to bypass the recovery process and set a rescuer account
 /// for a lost account directly.
 ///
 /// The dispatch origin for this call must be _ROOT_.
@@ -378,7 +389,7 @@ class CreateRecovery extends Call {
   /// u16
   final int threshold;
 
-  /// BlockNumberFor<T>
+  /// BlockNumberFromProviderOf<T>
   final int delayPeriod;
 
   @override
@@ -760,4 +771,76 @@ class CancelRecovered extends Call {
 
   @override
   int get hashCode => account.hashCode;
+}
+
+/// Poke deposits for recovery configurations and / or active recoveries.
+///
+/// This can be used by accounts to possibly lower their locked amount.
+///
+/// The dispatch origin for this call must be _Signed_.
+///
+/// Parameters:
+/// - `maybe_account`: Optional recoverable account for which you have an active recovery
+/// and want to adjust the deposit for the active recovery.
+///
+/// This function checks both recovery configuration deposit and active recovery deposits
+/// of the caller:
+/// - If the caller has created a recovery configuration, checks and adjusts its deposit
+/// - If the caller has initiated any active recoveries, and provides the account in
+/// `maybe_account`, checks and adjusts those deposits
+///
+/// If any deposit is updated, the difference will be reserved/unreserved from the caller's
+/// account.
+///
+/// The transaction is made free if any deposit is updated and paid otherwise.
+///
+/// Emits `DepositPoked` if any deposit is updated.
+/// Multiple events may be emitted in case both types of deposits are updated.
+class PokeDeposit extends Call {
+  const PokeDeposit({this.maybeAccount});
+
+  factory PokeDeposit._decode(_i1.Input input) {
+    return PokeDeposit(
+        maybeAccount:
+            const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec)
+                .decode(input));
+  }
+
+  /// Option<AccountIdLookupOf<T>>
+  final _i3.MultiAddress? maybeAccount;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>?>> toJson() => {
+        'poke_deposit': {'maybeAccount': maybeAccount?.toJson()}
+      };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size +
+        const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec)
+            .sizeHint(maybeAccount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec).encodeTo(
+      maybeAccount,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is PokeDeposit && other.maybeAccount == maybeAccount;
+
+  @override
+  int get hashCode => maybeAccount.hashCode;
 }

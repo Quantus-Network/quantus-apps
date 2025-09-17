@@ -47,7 +47,8 @@ enum Error {
   /// Reverser is invalid
   invalidReverser('InvalidReverser', 13),
 
-  /// Cannot schedule one time reversible transaction when account is reversible (theft deterrence)
+  /// Cannot schedule one time reversible transaction when account is reversible (theft
+  /// deterrence)
   accountAlreadyReversibleCannotScheduleOneTime(
       'AccountAlreadyReversibleCannotScheduleOneTime', 14),
 

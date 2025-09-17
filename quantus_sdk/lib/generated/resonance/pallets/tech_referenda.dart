@@ -10,7 +10,7 @@ import '../types/frame_support/traits/schedule/dispatch_time.dart' as _i11;
 import '../types/pallet_referenda/pallet/call_2.dart' as _i12;
 import '../types/pallet_referenda/types/curve.dart' as _i14;
 import '../types/pallet_referenda/types/referendum_info_2.dart' as _i3;
-import '../types/pallet_referenda/types/track_info.dart' as _i13;
+import '../types/pallet_referenda/types/track_details.dart' as _i13;
 import '../types/primitive_types/h256.dart' as _i5;
 import '../types/quantus_runtime/origin_caller.dart' as _i9;
 import '../types/quantus_runtime/runtime_call.dart' as _i8;
@@ -423,11 +423,13 @@ class Constants {
   /// automatic referendum status changes. Explicit servicing instructions are unaffected.
   final int alarmInterval = 1;
 
-  /// Information concerning the different referendum tracks.
-  final List<_i4.Tuple2<int, _i13.TrackInfo>> tracks = [
-    _i4.Tuple2<int, _i13.TrackInfo>(
+  /// A list of tracks.
+  ///
+  /// Note: if the tracks are dynamic, the value in the static metadata might be inaccurate.
+  final List<_i4.Tuple2<int, _i13.TrackDetails>> tracks = [
+    _i4.Tuple2<int, _i13.TrackDetails>(
       0,
-      _i13.TrackInfo(
+      _i13.TrackDetails(
         name: 'tech_collective_members',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
