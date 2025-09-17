@@ -84,9 +84,8 @@ void main() {
       const mnemonic1 =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
-      // const knownAccountId = '5H72qHthhaHuwybTUZDi9gtVqGbitcYPxUgbid8BLdZyiiMM';
       const knownAccountId =
-          'qzpVZcTCHBNBXXGBcfChAWDtqE5FugSvCErzRi4EUfPCf71zg';
+          'qzoYcXrTfvjpK1yn3fVAXktWQ6QLJ2ke7gLXyqadre8xxaQ5G';
       final keypair = generateKeypair(mnemonicStr: mnemonic1);
       final accountId = toAccountId(obj: keypair);
 

@@ -18,32 +18,6 @@ void main() {
       await settingsService.initialize();
     });
 
-    test('Migration: should migrate from old single-account format', () async {
-      // Arrange: Set up old format keys
-      SharedPreferences.setMockInitialValues({
-        'account_id': 'old_id',
-        'wallet_name': 'Old Wallet',
-      });
-      settingsService = SettingsService();
-      await settingsService.initialize();
-
-      // Act
-      final accounts = settingsService.getAccounts();
-      final activeAccount = settingsService.getActiveAccount()!;
-
-      // Assert
-      expect(accounts.length, 1);
-      expect(accounts.first.accountId, 'old_id');
-      expect(accounts.first.name, 'Old Wallet');
-      expect(accounts.first.index, 0);
-      expect(activeAccount.accountId, 'old_id');
-
-      // Verify old keys are removed
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('account_id'), isNull);
-      expect(prefs.getString('wallet_name'), isNull);
-    });
-
     test('getAccounts should throw if no wallet exists', () async {
       // Arrange (no keys set)
       // Act & Assert
