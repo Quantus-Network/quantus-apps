@@ -1,7 +1,7 @@
 use bip39::{Language, Mnemonic};
 use nam_tiny_hderive::bip32::ExtendedPrivKey;
-use poseidon_resonance::PoseidonHasher;
-use rusty_crystals_dilithium::*;
+use qp_poseidon::PoseidonHasher;
+use qp_rusty_crystals_dilithium::*;
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_core::Hasher;
 use std::convert::AsRef;
