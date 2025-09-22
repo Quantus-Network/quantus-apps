@@ -273,11 +273,13 @@ class _NavbarState extends ConsumerState<Navbar> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      extendBody: true,
-      body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        body: _buildBody(),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
     );
   }
 }

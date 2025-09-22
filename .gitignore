@@ -126,3 +126,4 @@ app.*.symbols
 /.vscode
 /mobile-app/android/.idea
 /mobile-app/.idea
+/mobile-app/android/.kotlin
