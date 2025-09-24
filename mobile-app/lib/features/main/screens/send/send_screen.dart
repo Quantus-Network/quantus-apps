@@ -129,7 +129,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   Future<void> _saveReversibleTimeSetting(int seconds) async {
     try {
-      await _settingsService.setReversibleTimeSeconds(seconds);
+      if (seconds > 0) {
+        // if reversibility is off, we don't store that.
+        await _settingsService.setReversibleTimeSeconds(seconds);
+      }
       _fetchNetworkFee();
     } catch (e) {
       debugPrint('Error saving reversible time setting: $e');
