@@ -382,7 +382,7 @@ class _TransactionActionSheetState
                 flex: 5,
                 child: Button(
                   variant: ButtonVariant.danger,
-                  label: 'Yes, reverse',
+                  label: 'Reverse',
                   onPressed: _cancelTransaction,
                 ),
               ),
