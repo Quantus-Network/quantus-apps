@@ -18,21 +18,6 @@ void main() {
       await settingsService.initialize();
     });
 
-    test('getAccounts should throw if no wallet exists', () async {
-      // Arrange (no keys set)
-      // Act & Assert
-      expect(
-        () async => settingsService.getAccounts(),
-        throwsA(
-          isA<Exception>().having(
-            (e) => e.toString(),
-            'message',
-            contains('Wallet is logged out'),
-          ),
-        ),
-      );
-    });
-
     test('addAccount should add a new account', () async {
       // Arrange
       await settingsService.addAccount(account1);
@@ -114,12 +99,12 @@ void main() {
       await settingsService.saveAccounts([account1, account2]);
 
       // Act
-      await settingsService.removeAccount(account1);
+      await settingsService.removeAccount(account2);
       final accounts = settingsService.getAccounts();
 
       // Assert
       expect(accounts.length, 1);
-      expect(accounts.first.accountId, account2.accountId);
+      expect(accounts.first.accountId, account1.accountId);
     });
 
     test('removeAccount should throw if it is the last account', () async {

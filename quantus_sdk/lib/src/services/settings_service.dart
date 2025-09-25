@@ -22,10 +22,12 @@ class SettingsService {
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
 
   Future<void> initialize() async {
-    if (!_initialized) {
-      _prefs = await SharedPreferences.getInstance();
-      _initialized = true;
-    }
+    // Always (re)bind the SharedPreferences instance. This ensures tests that
+    // call SharedPreferences.setMockInitialValues({}) before initialize()
+    // get a clean, isolated preferences store even if the service singleton
+    // was created earlier in the process.
+    _prefs = await SharedPreferences.getInstance();
+    _initialized = true;
   }
 
   // --- Multi-Account Methods ---
