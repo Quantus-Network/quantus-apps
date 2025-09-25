@@ -9,7 +9,6 @@ import 'package:quantus_sdk/generated/resonance/types/primitive_types/h256.dart'
 import 'package:quantus_sdk/generated/resonance/types/qp_scheduler/block_number_or_timestamp.dart'
     as qp;
 import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_core/crypto/account_id32.dart';
 import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
 import 'package:quantus_sdk/src/models/account.dart';
@@ -30,24 +29,17 @@ class ReversibleTransfersService {
   /// Used for theft deterrence - enables all future transfers to be reversible
   Future<Uint8List> setHighSecurity({
     required Account account,
+    required Account guardian,
     required qp.BlockNumberOrTimestamp delay,
-    String? reverserAddress,
   }) async {
     print('Not implemented - add reverser to params');
     try {
       final resonanceApi = Resonance(_substrateService.provider!);
 
-      // Convert reverser address if provided
-      AccountId32? reverser;
-      if (reverserAddress != null) {
-        reverser = crypto.ss58ToAccountId(s: reverserAddress);
-      }
-
       // Create the call
       final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
         delay: delay,
-        interceptor: reverser ?? crypto.ss58ToAccountId(s: account.accountId),
-        recoverer: reverser ?? crypto.ss58ToAccountId(s: account.accountId),
+        interceptor: crypto.ss58ToAccountId(s: guardian.accountId),
       );
 
       // Submit the transaction using substrate service
