@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/services/feature_flags.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -172,133 +175,120 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseWithBackground(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Notifications',
-              style: TextStyle(
-                color: Color(0xFFE6E6E6),
-                fontSize: 16,
-                fontFamily: 'Fira Code',
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 13),
-            Consumer(
-              builder: (context, ref, child) {
-                final accountsAsync = ref.watch(accountsProvider);
-                return accountsAsync.when(
-                  data: (accounts) {
-                    if (accounts.isEmpty) {
-                      return const Text(
-                        'No accounts found.',
-                        style: TextStyle(color: Colors.white70),
-                      );
-                    }
-                    return _buildAccountDropdown(accounts);
-                  },
-                  loading: () => const CircularProgressIndicator(),
-                  error: (e, st) => const Text(
-                    'Error loading accounts.',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 13),
-            // Show test buttons only if feature flag is enabled
-            Consumer(
-              builder: (context, ref, child) {
-                final featureFlags = ref.watch(featureFlagsProvider);
-                final enableTestButtons = featureFlags.isEnabled(
-                  'test_buttons',
-                );
-
-                if (!enableTestButtons) return const SizedBox.shrink();
-
-                return SizedBox(
-                  height: 200, // Fixed height for buttons section
-                  child: SingleChildScrollView(
-                    child: Column(
-                      spacing: 8,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _addNotification,
-                          child: const Text('Add Test Notifications'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _addTransactionFailed,
-                          child: const Text('Simulate Transaction Failed'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _addBalanceAlert,
-                          child: const Text('Simulate Balance Alert'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _addAccountSuccess,
-                          child: const Text('Simulate Account Added'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _addReversibleReminder,
-                          child: const Text('Simulate Reversible Reminder'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            Consumer(
-              builder: (context, ref, child) {
-                final featureFlags = ref.watch(featureFlagsProvider);
-                final enableTestButtons = featureFlags.isEnabled(
-                  'test_buttons',
-                );
-                return enableTestButtons
-                    ? const SizedBox(height: 24)
-                    : const SizedBox.shrink();
-              },
-            ),
-            const SizedBox(height: 24),
-            // Notification overlay - use Expanded to take remaining space
-            Expanded(
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final allNotifications = ref.watch(notificationProvider);
-                  final filteredNotifications = _filterNotificationsByAccounts(
-                    allNotifications,
-                  );
-
-                  if (filteredNotifications.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No notifications',
-                        style: TextStyle(
-                          color: Color(0xFFE6E6E6),
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                        ),
-                      ),
+    return ScaffoldBase(
+      decorations: [
+        Positioned(
+          left: context.getHorizontalCenterPosition(252),
+          bottom: -30,
+          child: const Sphere(variant: 9, size: 252),
+        ),
+      ],
+      screenTitle: ScreenTitle(title: 'Notifications'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Consumer(
+            builder: (context, ref, child) {
+              final accountsAsync = ref.watch(accountsProvider);
+              return accountsAsync.when(
+                data: (accounts) {
+                  if (accounts.isEmpty) {
+                    return const Text(
+                      'No accounts found.',
+                      style: TextStyle(color: Colors.white70),
                     );
                   }
-
-                  return NotificationGroup(
-                    notifications: filteredNotifications,
-                    onDismissAll: () =>
-                        ref.read(notificationProvider.notifier).clearAll(),
-                    onDismissSingle: (id) => ref
-                        .read(notificationProvider.notifier)
-                        .removeNotification(id),
-                  );
+                  return _buildAccountDropdown(accounts);
                 },
-              ),
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => const Text(
+                  'Error loading accounts.',
+                  style: TextStyle(color: Colors.red),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 13),
+          // Show test buttons only if feature flag is enabled
+          Consumer(
+            builder: (context, ref, child) {
+              final featureFlags = ref.watch(featureFlagsProvider);
+              final enableTestButtons = featureFlags.isEnabled('test_buttons');
+
+              if (!enableTestButtons) return const SizedBox.shrink();
+
+              return SizedBox(
+                height: 200, // Fixed height for buttons section
+                child: SingleChildScrollView(
+                  child: Column(
+                    spacing: 8,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _addNotification,
+                        child: const Text('Add Test Notifications'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addTransactionFailed,
+                        child: const Text('Simulate Transaction Failed'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addBalanceAlert,
+                        child: const Text('Simulate Balance Alert'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addAccountSuccess,
+                        child: const Text('Simulate Account Added'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _addReversibleReminder,
+                        child: const Text('Simulate Reversible Reminder'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          Consumer(
+            builder: (context, ref, child) {
+              final featureFlags = ref.watch(featureFlagsProvider);
+              final enableTestButtons = featureFlags.isEnabled('test_buttons');
+              return enableTestButtons
+                  ? const SizedBox(height: 24)
+                  : const SizedBox.shrink();
+            },
+          ),
+          const SizedBox(height: 24),
+          // Notification overlay - use Expanded to take remaining space
+          Expanded(
+            child: Consumer(
+              builder: (context, ref, child) {
+                final allNotifications = ref.watch(notificationProvider);
+                final filteredNotifications = _filterNotificationsByAccounts(
+                  allNotifications,
+                );
+
+                if (filteredNotifications.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No notifications',
+                      style: context.themeText.paragraph,
+                    ),
+                  );
+                }
+
+                return NotificationGroup(
+                  notifications: filteredNotifications,
+                  onDismissAll: () =>
+                      ref.read(notificationProvider.notifier).clearAll(),
+                  onDismissSingle: (id) => ref
+                      .read(notificationProvider.notifier)
+                      .removeNotification(id),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

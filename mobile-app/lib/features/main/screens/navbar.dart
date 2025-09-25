@@ -189,7 +189,6 @@ class _NavbarState extends ConsumerState<Navbar> {
             children: [
               SvgPicture.asset(
                 'assets/navbar/notifications_icon_off.svg',
-                width: context.themeSize.navbarIconWidth,
                 colorFilter: const ColorFilter.mode(
                   Colors.blueGrey,
                   BlendMode.srcIn,
@@ -214,11 +213,9 @@ class _NavbarState extends ConsumerState<Navbar> {
             isSelected
                 ? SvgPicture.asset(
                     item.onIcon,
-                    width: context.themeSize.navbarIconWidth,
                   )
                 : SvgPicture.asset(
                     item.offIcon,
-                    width: context.themeSize.navbarIconWidth,
                   ),
           ],
         ),
@@ -255,9 +252,9 @@ class _NavbarState extends ConsumerState<Navbar> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: 14.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: _navItems.asMap().entries.map((entry) {
                 int index = entry.key;
                 NavItem item = entry.value;
@@ -273,11 +270,13 @@ class _NavbarState extends ConsumerState<Navbar> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      extendBody: true,
-      body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        body: _buildBody(),
+        bottomNavigationBar: _buildBottomNavigationBar(),
+      ),
     );
   }
 }

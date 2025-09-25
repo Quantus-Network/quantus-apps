@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/label.dart';
+import 'package:resonance_network_wallet/features/components/card_info.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
@@ -176,33 +176,30 @@ class CreateWalletAndBackupScreenState
                   },
                 ),
                 const SizedBox(height: 25.0),
-                _createDetailItem(
-                  context,
-                  _isLoading ? 'Loading checksum...' : _checksum,
-                  const Icon(Icons.info_outline),
+                CardInfo(
+                  text: _isLoading ? 'Loading checksum...' : _checksum,
+                  icon: const Icon(Icons.info_outline),
                   label: 'ACCOUNT CHECKPHRASE',
                   onPressed: () {},
                   textColor: context.themeColors.checksumDarker,
                 ),
                 const SizedBox(height: 25.0),
-                _createDetailItem(
-                  context,
-                  _isLoading
+                CardInfo(
+                  text: _isLoading
                       ? 'Loading address...'
                       : AddressFormattingService.splitIntoChunks(
                           _address,
                         ).join(' '),
-                  const Icon(Icons.copy),
+                  icon: const Icon(Icons.copy),
                   onPressed: () {
                     ClipboardExtensions.copyTextWithSnackbar(context, _address);
                   },
                   label: 'ACCOUNT ADDRESS',
                 ),
                 const SizedBox(height: 25.0),
-                _createDetailItem(
-                  context,
-                  'Show Recovery Phrase',
-                  const Icon(Icons.chevron_right),
+                CardInfo(
+                  text: 'Show Recovery Phrase',
+                  icon: const Icon(Icons.chevron_right),
                   onPressed: () {
                     showRecoveryPhraseSheet(
                       context,
@@ -226,53 +223,6 @@ class CreateWalletAndBackupScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _createDetailItem(
-    BuildContext context,
-
-    String text,
-    Icon icon, {
-    String? label,
-    final VoidCallback? onPressed,
-    Color? textColor,
-  }) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label != null) ...[Label(label), const SizedBox(height: 4)],
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 8,
-              left: 10,
-              right: 18,
-              bottom: 8,
-            ),
-            decoration: BoxDecoration(color: context.themeColors.buttonGlass),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 251,
-                  child: Text(
-                    text,
-                    style: context.themeText.smallParagraph?.copyWith(
-                      color: textColor,
-                    ),
-                  ),
-                ),
-                icon,
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

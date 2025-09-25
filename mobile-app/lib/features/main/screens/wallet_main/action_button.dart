@@ -3,31 +3,70 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+
+enum ActionType { send, receive, bridge, swap }
 
 class ActionButton extends StatelessWidget {
-  final Widget iconWidget;
-  final String label;
-  final Color borderColor;
+  final ActionType type;
   final VoidCallback onPressed;
   final bool disabled;
 
   const ActionButton({
     super.key,
-    required this.iconWidget,
-    required this.label,
-    required this.borderColor,
+    required this.type,
     required this.onPressed,
     this.disabled = false,
   });
+
+  String get label {
+    switch (type) {
+      case ActionType.send:
+        return 'SEND';
+      case ActionType.receive:
+        return 'RECEIVE';
+      case ActionType.bridge:
+        return 'BRIDGE';
+      case ActionType.swap:
+        return 'SWAP';
+    }
+  }
+
+  Widget get iconWidget {
+    switch (type) {
+      case ActionType.send:
+        return Image.asset('assets/transaction/send_icon.png');
+      case ActionType.receive:
+        return SvgPicture.asset(
+          'assets/transaction/receive_icon.svg',
+          width: 19,
+        );
+      case ActionType.bridge:
+        return SvgPicture.asset(
+          'assets/transaction/bridge_icon.svg',
+          width: 19,
+        );
+      case ActionType.swap:
+        return SvgPicture.asset('assets/transaction/swap_icon.svg', width: 19);
+    }
+  }
+
+  String get frameImagePath {
+    switch (type) {
+      case ActionType.send:
+        return 'assets/send_btn_decoration.png';
+      case ActionType.receive:
+        return 'assets/receive_btn_decoration.png';
+      case ActionType.bridge:
+        return 'assets/bridge_btn_decoration.png';
+      case ActionType.swap:
+        return 'assets/swap_btn_decoration.png';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final color = disabled ? Colors.white.useOpacity(0.5) : Colors.white;
     final bgColor = Colors.black;
-    final effectiveBorderColor = disabled
-        ? borderColor.useOpacity(0.5)
-        : borderColor;
 
     Widget finalIconWidget = iconWidget;
     if (iconWidget is SvgPicture) {
@@ -56,35 +95,28 @@ class ActionButton extends StatelessWidget {
         onTap: disabled ? null : onPressed,
         borderRadius: BorderRadius.circular(4),
         child: Container(
-          width: context.isTablet ? 105 : 65,
-          height: context.isTablet ? 96 : 56,
-          padding: const EdgeInsets.all(1),
+          width: 145,
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            gradient: RadialGradient(
-              radius: 1,
-              colors: [effectiveBorderColor, const Color(0x26FFFFFF)],
-              stops: [0, 1],
+            color: bgColor,
+            image: DecorationImage(
+              image: AssetImage(frameImagePath),
+              fit: BoxFit.contain,
             ),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                finalIconWidget,
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: context.themeText.tag,
-                ),
-              ],
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              finalIconWidget,
+              const SizedBox(width: 10),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: context.themeText.tag,
+              ),
+            ],
           ),
         ),
       ),

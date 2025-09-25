@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.0.0+35
+version: 1.0.0+39
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -86,6 +86,8 @@ flutter:
     - assets/transaction/
     - assets/logo/
     - assets/background.png
+    - assets/send_btn_decoration.png
+    - assets/receive_btn_decoration.png
 
   fonts:
     - family: Fira Code
@@ -103,22 +105,12 @@ flutter:
 
 # Add flutter_native_splash configuration section
 flutter_native_splash:
-  # Replace color with background_image
-  # color: "#0E0E0E"
-  background_image: "assets/light_leak_effect_background.jpg"
-  # image: assets/logo.png # You can still add a logo on top if desired
+  image: assets/splash.png
+  color: "#000000"
+  android_gravity: center
+  android: true
+  ios: true
 
   # Optional: Configure Android 12 splash screen specific settings
   android_12:
-    # Replace color with background_image
-    # color: "#0E0E0E"
-    background_image: "assets/light_leak_effect_background.jpg"
-    # image: assets/logo.png
-
-  # Optional: Set color for status bar and navigation bar (Android)
-  # color_dark: "#0E0E0E"
-  # status_bar_color_dark: "#0E0E0E" # Match status bar to background
-  # navigation_bar_color_dark: "#0E0E0E" # Match navigation bar to background
-
-  # Optional: Set status bar style for iOS (dark content on light background or vice-versa)
-  # ios_content_mode: "dark"
+    icon_background_color: "#000000"

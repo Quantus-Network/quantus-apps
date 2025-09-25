@@ -4,21 +4,29 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class CustomTextField extends StatelessWidget {
   final String? labelText;
+  final TextStyle? textStyle;
   final String? initialValue;
   final String? hintText;
+  final TextStyle? hintStyle;
   final Icon? icon;
   final bool obscureText;
   final ValueChanged<String>? onChanged;
   final TextEditingController? controller;
+  final bool hasError;
+  final double? leftPadding;
 
   const CustomTextField({
     super.key,
     this.labelText,
+    this.textStyle,
     this.initialValue,
     this.hintText,
+    this.hintStyle,
     this.icon,
     this.obscureText = false,
+    this.hasError = false,
     this.onChanged,
+    this.leftPadding,
     this.controller,
   }) : assert(
          initialValue == null || controller == null,
@@ -51,18 +59,28 @@ class CustomTextField extends StatelessWidget {
                 onChanged: onChanged,
                 obscureText: obscureText,
                 // Styling for the text inside the input field
-                style: context.themeText.smallTitle,
+                style: textStyle ?? context.themeText.smallTitle,
                 decoration: InputDecoration(
                   isDense: true, // Reduces vertical padding
+                  enabledBorder: hasError
+                      ? const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        )
+                      : InputBorder.none,
+                  focusedBorder: hasError
+                      ? const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        )
+                      : InputBorder.none,
                   contentPadding: EdgeInsets.only(
                     top: 10,
                     bottom: 10,
-                    left: 11,
-                    right: icon != null ? 40 : 11
+                    left: leftPadding ?? 11,
+                    right: icon != null ? 40 : 11,
                   ), // Removes default padding
                   hintText: hintText,
                   // Style for the hint text when the field is empty
-                  hintStyle: context.themeText.smallTitle,
+                  hintStyle: hintStyle ?? context.themeText.smallTitle,
                 ),
               ),
             ],

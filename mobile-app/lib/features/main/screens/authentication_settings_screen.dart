@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -18,7 +20,7 @@ class _AuthenticationSettingsScreenState
   final LocalAuthService _localAuthService = LocalAuthService();
   bool _isDeviceAuthEnabled = false;
   bool _isLoading = true;
-  String _biometricDescription = 'Device Authentication';
+  String _biometricDescription = 'Use Device Authentication';
 
   @override
   void initState() {
@@ -139,85 +141,80 @@ class _AuthenticationSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: context.themeColors.background,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/light_leak_effect_background.jpg'),
-            fit: BoxFit.cover,
-            opacity: 0.54,
-          ),
+    return ScaffoldBase(
+      decorations: [
+         Positioned(
+          top: context.containerHalfHeight * 0.8,
+          right: -100,
+          child: const Sphere(variant: 7, size: 311.489),
         ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const WalletAppBar(title: 'Authentication Settings'),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(25.0, 12.0, 25.0, 0),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: context.isTablet ? 18 : 12,
-                  ),
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFF313131),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+          Positioned(
+          top: context.containerHalfHeight * 0.45,
+          right: 10,
+          child: const Sphere(variant: 2, size: 194),
+        ),
+      ],
+      appBar: 'Authentication Settings',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: context.isTablet ? 18 : 12,
+            ),
+            decoration: ShapeDecoration(
+              color: context.themeColors.buttonGlass,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SvgPicture.asset('assets/finger_print_icon.svg'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Authentication',
-                              style: context.themeText.largeTag,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _isLoading ? 'Loading...' : _biometricDescription,
-                              style: context.themeText.detail?.copyWith(
-                                color: context.themeColors.textMuted,
-                              ),
-                            ),
-                          ],
+                      Text('Authentication', style: context.themeText.largeTag),
+                      const SizedBox(height: 4),
+                      Text(
+                        _isLoading ? 'Loading...' : _biometricDescription,
+                        style: context.themeText.detail?.copyWith(
+                          color: context.themeColors.textMuted,
                         ),
                       ),
-                      _isLoading
-                          ? SizedBox(
-                              width: context.isTablet ? 28 : 20,
-                              height: context.isTablet ? 28 : 20,
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF16CECE),
-                                ),
-                              ),
-                            )
-                          : Switch(
-                              value: _isDeviceAuthEnabled,
-                              onChanged: _toggleAuthentication,
-                              activeTrackColor: const Color(0xFF16CECE),
-                              inactiveTrackColor: const Color(0xFFD9D9D9),
-                              activeThumbColor: Colors.white,
-                              inactiveThumbColor: Colors.white,
-                            ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                _isLoading
+                    ? SizedBox(
+                        width: context.isTablet ? 28 : 20,
+                        height: context.isTablet ? 28 : 20,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF16CECE),
+                          ),
+                        ),
+                      )
+                    : Switch(
+                        value: _isDeviceAuthEnabled,
+                        onChanged: _toggleAuthentication,
+                        activeTrackColor: context.themeColors.buttonSuccess,
+                        inactiveTrackColor: const Color(0xFFD9D9D9),
+                        activeThumbColor: Colors.white,
+                        inactiveThumbColor: Colors.white,
+                      ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

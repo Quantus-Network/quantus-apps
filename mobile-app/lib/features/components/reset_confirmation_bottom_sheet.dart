@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -22,8 +22,9 @@ class _ResetConfirmationBottomSheetState
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      bottom: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: 24),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
           decoration: ShapeDecoration(
@@ -70,8 +71,8 @@ class _ResetConfirmationBottomSheetState
                       _isCheckboxChecked = value ?? false;
                     });
                   },
-                  activeColor: const Color(0xFF8AF9A8),
-                  checkColor: Colors.black,
+                  activeColor: context.themeColors.buttonSuccess,
+                  checkColor: context.themeColors.buttonSuccess,
                   side: const BorderSide(color: Colors.white),
                   title: Text(
                     'I have backed up my recovery phrase',
@@ -79,22 +80,12 @@ class _ResetConfirmationBottomSheetState
                   ),
                 ),
                 const SizedBox(height: 28),
-                ElevatedButton(
+                Button(
+                  variant: ButtonVariant.danger,
+                  label: 'Reset & Clear Data',
                   onPressed: _isCheckboxChecked ? widget.onReset : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.themeColors.error,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    disabledBackgroundColor: context.themeColors.error
-                        .useOpacity(0.5),
-                  ),
-                  child: Text(
-                    'Reset & Clear Data',
-                    style: context.themeText.smallTitle?.copyWith(
-                      color: context.themeColors.textSecondary,
-                    ),
+                  textStyle: context.themeText.smallTitle?.copyWith(
+                    color: context.themeColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 16),

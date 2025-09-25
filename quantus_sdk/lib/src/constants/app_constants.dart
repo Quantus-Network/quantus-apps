@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Quantus Wallet';
-  static const String tokenSymbol = 'RES'; // fetch this from chain eventually
+  static const String tokenSymbol = 'QU'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
 
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
@@ -12,6 +12,9 @@ class AppConstants {
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
   static const String termsOfServiceUrl =
       'https://quantus.com/terms-and-privacy.html';
+  static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
+  static const String communityUrl = 'https://t.me/quantusnetwork';
+  static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';

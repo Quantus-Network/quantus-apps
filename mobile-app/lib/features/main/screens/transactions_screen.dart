@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/components/base_with_background.dart';
 import 'package:resonance_network_wallet/features/components/dropdown_select.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/transaction_utils.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -108,11 +109,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     _initialize(context, ref);
 
     if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0E0E0E),
-        body: Center(child: CircularProgressIndicator()),
+      return ScaffoldBase(
+        decorations: [
+          Positioned(
+            bottom: -20,
+            left: context.getHorizontalCenterPosition(251.62),
+            child: const Sphere(variant: 8, size: 251.62),
+          ),
+        ],
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
+
     if (_selectedAccountIds == null) {
       // Handles the case where initialization is complete but there are no
       // accounts
@@ -129,54 +137,55 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   Widget _buildSimpleScaffold() {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const WalletAppBar(title: 'Transaction History'),
-      backgroundColor: context.themeColors.background,
-      body: SafeArea(child: _buildBody()),
+    return ScaffoldBase(
+      decorations: [
+        Positioned(
+          bottom: -20,
+          left: context.getHorizontalCenterPosition(251.62),
+          child: const Sphere(variant: 8, size: 251.62),
+        ),
+      ],
+      appBar: 'Transaction History',
+      child: _buildBody(),
     );
   }
 
   Widget _buildFilterableScaffold() {
     final accountsAsync = ref.watch(accountsProvider);
 
-    return BaseWithBackground(
-      child: Padding(
-        padding: const EdgeInsets.only(left: 27.0, right: 27.0, top: 21.0),
-        child: SizedBox(
-          width: double.infinity,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Transaction History',
-                style: context.themeText.largeTag?.copyWith(
-                  color: context.themeColors.light,
-                ),
-              ),
-              const SizedBox(height: 13),
-              accountsAsync.when(
-                data: (accounts) {
-                  if (accounts.isEmpty) {
-                    return Text(
-                      'No accounts found.',
-                      style: context.themeText.smallParagraph,
-                    );
-                  }
-                  return _buildAccountDropdown();
-                },
-                loading: () => const CircularProgressIndicator(),
-                error: (e, st) => Text(
-                  'Error loading accounts.',
-                  style: TextStyle(color: context.themeColors.textError),
-                ),
-              ),
-              const SizedBox(height: 13),
-              Expanded(child: _buildBody()),
-              const SizedBox(height: 16),
-            ],
-          ),
+    return ScaffoldBase(
+      decorations: [
+        Positioned(
+          bottom: -20,
+          left: context.getHorizontalCenterPosition(251.62),
+          child: const Sphere(variant: 8, size: 251.62),
         ),
+      ],
+      screenTitle: ScreenTitle(title: 'Transaction History'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 13),
+          accountsAsync.when(
+            data: (accounts) {
+              if (accounts.isEmpty) {
+                return Text(
+                  'No accounts found.',
+                  style: context.themeText.smallParagraph,
+                );
+              }
+              return _buildAccountDropdown();
+            },
+            loading: () => const CircularProgressIndicator(),
+            error: (e, st) => Text(
+              'Error loading accounts.',
+              style: TextStyle(color: context.themeColors.textError),
+            ),
+          ),
+          const SizedBox(height: 13),
+          Expanded(child: _buildBody()),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -281,6 +290,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               if (allTransactions.isNotEmpty)
                 SliverToBoxAdapter(
                   child: RecentTransactionsList(
+                    backgroundColor: const Color(0x0d0c1014),
                     transactions: allTransactions,
                     accountIds: accountIds,
                   ),

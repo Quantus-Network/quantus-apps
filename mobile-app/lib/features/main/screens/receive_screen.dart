@@ -14,7 +14,9 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 import 'package:share_plus/share_plus.dart';
 
 class ReceiveSheet extends StatefulWidget {
-  const ReceiveSheet({super.key});
+  final bool isReceiving;
+
+  const ReceiveSheet({super.key, this.isReceiving = true});
 
   @override
   State<ReceiveSheet> createState() => _ReceiveSheetState();
@@ -138,18 +140,20 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/transaction/receive_icon.svg',
-                      width: context.isTablet ? 67 : 37,
-                    ),
-                    const SizedBox(width: 7),
-                    Text('RECEIVE', style: context.themeText.largeTitle),
-                  ],
-                ),
-                SizedBox(height: context.isTablet ? 36 : 28),
+                if (widget.isReceiving) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/transaction/receive_icon.svg',
+                        width: context.isTablet ? 67 : 37,
+                      ),
+                      const SizedBox(width: 7),
+                      Text('RECEIVE', style: context.themeText.largeTitle),
+                    ],
+                  ),
+                  SizedBox(height: context.isTablet ? 36 : 28),
+                ],
                 if (_accountId == null)
                   const Center(
                     child: CircularProgressIndicator(color: Colors.white),
@@ -334,7 +338,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 }
 
 // Helper function to show the receive sheet
-void showReceiveSheet(BuildContext context) {
+void showReceiveSheet(BuildContext context, {bool isReceiving = true}) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -367,7 +371,7 @@ void showReceiveSheet(BuildContext context) {
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
             child: Container(
               color: Colors.black.useOpacity(0.3),
-              child: const ReceiveSheet(),
+              child: const ReceiveSheet(isReceiving: false),
             ),
           ),
         ),

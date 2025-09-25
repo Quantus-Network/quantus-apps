@@ -10,12 +10,15 @@ class RecentTransactionsList extends StatelessWidget {
   final List<String>
   accountIds; // List of account IDs we're showing transactions for
   final bool Function(TransactionEvent)? filter;
+  final Color backgroundColor;
 
   const RecentTransactionsList({
     super.key,
     required this.transactions,
     required this.accountIds,
+    required this.backgroundColor,
     this.filter,
+    
   });
 
   TransactionRole _getTransactionRole(TransactionEvent transaction) {
@@ -51,7 +54,7 @@ class RecentTransactionsList extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: ShapeDecoration(
-        color: const Color(0x3F000000), // black w/ alpha
+        color: backgroundColor, 
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
       child: Padding(
@@ -61,9 +64,12 @@ class RecentTransactionsList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (transactionsToShow.isEmpty)
-              Text(
-                'No transactions yet.',
-                style: context.themeText.smallParagraph,
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  'No transactions yet.',
+                  style: context.themeText.smallParagraph,
+                ),
               )
             else ...[
               if (scheduled.isNotEmpty)
@@ -84,8 +90,11 @@ class RecentTransactionsList extends StatelessWidget {
                 ),
               if (scheduled.isNotEmpty && others.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(color: context.themeColors.darkGray, thickness: 1),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Divider(
+                    color: context.themeColors.darkGray,
+                    thickness: 1,
+                  ),
                 ),
               if (others.isNotEmpty)
                 ListView.separated(

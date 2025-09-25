@@ -23,6 +23,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double txListItemIconWidth;
   final double txDetailsIconHeight;
   final double txDetailsIconWidth;
+  final double timePickerSubtitleWidth;
+  final double bottomButtonSpacing;
 
   const AppSizeTheme({
     required this.logoHeight,
@@ -46,6 +48,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.txListItemIconWidth,
     required this.txDetailsIconHeight,
     required this.txDetailsIconWidth,
+    required this.timePickerSubtitleWidth,
+    required this.bottomButtonSpacing,
   });
 
   const AppSizeTheme.defaultTheme()
@@ -54,23 +58,25 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         mainMenuHeight: 20,
         mainMenuWidth: 20,
         mainMenuIconSize: 21.0,
-        navbarHeight: 90.0,
+        navbarHeight: 70.0,
         navbarItemHeight: 32,
-        navbarItemWidth: 70,
+        navbarItemWidth: 40,
         navbarIconWidth: 23,
         floatingBtnHeight: 57.0,
         floatingBtnWidth: 60.0,
         settingMenuIconSize: 11.0,
-        settingMenuShareIconSize: 16.0,
+        settingMenuShareIconSize: 20.0,
         accountListItemHeight: 110.0,
-        accountListItemLogoWidth: 32.0,
+        accountListItemLogoWidth: 36.0,
         appbarIconSize: 18.0,
-        sendOverlayContainerWidth: 305.0,
+        sendOverlayContainerWidth: double.infinity,
         overlayCloseIconSize: 24.0,
         mnemonicCellDesiredHeight: 31.0,
         txListItemIconWidth: 21.0,
         txDetailsIconHeight: 43.0,
         txDetailsIconWidth: 51.0,
+        timePickerSubtitleWidth: 249,
+        bottomButtonSpacing: 16,
       );
 
   const AppSizeTheme.iPad()
@@ -79,16 +85,16 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         mainMenuHeight: 30,
         mainMenuWidth: 30,
         mainMenuIconSize: 29.0,
-        navbarHeight: 110.0,
+        navbarHeight: 90.0,
         navbarItemHeight: 40,
-        navbarItemWidth: 78,
+        navbarItemWidth: 48,
         navbarIconWidth: 32,
         floatingBtnHeight: 82.0,
         floatingBtnWidth: 85.0,
         settingMenuIconSize: 16.0,
         settingMenuShareIconSize: 24.0,
         accountListItemHeight: 130.0,
-        accountListItemLogoWidth: 44.0,
+        accountListItemLogoWidth: 48.0,
         appbarIconSize: 20.0,
         sendOverlayContainerWidth: 510.0,
         overlayCloseIconSize: 28.0,
@@ -96,6 +102,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         txListItemIconWidth: 32.0,
         txDetailsIconHeight: 82.0,
         txDetailsIconWidth: 91.0,
+        timePickerSubtitleWidth: 400,
+        bottomButtonSpacing: 16,
       );
 
   @override
@@ -121,6 +129,10 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     double? txListItemIconWidth,
     double? txDetailsIconHeight,
     double? txDetailsIconWidth,
+    double? timePickerSubtitleWidth,
+    double? bottomButtonSpacing,
+    double? buttonsHorizontalSpacing,
+    double? infoSheetTitleIcon,
   }) {
     return AppSizeTheme(
       logoHeight: logoHeight ?? this.logoHeight,
@@ -149,6 +161,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txListItemIconWidth: txListItemIconWidth ?? this.txListItemIconWidth,
       txDetailsIconHeight: txDetailsIconHeight ?? this.txDetailsIconHeight,
       txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
+      timePickerSubtitleWidth:
+          timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
+      bottomButtonSpacing: bottomButtonSpacing ?? this.bottomButtonSpacing,
     );
   }
 
@@ -205,6 +220,12 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       txDetailsIconWidth:
           txDetailsIconWidth +
           (other.txDetailsIconWidth - txDetailsIconWidth) * t,
+      timePickerSubtitleWidth:
+          timePickerSubtitleWidth +
+          (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
+      bottomButtonSpacing:
+          bottomButtonSpacing +
+          (other.bottomButtonSpacing - bottomButtonSpacing) * t,
     );
   }
 }

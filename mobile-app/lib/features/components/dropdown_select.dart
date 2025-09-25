@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
 class Item<T> {
   final T value;
@@ -89,6 +91,8 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
     var size = renderBox.size;
 
+    final validContext = context;
+
     return OverlayEntry(
       builder: (context) => Positioned(
         width: size.width,
@@ -99,11 +103,8 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
           child: Material(
             color: Colors.transparent,
             child: Container(
-              decoration: ShapeDecoration(
-                color: Colors.black.withValues(alpha: 0.90),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5),
-                ),
+              decoration: BoxDecoration(
+                color: validContext.themeColors.buttonNeutral,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -126,13 +127,10 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
                       ),
                       child: Text(
                         item.label,
-                        style: TextStyle(
+                        style: validContext.themeText.smallParagraph?.copyWith(
                           color: selectedValue?.value == item.value
-                              ? Theme.of(context).primaryColor
-                              : Colors.white,
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w600,
+                              ? validContext.themeColors.pink
+                              : validContext.themeColors.textSecondary,
                         ),
                       ),
                     ),
@@ -158,7 +156,7 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
           decoration: ShapeDecoration(
             color: widget.disabled
                 ? Colors.grey.withValues(alpha: 0.50)
-                : Colors.black.withValues(alpha: 0.50),
+                : Colors.black,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
@@ -171,21 +169,16 @@ class _DropdownSelectState<T> extends State<DropdownSelect<T>> {
               Expanded(
                 child: Text(
                   selectedValue?.label ?? 'Select...',
-                  style: TextStyle(
-                    color: widget.disabled ? Colors.grey : Colors.white,
-                    fontSize: 14,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: context.themeText.smallParagraph,
                 ),
               ),
               const SizedBox(width: 12),
               AnimatedRotation(
                 turns: isOpen ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
-                child: const Icon(
+                child: Icon(
                   Icons.keyboard_arrow_down,
-                  color: Colors.white,
+                  color: context.themeColors.textPrimary,
                   size: 16,
                 ),
               ),

@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 
@@ -215,9 +216,9 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
               onPressed: _importWallet,
               isLoading: _isLoading,
             ),
-          const SizedBox(
-            height: 24,
-          ), // Consistent bottom padding like CreateWalletScreen
+           SizedBox(
+            height: context.themeSize.bottomButtonSpacing,
+          ), 
         ],
       ),
     );

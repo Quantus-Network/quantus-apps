@@ -65,10 +65,13 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
             },
           ),
           const SizedBox(height: 4),
-          Text(
-            widget.address,
-            style: context.themeText.detail?.copyWith(
-              color: context.themeColors.textMuted,
+          SizedBox(
+            width: 217,
+            child: Text(
+              AddressFormattingService.splitIntoChunks(widget.address).join(' '),
+              style: context.themeText.detail?.copyWith(
+                color: context.themeColors.textMuted,
+              ),
             ),
           ),
         ],

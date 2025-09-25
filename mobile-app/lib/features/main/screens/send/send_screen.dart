@@ -1,54 +1,33 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
-    as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/base_with_background.dart';
-import 'package:resonance_network_wallet/features/components/recent_address_list.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/segmented_control.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner/qr_scanner_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_progress/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_progress_overlay.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/time_picker_sheet.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-// Local provider for existential deposit toggle in send screen
-final _existentialDepositToggleProvider = StateProvider<bool>((ref) => true);
+enum SendMode { immediate, reversible }
 
-// Provider that combines balance with existential deposit toggle
-final _effectiveMaxBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
-  final existentialDeposit = balances.Constants().existentialDeposit;
-  final balanceAsyncValue = ref.watch(balanceProvider);
-  final includeExistentialDeposit = ref.watch(
-    _existentialDepositToggleProvider,
-  );
-
-  return balanceAsyncValue.when(
-    data: (balance) {
-      if (includeExistentialDeposit) {
-        return AsyncValue.data(
-          balance > existentialDeposit
-              ? balance - existentialDeposit
-              : BigInt.zero,
-        );
-      } else {
-        return AsyncValue.data(balance);
-      }
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (error, stack) => AsyncValue.error(error, stack),
-  );
-});
+extension SendModeExtension on SendMode {
+  bool get isImmediate => this == SendMode.immediate;
+  bool get isReversible => this == SendMode.reversible;
+}
 
 class SendScreen extends ConsumerStatefulWidget {
   const SendScreen({super.key});
@@ -71,11 +50,35 @@ class SendScreenState extends ConsumerState<SendScreen> {
   bool _hasAddressError = false;
   bool _hasAmountError = false;
   String _humanReadableCheckphrase = '';
+  SendMode _sendMode = SendMode.reversible;
   Timer? _debounce;
   int? _blockHeight;
 
   // Reversible time state
   int _reversibleTimeSeconds = 600; // Default: 10 minutes
+
+  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
+  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
+  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
+
+  String get getButtonText {
+    if (_hasAddressError || _recipientController.text.isEmpty) {
+      return 'Enter Address';
+    } else if (_amount <= BigInt.zero) {
+      return 'Enter Amount';
+    } else if (_hasAmountError) {
+      return 'Insufficient Balance';
+    } else {
+      return 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}';
+    }
+  }
+
+  bool get isButtonDisabled =>
+      (_hasAddressError ||
+      _hasAmountError ||
+      _recipientController.text.isEmpty ||
+      _amount <= BigInt.zero ||
+      _isFetchingFee);
 
   @override
   void initState() {
@@ -135,7 +138,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   Future<void> _saveReversibleTimeSetting(int seconds) async {
     try {
-      await _settingsService.setReversibleTimeSeconds(seconds);
+      if (seconds > 0) {
+        // if reversibility is off, we don't store that.
+        await _settingsService.setReversibleTimeSeconds(seconds);
+      }
       _fetchNetworkFee();
     } catch (e) {
       debugPrint('Error saving reversible time setting: $e');
@@ -144,7 +150,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   // Method to toggle existential deposit calculation
   void _toggleExistentialDeposit(bool includeExistentialDeposit) {
-    ref.read(_existentialDepositToggleProvider.notifier).state =
+    ref.read(existentialDepositToggleProvider.notifier).state =
         includeExistentialDeposit;
   }
 
@@ -412,7 +418,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               recipientName: _humanReadableCheckphrase,
               recipientAddress: _recipientController.text,
               fee: _networkFee,
-              reversibleTimeSeconds: _reversibleTimeSeconds,
+              reversibleTimeSeconds: _sendMode.isReversible ? _reversibleTimeSeconds : 0,
               blockHeight: _blockHeight ?? 0,
               onClose: () => Navigator.pop(context),
             ),
@@ -448,373 +454,44 @@ class SendScreenState extends ConsumerState<SendScreen> {
     }
   }
 
-  int get _reversibleTimeDays => _reversibleTimeSeconds ~/ 86400;
-  int get _reversibleTimeHours => (_reversibleTimeSeconds % 86400) ~/ 3600;
-  int get _reversibleTimeMinutes => (_reversibleTimeSeconds % 3600) ~/ 60;
-
   String _formatReversibleTime() {
     final days = _reversibleTimeDays;
     final hours = _reversibleTimeHours;
     final minutes = _reversibleTimeMinutes;
 
     if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''}, '
-          '$hours hr${hours != 1 ? 's' : ''}, '
-          '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${days}d, '
+          '${hours}h, '
+          '${minutes}m';
     } else if (hours > 0) {
-      return '$hours hr${hours != 1 ? 's' : ''}, '
-          '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${hours}h, '
+          '${minutes}m';
     } else {
-      return '$minutes min${minutes != 1 ? 's' : ''}';
+      return '${minutes}m';
     }
-  }
-
-  void _showTimePickerModal() {
-    // Set initial values from current state
-    var selectedDays = _reversibleTimeDays;
-    var selectedHours = _reversibleTimeHours;
-    var selectedMinutes = _reversibleTimeMinutes;
-
-    showAppModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        height: 632,
-        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 60),
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Header
-            const Column(
-              children: [
-                Icon(Icons.schedule, color: Color(0xFF16CECE), size: 29),
-                SizedBox(height: 16),
-                Text(
-                  'Set Reverse Window',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF16CECE),
-                    fontSize: 18,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Your transaction is reversible during this time period',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontFamily: 'Fira Code',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-
-            // Time pickers
-            Expanded(
-              child: Row(
-                children: [
-                  // Days
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Days',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(
-                                    initialItem: selectedDays,
-                                  ),
-                                  itemExtent: 40,
-                                  onSelectedItemChanged: (index) =>
-                                      selectedDays = index,
-                                  children: List.generate(
-                                    8,
-                                    (index) => Center(
-                                      child: Text(
-                                        index.toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ':',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Hours
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Hours',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoPicker(
-                                  scrollController: FixedExtentScrollController(
-                                    initialItem: selectedHours,
-                                  ),
-                                  itemExtent: 40,
-                                  onSelectedItemChanged: (index) =>
-                                      selectedHours = index,
-                                  children: List.generate(
-                                    24,
-                                    (index) => Center(
-                                      child: Text(
-                                        index.toString().padLeft(2, '0'),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontFamily: 'Fira Code',
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ':',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Minutes
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Minutes',
-                          style: TextStyle(
-                            color: Color(0xFFD9D9D9),
-                            fontSize: 16,
-                            fontFamily: 'Fira Code',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: CupertinoPicker(
-                            scrollController: FixedExtentScrollController(
-                              initialItem: selectedMinutes,
-                            ),
-                            itemExtent: 40,
-                            onSelectedItemChanged: (index) =>
-                                selectedMinutes = index,
-                            children: List.generate(
-                              60,
-                              (index) => Center(
-                                child: Text(
-                                  index.toString().padLeft(2, '0'),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontFamily: 'Fira Code',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFFFF2D53),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      final newTimeSeconds =
-                          (selectedDays * 86400) +
-                          (selectedHours * 3600) +
-                          (selectedMinutes * 60);
-                      _setReversibleTimeSeconds(newTimeSeconds);
-                      _saveReversibleTimeSetting(newTimeSeconds);
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF5FE49E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        'Set',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontFamily: 'Fira Code',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // NEW: Method to show the recent addresses modal bottom sheet
-  void _showRecentAddresses() async {
-    final activeAccount = _settingsService.getActiveAccount()!;
-
-    showAppModalBottomSheet(
-      // ignore: use_build_context_synchronously
-      context: context,
-      builder: (context) => Container(
-        height:
-            MediaQuery.of(context).size.height *
-            0.8, // Adjustable height for scrollability
-        padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
-        decoration: const ShapeDecoration(
-          color: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(20),
-            ), // Softer radius for modal
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Top row with close button (replacing empty stack in Figma)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
-                ),
-              ],
-            ),
-            const SizedBox(height: 26), // Spacing from Figma
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 226,
-                    child: Text(
-                      'Recently Used',
-                      style: context.themeText.largeTag,
-                    ),
-                  ),
-                  const SizedBox(height: 20), // Spacing from Figma
-                  Expanded(
-                    child: RecentAddressList(
-                      currentAddress: activeAccount.accountId,
-                      onAddressSelected: (address) {
-                        _recipientController.text = address;
-                        _lookupIdentity();
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BaseWithBackground(
+    return ScaffoldBase(
+      decorations: [
+        const Positioned(
+          top: 120,
+          left: -30,
+          child: Sphere(variant: 1, size: 144.23),
+        ),
+        Positioned(
+          top: context.containerHalfHeight,
+          right: -40,
+          child: const Sphere(variant: 2, size: 194),
+        ),
+      ],
+      appBar: 'Send',
       child: Consumer(
         builder: (context, ref, child) {
-          final balanceAsyncValue = ref.watch(_effectiveMaxBalanceProvider);
+          final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
           final includeExistentialDeposit = ref.watch(
-            _existentialDepositToggleProvider,
+            existentialDepositToggleProvider,
           );
 
           return balanceAsyncValue.when(
@@ -853,88 +530,74 @@ class SendScreenState extends ConsumerState<SendScreen> {
   ) {
     return Column(
       children: [
-        const WalletAppBar(title: 'Send'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      final data = await Clipboard.getData('text/plain');
-                      if (data != null && data.text != null) {
-                        _recipientController.text = data.text!;
-                        _lookupIdentity();
-                      }
-                    },
-                    child: _buildIconButton('assets/paste_icon_1.svg'),
-                  ),
-                  const SizedBox(width: 9),
-                  GestureDetector(
-                    onTap: _scanQRCode,
-                    child: _buildIconButton('assets/scan_1.svg'),
-                  ),
-                  const SizedBox(width: 9),
-                  GestureDetector(
-                    onTap: _showRecentAddresses,
-                    child: _buildHistoryIconButton(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
+        Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final data = await Clipboard.getData('text/plain');
+                    if (data != null && data.text != null) {
+                      _recipientController.text = data.text!;
+                      _lookupIdentity();
+                    }
+                  },
+                  child: _buildIconButton('assets/paste_icon_1.svg'),
+                ),
+                const SizedBox(width: 9),
+                GestureDetector(
+                  onTap: _scanQRCode,
+                  child: _buildIconButton('assets/scan_1.svg'),
+                ),
+                const SizedBox(width: 9),
+                GestureDetector(
+                  onTap: () {
+                    final activeAccount = _settingsService.getActiveAccount()!;
+
+                    showRecentAddresses(
+                      context,
+                      activeAccount: activeAccount,
+                      recipientController: _recipientController,
+                      lookupIdentity: _lookupIdentity,
+                    );
+                  },
+                  child: _buildHistoryIconButton(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(color: context.themeColors.surface),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('To:', style: context.themeText.smallParagraph),
                   Container(
-                    width: 1,
-                    height: context.isTablet ? 31 : 17,
-                    color: Colors.white,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: const EdgeInsets.only(left: 5.0),
+                    height: context.isTablet ? 42 : 38,
+                    decoration: BoxDecoration(
+                      color: context.themeColors.surface,
+                    ),
+                    child: Row(
+                      children: [
+                        Text('To:', style: context.themeText.smallParagraph),
+                      ],
+                    ),
                   ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextField(
+                        CustomTextField(
+                          leftPadding: 0,
                           controller: _recipientController,
-                          style: context.themeText.detail,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            enabledBorder: _hasAddressError
-                                ? const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                      width: 1,
-                                    ),
-                                  )
-                                : InputBorder.none,
-                            focusedBorder: _hasAddressError
-                                ? const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                      width: 1,
-                                    ),
-                                  )
-                                : InputBorder.none,
-                            hintText:
-                                '${AppConstants.tokenSymbol} '
-                                'address',
-                            hintStyle: context.themeText.detail?.copyWith(
-                              color: context.themeColors.textMuted,
-                            ),
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            filled: true,
-                            fillColor: Colors.transparent,
+                          textStyle: context.themeText.detail,
+                          hintText:
+                              '${AppConstants.tokenSymbol} '
+                              'address',
+                          hintStyle: context.themeText.detail?.copyWith(
+                            color: context.themeColors.textMuted,
                           ),
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          enableInteractiveSelection: true,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.none,
                           onChanged: (value) {
                             if (_debounce?.isActive ?? false) {
                               _debounce?.cancel();
@@ -949,7 +612,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                         ),
                         if (_humanReadableCheckphrase.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
+                            padding: const EdgeInsets.only(bottom: 10.0),
                             child: InkWell(
                               onTap: () async {
                                 ClipboardExtensions.copyTextWithSnackbar(
@@ -978,7 +641,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
                                     padding: const EdgeInsets.only(top: 1.0),
                                     child: Icon(
                                       Icons.copy,
-                                      size: 14,
+                                      size: context
+                                          .themeSize
+                                          .settingMenuShareIconSize,
                                       color: context.themeColors.checksum
                                           .useOpacity(0.7),
                                     ),
@@ -992,8 +657,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         Expanded(
           child: Center(
@@ -1053,164 +718,136 @@ class SendScreenState extends ConsumerState<SendScreen> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Available: '
-                // ignore: lines_longer_than_80_chars
-                '${_formattingService.formatBalance(_maxBalance)}',
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.checksum,
-                ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Available: '
+              // ignore: lines_longer_than_80_chars
+              '${_formattingService.formatBalance(_maxBalance)}',
+              style: context.themeText.smallParagraph?.copyWith(
+                color: context.themeColors.checksum,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: ShapeDecoration(
-                  color: Colors.white.useOpacity(0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                child: GestureDetector(
-                  onTap: _setMaxAmount,
-                  child: Text('Max', style: context.themeText.detail),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GestureDetector(
-            onTap: _showTimePickerModal,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: ShapeDecoration(
-                color: const Color(0xFF313131),
+                color: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Reversible for: ${_formatReversibleTime()}',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Icon(
-                    Icons.edit,
-                    color: Colors.white70,
-                    size: context.isTablet ? 22 : 14,
-                  ),
-                ],
+              child: GestureDetector(
+                onTap: _setMaxAmount,
+                child: Text('Max', style: context.themeText.detail),
               ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Network fee',
-                    style: context.themeText.detail?.copyWith(
-                      color: context.themeColors.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
+        const SizedBox(height: 14),
+        SegmentedControl<SendMode>(
+          widthMode: SegmentWidthMode.custom,
+          selectedValue: _sendMode,
+          onSelectionChanged: (value) {
+            setState(() {
+              _sendMode = value;
+            });
+          },
+          items: [
+            SegmentedControlItem(
+              value: SendMode.reversible,
+              child: InkWell(
+                onTap: _sendMode == SendMode.reversible
+                    ? () {
+                        showTimePickerSheet(
+                          context,
+                          reversibleTimeDays: _reversibleTimeDays,
+                          reversibleTimeHours: _reversibleTimeHours,
+                          reversibleTimeMinutes: _reversibleTimeMinutes,
+                          setReversibleTimeSeconds: _setReversibleTimeSeconds,
+                          saveReversibleTimeSetting: _saveReversibleTimeSetting,
+                        );
+                      }
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 8.0,
                   ),
-                  Row(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        _formattingService.formatBalance(
-                          _networkFee,
-                          addSymbol: true,
-                        ),
-                        style: context.themeText.detail?.copyWith(
-                          color: context.themeColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        'Send in: ${_formatReversibleTime()}',
+                        style: context.themeText.smallParagraph,
                       ),
-                      if (_isFetchingFee)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: context.themeColors.circularLoader,
-                            ),
-                          ),
+                      if (_sendMode.isReversible)
+                        Icon(
+                          Icons.edit,
+                          color: const Color(0x75000000),
+                          size: context.isTablet ? 22 : 14,
                         ),
                     ],
                   ),
-                ],
-              ),
-              _buildIconButton('assets/settings_icon.svg'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GestureDetector(
-            onTap:
-                (_hasAddressError ||
-                    _hasAmountError ||
-                    _recipientController.text.isEmpty ||
-                    _amount <= BigInt.zero ||
-                    _isFetchingFee)
-                ? null
-                : _showSendConfirmation,
-            child: Opacity(
-              opacity:
-                  (_hasAddressError ||
-                      _hasAmountError ||
-                      _recipientController.text.isEmpty ||
-                      _amount <= BigInt.zero ||
-                      _isFetchingFee)
-                  ? 0.3
-                  : 1.0,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: ShapeDecoration(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                child: Text(
-                  (_hasAddressError || _recipientController.text.isEmpty)
-                      ? 'Enter Address'
-                      : (_amount <= BigInt.zero)
-                      ? 'Enter Amount'
-                      : _hasAmountError
-                      ? 'Insufficient Balance'
-                      // ignore: lines_longer_than_80_chars
-                      : 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}',
-                  textAlign: TextAlign.center,
-                  style: context.themeText.smallTitle?.copyWith(
-                    color: context.themeColors.textSecondary,
-                  ),
                 ),
               ),
             ),
-          ),
+            SegmentedControlItem(
+              customWidth: 76.0,
+              value: SendMode.immediate,
+              child: Text('Now', style: context.themeText.smallParagraph),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 37),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Network fee: ',
+                  style: context.themeText.detail?.copyWith(
+                    color: context.themeColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  _formattingService.formatBalance(
+                    _networkFee,
+                    addSymbol: true,
+                  ),
+                  style: context.themeText.detail?.copyWith(
+                    color: context.themeColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (_isFetchingFee)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.themeColors.circularLoader,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            _buildIconButton('assets/settings_icon.svg'),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Button(
+          variant: ButtonVariant.neutral,
+          label: getButtonText,
+          onPressed: !isButtonDisabled ? _showSendConfirmation : null,
+          isDisabled: isButtonDisabled,
+        ),
+        SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
   }

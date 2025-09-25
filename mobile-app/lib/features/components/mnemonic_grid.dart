@@ -29,7 +29,7 @@ class MnemonicGrid extends StatelessWidget {
 
           // You might need to adjust this value slightly based on padding/margins
           // and font rendering.
-          final double desiredCellHeight = context.isTablet ? 80 : 31.0;
+          final double desiredCellHeight = context.isTablet ? 56 : 31.0;
 
           // Calculate the aspect ratio
           final double childAspectRatio = itemWidth / desiredCellHeight;

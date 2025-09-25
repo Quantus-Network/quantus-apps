@@ -139,7 +139,7 @@ class _TransactionDetailsActionSheetState
             height:
                 MediaQuery.of(context).size.height *
                 AppConstants.sendingSheetHeightFraction,
-            padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
             clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
               color: Colors.black,
@@ -190,12 +190,15 @@ class _TransactionDetailsActionSheetState
                       width: context.themeSize.txDetailsIconWidth,
                     )
                   else
-                    SvgPicture.asset(
-                      widget.role == TransactionRole.sender
-                          ? 'assets/transaction/send_icon.svg'
-                          : 'assets/transaction/receive_icon.svg',
-                      height: context.themeSize.txDetailsIconHeight,
-                    ),
+                    widget.role == TransactionRole.sender
+                        ? Image.asset(
+                            'assets/transaction/send_icon.png',
+                            height: context.themeSize.txDetailsIconHeight,
+                          )
+                        : SvgPicture.asset(
+                            'assets/transaction/receive_icon.svg',
+                            height: context.themeSize.txDetailsIconHeight,
+                          ),
                   const SizedBox(height: 17),
                   Text(
                     title,

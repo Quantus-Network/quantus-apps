@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
@@ -25,11 +27,49 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String? _accountId;
+  String? _checksum;
+
+  final HumanReadableChecksumService _checksumService =
+      HumanReadableChecksumService();
   final SettingsService _settingsService = SettingsService();
+
+  Future<void> _loadAccountData() async {
+    try {
+      final account = _settingsService.getActiveAccount()!;
+      final checksum = await _checksumService.getHumanReadableName(
+        account.accountId,
+      );
+
+      setState(() {
+        _accountId = account.accountId;
+        _checksum = checksum;
+      });
+    } catch (e) {
+      debugPrint('Error loading account data: $e');
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
 
   void _resetAndClearData() {
     _settingsService.clearAll();
     _logout();
+  }
+
+  void _share() {
+    if (_accountId != null && _checksum != null) {
+      final textToShare =
+          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\nhttps://www.quantus.com/account/$_accountId';
+      SharePlus.instance.share(
+        ShareParams(
+          text: textToShare,
+          subject: 'Shared Address',
+          title: 'Shared Address',
+        ),
+      );
+    }
   }
 
   Future<void> _logout() async {
@@ -69,67 +109,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadAccountData();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: context.themeColors.background,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/light_leak_effect_background.jpg'),
-            fit: BoxFit.cover,
-            opacity: 0.54,
-          ),
+    return ScaffoldBase(
+      screenTitle: ScreenTitle(title: 'Wallet Settings'),
+      decorations: [
+        Positioned(
+          bottom: -20,
+          left: context.getHorizontalCenterPosition(251.62),
+          child: const Sphere(variant: 8, size: 251.62),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  children: [
-                    const SizedBox(height: 22),
-                    _buildSettingsList(context),
-                    const SizedBox(height: 35),
-                    _buildInformationList(context),
-                    const SizedBox(height: 35),
-                    _buildResetButton(context),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ],
+      ],
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: [
+                _buildSettingsList(context),
+                const SizedBox(height: 35),
+                _buildInformationList(context),
+                const SizedBox(height: 42),
+                _buildResetButton(context),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4.0, bottom: 22.0),
-      child: Text(
-        title,
-        style: context.themeText.largeTag?.copyWith(
-          color: context.themeColors.light,
-        ),
-      ),
-    );
+    return Text(title, style: context.themeText.largeTag);
   }
 
   Widget _buildSettingsList(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Wallet Settings'),
         _buildSettingsItem(context, 'Manage Accounts', () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AccountsScreen()),
           );
         }),
-        // const SizedBox(height: 22),
-        // _buildSettingsItem(context, 'Notifications', () {}),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Authentication', () {
           Navigator.push(
@@ -157,29 +184,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Information'),
-        _buildSettingsItem(context, 'Help & Support', () {
-          final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
-          launchUrl(url);
-        }, showArrow: false),
+        const SizedBox(height: 14),
+        _buildSettingsItem(
+          context,
+          'Help & Support',
+          () {
+            final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
+            launchUrl(url);
+          },
+          trailing: const Icon(Icons.arrow_outward_sharp),
+          showArrow: false,
+        ),
         const SizedBox(height: 22),
         _buildSettingsItem(
           context,
           'Invite & Share',
-          () {
-            SharePlus.instance.share(
-              ShareParams(uri: Uri.parse(AppConstants.shareUrl)),
-            );
-          },
+          _share,
           trailing: Icon(
-            Icons.share,
+            Icons.share_outlined,
             size: context.themeSize.settingMenuShareIconSize,
           ),
         ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Term of Service', () {
-          final Uri url = Uri.parse(AppConstants.termsOfServiceUrl);
-          launchUrl(url);
-        }, showArrow: false),
+        _buildSettingsItem(
+          context,
+          'Term of Service',
+          () {
+            final Uri url = Uri.parse(AppConstants.termsOfServiceUrl);
+            launchUrl(url);
+          },
+          trailing: const Icon(Icons.arrow_outward_sharp),
+          showArrow: false,
+        ),
       ],
     );
   }
@@ -200,7 +236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           horizontal: 18,
         ),
         decoration: ShapeDecoration(
-          color: const Color(0xFF313131),
+          color: context.themeColors.buttonGlass,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
         child: Row(
@@ -250,7 +286,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: context.themeSize.settingMenuIconSize,
-              color: context.themeColors.error,
             ),
           ],
         ),

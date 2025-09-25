@@ -80,6 +80,9 @@ abstract class CargoKitBuildTask extends DefaultTask {
             environment "CARGOKIT_MIN_SDK_VERSION", minSdkVersion
             environment "CARGOKIT_TARGET_PLATFORMS", targetPlatforms.join(",")
             environment "CARGOKIT_JAVA_HOME", System.properties['java.home']
+            if (System.getenv('SCCACHE_BUCKET') || System.getenv('SCCACHE_DIR')) {
+                environment "RUSTC_WRAPPER", System.getenv('SCCACHE_PATH') ?: 'sccache'
+            }
         }
     }
 }
@@ -133,12 +136,21 @@ class CargoKitPlugin implements Plugin<Project> {
             jniLibs.srcDir(new File(cargoOutputDir))
 
             // Modern Flutter plugin doesn't have getTargetPlatforms, use standard Android platforms
-            def platforms = ["android-arm", "android-arm64"]
+            def onlyArm64 = project.hasProperty('ONLY_ARM64') && project.property('ONLY_ARM64').toString().toBoolean()
+            def allPlatforms = project.hasProperty('ALL_PLATFORMS') && project.property('ALL_PLATFORMS').toString().toBoolean()
 
-            // Same thing addFlutterDependencies does in flutter.gradle
-            if (buildType == "debug") {
-                platforms.add("android-x86")
-                platforms.add("android-x64")
+            def platforms = []
+            if (onlyArm64) {
+                platforms = ["android-arm64"]
+            } else if (allPlatforms) {
+                platforms = ["android-arm", "android-arm64", "android-x86", "android-x64"]
+            } else {
+                // Default: ARM platforms for phones + x86 for debug emulators
+                platforms = ["android-arm", "android-arm64"]
+                if (buildType == "debug") {
+                    platforms.add("android-x86")
+                    platforms.add("android-x64")
+                }
             }
 
             // The task name depends on plugin properties, which are not available

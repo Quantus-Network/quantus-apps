@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -48,34 +50,31 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: context.themeColors.background,
-      appBar: const WalletAppBar(title: 'Your Accounts'),
-      body: Stack(
+    return ScaffoldBase(
+      decorations: [
+        Positioned(
+          right: -40,
+          top: MediaQuery.of(context).size.height * 0.3,
+          child: const Sphere(variant: 2, size: 194),
+        ),
+        const Positioned(
+          left: -40,
+          bottom: 0,
+          child: Sphere(variant: 7, size: 240.681),
+        ),
+      ],
+      appBar: 'Your Accounts',
+      child: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/light_leak_effect_background.jpg'),
-                fit: BoxFit.cover,
-                opacity: 0.54,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                // Row 2: Accounts List (takes remaining space, scrollable)
-                Expanded(child: _buildAccountsList()),
+          Expanded(child: _buildAccountsList()),
 
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildCreateNewAccountButton(),
-                ),
-              ],
-            ),
+          Button(
+            variant: ButtonVariant.glass,
+            label: 'Create New Account',
+            onPressed: _isCreatingAccount ? null : _createNewAccount,
           ),
+
+           SizedBox(height: context.themeSize.bottomButtonSpacing)
         ],
       ),
     );
@@ -123,10 +122,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           ),
           data: (activeAccount) {
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
               itemCount: accounts.length,
               separatorBuilder: (context, index) => const SizedBox(height: 25),
               itemBuilder: (context, index) {
@@ -142,36 +138,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildCreateNewAccountButton() {
-    return InkWell(
-      onTap: _isCreatingAccount ? null : _createNewAccount,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: context.isTablet ? 18 : 16,
-          horizontal: 16,
-        ),
-        decoration: ShapeDecoration(
-          color: Colors.black.useOpacity(0.50),
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(width: 1, color: Color(0xFFE6E6E6)),
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (_isCreatingAccount)
-              const CircularProgressIndicator(color: Colors.white)
-            else
-              Text('Create New Account', style: context.themeText.smallTitle),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildAccountListItem(Account account, bool isActive, int index) {
     return InkWell(
       onTap: () async {
@@ -180,190 +146,217 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             .setActiveAccount(account);
         if (mounted) Navigator.pop(context);
       },
-      child: Row(
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
         children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: context.themeSize.accountListItemHeight,
-              decoration: ShapeDecoration(
-                color: isActive
-                    ? context.themeColors.surfaceActive
-                    : context.themeColors.surface,
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    width: 1,
-                    color: context.themeColors.borderLight,
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.isTablet ? 20 : 8,
+                    vertical: 8,
                   ),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 8),
-                  AccountGradientImage(
-                    accountId: account.accountId,
-                    width: context.themeSize.accountListItemLogoWidth,
-                    height: context.themeSize.accountListItemLogoWidth,
+                  decoration: ShapeDecoration(
+                    color: isActive
+                        ? context.themeColors.surfaceActive
+                        : context.themeColors.surface,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        width: 1,
+                        color: context.themeColors.borderLight,
+                      ),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Consumer(
-                      builder: (context, ref, child) {
-                        final balanceAsync = ref.watch(
-                          balanceProviderFamily(account.accountId),
-                        );
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final balanceAsync = ref.watch(
+                              balanceProviderFamily(account.accountId),
+                            );
 
-                        return FutureBuilder<String>(
-                          future: _checksumService.getHumanReadableName(
-                            account.accountId,
-                          ),
-                          builder: (context, checksumSnapshot) {
-                            final humanChecksum = checksumSnapshot.data ?? '';
+                            return FutureBuilder<String>(
+                              future: _checksumService.getHumanReadableName(
+                                account.accountId,
+                              ),
+                              builder: (context, checksumSnapshot) {
+                                final humanChecksum =
+                                    checksumSnapshot.data ?? '';
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  account.name,
-                                  style: context.themeText.smallParagraph
-                                      ?.copyWith(
-                                        color: isActive
-                                            ? Colors.black
-                                            : Colors.white,
-                                      ),
-                                ),
-                                Text(
-                                  humanChecksum,
-                                  style: context.themeText.detail?.copyWith(
-                                    color: isActive
-                                        ? context.themeColors.checksumDarker
-                                        : context.themeColors.checksum,
-                                  ),
-                                ),
-                                Row(
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      context.isTablet
-                                          ? account.accountId
-                                          // ignore: lines_longer_than_80_chars
-                                          : AddressFormattingService.formatAddress(
-                                              account.accountId,
-                                            ),
-                                      style: context.themeText.tiny?.copyWith(
+                                      account.name,
+                                      style: context.themeText.paragraph
+                                          ?.copyWith(
+                                            color: isActive
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                    ),
+                                    Text(
+                                      humanChecksum,
+                                      style: context.themeText.detail?.copyWith(
                                         color: isActive
-                                            ? context.themeColors.darkGray
-                                            : context.themeColors.textMuted,
+                                            ? context.themeColors.checksum
+                                            : context.themeColors.checksumDarker,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                balanceAsync.when(
-                                  loading: () => Text(
-                                    'loading balance...',
-                                    style: context.themeText.detail?.copyWith(
-                                      color: isActive
-                                          ? context.themeColors.darkGray
-                                          : context.themeColors.light,
-                                    ),
-                                  ),
-                                  error: (error, _) => Text(
-                                    'error loading',
-                                    style: context.themeText.detail?.copyWith(
-                                      color: isActive
-                                          ? context.themeColors.darkGray
-                                          : context.themeColors.light,
-                                    ),
-                                  ),
-                                  data: (balance) => Text.rich(
-                                    TextSpan(
+                                    Row(
                                       children: [
-                                        TextSpan(
-                                          text: _formattingService
-                                              .formatBalance(balance),
+                                        Text(
+                                          context.isTablet
+                                              ? account.accountId
+                                              // ignore: lines_longer_than_80_chars
+                                              : AddressFormattingService.formatAddress(
+                                                  account.accountId,
+                                                ),
                                           style: context.themeText.detail
                                               ?.copyWith(
                                                 color: isActive
                                                     ? context
                                                           .themeColors
                                                           .darkGray
-                                                    : context.themeColors.light,
-                                              ),
-                                        ),
-                                        TextSpan(
-                                          text: ' ${AppConstants.tokenSymbol}',
-                                          style: context.themeText.tiny
-                                              ?.copyWith(
-                                                color: isActive
-                                                    ? context
+                                                    : context
                                                           .themeColors
-                                                          .darkGray
-                                                    : context.themeColors.light,
+                                                          .textMuted,
                                               ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ),
-                              ],
+                                    const SizedBox(height: 2),
+                                    balanceAsync.when(
+                                      loading: () => Text(
+                                        'loading balance...',
+                                        style: context.themeText.detail
+                                            ?.copyWith(
+                                              color: isActive
+                                                  ? context.themeColors.darkGray
+                                                  : context.themeColors.light,
+                                            ),
+                                      ),
+                                      error: (error, _) => Text(
+                                        'error loading',
+                                        style: context.themeText.detail
+                                            ?.copyWith(
+                                              color: isActive
+                                                  ? context.themeColors.darkGray
+                                                  : context
+                                                        .themeColors
+                                                        .textPrimary,
+                                            ),
+                                      ),
+                                      data: (balance) => Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: _formattingService
+                                                  .formatBalance(balance),
+                                              style: context.themeText.smallParagraph
+                                                  ?.copyWith(
+                                                    color: isActive
+                                                        ? context
+                                                              .themeColors
+                                                              .darkGray
+                                                        : context
+                                                              .themeColors
+                                                              .textPrimary,
+                                                  ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  ' ${AppConstants.tokenSymbol}',
+                                              style: context.themeText.detail
+                                                  ?.copyWith(
+                                                    color: isActive
+                                                        ? context
+                                                              .themeColors
+                                                              .darkGray
+                                                        : context
+                                                              .themeColors
+                                                              .textPrimary,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 0),
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: SvgPicture.asset(
-              'assets/settings_icon_off.svg',
-              width: context.isTablet ? 28 : 21,
-              colorFilter: const ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              ),
-            ),
-            onPressed: () async {
-              // Get current data from providers
-              final balanceAsync = ref.read(
-                balanceProviderFamily(account.accountId),
-              );
-              final checksumName = await _checksumService.getHumanReadableName(
-                account.accountId,
-              );
-
-              balanceAsync.when(
-                loading: () {
-                  // Show loading or handle appropriately
-                },
-                error: (error, _) {
-                  // Handle error
-                },
-                data: (balance) async {
-                  if (!mounted) return;
-                  await Navigator.push<bool?>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AccountSettingsScreen(
-                        account: account,
-                        balance: _formattingService.formatBalance(
-                          balance,
-                          addSymbol: true,
                         ),
-                        checksumName: checksumName,
                       ),
-                    ),
+                    ],
+                  ),
+                ),
+              ),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: SvgPicture.asset(
+                  'assets/settings_icon_off.svg',
+                  width: context.isTablet ? 28 : 21,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                onPressed: () async {
+                  // Get current data from providers
+                  final balanceAsync = ref.read(
+                    balanceProviderFamily(account.accountId),
                   );
-                  // Providers will automatically refresh if needed
+                  final checksumName = await _checksumService
+                      .getHumanReadableName(account.accountId);
+
+                  balanceAsync.when(
+                    loading: () {
+                      // Show loading or handle appropriately
+                    },
+                    error: (error, _) {
+                      // Handle error
+                    },
+                    data: (balance) async {
+                      if (!mounted) return;
+                      await Navigator.push<bool?>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AccountSettingsScreen(
+                            account: account,
+                            balance: _formattingService.formatBalance(
+                              balance,
+                              addSymbol: true,
+                            ),
+                            checksumName: checksumName,
+                          ),
+                        ),
+                      );
+                      // Providers will automatically refresh if needed
+                    },
+                  );
                 },
-              );
-            },
+              ),
+            ],
+          ),
+
+          Positioned(
+            // calculating the middle point
+            top:
+                (context.themeSize.accountListItemHeight / 2) -
+                (context.themeSize.accountListItemLogoWidth / 2),
+            left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
+            child: AccountGradientImage(
+              accountId: account.accountId,
+              width: context.themeSize.accountListItemLogoWidth,
+              height: context.themeSize.accountListItemLogoWidth,
+            ),
           ),
         ],
       ),

@@ -125,3 +125,5 @@ app.*.symbols
 .vscode/launch.json
 /.vscode
 /mobile-app/android/.idea
+/mobile-app/.idea
+/mobile-app/android/.kotlin

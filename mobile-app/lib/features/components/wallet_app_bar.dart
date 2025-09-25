@@ -17,23 +17,24 @@ class WalletAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool canBePop = Navigator.canPop(context) || onBack != null;
+    final onHandleBack = onBack ?? () => Navigator.of(context).pop();
+
     return AppBar(
       iconTheme: IconThemeData(color: context.themeColors.light),
       centerTitle: false,
-      titleSpacing: 0,
-      leading: (Navigator.canPop(context) || onBack != null)
+      titleSpacing: -16,
+      leading: canBePop
           ? IconButton(
               icon: Icon(
                 Icons.arrow_back_ios,
                 size: context.themeSize.appbarIconSize,
               ),
-              onPressed: onBack ?? () => Navigator.of(context).pop(),
+              onPressed: onHandleBack,
             )
           : null,
       title: GestureDetector(
-        onTap: Navigator.canPop(context) || onBack != null
-            ? onBack ?? () => Navigator.of(context).pop()
-            : null,
+        onTap: canBePop ? onHandleBack : null,
         child: Text(title, style: context.themeText.detail),
       ),
       actions: actions,

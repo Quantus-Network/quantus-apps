@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hex/hex.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -100,23 +101,7 @@ class _TransactionActionSheetState
                 AppConstants.sendingSheetHeightFraction,
             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
             clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              color: Colors.black,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0A0A0D12),
-                  blurRadius: 8,
-                  offset: Offset(0, 8),
-                  spreadRadius: -4,
-                ),
-                BoxShadow(
-                  color: Color(0x190A0D12),
-                  blurRadius: 24,
-                  offset: Offset(0, 20),
-                  spreadRadius: -4,
-                ),
-              ],
-            ),
+            decoration: const BoxDecoration(color: Colors.black),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -132,7 +117,6 @@ class _TransactionActionSheetState
                     ),
                   ],
                 ),
-                // const SizedBox(height: 20.0),
                 _buildContent(),
               ],
             ),
@@ -162,37 +146,30 @@ class _TransactionActionSheetState
       children: [
         _buildHeader(
           'assets/hourglass.svg',
-          context.isTablet
-              ? 'Reversible Transaction'
-              : 'Reversible\nTransaction',
-          'Cancel or keep your send',
+          'Reversible Transaction',
+          'Reverse or keep your transaction',
           true,
         ),
         const SizedBox(height: 20),
-        const Divider(color: Colors.white, thickness: 1),
-
-        const SizedBox(height: 12),
-        ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
-        const SizedBox(height: 12),
-
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.0),
-          child: Divider(color: Colors.white, thickness: 1),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: ShapeDecoration(
+            color: context.themeColors.buttonGlass,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          child: ReversibleTimer(
+            remainingTime: _remainingTime ?? Duration.zero,
+          ),
         ),
         const SizedBox(height: 12),
-
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: _buildTransactionDetails(),
         ),
-
-        const SizedBox(height: 22),
-        const Divider(color: Colors.white, thickness: 1),
-        SizedBox(height: verticalPadding),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0),
-          child: buttons,
-        ),
+        const SizedBox(height: 29),
+        buttons,
       ],
     );
   }
@@ -203,34 +180,15 @@ class _TransactionActionSheetState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(
-          'assets/stop_icon.svg',
-          context.isTablet ? 'Transaction Cancelled' : 'Transaction\nCancelled',
+          'assets/transaction/cancel_icon.svg',
+          'Transaction Reversed',
           '',
           false,
         ),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          child: _buildTransactionDetails(),
-        ),
-        const SizedBox(height: 22),
-        const Divider(color: Colors.white, thickness: 1),
-        const SizedBox(height: 40),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0),
-          child: Center(
-            child: _buildButton(
-              'Done',
-              const Color(0xFF5FE49E),
-              Colors.black,
-              () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        ),
+        const SizedBox(height: 20),
+        _buildTransactionDetails(),
       ],
     );
   }
@@ -252,22 +210,22 @@ class _TransactionActionSheetState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SvgPicture.asset(
-          iconName,
-          width: context.isTablet ? 54 : 34,
-          height: context.isTablet ? 54 : 34,
-        ),
-        const SizedBox(width: 16),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SvgPicture.asset(
+                iconName,
+                width: context.isTablet ? 54 : 34,
+                height: context.isTablet ? 54 : 34,
+              ),
+              const SizedBox(height: 16),
               Text(
                 title,
                 style: context.themeText.smallTitle?.copyWith(
                   color: titleIsGreen
                       ? context.themeColors.checksum
-                      : const Color(0xFFD9D9D9),
+                      : context.themeColors.textPrimary,
                 ),
               ),
               if (subtitle.isNotEmpty)
@@ -361,108 +319,75 @@ class _TransactionActionSheetState
   }
 
   Widget _buildInitialButtons() {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _buildButton(
-          'Keep Transaction',
-          const Color(0xFF5FE49E),
-          Colors.black,
-          () {
-            Navigator.of(context).pop();
-          },
+        Expanded(
+          child: Button(
+            variant: ButtonVariant.neutral,
+            label: 'Keep',
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
-        const SizedBox(height: 17),
-        _buildButton(
-          'Reverse Transaction',
-          const Color(0xFFFF2D53),
-          Colors.black,
-          () {
-            setState(() {
-              _sheetState = _SheetState.confirmCancel;
-            });
-          },
+        const SizedBox(width: 22),
+        Expanded(
+          child: Button(
+            variant: ButtonVariant.danger,
+            label: 'Reverse',
+            onPressed: () {
+              setState(() {
+                _sheetState = _SheetState.confirmCancel;
+              });
+            },
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _buildButton(
-    String text,
-    Color bgColor,
-    Color textColor,
-    VoidCallback onPressed,
-  ) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: context.isTablet ? 520 : 260,
-        padding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: context.isTablet ? 16 : 12,
-        ),
-        decoration: ShapeDecoration(
-          color: bgColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        ),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: context.themeText.smallTitle?.copyWith(color: textColor),
-        ),
-      ),
     );
   }
 
   Widget _buildConfirmCancelButtons() {
     Widget buttons = Column(
       children: [
-        Text(
-          'Are you sure you want to cancel this tx?',
-          textAlign: TextAlign.center,
-          style: context.themeText.paragraph?.copyWith(
-            color: const Color(0xFFD9D9D9),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (_isCancelling)
-          const CircularProgressIndicator()
-        else ...[
-          _buildButton(
-            'Yes Cancel',
-            context.themeColors.error,
-            context.themeColors.textPrimary,
-            _cancelTransaction,
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => setState(() => _sheetState = _SheetState.initial),
-            child: Container(
-              width: context.isTablet ? 520 : 260,
-              padding: EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: context.isTablet ? 16 : 12,
-              ),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    width: 1,
-                    color: Colors.white.useOpacity(0.50),
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              child: Text(
-                'Keep Transaction',
-                textAlign: TextAlign.center,
-                style: context.themeText.smallTitle?.copyWith(
-                  color: const Color(0xFFD9D9D9),
-                ),
-              ),
+        SizedBox(
+          width: 305,
+          child: Text(
+            'Are you sure you want to reverse this tx?',
+            textAlign: TextAlign.center,
+            style: context.themeText.paragraph?.copyWith(
+              color: context.themeColors.textMuted,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ],
+        ),
+        const SizedBox(height: 29),
+        if (_isCancelling)
+          const CircularProgressIndicator()
+        else
+          Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: Button(
+                  variant: ButtonVariant.neutral,
+                  label: 'Keep',
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+              const SizedBox(width: 22),
+              Expanded(
+                flex: 5,
+                child: Button(
+                  variant: ButtonVariant.danger,
+                  label: 'Reverse',
+                  onPressed: _cancelTransaction,
+                ),
+              ),
+            ],
+          ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 10),
           Text(
