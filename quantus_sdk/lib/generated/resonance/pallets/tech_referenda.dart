@@ -416,7 +416,7 @@ class Constants {
 
   /// The number of blocks after submission that a referendum must begin being decided by.
   /// Once this passes, then anyone may cancel the referendum.
-  final int undecidingTimeout = 3888000;
+  final int undecidingTimeout = 324000;
 
   /// Quantization level for the referendum wakeup scheduler. A higher number will result in
   /// fewer storage reads/writes needed for smaller voters, but also result in delays to the
@@ -434,7 +434,7 @@ class Constants {
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
         preparePeriod: 100,
-        decisionPeriod: 86400,
+        decisionPeriod: 7200,
         confirmPeriod: 100,
         minEnactmentPeriod: 100,
         minApproval: const _i14.LinearDecreasing(

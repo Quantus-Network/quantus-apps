@@ -323,5 +323,5 @@ class Constants {
   ///
   /// It should be no shorter than enactment period to ensure that in the case of an approval,
   /// those successful voters are locked into the consequences that their votes entail.
-  final int voteLockingPeriod = 604800;
+  final int voteLockingPeriod = 50400;
 }

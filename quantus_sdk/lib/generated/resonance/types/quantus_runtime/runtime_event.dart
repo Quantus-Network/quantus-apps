@@ -4,24 +4,25 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 import '../frame_system/pallet/event.dart' as _i3;
+import '../pallet_assets/pallet/event.dart' as _i21;
+import '../pallet_assets_holder/pallet/event.dart' as _i22;
 import '../pallet_balances/pallet/event.dart' as _i4;
-import '../pallet_conviction_voting/pallet/event.dart' as _i16;
-import '../pallet_merkle_airdrop/pallet/event.dart' as _i19;
-import '../pallet_mining_rewards/pallet/event.dart' as _i9;
-import '../pallet_preimage/pallet/event.dart' as _i11;
+import '../pallet_conviction_voting/pallet/event.dart' as _i15;
+import '../pallet_merkle_airdrop/pallet/event.dart' as _i18;
+import '../pallet_mining_rewards/pallet/event.dart' as _i8;
+import '../pallet_preimage/pallet/event.dart' as _i10;
 import '../pallet_qpow/pallet/event.dart' as _i7;
-import '../pallet_ranked_collective/pallet/event.dart' as _i17;
-import '../pallet_recovery/pallet/event.dart' as _i21;
-import '../pallet_referenda/pallet/event_1.dart' as _i14;
-import '../pallet_referenda/pallet/event_2.dart' as _i18;
-import '../pallet_reversible_transfers/pallet/event.dart' as _i15;
-import '../pallet_scheduler/pallet/event.dart' as _i12;
+import '../pallet_ranked_collective/pallet/event.dart' as _i16;
+import '../pallet_recovery/pallet/event.dart' as _i20;
+import '../pallet_referenda/pallet/event_1.dart' as _i13;
+import '../pallet_referenda/pallet/event_2.dart' as _i17;
+import '../pallet_reversible_transfers/pallet/event.dart' as _i14;
+import '../pallet_scheduler/pallet/event.dart' as _i11;
 import '../pallet_sudo/pallet/event.dart' as _i6;
 import '../pallet_transaction_payment/pallet/event.dart' as _i5;
-import '../pallet_treasury/pallet/event.dart' as _i20;
-import '../pallet_utility/pallet/event.dart' as _i13;
-import '../pallet_vesting/pallet/event.dart' as _i10;
-import '../pallet_wormhole/pallet/event.dart' as _i8;
+import '../pallet_treasury/pallet/event.dart' as _i19;
+import '../pallet_utility/pallet/event.dart' as _i12;
+import '../pallet_vesting/pallet/event.dart' as _i9;
 
 abstract class RuntimeEvent {
   const RuntimeEvent();
@@ -70,60 +71,64 @@ class $RuntimeEvent {
     return QPoW(value0);
   }
 
-  Wormhole wormhole(_i8.Event value0) {
-    return Wormhole(value0);
-  }
-
-  MiningRewards miningRewards(_i9.Event value0) {
+  MiningRewards miningRewards(_i8.Event value0) {
     return MiningRewards(value0);
   }
 
-  Vesting vesting(_i10.Event value0) {
+  Vesting vesting(_i9.Event value0) {
     return Vesting(value0);
   }
 
-  Preimage preimage(_i11.Event value0) {
+  Preimage preimage(_i10.Event value0) {
     return Preimage(value0);
   }
 
-  Scheduler scheduler(_i12.Event value0) {
+  Scheduler scheduler(_i11.Event value0) {
     return Scheduler(value0);
   }
 
-  Utility utility(_i13.Event value0) {
+  Utility utility(_i12.Event value0) {
     return Utility(value0);
   }
 
-  Referenda referenda(_i14.Event value0) {
+  Referenda referenda(_i13.Event value0) {
     return Referenda(value0);
   }
 
-  ReversibleTransfers reversibleTransfers(_i15.Event value0) {
+  ReversibleTransfers reversibleTransfers(_i14.Event value0) {
     return ReversibleTransfers(value0);
   }
 
-  ConvictionVoting convictionVoting(_i16.Event value0) {
+  ConvictionVoting convictionVoting(_i15.Event value0) {
     return ConvictionVoting(value0);
   }
 
-  TechCollective techCollective(_i17.Event value0) {
+  TechCollective techCollective(_i16.Event value0) {
     return TechCollective(value0);
   }
 
-  TechReferenda techReferenda(_i18.Event value0) {
+  TechReferenda techReferenda(_i17.Event value0) {
     return TechReferenda(value0);
   }
 
-  MerkleAirdrop merkleAirdrop(_i19.Event value0) {
+  MerkleAirdrop merkleAirdrop(_i18.Event value0) {
     return MerkleAirdrop(value0);
   }
 
-  TreasuryPallet treasuryPallet(_i20.Event value0) {
+  TreasuryPallet treasuryPallet(_i19.Event value0) {
     return TreasuryPallet(value0);
   }
 
-  Recovery recovery(_i21.Event value0) {
+  Recovery recovery(_i20.Event value0) {
     return Recovery(value0);
+  }
+
+  Assets assets(_i21.Event value0) {
+    return Assets(value0);
+  }
+
+  AssetsHolder assetsHolder(_i22.Event value0) {
+    return AssetsHolder(value0);
   }
 }
 
@@ -144,8 +149,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return Sudo._decode(input);
       case 5:
         return QPoW._decode(input);
-      case 6:
-        return Wormhole._decode(input);
       case 7:
         return MiningRewards._decode(input);
       case 8:
@@ -172,6 +175,10 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return TreasuryPallet._decode(input);
       case 20:
         return Recovery._decode(input);
+      case 21:
+        return Assets._decode(input);
+      case 22:
+        return AssetsHolder._decode(input);
       default:
         throw Exception('RuntimeEvent: Invalid variant index: "$index"');
     }
@@ -197,9 +204,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         break;
       case QPoW:
         (value as QPoW).encodeTo(output);
-        break;
-      case Wormhole:
-        (value as Wormhole).encodeTo(output);
         break;
       case MiningRewards:
         (value as MiningRewards).encodeTo(output);
@@ -240,6 +244,12 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case Recovery:
         (value as Recovery).encodeTo(output);
         break;
+      case Assets:
+        (value as Assets).encodeTo(output);
+        break;
+      case AssetsHolder:
+        (value as AssetsHolder).encodeTo(output);
+        break;
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -259,8 +269,6 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as Sudo)._sizeHint();
       case QPoW:
         return (value as QPoW)._sizeHint();
-      case Wormhole:
-        return (value as Wormhole)._sizeHint();
       case MiningRewards:
         return (value as MiningRewards)._sizeHint();
       case Vesting:
@@ -287,6 +295,10 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         return (value as TreasuryPallet)._sizeHint();
       case Recovery:
         return (value as Recovery)._sizeHint();
+      case Assets:
+        return (value as Assets)._sizeHint();
+      case AssetsHolder:
+        return (value as AssetsHolder)._sizeHint();
       default:
         throw Exception(
             'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
@@ -507,19 +519,19 @@ class QPoW extends RuntimeEvent {
   int get hashCode => value0.hashCode;
 }
 
-class Wormhole extends RuntimeEvent {
-  const Wormhole(this.value0);
+class MiningRewards extends RuntimeEvent {
+  const MiningRewards(this.value0);
 
-  factory Wormhole._decode(_i1.Input input) {
-    return Wormhole(_i8.Event.codec.decode(input));
+  factory MiningRewards._decode(_i1.Input input) {
+    return MiningRewards(_i8.Event.codec.decode(input));
   }
 
-  /// pallet_wormhole::Event<Runtime>
+  /// pallet_mining_rewards::Event<Runtime>
   final _i8.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, BigInt>>> toJson() =>
-      {'Wormhole': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MiningRewards': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -529,53 +541,10 @@ class Wormhole extends RuntimeEvent {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i8.Event.codec.encodeTo(
-      value0,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Wormhole && other.value0 == value0;
-
-  @override
-  int get hashCode => value0.hashCode;
-}
-
-class MiningRewards extends RuntimeEvent {
-  const MiningRewards(this.value0);
-
-  factory MiningRewards._decode(_i1.Input input) {
-    return MiningRewards(_i9.Event.codec.decode(input));
-  }
-
-  /// pallet_mining_rewards::Event<Runtime>
-  final _i9.Event value0;
-
-  @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'MiningRewards': value0.toJson()};
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i9.Event.codec.sizeHint(value0);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
       7,
       output,
     );
-    _i9.Event.codec.encodeTo(
+    _i8.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -597,11 +566,11 @@ class Vesting extends RuntimeEvent {
   const Vesting(this.value0);
 
   factory Vesting._decode(_i1.Input input) {
-    return Vesting(_i10.Event.codec.decode(input));
+    return Vesting(_i9.Event.codec.decode(input));
   }
 
   /// pallet_vesting::Event<Runtime>
-  final _i10.Event value0;
+  final _i9.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -609,7 +578,7 @@ class Vesting extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i10.Event.codec.sizeHint(value0);
+    size = size + _i9.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -618,7 +587,7 @@ class Vesting extends RuntimeEvent {
       8,
       output,
     );
-    _i10.Event.codec.encodeTo(
+    _i9.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -640,11 +609,11 @@ class Preimage extends RuntimeEvent {
   const Preimage(this.value0);
 
   factory Preimage._decode(_i1.Input input) {
-    return Preimage(_i11.Event.codec.decode(input));
+    return Preimage(_i10.Event.codec.decode(input));
   }
 
   /// pallet_preimage::Event<Runtime>
-  final _i11.Event value0;
+  final _i10.Event value0;
 
   @override
   Map<String, Map<String, Map<String, List<int>>>> toJson() =>
@@ -652,7 +621,7 @@ class Preimage extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i11.Event.codec.sizeHint(value0);
+    size = size + _i10.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -661,7 +630,7 @@ class Preimage extends RuntimeEvent {
       9,
       output,
     );
-    _i11.Event.codec.encodeTo(
+    _i10.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -683,11 +652,11 @@ class Scheduler extends RuntimeEvent {
   const Scheduler(this.value0);
 
   factory Scheduler._decode(_i1.Input input) {
-    return Scheduler(_i12.Event.codec.decode(input));
+    return Scheduler(_i11.Event.codec.decode(input));
   }
 
   /// pallet_scheduler::Event<Runtime>
-  final _i12.Event value0;
+  final _i11.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -695,7 +664,7 @@ class Scheduler extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i12.Event.codec.sizeHint(value0);
+    size = size + _i11.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -704,7 +673,7 @@ class Scheduler extends RuntimeEvent {
       10,
       output,
     );
-    _i12.Event.codec.encodeTo(
+    _i11.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -726,18 +695,18 @@ class Utility extends RuntimeEvent {
   const Utility(this.value0);
 
   factory Utility._decode(_i1.Input input) {
-    return Utility(_i13.Event.codec.decode(input));
+    return Utility(_i12.Event.codec.decode(input));
   }
 
   /// pallet_utility::Event
-  final _i13.Event value0;
+  final _i12.Event value0;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i13.Event.codec.sizeHint(value0);
+    size = size + _i12.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -746,7 +715,7 @@ class Utility extends RuntimeEvent {
       11,
       output,
     );
-    _i13.Event.codec.encodeTo(
+    _i12.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -768,11 +737,11 @@ class Referenda extends RuntimeEvent {
   const Referenda(this.value0);
 
   factory Referenda._decode(_i1.Input input) {
-    return Referenda(_i14.Event.codec.decode(input));
+    return Referenda(_i13.Event.codec.decode(input));
   }
 
   /// pallet_referenda::Event<Runtime>
-  final _i14.Event value0;
+  final _i13.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -780,7 +749,7 @@ class Referenda extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i14.Event.codec.sizeHint(value0);
+    size = size + _i13.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -789,7 +758,7 @@ class Referenda extends RuntimeEvent {
       12,
       output,
     );
-    _i14.Event.codec.encodeTo(
+    _i13.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -811,11 +780,11 @@ class ReversibleTransfers extends RuntimeEvent {
   const ReversibleTransfers(this.value0);
 
   factory ReversibleTransfers._decode(_i1.Input input) {
-    return ReversibleTransfers(_i15.Event.codec.decode(input));
+    return ReversibleTransfers(_i14.Event.codec.decode(input));
   }
 
   /// pallet_reversible_transfers::Event<Runtime>
-  final _i15.Event value0;
+  final _i14.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -823,7 +792,7 @@ class ReversibleTransfers extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i15.Event.codec.sizeHint(value0);
+    size = size + _i14.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -832,7 +801,7 @@ class ReversibleTransfers extends RuntimeEvent {
       13,
       output,
     );
-    _i15.Event.codec.encodeTo(
+    _i14.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -854,11 +823,11 @@ class ConvictionVoting extends RuntimeEvent {
   const ConvictionVoting(this.value0);
 
   factory ConvictionVoting._decode(_i1.Input input) {
-    return ConvictionVoting(_i16.Event.codec.decode(input));
+    return ConvictionVoting(_i15.Event.codec.decode(input));
   }
 
   /// pallet_conviction_voting::Event<Runtime>
-  final _i16.Event value0;
+  final _i15.Event value0;
 
   @override
   Map<String, Map<String, dynamic>> toJson() =>
@@ -866,7 +835,7 @@ class ConvictionVoting extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i16.Event.codec.sizeHint(value0);
+    size = size + _i15.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -875,7 +844,7 @@ class ConvictionVoting extends RuntimeEvent {
       14,
       output,
     );
-    _i16.Event.codec.encodeTo(
+    _i15.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -897,11 +866,11 @@ class TechCollective extends RuntimeEvent {
   const TechCollective(this.value0);
 
   factory TechCollective._decode(_i1.Input input) {
-    return TechCollective(_i17.Event.codec.decode(input));
+    return TechCollective(_i16.Event.codec.decode(input));
   }
 
   /// pallet_ranked_collective::Event<Runtime>
-  final _i17.Event value0;
+  final _i16.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -909,7 +878,7 @@ class TechCollective extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i17.Event.codec.sizeHint(value0);
+    size = size + _i16.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -918,7 +887,7 @@ class TechCollective extends RuntimeEvent {
       15,
       output,
     );
-    _i17.Event.codec.encodeTo(
+    _i16.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -940,11 +909,11 @@ class TechReferenda extends RuntimeEvent {
   const TechReferenda(this.value0);
 
   factory TechReferenda._decode(_i1.Input input) {
-    return TechReferenda(_i18.Event.codec.decode(input));
+    return TechReferenda(_i17.Event.codec.decode(input));
   }
 
   /// pallet_referenda::Event<Runtime, pallet_referenda::Instance1>
-  final _i18.Event value0;
+  final _i17.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -952,7 +921,7 @@ class TechReferenda extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i18.Event.codec.sizeHint(value0);
+    size = size + _i17.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -961,7 +930,7 @@ class TechReferenda extends RuntimeEvent {
       16,
       output,
     );
-    _i18.Event.codec.encodeTo(
+    _i17.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -983,11 +952,11 @@ class MerkleAirdrop extends RuntimeEvent {
   const MerkleAirdrop(this.value0);
 
   factory MerkleAirdrop._decode(_i1.Input input) {
-    return MerkleAirdrop(_i19.Event.codec.decode(input));
+    return MerkleAirdrop(_i18.Event.codec.decode(input));
   }
 
   /// pallet_merkle_airdrop::Event<Runtime>
-  final _i19.Event value0;
+  final _i18.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -995,7 +964,7 @@ class MerkleAirdrop extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i19.Event.codec.sizeHint(value0);
+    size = size + _i18.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -1004,7 +973,7 @@ class MerkleAirdrop extends RuntimeEvent {
       17,
       output,
     );
-    _i19.Event.codec.encodeTo(
+    _i18.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -1026,11 +995,11 @@ class TreasuryPallet extends RuntimeEvent {
   const TreasuryPallet(this.value0);
 
   factory TreasuryPallet._decode(_i1.Input input) {
-    return TreasuryPallet(_i20.Event.codec.decode(input));
+    return TreasuryPallet(_i19.Event.codec.decode(input));
   }
 
   /// pallet_treasury::Event<Runtime>
-  final _i20.Event value0;
+  final _i19.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
@@ -1038,7 +1007,7 @@ class TreasuryPallet extends RuntimeEvent {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i20.Event.codec.sizeHint(value0);
+    size = size + _i19.Event.codec.sizeHint(value0);
     return size;
   }
 
@@ -1047,7 +1016,7 @@ class TreasuryPallet extends RuntimeEvent {
       18,
       output,
     );
-    _i20.Event.codec.encodeTo(
+    _i19.Event.codec.encodeTo(
       value0,
       output,
     );
@@ -1069,15 +1038,58 @@ class Recovery extends RuntimeEvent {
   const Recovery(this.value0);
 
   factory Recovery._decode(_i1.Input input) {
-    return Recovery(_i21.Event.codec.decode(input));
+    return Recovery(_i20.Event.codec.decode(input));
   }
 
   /// pallet_recovery::Event<Runtime>
-  final _i21.Event value0;
+  final _i20.Event value0;
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() =>
       {'Recovery': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i20.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      20,
+      output,
+    );
+    _i20.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Recovery && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class Assets extends RuntimeEvent {
+  const Assets(this.value0);
+
+  factory Assets._decode(_i1.Input input) {
+    return Assets(_i21.Event.codec.decode(input));
+  }
+
+  /// pallet_assets::Event<Runtime>
+  final _i21.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Assets': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -1087,7 +1099,7 @@ class Recovery extends RuntimeEvent {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      20,
+      21,
       output,
     );
     _i21.Event.codec.encodeTo(
@@ -1102,7 +1114,50 @@ class Recovery extends RuntimeEvent {
         this,
         other,
       ) ||
-      other is Recovery && other.value0 == value0;
+      other is Assets && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
+}
+
+class AssetsHolder extends RuntimeEvent {
+  const AssetsHolder(this.value0);
+
+  factory AssetsHolder._decode(_i1.Input input) {
+    return AssetsHolder(_i22.Event.codec.decode(input));
+  }
+
+  /// pallet_assets_holder::Event<Runtime>
+  final _i22.Event value0;
+
+  @override
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'AssetsHolder': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i22.Event.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(
+      22,
+      output,
+    );
+    _i22.Event.codec.encodeTo(
+      value0,
+      output,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetsHolder && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

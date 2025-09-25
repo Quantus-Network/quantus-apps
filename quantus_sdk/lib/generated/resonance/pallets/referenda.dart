@@ -416,7 +416,7 @@ class Constants {
 
   /// The number of blocks after submission that a referendum must begin being decided by.
   /// Once this passes, then anyone may cancel the referendum.
-  final int undecidingTimeout = 3888000;
+  final int undecidingTimeout = 324000;
 
   /// Quantization level for the referendum wakeup scheduler. A higher number will result in
   /// fewer storage reads/writes needed for smaller voters, but also result in delays to the
@@ -433,10 +433,10 @@ class Constants {
         name: 'signed',
         maxDeciding: 5,
         decisionDeposit: BigInt.from(500000000000000),
-        preparePeriod: 43200,
-        decisionPeriod: 604800,
-        confirmPeriod: 43200,
-        minEnactmentPeriod: 86400,
+        preparePeriod: 3600,
+        decisionPeriod: 50400,
+        confirmPeriod: 3600,
+        minEnactmentPeriod: 7200,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 550000000,
@@ -455,9 +455,9 @@ class Constants {
         name: 'signaling',
         maxDeciding: 20,
         decisionDeposit: BigInt.from(100000000000000),
-        preparePeriod: 21600,
-        decisionPeriod: 432000,
-        confirmPeriod: 10800,
+        preparePeriod: 1800,
+        decisionPeriod: 36000,
+        confirmPeriod: 900,
         minEnactmentPeriod: 1,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
@@ -477,10 +477,10 @@ class Constants {
         name: 'treasury_small_spender',
         maxDeciding: 5,
         decisionDeposit: BigInt.from(100000000000000),
-        preparePeriod: 86400,
-        decisionPeriod: 259200,
-        confirmPeriod: 86400,
-        minEnactmentPeriod: 43200,
+        preparePeriod: 7200,
+        decisionPeriod: 21600,
+        confirmPeriod: 7200,
+        minEnactmentPeriod: 3600,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 250000000,
@@ -499,10 +499,10 @@ class Constants {
         name: 'treasury_medium_spender',
         maxDeciding: 2,
         decisionDeposit: BigInt.from(250000000000000),
-        preparePeriod: 21600,
-        decisionPeriod: 432000,
-        confirmPeriod: 86400,
-        minEnactmentPeriod: 43200,
+        preparePeriod: 1800,
+        decisionPeriod: 36000,
+        confirmPeriod: 7200,
+        minEnactmentPeriod: 3600,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 500000000,
@@ -521,10 +521,10 @@ class Constants {
         name: 'treasury_big_spender',
         maxDeciding: 2,
         decisionDeposit: BigInt.from(500000000000000),
-        preparePeriod: 86400,
-        decisionPeriod: 604800,
-        confirmPeriod: 172800,
-        minEnactmentPeriod: 43200,
+        preparePeriod: 7200,
+        decisionPeriod: 50400,
+        confirmPeriod: 14400,
+        minEnactmentPeriod: 3600,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 650000000,
@@ -543,10 +543,10 @@ class Constants {
         name: 'treasury_treasurer',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
-        preparePeriod: 172800,
-        decisionPeriod: 1209600,
-        confirmPeriod: 345600,
-        minEnactmentPeriod: 86400,
+        preparePeriod: 14400,
+        decisionPeriod: 100800,
+        confirmPeriod: 28800,
+        minEnactmentPeriod: 7200,
         minApproval: const _i14.LinearDecreasing(
           length: 1000000000,
           floor: 750000000,

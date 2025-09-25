@@ -436,7 +436,7 @@ class Constants {
   Constants();
 
   /// Period between successive spends.
-  final int spendPeriod = 172800;
+  final int spendPeriod = 14400;
 
   /// Percentage of spare funds (if any) that are burnt per spend period.
   final _i10.Permill burn = 0;
@@ -462,7 +462,7 @@ class Constants {
   final int maxApprovals = 100;
 
   /// The period during which an approved treasury spend has to be claimed.
-  final int payoutPeriod = 1209600;
+  final int payoutPeriod = 100800;
 
   /// Gets this pallet's derived pot account.
   final _i12.AccountId32 potAccount = const <int>[

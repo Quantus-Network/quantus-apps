@@ -3,95 +3,68 @@ import 'dart:async' as _i4;
 import 'dart:typed_data' as _i5;
 
 import 'package:polkadart/polkadart.dart' as _i1;
-import 'package:polkadart/scale_codec.dart' as _i3;
+import 'package:polkadart/scale_codec.dart' as _i2;
 
-import '../types/primitive_types/u512.dart' as _i2;
+import '../types/primitive_types/u512.dart' as _i3;
 
 class Queries {
   const Queries(this.__api);
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<int, _i2.U512> _blockDistanceThresholds =
-      const _i1.StorageMap<int, _i2.U512>(
-    prefix: 'QPoW',
-    storage: 'BlockDistanceThresholds',
-    valueCodec: _i2.U512Codec(),
-    hasher: _i1.StorageHasher.twoxx64Concat(_i3.U32Codec.codec),
-  );
-
   final _i1.StorageValue<BigInt> _lastBlockTime =
       const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockTime',
-    valueCodec: _i3.U64Codec.codec,
+    valueCodec: _i2.U64Codec.codec,
   );
 
   final _i1.StorageValue<BigInt> _lastBlockDuration =
       const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockDuration',
-    valueCodec: _i3.U64Codec.codec,
+    valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<_i2.U512> _currentDistanceThreshold =
-      const _i1.StorageValue<_i2.U512>(
+  final _i1.StorageValue<_i3.U512> _currentDistanceThreshold =
+      const _i1.StorageValue<_i3.U512>(
     prefix: 'QPoW',
     storage: 'CurrentDistanceThreshold',
-    valueCodec: _i2.U512Codec(),
+    valueCodec: _i3.U512Codec(),
   );
 
-  final _i1.StorageValue<_i2.U512> _totalWork =
-      const _i1.StorageValue<_i2.U512>(
+  final _i1.StorageValue<_i3.U512> _totalWork =
+      const _i1.StorageValue<_i3.U512>(
     prefix: 'QPoW',
     storage: 'TotalWork',
-    valueCodec: _i2.U512Codec(),
+    valueCodec: _i3.U512Codec(),
   );
 
   final _i1.StorageValue<int> _blocksInPeriod = const _i1.StorageValue<int>(
     prefix: 'QPoW',
     storage: 'BlocksInPeriod',
-    valueCodec: _i3.U32Codec.codec,
+    valueCodec: _i2.U32Codec.codec,
   );
 
   final _i1.StorageMap<int, BigInt> _blockTimeHistory =
       const _i1.StorageMap<int, BigInt>(
     prefix: 'QPoW',
     storage: 'BlockTimeHistory',
-    valueCodec: _i3.U64Codec.codec,
-    hasher: _i1.StorageHasher.twoxx64Concat(_i3.U32Codec.codec),
+    valueCodec: _i2.U64Codec.codec,
+    hasher: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
   );
 
   final _i1.StorageValue<int> _historyIndex = const _i1.StorageValue<int>(
     prefix: 'QPoW',
     storage: 'HistoryIndex',
-    valueCodec: _i3.U32Codec.codec,
+    valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageValue<int> _historySize = const _i1.StorageValue<int>(
+  final _i1.StorageValue<BigInt> _blockTimeEma = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
-    storage: 'HistorySize',
-    valueCodec: _i3.U32Codec.codec,
+    storage: 'BlockTimeEma',
+    valueCodec: _i2.U64Codec.codec,
   );
-
-  _i4.Future<_i2.U512> blockDistanceThresholds(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _blockDistanceThresholds.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
-    if (bytes != null) {
-      return _blockDistanceThresholds.decodeValue(bytes);
-    }
-    return List<BigInt>.filled(
-      8,
-      BigInt.zero,
-      growable: false,
-    ); /* Default */
-  }
 
   _i4.Future<BigInt> lastBlockTime({_i1.BlockHash? at}) async {
     final hashedKey = _lastBlockTime.hashedKey();
@@ -117,7 +90,7 @@ class Queries {
     return BigInt.zero; /* Default */
   }
 
-  _i4.Future<_i2.U512> currentDistanceThreshold({_i1.BlockHash? at}) async {
+  _i4.Future<_i3.U512> currentDistanceThreshold({_i1.BlockHash? at}) async {
     final hashedKey = _currentDistanceThreshold.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -133,7 +106,7 @@ class Queries {
     ); /* Default */
   }
 
-  _i4.Future<_i2.U512> totalWork({_i1.BlockHash? at}) async {
+  _i4.Future<_i3.U512> totalWork({_i1.BlockHash? at}) async {
     final hashedKey = _totalWork.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
@@ -188,40 +161,16 @@ class Queries {
     return 0; /* Default */
   }
 
-  _i4.Future<int> historySize({_i1.BlockHash? at}) async {
-    final hashedKey = _historySize.hashedKey();
+  _i4.Future<BigInt> blockTimeEma({_i1.BlockHash? at}) async {
+    final hashedKey = _blockTimeEma.hashedKey();
     final bytes = await __api.getStorage(
       hashedKey,
       at: at,
     );
     if (bytes != null) {
-      return _historySize.decodeValue(bytes);
+      return _blockTimeEma.decodeValue(bytes);
     }
-    return 0; /* Default */
-  }
-
-  _i4.Future<List<_i2.U512>> multiBlockDistanceThresholds(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _blockDistanceThresholds.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
-    if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _blockDistanceThresholds.decodeValue(v.key))
-          .toList();
-    }
-    return (keys
-        .map((key) => List<BigInt>.filled(
-              8,
-              BigInt.zero,
-              growable: false,
-            ))
-        .toList() as List<_i2.U512>); /* Default */
+    return BigInt.zero; /* Default */
   }
 
   _i4.Future<List<BigInt>> multiBlockTimeHistory(
@@ -241,12 +190,6 @@ class Queries {
     }
     return (keys.map((key) => BigInt.zero).toList()
         as List<BigInt>); /* Default */
-  }
-
-  /// Returns the storage key for `blockDistanceThresholds`.
-  _i5.Uint8List blockDistanceThresholdsKey(int key1) {
-    final hashedKey = _blockDistanceThresholds.hashedKeyFor(key1);
-    return hashedKey;
   }
 
   /// Returns the storage key for `lastBlockTime`.
@@ -291,15 +234,9 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage key for `historySize`.
-  _i5.Uint8List historySizeKey() {
-    final hashedKey = _historySize.hashedKey();
-    return hashedKey;
-  }
-
-  /// Returns the storage map key prefix for `blockDistanceThresholds`.
-  _i5.Uint8List blockDistanceThresholdsMapPrefix() {
-    final hashedKey = _blockDistanceThresholds.mapPrefix();
+  /// Returns the storage key for `blockTimeEma`.
+  _i5.Uint8List blockTimeEmaKey() {
+    final hashedKey = _blockTimeEma.hashedKey();
     return hashedKey;
   }
 
@@ -314,15 +251,14 @@ class Constants {
   Constants();
 
   /// Pallet's weight info
-  final int initialDistanceThresholdExponent = 502;
+  final int initialDistanceThresholdExponent = 496;
 
   final int difficultyAdjustPercentClamp = 10;
 
-  final BigInt targetBlockTime = BigInt.from(20000);
+  final BigInt targetBlockTime = BigInt.from(12000);
 
-  final int adjustmentPeriod = 1;
-
-  final int blockTimeHistorySize = 10;
+  /// EMA smoothing factor (0-1000, where 1000 = 1.0)
+  final int emaAlpha = 500;
 
   final int maxReorgDepth = 180;
 
