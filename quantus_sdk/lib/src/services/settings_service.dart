@@ -11,7 +11,6 @@ class SettingsService {
 
   late SharedPreferences _prefs;
   final _secureStorage = const FlutterSecureStorage();
-  bool _initialized = false;
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts';
@@ -27,7 +26,6 @@ class SettingsService {
     // get a clean, isolated preferences store even if the service singleton
     // was created earlier in the process.
     _prefs = await SharedPreferences.getInstance();
-    _initialized = true;
   }
 
   // --- Multi-Account Methods ---
