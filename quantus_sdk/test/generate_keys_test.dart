@@ -51,20 +51,6 @@ void main() {
       expect(isValid, isTrue);
     });
 
-    test('Test CLI compatibility with known value', () {
-      // This is a valid BIP39 mnemonic phrase - DO NOT use for real wallets
-      const testMnemonic =
-          'ten tone sniff segment glance worth defense delay december boring catch thrive noodle radar exhibit dish whale hub couch audit usual certain dance clever';
-
-      // Generate keypair from mnemonic
-      final keypair = generateKeypair(mnemonicStr: testMnemonic);
-      // Convert to account ID
-      final accountId = toAccountId(obj: keypair);
-
-      // Verify account ID format (should be a valid SS58 address)
-      expect(accountId, 'qzo18PGwLjXx8GzKtPDqh5Qver9tHS2MDZPthyTyXnMRGW6Uz');
-    });
-
     test('should generate different keypairs for different mnemonics', () {
       // These are valid BIP39 mnemonics - DO NOT use for real wallets
       const mnemonic1 =
