@@ -145,7 +145,6 @@ class SettingsService {
 
   Future<bool> getHasWallet() async {
     final accounts = await getAccounts();
-    print('getHasWallet: ${accounts}');
     return accounts.isNotEmpty;
   }
 
