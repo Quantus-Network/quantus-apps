@@ -43,7 +43,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
-  late Account activeAccount = _settingsService.getActiveAccount()!;
+  Account? activeAccount;
 
   BigInt _maxBalance = BigInt.zero;
   BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
@@ -70,7 +70,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
       return 'Enter Amount';
     } else if (_hasAmountError) {
       return 'Insufficient Balance';
-    } else if (_recipientController.text == activeAccount.accountId) {
+    } else if (_recipientController.text == activeAccount!.accountId) {
       return "Can't Self Transfer";
     }
     else {
@@ -84,7 +84,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
           _recipientController.text.isEmpty ||
           _amount <= BigInt.zero ||
           _isFetchingFee) ||
-      _recipientController.text == activeAccount.accountId;
+      _recipientController.text == activeAccount!.accountId;
 
   @override
   void initState() {
@@ -101,6 +101,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
     // Check the flag
     if (_isInit) {
+      // Initialize active account
+      _loadActiveAccount();
+
       // Get the passed address
       final String? address =
           ModalRoute.of(context)?.settings.arguments as String?;
@@ -124,6 +127,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
     _amountController.dispose();
     _recipientController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadActiveAccount() async {
+    activeAccount = await _settingsService.getActiveAccount();
   }
 
   Future<void> _loadReversibleTimeSetting() async {
@@ -319,14 +326,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
     if (isReversible) {
       estimatedFee = await ReversibleTransfersService()
           .getReversibleTransferWithDelayFeeEstimate(
-            account: activeAccount,
+            account: activeAccount!,
             recipientAddress: recipient,
             amount: amount,
             delaySeconds: _reversibleTimeSeconds,
           );
     } else {
       estimatedFee = await BalancesService().getBalanceTransferFee(
-        activeAccount,
+        activeAccount!,
         recipient,
         amount,
       );
@@ -562,7 +569,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                   onTap: () {
                     showRecentAddresses(
                       context,
-                      activeAccount: activeAccount,
+                      activeAccount: activeAccount!,
                       recipientController: _recipientController,
                       lookupIdentity: _lookupIdentity,
                     );

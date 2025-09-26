@@ -99,7 +99,7 @@ class SendConfirmationOverlayState
     });
 
     try {
-      final account = _settingsService.getActiveAccount()!;
+      final account = (await _settingsService.getActiveAccount())!;
 
       // ignore: use_build_context_synchronously
       if (!context.mounted) {

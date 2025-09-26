@@ -41,7 +41,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   Future<void> _loadAccountData() async {
     try {
-      final account = _settingsService.getActiveAccount()!;
+      final account = (await _settingsService.getActiveAccount())!;
       setState(() {
         _accountName = account.name;
         _accountId = account.accountId;

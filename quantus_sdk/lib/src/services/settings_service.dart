@@ -30,14 +30,28 @@ class SettingsService {
 
   // --- Multi-Account Methods ---
 
-  List<Account> getAccounts() {
+  Future<List<Account>> getAccounts() async {
     final accountsJson = _prefs.getString(_accountsKey);
     if (accountsJson != null) {
       final decoded = jsonDecode(accountsJson) as List<dynamic>;
       return decoded.map((e) => Account.fromJson(e)).toList()
         ..sort((a, b) => a.index.compareTo(b.index));
     }
-    return []; // No accounts found;
+        // Migration for existing single-account users
+    final oldAccountId = _prefs.getString('account_id');
+    if (oldAccountId != null) {
+      final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
+      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
+      await saveAccounts([account]);
+      await setActiveAccount(account);
+      // Clean up old keys after migration
+      await _prefs.remove('account_id');
+      await _prefs.remove('wallet_name');
+      return [account];
+    }
+
+    return [];
+
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
@@ -48,7 +62,7 @@ class SettingsService {
   }
 
   Future<void> addAccount(Account account) async {
-    final accounts = getAccounts();
+    final accounts = await getAccounts();
     // Check for duplicates by index or accountId before adding
     if (!accounts.any(
       (a) => a.index == account.index || a.accountId == account.accountId,
@@ -65,7 +79,7 @@ class SettingsService {
   }
 
   Future<void> updateAccount(Account account) async {
-    final accounts = getAccounts();
+    final accounts = await getAccounts();
     final index = accounts.indexWhere((a) => a.index == account.index);
     if (index != -1) {
       accounts[index] = account;
@@ -74,7 +88,7 @@ class SettingsService {
   }
 
   Future<void> removeAccount(Account account) async {
-    final accounts = getAccounts();
+    final accounts = await getAccounts();
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
@@ -89,8 +103,8 @@ class SettingsService {
   }
 
   Future<void> setActiveAccount(Account account) async {
-    final exists = getAccount(account.index) != null;
-    if (exists) {
+    final accountExists = await getAccount(account.index);
+    if (accountExists != null) {
       _setActiveAccountIndex(account.index);
     } else {
       throw Exception('Account index does not exist');
@@ -108,19 +122,19 @@ class SettingsService {
     }
   }
 
-  Account? getActiveAccount() {
+  Future<Account?> getActiveAccount() async {
     final activeIndex = _getActiveAccountIndex();
     return getAccount(activeIndex);
   }
 
-  Account? getAccount(int index) {
-    final accounts = getAccounts();
+  Future<Account?> getAccount(int index) async {
+    final accounts = await getAccounts();
     final ix = accounts.indexWhere((a) => a.index == index);
     return ix != -1 ? accounts[ix] : null;
   }
 
   Future<int> getNextFreeAccountIndex() async {
-    final accounts = getAccounts();
+    final accounts = await getAccounts();
     final maxIndex = accounts
         .map((a) => a.index)
         .reduce((a, b) => a > b ? a : b);
@@ -130,8 +144,14 @@ class SettingsService {
   // --- End Multi-Account Methods ---
 
   Future<bool> getHasWallet() async {
-    final accounts = getAccounts();
+    final accounts = await getAccounts();
+    print('getHasWallet: ${accounts}');
     return accounts.isNotEmpty;
+  }
+
+  Future<bool> isWalletLoggedOut() async {
+    final accounts = await getAccounts();
+    return accounts.isEmpty;
   }
 
   // Mnemonic Settings - Using secure storage
@@ -187,6 +207,14 @@ class SettingsService {
 
   bool isAuthEnabled() {
     return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
+  }
+
+  // Test-only helper to reset initialization between tests
+  void resetForTest() {
+    assert(() {
+      _initialized = false;
+      return true;
+    }());
   }
 
   // Clear all settings

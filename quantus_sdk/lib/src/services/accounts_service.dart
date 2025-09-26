@@ -45,7 +45,7 @@ class AccountsService {
   }
 
   Future<List<Account>> getAccounts() async {
-    return _settingsService.getAccounts();
+    return await _settingsService.getAccounts();
   }
 
   Future<void> removeAccount(Account account) async {
