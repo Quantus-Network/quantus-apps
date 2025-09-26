@@ -36,7 +36,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadAccountData() async {
     try {
-      final account = _settingsService.getActiveAccount()!;
+      final account = (await _settingsService.getActiveAccount())!;
       final checksum = await _checksumService.getHumanReadableName(
         account.accountId,
       );
@@ -72,33 +72,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  Future<void> _logout() async {
-    try {
-      print('settings screen logout');
-      await SubstrateService().logout();
+Future<void> _logout() async {
+  try {
+    // Step 1: Clear sensitive data (mnemonic, accounts, etc.)
+    await _settingsService.clearAll();  // Clears prefs and secure storage
+    ref.read(pendingTransactionsProvider.notifier).clear();  // Clear specific notifier
+
+    // Step 2: Set providers to loading state to prevent UI errors during transition
+ref.read(accountsProvider.notifier).reset();
+ref.read(activeAccountProvider.notifier).reset();
+
+    // Step 3: Navigate to safe screen FIRST (prevents main screen rebuild errors)
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),  // Or your login screen
+        (route) => false,
+      );
+    }
+
+    // Step 4: Invalidate providers AFTER navigation (use addPostFrameCallback to delay)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('invalidating all providers');
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      ref.read(pendingTransactionsProvider.notifier).clear();
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      print('Error during logout: $e');
-      if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Logout failed: ${e.toString()}',
-          icon: buildErrorIcon(),
-        );
-      }
+      ref.invalidate(pendingTransactionsProvider);  // If needed for transactions
+    });
+
+    // Optional: Log success
+    debugPrint('Logout successful');
+  } catch (e) {
+    debugPrint('Logout error: $e');
+    if (mounted) {
+      showTopSnackBar(context, title: 'Error', message: 'Logout failed: $e');
     }
   }
-
+}
   void _showResetConfirmationSheet() {
     showAppModalBottomSheet(
       context: context,
