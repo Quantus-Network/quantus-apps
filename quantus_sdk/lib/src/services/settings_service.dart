@@ -112,7 +112,7 @@ class SettingsService {
   }
 
   int _getActiveAccountIndex() {
-    return _prefs.getInt(_activeAccountIndexKey) ?? -1;
+    return _prefs.getInt(_activeAccountIndexKey) ?? 0;
   }
 
   void _setActiveAccountIndex(int index) {
