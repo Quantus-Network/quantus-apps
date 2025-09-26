@@ -32,6 +32,12 @@ jobs:
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
 
+      - name: Import signing certificates (Developer ID Application)
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERT_P12 }}
+          p12-password: ${{ secrets.MACOS_CERT_PASSWORD }}
+
       - name: Get dependencies
         run: flutter pub get
         working-directory: ./miner-app
@@ -43,11 +49,36 @@ jobs:
         run: flutter build macos --release
         working-directory: ./miner-app
 
-      - name: Package macOS App
+      - name: Code sign macOS App (hardened runtime)
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          # Create a proper DMG or ZIP with the app
-          zip -r quantus_miner_macos.zip quantus_miner.app
+          APP_PATH="quantus_miner.app"
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -n1 | sed -E 's/.*"(.+)"$/\1/')
+          if [ -z "$IDENTITY" ]; then echo "Developer ID Application identity not found"; exit 1; fi
+          codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+      - name: Create ZIP for notarization
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          ditto -c -k --sequesterRsrc --keepParent quantus_miner.app quantus_miner_macos.zip
+
+      - name: Notarize macOS App with Apple
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          echo "${{ secrets.AC_API_PRIVATE_KEY }}" > /tmp/AuthKey.p8
+          xcrun notarytool submit "quantus_miner_macos.zip" \
+            --key /tmp/AuthKey.p8 \
+            --key-id "${{ secrets.AC_API_KEY_ID }}" \
+            --issuer "${{ secrets.AC_API_ISSUER_ID }}" \
+            --wait
+
+      - name: Staple notarization ticket and finalize ZIP
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          xcrun stapler staple "quantus_miner.app"
+          rm -f quantus_miner_macos.zip
+          ditto -c -k --sequesterRsrc --keepParent quantus_miner.app quantus_miner_macos.zip
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
