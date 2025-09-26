@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/features/main/screens/receive_screen.da
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
+import 'package:resonance_network_wallet/features/main/screens/wallet_main/error_display.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/history_section.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -32,6 +33,7 @@ class WalletMain extends ConsumerStatefulWidget {
 class _WalletMainState extends ConsumerState<WalletMain> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final ScrollController _scrollController = ScrollController();
+  bool _isErrorSheetDisplayed = false;
 
   @override
   void initState() {
@@ -50,6 +52,10 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     super.dispose();
   }
 
+  void setIsErrorSheetDisplayed(bool value) {
+    _isErrorSheetDisplayed = value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeAccountAsync = ref.watch(activeAccountProvider);
@@ -60,6 +66,23 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     if (activeAccountAsync.isLoading) {
       return _createLoadingDisplay(context);
+    }
+
+    final hasError = activeAccountAsync.hasError;
+    final noAccount = activeAccountAsync.value == null;
+
+    print('error: $hasError, noAccount: $noAccount');
+
+    if ((hasError || noAccount) && !_isErrorSheetDisplayed) {
+      setIsErrorSheetDisplayed(true);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showErrorDisplaySheet(
+          context,
+          activeAccountAsync: activeAccountAsync,
+          setIsErrorSheetDisplayed: setIsErrorSheetDisplayed,
+        );
+      });
     }
 
     final activeAccount = activeAccountAsync.value!;
