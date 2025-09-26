@@ -104,14 +104,14 @@ class MinerProcess {
       'DEBUG: Starting external miner on port $externalMinerPort with $minerCores cores...',
     );
     print(
-      'DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --num-cores $minerCores',
+      'DEBUG: External miner command: ${externalMinerBin.path} --port $externalMinerPort --workers $minerCores',
     );
 
     try {
       _externalMinerProcess = await Process.start(externalMinerBin.path, [
         '--port',
         externalMinerPort.toString(),
-        '--num-cores',
+        '--workers',
         minerCores.toString(),
       ]);
       print(
