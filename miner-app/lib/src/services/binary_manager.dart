@@ -70,7 +70,7 @@ class BinaryManager {
         'https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest',
       ),
     );
-    final tag = jsonDecode(rel.body)['tag_name'] as String;
+    final tag = 'v0.2.5';
 
     print('found latest tag: $tag');
 
