@@ -134,6 +134,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 35),
                 _buildInformationList(context),
                 const SizedBox(height: 42),
+                _buildDebugButton(context),
+                const SizedBox(height: 22),
                 _buildResetButton(context),
               ],
             ),
@@ -255,6 +257,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDebugButton(BuildContext context) {
+    return GestureDetector(
+      onTap: _createDebugOldAccounts,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          vertical: context.isTablet ? 16 : 12,
+          horizontal: 18,
+        ),
+        decoration: ShapeDecoration(
+          color: Colors.black,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(width: 1, color: Colors.orange),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Debug: Create Old Accounts',
+              style: context.themeText.smallParagraph?.copyWith(
+                color: Colors.orange,
+              ),
+            ),
+            Icon(
+              Icons.bug_report,
+              size: context.themeSize.settingMenuIconSize,
+              color: Colors.orange,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createDebugOldAccounts() async {
+    try {
+      final migrationService = MigrationService(_settingsService, HdWalletService());
+      await migrationService.createDebugOldAccounts();
+
+      if (mounted) {
+        showTopSnackBar(
+          context,
+          title: 'Debug',
+          message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
+          icon: buildSuccessIcon(),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(
+          context,
+          title: 'Error',
+          message: 'Failed to create debug accounts: ${e.toString()}',
+          icon: buildErrorIcon(),
+        );
+      }
+    }
   }
 
   Widget _buildResetButton(BuildContext context) {

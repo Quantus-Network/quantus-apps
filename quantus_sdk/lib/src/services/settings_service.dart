@@ -192,6 +192,47 @@ class SettingsService {
     return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
   }
 
+  // --- Migration Methods ---
+
+  /// Check if old accounts exist in legacy storage
+  bool hasOldAccounts() {
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
+    if (oldAccountsJson != null) {
+      try {
+        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
+        return decoded.isNotEmpty;
+      } catch (e) {
+        // If we can't decode, assume no valid old accounts
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /// Get old accounts from legacy storage
+  List<Account> getOldAccounts() {
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
+    if (oldAccountsJson != null) {
+      try {
+        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
+        return decoded.map((e) => Account.fromJson(e)).toList();
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  /// Remove old accounts from legacy storage after successful migration
+  Future<void> clearOldAccounts() async {
+    await _prefs.remove(_oldAccountsKey);
+  }
+
+  /// Set old accounts data (for debugging/testing)
+  Future<void> setOldAccountsData(String jsonData) async {
+    await _prefs.setString(_oldAccountsKey, jsonData);
+  }
+
   // Clear all settings
   Future<void> clearAll() async {
     await _prefs.clear();
