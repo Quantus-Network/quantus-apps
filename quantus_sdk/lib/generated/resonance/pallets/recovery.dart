@@ -201,7 +201,7 @@ class Txs {
     ));
   }
 
-  /// Allow ROOT to bypass the recovery process and set a rescuer account
+  /// Allow ROOT to bypass the recovery process and set an a rescuer account
   /// for a lost account directly.
   ///
   /// The dispatch origin for this call must be _ROOT_.
@@ -336,33 +336,6 @@ class Txs {
   /// - `account`: The recovered account you are able to call on-behalf-of.
   _i7.Recovery cancelRecovered({required _i8.MultiAddress account}) {
     return _i7.Recovery(_i9.CancelRecovered(account: account));
-  }
-
-  /// Poke deposits for recovery configurations and / or active recoveries.
-  ///
-  /// This can be used by accounts to possibly lower their locked amount.
-  ///
-  /// The dispatch origin for this call must be _Signed_.
-  ///
-  /// Parameters:
-  /// - `maybe_account`: Optional recoverable account for which you have an active recovery
-  /// and want to adjust the deposit for the active recovery.
-  ///
-  /// This function checks both recovery configuration deposit and active recovery deposits
-  /// of the caller:
-  /// - If the caller has created a recovery configuration, checks and adjusts its deposit
-  /// - If the caller has initiated any active recoveries, and provides the account in
-  /// `maybe_account`, checks and adjusts those deposits
-  ///
-  /// If any deposit is updated, the difference will be reserved/unreserved from the caller's
-  /// account.
-  ///
-  /// The transaction is made free if any deposit is updated and paid otherwise.
-  ///
-  /// Emits `DepositPoked` if any deposit is updated.
-  /// Multiple events may be emitted in case both types of deposits are updated.
-  _i7.Recovery pokeDeposit({_i8.MultiAddress? maybeAccount}) {
-    return _i7.Recovery(_i9.PokeDeposit(maybeAccount: maybeAccount));
   }
 }
 

@@ -69,13 +69,7 @@ enum Error {
   callbackFailed('CallbackFailed', 19),
 
   /// The asset ID must be equal to the [`NextAssetId`].
-  badAssetId('BadAssetId', 20),
-
-  /// The asset cannot be destroyed because some accounts for this asset contain freezes.
-  containsFreezes('ContainsFreezes', 21),
-
-  /// The asset cannot be destroyed because some accounts for this asset contain holds.
-  containsHolds('ContainsHolds', 22);
+  badAssetId('BadAssetId', 20);
 
   const Error(
     this.variantName,
@@ -147,10 +141,6 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.callbackFailed;
       case 20:
         return Error.badAssetId;
-      case 21:
-        return Error.containsFreezes;
-      case 22:
-        return Error.containsHolds;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

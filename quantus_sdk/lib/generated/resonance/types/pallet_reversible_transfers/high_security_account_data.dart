@@ -10,6 +10,7 @@ import '../sp_core/crypto/account_id32.dart' as _i2;
 class HighSecurityAccountData {
   const HighSecurityAccountData({
     required this.interceptor,
+    required this.recoverer,
     required this.delay,
   });
 
@@ -19,6 +20,9 @@ class HighSecurityAccountData {
 
   /// AccountId
   final _i2.AccountId32 interceptor;
+
+  /// AccountId
+  final _i2.AccountId32 recoverer;
 
   /// Delay
   final _i3.BlockNumberOrTimestamp delay;
@@ -32,6 +36,7 @@ class HighSecurityAccountData {
 
   Map<String, dynamic> toJson() => {
         'interceptor': interceptor.toList(),
+        'recoverer': recoverer.toList(),
         'delay': delay.toJson(),
       };
 
@@ -46,11 +51,16 @@ class HighSecurityAccountData {
             other.interceptor,
             interceptor,
           ) &&
+          _i5.listsEqual(
+            other.recoverer,
+            recoverer,
+          ) &&
           other.delay == delay;
 
   @override
   int get hashCode => Object.hash(
         interceptor,
+        recoverer,
         delay,
       );
 }
@@ -67,6 +77,10 @@ class $HighSecurityAccountDataCodec with _i1.Codec<HighSecurityAccountData> {
       obj.interceptor,
       output,
     );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      obj.recoverer,
+      output,
+    );
     _i3.BlockNumberOrTimestamp.codec.encodeTo(
       obj.delay,
       output,
@@ -77,6 +91,7 @@ class $HighSecurityAccountDataCodec with _i1.Codec<HighSecurityAccountData> {
   HighSecurityAccountData decode(_i1.Input input) {
     return HighSecurityAccountData(
       interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      recoverer: const _i1.U8ArrayCodec(32).decode(input),
       delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
@@ -85,6 +100,7 @@ class $HighSecurityAccountDataCodec with _i1.Codec<HighSecurityAccountData> {
   int sizeHint(HighSecurityAccountData obj) {
     int size = 0;
     size = size + const _i2.AccountId32Codec().sizeHint(obj.interceptor);
+    size = size + const _i2.AccountId32Codec().sizeHint(obj.recoverer);
     size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(obj.delay);
     return size;
   }

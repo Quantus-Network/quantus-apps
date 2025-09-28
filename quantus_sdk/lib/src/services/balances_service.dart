@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -47,7 +47,7 @@ class BalancesService {
   }
 
   Balances getBalanceTransferCall(String targetAddress, BigInt amount) {
-    final resonanceApi = Resonance(_substrateService.provider!);
+    final resonanceApi =  Schrodinger(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(
       crypto.ss58ToAccountId(s: targetAddress),
     );

@@ -5,8 +5,8 @@ class AppConstants {
 
   // static const String rpcEndpoint = 'ws://127.0.0.1:9944'; // local testing
   // static const String graphQlEndpoint = 'http://127.0.0.1:4350'; // local testing
-
-  static const String rpcEndpoint = 'wss://a1.quantu.se:443';
+  
+  static const String rpcEndpoint = 'wss://quantu.se';
   static const String graphQlEndpoint = 'https://gql.res.fm';
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
@@ -15,6 +15,10 @@ class AppConstants {
   static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
   static const String communityUrl = 'https://t.me/quantusnetwork';
   static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
+
+  // Old Resonance chain endpoints - previous chain
+  static const String oldResonanceRpcEndpoint = 'wss://a.t.res.fm:443';
+  static const String odlGraphQlEndpoint = 'https://gql.res.fm';
 
   // Development accounts
   static const String crystalAlice = '//Crystal Alice';

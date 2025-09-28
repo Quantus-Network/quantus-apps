@@ -83,16 +83,6 @@ class $Event {
       checkVersion: checkVersion,
     );
   }
-
-  RejectedInvalidAuthorizedUpgrade rejectedInvalidAuthorizedUpgrade({
-    required _i6.H256 codeHash,
-    required _i4.DispatchError error,
-  }) {
-    return RejectedInvalidAuthorizedUpgrade(
-      codeHash: codeHash,
-      error: error,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -116,8 +106,6 @@ class $EventCodec with _i1.Codec<Event> {
         return Remarked._decode(input);
       case 6:
         return UpgradeAuthorized._decode(input);
-      case 7:
-        return RejectedInvalidAuthorizedUpgrade._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -150,9 +138,6 @@ class $EventCodec with _i1.Codec<Event> {
       case UpgradeAuthorized:
         (value as UpgradeAuthorized).encodeTo(output);
         break;
-      case RejectedInvalidAuthorizedUpgrade:
-        (value as RejectedInvalidAuthorizedUpgrade).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -176,8 +161,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Remarked)._sizeHint();
       case UpgradeAuthorized:
         return (value as UpgradeAuthorized)._sizeHint();
-      case RejectedInvalidAuthorizedUpgrade:
-        return (value as RejectedInvalidAuthorizedUpgrade)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -557,75 +540,5 @@ class UpgradeAuthorized extends Event {
   int get hashCode => Object.hash(
         codeHash,
         checkVersion,
-      );
-}
-
-/// An invalid authorized upgrade was rejected while trying to apply it.
-class RejectedInvalidAuthorizedUpgrade extends Event {
-  const RejectedInvalidAuthorizedUpgrade({
-    required this.codeHash,
-    required this.error,
-  });
-
-  factory RejectedInvalidAuthorizedUpgrade._decode(_i1.Input input) {
-    return RejectedInvalidAuthorizedUpgrade(
-      codeHash: const _i1.U8ArrayCodec(32).decode(input),
-      error: _i4.DispatchError.codec.decode(input),
-    );
-  }
-
-  /// T::Hash
-  final _i6.H256 codeHash;
-
-  /// DispatchError
-  final _i4.DispatchError error;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'RejectedInvalidAuthorizedUpgrade': {
-          'codeHash': codeHash.toList(),
-          'error': error.toJson(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i6.H256Codec().sizeHint(codeHash);
-    size = size + _i4.DispatchError.codec.sizeHint(error);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      codeHash,
-      output,
-    );
-    _i4.DispatchError.codec.encodeTo(
-      error,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RejectedInvalidAuthorizedUpgrade &&
-          _i7.listsEqual(
-            other.codeHash,
-            codeHash,
-          ) &&
-          other.error == error;
-
-  @override
-  int get hashCode => Object.hash(
-        codeHash,
-        error,
       );
 }

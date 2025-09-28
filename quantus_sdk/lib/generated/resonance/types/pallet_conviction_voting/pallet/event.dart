@@ -68,16 +68,6 @@ class $Event {
       vote: vote,
     );
   }
-
-  VoteUnlocked voteUnlocked({
-    required _i3.AccountId32 who,
-    required int class_,
-  }) {
-    return VoteUnlocked(
-      who: who,
-      class_: class_,
-    );
-  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -95,8 +85,6 @@ class $EventCodec with _i1.Codec<Event> {
         return Voted._decode(input);
       case 3:
         return VoteRemoved._decode(input);
-      case 4:
-        return VoteUnlocked._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -120,9 +108,6 @@ class $EventCodec with _i1.Codec<Event> {
       case VoteRemoved:
         (value as VoteRemoved).encodeTo(output);
         break;
-      case VoteUnlocked:
-        (value as VoteUnlocked).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -140,8 +125,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Voted)._sizeHint();
       case VoteRemoved:
         return (value as VoteRemoved)._sizeHint();
-      case VoteUnlocked:
-        return (value as VoteUnlocked)._sizeHint();
       default:
         throw Exception(
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
@@ -269,7 +252,7 @@ class Undelegated extends Event {
   int get hashCode => value0.hashCode;
 }
 
-/// An account has voted
+/// An account that has voted
 class Voted extends Event {
   const Voted({
     required this.who,
@@ -339,7 +322,7 @@ class Voted extends Event {
       );
 }
 
-/// A vote has been removed
+/// A vote that been removed
 class VoteRemoved extends Event {
   const VoteRemoved({
     required this.who,
@@ -406,75 +389,5 @@ class VoteRemoved extends Event {
   int get hashCode => Object.hash(
         who,
         vote,
-      );
-}
-
-/// The lockup period of a conviction vote expired, and the funds have been unlocked.
-class VoteUnlocked extends Event {
-  const VoteUnlocked({
-    required this.who,
-    required this.class_,
-  });
-
-  factory VoteUnlocked._decode(_i1.Input input) {
-    return VoteUnlocked(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      class_: _i1.U16Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 who;
-
-  /// ClassOf<T, I>
-  final int class_;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'VoteUnlocked': {
-          'who': who.toList(),
-          'class': class_,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(who);
-    size = size + _i1.U16Codec.codec.sizeHint(class_);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      class_,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VoteUnlocked &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.class_ == class_;
-
-  @override
-  int get hashCode => Object.hash(
-        who,
-        class_,
       );
 }

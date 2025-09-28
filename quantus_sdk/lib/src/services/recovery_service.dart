@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:quantus_sdk/generated/resonance/resonance.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/active_recovery.dart';
-import 'package:quantus_sdk/generated/resonance/types/pallet_recovery/recovery_config.dart';
-import 'package:quantus_sdk/generated/resonance/types/quantus_runtime/runtime_call.dart';
-import 'package:quantus_sdk/generated/resonance/types/sp_runtime/multiaddress/multi_address.dart'
+import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/active_recovery.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/recovery_config.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_call.dart';
+import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -29,7 +29,7 @@ class RecoveryService {
     required int delayPeriod,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final friends = friendAddresses
           .map((addr) => crypto.ss58ToAccountId(s: addr))
           .toList();
@@ -54,7 +54,7 @@ class RecoveryService {
     required String lostAccountAddress,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: lostAccountAddress),
       );
@@ -78,7 +78,7 @@ class RecoveryService {
     required String rescuerAddress,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: lostAccountAddress),
       );
@@ -105,7 +105,7 @@ class RecoveryService {
     required String lostAccountAddress,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: lostAccountAddress),
       );
@@ -126,7 +126,7 @@ class RecoveryService {
     required String rescuerAddress,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final rescuer = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: rescuerAddress),
       );
@@ -146,7 +146,7 @@ class RecoveryService {
     required Account senderAccount,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
 
       // Create the call
       final call = resonanceApi.tx.recovery.removeRecovery();
@@ -165,7 +165,7 @@ class RecoveryService {
     required RuntimeCall call,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: recoveredAccountAddress),
       );
@@ -189,7 +189,7 @@ class RecoveryService {
     required String recoveredAccountAddress,
   }) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: recoveredAccountAddress),
       );
@@ -209,7 +209,7 @@ class RecoveryService {
   /// Query recovery configuration for an account
   Future<RecoveryConfig?> getRecoveryConfig(String address) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
       return await resonanceApi.query.recovery.recoverable(accountId);
@@ -224,7 +224,7 @@ class RecoveryService {
     String rescuerAddress,
   ) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
       final rescuerId = crypto.ss58ToAccountId(s: rescuerAddress);
 
@@ -240,7 +240,7 @@ class RecoveryService {
   /// Check if an account can act as proxy for a recovered account
   Future<String?> getProxyRecoveredAccount(String proxyAddress) async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
       final recoveredAccountId = await resonanceApi.query.recovery.proxy(
@@ -315,7 +315,7 @@ class RecoveryService {
   /// Get recovery constants
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final resonanceApi = Resonance(_substrateService.provider!);
+      final resonanceApi = Schrodinger(_substrateService.provider!);
       final constants = resonanceApi.constant.recovery;
 
       return {
@@ -331,7 +331,7 @@ class RecoveryService {
 
   /// Helper to create a balance transfer call for recovered account
   Balances createBalanceTransferCall(String recipientAddress, BigInt amount) {
-    final resonanceApi = Resonance(_substrateService.provider!);
+    final resonanceApi = Schrodinger(_substrateService.provider!);
     final accountID = crypto.ss58ToAccountId(s: recipientAddress);
     final dest = const multi_address.$MultiAddress().id(accountID);
     final call = resonanceApi.tx.balances.transferAllowDeath(

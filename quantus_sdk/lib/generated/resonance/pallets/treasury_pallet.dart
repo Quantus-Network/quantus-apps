@@ -11,7 +11,6 @@ import '../types/pallet_treasury/proposal.dart' as _i3;
 import '../types/pallet_treasury/spend_status.dart' as _i4;
 import '../types/quantus_runtime/runtime_call.dart' as _i7;
 import '../types/sp_arithmetic/per_things/permill.dart' as _i10;
-import '../types/sp_core/crypto/account_id32.dart' as _i12;
 import '../types/sp_runtime/multiaddress/multi_address.dart' as _i8;
 
 class Queries {
@@ -436,7 +435,7 @@ class Constants {
   Constants();
 
   /// Period between successive spends.
-  final int spendPeriod = 14400;
+  final int spendPeriod = 172800;
 
   /// Percentage of spare funds (if any) that are burnt per spend period.
   final _i10.Permill burn = 0;
@@ -462,41 +461,5 @@ class Constants {
   final int maxApprovals = 100;
 
   /// The period during which an approved treasury spend has to be claimed.
-  final int payoutPeriod = 100800;
-
-  /// Gets this pallet's derived pot account.
-  final _i12.AccountId32 potAccount = const <int>[
-    109,
-    111,
-    100,
-    108,
-    112,
-    121,
-    47,
-    116,
-    114,
-    115,
-    114,
-    121,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ];
+  final int payoutPeriod = 1209600;
 }

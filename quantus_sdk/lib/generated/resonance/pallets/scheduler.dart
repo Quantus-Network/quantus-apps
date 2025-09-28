@@ -444,5 +444,5 @@ class Constants {
   /// Precision of the timestamp buckets.
   ///
   /// Timestamp based dispatches are rounded to the nearest bucket of this precision.
-  final BigInt timestampBucketSize = BigInt.from(24000);
+  final BigInt timestampBucketSize = BigInt.from(40000);
 }

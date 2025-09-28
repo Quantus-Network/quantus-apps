@@ -10,7 +10,7 @@ import '../types/frame_support/traits/schedule/dispatch_time.dart' as _i11;
 import '../types/pallet_referenda/pallet/call_2.dart' as _i12;
 import '../types/pallet_referenda/types/curve.dart' as _i14;
 import '../types/pallet_referenda/types/referendum_info_2.dart' as _i3;
-import '../types/pallet_referenda/types/track_details.dart' as _i13;
+import '../types/pallet_referenda/types/track_info.dart' as _i13;
 import '../types/primitive_types/h256.dart' as _i5;
 import '../types/quantus_runtime/origin_caller.dart' as _i9;
 import '../types/quantus_runtime/runtime_call.dart' as _i8;
@@ -416,25 +416,23 @@ class Constants {
 
   /// The number of blocks after submission that a referendum must begin being decided by.
   /// Once this passes, then anyone may cancel the referendum.
-  final int undecidingTimeout = 324000;
+  final int undecidingTimeout = 3888000;
 
   /// Quantization level for the referendum wakeup scheduler. A higher number will result in
   /// fewer storage reads/writes needed for smaller voters, but also result in delays to the
   /// automatic referendum status changes. Explicit servicing instructions are unaffected.
   final int alarmInterval = 1;
 
-  /// A list of tracks.
-  ///
-  /// Note: if the tracks are dynamic, the value in the static metadata might be inaccurate.
-  final List<_i4.Tuple2<int, _i13.TrackDetails>> tracks = [
-    _i4.Tuple2<int, _i13.TrackDetails>(
+  /// Information concerning the different referendum tracks.
+  final List<_i4.Tuple2<int, _i13.TrackInfo>> tracks = [
+    _i4.Tuple2<int, _i13.TrackInfo>(
       0,
-      _i13.TrackDetails(
+      _i13.TrackInfo(
         name: 'tech_collective_members',
         maxDeciding: 1,
         decisionDeposit: BigInt.from(1000000000000000),
         preparePeriod: 100,
-        decisionPeriod: 7200,
+        decisionPeriod: 86400,
         confirmPeriod: 100,
         minEnactmentPeriod: 100,
         minApproval: const _i14.LinearDecreasing(

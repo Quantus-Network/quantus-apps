@@ -40,10 +40,12 @@ class $Call {
   SetHighSecurity setHighSecurity({
     required _i3.BlockNumberOrTimestamp delay,
     required _i4.AccountId32 interceptor,
+    required _i4.AccountId32 recoverer,
   }) {
     return SetHighSecurity(
       delay: delay,
       interceptor: interceptor,
+      recoverer: recoverer,
     );
   }
 
@@ -76,32 +78,6 @@ class $Call {
       delay: delay,
     );
   }
-
-  ScheduleAssetTransfer scheduleAssetTransfer({
-    required int assetId,
-    required _i6.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return ScheduleAssetTransfer(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-    );
-  }
-
-  ScheduleAssetTransferWithDelay scheduleAssetTransferWithDelay({
-    required int assetId,
-    required _i6.MultiAddress dest,
-    required BigInt amount,
-    required _i3.BlockNumberOrTimestamp delay,
-  }) {
-    return ScheduleAssetTransferWithDelay(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    );
-  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -121,10 +97,6 @@ class $CallCodec with _i1.Codec<Call> {
         return ScheduleTransfer._decode(input);
       case 4:
         return ScheduleTransferWithDelay._decode(input);
-      case 5:
-        return ScheduleAssetTransfer._decode(input);
-      case 6:
-        return ScheduleAssetTransferWithDelay._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -151,12 +123,6 @@ class $CallCodec with _i1.Codec<Call> {
       case ScheduleTransferWithDelay:
         (value as ScheduleTransferWithDelay).encodeTo(output);
         break;
-      case ScheduleAssetTransfer:
-        (value as ScheduleAssetTransfer).encodeTo(output);
-        break;
-      case ScheduleAssetTransferWithDelay:
-        (value as ScheduleAssetTransferWithDelay).encodeTo(output);
-        break;
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -176,10 +142,6 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as ScheduleTransfer)._sizeHint();
       case ScheduleTransferWithDelay:
         return (value as ScheduleTransferWithDelay)._sizeHint();
-      case ScheduleAssetTransfer:
-        return (value as ScheduleAssetTransfer)._sizeHint();
-      case ScheduleAssetTransferWithDelay:
-        return (value as ScheduleAssetTransferWithDelay)._sizeHint();
       default:
         throw Exception(
             'Call: Unsupported "$value" of type "${value.runtimeType}"');
@@ -187,29 +149,21 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Enable high-security for the calling account with a specified
-/// reversibility delay.
+/// Enable high-security for the calling account with a specified delay
 ///
-/// Recoverer and interceptor (aka guardian) could be the same account or
-/// different accounts.
-///
-/// Once an account is set as high security it can only make reversible
-/// transfers. It is not allowed any other calls.
-///
-/// - `delay`: The reversibility time for any transfer made by the high
-/// security account.
-/// - interceptor: The account that can intercept transctions from the
-/// high security account.
+/// - `delay`: The time (in milliseconds) after submission before the transaction executes.
 class SetHighSecurity extends Call {
   const SetHighSecurity({
     required this.delay,
     required this.interceptor,
+    required this.recoverer,
   });
 
   factory SetHighSecurity._decode(_i1.Input input) {
     return SetHighSecurity(
       delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
       interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      recoverer: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
 
@@ -219,11 +173,15 @@ class SetHighSecurity extends Call {
   /// T::AccountId
   final _i4.AccountId32 interceptor;
 
+  /// T::AccountId
+  final _i4.AccountId32 recoverer;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
         'set_high_security': {
           'delay': delay.toJson(),
           'interceptor': interceptor.toList(),
+          'recoverer': recoverer.toList(),
         }
       };
 
@@ -231,6 +189,7 @@ class SetHighSecurity extends Call {
     int size = 1;
     size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
     size = size + const _i4.AccountId32Codec().sizeHint(interceptor);
+    size = size + const _i4.AccountId32Codec().sizeHint(recoverer);
     return size;
   }
 
@@ -247,6 +206,10 @@ class SetHighSecurity extends Call {
       interceptor,
       output,
     );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      recoverer,
+      output,
+    );
   }
 
   @override
@@ -260,12 +223,17 @@ class SetHighSecurity extends Call {
           _i7.listsEqual(
             other.interceptor,
             interceptor,
+          ) &&
+          _i7.listsEqual(
+            other.recoverer,
+            recoverer,
           );
 
   @override
   int get hashCode => Object.hash(
         delay,
         interceptor,
+        recoverer,
       );
 }
 
@@ -439,7 +407,7 @@ class ScheduleTransfer extends Call {
 /// Schedule a transaction for delayed execution with a custom, one-time delay.
 ///
 /// This can only be used by accounts that have *not* set up a persistent
-/// reversibility configuration with `set_high_security`.
+/// reversibility configuration with `set_reversibility`.
 ///
 /// - `delay`: The time (in blocks or milliseconds) before the transaction executes.
 class ScheduleTransferWithDelay extends Call {
@@ -515,180 +483,6 @@ class ScheduleTransferWithDelay extends Call {
 
   @override
   int get hashCode => Object.hash(
-        dest,
-        amount,
-        delay,
-      );
-}
-
-/// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
-/// delay.
-class ScheduleAssetTransfer extends Call {
-  const ScheduleAssetTransfer({
-    required this.assetId,
-    required this.dest,
-    required this.amount,
-  });
-
-  factory ScheduleAssetTransfer._decode(_i1.Input input) {
-    return ScheduleAssetTransfer(
-      assetId: _i1.U32Codec.codec.decode(input),
-      dest: _i6.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
-  }
-
-  /// AssetIdOf<T>
-  final int assetId;
-
-  /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i6.MultiAddress dest;
-
-  /// BalanceOf<T>
-  final BigInt amount;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_asset_transfer': {
-          'assetId': assetId,
-          'dest': dest.toJson(),
-          'amount': amount,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(assetId);
-    size = size + _i6.MultiAddress.codec.sizeHint(dest);
-    size = size + _i1.U128Codec.codec.sizeHint(amount);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleAssetTransfer &&
-          other.assetId == assetId &&
-          other.dest == dest &&
-          other.amount == amount;
-
-  @override
-  int get hashCode => Object.hash(
-        assetId,
-        dest,
-        amount,
-      );
-}
-
-/// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
-class ScheduleAssetTransferWithDelay extends Call {
-  const ScheduleAssetTransferWithDelay({
-    required this.assetId,
-    required this.dest,
-    required this.amount,
-    required this.delay,
-  });
-
-  factory ScheduleAssetTransferWithDelay._decode(_i1.Input input) {
-    return ScheduleAssetTransferWithDelay(
-      assetId: _i1.U32Codec.codec.decode(input),
-      dest: _i6.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-      delay: _i3.BlockNumberOrTimestamp.codec.decode(input),
-    );
-  }
-
-  /// AssetIdOf<T>
-  final int assetId;
-
-  /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
-  final _i6.MultiAddress dest;
-
-  /// BalanceOf<T>
-  final BigInt amount;
-
-  /// BlockNumberOrTimestampOf<T>
-  final _i3.BlockNumberOrTimestamp delay;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_asset_transfer_with_delay': {
-          'assetId': assetId,
-          'dest': dest.toJson(),
-          'amount': amount,
-          'delay': delay.toJson(),
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + _i1.U32Codec.codec.sizeHint(assetId);
-    size = size + _i6.MultiAddress.codec.sizeHint(dest);
-    size = size + _i1.U128Codec.codec.sizeHint(amount);
-    size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(delay);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      delay,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleAssetTransferWithDelay &&
-          other.assetId == assetId &&
-          other.dest == dest &&
-          other.amount == amount &&
-          other.delay == delay;
-
-  @override
-  int get hashCode => Object.hash(
-        assetId,
         dest,
         amount,
         delay,

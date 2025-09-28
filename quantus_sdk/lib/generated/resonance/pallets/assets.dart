@@ -362,9 +362,6 @@ class Txs {
   ///
   /// - `id`: The identifier of the asset to be destroyed. This must identify an existing
   ///  asset.
-  ///
-  /// It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
-  /// an account contains holds or freezes in place.
   _i10.Assets startDestroy({required BigInt id}) {
     return _i10.Assets(_i12.StartDestroy(id: id));
   }
@@ -941,9 +938,6 @@ class Txs {
   ///  refunded.
   /// - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
   ///
-  /// It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
-  /// the asset account contains holds or freezes in place.
-  ///
   /// Emits `Refunded` event when successful.
   _i10.Assets refund({
     required BigInt id,
@@ -1005,9 +999,6 @@ class Txs {
   ///
   /// - `id`: The identifier of the asset for the account holding a deposit.
   /// - `who`: The account to refund.
-  ///
-  /// It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
-  /// the asset account contains holds or freezes in place.
   ///
   /// Emits `Refunded` event when successful.
   _i10.Assets refundOther({

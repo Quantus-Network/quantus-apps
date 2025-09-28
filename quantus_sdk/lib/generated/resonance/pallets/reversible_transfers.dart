@@ -164,8 +164,7 @@ class Queries {
   }
 
   /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an
-  /// interceptor.
+  /// This allows the UI to efficiently query all accounts for which a given account is an interceptor.
   _i7.Future<List<_i2.AccountId32>> interceptorIndex(
     _i2.AccountId32 key1, {
     _i1.BlockHash? at,
@@ -298,8 +297,7 @@ class Queries {
   }
 
   /// Maps interceptor accounts to the list of accounts they can intercept for.
-  /// This allows the UI to efficiently query all accounts for which a given account is an
-  /// interceptor.
+  /// This allows the UI to efficiently query all accounts for which a given account is an interceptor.
   _i7.Future<List<List<_i2.AccountId32>>> multiInterceptorIndex(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
@@ -401,26 +399,18 @@ class Queries {
 class Txs {
   const Txs();
 
-  /// Enable high-security for the calling account with a specified
-  /// reversibility delay.
+  /// Enable high-security for the calling account with a specified delay
   ///
-  /// Recoverer and interceptor (aka guardian) could be the same account or
-  /// different accounts.
-  ///
-  /// Once an account is set as high security it can only make reversible
-  /// transfers. It is not allowed any other calls.
-  ///
-  /// - `delay`: The reversibility time for any transfer made by the high
-  /// security account.
-  /// - interceptor: The account that can intercept transctions from the
-  /// high security account.
+  /// - `delay`: The time (in milliseconds) after submission before the transaction executes.
   _i9.ReversibleTransfers setHighSecurity({
     required _i10.BlockNumberOrTimestamp delay,
     required _i2.AccountId32 interceptor,
+    required _i2.AccountId32 recoverer,
   }) {
     return _i9.ReversibleTransfers(_i11.SetHighSecurity(
       delay: delay,
       interceptor: interceptor,
+      recoverer: recoverer,
     ));
   }
 
@@ -452,7 +442,7 @@ class Txs {
   /// Schedule a transaction for delayed execution with a custom, one-time delay.
   ///
   /// This can only be used by accounts that have *not* set up a persistent
-  /// reversibility configuration with `set_high_security`.
+  /// reversibility configuration with `set_reversibility`.
   ///
   /// - `delay`: The time (in blocks or milliseconds) before the transaction executes.
   _i9.ReversibleTransfers scheduleTransferWithDelay({
@@ -461,35 +451,6 @@ class Txs {
     required _i10.BlockNumberOrTimestamp delay,
   }) {
     return _i9.ReversibleTransfers(_i11.ScheduleTransferWithDelay(
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    ));
-  }
-
-  /// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
-  /// delay.
-  _i9.ReversibleTransfers scheduleAssetTransfer({
-    required int assetId,
-    required _i12.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransfer(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-    ));
-  }
-
-  /// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
-  _i9.ReversibleTransfers scheduleAssetTransferWithDelay({
-    required int assetId,
-    required _i12.MultiAddress dest,
-    required BigInt amount,
-    required _i10.BlockNumberOrTimestamp delay,
-  }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransferWithDelay(
-      assetId: assetId,
       dest: dest,
       amount: amount,
       delay: delay,
@@ -509,11 +470,12 @@ class Constants {
   /// The default delay period for reversible transactions if none is specified.
   ///
   /// NOTE: default delay is always in blocks.
-  final _i10.BlockNumberOrTimestamp defaultDelay = const _i10.BlockNumber(7200);
+  final _i10.BlockNumberOrTimestamp defaultDelay =
+      const _i10.BlockNumber(86400);
 
   /// The minimum delay period allowed for reversible transactions, in blocks.
   final int minDelayPeriodBlocks = 2;
 
   /// The minimum delay period allowed for reversible transactions, in milliseconds.
-  final BigInt minDelayPeriodMoment = BigInt.from(12000);
+  final BigInt minDelayPeriodMoment = BigInt.from(20000);
 }

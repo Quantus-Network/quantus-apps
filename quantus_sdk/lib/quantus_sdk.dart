@@ -5,8 +5,8 @@ import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
-export 'generated/resonance/pallets/balances.dart';
-export 'generated/resonance/types/quantus_runtime/runtime_call.dart';
+export 'generated/schrodinger/pallets/balances.dart';
+export 'generated/schrodinger/types/quantus_runtime/runtime_call.dart';
 export 'src/constants/app_constants.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/decimal_input_filter.dart';

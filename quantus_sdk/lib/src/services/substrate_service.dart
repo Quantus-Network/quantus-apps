@@ -6,7 +6,7 @@ import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
-import 'package:quantus_sdk/generated/resonance/resonance.dart';
+import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
@@ -197,7 +197,7 @@ class SubstrateService {
   Future<BigInt> queryBalance(String address) async {
     try {
       // Create Resonance API instance
-      final resonanceApi = Resonance(_provider!);
+      final resonanceApi = Schrodinger(_provider!);
       // Account from SS58 address
       final accountID = crypto.ss58ToAccountId(s: address);
 
@@ -297,7 +297,7 @@ class SubstrateService {
     Account account,
     RuntimeCall call,
   ) async {
-    final resonanceApi = Resonance(_provider!);
+    final resonanceApi = Schrodinger(_provider!);
     final mnemonic = await account.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found for signing.');

@@ -34,16 +34,6 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  VestingCreated vestingCreated({
-    required _i3.AccountId32 account,
-    required int scheduleIndex,
-  }) {
-    return VestingCreated(
-      account: account,
-      scheduleIndex: scheduleIndex,
-    );
-  }
-
   VestingUpdated vestingUpdated({
     required _i3.AccountId32 account,
     required BigInt unvested,
@@ -67,10 +57,8 @@ class $EventCodec with _i1.Codec<Event> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return VestingCreated._decode(input);
-      case 1:
         return VestingUpdated._decode(input);
-      case 2:
+      case 1:
         return VestingCompleted._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
@@ -83,9 +71,6 @@ class $EventCodec with _i1.Codec<Event> {
     _i1.Output output,
   ) {
     switch (value.runtimeType) {
-      case VestingCreated:
-        (value as VestingCreated).encodeTo(output);
-        break;
       case VestingUpdated:
         (value as VestingUpdated).encodeTo(output);
         break;
@@ -101,8 +86,6 @@ class $EventCodec with _i1.Codec<Event> {
   @override
   int sizeHint(Event value) {
     switch (value.runtimeType) {
-      case VestingCreated:
-        return (value as VestingCreated)._sizeHint();
       case VestingUpdated:
         return (value as VestingUpdated)._sizeHint();
       case VestingCompleted:
@@ -112,76 +95,6 @@ class $EventCodec with _i1.Codec<Event> {
             'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
-}
-
-/// A vesting schedule has been created.
-class VestingCreated extends Event {
-  const VestingCreated({
-    required this.account,
-    required this.scheduleIndex,
-  });
-
-  factory VestingCreated._decode(_i1.Input input) {
-    return VestingCreated(
-      account: const _i1.U8ArrayCodec(32).decode(input),
-      scheduleIndex: _i1.U32Codec.codec.decode(input),
-    );
-  }
-
-  /// T::AccountId
-  final _i3.AccountId32 account;
-
-  /// u32
-  final int scheduleIndex;
-
-  @override
-  Map<String, Map<String, dynamic>> toJson() => {
-        'VestingCreated': {
-          'account': account.toList(),
-          'scheduleIndex': scheduleIndex,
-        }
-      };
-
-  int _sizeHint() {
-    int size = 1;
-    size = size + const _i3.AccountId32Codec().sizeHint(account);
-    size = size + _i1.U32Codec.codec.sizeHint(scheduleIndex);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      scheduleIndex,
-      output,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VestingCreated &&
-          _i4.listsEqual(
-            other.account,
-            account,
-          ) &&
-          other.scheduleIndex == scheduleIndex;
-
-  @override
-  int get hashCode => Object.hash(
-        account,
-        scheduleIndex,
-      );
 }
 
 /// The amount vested has been updated. This could indicate a change in funds available.
@@ -222,7 +135,7 @@ class VestingUpdated extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      1,
+      0,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(
@@ -279,7 +192,7 @@ class VestingCompleted extends Event {
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(
-      2,
+      1,
       output,
     );
     const _i1.U8ArrayCodec(32).encodeTo(

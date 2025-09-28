@@ -351,7 +351,7 @@ class Spend extends Call {
   /// Box<BeneficiaryLookupOf<T, I>>
   final _i3.MultiAddress beneficiary;
 
-  /// Option<BlockNumberFor<T, I>>
+  /// Option<BlockNumberFor<T>>
   final int? validFrom;
 
   @override

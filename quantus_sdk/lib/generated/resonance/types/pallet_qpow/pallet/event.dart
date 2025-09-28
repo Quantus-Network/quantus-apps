@@ -34,16 +34,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  ProofSubmitted proofSubmitted({
-    required List<int> nonce,
-    required _i3.U512 difficulty,
-    required _i3.U512 distanceAchieved,
-  }) {
-    return ProofSubmitted(
-      nonce: nonce,
-      difficulty: difficulty,
-      distanceAchieved: distanceAchieved,
-    );
+  ProofSubmitted proofSubmitted({required List<int> nonce}) {
+    return ProofSubmitted(nonce: nonce);
   }
 
   DistanceThresholdAdjusted distanceThresholdAdjusted({
@@ -108,43 +100,23 @@ class $EventCodec with _i1.Codec<Event> {
 }
 
 class ProofSubmitted extends Event {
-  const ProofSubmitted({
-    required this.nonce,
-    required this.difficulty,
-    required this.distanceAchieved,
-  });
+  const ProofSubmitted({required this.nonce});
 
   factory ProofSubmitted._decode(_i1.Input input) {
-    return ProofSubmitted(
-      nonce: const _i1.U8ArrayCodec(64).decode(input),
-      difficulty: const _i1.U64ArrayCodec(8).decode(input),
-      distanceAchieved: const _i1.U64ArrayCodec(8).decode(input),
-    );
+    return ProofSubmitted(nonce: const _i1.U8ArrayCodec(64).decode(input));
   }
 
   /// NonceType
   final List<int> nonce;
 
-  /// U512
-  final _i3.U512 difficulty;
-
-  /// U512
-  final _i3.U512 distanceAchieved;
-
   @override
-  Map<String, Map<String, List<dynamic>>> toJson() => {
-        'ProofSubmitted': {
-          'nonce': nonce.toList(),
-          'difficulty': difficulty.toList(),
-          'distanceAchieved': distanceAchieved.toList(),
-        }
+  Map<String, Map<String, List<int>>> toJson() => {
+        'ProofSubmitted': {'nonce': nonce.toList()}
       };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(64).sizeHint(nonce);
-    size = size + const _i3.U512Codec().sizeHint(difficulty);
-    size = size + const _i3.U512Codec().sizeHint(distanceAchieved);
     return size;
   }
 
@@ -155,14 +127,6 @@ class ProofSubmitted extends Event {
     );
     const _i1.U8ArrayCodec(64).encodeTo(
       nonce,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      difficulty,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      distanceAchieved,
       output,
     );
   }
@@ -177,22 +141,10 @@ class ProofSubmitted extends Event {
           _i4.listsEqual(
             other.nonce,
             nonce,
-          ) &&
-          _i4.listsEqual(
-            other.difficulty,
-            difficulty,
-          ) &&
-          _i4.listsEqual(
-            other.distanceAchieved,
-            distanceAchieved,
           );
 
   @override
-  int get hashCode => Object.hash(
-        nonce,
-        difficulty,
-        distanceAchieved,
-      );
+  int get hashCode => nonce.hashCode;
 }
 
 class DistanceThresholdAdjusted extends Event {

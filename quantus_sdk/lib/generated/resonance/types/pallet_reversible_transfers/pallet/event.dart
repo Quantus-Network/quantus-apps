@@ -42,11 +42,13 @@ class $Event {
   HighSecuritySet highSecuritySet({
     required _i3.AccountId32 who,
     required _i3.AccountId32 interceptor,
+    required _i3.AccountId32 recoverer,
     required _i4.BlockNumberOrTimestamp delay,
   }) {
     return HighSecuritySet(
       who: who,
       interceptor: interceptor,
+      recoverer: recoverer,
       delay: delay,
     );
   }
@@ -55,7 +57,6 @@ class $Event {
     required _i3.AccountId32 from,
     required _i3.AccountId32 to,
     required _i3.AccountId32 interceptor,
-    int? assetId,
     required BigInt amount,
     required _i5.H256 txId,
     required _i6.DispatchTime executeAt,
@@ -64,7 +65,6 @@ class $Event {
       from: from,
       to: to,
       interceptor: interceptor,
-      assetId: assetId,
       amount: amount,
       txId: txId,
       executeAt: executeAt,
@@ -161,6 +161,7 @@ class HighSecuritySet extends Event {
   const HighSecuritySet({
     required this.who,
     required this.interceptor,
+    required this.recoverer,
     required this.delay,
   });
 
@@ -168,6 +169,7 @@ class HighSecuritySet extends Event {
     return HighSecuritySet(
       who: const _i1.U8ArrayCodec(32).decode(input),
       interceptor: const _i1.U8ArrayCodec(32).decode(input),
+      recoverer: const _i1.U8ArrayCodec(32).decode(input),
       delay: _i4.BlockNumberOrTimestamp.codec.decode(input),
     );
   }
@@ -178,6 +180,9 @@ class HighSecuritySet extends Event {
   /// T::AccountId
   final _i3.AccountId32 interceptor;
 
+  /// T::AccountId
+  final _i3.AccountId32 recoverer;
+
   /// BlockNumberOrTimestampOf<T>
   final _i4.BlockNumberOrTimestamp delay;
 
@@ -186,6 +191,7 @@ class HighSecuritySet extends Event {
         'HighSecuritySet': {
           'who': who.toList(),
           'interceptor': interceptor.toList(),
+          'recoverer': recoverer.toList(),
           'delay': delay.toJson(),
         }
       };
@@ -194,6 +200,7 @@ class HighSecuritySet extends Event {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(who);
     size = size + const _i3.AccountId32Codec().sizeHint(interceptor);
+    size = size + const _i3.AccountId32Codec().sizeHint(recoverer);
     size = size + _i4.BlockNumberOrTimestamp.codec.sizeHint(delay);
     return size;
   }
@@ -209,6 +216,10 @@ class HighSecuritySet extends Event {
     );
     const _i1.U8ArrayCodec(32).encodeTo(
       interceptor,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      recoverer,
       output,
     );
     _i4.BlockNumberOrTimestamp.codec.encodeTo(
@@ -232,12 +243,17 @@ class HighSecuritySet extends Event {
             other.interceptor,
             interceptor,
           ) &&
+          _i9.listsEqual(
+            other.recoverer,
+            recoverer,
+          ) &&
           other.delay == delay;
 
   @override
   int get hashCode => Object.hash(
         who,
         interceptor,
+        recoverer,
         delay,
       );
 }
@@ -249,7 +265,6 @@ class TransactionScheduled extends Event {
     required this.from,
     required this.to,
     required this.interceptor,
-    this.assetId,
     required this.amount,
     required this.txId,
     required this.executeAt,
@@ -260,7 +275,6 @@ class TransactionScheduled extends Event {
       from: const _i1.U8ArrayCodec(32).decode(input),
       to: const _i1.U8ArrayCodec(32).decode(input),
       interceptor: const _i1.U8ArrayCodec(32).decode(input),
-      assetId: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
       amount: _i1.U128Codec.codec.decode(input),
       txId: const _i1.U8ArrayCodec(32).decode(input),
       executeAt: _i6.DispatchTime.codec.decode(input),
@@ -276,10 +290,7 @@ class TransactionScheduled extends Event {
   /// T::AccountId
   final _i3.AccountId32 interceptor;
 
-  /// Option<AssetIdOf<T>>
-  final int? assetId;
-
-  /// BalanceOf<T>
+  /// T::Balance
   final BigInt amount;
 
   /// T::Hash
@@ -294,7 +305,6 @@ class TransactionScheduled extends Event {
           'from': from.toList(),
           'to': to.toList(),
           'interceptor': interceptor.toList(),
-          'assetId': assetId,
           'amount': amount,
           'txId': txId.toList(),
           'executeAt': executeAt.toJson(),
@@ -306,8 +316,6 @@ class TransactionScheduled extends Event {
     size = size + const _i3.AccountId32Codec().sizeHint(from);
     size = size + const _i3.AccountId32Codec().sizeHint(to);
     size = size + const _i3.AccountId32Codec().sizeHint(interceptor);
-    size =
-        size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(assetId);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + const _i5.H256Codec().sizeHint(txId);
     size = size + _i6.DispatchTime.codec.sizeHint(executeAt);
@@ -329,10 +337,6 @@ class TransactionScheduled extends Event {
     );
     const _i1.U8ArrayCodec(32).encodeTo(
       interceptor,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      assetId,
       output,
     );
     _i1.U128Codec.codec.encodeTo(
@@ -368,7 +372,6 @@ class TransactionScheduled extends Event {
             other.interceptor,
             interceptor,
           ) &&
-          other.assetId == assetId &&
           other.amount == amount &&
           _i9.listsEqual(
             other.txId,
@@ -381,7 +384,6 @@ class TransactionScheduled extends Event {
         from,
         to,
         interceptor,
-        assetId,
         amount,
         txId,
         executeAt,

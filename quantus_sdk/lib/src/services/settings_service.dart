@@ -13,7 +13,10 @@ class SettingsService {
   final _secureStorage = const FlutterSecureStorage();
 
   // New keys for multi-account support
-  static const String _accountsKey = 'accounts';
+  static const String _accountsKey = 'accounts_v2';
+  
+  // ignore: unused_field
+  static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
 
   // Local authentication keys

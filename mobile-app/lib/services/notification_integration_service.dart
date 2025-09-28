@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/generated/resonance/pallets/balances.dart'
+import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart'
     as balances;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
