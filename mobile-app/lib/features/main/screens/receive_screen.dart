@@ -108,8 +108,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
           children: [
             Positioned(
               left: context.getHorizontalCenterPosition(
-                230 + (35 * 2),
-              ), // We add 35 * 2 because of the padding horizontal
+                230 + (24 * 2),
+              ), // We add 24 * 2 because of the padding horizontal
               bottom: -100,
               child: const Sphere(variant: 7, size: 230),
             ),

@@ -1,10 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class MigrationDialog extends StatefulWidget {
   final List<MigrationAccountData> migrationData;
@@ -24,12 +27,47 @@ class MigrationDialog extends StatefulWidget {
     required VoidCallback onMigrate,
     required VoidCallback onCancel,
   }) {
-    return showAppModalBottomSheet(
+    return showModalBottomSheet(
       context: context,
-      builder: (context) => MigrationDialog(
-        migrationData: migrationData,
-        onMigrate: onMigrate,
-        onCancel: onCancel,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width, // Ensure full width
+      ),
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black,
+                    const Color(0xFF312E6E).useOpacity(0.4),
+                    Colors.black,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: Container(
+                color: Colors.black.useOpacity(0.3),
+                child: MigrationDialog(
+                  migrationData: migrationData,
+                  onMigrate: onMigrate,
+                  onCancel: onCancel,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -43,36 +81,54 @@ class _MigrationDialogState extends State<MigrationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final accountCount = widget.migrationData.length;
+
     return SafeArea(
       bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
-          decoration: ShapeDecoration(
-            color: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: ShapeDecoration(
+          color: context.themeColors.background,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: context.getHorizontalCenterPosition(
+                230 + (24 * 2),
+              ), // We add 24 * 2 because of the padding horizontal
+              bottom: -100,
+              child: const Sphere(variant: 7, size: 230),
             ),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
+            Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: context.themeSize.overlayCloseIconSize,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(7),
+                  decoration: ShapeDecoration(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                    onPressed: widget.onCancel,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      InkWell(
+                        onTap: widget.onCancel,
+                        child: Icon(
+                          Icons.close,
+                          size: context.isTablet ? 28 : 24,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 28),
                 Text(
-                  'Migrating your account to the new Quantus Testnet',
+                  'Migrate your accounts',
                   style: context.themeText.mediumTitle,
                 ),
                 const SizedBox(height: 16),
@@ -81,96 +137,46 @@ class _MigrationDialogState extends State<MigrationDialog> {
                   'This will update your account addresses while preserving your funds.',
                   style: context.themeText.smallParagraph,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 Text(
-                  'Accounts to migrate:',
-                  style: context.themeText.smallTitle,
+                  '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
+                  style: context.themeText.paragraph?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: context.themeColors.yellow
+                  ),
                 ),
-                const SizedBox(height: 16),
-                ...widget.migrationData.map((data) => _buildAccountItem(data)),
-                const SizedBox(height: 28),
-                if (_isMigrating)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  Button(
-                    variant: ButtonVariant.primary,
-                    label: 'Migrate Accounts',
-                    onPressed: () async {
-                      setState(() => _isMigrating = true);
-                      try {
-                        widget.onMigrate();
-                      } finally {
-                        if (mounted) {
-                          setState(() => _isMigrating = false);
-                        }
+                const SizedBox(height: 120),
+                Button(
+                  isLoading: _isMigrating,
+                  variant: ButtonVariant.primary,
+                  label: 'Migrate Accounts',
+                  onPressed: () async {
+                    setState(() => _isMigrating = true);
+
+                    try {
+                      widget.onMigrate();
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isMigrating = false);
                       }
-                    },
-                    textStyle: context.themeText.smallTitle?.copyWith(
-                      color: context.themeColors.textSecondary,
-                    ),
-                  ),
+                    }
+                  },
+                ),
                 const SizedBox(height: 16),
-                Center(
-                  child: TextButton(
-                    onPressed: widget.onCancel,
-                    child: Text(
-                      'Cancel',
-                      style: context.themeText.smallParagraph?.copyWith(
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
+                Button(
+                  isDisabled: _isMigrating,
+                  variant: ButtonVariant.transparent,
+                  label: 'Cancel',
+                  onPressed: widget.onCancel,
+                  textStyle: context.themeText.smallParagraph?.copyWith(
+                    decoration: TextDecoration.underline,
                   ),
                 ),
+                SizedBox(height: context.themeSize.bottomButtonSpacing),
               ],
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAccountItem(MigrationAccountData data) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.themeColors.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Account ${data.oldAccount.index}',
-                style: context.themeText.smallTitle,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                data.oldAccount.name,
-                style: context.themeText.detail,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Address: ${data.oldAccount.accountId}',
-            style: context.themeText.detail,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Public Key: ${data.publicKeyHex}',
-            style: context.themeText.detail,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'New Address: ${data.newAccountId}',
-            style: context.themeText.detail?.copyWith(
-              color: context.themeColors.buttonSuccess,
-            ),
-          ),
-        ],
       ),
     );
   }

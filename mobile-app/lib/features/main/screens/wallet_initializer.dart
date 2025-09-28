@@ -36,13 +36,20 @@ class WalletInitializerState extends State<WalletInitializer> {
       try {
         final migrationData = await _migrationService.getMigrationData();
 
-            for (final data in migrationData) {
-              print("MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}");
-            }
         setState(() {
           _needsMigration = true;
           _migrationData = migrationData;
           _loading = false;
+        });
+
+        // Show migration dialog
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          MigrationDialog.show(
+            context: context,
+            migrationData: _migrationData!,
+            onMigrate: _performMigration,
+            onCancel: _cancelMigration,
+          );
         });
       } catch (e) {
         // If migration data can't be loaded, continue without migration
@@ -63,42 +70,33 @@ class WalletInitializerState extends State<WalletInitializer> {
     if (_migrationData == null) return;
 
     try {
+      Navigator.of(context).pop();
+    
       await _migrationService.performMigration(_migrationData!);
       // After migration, check wallet status again
       await _checkWalletAndMigration();
     } catch (e) {
       // Handle migration error - for now just show snackbar
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Migration failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Migration failed: $e')));
       }
     }
   }
 
   void _cancelMigration() {
+    Navigator.of(context).pop();
+
     setState(() {
       _needsMigration = false;
-      _walletExists = false; // Go to welcome screen if migration cancelled
-    });
+      _walletExists = false;
+    });    
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (_needsMigration && _migrationData != null) {
-      // Show migration dialog
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        MigrationDialog.show(
-          context: context,
-          migrationData: _migrationData!,
-          onMigrate: _performMigration,
-          onCancel: _cancelMigration,
-        );
-      });
+    if (_loading || _needsMigration) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
