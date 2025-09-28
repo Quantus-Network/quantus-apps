@@ -14,7 +14,7 @@ class SettingsService {
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v2';
-  
+
   // ignore: unused_field
   static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
@@ -40,11 +40,15 @@ class SettingsService {
       return decoded.map((e) => Account.fromJson(e)).toList()
         ..sort((a, b) => a.index.compareTo(b.index));
     }
-        // Migration for existing single-account users
+    // Migration for existing single-account users
     final oldAccountId = _prefs.getString('account_id');
     if (oldAccountId != null) {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
-      final account = Account(index: 0, name: oldWalletName, accountId: oldAccountId);
+      final account = Account(
+        index: 0,
+        name: oldWalletName,
+        accountId: oldAccountId,
+      );
       await saveAccounts([account]);
       await setActiveAccount(account);
       // Clean up old keys after migration
@@ -54,7 +58,6 @@ class SettingsService {
     }
 
     return [];
-
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
@@ -245,15 +248,15 @@ class SettingsService {
   /// Remove old accounts from legacy storage after successful migration
   Future<void> clearOldAccounts() async {
     print('clearOldAccounts DISABLED for now');
-    // don't clear old accounts for now... 
+    // don't clear old accounts for now...
     // await _prefs.remove(_oldAccountsKey);
   }
 
   /// Set old accounts data (for debugging/testing)
   Future<void> setOldAccountsData(String jsonData) async {
     await _prefs.setString(_oldAccountsKey, jsonData);
-
   }
+
   // Test-only helper to reset initialization between tests
   void resetForTest() {
     assert(() {

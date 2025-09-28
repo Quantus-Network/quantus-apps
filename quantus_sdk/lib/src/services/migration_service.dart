@@ -32,22 +32,27 @@ class MigrationService {
       final keypair = _hdWalletService.keyPairAtIndex(mnemonic, account.index);
       final publicKeyHex = _uint8ListToHex(keypair.publicKey);
 
-      migrationData.add(MigrationAccountData(
-        oldAccount: account,
-        publicKeyHex: publicKeyHex,
-        newAccountId: crypto.toAccountId(obj: keypair),
-      ));
+      migrationData.add(
+        MigrationAccountData(
+          oldAccount: account,
+          publicKeyHex: publicKeyHex,
+          newAccountId: crypto.toAccountId(obj: keypair),
+        ),
+      );
     }
 
     return migrationData;
   }
 
   /// Perform the migration by creating new accounts and clearing old data
-  Future<void> performMigration(List<MigrationAccountData> migrationData) async {
+  Future<void> performMigration(
+    List<MigrationAccountData> migrationData,
+  ) async {
     // Create new accounts with the same indices and names
     for (final data in migrationData) {
-
-      print('performMigration: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}');
+      print(
+        'performMigration: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
+      );
 
       final newAccount = Account(
         index: data.oldAccount.index,

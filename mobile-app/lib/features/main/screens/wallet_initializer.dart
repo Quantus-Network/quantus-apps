@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 
 class WalletInitializer extends StatefulWidget {
   final String? address;
@@ -36,9 +36,11 @@ class WalletInitializerState extends State<WalletInitializer> {
       try {
         final migrationData = await _migrationService.getMigrationData();
 
-            for (final data in migrationData) {
-              print("MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}");
-            }
+        for (final data in migrationData) {
+          print(
+            "MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}",
+          );
+        }
         setState(() {
           _needsMigration = true;
           _migrationData = migrationData;
@@ -69,9 +71,9 @@ class WalletInitializerState extends State<WalletInitializer> {
     } catch (e) {
       // Handle migration error - for now just show snackbar
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Migration failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Migration failed: $e')));
       }
     }
   }
