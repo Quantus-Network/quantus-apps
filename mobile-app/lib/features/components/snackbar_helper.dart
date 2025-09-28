@@ -81,3 +81,16 @@ Widget buildErrorIcon() {
     child: const Icon(Icons.error_outline, color: Colors.white, size: 20),
   );
 }
+
+Widget buildSuccessIcon() {
+  return Container(
+    width: 36,
+    height: 36,
+    decoration: const ShapeDecoration(
+      color: Colors.green, // Green background for success
+      shape: OvalBorder(),
+    ),
+    alignment: Alignment.center,
+    child: const Icon(Icons.check, color: Colors.white, size: 20),
+  );
+}

@@ -280,7 +280,7 @@ ref.read(activeAccountProvider.notifier).reset();
         decoration: ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
-            side: BorderSide(width: 1, color: Colors.orange),
+            side: const BorderSide(width: 1, color: Colors.orange),
             borderRadius: BorderRadius.circular(4),
           ),
         ),

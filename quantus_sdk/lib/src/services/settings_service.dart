@@ -244,7 +244,9 @@ class SettingsService {
 
   /// Remove old accounts from legacy storage after successful migration
   Future<void> clearOldAccounts() async {
-    await _prefs.remove(_oldAccountsKey);
+    print('clearOldAccounts DISABLED for now');
+    // don't clear old accounts for now... 
+    // await _prefs.remove(_oldAccountsKey);
   }
 
   /// Set old accounts data (for debugging/testing)
