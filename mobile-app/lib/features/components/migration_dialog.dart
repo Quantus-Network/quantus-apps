@@ -133,7 +133,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     ),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: context.themeColors.error.withOpacity(0.15),
+                      color: context.themeColors.error.useOpacity(0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -156,6 +156,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     try {
                       await widget.onMigrate();
                       if (mounted) {
+                        // ignore: use_build_context_synchronously
                         Navigator.of(context).pop();
                       }
                     } catch (e) {
@@ -182,6 +183,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                         await widget.onTryLater!();
                       }
                       if (mounted) {
+                        // ignore: use_build_context_synchronously
                         Navigator.of(context).pop();
                       }
                     },
@@ -190,7 +192,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     ),
                   ),
                 ],
-                SizedBox(height: 48),
+                const SizedBox(height: 48),
               ],
             ),
           ],
