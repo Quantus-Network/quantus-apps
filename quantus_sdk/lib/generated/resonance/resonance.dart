@@ -214,7 +214,7 @@ class Resonance {
         tx = Extrinsics(),
         registry = Registry();
 
-  factory Schrodinger(_i1.Provider provider) {
+  factory Resonance(_i1.Provider provider) {
     final rpc = Rpc(
       state: _i1.StateApi(provider),
       system: _i1.SystemApi(provider),
@@ -227,7 +227,7 @@ class Resonance {
 
   factory Resonance.url(Uri url) {
     final provider = _i1.Provider.fromUri(url);
-    return Schrodinger(provider);
+    return Resonance(provider);
   }
 
   final _i1.Provider _provider;
