@@ -72,42 +72,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-Future<void> _logout() async {
-  try {
-    // Step 1: Clear sensitive data (mnemonic, accounts, etc.)
-    await _settingsService.clearAll();  // Clears prefs and secure storage
-    ref.read(pendingTransactionsProvider.notifier).clear();  // Clear specific notifier
+  Future<void> _logout() async {
+    try {
+      // Step 1: Clear sensitive data (mnemonic, accounts, etc.)
+      await _settingsService.clearAll(); // Clears prefs and secure storage
+      ref
+          .read(pendingTransactionsProvider.notifier)
+          .clear(); // Clear specific notifier
 
-    // Step 2: Set providers to loading state to prevent UI errors during transition
-ref.read(accountsProvider.notifier).reset();
-ref.read(activeAccountProvider.notifier).reset();
+      // Step 2: Set providers to loading state to prevent UI errors during transition
+      ref.read(accountsProvider.notifier).reset();
+      ref.read(activeAccountProvider.notifier).reset();
 
-    // Step 3: Navigate to safe screen FIRST (prevents main screen rebuild errors)
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),  // Or your login screen
-        (route) => false,
-      );
-    }
+      // Step 3: Navigate to safe screen FIRST (prevents main screen rebuild errors)
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WelcomeScreen(),
+          ), // Or your login screen
+          (route) => false,
+        );
+      }
 
-    // Step 4: Invalidate providers AFTER navigation (use addPostFrameCallback to delay)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('invalidating all providers');
-      ref.invalidate(accountsProvider);
-      ref.invalidate(activeAccountProvider);
-      ref.invalidate(pendingTransactionsProvider);  // If needed for transactions
-    });
+      // Step 4: Invalidate providers AFTER navigation (use addPostFrameCallback to delay)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        print('invalidating all providers');
+        ref.invalidate(accountsProvider);
+        ref.invalidate(activeAccountProvider);
+        ref.invalidate(
+          pendingTransactionsProvider,
+        ); // If needed for transactions
+      });
 
-    // Optional: Log success
-    debugPrint('Logout successful');
-  } catch (e) {
-    debugPrint('Logout error: $e');
-    if (mounted) {
-      showTopSnackBar(context, title: 'Error', message: 'Logout failed: $e');
+      // Optional: Log success
+      debugPrint('Logout successful');
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      if (mounted) {
+        showTopSnackBar(context, title: 'Error', message: 'Logout failed: $e');
+      }
     }
   }
-}
+
   void _showResetConfirmationSheet() {
     showAppModalBottomSheet(
       context: context,
@@ -143,7 +150,10 @@ ref.read(activeAccountProvider.notifier).reset();
                 const SizedBox(height: 35),
                 _buildInformationList(context),
                 const SizedBox(height: 42),
-                _buildDebugButton(context),
+                if (AppConstants.globalDebug) ...[
+                  _buildDebugButton(context),
+                  const SizedBox(height: 22),
+                ],
                 const SizedBox(height: 22),
                 _buildResetButton(context),
               ],
@@ -307,14 +317,18 @@ ref.read(activeAccountProvider.notifier).reset();
 
   Future<void> _createDebugOldAccounts() async {
     try {
-      final migrationService = MigrationService(_settingsService, HdWalletService());
+      final migrationService = MigrationService(
+        _settingsService,
+        HdWalletService(),
+      );
       await migrationService.createDebugOldAccounts();
 
       if (mounted) {
         showTopSnackBar(
           context,
           title: 'Debug',
-          message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
+          message:
+              'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
           icon: buildSuccessIcon(),
         );
       }
