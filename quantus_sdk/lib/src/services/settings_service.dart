@@ -247,6 +247,7 @@ class SettingsService {
     print('clearOldAccounts DISABLED for now');
     // don't clear old accounts for now... 
     // await _prefs.remove(_oldAccountsKey);
+    await _prefs.remove(_oldAccountsKey);
   }
 
   /// Set old accounts data (for debugging/testing)
