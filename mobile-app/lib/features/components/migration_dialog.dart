@@ -111,8 +111,10 @@ class _MigrationDialogState extends State<MigrationDialog> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'We found existing accounts that need to be migrated to the new testnet. '
-                  'This will update your account addresses while preserving your funds.',
+                  'We\'ll record your old‑chain mining rewards and actions to determine '
+                  'airdrops and rewards on the new Quantus Testnet.\n\n'
+                  'Balances do not migrate. Use the new testnet faucet for funds; '
+                  'mining on the new testnet will earn rewards again.',
                   style: context.themeText.smallParagraph,
                 ),
                 const SizedBox(height: 24),
