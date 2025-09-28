@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -55,30 +54,6 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
   }
 
-  Future<void> _performMigration() async {
-    if (_migrationData == null) return;
-
-    try {
-      await _migrationService.performMigration(_migrationData!);
-      // After migration, check wallet status again
-      await _checkWalletAndMigration();
-    } catch (e) {
-      // Handle migration error - for now just show snackbar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Migration failed: $e')),
-        );
-      }
-    }
-  }
-
-  void _cancelMigration() {
-    setState(() {
-      _needsMigration = false;
-      _walletExists = false; // Go to welcome screen if migration cancelled
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -86,15 +61,6 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
 
     if (_needsMigration && _migrationData != null) {
-      // Show migration dialog
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        MigrationDialog.show(
-          context: context,
-          migrationData: _migrationData!,
-          onMigrate: _performMigration,
-          onCancel: _cancelMigration,
-        );
-      });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
