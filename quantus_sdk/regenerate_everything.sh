@@ -3,6 +3,9 @@
 echo "Generating Rust bindings..."
 flutter_rust_bridge_codegen generate
 
+echo "Building Rust library..."
+cd rust && cargo build --release && cd ..
+
 echo "Deleting old Polkadart bindings"
 rm -rf lib/generated
 
