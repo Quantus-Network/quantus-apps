@@ -5,7 +5,6 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class MigrationDialog extends StatefulWidget {
   final List<MigrationAccountData> migrationData;
@@ -135,7 +134,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.themeColors.surfaceSecondary,
+        color: context.themeColors.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(

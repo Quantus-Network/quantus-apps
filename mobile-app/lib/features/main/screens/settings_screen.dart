@@ -280,7 +280,7 @@ ref.read(activeAccountProvider.notifier).reset();
         decoration: ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
-            side: BorderSide(width: 1, color: Colors.orange),
+            side: const BorderSide(width: 1, color: Colors.orange),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -311,12 +311,13 @@ ref.read(activeAccountProvider.notifier).reset();
       await migrationService.createDebugOldAccounts();
 
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Debug',
-          message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
-          icon: buildSuccessIcon(),
-        );
+        // TBD
+        // showTopSnackBar(
+        //   context,
+        //   title: 'Debug',
+        //   message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
+        //   icon: buildSuccessIcon(),
+        // );
       }
     } catch (e) {
       if (mounted) {
