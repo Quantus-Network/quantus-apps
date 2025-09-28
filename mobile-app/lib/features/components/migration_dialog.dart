@@ -142,7 +142,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                   '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
                   style: context.themeText.paragraph?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: context.themeColors.yellow
+                    color: context.themeColors.yellow,
                   ),
                 ),
                 const SizedBox(height: 120),
