@@ -43,6 +43,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
   final TextEditingController _amountController = TextEditingController();
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
+  Account? activeAccount;
+
   BigInt _maxBalance = BigInt.zero;
   BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
   bool _isFetchingFee = false;
@@ -68,17 +70,21 @@ class SendScreenState extends ConsumerState<SendScreen> {
       return 'Enter Amount';
     } else if (_hasAmountError) {
       return 'Insufficient Balance';
-    } else {
+    } else if (_recipientController.text == activeAccount!.accountId) {
+      return "Can't Self Transfer";
+    }
+    else {
       return 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}';
     }
   }
 
   bool get isButtonDisabled =>
       (_hasAddressError ||
-      _hasAmountError ||
-      _recipientController.text.isEmpty ||
-      _amount <= BigInt.zero ||
-      _isFetchingFee);
+          _hasAmountError ||
+          _recipientController.text.isEmpty ||
+          _amount <= BigInt.zero ||
+          _isFetchingFee) ||
+      _recipientController.text == activeAccount!.accountId;
 
   @override
   void initState() {
@@ -95,6 +101,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
     // Check the flag
     if (_isInit) {
+      // Initialize active account
+      _loadActiveAccount();
+
       // Get the passed address
       final String? address =
           ModalRoute.of(context)?.settings.arguments as String?;
@@ -118,6 +127,10 @@ class SendScreenState extends ConsumerState<SendScreen> {
     _amountController.dispose();
     _recipientController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadActiveAccount() async {
+    activeAccount = await _settingsService.getActiveAccount();
   }
 
   Future<void> _loadReversibleTimeSetting() async {
@@ -309,19 +322,18 @@ class SendScreenState extends ConsumerState<SendScreen> {
     String recipient,
     BigInt amount,
   ) async {
-    final account = _settingsService.getActiveAccount()!;
     ExtrinsicFeeData estimatedFee;
     if (isReversible) {
       estimatedFee = await ReversibleTransfersService()
           .getReversibleTransferWithDelayFeeEstimate(
-            account: account,
+            account: activeAccount!,
             recipientAddress: recipient,
             amount: amount,
             delaySeconds: _reversibleTimeSeconds,
           );
     } else {
       estimatedFee = await BalancesService().getBalanceTransferFee(
-        account,
+        activeAccount!,
         recipient,
         amount,
       );
@@ -418,7 +430,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
               recipientName: _humanReadableCheckphrase,
               recipientAddress: _recipientController.text,
               fee: _networkFee,
-              reversibleTimeSeconds: _sendMode.isReversible ? _reversibleTimeSeconds : 0,
+              reversibleTimeSeconds: _sendMode.isReversible
+                  ? _reversibleTimeSeconds
+                  : 0,
               blockHeight: _blockHeight ?? 0,
               onClose: () => Navigator.pop(context),
             ),
@@ -553,11 +567,9 @@ class SendScreenState extends ConsumerState<SendScreen> {
                 const SizedBox(width: 9),
                 GestureDetector(
                   onTap: () {
-                    final activeAccount = _settingsService.getActiveAccount()!;
-
                     showRecentAddresses(
                       context,
-                      activeAccount: activeAccount,
+                      activeAccount: activeAccount!,
                       recipientController: _recipientController,
                       lookupIdentity: _lookupIdentity,
                     );
@@ -667,7 +679,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 LimitedBox(
-                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
                   child: IntrinsicWidth(
                     child: TextField(
                       controller: _amountController,

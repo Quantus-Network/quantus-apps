@@ -127,3 +127,4 @@ app.*.symbols
 /mobile-app/android/.idea
 /mobile-app/.idea
 /mobile-app/android/.kotlin
+/mobile-app/android/.idea

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/get_started.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
@@ -121,16 +122,18 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
             children: [
               Text(
                 error.toString(),
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: Colors.white70,
+                style: context.themeText.detail?.copyWith(
+                  color: context.themeColors.textError,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () =>
-                    ref.invalidate(activeAccountTransactionsProvider),
-                child: Text('Retry', style: context.themeText.smallParagraph),
+              const SizedBox(height: 24),
+              Button(
+                variant: ButtonVariant.neutral,
+                label: 'Retry',
+                onPressed: () {
+                  ref.invalidate(activeAccountTransactionsProvider);
+                },
               ),
             ],
           ),

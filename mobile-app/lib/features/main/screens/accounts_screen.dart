@@ -69,7 +69,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           Expanded(child: _buildAccountsList()),
 
           Button(
-            variant: ButtonVariant.glass,
+            variant: ButtonVariant.glassOutline,
             label: 'Create New Account',
             onPressed: _isCreatingAccount ? null : _createNewAccount,
           ),

@@ -76,7 +76,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     return SafeArea(
       bottom: false,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: ShapeDecoration(
           color: context.themeColors.background,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -128,7 +128,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return SizedBox(
-                            height: 14,
+                            height: 18,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

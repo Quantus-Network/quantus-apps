@@ -408,7 +408,7 @@ class _TransactionActionSheetState
     });
 
     try {
-      final senderAccount = _settingsService.getActiveAccount()!;
+      final senderAccount = (await _settingsService.getActiveAccount())!;
 
       var txId = widget.transaction.txId;
       if (txId.startsWith('0x')) {

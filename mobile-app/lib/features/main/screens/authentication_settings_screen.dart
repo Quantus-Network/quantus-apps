@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
@@ -143,12 +144,12 @@ class _AuthenticationSettingsScreenState
   Widget build(BuildContext context) {
     return ScaffoldBase(
       decorations: [
-         Positioned(
+        Positioned(
           top: context.containerHalfHeight * 0.8,
           right: -100,
           child: const Sphere(variant: 7, size: 311.489),
         ),
-          Positioned(
+        Positioned(
           top: context.containerHalfHeight * 0.45,
           right: 10,
           child: const Sphere(variant: 2, size: 194),
@@ -203,13 +204,12 @@ class _AuthenticationSettingsScreenState
                           ),
                         ),
                       )
-                    : Switch(
+                    : CupertinoSwitch(
                         value: _isDeviceAuthEnabled,
                         onChanged: _toggleAuthentication,
                         activeTrackColor: context.themeColors.buttonSuccess,
-                        inactiveTrackColor: const Color(0xFFD9D9D9),
-                        activeThumbColor: Colors.white,
-                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: context.themeColors.textMuted,
+                        thumbColor: context.themeColors.buttonNeutral,
                       ),
               ],
             ),

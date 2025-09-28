@@ -3,6 +3,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('SettingsService Account Management Tests', () {
     late SettingsService settingsService;
 
@@ -12,18 +14,62 @@ void main() {
     const account3 = Account(index: 2, name: 'Account 3', accountId: 'id_3');
 
     setUp(() async {
-      // Set up mock values for SharedPreferences
+      // Reset mock storage BEFORE any SharedPreferences.getInstance() calls
       SharedPreferences.setMockInitialValues({});
+
+      // Reset service initialization between tests so initialize() rebinds prefs
+      SettingsService().resetForTest();
+
+      // Fresh service instance for each test
       settingsService = SettingsService();
       await settingsService.initialize();
     });
 
+    test('Migration: should migrate from old single-account format', () async {
+      // Arrange: Set up old format keys directly in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('account_id', 'old_id');
+      await prefs.setString('wallet_name', 'Old Wallet');
+
+      // Reset service so it re-binds to prefs and performs migration
+      SettingsService().resetForTest();
+      final migrationService = SettingsService();
+      await migrationService.initialize();
+
+      // Act
+      final accounts = await migrationService.getAccounts();
+      final activeAccount = await migrationService.getActiveAccount();
+
+      // Assert
+      expect(accounts.length, 1);
+      expect(accounts.first.accountId, 'old_id');
+      expect(accounts.first.name, 'Old Wallet');
+      expect(accounts.first.index, 0);
+      expect(activeAccount, isNotNull);
+      expect(activeAccount!.accountId, 'old_id');
+
+      // Verify old keys are removed
+      final verificationPrefs = await SharedPreferences.getInstance();
+      expect(verificationPrefs.getString('account_id'), isNull);
+      expect(verificationPrefs.getString('wallet_name'), isNull);
+    });
+
+    test('getAccounts should return empty list if no wallet exists', () async {
+      // Arrange (no keys set)
+      await settingsService.initialize();
+      // Act
+      final accounts = await settingsService.getAccounts();
+      // Assert
+      expect(accounts, isEmpty);
+    });
+
     test('addAccount should add a new account', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.addAccount(account1);
 
       // Act
-      final accounts = settingsService.getAccounts();
+      final accounts = await settingsService.getAccounts();
 
       // Assert
       expect(accounts.length, 1);
@@ -32,6 +78,7 @@ void main() {
 
     test('addAccount should throw if account index already exists', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.addAccount(account1);
 
       // Act & Assert
@@ -51,12 +98,13 @@ void main() {
 
     test('updateAccount should modify an existing account', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.addAccount(account1);
 
       // Act
       final updatedAccount = account1.copyWith(name: 'Updated Name');
       await settingsService.updateAccount(updatedAccount);
-      final accounts = settingsService.getAccounts();
+      final accounts = await settingsService.getAccounts();
 
       // Assert
       expect(accounts.first.name, 'Updated Name');
@@ -66,11 +114,12 @@ void main() {
       'setActiveAccount and getActiveAccount should work correctly',
       () async {
         // Arrange
+        await settingsService.initialize();
         await settingsService.saveAccounts([account1, account2]);
 
         // Act
         await settingsService.setActiveAccount(account2);
-        final activeAccount = settingsService.getActiveAccount()!;
+        final activeAccount = (await settingsService.getActiveAccount())!;
 
         // Assert
         expect(activeAccount.accountId, account2.accountId);
@@ -79,6 +128,7 @@ void main() {
 
     test('setActiveAccount should throw for a non-existent account', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.saveAccounts([account1]);
 
       // Act & Assert
@@ -96,11 +146,12 @@ void main() {
 
     test('removeAccount should remove an account', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.saveAccounts([account1, account2]);
 
       // Act
       await settingsService.removeAccount(account2);
-      final accounts = settingsService.getAccounts();
+      final accounts = await settingsService.getAccounts();
 
       // Assert
       expect(accounts.length, 1);
@@ -109,6 +160,7 @@ void main() {
 
     test('removeAccount should throw if it is the last account', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.saveAccounts([account1]);
 
       // Act & Assert
@@ -128,12 +180,13 @@ void main() {
       'removeAccount should change active account if active is removed',
       () async {
         // Arrange
+        await settingsService.initialize();
         await settingsService.saveAccounts([account1, account2, account3]);
         await settingsService.setActiveAccount(account2);
 
         // Act
         await settingsService.removeAccount(account2);
-        final activeAccount = settingsService.getActiveAccount()!;
+        final activeAccount = (await settingsService.getActiveAccount())!;
 
         // Assert
         // It should fall back to the first account in the remaining list
@@ -143,6 +196,7 @@ void main() {
 
     test('getNextFreeAccountIndex should return correct next index', () async {
       // Arrange
+      await settingsService.initialize();
       await settingsService.saveAccounts([
         account1,
         account3,

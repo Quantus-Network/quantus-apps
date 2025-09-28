@@ -1,12 +1,14 @@
 import 'package:intl/intl.dart';
 
 class FormattedDuration {
+  final String? days;
   final String hours;
   final String minutes;
   final String seconds;
   final String formatted;
 
   const FormattedDuration({
+    this.days,
     required this.hours,
     required this.minutes,
     required this.seconds,
@@ -47,6 +49,7 @@ class DatetimeFormattingService {
   static FormattedDuration formatDuration(Duration duration) {
     if (duration.isNegative) {
       return const FormattedDuration(
+        days: null,
         hours: '00',
         minutes: '00',
         seconds: '00',
@@ -55,7 +58,8 @@ class DatetimeFormattingService {
     }
 
     // Use padLeft to ensure that single-digit numbers have a leading zero.
-    String hours = duration.inHours.toString().padLeft(2, '0');
+    String days = duration.inDays.toString().padLeft(2, '0');
+    String hours = duration.inHours.remainder(24).toString().padLeft(2, '0');
     String minutes = duration.inMinutes
         .remainder(60)
         .toString()
@@ -66,10 +70,13 @@ class DatetimeFormattingService {
         .padLeft(2, '0');
 
     return FormattedDuration(
+      days: days != '00' ? days : null,
       hours: hours,
       minutes: minutes,
       seconds: seconds,
-      formatted: '$hours:$minutes:$seconds',
+      formatted: days != '00'
+          ? '${days}d:${hours}h:${minutes}m'
+          : '${hours}h:${minutes}m:${seconds}s',
     );
   }
 

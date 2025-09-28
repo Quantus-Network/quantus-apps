@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -261,36 +262,11 @@ class _TransactionDetailsActionSheetState
     return Column(
       children: [
         const SizedBox(height: 26),
-        GestureDetector(
-          onTap: () {
-            // TO DO: Implement retry logic
-          },
-          child: Container(
-            width: 130,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            decoration: ShapeDecoration(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 10,
-              children: [
-                Text(
-                  'Retry',
-                  textAlign: TextAlign.center,
-                  style: context.themeText.smallParagraph?.copyWith(
-                    color: context.themeColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+
+        Button(
+          variant: ButtonVariant.glassOutline,
+          label: 'Retry',
+          onPressed: () {},
         ),
       ],
     );

@@ -43,6 +43,10 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
       }
     });
   }
+
+  void reset() {
+    state = const AsyncValue.loading();
+  }
 }
 
 final accountsProvider =
@@ -61,7 +65,7 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
 
   Future<void> _loadActiveAccount() async {
     try {
-      final account = _settingsService.getActiveAccount();
+      final account = await _settingsService.getActiveAccount();
       print('loaded active account: ${account?.index} ${account?.name}');
       state = AsyncValue.data(account);
     } catch (e, st) {
@@ -77,6 +81,10 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
     } catch (e, st) {
       print('setActiveAccount error $e $st');
     }
+  }
+
+  void reset() {
+    state = const AsyncValue.loading();
   }
 }
 

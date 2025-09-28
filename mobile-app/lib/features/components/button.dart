@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-enum ButtonVariant { transparent, neutral, primary, success, danger, glass }
-
+enum ButtonVariant {
+  transparent,
+  neutral,
+  primary,
+  success,
+  danger,
+  glass,
+  glassOutline,
+}
 
 class Button extends StatelessWidget {
   final String label;
@@ -123,6 +130,31 @@ class Button extends StatelessWidget {
         );
         break;
 
+      case ButtonVariant.glassOutline:
+        buttonWidget = ClipRRect(
+          borderRadius: BorderRadius.circular(buttonRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: width,
+              padding: padding,
+              decoration: ShapeDecoration(
+                color: disabled
+                    ? context.themeColors.buttonDisabled
+                    : context.themeColors.buttonGlass,
+                shape: RoundedRectangleBorder(
+                  side: disabled
+                      ? BorderSide.none
+                      : BorderSide(color: context.themeColors.buttonNeutral),
+                  borderRadius: BorderRadius.circular(buttonRadius),
+                ),
+              ),
+              child: buttonContent,
+            ),
+          ),
+        );
+        break;
+
       case ButtonVariant.danger:
         buttonWidget = Container(
           width: width,
@@ -168,9 +200,7 @@ class Button extends StatelessWidget {
                     ? context.themeColors.buttonDisabled
                     : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    buttonRadius,
-                  ),
+                  borderRadius: BorderRadius.circular(buttonRadius),
                 ),
               ),
               child: buttonContent,
