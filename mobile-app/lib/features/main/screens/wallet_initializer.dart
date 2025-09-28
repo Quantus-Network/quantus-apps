@@ -3,6 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends StatefulWidget {
   final String? address;
@@ -38,7 +39,7 @@ class WalletInitializerState extends State<WalletInitializer> {
 
         for (final data in migrationData) {
           print(
-            "MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}",
+            'MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
           );
         }
         setState(() {
@@ -65,7 +66,12 @@ class WalletInitializerState extends State<WalletInitializer> {
     if (_migrationData == null) return;
 
     try {
+      // First, upload migration data to Supabase
+      await _uploadMigrationDataToSupabase(_migrationData!);
+
+      // Then perform the actual migration
       await _migrationService.performMigration(_migrationData!);
+
       // After migration, check wallet status again
       await _checkWalletAndMigration();
     } catch (e) {
@@ -83,6 +89,39 @@ class WalletInitializerState extends State<WalletInitializer> {
       _needsMigration = false;
       _walletExists = false; // Go to welcome screen if migration cancelled
     });
+  }
+
+  Future<void> _uploadMigrationDataToSupabase(
+    List<MigrationAccountData> migrationData,
+  ) async {
+    print('_uploadMigrationDataToSupabase');
+    final supabase = EnvUtils.supabaseClient;
+
+    try {
+      // Prepare the data for insertion
+      final dataToInsert = migrationData
+          .map(
+            (data) => {
+              'old_account_id': data.oldAccount.accountId,
+              'new_account_id': data.newAccountId,
+              'public_key_hex': data.publicKeyHex,
+            },
+          )
+          .toList();
+
+      print('uploading data to supabase: $dataToInsert');
+
+      // Insert all records at once
+      await supabase.from('account_id_mappings').insert(dataToInsert);
+
+      print(
+        'Successfully uploaded ${migrationData.length} migration records to Supabase',
+      );
+    } catch (e) {
+      print('Failed to upload migration data to Supabase: $e');
+      // Re-throw the error so it gets caught by the caller
+      rethrow;
+    }
   }
 
   @override

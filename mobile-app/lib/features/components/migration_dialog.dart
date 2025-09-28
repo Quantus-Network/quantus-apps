@@ -83,11 +83,11 @@ class _MigrationDialogState extends State<MigrationDialog> {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'Accounts to migrate:',
+                  '${widget.migrationData.length} Accounts to migrate:',
                   style: context.themeText.smallTitle,
                 ),
-                const SizedBox(height: 16),
-                ...widget.migrationData.map((data) => _buildAccountItem(data)),
+                // const SizedBox(height: 16),
+                // ...widget.migrationData.map((data) => _buildAccountItem(data)),
                 const SizedBox(height: 28),
                 if (_isMigrating)
                   const Center(child: CircularProgressIndicator())
@@ -147,10 +147,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                 style: context.themeText.smallTitle,
               ),
               const SizedBox(width: 8),
-              Text(
-                data.oldAccount.name,
-                style: context.themeText.detail,
-              ),
+              Text(data.oldAccount.name, style: context.themeText.detail),
             ],
           ),
           const SizedBox(height: 8),

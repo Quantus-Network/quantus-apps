@@ -128,3 +128,4 @@ app.*.symbols
 /mobile-app/.idea
 /mobile-app/android/.kotlin
 /mobile-app/android/.idea
+mobile-app/.env
