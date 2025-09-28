@@ -22,7 +22,7 @@ BIN_DIR="$QUANTUS_HOME/bin"
 FLUTTER_SECURE_STORAGE_KEY_NAME="rewards_address_mnemonic"
 SERVICE_NAME="flutter_secure_storage.$FLUTTER_SECURE_STORAGE_KEY_NAME"
 # The account name is the app's bundle identifier
-ACCOUNT_NAME="com.example.quantusMiner"
+ACCOUNT_NAME="com.quantus.quantusMiner"
 # --- End Additions for Keychain ---
 
 echo ""

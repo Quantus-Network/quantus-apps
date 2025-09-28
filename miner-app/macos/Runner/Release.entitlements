@@ -10,7 +10,7 @@
 	<true/>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.example.quantusMiner</string>
+		<string>$(AppIdentifierPrefix)com.quantus.quantusMiner</string>
 	</array>
 </dict>
 </plist>
