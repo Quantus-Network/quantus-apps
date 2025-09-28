@@ -50,8 +50,9 @@ class MigrationService {
   ) async {
     // Create new accounts with the same indices and names
     for (final data in migrationData) {
-
-      print('performMigration: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}');
+      print(
+        'performMigration: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
+      );
 
       final newAccount = Account(
         index: data.oldAccount.index,
@@ -69,6 +70,11 @@ class MigrationService {
   /// Debug method to create test old accounts
   Future<void> createDebugOldAccounts() async {
     final debugAccounts = [
+      const Account(
+        index: -1,
+        name: 'Primary Account',
+        accountId: 'qznd1YWbgQrviV76psu5n8d24mHSuHtAc9JmJLB42gTELksvQ',
+      ),
       const Account(index: 0, name: 'Account 0', accountId: 'debug_id_0'),
       const Account(index: 1, name: 'Account 1', accountId: 'debug_id_1'),
     ];

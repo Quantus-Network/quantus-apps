@@ -5,13 +5,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class MigrationDialog extends StatefulWidget {
   final List<MigrationAccountData> migrationData;
-  final VoidCallback onMigrate;
+  final Future<void> Function() onMigrate;
   final VoidCallback onCancel;
 
   const MigrationDialog({
@@ -24,7 +23,7 @@ class MigrationDialog extends StatefulWidget {
   static Future<void> show({
     required BuildContext context,
     required List<MigrationAccountData> migrationData,
-    required VoidCallback onMigrate,
+    required Future<void> Function() onMigrate,
     required VoidCallback onCancel,
   }) {
     return showModalBottomSheet(
@@ -105,28 +104,6 @@ class _MigrationDialogState extends State<MigrationDialog> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      InkWell(
-                        onTap: widget.onCancel,
-                        child: Icon(
-                          Icons.close,
-                          size: context.isTablet ? 28 : 24,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
                 Text(
                   'Migrate your accounts',
                   style: context.themeText.mediumTitle,
@@ -154,7 +131,10 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     setState(() => _isMigrating = true);
 
                     try {
-                      widget.onMigrate();
+                      await widget.onMigrate();
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
                     } finally {
                       if (mounted) {
                         setState(() => _isMigrating = false);
@@ -162,17 +142,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     }
                   },
                 ),
-                const SizedBox(height: 16),
-                Button(
-                  isDisabled: _isMigrating,
-                  variant: ButtonVariant.transparent,
-                  label: 'Cancel',
-                  onPressed: widget.onCancel,
-                  textStyle: context.themeText.smallParagraph?.copyWith(
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-                SizedBox(height: context.themeSize.bottomButtonSpacing),
+                SizedBox(height: 48),
               ],
             ),
           ],

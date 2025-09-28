@@ -76,18 +76,20 @@ class WalletInitializerState extends State<WalletInitializer> {
     if (_migrationData == null) return;
 
     try {
-      Navigator.of(context).pop();
-
       // First, upload migration data to Supabase
       await _uploadMigrationDataToSupabase(_migrationData!);
 
       // Then perform the actual migration
       await _migrationService.performMigration(_migrationData!);
 
-      // After migration, check wallet status again
-      await _checkWalletAndMigration();
+      // Migration completed successfully. Update state to show the main app.
+      setState(() {
+        _needsMigration = false;
+        _walletExists = true;
+        _loading = false;
+      });
     } catch (e) {
-      // Handle migration error - for now just show snackbar
+      // Handle migration error - show snackbar but keep dialog open
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -140,8 +142,14 @@ class WalletInitializerState extends State<WalletInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading || _needsMigration) {
+    if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // If migration is needed, render a neutral background (no spinner) while
+    // the bottom sheet is presented, to avoid a loading indicator behind it.
+    if (_needsMigration) {
+      return const Scaffold(body: SizedBox.shrink());
     }
 
     if (_walletExists) {
