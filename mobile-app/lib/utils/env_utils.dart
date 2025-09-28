@@ -14,9 +14,9 @@ class EnvUtils {
 
   /// Get the Supabase key from environment variables
   static String get supabaseKey {
-    final key = dotenv.env['SUPABASE_KEY'];
+    final key = dotenv.env['SUPABASE_ANON_KEY'];
     if (key == null || key.isEmpty) {
-      throw Exception('SUPABASE_KEY is not set in .env file');
+      throw Exception('SUPABASE_ANON_KEY is not set in .env file');
     }
     return key;
   }
