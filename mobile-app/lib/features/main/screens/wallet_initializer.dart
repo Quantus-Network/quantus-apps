@@ -54,7 +54,7 @@ class WalletInitializerState extends State<WalletInitializer> {
             context: context,
             migrationData: _migrationData!,
             onMigrate: _performMigration,
-            onCancel: _cancelMigration,
+            onTryLater: _tryLater,
           );
         });
       } catch (e) {
@@ -89,21 +89,26 @@ class WalletInitializerState extends State<WalletInitializer> {
         _loading = false;
       });
     } catch (e) {
-      // Handle migration error - show snackbar but keep dialog open
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Migration failed: $e')));
-      }
+      print('migration error: $e');
+      rethrow;
     }
   }
 
-  void _cancelMigration() {
-    Navigator.of(context).pop();
+  Future<void> _tryLater() async {
+    // Persist the old accounts so we can retry upload later from settings
+    final oldAccounts = _settingsService.getOldAccounts();
+    await _settingsService.setAccountsToMigrate(oldAccounts);
 
+    // Proceed with local migration immediately
+    if (_migrationData != null) {
+      await _migrationService.performMigration(_migrationData!);
+    }
+
+    if (!mounted) return;
     setState(() {
       _needsMigration = false;
-      _walletExists = false;
+      _walletExists = true;
+      _loading = false;
     });
   }
 

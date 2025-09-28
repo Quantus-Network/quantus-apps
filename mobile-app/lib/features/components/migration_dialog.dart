@@ -11,20 +11,20 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 class MigrationDialog extends StatefulWidget {
   final List<MigrationAccountData> migrationData;
   final Future<void> Function() onMigrate;
-  final VoidCallback onCancel;
+  final Future<void> Function()? onTryLater;
 
   const MigrationDialog({
     super.key,
     required this.migrationData,
     required this.onMigrate,
-    required this.onCancel,
+    this.onTryLater,
   });
 
   static Future<void> show({
     required BuildContext context,
     required List<MigrationAccountData> migrationData,
     required Future<void> Function() onMigrate,
-    required VoidCallback onCancel,
+    Future<void> Function()? onTryLater,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -61,7 +61,7 @@ class MigrationDialog extends StatefulWidget {
                 child: MigrationDialog(
                   migrationData: migrationData,
                   onMigrate: onMigrate,
-                  onCancel: onCancel,
+                  onTryLater: onTryLater,
                 ),
               ),
             ),
@@ -77,6 +77,7 @@ class MigrationDialog extends StatefulWidget {
 
 class _MigrationDialogState extends State<MigrationDialog> {
   bool _isMigrating = false;
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -123,17 +124,46 @@ class _MigrationDialogState extends State<MigrationDialog> {
                   ),
                 ),
                 const SizedBox(height: 120),
+                if (_errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: context.themeColors.error.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: context.themeText.smallParagraph?.copyWith(
+                        color: context.themeColors.error,
+                      ),
+                    ),
+                  ),
+                ],
                 Button(
                   isLoading: _isMigrating,
                   variant: ButtonVariant.primary,
-                  label: 'Migrate Accounts',
+                  label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
                   onPressed: () async {
-                    setState(() => _isMigrating = true);
+                    setState(() {
+                      _isMigrating = true;
+                    });
 
                     try {
                       await widget.onMigrate();
                       if (mounted) {
                         Navigator.of(context).pop();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        setState(() {
+                          _errorMessage =
+                              'We couldn\'t upload migration data. Please retry or try later.';
+                        });
                       }
                     } finally {
                       if (mounted) {
@@ -142,6 +172,24 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     }
                   },
                 ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Button(
+                    variant: ButtonVariant.transparent,
+                    label: 'Try later',
+                    onPressed: () async {
+                      if (widget.onTryLater != null) {
+                        await widget.onTryLater!();
+                      }
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    textStyle: context.themeText.smallParagraph?.copyWith(
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
                 SizedBox(height: 48),
               ],
             ),
