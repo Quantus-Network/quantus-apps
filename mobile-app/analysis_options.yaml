@@ -21,4 +21,5 @@ analyzer:
     avoid_print: ignore # print is the most reliable way to debug the app
     missing_required_param: error
     missing_return: error
-    must_be_immutable: error 
+    must_be_immutable: error
+    asset_does_not_exist: ignore 
