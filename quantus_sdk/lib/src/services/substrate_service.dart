@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:bip39_mnemonic/bip39_mnemonic.dart';
@@ -12,8 +11,6 @@ import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';
-
-enum ConnectionStatus { connecting, connected, disconnected, error }
 
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
@@ -64,71 +61,11 @@ class SubstrateService {
   static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   final SettingsService _settingsService = SettingsService();
 
-  // Add StreamController for connection status
-  final _connectionStatusController =
-      StreamController<ConnectionStatus>.broadcast();
-
-  // Expose the stream
-  Stream<ConnectionStatus> get connectionStatus =>
-      _connectionStatusController.stream;
-
   Future<void> initialize() async {
-    // Only create the provider if it hasn't been created yet
-    // If it exists, assume it's already connected or will attempt to reconnect automatically.
     if (_provider == null) {
+      print('initializing provider at endpoint: $_rpcEndpoint');
       _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-      // Initialize APIs with the new provider
       _stateApi = StateApi(_provider!);
-    }
-
-    // Attempt to connect
-    try {
-      _connectionStatusController.add(ConnectionStatus.connecting);
-      // Only attempt to connect if provider was just created or is not currently connecting/connected
-      // A simple check for null provider implies it needs connecting
-      if (_provider != null) {
-        await _provider!.connect().timeout(const Duration(seconds: 15));
-        _connectionStatusController.add(ConnectionStatus.connected);
-      }
-    } catch (e) {
-      _connectionStatusController.add(ConnectionStatus.error);
-      print('Initial connection failed: $e');
-      // Optionally rethrow or handle based on app's startup requirements
-    }
-  }
-
-  Future<void> reconnect() async {
-    print('Attempting to recreate and reconnect Substrate provider...');
-    const Duration networkTimeout = Duration(seconds: 15);
-
-    // Dispose of the old provider instance if it exists
-    // Note: Polkadart Provider might not have a public dispose/close.
-    // Relying on garbage collection or checking Polkadart docs for proper cleanup.
-    // To force re-initialization with a potentially new connection,
-    // we'll create a new Provider instance.
-    _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-
-    // Re-initialize APIs with the new provider
-    _stateApi = StateApi(_provider!);
-
-    // Attempt to connect the new provider with timeout
-    try {
-      _connectionStatusController.add(ConnectionStatus.connecting);
-      await _provider!.connect().timeout(networkTimeout);
-      _connectionStatusController.add(ConnectionStatus.connected);
-      print('New provider connected successfully during reconnect.');
-    } catch (e) {
-      _connectionStatusController.add(
-        ConnectionStatus.disconnected,
-      ); // Or error
-      print('Failed to recreate/reconnect provider: $e');
-      if (e is TimeoutException) {
-        throw Exception(
-          'Failed to reconnect to the network: Connection timed out.',
-        );
-      } else {
-        throw Exception('Failed to reconnect to the network: $e');
-      }
     }
   }
 
@@ -153,12 +90,6 @@ class SubstrateService {
 
       return partialFee;
     } catch (e, s) {
-      // If a network error occurs here, update the connection status
-      if (e.toString().contains('WebSocketChannelException') ||
-          e is SocketException ||
-          e is TimeoutException) {
-        _connectionStatusController.add(ConnectionStatus.disconnected);
-      }
       print('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
@@ -169,22 +100,6 @@ class SubstrateService {
     final keypair = await account.getKeypair();
     return keypair;
   }
-
-  // @Deprecated('Use Account.getKeypair() instead')
-  // Future<DilithiumWalletInfo> generateWalletFromSeed(
-  //   String seedPhrase,
-  //   Account account,
-  // ) async {
-  //   try {
-  //     final keypair = HdWalletService().keyPairAtIndex(
-  //       seedPhrase,
-  //       account.index,
-  //     );
-  //     return DilithiumWalletInfo.fromKeyPair(keypair, walletName: 'Account 1');
-  //   } catch (e) {
-  //     throw Exception('Failed to generate wallet: $e');
-  //   }
-  // }
 
   // Fetch balance of current user
   Future<BigInt> queryUserBalance() async {
@@ -209,12 +124,6 @@ class SubstrateService {
       // Get the free balance
       return accountInfo.data.free;
     } catch (e, st) {
-      // If a network error occurs here, update the connection status
-      if (e.toString().contains('WebSocketChannelException') ||
-          e is SocketException ||
-          e is TimeoutException) {
-        _connectionStatusController.add(ConnectionStatus.disconnected);
-      }
       print('Error querying balance: $e, $st');
       throw Exception('Failed to query balance: $e');
     }
@@ -425,7 +334,6 @@ class SubstrateService {
   }
 
   void dispose() {
-    _connectionStatusController.close();
     // Dispose of the provider instance if it has a dispose/close method
     // _provider.close(); // If a close method exists
   }
