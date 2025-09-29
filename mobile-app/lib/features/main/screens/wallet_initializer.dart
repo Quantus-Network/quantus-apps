@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
-class WalletInitializer extends StatefulWidget {
+class WalletInitializer extends ConsumerStatefulWidget {
   final String? address;
 
   const WalletInitializer({super.key, this.address});
 
   @override
-  WalletInitializerState createState() => WalletInitializerState();
+  ConsumerState<WalletInitializer> createState() => WalletInitializerState();
 }
 
-class WalletInitializerState extends State<WalletInitializer> {
+class WalletInitializerState extends ConsumerState<WalletInitializer> {
   bool _loading = true;
   bool _walletExists = false;
   bool _needsMigration = false;
@@ -72,6 +74,11 @@ class WalletInitializerState extends State<WalletInitializer> {
     }
   }
 
+  void _reloadAccounts() {
+    ref.invalidate(accountsProvider);
+    ref.invalidate(activeAccountProvider);
+  }
+
   Future<void> _performMigration() async {
     if (_migrationData == null) return;
 
@@ -82,6 +89,7 @@ class WalletInitializerState extends State<WalletInitializer> {
       // Then perform the actual migration
       await _migrationService.performMigration(_migrationData!);
 
+      _reloadAccounts();
       // Migration completed successfully. Update state to show the main app.
       setState(() {
         _needsMigration = false;
@@ -103,6 +111,8 @@ class WalletInitializerState extends State<WalletInitializer> {
     if (_migrationData != null) {
       await _migrationService.performMigration(_migrationData!);
     }
+
+    _reloadAccounts();
 
     if (!mounted) return;
     setState(() {
