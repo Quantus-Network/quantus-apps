@@ -147,7 +147,7 @@ class _TransactionActionSheetState
         _buildHeader(
           'assets/hourglass.svg',
           'Reversible Transaction',
-          'Reverse or keep your transaction',
+          'Revert or keep your transaction',
           true,
         ),
         const SizedBox(height: 20),
@@ -335,7 +335,7 @@ class _TransactionActionSheetState
         Expanded(
           child: Button(
             variant: ButtonVariant.danger,
-            label: 'Reverse',
+            label: 'Revert',
             onPressed: () {
               setState(() {
                 _sheetState = _SheetState.confirmCancel;
@@ -382,7 +382,7 @@ class _TransactionActionSheetState
                 flex: 5,
                 child: Button(
                   variant: ButtonVariant.danger,
-                  label: 'Reverse',
+                  label: 'Revert',
                   onPressed: _cancelTransaction,
                 ),
               ),
