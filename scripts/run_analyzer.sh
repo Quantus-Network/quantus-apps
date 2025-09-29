@@ -1,0 +1,1 @@
+melos exec "flutter analyze ."
