@@ -11,9 +11,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
+import 'package:quantus_sdk/src/services/connection_status.dart';
+import 'package:quantus_sdk/src/services/provider_manager.dart';
 import 'package:ss58/ss58.dart';
-
-enum ConnectionStatus { connecting, connected, disconnected, error }
 
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
@@ -59,77 +59,18 @@ class SubstrateService {
   factory SubstrateService() => _instance;
   SubstrateService._internal();
 
-  Provider? _provider;
-  StateApi? _stateApi;
-  static const String _rpcEndpoint = AppConstants.rpcEndpoint;
   final SettingsService _settingsService = SettingsService();
+  static const Duration _defaultOpTimeout = Duration(seconds: 10);
 
-  // Add StreamController for connection status
-  final _connectionStatusController =
-      StreamController<ConnectionStatus>.broadcast();
-
-  // Expose the stream
   Stream<ConnectionStatus> get connectionStatus =>
-      _connectionStatusController.stream;
+      ProviderManager().connectionStatus;
 
   Future<void> initialize() async {
-    // Only create the provider if it hasn't been created yet
-    // If it exists, assume it's already connected or will attempt to reconnect automatically.
-    if (_provider == null) {
-      _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-      // Initialize APIs with the new provider
-      _stateApi = StateApi(_provider!);
-    }
-
-    // Attempt to connect
-    try {
-      _connectionStatusController.add(ConnectionStatus.connecting);
-      // Only attempt to connect if provider was just created or is not currently connecting/connected
-      // A simple check for null provider implies it needs connecting
-      if (_provider != null) {
-        await _provider!.connect().timeout(const Duration(seconds: 15));
-        _connectionStatusController.add(ConnectionStatus.connected);
-      }
-    } catch (e) {
-      _connectionStatusController.add(ConnectionStatus.error);
-      print('Initial connection failed: $e');
-      // Optionally rethrow or handle based on app's startup requirements
-    }
+    await ProviderManager().ensureConnected();
   }
 
   Future<void> reconnect() async {
-    print('Attempting to recreate and reconnect Substrate provider...');
-    const Duration networkTimeout = Duration(seconds: 15);
-
-    // Dispose of the old provider instance if it exists
-    // Note: Polkadart Provider might not have a public dispose/close.
-    // Relying on garbage collection or checking Polkadart docs for proper cleanup.
-    // To force re-initialization with a potentially new connection,
-    // we'll create a new Provider instance.
-    _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-
-    // Re-initialize APIs with the new provider
-    _stateApi = StateApi(_provider!);
-
-    // Attempt to connect the new provider with timeout
-    try {
-      _connectionStatusController.add(ConnectionStatus.connecting);
-      await _provider!.connect().timeout(networkTimeout);
-      _connectionStatusController.add(ConnectionStatus.connected);
-      print('New provider connected successfully during reconnect.');
-    } catch (e) {
-      _connectionStatusController.add(
-        ConnectionStatus.disconnected,
-      ); // Or error
-      print('Failed to recreate/reconnect provider: $e');
-      if (e is TimeoutException) {
-        throw Exception(
-          'Failed to reconnect to the network: Connection timed out.',
-        );
-      } else {
-        throw Exception('Failed to reconnect to the network: $e');
-      }
-    }
+    await ProviderManager().reconnect();
   }
 
   Future<BigInt> getFee(Uint8List signedExtrinsic) async {
@@ -138,10 +79,12 @@ class SubstrateService {
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
 
       // Use provider.send to call the payment_queryInfo RPC with the signed extrinsic
-      final result = await _provider!.send('payment_queryInfo', [
-        hexEncodedSignedExtrinsic,
-        null,
-      ]); // null for block hash
+      final result = await ProviderManager().withProvider((provider) async {
+        return await provider.send('payment_queryInfo', [
+          hexEncodedSignedExtrinsic,
+          null,
+        ]);
+      }, operationTimeout: _defaultOpTimeout);
 
       // Parse the result to get the partialFee
       // The result structure is typically {'partialFee': '...'} for this RPC
@@ -156,9 +99,7 @@ class SubstrateService {
       // If a network error occurs here, update the connection status
       if (e.toString().contains('WebSocketChannelException') ||
           e is SocketException ||
-          e is TimeoutException) {
-        _connectionStatusController.add(ConnectionStatus.disconnected);
-      }
+          e is TimeoutException) {}
       print('Error estimating fee: $e $s');
       throw Exception('Failed to estimate network fee: $e');
     }
@@ -196,25 +137,15 @@ class SubstrateService {
 
   Future<BigInt> queryBalance(String address) async {
     try {
-      // Create Resonance API instance
-      final resonanceApi = Schrodinger(_provider!);
-      // Account from SS58 address
-      final accountID = crypto.ss58ToAccountId(s: address);
-
-      // Retrieve Account Balance
-      final accountInfo = await resonanceApi.query.system.account(accountID);
-
-      print('user balance $address: ${accountInfo.data.free}');
-
-      // Get the free balance
-      return accountInfo.data.free;
+      final result = await ProviderManager().withProvider((provider) async {
+        final resonanceApi = Schrodinger(provider);
+        final accountID = crypto.ss58ToAccountId(s: address);
+        final accountInfo = await resonanceApi.query.system.account(accountID);
+        return accountInfo.data.free;
+      }, operationTimeout: _defaultOpTimeout);
+      print('user balance $address: $result');
+      return result;
     } catch (e, st) {
-      // If a network error occurs here, update the connection status
-      if (e.toString().contains('WebSocketChannelException') ||
-          e is SocketException ||
-          e is TimeoutException) {
-        _connectionStatusController.add(ConnectionStatus.disconnected);
-      }
       print('Error querying balance: $e, $st');
       throw Exception('Failed to query balance: $e');
     }
@@ -248,7 +179,9 @@ class SubstrateService {
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
     final List<dynamic> params = ['0x${hex.encode(extrinsic)}'];
 
-    final response = await _provider!.send('author_submitExtrinsic', params);
+    final response = await ProviderManager().withProvider((provider) async {
+      return await provider.send('author_submitExtrinsic', params);
+    }, operationTimeout: _defaultOpTimeout);
     // same hash - not the final extrinsic hash
     print('submitExtrinsic response: ${response.result}');
 
@@ -265,9 +198,7 @@ class SubstrateService {
     RuntimeCall call, {
     int maxRetries = 3,
   }) async {
-    if (_provider == null) {
-      await initialize();
-    }
+    await initialize();
 
     int retryCount = 0;
     while (retryCount < maxRetries) {
@@ -275,7 +206,6 @@ class SubstrateService {
         final extrinsicData = await getExtrinsicPayload(account, call);
         Uint8List extrinsic = extrinsicData.payload;
 
-        // final result = await _authorApi!.submitExtrinsic(extrinsic);
         final result = await _submitExtrinsic(extrinsic);
 
         print('result: $result');
@@ -297,97 +227,112 @@ class SubstrateService {
     Account account,
     RuntimeCall call,
   ) async {
-    final resonanceApi = Schrodinger(_provider!);
-    final mnemonic = await account.getMnemonic();
-    if (mnemonic == null) {
-      throw Exception('Mnemonic not found for signing.');
-    }
-    final senderWallet = HdWalletService().keyPairAtIndex(
-      mnemonic,
-      account.index,
-    );
-    final runtimeVersion = await _stateApi!.getRuntimeVersion();
-    final specVersion = runtimeVersion.specVersion;
-    final transactionVersion = runtimeVersion.transactionVersion;
-    var genesisHash = await _getGenesisHash();
-    final encodedCall = call.encode();
-    final [blockNumber, blockHash, nonce] = await Future.wait([
-      _getBlockNumber(),
-      _getBlockHash(),
-      _getNextAccountNonce(senderWallet),
-    ]);
+    final result = await ProviderManager().withProvider((provider) async {
+      final resonanceApi = Schrodinger(provider);
+      final mnemonic = await account.getMnemonic();
+      if (mnemonic == null) {
+        throw Exception('Mnemonic not found for signing.');
+      }
+      final senderWallet = HdWalletService().keyPairAtIndex(
+        mnemonic,
+        account.index,
+      );
+      final runtimeVersion = await StateApi(provider).getRuntimeVersion();
+      final specVersion = runtimeVersion.specVersion;
+      final transactionVersion = runtimeVersion.transactionVersion;
+      var genesisHash = await _getGenesisHash();
+      final encodedCall = call.encode();
+      final values = await Future.wait([
+        _getBlockNumber(),
+        _getBlockHash(),
+        _getNextAccountNonce(senderWallet),
+      ]);
+      final blockNumber = values[0] as int;
+      final blockHash = values[1] as String;
+      final nonce = values[2] as int;
 
-    final payloadToSign = SigningPayload(
-      method: encodedCall,
-      specVersion: specVersion,
-      transactionVersion: transactionVersion,
-      genesisHash: genesisHash,
-      blockHash: blockHash,
-      blockNumber: blockNumber,
-      eraPeriod: 64,
-      nonce: nonce,
-      tip: 0,
-    );
+      final payloadToSign = SigningPayload(
+        method: encodedCall,
+        specVersion: specVersion,
+        transactionVersion: transactionVersion,
+        genesisHash: genesisHash,
+        blockHash: blockHash,
+        blockNumber: blockNumber,
+        eraPeriod: 64,
+        nonce: nonce,
+        tip: 0,
+      );
 
-    final payload = payloadToSign.encode(resonanceApi.registry);
-    final signature = crypto.signMessage(
-      keypair: senderWallet,
-      message: payload,
-    );
-    // for testing failed transactions - use the bad signature.
-    // var badSignature = Uint8List(signature.length); // 0 list
+      final payload = payloadToSign.encode(resonanceApi.registry);
+      final signature = crypto.signMessage(
+        keypair: senderWallet,
+        message: payload,
+      );
+      final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
+        signature,
+        senderWallet.publicKey,
+      );
 
-    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
-      signature,
-      senderWallet.publicKey,
-    );
+      final extrinsic =
+          ResonanceExtrinsicPayload(
+            signer: Uint8List.fromList(senderWallet.addressBytes),
+            method: encodedCall,
+            signature: signatureWithPublicKeyBytes,
+            eraPeriod: 64,
+            blockNumber: blockNumber,
+            nonce: nonce,
+            tip: 0,
+          ).encodeResonance(
+            resonanceApi.registry,
+            ResonanceSignatureType.resonance,
+          );
 
-    final extrinsic = ResonanceExtrinsicPayload(
-      signer: Uint8List.fromList(senderWallet.addressBytes),
-      method: encodedCall,
-      signature: signatureWithPublicKeyBytes,
-      eraPeriod: 64,
-      blockNumber: blockNumber,
-      nonce: nonce,
-      tip: 0,
-    ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+      return ExtrinsicData(
+        payload: extrinsic,
+        blockNumber: blockNumber,
+        blockHash: blockHash,
+        nonce: nonce,
+      );
+    }, operationTimeout: const Duration(seconds: 12));
 
-    return ExtrinsicData(
-      payload: extrinsic,
-      blockNumber: blockNumber,
-      blockHash: blockHash,
-      nonce: nonce,
-    );
+    return result;
   }
 
   Future<int> _getNextAccountNonce(Keypair senderWallet) async {
-    final nonceResult = await _provider!.send('system_accountNextIndex', [
-      senderWallet.ss58Address,
-    ]);
+    final nonceResult = await ProviderManager().withProvider((provider) async {
+      return await provider.send('system_accountNextIndex', [
+        senderWallet.ss58Address,
+      ]);
+    }, operationTimeout: _defaultOpTimeout);
     final nonce = int.parse(nonceResult.result.toString());
     return nonce;
   }
 
   Future<dynamic> _getBlockHash() async {
-    final result = await _provider!.send('chain_getBlockHash', []);
+    final result = await ProviderManager().withProvider((provider) async {
+      return await provider.send('chain_getBlockHash', []);
+    }, operationTimeout: _defaultOpTimeout);
     final blockHash = result.result;
     return blockHash.replaceAll('0x', '');
   }
 
   Future<dynamic> _getGenesisHash() async {
-    final result = await _provider!.send('chain_getBlockHash', [0]);
+    final result = await ProviderManager().withProvider((provider) async {
+      return await provider.send('chain_getBlockHash', [0]);
+    }, operationTimeout: _defaultOpTimeout);
     final genesisHash = result.result;
     return genesisHash.replaceAll('0x', '');
   }
 
   Future<int> _getBlockNumber() async {
-    final blockHeader = await _provider!.send('chain_getHeader', []);
+    final blockHeader = await ProviderManager().withProvider((provider) async {
+      return await provider.send('chain_getHeader', []);
+    }, operationTimeout: _defaultOpTimeout);
     final blockNumber = int.parse(blockHeader.result['number']);
     return blockNumber;
   }
 
-  // Getter for provider (for services that need direct access)
-  Provider? get provider => _provider;
+  Provider? get provider => ProviderManager().provider;
 
   Future<void> logout() async {
     print('Log out!');
@@ -425,8 +370,6 @@ class SubstrateService {
   }
 
   void dispose() {
-    _connectionStatusController.close();
-    // Dispose of the provider instance if it has a dispose/close method
-    // _provider.close(); // If a close method exists
+    ProviderManager().dispose();
   }
 }

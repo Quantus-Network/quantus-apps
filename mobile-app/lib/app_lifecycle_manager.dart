@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
 /// Provider that holds the current app lifecycle state
@@ -52,6 +53,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
 
       case AppLifecycleState.resumed:
         // Resume polling when app comes back to foreground
+        SubstrateService().reconnect();
         pollingManager.resumePolling();
         // Trigger a silent refresh to catch up on any missed updates
         pollingManager.triggerSilentRefresh();
@@ -63,6 +65,8 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
         break;
     }
   }
+
+  Future<void> reconnectNetwork() async {}
 
   @override
   Widget build(BuildContext context) {
