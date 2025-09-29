@@ -74,17 +74,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _logout() async {
     try {
-      // Step 1: Clear sensitive data (mnemonic, accounts, etc.)
       await _settingsService.clearAll(); // Clears prefs and secure storage
       ref
           .read(pendingTransactionsProvider.notifier)
           .clear(); // Clear specific notifier
 
-      // Step 2: Set providers to loading state to prevent UI errors during transition
       ref.read(accountsProvider.notifier).reset();
       ref.read(activeAccountProvider.notifier).reset();
 
-      // Step 3: Navigate to safe screen FIRST (prevents main screen rebuild errors)
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -95,7 +92,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
 
-      // Step 4: Invalidate providers AFTER navigation (use addPostFrameCallback to delay)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         print('invalidating all providers');
         ref.invalidate(accountsProvider);
@@ -105,7 +101,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ); // If needed for transactions
       });
 
-      // Optional: Log success
       debugPrint('Logout successful');
     } catch (e) {
       debugPrint('Logout error: $e');
