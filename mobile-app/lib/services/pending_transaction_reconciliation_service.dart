@@ -120,7 +120,7 @@ class PendingTransactionReconciliationService {
 
     // Check if transaction is stale (been in broadcast/inBlock state for too long)
     if (age > _stalePendingThreshold &&
-        (pendingTx.transactionState == TransactionState.broadcast ||
+        (pendingTx.transactionState == TransactionState.pending ||
             pendingTx.transactionState == TransactionState.inBlock)) {
       print(
         'PendingReconciliation: Transaction ${pendingTx.id} is'

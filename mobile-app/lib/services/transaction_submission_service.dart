@@ -160,7 +160,7 @@ class TransactionSubmissionService {
       final hexString = hex.encode(extrinsicHash);
       print('submission hash: 0x$hexString');
 
-      final newState = TransactionState.broadcast;
+      final newState = TransactionState.pending;
       // Update state for all non-retry cases
       print('updating tx ${pendingTx.amount} to $newState');
       _ref

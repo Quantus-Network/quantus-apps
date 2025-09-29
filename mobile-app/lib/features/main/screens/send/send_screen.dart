@@ -72,8 +72,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
       return 'Insufficient Balance';
     } else if (_recipientController.text == activeAccount!.accountId) {
       return "Can't Self Transfer";
-    }
-    else {
+    } else {
       return 'Send ${_formattingService.formatBalance(_amount, addSymbol: true)}';
     }
   }
@@ -791,7 +790,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Send in: ${_formatReversibleTime()}',
+                        'Revert for: ${_formatReversibleTime()}',
                         style: context.themeText.smallParagraph,
                       ),
                       if (_sendMode.isReversible)

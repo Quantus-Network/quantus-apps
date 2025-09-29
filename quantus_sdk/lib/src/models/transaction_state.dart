@@ -3,7 +3,7 @@
 enum TransactionState {
   created,
   ready,
-  broadcast,
+  pending,
   inBlock,
   inHistory,
   failed, // For errors
