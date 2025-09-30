@@ -4,10 +4,6 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 // We define the following 5 levels in BIP32 path:
 // m / 44' / coin_type' / account' / change / address_index
-// For Quantus purpose is 189189
-// coin type should be 0 for native
-// account is the account index - 0, 1, 2, 3...
-// change and address index should remain at 0
 
 // Bip44 describes account discovery from seed phrase - it keeps looking by increasing acocunt index, for accounts with activity.
 // It defines the max allowed account gap as 20, if there's 20 addresses in a row where there's no activity, it assumes the highest index has been reached.
