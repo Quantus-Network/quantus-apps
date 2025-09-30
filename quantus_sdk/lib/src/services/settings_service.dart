@@ -16,9 +16,7 @@ class SettingsService {
   static const String _accountsKey = 'accounts_v3';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
 
-  // ignore: unused_field
   static const String _accountsKeyV2 = 'accounts_v2';
-  // ignore: unused_field
   static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
 
