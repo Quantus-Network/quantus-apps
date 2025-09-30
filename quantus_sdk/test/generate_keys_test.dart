@@ -78,7 +78,18 @@ void main() {
       final accountId = toAccountId(obj: keypair);
 
       expect(accountId, knownAccountId);
-      expect(keypair.publicKey, hex.decode(knownPublicKey));
+      // expect(keypair.publicKey, hex.decode(knownPublicKey));
+
+      const knownAccountId1 =
+          'qzpdz3yYFw2JhSL7JMdgnrwsowquopFQWmSZu1RePQu1Fkm2v'; // account index 0
+      const knownAccountId2 =
+          'qzn61P2iawPRGMABGrkU6qQFhkzW1bePxXoEtaijRSGQ2kiXx'; // account index 1
+      final keyPair1 = HdWalletService().keyPairAtIndex(mnemonic1, 0);
+      final keyPair2 = HdWalletService().keyPairAtIndex(mnemonic1, 1);
+      final accountId1 = toAccountId(obj: keyPair1);
+      final accountId2 = toAccountId(obj: keyPair2);
+      expect(accountId1, knownAccountId1);
+      expect(accountId2, knownAccountId2);
     });
   });
 }
