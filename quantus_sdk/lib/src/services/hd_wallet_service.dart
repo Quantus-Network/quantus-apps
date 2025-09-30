@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 // We define the following 5 levels in BIP32 path:
-// m / purpose' / coin_type' / account' / change / address_index
+// m / 44' / coin_type' / account' / change / address_index
 // For Quantus purpose is 189189
 // coin type should be 0 for native
 // account is the account index - 0, 1, 2, 3...
@@ -17,14 +17,13 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 class HdWalletService {
   Uint8List _deriveHDWallet({
     required Uint8List seed,
-    int purpose = 189189,
-    int coinType = 0,
+    int coinType = 189189,
     int account = 0,
     int change = 0,
     int addressIndex = 0,
   }) {
     final derivationPath =
-        "m/$purpose'/$coinType'/$account'/$change/$addressIndex";
+        "m/44'/$coinType'/$account'/$change/$addressIndex";
     final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
     return derivedSeed;
   }
