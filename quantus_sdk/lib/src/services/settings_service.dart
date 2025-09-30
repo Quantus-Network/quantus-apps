@@ -273,7 +273,8 @@ class SettingsService {
     print('removing accounts data');
     await _prefs.remove(_accountsKey);
     print('setting old accounts data - reload app after this');
-    await _prefs.setString(_accountsKeyV2, jsonData);
+    // await _prefs.setString(_accountsKeyV2, jsonData); // test mid new accts - also works
+    await _prefs.setString(_oldAccountsKey, jsonData);
   }
 
   // Test-only helper to reset initialization between tests
