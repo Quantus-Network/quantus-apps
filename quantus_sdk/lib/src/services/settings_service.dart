@@ -13,9 +13,11 @@ class SettingsService {
   final _secureStorage = const FlutterSecureStorage();
 
   // New keys for multi-account support
-  static const String _accountsKey = 'accounts_v2';
+  static const String _accountsKey = 'accounts_v3';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
 
+  // ignore: unused_field
+  static const String _accountsKeyV2 = 'accounts_v2';
   // ignore: unused_field
   static const String _oldAccountsKey = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
@@ -242,22 +244,13 @@ class SettingsService {
 
   /// Check if old accounts exist in legacy storage
   bool hasOldAccounts() {
-    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
-    if (oldAccountsJson != null) {
-      try {
-        final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
-        return decoded.isNotEmpty;
-      } catch (e) {
-        // If we can't decode, assume no valid old accounts
-        return false;
-      }
-    }
-    return false;
+    final oldAccounts = getOldAccounts();
+    return oldAccounts.isNotEmpty;
   }
 
-  /// Get old accounts from legacy storage
+  /// Get old accounts from legacy storage or v2 storage
   List<Account> getOldAccounts() {
-    final oldAccountsJson = _prefs.getString(_oldAccountsKey);
+    final oldAccountsJson = _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
     if (oldAccountsJson != null) {
       try {
         final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
@@ -272,6 +265,7 @@ class SettingsService {
   /// Remove old accounts from legacy storage after successful migration
   Future<void> clearOldAccounts() async {
     await _prefs.remove(_oldAccountsKey);
+    await _prefs.remove(_accountsKeyV2);
   }
 
   /// Set old accounts data (for debugging/testing)
@@ -279,7 +273,7 @@ class SettingsService {
     print('removing accounts data');
     await _prefs.remove(_accountsKey);
     print('setting old accounts data - reload app after this');
-    await _prefs.setString(_oldAccountsKey, jsonData);
+    await _prefs.setString(_accountsKeyV2, jsonData);
   }
 
   // Test-only helper to reset initialization between tests
