@@ -17,19 +17,20 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 class HdWalletService {
   Uint8List _deriveHDWallet({
     required Uint8List seed,
-    int coinType = 189189,
     int account = 0,
     int change = 0,
     int addressIndex = 0,
   }) {
+    // m/44'/189189'/0'/0/0
     final derivationPath =
-        "m/44'/$coinType'/$account'/$change/$addressIndex";
+        "m/44'/189189'/$account'/$change/$addressIndex";
+    print('derivationPath: $derivationPath');
     final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
     return derivedSeed;
   }
 
-  Uint8List _derivedSeedAtIndex(Uint8List seed, int index, {int coinType = 0}) {
-    return _deriveHDWallet(seed: seed, account: index, coinType: coinType);
+  Uint8List _derivedSeedAtIndex(Uint8List seed, int index) {
+    return _deriveHDWallet(seed: seed, account: index);
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
