@@ -39,6 +39,7 @@ export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/migration_service.dart';
 export 'src/services/substrate_service.dart';
+export 'src/services/taskmaster_service.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

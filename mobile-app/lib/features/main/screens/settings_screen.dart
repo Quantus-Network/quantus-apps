@@ -31,6 +31,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final SettingsService _settingsService = SettingsService();
   final ReferralService _referralService = ReferralService();
 
+  Future<void> _testLogin() async {
+    try {
+      final service = TaskmasterService();
+      final sessionKey = await service.loginWithAccount1();
+      print('sessionKey: $sessionKey');
+      final me = await service.me(sessionKey);
+      if (!mounted) return;
+      showTopSnackBar(
+        context,
+        title: 'Logged in',
+        message: 'Address ${me['address']}',
+        icon: buildSuccessIcon(),
+      );
+    } catch (e, s) {
+      print('error: $e');
+      print('error stack: $s');
+      if (!mounted) return;
+      showTopSnackBar(
+        context,
+        title: 'Error',
+        message: 'Login failed: $e',
+        icon: buildErrorIcon(),
+      );
+    }
+  }
+
   void _resetAndClearData() {
     _settingsService.clearAll();
     _logout();
@@ -162,6 +188,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           );
         }),
+        const SizedBox(height: 22),
+        _buildSettingsItem(
+          context,
+          'Test Login',
+          _testLogin,
+          trailing: const Icon(Icons.login),
+        ),
       ],
     );
   }
