@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
@@ -158,6 +160,18 @@ class _ReferralAndRewardActionSheetState
           controller: _referralCodeController,
           hintText: 'Referral Code',
           errorMsg: _errorMsg,
+          trailing: InkWell(
+            onTap: () async {
+              final data = await Clipboard.getData('text/plain');
+              if (data != null && data.text != null) {
+                _referralCodeController.text = data.text!;
+              }
+            },
+            child: SvgPicture.asset(
+              'assets/paste_icon_1.svg',
+              width: context.isTablet ? 24 : 18,
+            ),
+          ),
         ),
         const SizedBox(height: 24),
         Text(
