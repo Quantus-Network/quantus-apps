@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:quantus_sdk/src/models/account.dart';
@@ -65,22 +64,6 @@ class MigrationService {
 
     // Clear old accounts data
     await _settingsService.clearOldAccounts();
-  }
-
-  /// Debug method to create test old accounts
-  Future<void> createDebugOldAccounts() async {
-    final debugAccounts = [
-      const Account(
-        index: -1,
-        name: 'Primary Account',
-        accountId: 'qznd1YWbgQrviV76psu5n8d24mHSuHtAc9JmJLB42gTELksvQ',
-      ),
-      const Account(index: 0, name: 'Account 0', accountId: 'debug_id_0'),
-      const Account(index: 1, name: 'Account 1', accountId: 'debug_id_1'),
-    ];
-
-    final jsonData = jsonEncode(debugAccounts.map((a) => a.toJson()).toList());
-    await _settingsService.setOldAccountsData(jsonData);
   }
 
   String _uint8ListToHex(Uint8List bytes) {
