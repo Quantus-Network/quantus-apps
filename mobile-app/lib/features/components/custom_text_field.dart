@@ -11,6 +11,7 @@ class CustomTextField extends StatelessWidget {
   final String? hintText;
   final TextStyle? hintStyle;
   final Icon? icon;
+  final Widget? trailing;
   final bool obscureText;
   final ValueChanged<String>? onChanged;
   final TextEditingController? controller;
@@ -26,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.hintText,
     this.hintStyle,
     this.icon,
+    this.trailing,
     this.obscureText = false,
     this.errorMsg,
     this.onChanged,
@@ -55,8 +57,6 @@ class CustomTextField extends StatelessWidget {
           Stack(
             alignment: AlignmentGeometry.center,
             children: [
-              if (icon != null) Positioned(right: 16, child: icon!),
-
               TextFormField(
                 controller: controller,
                 initialValue: initialValue,
@@ -81,7 +81,7 @@ class CustomTextField extends StatelessWidget {
                     top: 10,
                     bottom: 10,
                     left: leftPadding ?? 11,
-                    right: icon != null ? 40 : 11,
+                    right: (trailing != null || icon != null) ? 40 : 11,
                   ), // Removes default padding
                   hintText: hintText,
                   // Style for the hint text when the field is empty
@@ -92,6 +92,9 @@ class CustomTextField extends StatelessWidget {
                       ),
                 ),
               ),
+
+              if (icon != null) Positioned(right: 16, child: icon!),
+              if (trailing != null) Positioned(right: 10, child: trailing!),
             ],
           ),
 
