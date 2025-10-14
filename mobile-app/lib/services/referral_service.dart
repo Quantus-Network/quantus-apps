@@ -157,20 +157,21 @@ class ReferralService {
     return '${AppConstants.websiteBaseUrl}/invite?referralCode=$referralCode';
   }
 
-  Future<void> shareReferralLink() async {
+  Future<ShareParams> getShareLinkParameters() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
-    if (account == null) return;
 
     final referralCode = await _checksumService.getHumanReadableName(
-      account.accountId,
+      account!.accountId,
     );
 
     String link = generateReferralLink(referralCode);
     String message =
         'Join me on Quantus Wallet! Use my referral code: $referralCode\n\n$link';
 
-    await SharePlus.instance.share(
-      ShareParams(text: message, subject: 'Invite Link', title: 'Invite Link'),
+    return ShareParams(
+      text: message,
+      subject: 'Invite Link',
+      title: 'Invite Link',
     );
   }
 

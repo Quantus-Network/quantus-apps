@@ -18,6 +18,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -61,8 +62,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _logout();
   }
 
-  void _share() {
-    _referralService.shareReferralLink();
+  Future<void> _share() async {
+    final params = await _referralService.getShareLinkParameters();
+    SharePlus.instance.share(params);
   }
 
   Future<void> _logout() async {
