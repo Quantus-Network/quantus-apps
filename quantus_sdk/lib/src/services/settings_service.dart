@@ -24,6 +24,10 @@ class SettingsService {
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
   static const String _lastSuccessfulAuthKey = 'last_successful_auth';
 
+  // referral status
+  static const String hasCheckedReferralKey = 'referral_check';
+  static const String referralCodeKey = 'referral_code';
+
   Future<void> initialize() async {
     // Always (re)bind the SharedPreferences instance. This ensures tests that
     // call SharedPreferences.setMockInitialValues({}) before initialize()
@@ -248,7 +252,8 @@ class SettingsService {
 
   /// Get old accounts from legacy storage or v2 storage
   List<Account> getOldAccounts() {
-    final oldAccountsJson = _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
+    final oldAccountsJson =
+        _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
     if (oldAccountsJson != null) {
       try {
         final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
@@ -287,5 +292,25 @@ class SettingsService {
   Future<void> clearAll() async {
     await _prefs.clear();
     await _secureStorage.deleteAll();
+  }
+
+  bool referralCheckCompleted() {
+    return _prefs.getBool(hasCheckedReferralKey) ?? false;
+  }
+
+  void setReferralCheckCompleted() {
+    _prefs.setBool(hasCheckedReferralKey, true);
+  }
+
+  void clearReferralCheckCompletedFlag() {
+    _prefs.remove(hasCheckedReferralKey);
+  }
+
+  String? getReferralCode() {
+    return _prefs.getString(referralCodeKey);
+  }
+
+  void setReferralCode(String code) {
+    _prefs.setString(referralCodeKey, code);
   }
 }

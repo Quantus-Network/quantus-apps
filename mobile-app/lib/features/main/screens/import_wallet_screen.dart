@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/services/referral_service.dart';
 
 class ImportWalletScreen extends ConsumerStatefulWidget {
   const ImportWalletScreen({super.key});
@@ -24,7 +23,6 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   bool _isDiscovering = false;
   String _errorMessage = '';
   final SettingsService _settingsService = SettingsService();
-  final ReferralService _referralService = ReferralService();
   final AccountsService _accountsService = AccountsService();
   final AccountDiscoveryService _accountDiscoveryService =
       AccountDiscoveryService(HdWalletService(), SubstrateService());
@@ -94,7 +92,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       await _discoverAccounts(mnemonic);
       // We set check status to true so we wil not prompt user to input refferal code.
       // This is because we know they can only import if they have gone through create process.
-      await _referralService.setCheckReferralStatus(true);
+      _settingsService.setReferralCheckCompleted();
 
       if (context.mounted && mounted) {
         Navigator.pushAndRemoveUntil(
@@ -124,7 +122,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     return ScaffoldBase(
       appBar: 'Import Wallet',
       decorations: [
-          const Positioned(
+        const Positioned(
           bottom: 140,
           right: 0,
           child: Sphere(variant: 2, size: 200),
@@ -221,9 +219,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
               onPressed: _importWallet,
               isLoading: _isLoading,
             ),
-           SizedBox(
-            height: context.themeSize.bottomButtonSpacing,
-          ), 
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
     );

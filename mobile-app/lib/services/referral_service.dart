@@ -1,14 +1,10 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 
-import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:play_install_referrer/play_install_referrer.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/models/referral_data.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:http/http.dart' as http;
 
 class ReferralService {
   final _referralEndpoint = Uri.parse(
@@ -23,10 +19,8 @@ class ReferralService {
       HumanReadableChecksumService();
 
   Future<void> checkReferralOnInstall() async {
-    final prefs = await SharedPreferences.getInstance();
-
     // Only check once - on first launch after install
-    bool hasChecked = prefs.getBool(AppConstants.hasCheckReferralKey) ?? false;
+    bool hasChecked = _settingsService.referralCheckCompleted();
     if (hasChecked) return;
 
     try {
@@ -42,9 +36,8 @@ class ReferralService {
         String? referralCode = params['referral_code'];
 
         if (referralCode != null && referralCode.isNotEmpty) {
-          await prefs.setString(AppConstants.referralCodeKey, referralCode);
-          await prefs.setBool(AppConstants.hasCheckReferralKey, true);
-
+          SettingsService().setReferralCode(referralCode);
+          SettingsService().setReferralCheckCompleted();
           print('Referral Code Found: $referralCode');
         }
       }
@@ -55,16 +48,10 @@ class ReferralService {
     }
   }
 
-  Future<void> setCheckReferralStatus(bool status) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setBool(AppConstants.hasCheckReferralKey, status);
-  }
-
   Future<void> optInRewardProgram() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
     if (account == null) {
-       throw Exception(
+      throw Exception(
         'Failed joining reward program, no active account detected!',
       );
     }
@@ -104,13 +91,10 @@ class ReferralService {
   }
 
   Future<void> submitReferralToBackend({String? referral}) async {
-    final prefs = await SharedPreferences.getInstance();
-
     bool hasSubmitRefferalCode = await getReferralData() != null;
     if (hasSubmitRefferalCode) return;
 
-    final referralCode =
-        referral ?? prefs.getString(AppConstants.referralCodeKey);
+    final referralCode = referral ?? _settingsService.getReferralCode();
     final activeAccount = await _settingsService.getActiveAccount();
 
     if (activeAccount == null) {
@@ -156,31 +140,6 @@ class ReferralService {
     }
   }
 
-  Future<void> promptOrSubmitReferral(
-    BuildContext context,
-    bool mounted,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    bool hasChecked = prefs.getBool(AppConstants.hasCheckReferralKey) ?? false;
-    bool hasSubmit = await getReferralData() != null;
-    String? referralCode = prefs.getString(AppConstants.referralCodeKey);
-
-    if (!hasChecked && mounted) {
-      await prefs.setBool(AppConstants.hasCheckReferralKey, true);
-
-      // ignore: use_build_context_synchronously
-      showReferralAndRewardActionSheet(context);
-    } else if (Platform.isAndroid &&
-        hasChecked &&
-        referralCode != null &&
-        !hasSubmit &&
-        mounted) {
-      // ignore: use_build_context_synchronously
-      showReferralAndRewardActionSheet(context, referralCode: referralCode);
-    }
-  }
-
   String generateReferralLink(String referralCode) {
     return '${AppConstants.websiteBaseUrl}/invite?referralCode=$referralCode';
   }
@@ -200,5 +159,9 @@ class ReferralService {
     await SharePlus.instance.share(
       ShareParams(text: message, subject: 'Invite Link', title: 'Invite Link'),
     );
+  }
+
+  String? getReferralCode() {
+    return _settingsService.getReferralCode();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/transactions_screen.dart';
@@ -144,7 +145,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
-    _referralService.promptOrSubmitReferral(context, mounted);
+    showReferralActionSheet(context, mounted);
   }
 
   void _onItemTapped(int index) {
@@ -283,5 +284,26 @@ class _NavbarState extends ConsumerState<Navbar> {
         bottomNavigationBar: _buildBottomNavigationBar(),
       ),
     );
+  }
+
+  Future<void> showReferralActionSheet(
+    BuildContext context,
+    bool mounted,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+
+    bool referralDataAlreadyExists =
+        await _referralService.getReferralData() != null;
+
+    if (referralDataAlreadyExists) {
+      return;
+    }
+
+    String? referralCode = ReferralService().getReferralCode();
+
+    // ignore: use_build_context_synchronously
+    showReferralAndRewardActionSheet(context, referralCode: referralCode);
   }
 }
