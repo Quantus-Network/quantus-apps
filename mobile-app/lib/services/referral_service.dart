@@ -17,6 +17,7 @@ class ReferralService {
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
+  final TaskmasterService _taskmasterService = TaskmasterService();
 
   Future<void> checkReferralOnInstall() async {
     // Only check once - on first launch after install
@@ -113,9 +114,14 @@ class ReferralService {
       'referee_address': activeAccount.accountId,
     };
 
+    await _taskmasterService.ensureIsLoggedIn();
+
     final http.Response response = await http.post(
       _referralEndpoint,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        ..._taskmasterService.getAuthHeaders(),
+      },
       body: jsonEncode(requestBody),
     );
 
@@ -129,10 +135,15 @@ class ReferralService {
   Future<void> submitAddressToBackend(String address) async {
     final Map<String, dynamic> requestBody = {'quan_address': address};
 
+    await _taskmasterService.ensureIsLoggedIn();
+
     try {
       await http.post(
         _addressEndpoint,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          ..._taskmasterService.getAuthHeaders(),
+        },
         body: jsonEncode(requestBody),
       );
     } catch (e) {

@@ -125,6 +125,10 @@ class TaskmasterService {
     return _client.me(sessionKey);
   }
 
+  Map<String, String> getAuthHeaders() {
+    return {'authorization': 'Session $sessionKey'};
+  }
+
   // Makes sure account is logged in
   Future<bool> ensureIsLoggedIn() async {
     if (_sessionKey != null) {
@@ -135,7 +139,6 @@ class TaskmasterService {
       } catch (error) {
         print('ensureIsLoggedIn error: $error');
         _sessionKey = null;
-        return await ensureIsLoggedIn();
       }
     }
     try {
