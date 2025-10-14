@@ -8,10 +8,10 @@ import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
   final _referralEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/referrals',
+    '${AppConstants.taskMasterEndpoint}/api/referrals',
   );
   final _addressEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/addresses',
+    '${AppConstants.taskMasterEndpoint}/api/addresses',
   );
   final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
@@ -92,6 +92,8 @@ class ReferralService {
   }
 
   Future<void> submitReferralToBackend({String? referral}) async {
+    print('submitAddressToBackend $referral');
+
     bool hasSubmitRefferalCode = await getReferralData() != null;
     if (hasSubmitRefferalCode) return;
 
@@ -110,7 +112,7 @@ class ReferralService {
     }
 
     final Map<String, dynamic> requestBody = {
-      'referral_code': referralCode,
+      'referral_code': referralCode.toLowerCase(),
       'referee_address': activeAccount.accountId,
     };
 
@@ -133,8 +135,8 @@ class ReferralService {
   }
 
   Future<void> submitAddressToBackend(String address) async {
+    print('submitAddressToBackend $address');
     final Map<String, dynamic> requestBody = {'quan_address': address};
-
     await _taskmasterService.ensureIsLoggedIn();
 
     try {
