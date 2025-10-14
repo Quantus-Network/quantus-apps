@@ -154,7 +154,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
-      extendBodyBehingNavBar: true,
+      extendBodyBehindNavBar: true,
       decorations: [
         Positioned(
           bottom: -20,
@@ -290,7 +290,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 begin: Alignment.bottomCenter,
                 end: Alignment.center,
                 colors: [Colors.transparent, Colors.white],
-                stops: [0.0, 0.5], 
+                stops: [0.0, 0.5],
               ).createShader(bounds);
             },
             blendMode: BlendMode.dstIn,

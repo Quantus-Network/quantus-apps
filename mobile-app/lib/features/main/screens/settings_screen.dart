@@ -118,8 +118,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     return ScaffoldBase(
       screenTitle: ScreenTitle(title: 'Wallet Settings'),
-      extendBodyBehingAppBar: true,
-      extendBodyBehingNavBar: true,
+      extendBodyBehindAppBar: true,
+      extendBodyBehindNavBar: true,
       decorations: [
         Positioned(
           bottom: -20,
