@@ -37,6 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final sessionKey = await service.loginWithAccount1();
       print('sessionKey: $sessionKey');
       final me = await service.me(sessionKey);
+      print("me: $me");
       if (!mounted) return;
       showTopSnackBar(
         context,

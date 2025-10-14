@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:convert/convert.dart' as convert_hex;
-
+import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -10,7 +9,8 @@ class TaskMasterAuthClient {
   final String base;
   final http.Client _client;
 
-  TaskMasterAuthClient(this.base, {http.Client? client}) : _client = client ?? http.Client();
+  TaskMasterAuthClient(this.base, {http.Client? client})
+    : _client = client ?? http.Client();
 
   Future<Map<String, String>> requestChallenge() async {
     final r = await _client.post(
@@ -69,7 +69,8 @@ class TaskMasterAuthClient {
   }) async {
     final ch = await requestChallenge();
     print('challenge: $ch');
-    final msg = 'taskmaster:login:1|challenge=${ch['challenge']}|address=$ss58Address';
+    final msg =
+        'taskmaster:login:1|challenge=${ch['challenge']}|address=$ss58Address';
     print('msg: $msg');
     final sigHex = await signHex(utf8.encode(msg));
     return verify(
@@ -81,13 +82,23 @@ class TaskMasterAuthClient {
   }
 }
 
+// Task master service singleton
 class TaskmasterService {
+  static final TaskmasterService _instance = TaskmasterService._internal();
+  factory TaskmasterService() => _instance;
+  TaskmasterService._internal();
+
   final SettingsService _settings = SettingsService();
   final HdWalletService _hd = HdWalletService();
+  String? _sessionKey;
+  String? get sessionKey => _sessionKey;
+  bool get isLoggedIn => _sessionKey != null;
 
-  TaskMasterAuthClient _clientForBase(String base) => TaskMasterAuthClient(base);
+  TaskMasterAuthClient _clientForBase(String base) =>
+      TaskMasterAuthClient(base);
 
-  TaskMasterAuthClient get _client => _clientForBase(AppConstants.taskMasterEndpoint);
+  TaskMasterAuthClient get _client =>
+      _clientForBase(AppConstants.taskMasterEndpoint);
 
   Future<String> loginWithAccount1() async {
     final mnemonic = await _settings.getMnemonic();
@@ -113,6 +124,27 @@ class TaskmasterService {
   Future<Map<String, dynamic>> me(String sessionKey) {
     return _client.me(sessionKey);
   }
+
+  // Makes sure account is logged in
+  Future<bool> ensureIsLoggedIn() async {
+    if (_sessionKey != null) {
+      try {
+        // ignore: unused_local_variable
+        final meResult = await me(_sessionKey!);
+        return true;
+      } catch (error) {
+        print('ensureIsLoggedIn error: $error');
+        _sessionKey = null;
+        return await ensureIsLoggedIn();
+      }
+    }
+    try {
+      _sessionKey = await loginWithAccount1();
+      print('sessionKey: $_sessionKey');
+      return true;
+    } catch (error) {
+      print('ensureIsLoggedIn login error $error');
+      return false;
+    }
+  }
 }
-
-
