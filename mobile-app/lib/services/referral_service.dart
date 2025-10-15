@@ -92,9 +92,9 @@ class ReferralService {
     if (hasSubmitRefferalCode) return;
 
     final referralCode = referral ?? _settingsService.getReferralCode();
-    final activeAccount = await _settingsService.getActiveAccount();
+    final account1 = await _settingsService.getAccount(_mainAccountIndex);
 
-    if (activeAccount == null) {
+    if (account1 == null) {
       throw Exception(
         'Failed sending referral to backend, no active account detected!',
       );
@@ -105,7 +105,7 @@ class ReferralService {
       );
     }
 
-    await _taskmasterService.submitReferral(referralCode, activeAccount);
+    await _taskmasterService.submitReferral(referralCode, account1);
   }
 
   Future<void> submitAddressToBackend(String address) async {
