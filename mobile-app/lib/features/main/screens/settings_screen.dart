@@ -35,8 +35,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _testLogin() async {
     try {
       final service = TaskmasterService();
-      final sessionKey = await service.loginWithAccount1();
-      final me = await service.me(sessionKey);
+      final accessToken = await service.loginWithAccount1();
+      final me = await service.me(accessToken);
       print('me $me');
       if (!mounted) return;
       showTopSnackBar(

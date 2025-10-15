@@ -53,10 +53,10 @@ class TaskMasterAuthClient {
     return j['access_token'] as String;
   }
 
-  Future<Map<String, dynamic>> me(String sessionKey) async {
+  Future<Map<String, dynamic>> me(String accessToken) async {
     final r = await _client.get(
       Uri.parse('$taskMasterEndpointUrl/auth/me'),
-      headers: getAuthHeaders(sessionKey),
+      headers: getAuthHeaders(accessToken),
     );
     if (r.statusCode != 200) {
       throw Exception('me failed: ${r.statusCode}');
@@ -83,8 +83,8 @@ class TaskMasterAuthClient {
     );
   }
 
-  Map<String, String> getAuthHeaders(String? sessionKey) {
-    return {'authorization': 'Bearer $sessionKey'};
+  Map<String, String> getAuthHeaders(String? accessToken) {
+    return {'authorization': 'Bearer $accessToken'};
   }
 }
 
@@ -104,7 +104,7 @@ class TaskmasterService {
   final SettingsService _settings = SettingsService();
   final HdWalletService _hd = HdWalletService();
   String? _sessionKey;
-  String? get sessionKey => _sessionKey;
+  String? get accessToken => _sessionKey;
   bool get isLoggedIn => _sessionKey != null;
 
   TaskMasterAuthClient get _client =>
@@ -131,12 +131,12 @@ class TaskmasterService {
     );
   }
 
-  Future<Map<String, dynamic>> me(String sessionKey) {
-    return _client.me(sessionKey);
+  Future<Map<String, dynamic>> me(String accessToken) {
+    return _client.me(accessToken);
   }
 
   Map<String, String> getAuthHeaders() {
-    return _client.getAuthHeaders(sessionKey);
+    return _client.getAuthHeaders(accessToken);
   }
 
   // Makes sure account is logged in
@@ -153,7 +153,7 @@ class TaskmasterService {
     }
     try {
       _sessionKey = await loginWithAccount1();
-      print('sessionKey: $_sessionKey');
+      print('accessToken: $_sessionKey');
       return true;
     } catch (error) {
       print('ensureIsLoggedIn login error $error');
