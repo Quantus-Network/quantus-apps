@@ -6,20 +6,21 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TaskMasterAuthClient {
-  final String base;
+  final String taskMasterEndpointUrl;
   final http.Client _client;
 
-  TaskMasterAuthClient(this.base, {http.Client? client})
+  TaskMasterAuthClient(this.taskMasterEndpointUrl, {http.Client? client})
     : _client = client ?? http.Client();
 
   Future<Map<String, String>> requestChallenge() async {
+    print('request challenge');
     final r = await _client.post(
-      Uri.parse('$base/auth/request-challenge'),
+      Uri.parse('$taskMasterEndpointUrl/auth/request-challenge'),
       headers: {'content-type': 'application/json'},
       body: jsonEncode({}),
     );
     if (r.statusCode != 200) {
-      throw Exception('request-challenge failed: ${r.statusCode}');
+      throw Exception('request-challenge failed: ${r.statusCode} ${r.body}');
     }
     final j = jsonDecode(r.body) as Map<String, dynamic>;
     return {
@@ -35,7 +36,7 @@ class TaskMasterAuthClient {
     required String signatureHex,
   }) async {
     final r = await _client.post(
-      Uri.parse('$base/auth/verify'),
+      Uri.parse('$taskMasterEndpointUrl/auth/verify'),
       headers: {'content-type': 'application/json'},
       body: jsonEncode({
         'temp_session_id': tempSessionId,
@@ -48,13 +49,14 @@ class TaskMasterAuthClient {
       throw Exception('verify failed: ${r.statusCode}');
     }
     final j = jsonDecode(r.body) as Map<String, dynamic>;
-    return j['session_key'] as String;
+    print('verify response: ${r.body}');
+    return j['access_token'] as String;
   }
 
   Future<Map<String, dynamic>> me(String sessionKey) async {
     final r = await _client.get(
-      Uri.parse('$base/auth/me'),
-      headers: {'authorization': 'Session $sessionKey'},
+      Uri.parse('$taskMasterEndpointUrl/auth/me'),
+      headers: getAuthHeaders(sessionKey),
     );
     if (r.statusCode != 200) {
       throw Exception('me failed: ${r.statusCode}');
@@ -80,10 +82,21 @@ class TaskMasterAuthClient {
       signatureHex: sigHex,
     );
   }
+
+  Map<String, String> getAuthHeaders(String? sessionKey) {
+    return {'authorization': 'Bearer $sessionKey'};
+  }
 }
 
 // Task master service singleton
 class TaskmasterService {
+  final _referralEndpoint = Uri.parse(
+    '${AppConstants.taskMasterEndpoint}/referrals',
+  );
+  final _addressEndpoint = Uri.parse(
+    '${AppConstants.taskMasterEndpoint}/addresses',
+  );
+
   static final TaskmasterService _instance = TaskmasterService._internal();
   factory TaskmasterService() => _instance;
   TaskmasterService._internal();
@@ -94,11 +107,8 @@ class TaskmasterService {
   String? get sessionKey => _sessionKey;
   bool get isLoggedIn => _sessionKey != null;
 
-  TaskMasterAuthClient _clientForBase(String base) =>
-      TaskMasterAuthClient(base);
-
   TaskMasterAuthClient get _client =>
-      _clientForBase(AppConstants.taskMasterEndpoint);
+      TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
 
   Future<String> loginWithAccount1() async {
     final mnemonic = await _settings.getMnemonic();
@@ -126,7 +136,7 @@ class TaskmasterService {
   }
 
   Map<String, String> getAuthHeaders() {
-    return {'authorization': 'Session $sessionKey'};
+    return _client.getAuthHeaders(sessionKey);
   }
 
   // Makes sure account is logged in
@@ -148,6 +158,51 @@ class TaskmasterService {
     } catch (error) {
       print('ensureIsLoggedIn login error $error');
       return false;
+    }
+  }
+
+  // Submit a referral code
+  Future<void> submitReferral(
+    String referralCode,
+    Account activeAccount,
+  ) async {
+    print(
+      'submit referral $referralCode for ${activeAccount.name} ${activeAccount.accountId}',
+    );
+    final Map<String, dynamic> requestBody = {
+      'referral_code': referralCode.toLowerCase(),
+      'referee_address': activeAccount.accountId,
+    };
+
+    await ensureIsLoggedIn();
+
+    final http.Response response = await http.post(
+      _referralEndpoint,
+      headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+  }
+
+  Future<void> submitAddress(String address) async {
+    print('submitAddress $address');
+    final Map<String, dynamic> requestBody = {'quan_address': address};
+
+    await ensureIsLoggedIn();
+
+    try {
+      await http.post(
+        _addressEndpoint,
+        headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
+        body: jsonEncode(requestBody),
+      );
+    } catch (e) {
+      print('Failed saving address to database: $e');
     }
   }
 }

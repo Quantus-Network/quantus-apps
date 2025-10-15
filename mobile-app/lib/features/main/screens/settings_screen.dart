@@ -37,11 +37,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final service = TaskmasterService();
       final sessionKey = await service.loginWithAccount1();
       final me = await service.me(sessionKey);
+      print('me $me');
       if (!mounted) return;
       showTopSnackBar(
         context,
         title: 'Logged in',
-        message: 'Address ${me['address']}',
+        message: 'Address ${me['data']['quan_address']}',
         icon: buildSuccessIcon(),
       );
     } catch (e, s) {

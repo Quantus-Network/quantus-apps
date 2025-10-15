@@ -10,9 +10,10 @@ class AppConstants {
 
   static const String rpcEndpoint = 'https://quantu.se';
   static const String graphQlEndpoint = 'https://quantu.se';
-  
+
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api'; // local test android use special ip
-  static const String taskMasterEndpoint = 'http://localhost:3000'; // local test ios can use localhost
+  static const String taskMasterEndpoint =
+      'http://localhost:3000/api'; // local test ios can use localhost
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';

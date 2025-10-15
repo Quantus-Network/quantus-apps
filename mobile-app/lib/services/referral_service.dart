@@ -7,12 +7,6 @@ import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
-  final _referralEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/api/referrals',
-  );
-  final _addressEndpoint = Uri.parse(
-    '${AppConstants.taskMasterEndpoint}/api/addresses',
-  );
   final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
@@ -111,46 +105,11 @@ class ReferralService {
       );
     }
 
-    final Map<String, dynamic> requestBody = {
-      'referral_code': referralCode.toLowerCase(),
-      'referee_address': activeAccount.accountId,
-    };
-
-    await _taskmasterService.ensureIsLoggedIn();
-
-    final http.Response response = await http.post(
-      _referralEndpoint,
-      headers: {
-        'Content-Type': 'application/json',
-        ..._taskmasterService.getAuthHeaders(),
-      },
-      body: jsonEncode(requestBody),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
-      );
-    }
+    await _taskmasterService.submitReferral(referralCode, activeAccount);
   }
 
   Future<void> submitAddressToBackend(String address) async {
-    print('submitAddressToBackend $address');
-    final Map<String, dynamic> requestBody = {'quan_address': address};
-    await _taskmasterService.ensureIsLoggedIn();
-
-    try {
-      await http.post(
-        _addressEndpoint,
-        headers: {
-          'Content-Type': 'application/json',
-          ..._taskmasterService.getAuthHeaders(),
-        },
-        body: jsonEncode(requestBody),
-      );
-    } catch (e) {
-      print('Failed saving address to database: $e');
-    }
+    await _taskmasterService.submitAddress(address);
   }
 
   String generateReferralLink(String referralCode) {
