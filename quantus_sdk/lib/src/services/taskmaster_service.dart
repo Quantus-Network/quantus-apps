@@ -265,4 +265,8 @@ class TaskmasterService {
       rethrow;
     }
   }
+
+  Future<void> logout() async {
+    _accessToken = null;
+  }
 }

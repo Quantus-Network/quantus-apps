@@ -44,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _logout() async {
     try {
-      await _settingsService.clearAll(); // Clears prefs and secure storage
+      await SubstrateService().logout();
       ref
           .read(pendingTransactionsProvider.notifier)
           .clear(); // Clear specific notifier
