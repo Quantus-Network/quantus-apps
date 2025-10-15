@@ -100,8 +100,9 @@ class NavbarItem extends StatelessWidget {
 
 class Navbar extends ConsumerStatefulWidget {
   final String? address;
+  final bool showReferralOnLaunch;
 
-  const Navbar({super.key, this.address});
+  const Navbar({super.key, this.address, this.showReferralOnLaunch = false});
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -111,7 +112,6 @@ class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
-  final ReferralService _referralService = ReferralService();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -145,7 +145,13 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
-    showReferralActionSheet(context, mounted);
+    if (widget.showReferralOnLaunch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showReferralActionSheet(context, mounted);
+        }
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -291,13 +297,6 @@ class _NavbarState extends ConsumerState<Navbar> {
     bool mounted,
   ) async {
     if (!mounted) {
-      return;
-    }
-
-    bool referralDataAlreadyExists =
-        await _referralService.getReferralData() != null;
-
-    if (referralDataAlreadyExists) {
       return;
     }
 
