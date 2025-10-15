@@ -27,8 +27,6 @@ class _ReferralAndRewardActionSheetState
   final ReferralService _referralService = ReferralService();
   final _referralCodeController = TextEditingController();
 
-  bool _isRewardProgram = false;
-
   bool _isSubmitting = false;
   bool _isDisabled = true;
   String? _errorMsg;
@@ -59,35 +57,15 @@ class _ReferralAndRewardActionSheetState
 
       setState(() {
         _isSubmitting = false;
-        _isRewardProgram = true;
       });
+
+      _closeSheet();
     } catch (e) {
       print('Failed submitting referral code: $e');
 
       setState(() {
         _isSubmitting = false;
         _errorMsg = e.toString();
-      });
-    }
-  }
-
-  Future<void> _handleOptIn() async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      await _referralService.optInRewardProgram();
-
-      setState(() {
-        _isSubmitting = false;
-      });
-
-      _closeSheet();
-    } catch (e) {
-      print('Failed opting in reward program: $e');
-      setState(() {
-        _isSubmitting = false;
       });
     }
   }
@@ -110,9 +88,7 @@ class _ReferralAndRewardActionSheetState
   }
 
   Widget _buildSheetContent(BuildContext context) {
-    if (_isRewardProgram) {
-      return _buildRewardProgram(context);
-    } else if (widget.referralCode != null) {
+    if (widget.referralCode != null) {
       return _buildPrefilledReferralForm(context, widget.referralCode!);
     } else {
       return _buildManualReferralForm(context);
@@ -350,10 +326,6 @@ class _ReferralAndRewardActionSheetState
             onPressed: _closeSheet,
           ),
         ),
-        SizedBox(height: context.themeSize.bottomButtonSpacing),
-      ],
-    );
-  }
 }
 
 void showReferralAndRewardActionSheet(
