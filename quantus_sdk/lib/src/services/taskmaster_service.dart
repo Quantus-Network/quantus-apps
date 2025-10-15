@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/models/miner_stats.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TaskMasterAuthClient {
@@ -96,6 +97,15 @@ class TaskmasterService {
   final _addressEndpoint = Uri.parse(
     '${AppConstants.taskMasterEndpoint}/addresses',
   );
+  final String _minerStatsQuery = r'''
+    query MinerStats($id: String!) {
+      minerStats(where: {id_eq: $id}) {
+        totalMinedBlocks
+        totalRewards
+        id
+      }
+    }
+  ''';
 
   static final TaskmasterService _instance = TaskmasterService._internal();
   factory TaskmasterService() => _instance;
@@ -203,6 +213,56 @@ class TaskmasterService {
       );
     } catch (e) {
       print('Failed saving address to database: $e');
+    }
+  }
+
+  Future<MinerStats> getMinerStats(String minerAddress) async {
+    final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
+    final Map<String, dynamic> requestBody = {
+      'query': _minerStatsQuery,
+      'variables': {'id': minerAddress},
+    };
+
+    try {
+      final http.Response response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
+        );
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody['errors'] != null) {
+        throw Exception('GraphQL errors: ${responseBody['errors']}');
+      }
+
+      final Map<String, dynamic> data = responseBody['data'];
+
+      print('data $data');
+
+      final List<dynamic>? minerStatsList = data['minerStats'];
+      if (minerStatsList == null || minerStatsList.isEmpty) {
+        return MinerStats(totalMinedBlocks: 0, totalRewards: BigInt.zero);
+      }
+
+      final Map<String, dynamic> stats = minerStatsList.first;
+
+      final int totalMinedBlocks = stats['totalMinedBlocks'];
+      final BigInt totalRewards = BigInt.parse(stats['totalRewards']);
+
+      return MinerStats(
+        totalMinedBlocks: totalMinedBlocks,
+        totalRewards: totalRewards,
+      );
+    } catch (e, stackTrace) {
+      print('Error fetching miner stats: $e');
+      print(stackTrace);
+      rethrow;
     }
   }
 }

@@ -34,10 +34,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _testLogin() async {
     try {
+      // testing miner stats
+      // final acct = await SettingsService().getAccount(0);
+      // final minerStats = await TaskmasterService().getMinerStats(
+      //   'qznJ4dHSXqWw112iqxU3F8ZLV7kvTB7myut9r2DKnYfnrggEA',
+      //   // acct!.accountId,
+      // );
+
       final service = TaskmasterService();
       final accessToken = await service.loginWithAccount1();
       final me = await service.me(accessToken);
       print('me $me');
+      print('Address ${me['data']['quan_address']}');
+
       if (!mounted) return;
       showTopSnackBar(
         context,
