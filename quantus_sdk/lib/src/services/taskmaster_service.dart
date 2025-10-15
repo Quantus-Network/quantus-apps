@@ -103,9 +103,9 @@ class TaskmasterService {
 
   final SettingsService _settings = SettingsService();
   final HdWalletService _hd = HdWalletService();
-  String? _sessionKey;
-  String? get accessToken => _sessionKey;
-  bool get isLoggedIn => _sessionKey != null;
+  String? _accessToken;
+  String? get accessToken => _accessToken;
+  bool get isLoggedIn => _accessToken != null;
 
   TaskMasterAuthClient get _client =>
       TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
@@ -141,19 +141,19 @@ class TaskmasterService {
 
   // Makes sure account is logged in
   Future<bool> ensureIsLoggedIn() async {
-    if (_sessionKey != null) {
+    if (_accessToken != null) {
       try {
         // ignore: unused_local_variable
-        final meResult = await me(_sessionKey!);
+        final meResult = await me(_accessToken!);
         return true;
       } catch (error) {
         print('ensureIsLoggedIn error: $error');
-        _sessionKey = null;
+        _accessToken = null;
       }
     }
     try {
-      _sessionKey = await loginWithAccount1();
-      print('accessToken: $_sessionKey');
+      _accessToken = await loginWithAccount1();
+      print('accessToken: $_accessToken');
       return true;
     } catch (error) {
       print('ensureIsLoggedIn login error $error');
