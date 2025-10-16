@@ -124,7 +124,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
-          context,
+          this.context,
           MaterialPageRoute(
             settings: const RouteSettings(name: 'navbar'),
             builder: (context) => const Navbar(initialIndex: 3),
@@ -183,7 +183,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.8),
+                        Colors.black.useOpacity(0.8),
                       ],
                     ),
                   ),
