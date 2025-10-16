@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/models/miner_stats.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TaskMasterAuthClient {
@@ -95,8 +94,8 @@ class TaskmasterService {
     '${AppConstants.taskMasterEndpoint}/referrals',
   );
   final String _minerStatsQuery = r'''
-    query MinerStats($id: String!) {
-      minerStats(where: {id_eq: $id}) {
+    query MinerStats($ids: [String!]!) {
+      minerStats(where: {id_in: $ids}) {
         totalMinedBlocks
         totalRewards
         id
@@ -117,6 +116,17 @@ class TaskmasterService {
 
   TaskMasterAuthClient get _client =>
       TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
+
+  Future<String> getOldMiningAccountId() async {
+    final mnemonic = await _settingsService.getMnemonic();
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found.');
+    }
+    final rawKeyPair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
+      mnemonic,
+    );
+    return rawKeyPair.ss58Address;
+  }
 
   Future<String> loginWithAccount1() async {
     final mnemonic = await _settingsService.getMnemonic();
@@ -271,12 +281,14 @@ class TaskmasterService {
   }
 
   Future<MinerStats> getMinerStats() async {
-    final minerAddress = getMainAccount();
-    // TODO also add account index -1 (base acct) for older miners
+    final mainAccount = await getMainAccount();
+    final oldMiningAccountId = await getOldMiningAccountId();
+    final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
+
     final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
-      'variables': {'id': minerAddress},
+      'variables': {'ids': accountIds},
     };
 
     try {
@@ -306,10 +318,14 @@ class TaskmasterService {
         return MinerStats(totalMinedBlocks: 0, totalRewards: BigInt.zero);
       }
 
-      final Map<String, dynamic> stats = minerStatsList.first;
+      // Aggregate stats across all accounts
+      int totalMinedBlocks = 0;
+      BigInt totalRewards = BigInt.zero;
 
-      final int totalMinedBlocks = stats['totalMinedBlocks'];
-      final BigInt totalRewards = BigInt.parse(stats['totalRewards']);
+      for (final stats in minerStatsList) {
+        totalMinedBlocks += stats['totalMinedBlocks'] as int;
+        totalRewards += BigInt.parse(stats['totalRewards'] as String);
+      }
 
       return MinerStats(
         totalMinedBlocks: totalMinedBlocks,
