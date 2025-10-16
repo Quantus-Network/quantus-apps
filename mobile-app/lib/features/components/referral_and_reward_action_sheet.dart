@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/features/components/story_video_player.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -28,7 +29,7 @@ class _ReferralAndRewardActionSheetState
   final _referralCodeController = TextEditingController();
 
   bool _isRewardProgram = false;
-
+  bool _isLastPromo = false;
   bool _isSubmitting = false;
   bool _isDisabled = true;
   String? _errorMsg;
@@ -42,6 +43,12 @@ class _ReferralAndRewardActionSheetState
         _isDisabled = _referralCodeController.text.trim().isEmpty;
         _errorMsg = null;
       });
+    });
+  }
+
+  void _setIsFinalVideo(bool value) {
+    setState(() {
+      _isLastPromo = value;
     });
   }
 
@@ -95,14 +102,24 @@ class _ReferralAndRewardActionSheetState
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
+    final effectiveHeight = _isRewardProgram
+        ? height
+        : height * AppConstants.sendingSheetHeightFraction;
+
+    final effectiveRadius = _isRewardProgram ? 0.0 : 5.0;
+    final effectivePadding = _isRewardProgram
+        ? null
+        : const EdgeInsets.symmetric(horizontal: 24, vertical: 16);
 
     return SafeArea(
       child: Container(
-        height: height * AppConstants.sendingSheetHeightFraction,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        height: effectiveHeight,
+        padding: effectivePadding,
         decoration: ShapeDecoration(
-          color: context.themeColors.background,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(effectiveRadius),
+          ),
         ),
         child: _buildSheetContent(context),
       ),
@@ -159,6 +176,7 @@ class _ReferralAndRewardActionSheetState
         CustomTextField(
           controller: _referralCodeController,
           hintText: 'Referral Code',
+          fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
           trailing: InkWell(
             onTap: () async {
@@ -233,6 +251,7 @@ class _ReferralAndRewardActionSheetState
         const SizedBox(height: 22),
         CustomTextField(
           initialValue: widget.referralCode,
+          fillColor: context.themeColors.background,
           errorMsg: _errorMsg,
           textStyle: context.themeText.paragraph?.copyWith(
             color: context.themeColors.checksum,
@@ -264,93 +283,50 @@ class _ReferralAndRewardActionSheetState
   }
 
   Widget _buildRewardProgram(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(7),
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              InkWell(
-                onTap: _isSubmitting ? null : _closeSheet,
-                child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 22),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(
-              'assets/quantum_cat_magician.png',
-              height: 80,
-              width: 80,
-            ),
-            const SizedBox(width: 11),
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Quantus Quests\n',
-                    style: context.themeText.mediumTitle?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.themeColors.pink,
-                    ),
-                  ),
-                  TextSpan(
-                    text: 'Reward Program',
-                    style: context.themeText.mediumTitle?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 90),
+            StoryVideoPlayer(
+              isSubmitting: _isSubmitting,
+              closeSheet: _closeSheet,
+              setIsFinalVideo: _setIsFinalVideo,
             ),
           ],
         ),
-        SizedBox(height: context.isTablet ? 36 : 28),
-        Text(
-          'Register now and start earning points for referrals, mining, app activity, bounties, quests and more!',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel,
+        if (_isLastPromo)
+          Positioned(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  SizedBox(
+                    width: context.isTablet ? 465 : null,
+                    child: Button(
+                      label: "I'm In",
+                      isLoading: _isSubmitting,
+                      variant: ButtonVariant.primary,
+                      onPressed: _handleOptIn,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: context.isTablet ? 465 : null,
+                    child: Button(
+                      label: 'No thanks',
+                      isLoading: _isSubmitting,
+                      variant: ButtonVariant.glassOutline,
+                      onPressed: _closeSheet,
+                    ),
+                  ),
+                  SizedBox(height: context.themeSize.bottomButtonSpacing),
+                ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Participants will be rewarded for their early support of Quantus Network and are eligible for valuable quests and competitions.',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.inputLabel,
-          ),
-        ),
-        const Spacer(),
-        SizedBox(
-          width: context.isTablet ? 465 : null,
-          child: Button(
-            label: "I'm In",
-            isLoading: _isSubmitting,
-            variant: ButtonVariant.primary,
-            onPressed: _handleOptIn,
-          ),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: context.isTablet ? 465 : null,
-          child: Button(
-            label: 'No thanks',
-            isLoading: _isSubmitting,
-            variant: ButtonVariant.glassOutline,
-            onPressed: _closeSheet,
-          ),
-        ),
-        SizedBox(height: context.themeSize.bottomButtonSpacing),
       ],
     );
   }

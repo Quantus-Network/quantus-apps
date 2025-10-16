@@ -161,9 +161,10 @@ class TaskmasterService {
         _accessToken = null;
       }
     }
+
     try {
       _accessToken = await loginWithAccount1();
-      print('accessToken: $_accessToken');
+
       return true;
     } catch (error) {
       print('ensureIsLoggedIn login error $error');
@@ -193,6 +194,31 @@ class TaskmasterService {
     );
 
     if (response.statusCode != 200) {
+      throw Exception(
+        'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
+      );
+    }
+  }
+
+  Future<void> optInRewardProgram(Account activeAccount) async {
+    final rewardProgramEndpoint = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
+    );
+
+    print(
+      'opt in reward program for ${activeAccount.name} ${activeAccount.accountId}',
+    );
+    final Map<String, dynamic> requestBody = {'new_status': true};
+
+    await ensureIsLoggedIn();
+
+    final http.Response response = await http.put(
+      rewardProgramEndpoint,
+      headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 204) {
       throw Exception(
         'Referral http request failed with status: ${response.statusCode}. Body: ${response.body}',
       );

@@ -50,6 +50,8 @@ class ReferralService {
         'Failed joining reward program, no active account detected!',
       );
     }
+
+    await _taskmasterService.optInRewardProgram(account);
   }
 
   Map<String, String> _parseReferrer(String referrer) {

@@ -8,6 +8,7 @@ class CustomTextField extends StatelessWidget {
   final String? labelText;
   final TextStyle? textStyle;
   final String? initialValue;
+  final Color? fillColor;
   final String? hintText;
   final TextStyle? hintStyle;
   final Icon? icon;
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.labelText,
     this.textStyle,
     this.initialValue,
+    this.fillColor,
     this.hintText,
     this.hintStyle,
     this.icon,
@@ -66,6 +68,7 @@ class CustomTextField extends StatelessWidget {
                 // Styling for the text inside the input field
                 style: textStyle ?? context.themeText.smallTitle,
                 decoration: InputDecoration(
+                  fillColor: fillColor,
                   isDense: true, // Reduces vertical padding
                   enabledBorder: errorMsg != null
                       ? const OutlineInputBorder(
