@@ -12,6 +12,8 @@ class ReferralService {
       HumanReadableChecksumService();
   final TaskmasterService _taskmasterService = TaskmasterService();
 
+  bool? _rewardProgramParticipationCache;
+
   // This fetches any available referral code from the google play store and stores
   // it in settings if found.
   Future<void> checkPlayStoreReferralCode() async {
@@ -48,6 +50,8 @@ class ReferralService {
     final account = await getMainAccount();
 
     await _taskmasterService.optInRewardProgram(account);
+
+    _rewardProgramParticipationCache = true;
   }
 
   Map<String, String> _parseReferrer(String referrer) {
@@ -86,7 +90,13 @@ class ReferralService {
   }
 
   Future<bool> getRewardProgramParticiation() async {
+    if (_rewardProgramParticipationCache != null) {
+      return _rewardProgramParticipationCache!;
+    }
+
     final hasOptedIn = await _taskmasterService.getRewardProgramParticipation();
+
+    _rewardProgramParticipationCache = hasOptedIn;
     return hasOptedIn;
   }
 

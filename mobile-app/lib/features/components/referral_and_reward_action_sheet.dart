@@ -149,6 +149,19 @@ class _ReferralAndRewardActionSheetState
     });
   }
 
+  Future<void> _handleSkipReferral() async {
+    final isRewardProgramParticipant = await _referralService
+        .getRewardProgramParticiation();
+
+    if (isRewardProgramParticipant) {
+      _closeSheet();
+    } else {
+      setState(() {
+        _isRewardProgram = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
@@ -273,11 +286,7 @@ class _ReferralAndRewardActionSheetState
             label: 'Skip',
             isLoading: _isSubmitting,
             variant: ButtonVariant.glassOutline,
-            onPressed: () {
-              setState(() {
-                _isRewardProgram = true;
-              });
-            },
+            onPressed: _handleSkipReferral,
           ),
         ),
 

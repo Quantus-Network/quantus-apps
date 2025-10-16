@@ -105,7 +105,12 @@ class Navbar extends ConsumerStatefulWidget {
   final bool showReferralOnLaunch;
   final int initialIndex;
 
-  const Navbar({super.key, this.address, this.showReferralOnLaunch = false, this.initialIndex = 0});
+  const Navbar({
+    super.key,
+    this.address,
+    this.showReferralOnLaunch = false,
+    this.initialIndex = 0,
+  });
 
   @override
   ConsumerState<Navbar> createState() => _NavbarState();
@@ -148,6 +153,8 @@ class _NavbarState extends ConsumerState<Navbar> {
   void initState() {
     super.initState();
 
+    _referralService.getRewardProgramParticiation();
+
     setState(() {
       _selectedIndex = widget.initialIndex;
     });
@@ -169,7 +176,12 @@ class _NavbarState extends ConsumerState<Navbar> {
 
     if (newIndex == 3 && !isRewardProgramParticipant) {
       // ignore: use_build_context_synchronously
-      if (mounted) showReferralAndRewardActionSheet(context, directlyShowRewardProgram: true);
+      if (mounted) {
+        showReferralAndRewardActionSheet(
+          context,
+          directlyShowRewardProgram: true,
+        );
+      }
     } else {
       // Track tab navigation centrally
       final toLabel = _labelForIndex(newIndex);
