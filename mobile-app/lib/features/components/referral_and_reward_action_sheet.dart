@@ -17,11 +17,15 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 class ReferralAndRewardActionSheet extends StatefulWidget {
   final String? referralCode;
   final bool? directlyShowRewardProgram;
+  final int? currentNavbarIndex;
+  final bool showRewardProgram;
 
   const ReferralAndRewardActionSheet({
     super.key,
     this.referralCode,
     this.directlyShowRewardProgram,
+    this.currentNavbarIndex,
+    this.showRewardProgram = true,
   });
 
   @override
@@ -122,7 +126,7 @@ class _ReferralAndRewardActionSheetState
           MaterialPageRoute(
             settings: const RouteSettings(name: 'navbar'),
             builder: (context) =>
-                const Navbar(initialIndex: 3), // index of quests screen
+                Navbar(initialIndex: widget.currentNavbarIndex ?? 3),
           ),
           (route) => false,
         );
@@ -153,7 +157,7 @@ class _ReferralAndRewardActionSheetState
     final isRewardProgramParticipant = await _referralService
         .getRewardProgramParticiation();
 
-    if (isRewardProgramParticipant) {
+    if (isRewardProgramParticipant || !widget.showRewardProgram) {
       _closeSheet();
     } else {
       setState(() {
@@ -192,7 +196,7 @@ class _ReferralAndRewardActionSheetState
   Widget _buildSheetContent(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
-    } else if (_isRewardProgram) {
+    } else if (_isRewardProgram && widget.showRewardProgram) {
       return _buildRewardProgram(context);
     } else if (_checksum != null) {
       print(_checksum);
@@ -471,6 +475,8 @@ void showReferralAndRewardActionSheet(
   BuildContext context, {
   String? referralCode,
   bool? directlyShowRewardProgram,
+  int? currentNavbarIndex,
+  bool showRewardProgram = true,
 }) {
   showModalBottomSheet(
     context: context,
@@ -505,6 +511,8 @@ void showReferralAndRewardActionSheet(
               child: ReferralAndRewardActionSheet(
                 referralCode: referralCode,
                 directlyShowRewardProgram: directlyShowRewardProgram,
+                currentNavbarIndex: currentNavbarIndex,
+                showRewardProgram: showRewardProgram,
               ),
             ),
           ),

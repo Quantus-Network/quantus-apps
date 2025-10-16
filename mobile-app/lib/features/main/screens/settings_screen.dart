@@ -157,7 +157,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }),
         const SizedBox(height: 22),
         _buildSettingsItem(context, 'Referral', () {
-          showReferralAndRewardActionSheet(context);
+          showReferralAndRewardActionSheet(
+            context,
+            currentNavbarIndex: 2, // settings screen index
+            showRewardProgram: false, // only show referral code section
+          );
         }),
       ],
     );
