@@ -186,6 +186,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     if (newIndex == 3) {
       // quests screen index
       (_questsScreenKey.currentState as dynamic)?.refreshData();
+      (_questsScreenKey.currentState as dynamic)?.startPlayingVideos();
     }
 
     setState(() {

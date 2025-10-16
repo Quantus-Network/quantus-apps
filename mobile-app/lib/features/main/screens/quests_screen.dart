@@ -86,6 +86,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     ref.invalidate(accountsStatsProvider);
   }
 
+  void startPlayingVideos() {
+    if (_isLoadingParticipation) return;
+
+    if (_isRewardProgramParticipant) return;
+
+    showReferralAndRewardActionSheet(context, directlyShowRewardProgram: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
