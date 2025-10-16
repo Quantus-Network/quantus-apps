@@ -7,12 +7,14 @@ class QuestsPromoVideo extends StatefulWidget {
   final bool isSubmitting;
   final VoidCallback closeSheet;
   final Function(bool isFinalVideo) setIsFinalVideo;
+  final bool startFromBeginning;
 
   const QuestsPromoVideo({
     super.key,
     required this.closeSheet,
     required this.isSubmitting,
     required this.setIsFinalVideo,
+    this.startFromBeginning = false,
   });
 
   @override
@@ -35,7 +37,9 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
     super.initState();
 
     setState(() {
-      _currentStoryIndex = _settingsService.hasWatchedQuestsPromo() ? 2 : 0;
+      _currentStoryIndex = widget.startFromBeginning
+          ? 0
+          : (_settingsService.hasWatchedQuestsPromo() ? 2 : 0);
     });
 
     _initializeVideo(_currentStoryIndex);

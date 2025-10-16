@@ -168,29 +168,16 @@ class _NavbarState extends ConsumerState<Navbar> {
     }
   }
 
-  void _onItemTapped(int index) async {
-    final isRewardProgramParticipant = await _referralService
-        .getRewardProgramParticiation();
-
+  void _onItemTapped(int index) {
     final newIndex = index > 2 ? index - 1 : index;
 
-    if (newIndex == 3 && !isRewardProgramParticipant) {
-      // ignore: use_build_context_synchronously
-      if (mounted) {
-        showReferralAndRewardActionSheet(
-          context,
-          directlyShowRewardProgram: true,
-        );
-      }
-    } else {
-      // Track tab navigation centrally
-      final toLabel = _labelForIndex(newIndex);
-      _telemetry.trackScreenView('tab:$toLabel');
+    // Track tab navigation centrally
+    final toLabel = _labelForIndex(newIndex);
+    _telemetry.trackScreenView('tab:$toLabel');
 
-      setState(() {
-        _selectedIndex = newIndex;
-      });
-    }
+    setState(() {
+      _selectedIndex = newIndex;
+    });
   }
 
   String _labelForIndex(int index) {

@@ -192,11 +192,11 @@ class _ReferralAndRewardActionSheetState
   Widget _buildSheetContent(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    } else if (_isRewardProgram) {
+      return _buildRewardProgram(context);
     } else if (_checksum != null) {
       print(_checksum);
       return _buildReferralSubmittedInfo(context, _checksum!);
-    } else if (_isRewardProgram) {
-      return _buildRewardProgram(context);
     } else if (widget.referralCode != null) {
       return _buildPrefilledReferralForm(context, widget.referralCode!);
     } else {
@@ -425,6 +425,7 @@ class _ReferralAndRewardActionSheetState
               isSubmitting: _isSubmitting,
               closeSheet: _closeSheet,
               setIsFinalVideo: _setIsFinalVideo,
+              startFromBeginning: widget.directlyShowRewardProgram ?? false,
             ),
           ],
         ),

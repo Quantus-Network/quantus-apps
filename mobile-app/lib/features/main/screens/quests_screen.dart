@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -11,8 +12,8 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
   const QuestsScreen({super.key});
@@ -26,6 +27,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
   final ScrollController _scrollController = ScrollController();
 
   String? _referralCode;
+  bool _isRewardProgramParticipant = false;
+  bool _isLoadingParticipation = true;
 
   Future<void> _loadReferralCode() async {
     try {
@@ -38,6 +41,22 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
       if (mounted) {
         setState(() {});
       }
+    }
+  }
+
+  Future<void> _loadParticipationStatus() async {
+    try {
+      final isParticipant = await _referralService
+          .getRewardProgramParticiation();
+      setState(() {
+        _isRewardProgramParticipant = isParticipant;
+        _isLoadingParticipation = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading participation status: $e');
+      setState(() {
+        _isLoadingParticipation = false;
+      });
     }
   }
 
@@ -60,11 +79,57 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
   void initState() {
     super.initState();
     _loadReferralCode();
+    _loadParticipationStatus();
   }
 
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
+
+    // Show videos for users who haven't opted in to the reward program
+    if (_isLoadingParticipation) {
+      return ScaffoldBase(
+        screenTitle: ScreenTitle(title: 'Quests'),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF0CE6ED)),
+        ),
+      );
+    }
+
+    if (!_isRewardProgramParticipant) {
+      return ScaffoldBase(
+        screenTitle: ScreenTitle(title: 'Quests'),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Join the Quest Program!',
+                style: context.themeText.largeTitle,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Watch the videos below to learn about quests and earn rewards',
+                style: context.themeText.paragraph,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Button(
+                variant: ButtonVariant.primary,
+                label: 'Watch Quest Videos',
+                onPressed: () {
+                  showReferralAndRewardActionSheet(
+                    context,
+                    directlyShowRewardProgram: true,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return ScaffoldBase(
       padding: const EdgeInsetsGeometry.all(0),
