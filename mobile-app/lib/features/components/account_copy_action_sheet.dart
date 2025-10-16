@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -114,32 +112,8 @@ void showAccountCopyActionSheet(BuildContext context, Account activeAccount) {
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (context) => Stack(
-      children: [
-        // Blur overlay
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-              ),
-            ),
-          ),
-        ),
-        // Action sheet
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: AccountCopyActionSheet(activeAccount: activeAccount),
-        ),
-      ],
-    ),
+    isDismissible: true,
+    enableDrag: true,
+    builder: (context) => AccountCopyActionSheet(activeAccount: activeAccount),
   );
 }
