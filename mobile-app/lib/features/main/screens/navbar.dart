@@ -120,6 +120,7 @@ class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
   final ReferralService _referralService = ReferralService();
   final TelemetryService _telemetry = TelemetryService();
+  final GlobalKey _questsScreenKey = GlobalKey();
 
   final List<NavItem> _navItems = [
     NavItem(
@@ -174,6 +175,12 @@ class _NavbarState extends ConsumerState<Navbar> {
     // Track tab navigation centrally
     final toLabel = _labelForIndex(newIndex);
     _telemetry.trackScreenView('tab:$toLabel');
+
+    // Refresh quest screen data when navigating to it
+    if (newIndex == 3) {
+      // quests screen index
+      (_questsScreenKey.currentState as dynamic)?.refreshData();
+    }
 
     setState(() {
       _selectedIndex = newIndex;
@@ -263,7 +270,7 @@ class _NavbarState extends ConsumerState<Navbar> {
         WalletMain(address: widget.address),
         const TransactionsScreen(),
         const SettingsScreen(),
-        const QuestsScreen(),
+        QuestsScreen(key: _questsScreenKey),
       ],
     );
   }
