@@ -10,7 +10,24 @@ class AccountStatsNotifier extends StateNotifier<AsyncValue<AccountStats>> {
 
   Future<void> fetchStats() async {
     try {
-      final accountStats = await _taskmasterService.getAccountStats();
+      // Fetch both stats concurrently
+      final [accountStatsRes, minerStatsRes] = await Future.wait([
+        _taskmasterService.getAccountStats(),
+        _taskmasterService.getMinerStats(),
+      ]);
+
+      // For now task master can't figure this out yet so lets do it locally
+      // TODO fix task master so it gets the miner rewards aggregate.
+      final minerStats = minerStatsRes as MinerStats;
+      final s = accountStatsRes as AccountStats;
+      final accountStats = AccountStats(
+        referralCount: s.referralCount,
+        sendCount: s.sendCount,
+        reversalCount: s.reversalCount,
+        miningCount: minerStats.totalMinedBlocks,
+        miningRewards: minerStats.totalRewards,
+      );
+
       state = AsyncValue.data(accountStats);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
