@@ -110,7 +110,6 @@ class Navbar extends ConsumerStatefulWidget {
 
 class _NavbarState extends ConsumerState<Navbar> {
   int _selectedIndex = 0;
-  final bool _notificationTestDisabled = false; // Flag for notifications
   final TelemetryService _telemetry = TelemetryService();
 
   final List<NavItem> _navItems = [
@@ -135,8 +134,8 @@ class _NavbarState extends ConsumerState<Navbar> {
       'Settings',
     ),
     NavItem(
-      'assets/qcat_navbar_icon.png',
-      'assets/qcat_navbar_icon.png',
+      'assets/navbar/qcat_navbar_icon.png',
+      'assets/navbar/qcat_navbar_icon.png',
       'Quests',
     ),
   ];
