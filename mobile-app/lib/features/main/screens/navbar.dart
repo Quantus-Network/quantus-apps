@@ -207,7 +207,6 @@ class _NavbarState extends ConsumerState<Navbar> {
                 'assets/qcat_navbar_icon.png',
                 width: 26,
                 height: 26,
-                color: Colors.blueGrey,
               ),
             ],
           ),
