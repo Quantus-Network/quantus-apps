@@ -5,16 +5,20 @@ import 'package:video_player/video_player.dart';
 
 class QuestsPromoVideo extends StatefulWidget {
   final bool isSubmitting;
-  final VoidCallback closeSheet;
+  final VoidCallback? closeSheet;
   final Function(bool isFinalVideo) setIsFinalVideo;
   final bool startFromBeginning;
+  final bool showCloseButton;
+  final bool isVisible;
 
   const QuestsPromoVideo({
     super.key,
-    required this.closeSheet,
+    this.closeSheet,
     required this.isSubmitting,
     required this.setIsFinalVideo,
     this.startFromBeginning = false,
+    this.showCloseButton = true,
+    this.isVisible = true,
   });
 
   @override
@@ -43,6 +47,32 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
     });
 
     _initializeVideo(_currentStoryIndex);
+  }
+
+  @override
+  void didUpdateWidget(QuestsPromoVideo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Handle visibility changes
+    if (oldWidget.isVisible != widget.isVisible) {
+      if (widget.isVisible) {
+        _playVideo();
+      } else {
+        _pauseVideo();
+      }
+    }
+  }
+
+  void _pauseVideo() {
+    if (_controller.value.isInitialized && _controller.value.isPlaying) {
+      _controller.pause();
+    }
+  }
+
+  void _playVideo() {
+    if (_controller.value.isInitialized && !_controller.value.isPlaying) {
+      _controller.play();
+    }
   }
 
   Future<void> _initializeVideo(int index) async {
@@ -172,10 +202,11 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
               ),
             ),
             const SizedBox(width: 26),
-            InkWell(
-              onTap: widget.isSubmitting ? null : widget.closeSheet,
-              child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
-            ),
+            if (widget.showCloseButton && widget.closeSheet != null)
+              InkWell(
+                onTap: widget.isSubmitting ? null : widget.closeSheet,
+                child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
+              ),
           ],
         ),
       ),

@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
@@ -22,13 +23,17 @@ class QuestsScreen extends ConsumerStatefulWidget {
   ConsumerState<QuestsScreen> createState() => _QuestsScreenState();
 }
 
-class _QuestsScreenState extends ConsumerState<QuestsScreen> {
+class _QuestsScreenState extends ConsumerState<QuestsScreen>
+    with WidgetsBindingObserver {
   final ReferralService _referralService = ReferralService();
   final ScrollController _scrollController = ScrollController();
 
   String? _referralCode;
   bool _isRewardProgramParticipant = false;
   bool _isLoadingParticipation = true;
+  bool _isLastPromo = false;
+  bool _isSubmitting = false;
+  bool _isVisible = true;
 
   Future<void> _loadReferralCode() async {
     try {
@@ -82,16 +87,57 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     _loadParticipationStatus();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void refreshData() {
     ref.invalidate(accountsStatsProvider);
   }
 
-  void startPlayingVideos() {
-    if (_isLoadingParticipation) return;
+  void setVideoVisibility(bool isVisible) {
+    if (mounted) {
+      setState(() {
+        _isVisible = isVisible;
+      });
+    }
+  }
 
-    if (_isRewardProgramParticipant) return;
+  void _setIsFinalVideo(bool isFinalVideo) {
+    setState(() {
+      _isLastPromo = isFinalVideo;
+    });
+  }
 
-    showReferralAndRewardActionSheet(context, directlyShowRewardProgram: true);
+  Future<void> _handleOptIn(BuildContext context) async {
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await _referralService.optInRewardProgram();
+
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'navbar'),
+            builder: (context) => const Navbar(initialIndex: 3),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Failed opting in reward program: $e');
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
   }
 
   @override
@@ -109,36 +155,54 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     }
 
     if (!_isRewardProgramParticipant) {
-      return ScaffoldBase(
-        screenTitle: ScreenTitle(title: 'Quests'),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Join the Quest Program!',
-                style: context.themeText.largeTitle,
-                textAlign: TextAlign.center,
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            QuestsPromoVideo(
+              isSubmitting: _isSubmitting,
+              closeSheet: null, // No close button for inline use
+              setIsFinalVideo: _setIsFinalVideo,
+              startFromBeginning: true,
+              showCloseButton: false,
+              isVisible: _isVisible,
+            ),
+            if (_isLastPromo)
+              Positioned(
+                bottom: 100, // Move down to avoid video text overlap
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Button(
+                        label: "I'm In",
+                        isLoading: _isSubmitting,
+                        variant: ButtonVariant.primary,
+                        onPressed: () {
+                          _handleOptIn(context);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Watch the videos below to learn about quests and earn rewards',
-                style: context.themeText.paragraph,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Button(
-                variant: ButtonVariant.primary,
-                label: 'Watch Quest Videos',
-                onPressed: () {
-                  showReferralAndRewardActionSheet(
-                    context,
-                    directlyShowRewardProgram: true,
-                  );
-                },
-              ),
-            ],
-          ),
+          ],
         ),
       );
     }

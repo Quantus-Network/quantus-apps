@@ -182,11 +182,14 @@ class _NavbarState extends ConsumerState<Navbar> {
     final toLabel = _labelForIndex(newIndex);
     _telemetry.trackScreenView('tab:$toLabel');
 
-    // Refresh quest screen data when navigating to it
+    // Handle quest screen visibility
     if (newIndex == 3) {
-      // quests screen index
+      // quests screen index - make video visible
       (_questsScreenKey.currentState as dynamic)?.refreshData();
-      (_questsScreenKey.currentState as dynamic)?.startPlayingVideos();
+      (_questsScreenKey.currentState as dynamic)?.setVideoVisibility(true);
+    } else if (_selectedIndex == 3) {
+      // leaving quests screen - hide video
+      (_questsScreenKey.currentState as dynamic)?.setVideoVisibility(false);
     }
 
     setState(() {
