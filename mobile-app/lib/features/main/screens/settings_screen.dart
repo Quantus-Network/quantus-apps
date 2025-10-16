@@ -45,6 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _logout() async {
     try {
       await SubstrateService().logout();
+      _referralService.invalidateRewardProgramCache();
       ref
           .read(pendingTransactionsProvider.notifier)
           .clear(); // Clear specific notifier

@@ -32,6 +32,7 @@ class CreateWalletAndBackupScreenState
     extends ConsumerState<CreateWalletAndBackupScreen> {
   String _mnemonic = '';
   bool _isLoading = true;
+  bool _isSubmitting = false;
   bool _isEditing = false;
   String? _error;
 
@@ -103,6 +104,10 @@ class CreateWalletAndBackupScreenState
       return;
     }
 
+    setState(() {
+      _isSubmitting = true;
+    });
+
     try {
       await _settingsService.setMnemonic(_mnemonic);
 
@@ -140,6 +145,7 @@ class CreateWalletAndBackupScreenState
     } finally {
       if (mounted) {
         setState(() {
+          _isSubmitting = true;
           _isLoading = false;
         });
       }
@@ -234,7 +240,7 @@ class CreateWalletAndBackupScreenState
                         label: 'Create Wallet',
                         textStyle: context.themeText.smallTitle,
                         onPressed: _saveWalletAndBackup,
-                        isLoading: _isLoading,
+                        isLoading: _isLoading || _isSubmitting,
                         isDisabled: !canContinue,
                       ),
                     ],

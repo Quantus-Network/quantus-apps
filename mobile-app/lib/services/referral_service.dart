@@ -86,6 +86,10 @@ class ReferralService {
     }
   }
 
+  void invalidateRewardProgramCache() {
+    _rewardProgramParticipationCache = null;
+  }
+
   Future<bool> getRewardProgramParticiation() async {
     if (_rewardProgramParticipationCache != null) {
       return _rewardProgramParticipationCache!;
