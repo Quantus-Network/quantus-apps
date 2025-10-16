@@ -193,27 +193,6 @@ class _NavbarState extends ConsumerState<Navbar> {
       );
     }
 
-    // Notification item with test flag
-    if (index == 4 && _notificationTestDisabled) {
-      return SizedBox(
-        height: context.themeSize.navbarItemHeight,
-        width: context.themeSize.navbarItemWidth,
-        child: InkWell(
-          onTap: null,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/qcat_navbar_icon.png',
-                width: 26,
-                height: 26,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return InkWell(
       onTap: () {
         _onItemTapped(index);
