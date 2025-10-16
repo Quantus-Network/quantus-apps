@@ -7,7 +7,6 @@ import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
-  final _mainAccountIndex = 0;
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
@@ -87,11 +86,7 @@ class ReferralService {
   }
 
   Future<bool> getRewardProgramParticiation() async {
-    final account = await getMainAccount();
-    final hasOptedIn = await _taskmasterService.getRewardProgramParticipation(
-      account,
-    );
-
+    final hasOptedIn = await _taskmasterService.getRewardProgramParticipation();
     return hasOptedIn;
   }
 
@@ -108,9 +103,8 @@ class ReferralService {
   }
 
   Future<Account> getMainAccount() async {
-    final account = await _settingsService.getAccount(_mainAccountIndex);
-
-    return account!;
+    final account = await _taskmasterService.getMainAccount();
+    return account;
   }
 
   Future<String> getMyInviteCode() async {
