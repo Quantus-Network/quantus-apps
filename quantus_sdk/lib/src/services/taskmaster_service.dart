@@ -182,7 +182,6 @@ class TaskmasterService {
     );
     final Map<String, dynamic> requestBody = {
       'referral_code': referralCode.toLowerCase(),
-      'referee_address': activeAccount.accountId,
     };
 
     await ensureIsLoggedIn();
@@ -227,7 +226,7 @@ class TaskmasterService {
 
   Future<void> submitAddress(String address) async {
     print('submitAddress $address');
-    final Map<String, dynamic> requestBody = {'quan_address': address};
+    final Map<String, dynamic> requestBody = {};
 
     await ensureIsLoggedIn();
 

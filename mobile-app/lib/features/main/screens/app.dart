@@ -29,7 +29,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(deepLinkServiceProvider).init(navigatorKey);
 
-      if (Platform.isAndroid) _referralService.checkReferralOnInstall();
+      if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
   }
 

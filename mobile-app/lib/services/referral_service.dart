@@ -13,7 +13,9 @@ class ReferralService {
       HumanReadableChecksumService();
   final TaskmasterService _taskmasterService = TaskmasterService();
 
-  Future<void> checkReferralOnInstall() async {
+  // This fetches any available referral code from the google play store and stores 
+  // it in settings if found. 
+  Future<void> checkPlayStoreReferralCode() async {
     // Only check once - on first launch after install
     bool hasChecked = _settingsService.referralCheckCompleted();
     if (hasChecked) return;
