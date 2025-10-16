@@ -110,8 +110,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       _isCreating = true;
     });
     try {
-      
-
       if (_isEditMode) {
         await _accountsService.updateAccountName(
           _provisionalAccount,
@@ -124,7 +122,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         final accountToSave = _provisionalAccount.copyWith(
           name: _nameController.text,
         );
-        await _referralService.submitAddressToBackend(accountToSave.accountId);
+        await _referralService
+            .submitAddressToBackend(); // ensure the user is logged in
         await _accountsService.addAccount(accountToSave);
         // Invalidate the accounts provider to reload the entire list
         ref.invalidate(accountsProvider);

@@ -110,15 +110,15 @@ class CreateWalletAndBackupScreenState
       final accounts =
           asyncAccounts.value ?? <Account>[]; // Extract data or empty list
       if (accounts.isEmpty) {
-        await _referralService.submitAddressToBackend(_address);
         await _accountsService.addAccount(
           Account(index: 0, name: _accountName.value.text, accountId: _address),
         );
+        await _referralService.submitAddressToBackend();
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      if (mounted) {        
+      if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(

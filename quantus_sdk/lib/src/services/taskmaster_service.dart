@@ -192,7 +192,8 @@ class TaskmasterService {
     }
   }
 
-  Future<void> optInRewardProgram(Account activeAccount) async {
+  Future<void> optInRewardProgram() async {
+    final activeAccount = await getMainAccount();
     final rewardProgramEndpoint = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${activeAccount.accountId}/reward-program',
     );
@@ -265,12 +266,13 @@ class TaskmasterService {
     }
   }
 
-  Future<void> submitAddress(String address) async {
-    print('submitAddress $address - just log in');
+  Future<void> submitAddress() async {
     await ensureIsLoggedIn();
   }
 
-  Future<MinerStats> getMinerStats(String minerAddress) async {
+  Future<MinerStats> getMinerStats() async {
+    final minerAddress = getMainAccount();
+    // TODO also add account index -1 (base acct) for older miners
     final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
@@ -320,7 +322,8 @@ class TaskmasterService {
     }
   }
 
-  Future<AccountStats> getAccountStats(Account account) async {
+  Future<AccountStats> getAccountStats() async {
+    final account = await getMainAccount();
     final Uri uri = Uri.parse(
       '${AppConstants.taskMasterEndpoint}/addresses/${account.accountId}/stats',
     );

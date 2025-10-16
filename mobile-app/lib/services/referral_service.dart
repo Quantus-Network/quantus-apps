@@ -47,10 +47,7 @@ class ReferralService {
   }
 
   Future<void> optInRewardProgram() async {
-    final account = await getMainAccount();
-
-    await _taskmasterService.optInRewardProgram(account);
-
+    await _taskmasterService.optInRewardProgram();
     _rewardProgramParticipationCache = true;
   }
 
@@ -104,8 +101,8 @@ class ReferralService {
     await _taskmasterService.submitReferral(referral);
   }
 
-  Future<void> submitAddressToBackend(String address) async {
-    await _taskmasterService.submitAddress(address);
+  Future<void> submitAddressToBackend() async {
+    await _taskmasterService.submitAddress();
   }
 
   String generateReferralLink(String referralCode) {
