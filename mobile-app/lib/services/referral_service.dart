@@ -67,10 +67,9 @@ class ReferralService {
 
   Future<ReferralData?> getReferralData() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
-    if (account == null) return null;
 
     final getReferralByRefereeUri = Uri.parse(
-      '${AppConstants.taskMasterEndpoint}/referrals/${account.accountId}',
+      '${AppConstants.taskMasterEndpoint}/referrals/${account!.accountId}',
     );
 
     try {
@@ -79,8 +78,11 @@ class ReferralService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print(response.body);
-      if (response.statusCode != 200) return null;
+      print('getReferralData response: ${response.body}');
+
+      if (response.statusCode != 200) {
+        return null;
+      }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return ReferralData.fromJson(json);
@@ -89,27 +91,8 @@ class ReferralService {
     }
   }
 
-  Future<void> submitReferralToBackend({String? referral}) async {
-    print('submitAddressToBackend $referral');
-
-    bool hasSubmitRefferalCode = await getReferralData() != null;
-    if (hasSubmitRefferalCode) return;
-
-    final referralCode = referral ?? _settingsService.getReferralCode();
-    final account1 = await _settingsService.getAccount(_mainAccountIndex);
-
-    if (account1 == null) {
-      throw Exception(
-        'Failed sending referral to backend, no active account detected!',
-      );
-    }
-    if (referralCode == null) {
-      throw Exception(
-        'Failed sending referral to backend, no referral code found!',
-      );
-    }
-
-    await _taskmasterService.submitReferral(referralCode, account1);
+  Future<void> submitReferralToBackend({required String referral}) async {
+    await _taskmasterService.submitReferral(referral);
   }
 
   Future<void> submitAddressToBackend(String address) async {

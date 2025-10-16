@@ -172,11 +172,8 @@ class TaskmasterService {
   // Submit a referral code
   Future<void> submitReferral(
     String referralCode,
-    Account activeAccount,
   ) async {
-    print(
-      'submit referral $referralCode for ${activeAccount.name} ${activeAccount.accountId}',
-    );
+    print('submitReferral $referralCode');
     final Map<String, dynamic> requestBody = {
       'referral_code': referralCode.toLowerCase(),
     };
