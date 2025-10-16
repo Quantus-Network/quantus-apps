@@ -226,15 +226,13 @@ class TaskmasterService {
 
   Future<void> submitAddress(String address) async {
     print('submitAddress $address');
-    final Map<String, dynamic> requestBody = {};
 
     await ensureIsLoggedIn();
 
     try {
-      await http.post(
+      await http.put(
         _addressEndpoint,
         headers: {'Content-Type': 'application/json', ...getAuthHeaders()},
-        body: jsonEncode(requestBody),
       );
     } catch (e) {
       print('Failed saving address to database: $e');
