@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/features/components/shared_address_acti
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/history_section.dart';
@@ -122,34 +122,37 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               InkWell(
-                                child: SvgPicture.asset(
-                                  'assets/scan_1.svg',
-                                  width: context.isTablet ? 29 : 21,
+                                child: Image.asset(
+                                  'assets/notification/notification_top_icon.png',
+                                  width: 26,
+                                  height: 26,
                                 ),
-                                onTap: () async {
-                                  final scannedAddress =
-                                      await Navigator.push<String>(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const QRScannerScreen(),
-                                          fullscreenDialog: true,
-                                        ),
-                                      );
-
-                                  if (scannedAddress != null) {
-                                    Navigator.of(
-                                      // ignore: use_build_context_synchronously
-                                      context,
-                                    ).pushNamed('/send', arguments: scannedAddress);
-                                  }
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) =>
+                                          const NotificationsScreen(),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        const begin = Offset(1.0, 0.0);
+                                        const end = Offset.zero;
+                                        const curve = Curves.easeInOut;
+                                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                        return SlideTransition(
+                                          position: animation.drive(tween),
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                  );
                                 },
                               ),
-                              const SizedBox(width: 12.0),
+                              const SizedBox(width: 16.0),
                               InkWell(
                                 child: SvgPicture.asset(
                                   'assets/wallet_icon.svg',
-                                  width: context.isTablet ? 32 : 24,
+                                  width: 26,
+                                  height: 26,
                                 ),
                                 onTap: () {
                                   Navigator.push(
