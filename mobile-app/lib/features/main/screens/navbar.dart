@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/settings_screen.dart';
@@ -160,10 +161,15 @@ class _NavbarState extends ConsumerState<Navbar> {
       _selectedIndex = widget.initialIndex;
     });
 
-    if (widget.showReferralOnLaunch) {
+    if (widget.showReferralOnLaunch ||
+        !SettingsService().existingUserSeenPromoVideo()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          showReferralActionSheet(context, mounted);
+          showReferralActionSheet(
+            context,
+            mounted,
+            widget.showReferralOnLaunch,
+          );
         }
       });
     }
@@ -323,18 +329,23 @@ class _NavbarState extends ConsumerState<Navbar> {
   Future<void> showReferralActionSheet(
     BuildContext context,
     bool mounted,
+    bool showReferral,
   ) async {
     if (!mounted) {
       return;
     }
 
-    String? referralCode = ReferralService().getReferralCode();
+    SettingsService().setExistingUserSeenPromoVideo();
+
+    String? referralCode = showReferral
+        ? ReferralService().getReferralCode()
+        : null;
 
     // ignore: use_build_context_synchronously
     showReferralAndRewardActionSheet(
       context,
       referralCode: referralCode,
-      currentNavbarIndex: _selectedIndex,
+      directlyShowRewardProgram: !showReferral,
     );
   }
 }

@@ -474,7 +474,6 @@ void showReferralAndRewardActionSheet(
   BuildContext context, {
   String? referralCode,
   bool? directlyShowRewardProgram,
-  int? currentNavbarIndex,
   bool showRewardProgram = true,
 }) {
   showModalBottomSheet(
@@ -510,7 +509,6 @@ void showReferralAndRewardActionSheet(
               child: ReferralAndRewardActionSheet(
                 referralCode: referralCode,
                 directlyShowRewardProgram: directlyShowRewardProgram,
-                currentNavbarIndex: currentNavbarIndex,
                 showRewardProgram: showRewardProgram,
               ),
             ),

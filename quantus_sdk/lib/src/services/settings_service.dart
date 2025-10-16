@@ -28,6 +28,8 @@ class SettingsService {
   static const String hasCheckedReferralKey = 'referral_check';
   static const String referralCodeKey = 'referral_code';
   static const String hasWatchedQuestsPromoKey = 'quests_promo';
+  static const String existingUserSeenPromoVideoKey =
+      'existing_user_seen_promo_video';
 
   Future<void> initialize() async {
     // Always (re)bind the SharedPreferences instance. This ensures tests that
@@ -325,5 +327,17 @@ class SettingsService {
 
   void clearQuestsPromoWatchedFlag() {
     _prefs.remove(hasWatchedQuestsPromoKey);
+  }
+
+  bool existingUserSeenPromoVideo() {
+    return _prefs.getBool(existingUserSeenPromoVideoKey) ?? false;
+  }
+
+  void setExistingUserSeenPromoVideo() {
+    _prefs.setBool(existingUserSeenPromoVideoKey, true);
+  }
+
+  void clearExistingUserSeenPromoVideoFlag() {
+    _prefs.remove(existingUserSeenPromoVideoKey);
   }
 }

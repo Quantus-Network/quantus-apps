@@ -126,7 +126,6 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                   showReferralAndRewardActionSheet(
                     context,
                     directlyShowRewardProgram: true,
-                    currentNavbarIndex: 3,
                   );
                 },
               ),
