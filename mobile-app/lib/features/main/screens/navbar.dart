@@ -34,8 +34,6 @@ class BottomNavPainter extends CustomPainter {
     required this.isTablet,
   });
 
-  double get offset => isTablet ? 130 : 80;
-
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
@@ -44,13 +42,17 @@ class BottomNavPainter extends CustomPainter {
 
     Path path = Path();
 
-    path.moveTo(0, size.height);
+    // 0,0 is top left
+    path.moveTo(0, size.height); 
+    final dipWidth = 140.0;
+    final offset = dipWidth / 2;
+    final dipHeight = 26.0;
 
-    path.lineTo(size.width, size.height);
-    path.lineTo(size.width, 0);
-    path.lineTo((size.width * 1 / 2) + offset, 0);
-    path.lineTo((size.width * 1 / 2), size.height / 2);
-    path.lineTo((size.width * 1 / 2) - offset, 0);
+    path.lineTo(size.width, size.height); // move to bottom right
+    path.lineTo(size.width, 0); // move to top right
+    path.lineTo((size.width / 2) + offset, 0); // move to right dip part
+    path.lineTo((size.width / 2), dipHeight);
+    path.lineTo((size.width / 2) - offset, 0);
     path.lineTo(0, 0);
 
     path.close();
@@ -212,14 +214,17 @@ class _NavbarState extends ConsumerState<Navbar> {
 
     // Floating action button item
     if (index == 2) {
-      return SizedBox(
-        height: context.themeSize.floatingBtnHeight,
-        width: context.themeSize.floatingBtnWidth,
-        child: GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(context, '/send');
-          },
-          child: SvgPicture.asset(item.onIcon),
+      return Transform.translate(
+        offset: const Offset(1, -2),
+        child: SizedBox(
+          height: context.themeSize.floatingBtnHeight,
+          width: context.themeSize.floatingBtnWidth,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/send');
+            },
+            child: SvgPicture.asset(item.onIcon),
+          ),
         ),
       );
     }
