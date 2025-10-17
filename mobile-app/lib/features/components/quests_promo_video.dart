@@ -83,8 +83,13 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
     try {
       await _controller.initialize();
       setState(() {});
+      
+      // Set looping only for the final video
+      final isFinalVideo = index == _storyVideos.length - 1;
+      _controller.setLooping(isFinalVideo);
+      
       _controller.play();
-      widget.setIsFinalVideo(_currentStoryIndex == _storyVideos.length - 1);
+      widget.setIsFinalVideo(isFinalVideo);
 
       // Listen for video completion
       _controller.addListener(_videoListener);
@@ -96,8 +101,8 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
   void _videoListener() {
     if (_controller.value.position >= _controller.value.duration) {
       if (_currentStoryIndex == _storyVideos.length - 1) {
-        _controller.seekTo(Duration.zero);
-        _controller.play();
+        // Use setLooping for infinite loop
+        _controller.setLooping(true);
       } else {
         _nextStory();
       }
