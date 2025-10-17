@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:convert/convert.dart' as convert_hex;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
@@ -138,7 +137,6 @@ class TaskmasterService {
 
   final SettingsService _settingsService = SettingsService();
   final HdWalletService _hd = HdWalletService();
-  final _secureStorage = const FlutterSecureStorage();
   final _mainAccountIndex = 0;
   TokenInfo? _tokenInfo;
   String? get accessToken => _tokenInfo?.accessToken;
@@ -147,34 +145,8 @@ class TaskmasterService {
   TaskMasterAuthClient get _client =>
       TaskMasterAuthClient(AppConstants.taskMasterEndpoint);
 
-  Future<void> _persistToken(TokenInfo token) async {
-    await _secureStorage.write(
-      key: 'access_token',
-      value: jsonEncode(token.toJson()),
-    );
-  }
-
-  Future<TokenInfo?> _loadToken() async {
-    final tokenJson = await _secureStorage.read(key: 'access_token');
-    if (tokenJson == null) return null;
-    try {
-      return TokenInfo.fromJson(jsonDecode(tokenJson));
-    } catch (e) {
-      print('Error loading token: $e');
-      return null;
-    }
-  }
-
-  Future<void> _clearToken() async {
-    await _secureStorage.delete(key: 'access_token');
+  void _clearToken() {
     _tokenInfo = null;
-  }
-
-  Future<void> _initializeToken() async {
-    final token = await _loadToken();
-    if (token != null && !token.isExpired) {
-      _tokenInfo = token;
-    }
   }
 
   Future<String> getOldMiningAccountId() async {
@@ -211,14 +183,11 @@ class TaskmasterService {
     final now = DateTime.now();
     final expiresAt = now.add(const Duration(hours: 24));
     
-    final tokenInfo = TokenInfo(
+    return TokenInfo(
       accessToken: accessToken,
       expiresAt: expiresAt,
       issuedAt: now,
     );
-
-    await _persistToken(tokenInfo);
-    return tokenInfo;
   }
 
   Future<Map<String, dynamic>> me(String accessToken) {
@@ -230,7 +199,7 @@ class TaskmasterService {
   }
 
   Future<bool> ensureIsLoggedIn() async {
-    await _initializeToken();
+    print('ensureIsLoggedIn');
 
     if (_tokenInfo != null && !_tokenInfo!.isExpired) {
       if (_tokenInfo!.isNearExpiry) {
@@ -239,9 +208,10 @@ class TaskmasterService {
           return true;
         } catch (error) {
           print('Token refresh failed: $error');
-          await _clearToken();
+          _clearToken();
         }
       } else {
+        print('is logged in by token expiry');
         return true;
       }
     }
@@ -441,6 +411,6 @@ class TaskmasterService {
   }
 
   Future<void> logout() async {
-    await _clearToken();
+    _clearToken();
   }
 }
