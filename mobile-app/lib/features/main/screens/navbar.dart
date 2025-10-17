@@ -301,17 +301,15 @@ class _NavbarState extends ConsumerState<Navbar> {
               isTablet: context.isTablet,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 14.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _navItems.asMap().entries.map((entry) {
-                int index = entry.key;
-                NavItem item = entry.value;
-
-                return _buildNavItem(index, item);
-              }).toList(),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _navItems.asMap().entries.map((entry) {
+              int index = entry.key;
+              NavItem item = entry.value;
+          
+              return _buildNavItem(index, item);
+            }).toList(),
           ),
         ],
       ),
