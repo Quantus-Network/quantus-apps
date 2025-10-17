@@ -7,6 +7,10 @@ import 'package:resonance_network_wallet/models/referral_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
+  static final ReferralService _instance = ReferralService._internal();
+  factory ReferralService() => _instance;
+  ReferralService._internal();
+
   final SettingsService _settingsService = SettingsService();
   final HumanReadableChecksumService _checksumService =
       HumanReadableChecksumService();
