@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
 /// Provider that holds the current app lifecycle state
@@ -27,6 +28,11 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     // Set initial state
     ref.read(appLifecycleStateProvider.notifier).state =
         WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
+    
+    // Initialize Taskmaster login on app start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTaskmasterLogin();
+    });
   }
 
   @override
@@ -51,16 +57,35 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
         break;
 
       case AppLifecycleState.resumed:
+        print('AppLifecycleState.resumed');
         // Resume polling when app comes back to foreground
         pollingManager.resumePolling();
         // Trigger a silent refresh to catch up on any missed updates
         pollingManager.triggerSilentRefresh();
+        // Initialize Taskmaster login if wallet exists
+        _initializeTaskmasterLogin();
         break;
 
       case AppLifecycleState.detached:
         // App is being terminated
         pollingManager.stopPolling();
         break;
+    }
+  }
+
+  // This is merely an optimization - check our login is active. 
+  Future<void> _initializeTaskmasterLogin() async {
+    try {
+      final settingsService = SettingsService();
+      final hasWallet = await settingsService.getHasWallet();
+      
+      if (hasWallet) {
+        final taskmasterService = TaskmasterService();
+        await taskmasterService.ensureIsLoggedIn();
+        print('Taskmaster login initialized');
+      }
+    } catch (e) {
+      print('Failed to initialize taskmaster login: $e');
     }
   }
 
