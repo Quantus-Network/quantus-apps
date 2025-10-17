@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -252,7 +253,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                               Expanded(
                                 child: Column(
                                   children: [
-                                    const SizedBox(height: 163),
+                                     SizedBox(height:  context.isSmallHeight? 132: 163),
                                     ..._buildAccountStats(context, statsAsync),
                                     const SizedBox(height: 16),
                                     Text.rich(
@@ -292,7 +293,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 40),
+                         SizedBox(height: context.isSmallHeight ? 18: 40),
                         Text(
                           'Click to Copy Referral Code',
                           style: context.themeText.smallParagraph,
@@ -414,7 +415,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen>
   Widget _buildDecoration() {
     return Container(
       width: 85,
-      height: 462,
+      height: context.isSmallHeight ? 380: 462,
       decoration: const ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment(0.03, -1.00),
