@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 
 /// Service that handles global history polling - refreshes transaction history
@@ -63,6 +64,14 @@ class GlobalHistoryPollingService {
   Future<void> _performPoll() async {
     if (!_isPolling) return;
 
+    // Check connectivity before polling
+    final isOnline = _ref.read(isOnlineProvider);
+    if (!isOnline) {
+      print('Skipping poll - offline');
+      _scheduleNextPoll();
+      return;
+    }
+
     try {
       // Check if we have accounts available
       final accountsState = _ref.read(accountsProvider);
@@ -109,6 +118,14 @@ class GlobalHistoryPollingService {
   /// Manually trigger a history refresh (useful for pull-to-refresh)
   Future<void> triggerManualRefresh() async {
     print('Global polling manager: Manual Refresh!');
+    
+    // Check connectivity before refreshing
+    final isOnline = _ref.read(isOnlineProvider);
+    if (!isOnline) {
+      print('Skipping manual refresh - offline');
+      return;
+    }
+    
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {

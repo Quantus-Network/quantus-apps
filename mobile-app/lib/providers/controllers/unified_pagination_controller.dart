@@ -4,6 +4,7 @@ import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 
 /// Unified pagination controller that handles both all-accounts and
 /// filtered-accounts scenarios
@@ -137,6 +138,13 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   /// Used for user-initiated refreshes like pull-to-refresh.
   Future<void> loadingRefresh() async {
     print('UnifiedPaginationController: Loading Refresh');
+
+    // Check connectivity before refreshing
+    final isOnline = ref.read(isOnlineProvider);
+    if (!isOnline) {
+      print('Skipping refresh - offline');
+      return;
+    }
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) {

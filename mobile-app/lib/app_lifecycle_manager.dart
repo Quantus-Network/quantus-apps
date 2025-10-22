@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
 /// Provider that holds the current app lifecycle state
@@ -32,6 +33,31 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     // Initialize Taskmaster login on app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeTaskmasterLogin();
+      _setupConnectivityListener();
+    });
+  }
+
+  void _setupConnectivityListener() {
+    ref.listenManual(networkStatusProvider, (previous, next) {
+      next.when(
+        data: (status) {
+          final pollingManager = ref.read(historyPollingManagerProvider);
+          final appState = ref.read(appLifecycleStateProvider);
+          
+          if (status == NetworkStatus.online && appState == AppLifecycleState.resumed) {
+            print('Back online - resuming polling');
+            pollingManager.resumePolling();
+            pollingManager.triggerSilentRefresh();
+          } else if (status == NetworkStatus.offline) {
+            print('Gone offline - pausing polling');
+            pollingManager.pausePolling();
+          }
+        },
+        loading: () {},
+        error: (e, _) {
+          print('Error listening to network status: $e');
+        },
+      );
     });
   }
 
@@ -46,6 +72,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     ref.read(appLifecycleStateProvider.notifier).state = state;
 
     final pollingManager = ref.read(historyPollingManagerProvider);
+    final isOnline = ref.read(isOnlineProvider);
 
     switch (state) {
       case AppLifecycleState.paused:
@@ -58,10 +85,13 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
 
       case AppLifecycleState.resumed:
         print('AppLifecycleState.resumed');
-        // Resume polling when app comes back to foreground
-        pollingManager.resumePolling();
-        // Trigger a silent refresh to catch up on any missed updates
-        pollingManager.triggerSilentRefresh();
+        // Only resume if online
+        if (isOnline) {
+          pollingManager.resumePolling();
+          pollingManager.triggerSilentRefresh();
+        } else {
+          print('App resumed but offline - polling paused');
+        }
         // Initialize Taskmaster login if wallet exists
         _initializeTaskmasterLogin();
         break;

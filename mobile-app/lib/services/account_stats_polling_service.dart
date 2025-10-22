@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 
 /// Service that handles account stats polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -58,6 +59,14 @@ class AccountStatsPollingService {
 
   Future<void> _performPoll() async {
     if (!_isPolling) return;
+
+    // Check connectivity before polling
+    final isOnline = _ref.read(isOnlineProvider);
+    if (!isOnline) {
+      print('Skipping poll - offline');
+      _scheduleNextPoll();
+      return;
+    }
 
     try {
       print('Performing account stats poll...');

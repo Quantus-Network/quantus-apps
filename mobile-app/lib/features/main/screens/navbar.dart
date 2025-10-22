@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/features/main/screens/transactions_scre
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/wallet_main.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -291,56 +292,107 @@ class _NavbarState extends ConsumerState<Navbar> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      color: Colors.transparent,
-      height: context.themeSize.navbarHeight,
-      child: Stack(
-        children: [
-          // Shadow
-          Transform.translate(
-            offset: const Offset(0, -3),
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-              child: ColorFiltered(
-                colorFilter: const ColorFilter.mode(
-                  Color(0x19FFFFFF),
-                  BlendMode.srcIn,
-                ),
-                child: CustomPaint(
-                  size: Size(
-                    MediaQuery.of(context).size.width,
-                    context.themeSize.navbarHeight,
-                  ),
-                  painter: BottomNavPainter(
-                    background: context.themeColors.navbarBg,
-                    isTablet: context.isTablet,
-                  ),
+    final isOnline = ref.watch(isOnlineProvider);
+    final shouldShowStatus = !isOnline || AppConstants.globalDebug;
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Connectivity status bar
+        if (shouldShowStatus)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isOnline 
+                  ? context.themeColors.buttonSuccess.withOpacity(0.2)
+                  : context.themeColors.checksum.withOpacity(0.2),
+              border: Border(
+                top: BorderSide(
+                  color: isOnline
+                      ? context.themeColors.buttonSuccess.withOpacity(0.3)
+                      : context.themeColors.checksum.withOpacity(0.3),
+                  width: 1,
                 ),
               ),
             ),
-          ),
-          CustomPaint(
-            size: Size(
-              MediaQuery.of(context).size.width,
-              context.themeSize.navbarHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isOnline ? Icons.wifi : Icons.wifi_off,
+                  size: 14,
+                  color: isOnline 
+                      ? context.themeColors.buttonSuccess
+                      : context.themeColors.checksum,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isOnline ? 'Wallet connected' : 'Wallet not connected',
+                  style: TextStyle(
+                    color: isOnline 
+                        ? context.themeColors.buttonSuccess
+                        : context.themeColors.checksum,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            painter: BottomNavPainter(
-              background: context.themeColors.navbarBg,
-              isTablet: context.isTablet,
-            ),
           ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: _navItems.asMap().entries.map((entry) {
-              int index = entry.key;
-              NavItem item = entry.value;
+        // Navbar
+        Container(
+          color: Colors.transparent,
+          height: context.themeSize.navbarHeight,
+          child: Stack(
+            children: [
+              // Shadow
+              Transform.translate(
+                offset: const Offset(0, -3),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                  child: ColorFiltered(
+                    colorFilter: const ColorFilter.mode(
+                      Color(0x19FFFFFF),
+                      BlendMode.srcIn,
+                    ),
+                    child: CustomPaint(
+                      size: Size(
+                        MediaQuery.of(context).size.width,
+                        context.themeSize.navbarHeight,
+                      ),
+                      painter: BottomNavPainter(
+                        background: context.themeColors.navbarBg,
+                        isTablet: context.isTablet,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              CustomPaint(
+                size: Size(
+                  MediaQuery.of(context).size.width,
+                  context.themeSize.navbarHeight,
+                ),
+                painter: BottomNavPainter(
+                  background: context.themeColors.navbarBg,
+                  isTablet: context.isTablet,
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: _navItems.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  NavItem item = entry.value;
 
-              return _buildNavItem(index, item);
-            }).toList(),
+                  return _buildNavItem(index, item);
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

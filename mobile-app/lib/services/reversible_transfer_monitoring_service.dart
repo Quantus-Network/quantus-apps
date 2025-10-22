@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/connectivity_service.dart';
 
 /// Service that monitors reversible transfers approaching execution time
 /// and polls the chain aggressively when timers hit zero to catch state
@@ -129,6 +130,13 @@ class ReversibleTransferMonitoringService {
   }
 
   Future<void> _checkForExecution(ReversibleTransferEvent transfer) async {
+    // Check connectivity before polling
+    final isOnline = _ref.read(isOnlineProvider);
+    if (!isOnline) {
+      print('Skipping execution check - offline');
+      return;
+    }
+
     try {
       // Use the new targeted query by transaction hash
       if (transfer.extrinsicHash == null) {
