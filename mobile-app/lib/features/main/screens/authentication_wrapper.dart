@@ -83,14 +83,6 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper>
       });
     }
 
-    if (!didAuthenticate) {
-      // Handle failed authentication, maybe close the app or show an error.
-      if (Platform.isAndroid) {
-        SystemNavigator.pop();
-      }
-      // On iOS, we can't programmatically close the app,
-      // so we'll just stay on the lock screen.
-    }
   }
 
   @override
