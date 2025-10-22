@@ -1,7 +1,4 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
