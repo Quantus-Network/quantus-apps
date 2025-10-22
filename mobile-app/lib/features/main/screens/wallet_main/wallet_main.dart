@@ -201,7 +201,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                               width: 250,
                               child: Text(
                                 textAlign: TextAlign.center,
-                                err.toString(),
+                                'Error loading balance',
                                 style: context.themeText.detail?.copyWith(
                                   color: context.themeColors.textError,
                                 ),
