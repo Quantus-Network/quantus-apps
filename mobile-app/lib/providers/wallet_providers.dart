@@ -44,6 +44,9 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
   );
 });
 
+// Store for cached balance to return on error
+BigInt _cachedBalance = BigInt.zero;
+
 // Effective balance (blockchain balance minus pending outgoing transactions)
 final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final balanceAsync = ref.watch(balanceProviderRaw);
@@ -54,23 +57,24 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
     data: (blockchainBalance) {
       final activeAccount = activeAccountAsync.value;
       if (activeAccount == null) {
+        _cachedBalance = BigInt.zero;
         return AsyncValue.data(BigInt.zero);
       }
 
-      // Calculate pending outgoing amount for this account
       final pendingOutgoing = _calculatePendingOutgoing(
         pendingTransactions,
         activeAccount.accountId,
       );
       final effectiveBalance = blockchainBalance - pendingOutgoing;
-
-      // Ensure balance doesn't go negative
-      return AsyncValue.data(
-        effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero,
-      );
+      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
+      _cachedBalance = result;
+      return AsyncValue.data(result);
     },
     loading: () => const AsyncValue.loading(),
-    error: (err, stack) => AsyncValue.error(err, stack),
+    error: (err, stack) {
+      // On error, return last cached balance
+      return AsyncValue.data(_cachedBalance);
+    },
   );
 });
 
