@@ -17,7 +17,6 @@ class AccountStatsNotifier extends StateNotifier<AsyncValue<AccountStats>> {
       ]);
 
       // For now task master can't figure this out yet so lets do it locally
-      // TODO fix task master so it gets the miner rewards aggregate.
       final minerStats = minerStatsRes as MinerStats;
       final s = accountStatsRes as AccountStats;
       final accountStats = AccountStats(

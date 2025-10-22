@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
@@ -65,6 +66,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
         }
         return ScaffoldBase(
           dim: 0,
+          padding: EdgeInsets.zero,
           decorations: [
             Positioned(
               left: context.getHorizontalCenterPosition(252),
@@ -99,7 +101,9 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
-                  child: Column(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
                     children: [
                       const SizedBox(height: 31.0),
                       Row(
@@ -168,6 +172,18 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                    ],
+                  ),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: NetworkStatusBanner(),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                    children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -232,11 +248,15 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                       const SizedBox(height: 30),
                     ],
                   ),
+                  ),
                 ),
                 SliverToBoxAdapter(
-                  child: HistorySection(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: HistorySection(
                     allTransactionsAsync: activeAccountTransactionsAsync,
                     activeAccount: activeAccount,
+                  ),
                   ),
                 ),
               ],

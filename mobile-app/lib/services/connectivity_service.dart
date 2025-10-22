@@ -77,7 +77,7 @@ final isOnlineProvider = Provider<bool>((ref) {
   return statusAsync.when(
     data: (status) => status == NetworkStatus.online,
     loading: () => true,
-    error: (_, __) => false,
+    error: (_, _) => false,
   );
 });
 
