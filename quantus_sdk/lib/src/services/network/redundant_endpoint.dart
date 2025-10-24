@@ -53,11 +53,7 @@ class RpcEndpointService extends RedundantEndpointService {
         return result;
       } catch (e) {
         lastError = e;
-        
-        if (!_isOfflineError(e)) {
-          endpoint.lastFailure = DateTime.now();
-          endpoint.latency = const Duration(days: 365);
-        }
+        logEndpointFailure(endpoint, e);
       }
     }
     
@@ -89,12 +85,16 @@ class RedundantEndpointService {
     });
   }
 
-  bool _isOfflineError(dynamic error) {
+  bool _isReachabilityError(dynamic error) {
     
     return error is SocketException || 
            error is HttpException ||
            (error.toString().contains('Failed host lookup') ||
             error.toString().contains('Connection refused'));
+  }
+
+  bool get _connectivityIsOffline {
+    return ConnectivityService().currentStatus == NetworkStatus.offline;
   }
 
   Future<http.Response> get(String path, {Map<String, String>? headers}) async {
@@ -114,16 +114,22 @@ class RedundantEndpointService {
         return response;
       } catch (e) {
         lastError = e;
-        
-        if (!_isOfflineError(e)) {
-          endpoint.lastFailure = DateTime.now();
-          endpoint.latency = const Duration(days: 365);
-        }
+        logEndpointFailure(endpoint, e);
       }
     }
     
     _sortServers();
     throw lastError ?? Exception('All endpoints failed');
+  }
+
+  void logEndpointFailure(Endpoint endpoint, dynamic error) {
+    if (!_connectivityIsOffline) {
+      if (_isReachabilityError(error)) {
+        print('Reachability error on endpoint: ${endpoint.url}: $error');
+      }
+      endpoint.lastFailure = DateTime.now();
+      endpoint.latency = const Duration(days: 365);
+    }
   }
 
   Future<http.Response> post({String? path, Map<String, String>? headers, String? body}) async {
@@ -143,11 +149,7 @@ class RedundantEndpointService {
         return response;
       } catch (e) {
         lastError = e;
-        
-        if (!_isOfflineError(e)) {
-          endpoint.lastFailure = DateTime.now();
-          endpoint.latency = const Duration(days: 365);
-        }
+        logEndpointFailure(endpoint, e);
       }
     }
     
