@@ -37,28 +37,9 @@ class RpcEndpointService extends RedundantEndpointService {
   String get bestEndpointUrl => endpoints.first.url;
 
   Future<T> rpcTask<T>(Future<T> Function(Uri uri) task) async {
-    dynamic lastError;
-    
-    for (final endpoint in endpoints) {
-      final uri = Uri.parse(endpoint.url);
-      final startTime = DateTime.now();
-      
-      try {
-        final result = await task(uri);
-        
-        endpoint.latency ??= DateTime.now().difference(startTime);
-        endpoint.lastSuccess = DateTime.now();
-        
-        _sortServers();
-        return result;
-      } catch (e) {
-        lastError = e;
-        logEndpointFailure(endpoint, e);
-      }
-    }
-    
-    _sortServers();
-    throw lastError ?? Exception('All RPC endpoints failed');
+    return _executeTask(
+      (url) => task(Uri.parse(url)),
+    );
   }
 }
 
@@ -97,21 +78,20 @@ class RedundantEndpointService {
     return ConnectivityService().currentStatus == NetworkStatus.offline;
   }
 
-  Future<http.Response> get(String path, {Map<String, String>? headers}) async {
+  Future<T> _executeTask<T>(Future<T> Function(String url) task) async {
     dynamic lastError;
     
     for (final endpoint in endpoints) {
-      final url = '${endpoint.url}$path';
       final startTime = DateTime.now();
       
       try {
-        final response = await http.get(Uri.parse(url), headers: _mergedHeaders(headers));
+        final result = await task(endpoint.url);
         
         endpoint.latency ??= DateTime.now().difference(startTime);
         endpoint.lastSuccess = DateTime.now();
         
         _sortServers();
-        return response;
+        return result;
       } catch (e) {
         lastError = e;
         logEndpointFailure(endpoint, e);
@@ -132,28 +112,15 @@ class RedundantEndpointService {
     }
   }
 
+  Future<http.Response> get(String path, {Map<String, String>? headers}) async {
+    return _executeTask(
+      (url) => http.get(Uri.parse('$url$path'), headers: _mergedHeaders(headers)),
+    );
+  }
+
   Future<http.Response> post({String? path, Map<String, String>? headers, String? body}) async {
-    dynamic lastError;
-    
-    for (final endpoint in endpoints) {
-      final url = '${endpoint.url}${(path ?? '')}';
-      final startTime = DateTime.now();
-      
-      try {
-        final response = await http.post(Uri.parse(url), body: body, headers: _mergedHeaders(headers));
-        
-        endpoint.latency ??= DateTime.now().difference(startTime);
-        endpoint.lastSuccess = DateTime.now();
-        
-        _sortServers();
-        return response;
-      } catch (e) {
-        lastError = e;
-        logEndpointFailure(endpoint, e);
-      }
-    }
-    
-    _sortServers();
-    throw lastError ?? Exception('All endpoints failed');
+    return _executeTask(
+      (url) => http.post(Uri.parse('$url${(path ?? '')}'), body: body, headers: _mergedHeaders(headers)),
+    );
   }
 }
