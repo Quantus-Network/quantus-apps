@@ -330,16 +330,13 @@ class TaskmasterService {
     final oldMiningAccountId = await getOldMiningAccountId();
     final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
 
-    final Uri uri = Uri.parse('${AppConstants.graphQlEndpoint}/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,
       'variables': {'ids': accountIds},
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final http.Response response = await GraphQlEndpointService().post(
         body: jsonEncode(requestBody),
       );
 

@@ -11,44 +11,16 @@ import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 
 const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
 const crystalCharlie = '//Crystal Charlie';
 
-extension on Address {
-  // Address is used to convert between ss58 Strings and AccountID32 bytes.
-  // The ss58 package assumes Ed25519 addresses, and it assumes that AccountID32 for an ss58 address is
-  // the same as the public key.
-  // That is not true for dilithium signatures, where AccoundID32 is a
-  // Poseidon hash of the public key.
-  // Just to explain why this field is named pubkey - it's not a pub key in our signature scheme.
-  // However, we can still use this class to convert between ss58 Strings and AccountID32 bytes.
-  Uint8List get addressBytes => pubkey;
-}
 
 // equivalent to crypto.ss58ToAccountId(s: ss58Address)
 Uint8List getAccountId32(String ss58Address) {
   return Address.decode(ss58Address).addressBytes;
-}
-
-class ExtrinsicData {
-  Uint8List payload;
-  int blockNumber;
-  String blockHash;
-  int nonce;
-  ExtrinsicData({
-    required this.payload,
-    required this.blockHash,
-    required this.blockNumber,
-    required this.nonce,
-  });
-}
-
-class ExtrinsicFeeData {
-  BigInt fee;
-  ExtrinsicData extrinsicData;
-  ExtrinsicFeeData({required this.fee, required this.extrinsicData});
 }
 
 class SubstrateService {
@@ -56,38 +28,22 @@ class SubstrateService {
   factory SubstrateService() => _instance;
   SubstrateService._internal();
 
-  Provider? _provider;
-  StateApi? _stateApi;
-  static const String _rpcEndpoint = AppConstants.rpcEndpoint;
+  final RpcEndpointService _rpcEndpointService = RpcEndpointService();
   final SettingsService _settingsService = SettingsService();
-
-  Future<void> initialize() async {
-    if (_provider == null) {
-      print('initializing provider at endpoint: $_rpcEndpoint');
-      _provider = Provider.fromUri(Uri.parse(_rpcEndpoint));
-      _stateApi = StateApi(_provider!);
-    }
-  }
 
   Future<BigInt> getFee(Uint8List signedExtrinsic) async {
     try {
-      // Convert encoded signed extrinsic to hex string
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
+      
+      final result = await _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+        return await provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]);
+      });
 
-      // Use provider.send to call the payment_queryInfo RPC with the signed extrinsic
-      final result = await _provider!.send('payment_queryInfo', [
-        hexEncodedSignedExtrinsic,
-        null,
-      ]); // null for block hash
-
-      // Parse the result to get the partialFee
-      // The result structure is typically {'partialFee': '...'} for this RPC
       print('getFee: $result');
       final partialFeeString = result.result['partialFee'] as String;
       final partialFee = BigInt.parse(partialFeeString);
-
       print('partialFee: $partialFee');
-
       return partialFee;
     } catch (e, s) {
       print('Error estimating fee: $e $s');
@@ -111,17 +67,15 @@ class SubstrateService {
 
   Future<BigInt> queryBalance(String address) async {
     try {
-      // Create Resonance API instance
-      final resonanceApi = Schrodinger(_provider!);
-      // Account from SS58 address
       final accountID = crypto.ss58ToAccountId(s: address);
-
-      // Retrieve Account Balance
-      final accountInfo = await resonanceApi.query.system.account(accountID);
+      
+      final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+        final resonanceApi = Schrodinger(provider);
+        return await resonanceApi.query.system.account(accountID);
+      });
 
       print('user balance $address: ${accountInfo.data.free}');
-
-      // Get the free balance
       return accountInfo.data.free;
     } catch (e, st) {
       print('Error querying balance: $e, $st');
@@ -155,12 +109,14 @@ class SubstrateService {
   /// The type will be changed to Extrinsic later
   /// Note: Copied from author API
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
-    final List<dynamic> params = ['0x${hex.encode(extrinsic)}'];
+    final params = ['0x${hex.encode(extrinsic)}'];
+    
+    final response = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return await provider.send('author_submitExtrinsic', params);
+    });
 
-    final response = await _provider!.send('author_submitExtrinsic', params);
-    // same hash - not the final extrinsic hash
     print('submitExtrinsic response: ${response.result}');
-
     if (response.error != null) {
       throw Exception(response.error.toString());
     }
@@ -174,10 +130,6 @@ class SubstrateService {
     RuntimeCall call, {
     int maxRetries = 3,
   }) async {
-    if (_provider == null) {
-      await initialize();
-    }
-
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
@@ -206,25 +158,26 @@ class SubstrateService {
     Account account,
     RuntimeCall call,
   ) async {
-    final resonanceApi = Schrodinger(_provider!);
     final mnemonic = await account.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found for signing.');
     }
-    final senderWallet = HdWalletService().keyPairAtIndex(
-      mnemonic,
-      account.index,
-    );
-    final runtimeVersion = await _stateApi!.getRuntimeVersion();
-    final specVersion = runtimeVersion.specVersion;
-    final transactionVersion = runtimeVersion.transactionVersion;
-    var genesisHash = await _getGenesisHash();
-    final encodedCall = call.encode();
-    final [blockNumber, blockHash, nonce] = await Future.wait([
+    final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
+    
+    final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
+      _rpcEndpointService.rpcTask((uri) async {
+        final provider = Provider.fromUri(uri);
+        final stateApi = StateApi(provider);
+        return await stateApi.getRuntimeVersion();
+      }),
+      _getGenesisHash(),
       _getBlockNumber(),
       _getBlockHash(),
       _getNextAccountNonce(senderWallet),
     ]);
+
+    final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
+    final encodedCall = call.encode();
 
     final payloadToSign = SigningPayload(
       method: encodedCall,
@@ -238,18 +191,15 @@ class SubstrateService {
       tip: 0,
     );
 
-    final payload = payloadToSign.encode(resonanceApi.registry);
-    final signature = crypto.signMessage(
-      keypair: senderWallet,
-      message: payload,
-    );
-    // for testing failed transactions - use the bad signature.
-    // var badSignature = Uint8List(signature.length); // 0 list
+    final registry = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return Schrodinger(provider).registry;
+    });
+    
+    final payload = payloadToSign.encode(registry);
 
-    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(
-      signature,
-      senderWallet.publicKey,
-    );
+    final signature = crypto.signMessage(keypair: senderWallet, message: payload);
+    final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, senderWallet.publicKey);
 
     final extrinsic = ResonanceExtrinsicPayload(
       signer: Uint8List.fromList(senderWallet.addressBytes),
@@ -259,7 +209,7 @@ class SubstrateService {
       blockNumber: blockNumber,
       nonce: nonce,
       tip: 0,
-    ).encodeResonance(resonanceApi.registry, ResonanceSignatureType.resonance);
+    ).encodeResonance(registry, ResonanceSignatureType.resonance);
 
     return ExtrinsicData(
       payload: extrinsic,
@@ -270,33 +220,44 @@ class SubstrateService {
   }
 
   Future<int> _getNextAccountNonce(Keypair senderWallet) async {
-    final nonceResult = await _provider!.send('system_accountNextIndex', [
-      senderWallet.ss58Address,
-    ]);
-    final nonce = int.parse(nonceResult.result.toString());
-    return nonce;
+    final nonceResult = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return await provider.send('system_accountNextIndex', [senderWallet.ss58Address]);
+    });
+    return int.parse(nonceResult.result.toString());
   }
 
   Future<dynamic> _getBlockHash() async {
-    final result = await _provider!.send('chain_getBlockHash', []);
-    final blockHash = result.result;
-    return blockHash.replaceAll('0x', '');
+    final result = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return await provider.send('chain_getBlockHash', []);
+    });
+    return result.result.replaceAll('0x', '');
   }
 
   Future<dynamic> _getGenesisHash() async {
-    final result = await _provider!.send('chain_getBlockHash', [0]);
-    final genesisHash = result.result;
-    return genesisHash.replaceAll('0x', '');
+    final result = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return await provider.send('chain_getBlockHash', [0]);
+    });
+    return result.result.replaceAll('0x', '');
   }
 
   Future<int> _getBlockNumber() async {
-    final blockHeader = await _provider!.send('chain_getHeader', []);
-    final blockNumber = int.parse(blockHeader.result['number']);
-    return blockNumber;
+    final blockHeader = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return await provider.send('chain_getHeader', []);
+    });
+    return int.parse(blockHeader.result['number']);
   }
 
-  // Getter for provider (for services that need direct access)
-  Provider? get provider => _provider;
+  Provider? get provider {
+    try {
+      return Provider.fromUri(Uri.parse(_rpcEndpointService.bestEndpointUrl));
+    } catch (e) {
+      return null;
+    }
+  }
 
   Future<void> logout() async {
     print('Log out!');

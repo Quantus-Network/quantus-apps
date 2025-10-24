@@ -1,16 +1,10 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-import 'package:quantus_sdk/src/constants/app_constants.dart';
-import 'package:quantus_sdk/src/extensions/keypair_extensions.dart';
-import 'package:quantus_sdk/src/models/account.dart';
-import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
-import 'package:quantus_sdk/src/services/substrate_service.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AccountDiscoveryService {
   final HdWalletService _hdWalletService;
   final SubstrateService _substrateService;
-  final String _graphQlEndpoint = AppConstants.graphQlEndpoint;
 
   AccountDiscoveryService(this._hdWalletService, this._substrateService);
 
@@ -52,15 +46,15 @@ class AccountDiscoveryService {
 
     final accountIds = allPossibleAccounts.map((a) => a.accountId).toList();
 
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
+    final graphQlEndpoint = GraphQlEndpointService();
+
     final Map<String, dynamic> requestBody = {
       'query': _accountsQuery,
       'variables': {'ids': accountIds},
     };
 
     try {
-      final response = await http.post(
-        uri,
+      final response = await graphQlEndpoint.post(
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );

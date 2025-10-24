@@ -12,6 +12,7 @@ import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_
 import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart'
     as multi_address;
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 import 'substrate_service.dart';

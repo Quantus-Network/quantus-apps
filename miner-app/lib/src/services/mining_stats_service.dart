@@ -45,7 +45,6 @@ class MiningStatsService {
   Future<void> startMonitoring() async {
     // Initialize the SubstrateService first
     try {
-      await _substrateService.initialize();
       print('MiningStatsService: Initialized Substrate service');
     } catch (e) {
       print('MiningStatsService: Failed to initialize Substrate service: $e');

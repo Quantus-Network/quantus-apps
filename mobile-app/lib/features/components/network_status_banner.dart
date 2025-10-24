@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/services/connectivity_service.dart';
+import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 
 class NetworkStatusBanner extends ConsumerWidget {
   const NetworkStatusBanner({super.key});

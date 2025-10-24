@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
-import 'package:resonance_network_wallet/services/connectivity_service.dart';
+import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 
 /// Service that handles account stats polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.

@@ -31,6 +31,7 @@ export 'src/services/accounts_service.dart';
 export 'src/services/address_formatting_service.dart';
 export 'src/services/balances_service.dart';
 export 'src/services/chain_history_service.dart';
+export 'src/services/connectivity_service.dart';
 export 'src/services/datetime_formatting_service.dart';
 export 'src/services/hd_wallet_service.dart';
 export 'src/services/human_readable_checksum_service.dart';
@@ -42,6 +43,9 @@ export 'src/services/reversible_transfers_service.dart';
 export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
 export 'src/services/taskmaster_service.dart';
+export 'src/services/network/redundant_endpoint.dart';
+export 'src/models/extrinsic_data.dart';
+export 'src/models/extrinsic_fee_data.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

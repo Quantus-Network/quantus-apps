@@ -101,7 +101,6 @@ final _router = GoRouter(
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
   try {
-    await SubstrateService().initialize(); // Initialize SubstrateService
     await QuantusSdk.init();
     print('SubstrateService and QuantusSdk initialized successfully.');
   } catch (e) {

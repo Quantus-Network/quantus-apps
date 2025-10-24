@@ -10,7 +10,7 @@ import 'package:resonance_network_wallet/providers/all_transactions_provider.dar
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/connectivity_service.dart';
+import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 
 /// Service that monitors reversible transfers approaching execution time
 /// and polls the chain aggressively when timers hit zero to catch state

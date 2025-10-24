@@ -1,11 +1,7 @@
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
 import 'package:http/http.dart' as http;
-import 'package:quantus_sdk/src/models/sorted_transactions.dart';
-
-import '../constants/app_constants.dart';
-import '../models/miner_reward_event.dart';
-import '../models/transaction_event.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class TransferList {
   final List<TransactionEvent> transfers;
@@ -39,7 +35,7 @@ class BlockQueryResponse {
 }
 
 class ChainHistoryService {
-  final String _graphQlEndpoint = AppConstants.graphQlEndpoint;
+  final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
   // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
@@ -427,8 +423,6 @@ query SearchPendingTransaction(
       return [];
     }
 
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-
     // print(
     //   'Fetching transactions by hash: $transactionHashes (limit: $limit, offset: $offset)',
     // );
@@ -443,9 +437,7 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final http.Response response = await _graphQlEndpointService.post(
         body: jsonEncode(requestBody),
       );
 
@@ -517,16 +509,13 @@ query SearchPendingTransaction(
     int limit = 10,
     int offset = 0,
   }) async {
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     final Map<String, dynamic> requestBody = {
       'query': _scheduledTransfersQuery,
       'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final http.Response response = await _graphQlEndpointService.post(
         body: jsonEncode(requestBody),
       );
 
@@ -567,10 +556,9 @@ query SearchPendingTransaction(
     int offset = 0,
     String? printName,
   }) async {
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
     print(
       '${printName ?? ''} '
-      ' fetchTransfers for account: $accountIds from $uri (limit: $limit, offset: $offset)',
+      ' fetchTransfers for account: $accountIds (limit: $limit, offset: $offset)',
     );
 
     // Construct the GraphQL request body
@@ -584,9 +572,7 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: <String, String>{'Content-Type': 'application/json'},
+      final http.Response response = await _graphQlEndpointService.post(
         body: jsonEncode(requestBody),
       );
 
@@ -659,8 +645,6 @@ query SearchPendingTransaction(
     required String to,
     required bool isReversible,
   }) async {
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-
     print('Fetching transactions in block: $blockHash');
 
     final Map<String, dynamic> requestBody = {
@@ -671,9 +655,7 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final http.Response response = await _graphQlEndpointService.post(
         body: jsonEncode(requestBody),
       );
 
@@ -749,8 +731,6 @@ query SearchPendingTransaction(
     required int blockHeightAfter,
     int limit = 10,
   }) async {
-    final Uri uri = Uri.parse('$_graphQlEndpoint/graphql');
-
     print(
       'Searching for pending transaction: $from → $to, amount: $amount, '
       'reversible: $isReversible, after block: $blockHeightAfter',
@@ -770,9 +750,7 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
+      final http.Response response = await _graphQlEndpointService.post(
         body: jsonEncode(requestBody),
       );
 

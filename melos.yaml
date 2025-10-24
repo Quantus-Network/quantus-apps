@@ -27,6 +27,7 @@ dependency_overrides:
 
   # HTTP and networking
   http: ^1.4.0
+  connectivity_plus: ^7.0.0
 
   # Storage and preferences
   shared_preferences: ^2.5.2
