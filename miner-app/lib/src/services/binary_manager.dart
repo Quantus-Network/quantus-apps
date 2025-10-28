@@ -32,12 +32,12 @@ class BinaryManager {
 
   static Future<String> getNodeBinaryFilePath() async {
     final cacheDir = await _getCacheDir();
-    return p.join(cacheDir.path, _binary);
+    return p.join(cacheDir.path, _normalizeFilename(_binary));
   }
 
   static Future<String> getExternalMinerBinaryFilePath() async {
     final cacheDir = await _getCacheDir();
-    return p.join(cacheDir.path, _minerBinary);
+    return p.join(cacheDir.path, _normalizeFilename(_minerBinary));
   }
 
   static Future<bool> hasBinary() async {
@@ -76,7 +76,8 @@ class BinaryManager {
 
     // 3. pick asset name like the shell script
     final target = _targetTriple();
-    final asset = '$_binary-$tag-$target.tar.gz';
+    final extension = Platform.isWindows ? "zip" : "tar.gz";
+    final asset = '$_binary-$tag-$target.$extension';
     final url =
         'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
 
@@ -364,6 +365,8 @@ class BinaryManager {
     }
   }
 
+  static String _normalizeFilename(String file) => Platform.isWindows ? "$file.exe" : file;
+
   /* helpers */
   static Future<Directory> _getCacheDir() async => Directory(
     p.join(await getQuantusHomeDirectoryPath(), 'bin'),
@@ -373,7 +376,9 @@ class BinaryManager {
       Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']!;
 
   static String _targetTriple() {
-    final os = Platform.isMacOS ? 'apple-darwin' : 'unknown-linux-gnu';
+    final os = Platform.isMacOS ? 'apple-darwin' : (
+      Platform.isWindows ? 'pc-windows-msvc' : 'unknown-linux-gnu'
+    );
     final arch =
         Platform.version.contains('arm64') ||
             Platform.version.contains('aarch64')
