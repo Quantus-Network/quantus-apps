@@ -33,10 +33,8 @@ class GraphQlEndpointService extends RedundantEndpointService {
         .post(Uri.parse(endpoint.url), headers: {'Content-Type': 'application/json'}, body: queryBody)
         .timeout(const Duration(seconds: 5));
 
-    print('GraphQL healthCheckImpl: ${response.statusCode}');
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      print('GraphQL healthCheckImpl: $jsonResponse');
       if (jsonResponse.containsKey('data')) {
         return true;
       }
@@ -62,7 +60,7 @@ class RpcEndpointService extends RedundantEndpointService {
   Future<bool> healthCheckImpl(Endpoint endpoint) async {
     final provider = Provider.fromUri(Uri.parse(endpoint.url));
     final result = await provider.send('system_health', []).timeout(const Duration(seconds: 7));
-    print('RPC healthCheckImpl: $result');
+    // print('RPC healthCheckImpl: $result');
     return result.error == null;
   }
 }
@@ -157,7 +155,6 @@ abstract class RedundantEndpointService {
   }
 
   Future<void> healthCheck() async {
-    print('healthCheck!');
     // note this has different semantics from executeTask - it's more lenient and does not penalize 
     // endpoints that are failing.
     for (final endpoint in endpoints) {
