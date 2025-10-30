@@ -15,6 +15,7 @@ export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/models/account.dart';
 export 'src/models/account_stats.dart';
+export 'src/models/opted_in_position.dart';
 export 'src/models/event_type.dart';
 export 'src/models/miner_reward_event.dart';
 export 'src/models/miner_stats.dart';

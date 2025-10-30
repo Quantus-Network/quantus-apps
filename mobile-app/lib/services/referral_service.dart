@@ -149,7 +149,7 @@ class ReferralService {
     final referralCode = await getMyInviteCode();
 
     String link = generateReferralLink(referralCode);
-    String message = 'Join me on Quantum Future! Use my referral link so we both earn points: \n$link';
+    String message = "Most L1s aren't ready for quantum threats. This one is.\nI'm on the @QuantusNetwork testnet stacking early points for rewards.\nUse my referral link so we both earn points: $referralCode\n\nDownload the wallet & get in early\n$link";
 
     return ShareParams(text: message, subject: 'Invite Link', title: 'Invite Link');
   }
