@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:convert/convert.dart' as convert_hex;
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/models/opted_in_position.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 class TokenInfo {
