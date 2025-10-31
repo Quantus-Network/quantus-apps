@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import '../styles/app_colors_theme.dart';
+
+const _defaultSkeletonBaseColor = Color(0xFF3D3C44);
+const _defaultSkeletonHighlightColor = Color(0xFF5A5A5A);
 
 /// A skeleton widget with shimmer animation for loading states
 class Skeleton extends StatefulWidget {
   final double? width;
   final double? height;
   final BorderRadius? borderRadius;
-  final Color baseColor;
-  final Color highlightColor;
   final Duration duration;
 
   const Skeleton({
@@ -14,8 +16,6 @@ class Skeleton extends StatefulWidget {
     this.width,
     this.height = 16,
     this.borderRadius,
-    this.baseColor = const Color(0xFFCBCBCB),
-    this.highlightColor = const Color(0xFFF5F5F5),
     this.duration = const Duration(milliseconds: 1500),
   });
 
@@ -23,8 +23,6 @@ class Skeleton extends StatefulWidget {
   const Skeleton.circular({
     super.key,
     required double size,
-    this.baseColor = const Color(0xFFCBCBCB),
-    this.highlightColor = const Color(0xFFF5F5F5),
     this.duration = const Duration(milliseconds: 1500),
   }) : width = size,
        height = size,
@@ -57,6 +55,10 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final themeColors = Theme.of(context).extension<AppColorsTheme>();
+    final baseColor = themeColors?.skeletonBase ?? _defaultSkeletonBaseColor;
+    final highlightColor = themeColors?.skeletonHighlight ?? _defaultSkeletonHighlightColor;
+    
     final borderRadius =
         widget.borderRadius ??
         (widget.width == widget.height ? BorderRadius.circular(widget.width ?? 0) : BorderRadius.circular(4));
@@ -72,7 +74,7 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [widget.baseColor, widget.highlightColor, widget.baseColor],
+              colors: [baseColor, highlightColor, baseColor],
               stops: const [0.0, 0.5, 1.0],
               transform: _SlideGradientTransform(_animation.value),
             ),

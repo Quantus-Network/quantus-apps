@@ -36,6 +36,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color buttonSuccess;
   final Color buttonNeutral;
   final List<Color> buttonPrimary;
+  final Color skeletonBase;
+  final Color skeletonHighlight;
 
   const AppColorsTheme({
     required this.primary,
@@ -69,6 +71,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.buttonSuccess,
     required this.buttonNeutral,
     required this.buttonPrimary,
+    required this.skeletonBase,
+    required this.skeletonHighlight,
   });
 
   const AppColorsTheme.light()
@@ -104,6 +108,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         buttonSuccess: const Color(0xFF1FFFA7),
         buttonNeutral: const Color(0xFFF4F6F9),
         buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
+        skeletonBase: const Color(0xFF3D3C44),
+        skeletonHighlight: const Color(0xFF5A5A5A),
       );
 
   const AppColorsTheme.dark()
@@ -139,6 +145,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         buttonSuccess: const Color(0xFF1FFFA7),
         buttonNeutral: const Color(0xFFF4F6F9),
         buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
+        skeletonBase: const Color(0xFF3D3C44),
+        skeletonHighlight: const Color(0xFF5A5A5A),
       );
 
   @override
@@ -174,6 +182,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? buttonNeutral,
     Color? buttonDanger,
     Color? buttonSuccess,
+    Color? skeletonBase,
+    Color? skeletonHighlight,
   }) {
     return AppColorsTheme(
       primary: primary ?? this.primary,
@@ -206,6 +216,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       buttonNeutral: buttonNeutral ?? this.buttonNeutral,
       buttonDanger: buttonDanger ?? this.buttonDanger,
       buttonSuccess: buttonSuccess ?? this.buttonSuccess,
+      skeletonBase: skeletonBase ?? this.skeletonBase,
+      skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
     );
   }
 
@@ -252,6 +264,8 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       buttonSuccess:
           Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
       buttonPrimary: other.buttonPrimary,
+      skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
+      skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,
     );
   }
 }
