@@ -694,83 +694,66 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                           onMinerProcessChanged: _onMinerProcessChanged,
                         ),
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // Logs Section
-                      Container(
-                        height: 300,
-                        decoration: BoxDecoration(
-                          color: Colors.white.useOpacity(0.05),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.useOpacity(0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Logs header
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Colors.white.useOpacity(0.1),
-                                    width: 1,
+                    ]),
+                  ),
+                ),
+                // Logs section
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: Colors.white.useOpacity(0.05),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          // Logs header
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              border: Border(bottom: BorderSide(color: Colors.white.useOpacity(0.1), width: 1)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.terminal, color: Colors.white.useOpacity(0.7), size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Live Logs',
+                                  style: TextStyle(
+                                    color: Colors.white.useOpacity(0.9),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.terminal,
-                                    color: Colors.white.useOpacity(0.7),
-                                    size: 20,
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.useOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Live Logs',
+                                  child: Text(
+                                    'AUTO-SCROLL',
                                     style: TextStyle(
-                                      color: Colors.white.useOpacity(0.9),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.useOpacity(0.6),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.useOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      'AUTO-SCROLL',
-                                      style: TextStyle(
-                                        color: Colors.white.useOpacity(0.6),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            // Logs content
-                            Expanded(
-                              child: LogsWidget(
-                                minerProcess: _currentMinerProcess,
-                                maxLines: 200,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                          // Logs content
+                          Expanded(child: LogsWidget(minerProcess: _currentMinerProcess, maxLines: 200)),
+                        ],
                       ),
-                    ]),
+                    ),
                   ),
                 ),
               ],
