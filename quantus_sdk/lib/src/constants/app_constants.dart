@@ -8,15 +8,8 @@ class AppConstants {
   // static const List<String> rpcEndpoints = ['ws://127.0.0.1:9944']; // local testing
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350']; // local testing
 
-  static const List<String> rpcEndpoints = [
-    'https://quantu.se',
-    'https://matcha-latte.quantus.com',
-  ];
-  static const List<String> graphQlEndpoints = [
-    'https://quantu.se/graphql',
-    'https://subsquid.quantus.com/graphql',
-  ];
-
+  static const List<String> rpcEndpoints = ['https://matcha-latte.quantus.com', 'https://quantu.se'];
+  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/graphql', 'https://quantu.se/graphql'];
 
   // local test android use special ip
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';
