@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `to_account_id`
+// These functions are ignored because they are not marked as `pub`: `from_ml_dsa`, `to_ml_dsa`
 
 void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
@@ -23,10 +23,13 @@ Uint8List ss58ToAccountId({required String s}) =>
 Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
     .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Uint8List seedFromMnemonic({required String mnemonicStr}) => RustLib
-    .instance
-    .api
-    .crateApiCryptoSeedFromMnemonic(mnemonicStr: mnemonicStr);
+Keypair generateDerivedKeypair({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
@@ -69,6 +72,9 @@ Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 
 Uint8List deriveHdPath({required List<int> seed, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
+abstract class HdLatticeError implements RustOpaqueInterface {}
 
 class Keypair {
   final Uint8List publicKey;

@@ -325,8 +325,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43d193de1f7487df1914d3a568b772458861d33f9c54249612cc2893d6915054"
 dependencies = [
  "bitcoin_hashes",
- "serde",
- "unicode-normalization",
 ]
 
 [[package]]
@@ -2208,7 +2206,6 @@ dependencies = [
 name = "rust_lib_resonance_network_wallet"
 version = "0.1.0"
 dependencies = [
- "bip39",
  "flutter_rust_bridge",
  "hex",
  "nam-tiny-hderive",

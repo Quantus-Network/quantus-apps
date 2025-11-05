@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -11,36 +10,16 @@ import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 /// Hierarchical deterministic wallet service.
 ///
 class HdWalletService {
-  Uint8List _deriveHDWallet({
-    required Uint8List seed,
-    int account = 0,
-    int change = 0,
-    int addressIndex = 0,
-  }) {
+  Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
     // m/44'/189189'/0'/0/0
-    final derivationPath =
-        "m/44'/189189'/$account'/$change/$addressIndex";
+    final derivationPath = "m/44'/189189'/$account'/$change/$addressIndex";
     print('derivationPath: $derivationPath');
-    final derivedSeed = crypto.deriveHdPath(seed: seed, path: derivationPath);
+    final derivedSeed = crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
     return derivedSeed;
   }
 
-  Uint8List _derivedSeedAtIndex(Uint8List seed, int index) {
-    return _deriveHDWallet(seed: seed, account: index);
-  }
-
   Keypair keyPairAtIndex(String mnemonic, int index) {
-    // Derive the new keypair
-    final seed = crypto.seedFromMnemonic(mnemonicStr: mnemonic);
-    var seedToUse = seed;
-
-    if (index > -1) {
-      seedToUse = HdWalletService()._derivedSeedAtIndex(seed, index);
-    }
-
-    // We use this private key as seed to derive a new Dilithium pair.
-    final keypair = crypto.generateKeypairFromSeed(seed: seedToUse);
-
+    final keypair = _deriveHDWallet(mnemonic: mnemonic, account: index);
     return keypair;
   }
 }

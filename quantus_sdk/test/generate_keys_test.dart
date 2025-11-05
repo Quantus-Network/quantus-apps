@@ -29,10 +29,7 @@ void main() {
 
       // Verify account ID format (should be a valid SS58 address)
       expect(accountId, isNotEmpty);
-      expect(
-        accountId.startsWith('qz'),
-        isTrue,
-      ); // SS58 addresses typically start with '5'
+      expect(accountId.startsWith('qz'), isTrue); // SS58 addresses typically start with '5'
 
       // Test signing and verification
       final message = [1, 2, 3, 4, 5];
@@ -42,11 +39,7 @@ void main() {
       expect(signature, isNotEmpty);
 
       // Verify the signature is valid
-      final isValid = verifyMessage(
-        keypair: keypair,
-        message: message,
-        signature: signature,
-      );
+      final isValid = verifyMessage(keypair: keypair, message: message, signature: signature);
 
       expect(isValid, isTrue);
     });
@@ -70,23 +63,20 @@ void main() {
       const mnemonic1 =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
-      const knownAccountId =
-          'qzpKnCCUvfXQdanRBkoPVDxcXbLja9JkYzv26hTQwP9C5mZWP'; // schroedinger chain spec
+      const knownAccountId = 'qznBvupPsA9T8VJDuTDokKPiNUe88zMMUtHGA1AsGc8fXKSSA'; // schroedinger chain spec
       final keypair = generateKeypair(mnemonicStr: mnemonic1);
       final accountId = toAccountId(obj: keypair);
 
       expect(accountId, knownAccountId);
 
-      const knownAccountId1 =
-          'qzjtZjisjHH71BBCzoPV2taXyanMqzXQSZsi9kVpDBRkEGL24'; // account index 0
-      const knownAccountId2 =
-          'qzpQAWrLAwiVzTXxfHpFbkMRgzzFnSjLuSg5yQFb55XvL9sZT'; // account index 1
+      const knownAccountHdIndex0 = 'qznMJss7Ls1SWBhvvL2CSHVbgTxEfnL9GgpvMTq5CWMEwfCoe'; // account index 0
+      const knownAccountHdIndex1 = 'qzn4tYHSaU2Q4xhUnJ7KskQBWfgVQx1fNPMYuiQYhAVPtvrL8'; // account index 1
       final keyPair1 = HdWalletService().keyPairAtIndex(mnemonic1, 0);
       final keyPair2 = HdWalletService().keyPairAtIndex(mnemonic1, 1);
       final accountId1 = toAccountId(obj: keyPair1);
       final accountId2 = toAccountId(obj: keyPair2);
-      expect(accountId1, knownAccountId1);
-      expect(accountId2, knownAccountId2);
+      expect(accountId1, knownAccountHdIndex0);
+      expect(accountId2, knownAccountHdIndex1);
     });
   });
 }
