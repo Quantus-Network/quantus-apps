@@ -12,7 +12,7 @@ qp-poseidon = { version = "1.0.1", default-features = false }
 qp-rusty-crystals-dilithium = { git = "https://github.com/Quantus-Network/qp-rusty-crystals.git", branch = "master" }
 qp-rusty-crystals-hdwallet = { git = "https://github.com/Quantus-Network/qp-rusty-crystals.git", branch = "master" }
 
-flutter_rust_bridge = "=2.9.0"
+flutter_rust_bridge = "=2.11.1"
 hex = "0.4.3"
 nam-tiny-hderive = "0.3.1-nam.0"
 sp-core = "35.0.0"

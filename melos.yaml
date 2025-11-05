@@ -68,7 +68,7 @@ dependency_overrides:
   path_provider: ^2.0.0
 
   # Rust bridge
-  flutter_rust_bridge: ^2.10.0
+  flutter_rust_bridge: ^2.11.1
 
   # Dev dependencies - latest versions
   flutter_lints: ^6.0.0
