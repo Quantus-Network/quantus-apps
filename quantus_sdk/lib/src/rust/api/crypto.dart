@@ -3,8 +3,9 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+import '../frb_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `to_account_id`
 
@@ -12,47 +13,28 @@ void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
 
 /// Convert public key to accountId32 in ss58check format
-String toAccountId({required Keypair obj}) =>
-    RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
+String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
 /// Convert key in ss58check format to accountId32
-Uint8List ss58ToAccountId({required String s}) =>
-    RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
+Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
-Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
-    .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
+Keypair generateKeypair({required String mnemonicStr}) =>
+    RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Uint8List seedFromMnemonic({required String mnemonicStr}) => RustLib
-    .instance
-    .api
-    .crateApiCryptoSeedFromMnemonic(mnemonicStr: mnemonicStr);
+Uint8List seedFromMnemonic({required String mnemonicStr}) =>
+    RustLib.instance.api.crateApiCryptoSeedFromMnemonic(mnemonicStr: mnemonicStr);
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
 Uint8List signMessage({required Keypair keypair, required List<int> message}) =>
-    RustLib.instance.api.crateApiCryptoSignMessage(
-      keypair: keypair,
-      message: message,
-    );
+    RustLib.instance.api.crateApiCryptoSignMessage(keypair: keypair, message: message);
 
-Uint8List signMessageWithPubkey({
-  required Keypair keypair,
-  required List<int> message,
-}) => RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
-  keypair: keypair,
-  message: message,
-);
+Uint8List signMessageWithPubkey({required Keypair keypair, required List<int> message}) =>
+    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(keypair: keypair, message: message);
 
-bool verifyMessage({
-  required Keypair keypair,
-  required List<int> message,
-  required List<int> signature,
-}) => RustLib.instance.api.crateApiCryptoVerifyMessage(
-  keypair: keypair,
-  message: message,
-  signature: signature,
-);
+bool verifyMessage({required Keypair keypair, required List<int> message, required List<int> signature}) =>
+    RustLib.instance.api.crateApiCryptoVerifyMessage(keypair: keypair, message: message, signature: signature);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 
@@ -70,7 +52,7 @@ class Keypair {
   const Keypair({required this.publicKey, required this.secretKey});
 
   @override
-  int get hashCode => publicKey.hashCode ^ secretKey.hashCode;
+  int get hashCode => publicKey.hashCode;
 
   @override
   bool operator ==(Object other) =>
