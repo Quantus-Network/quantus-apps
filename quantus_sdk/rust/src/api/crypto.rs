@@ -66,7 +66,7 @@ pub fn seed_from_mnemonic(mnemonic_str: String) -> Vec<u8> {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
-    let keypair = ml_dsa_87::Keypair::generate(Some(&seed));
+    let keypair = ml_dsa_87::Keypair::generate(&seed);
     return Keypair {
         public_key: keypair.public.to_bytes().to_vec(),
         secret_key: keypair.secret.to_bytes().to_vec(),
@@ -74,7 +74,7 @@ pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
+pub fn sign_message(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
     let keypair = ml_dsa_87::Keypair {
         secret: ml_dsa_87::SecretKey::from_bytes(&keypair.secret_key)
             .expect("Failed to parse secret key"),
@@ -82,13 +82,13 @@ pub fn sign_message(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
             .expect("Failed to parse public key"),
     };
 
-    let signature = keypair.sign(&message, None, false);
+    let signature = keypair.sign(&message, None, entropy);
     signature.as_slice().to_vec()
 }
 
 #[flutter_rust_bridge::frb(sync)]
-pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8]) -> Vec<u8> {
-    let signature = sign_message(keypair, message);
+pub fn sign_message_with_pubkey(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
+    let signature = sign_message(keypair, message, entropy);
     let mut result = Vec::with_capacity(signature.len() + keypair.public_key.len());
     result.extend_from_slice(&signature);
     result.extend_from_slice(&keypair.public_key);
@@ -148,7 +148,7 @@ mod tests {
         let keypair = crystal_alice();
 
         // Sign the message
-        let signature = sign_message(&keypair, message);
+        let signature = sign_message(&keypair, message, None);
 
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
@@ -162,7 +162,7 @@ mod tests {
         let keypair = crystal_alice();
 
         // Sign the message
-        let signature = sign_message(&keypair, message);
+        let signature = sign_message(&keypair, message, None);
 
         // Try to verify with a different keypair
         let different_keypair = crystal_bob();
@@ -180,7 +180,7 @@ mod tests {
         let keypair = crystal_alice();
 
         // Sign the message
-        let signature = sign_message(&keypair, message);
+        let signature = sign_message(&keypair, message, None);
 
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
@@ -194,7 +194,7 @@ mod tests {
         let keypair = crystal_alice();
 
         // Sign the message
-        let signature = sign_message(&keypair, message);
+        let signature = sign_message(&keypair, message, None);
 
         // Verify the signature
         let is_valid = verify_message(&keypair, message, &signature);
