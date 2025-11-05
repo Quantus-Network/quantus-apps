@@ -52,7 +52,7 @@ class Keypair {
   const Keypair({required this.publicKey, required this.secretKey});
 
   @override
-  int get hashCode => publicKey.hashCode;
+  int get hashCode => publicKey.hashCode ^ [1].hashCode;
 
   @override
   bool operator ==(Object other) =>
