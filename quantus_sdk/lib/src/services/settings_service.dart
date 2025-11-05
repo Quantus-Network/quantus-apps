@@ -13,11 +13,12 @@ class SettingsService {
   final _secureStorage = const FlutterSecureStorage();
 
   // New keys for multi-account support
-  static const String _accountsKey = 'accounts_v3';
+  static const String _accountsKey = 'accounts_v4';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
 
-  static const String _accountsKeyV2 = 'accounts_v2';
-  static const String _oldAccountsKey = 'accounts';
+  static const String _oldAccountsKeyV3 = 'accounts_v3';
+  static const String _oldAccountsKeyV2 = 'accounts_v2';
+  static const String _oldAccountsKeyV1 = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
 
   // Local authentication keys
@@ -253,7 +254,10 @@ class SettingsService {
 
   /// Get old accounts from legacy storage or v2 storage
   List<Account> getOldAccounts() {
-    final oldAccountsJson = _prefs.getString(_oldAccountsKey) ?? _prefs.getString(_accountsKeyV2);
+    final oldAccountsJson =
+        _prefs.getString(_oldAccountsKeyV1) ??
+        _prefs.getString(_oldAccountsKeyV2) ??
+        _prefs.getString(_oldAccountsKeyV3);
     if (oldAccountsJson != null) {
       try {
         final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
@@ -267,8 +271,9 @@ class SettingsService {
 
   /// Remove old accounts from legacy storage after successful migration
   Future<void> clearOldAccounts() async {
-    await _prefs.remove(_oldAccountsKey);
-    await _prefs.remove(_accountsKeyV2);
+    await _prefs.remove(_oldAccountsKeyV1);
+    await _prefs.remove(_oldAccountsKeyV2);
+    await _prefs.remove(_oldAccountsKeyV3);
   }
 
   /// Set old accounts data (for debugging/testing)
@@ -276,8 +281,9 @@ class SettingsService {
     print('removing accounts data');
     await _prefs.remove(_accountsKey);
     print('setting old accounts data - reload app after this');
-    // await _prefs.setString(_accountsKeyV2, jsonData); // test mid new accts - also works
-    await _prefs.setString(_oldAccountsKey, jsonData);
+    await _prefs.setString(_oldAccountsKeyV3, jsonData);
+    // await _prefs.setString(_oldAccountsKeyV2, jsonData); // test mid new accts - also works
+    // await _prefs.setString(_oldAccountsKeyV1, jsonData);
   }
 
   // Test-only helper to reset initialization between tests
