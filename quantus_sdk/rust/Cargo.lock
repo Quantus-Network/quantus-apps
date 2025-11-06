@@ -2024,8 +2024,9 @@ dependencies = [
 
 [[package]]
 name = "qp-rusty-crystals-dilithium"
-version = "1.0.3"
-source = "git+https://github.com/Quantus-Network/qp-rusty-crystals.git?branch=master#2205202bc6b8682fb081e3b69a1bbbf7efe21a77"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e77a42bfb3430fa3bf3f5a148f8132de301876ceb1bdf0891909c2728f044a58"
 dependencies = [
  "aes",
  "cipher",
@@ -2035,8 +2036,9 @@ dependencies = [
 
 [[package]]
 name = "qp-rusty-crystals-hdwallet"
-version = "0.1.5"
-source = "git+https://github.com/Quantus-Network/qp-rusty-crystals.git?branch=master#2205202bc6b8682fb081e3b69a1bbbf7efe21a77"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48fa242963fcd6bc970948b6904f18074673ff89cab8ed0133846a53c69deca7"
 dependencies = [
  "bip39",
  "hex",
