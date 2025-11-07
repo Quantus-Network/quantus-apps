@@ -14,11 +14,13 @@ class HdWalletService {
     // m/44'/189189'/0'/0/0
     final derivationPath = "m/44'/189189'/$account'/$change/$addressIndex";
     print('derivationPath: $derivationPath');
-    final derivedSeed = crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
-    return derivedSeed;
+    return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
+    if (index == -1) {
+      return crypto.generateKeypair(mnemonicStr: mnemonic);
+    }
     final keypair = _deriveHDWallet(mnemonic: mnemonic, account: index);
     return keypair;
   }
