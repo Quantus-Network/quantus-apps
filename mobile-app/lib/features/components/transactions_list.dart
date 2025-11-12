@@ -65,7 +65,7 @@ class RecentTransactionsList extends ConsumerWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      role: txService.getTransactionRole(transaction),
+                      role: txService.getTransactionRole(transaction, accountIds: accountIds),
                       showFromAndTo: accountIds.length > 1,
                     );
                   },
@@ -86,7 +86,7 @@ class RecentTransactionsList extends ConsumerWidget {
                     return TransactionListItem(
                       key: ValueKey(transaction.id),
                       transaction: transaction,
-                      role: txService.getTransactionRole(transaction),
+                      role: txService.getTransactionRole(transaction, accountIds: accountIds),
                       showFromAndTo: accountIds.length > 1,
                     );
                   },

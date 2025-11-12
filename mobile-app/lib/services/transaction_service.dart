@@ -58,8 +58,8 @@ class TransactionService {
     return result;
   }
 
-  TransactionRole getTransactionRole(TransactionEvent transaction) {
-    final accounts = _ref.read(accountsProvider).value?.map((acc) => acc.accountId).toList() ?? [];
+  TransactionRole getTransactionRole(TransactionEvent transaction, {List<String>? accountIds}) {
+    final accounts = accountIds ?? (_ref.read(accountsProvider).value?.map((acc) => acc.accountId).toList() ?? []);
 
     final isFrom = accounts.contains(transaction.from);
     final isTo = accounts.contains(transaction.to);
