@@ -59,35 +59,43 @@ class RecentTransactionsList extends ConsumerWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   itemCount: scheduled.length,
                   itemBuilder: (context, index) {
                     final transaction = scheduled[index];
-                    return TransactionListItem(
-                      key: ValueKey(transaction.id),
-                      transaction: transaction,
-                      role: txService.getTransactionRole(transaction, accountIds: accountIds),
-                      showFromAndTo: accountIds.length > 1,
+                    return Padding(
+                      padding: EdgeInsets.only(top: index == 0 ? 7.0 : 0),
+                      child: TransactionListItem(
+                        key: ValueKey(transaction.id),
+                        transaction: transaction,
+                        role: txService.getTransactionRole(transaction, accountIds: accountIds),
+                        showFromAndTo: accountIds.length > 1,
+                      ),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
                 ),
               if (scheduled.isNotEmpty && others.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  padding: const EdgeInsets.only(top: 7.0),
                   child: Divider(color: context.themeColors.darkGray, thickness: 1),
                 ),
               if (others.isNotEmpty)
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   itemCount: others.length,
                   itemBuilder: (context, index) {
                     final transaction = others[index];
-                    return TransactionListItem(
-                      key: ValueKey(transaction.id),
-                      transaction: transaction,
-                      role: txService.getTransactionRole(transaction, accountIds: accountIds),
-                      showFromAndTo: accountIds.length > 1,
+                    return Padding(
+                      padding: EdgeInsets.only(top: index == 0 ? 7.0 : 0),
+                      child: TransactionListItem(
+                        key: ValueKey(transaction.id),
+                        transaction: transaction,
+                        role: txService.getTransactionRole(transaction, accountIds: accountIds),
+                        showFromAndTo: accountIds.length > 1,
+                      ),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
