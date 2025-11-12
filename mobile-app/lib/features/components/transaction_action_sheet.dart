@@ -18,20 +18,18 @@ import 'package:resonance_network_wallet/providers/pending_cancellations_provide
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class TransactionActionSheet extends ConsumerStatefulWidget {
+class ReversibleTransactionActionSheet extends ConsumerStatefulWidget {
   final ReversibleTransferEvent transaction;
 
-  const TransactionActionSheet({super.key, required this.transaction});
+  const ReversibleTransactionActionSheet({super.key, required this.transaction});
 
   @override
-  ConsumerState<TransactionActionSheet> createState() =>
-      _TransactionActionSheetState();
+  ConsumerState<ReversibleTransactionActionSheet> createState() => _ReversibleTransactionActionSheetState();
 }
 
 enum _SheetState { initial, confirmCancel, cancelled }
 
-class _TransactionActionSheetState
-    extends ConsumerState<TransactionActionSheet> {
+class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTransactionActionSheet> {
   _SheetState _sheetState = _SheetState.initial;
   Timer? _timer;
   Duration? _remainingTime;
@@ -40,8 +38,7 @@ class _TransactionActionSheetState
 
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
-  final ReversibleTransfersService _reversibleTransfersService =
-      ReversibleTransfersService();
+  final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
   Future<String> get _checksumFuture {
     final address = widget.transaction.to;
@@ -96,9 +93,7 @@ class _TransactionActionSheetState
             ),
           ),
           Container(
-            height:
-                MediaQuery.of(context).size.height *
-                AppConstants.sendingSheetHeightFraction,
+            height: MediaQuery.of(context).size.height * AppConstants.sendingSheetHeightFraction,
             padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 18),
             clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(color: Colors.black),
@@ -109,10 +104,7 @@ class _TransactionActionSheetState
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        size: context.themeSize.overlayCloseIconSize,
-                      ),
+                      icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -144,30 +136,18 @@ class _TransactionActionSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(
-          'assets/hourglass.svg',
-          'Reversible Transaction',
-          'Reverse or keep your transaction',
-          true,
-        ),
+        _buildHeader('assets/hourglass.svg', 'Reversible Transaction', 'Reverse or keep your transaction', true),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: ShapeDecoration(
             color: context.themeColors.buttonGlass,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
-          child: ReversibleTimer(
-            remainingTime: _remainingTime ?? Duration.zero,
-          ),
+          child: ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
         ),
         const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: _buildTransactionDetails(),
-        ),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 15.0), child: _buildTransactionDetails()),
         const SizedBox(height: 29),
         buttons,
       ],
@@ -179,12 +159,7 @@ class _TransactionActionSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(
-          'assets/transaction/cancel_icon.svg',
-          'Transaction Reversed',
-          '',
-          false,
-        ),
+        _buildHeader('assets/transaction/cancel_icon.svg', 'Transaction Reversed', '', false),
         const SizedBox(height: 20),
         const Divider(color: Colors.white, thickness: 1),
         const SizedBox(height: 20),
@@ -201,12 +176,7 @@ class _TransactionActionSheetState
     return _buildBaseBlockView(_buildConfirmCancelButtons(), 6);
   }
 
-  Widget _buildHeader(
-    String iconName,
-    String title,
-    String subtitle,
-    bool titleIsGreen,
-  ) {
+  Widget _buildHeader(String iconName, String title, String subtitle, bool titleIsGreen) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -214,27 +184,16 @@ class _TransactionActionSheetState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SvgPicture.asset(
-                iconName,
-                width: context.isTablet ? 54 : 34,
-                height: context.isTablet ? 54 : 34,
-              ),
+              SvgPicture.asset(iconName, width: context.isTablet ? 54 : 34, height: context.isTablet ? 54 : 34),
               const SizedBox(height: 16),
               Text(
                 title,
                 style: context.themeText.smallTitle?.copyWith(
-                  color: titleIsGreen
-                      ? context.themeColors.checksum
-                      : context.themeColors.textPrimary,
+                  color: titleIsGreen ? context.themeColors.checksum : context.themeColors.textPrimary,
                 ),
               ),
               if (subtitle.isNotEmpty)
-                Text(
-                  subtitle,
-                  style: context.themeText.detail?.copyWith(
-                    color: const Color(0xFFD9D9D9),
-                  ),
-                ),
+                Text(subtitle, style: context.themeText.detail?.copyWith(color: const Color(0xFFD9D9D9))),
             ],
           ),
         ),
@@ -260,17 +219,9 @@ class _TransactionActionSheetState
       children: [
         Text(
           title,
-          style: context.themeText.paragraph?.copyWith(
-            color: const Color(0xFFD9D9D9),
-            fontWeight: FontWeight.w600,
-          ),
+          style: context.themeText.paragraph?.copyWith(color: const Color(0xFFD9D9D9), fontWeight: FontWeight.w600),
         ),
-        Text(
-          value,
-          style: context.themeText.largeTag?.copyWith(
-            color: const Color(0xFFD9D9D9),
-          ),
-        ),
+        Text(value, style: context.themeText.largeTag?.copyWith(color: const Color(0xFFD9D9D9))),
       ],
     );
   }
@@ -288,10 +239,7 @@ class _TransactionActionSheetState
           width: 269,
           child: Text(
             'Recipient',
-            style: context.themeText.paragraph?.copyWith(
-              color: const Color(0xFFD9D9D9),
-              fontWeight: FontWeight.w600,
-            ),
+            style: context.themeText.paragraph?.copyWith(color: const Color(0xFFD9D9D9), fontWeight: FontWeight.w600),
           ),
         ),
         FutureBuilder(
@@ -302,17 +250,13 @@ class _TransactionActionSheetState
 
             return Text(
               checkPhrase,
-              style: context.themeText.smallParagraph?.copyWith(
-                color: context.themeColors.checksum,
-              ),
+              style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
             );
           },
         ),
         Text(
           context.isTablet ? address : formattedAddress,
-          style: context.themeText.detail?.copyWith(
-            color: const Color(0xFFD9D9D9),
-          ),
+          style: context.themeText.detail?.copyWith(color: const Color(0xFFD9D9D9)),
         ),
       ],
     );
@@ -380,11 +324,7 @@ class _TransactionActionSheetState
               const SizedBox(width: 22),
               Expanded(
                 flex: 5,
-                child: Button(
-                  variant: ButtonVariant.danger,
-                  label: 'Reverse',
-                  onPressed: _cancelTransaction,
-                ),
+                child: Button(variant: ButtonVariant.danger, label: 'Reverse', onPressed: _cancelTransaction),
               ),
             ],
           ),
@@ -416,10 +356,7 @@ class _TransactionActionSheetState
       }
       final transactionId = HEX.decode(txId);
 
-      await _reversibleTransfersService.cancelReversibleTransfer(
-        account: senderAccount,
-        transactionId: transactionId,
-      );
+      await _reversibleTransfersService.cancelReversibleTransfer(account: senderAccount, transactionId: transactionId);
 
       // Update providers/UI and start polling to reflect cancellation quickly
       try {
@@ -428,36 +365,19 @@ class _TransactionActionSheetState
         // Global (all-accounts) controller
         ref
             .read(paginationControllerProvider.notifier)
-            .updateReversibleTransferToExecuted(
-              extrinsicHash,
-              ReversibleTransferStatus.CANCELLED,
-            );
-        ref
-            .read(pendingCancellationsProvider.notifier)
-            .addPendingCancellation(widget.transaction.id);
+            .updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
+        ref.read(pendingCancellationsProvider.notifier).addPendingCancellation(widget.transaction.id);
 
         // Filtered controllers for involved accounts
-        final affectedAccounts = <String>{
-          widget.transaction.from,
-          widget.transaction.to,
-        };
+        final affectedAccounts = <String>{widget.transaction.from, widget.transaction.to};
         for (final accountId in affectedAccounts) {
           ref
-              .read(
-                filteredPaginationControllerProviderFamily(
-                  AccountIdListCache.get([accountId]),
-                ).notifier,
-              )
-              .updateReversibleTransferToExecuted(
-                extrinsicHash,
-                ReversibleTransferStatus.CANCELLED,
-              );
+              .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
+              .updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
         }
 
         // 2) Start the aggressive poller to confirm final status promptly
-        ref
-            .read(reversibleTransferMonitoringServiceProvider)
-            .startImmediatePollingForTransfer(widget.transaction);
+        ref.read(reversibleTransferMonitoringServiceProvider).startImmediatePollingForTransfer(widget.transaction);
       } catch (_) {
         // Swallow provider update errors; UI will still show cancelled state below
       }

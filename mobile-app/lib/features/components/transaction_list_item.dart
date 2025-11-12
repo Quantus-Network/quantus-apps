@@ -236,7 +236,7 @@ void showTransactionActionSheet(BuildContext context, {required TransactionEvent
   Widget sheet;
 
   if (transaction.isReversibleScheduled && (role == TransactionRole.sender || role == TransactionRole.both)) {
-    sheet = TransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
+    sheet = ReversibleTransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
   } else {
     sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
   }
