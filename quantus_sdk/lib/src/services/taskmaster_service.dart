@@ -54,7 +54,7 @@ class TaskMasterAuthClient {
     required String publicKeyHex,
     required String signatureHex,
   }) async {
-    print('verify $tempSessionId ');
+    print('verify $tempSessionId $taskMasterEndpointUrl');
     final r = await _client.post(
       Uri.parse('$taskMasterEndpointUrl/auth/verify'),
       headers: {'content-type': 'application/json'},
