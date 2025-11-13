@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
 import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
@@ -29,6 +29,7 @@ class QuestsScreen extends ConsumerStatefulWidget {
 class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBindingObserver {
   final ReferralService _referralService = ReferralService();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _shareButtonKey = GlobalKey();
 
   String? _referralCode;
   bool _isRewardProgramParticipant = false;
@@ -68,7 +69,27 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
 
   Future<void> _shareReferralLink() async {
     final params = await _referralService.getShareLinkParameters();
-    SharePlus.instance.share(params);
+
+    return Future<void>.microtask(() async {
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      final RenderBox? renderBox = _shareButtonKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null && renderBox.hasSize) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        final size = renderBox.size;
+        if (size.width > 0 && size.height > 0 && position.dx >= 0 && position.dy >= 0) {
+          final shareParams = ShareParams(
+            text: params.text,
+            subject: params.subject,
+            title: params.title,
+            sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, size.width, size.height),
+          );
+          await SharePlus.instance.share(shareParams);
+          return;
+        }
+      }
+      await SharePlus.instance.share(params);
+    });
   }
 
   void _copyReferralCode() {
@@ -284,6 +305,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Button(
+                        key: _shareButtonKey,
                         variant: ButtonVariant.glassOutline,
                         label: 'Share Referral Link',
                         onPressed: _shareReferralLink,
