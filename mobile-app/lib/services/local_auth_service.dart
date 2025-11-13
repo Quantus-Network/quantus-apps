@@ -177,8 +177,8 @@ class LocalAuthService {
       final DateTime? lastAuthTime = _settingsService.getLastSuccessfulAuthTime();
       if (lastAuthTime == null) return true;
 
-      final int? timeoutDurationInMinutes = _settingsService.getAuthTimeout();
-      if (timeoutDurationInMinutes == null) return true;
+      final int timeoutDurationInMinutes = _settingsService.getAuthTimeout() ?? 5;
+      print('timeoutDurationInMinutes: $timeoutDurationInMinutes');
 
       final Duration authTimeout = Duration(minutes: timeoutDurationInMinutes);
 
