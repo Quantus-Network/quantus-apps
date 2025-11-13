@@ -40,7 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _share() async {
-    final params = await _referralService.getShareLinkParameters();
+    final params = await _referralService.getShareLinkParameters(context.sharePositionRect());
     SharePlus.instance.share(params);
   }
 

@@ -69,9 +69,18 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   void _share() {
     if (_accountId != null && _checksum != null) {
+      final box = context.findRenderObject() as RenderBox?;
+
       final textToShare =
           'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account?id=$_accountId';
-      SharePlus.instance.share(ShareParams(text: textToShare, subject: 'Shared Address', title: 'Shared Address'));
+      SharePlus.instance.share(
+        ShareParams(
+          text: textToShare,
+          subject: 'Shared Address',
+          title: 'Shared Address',
+          sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
     }
   }
 

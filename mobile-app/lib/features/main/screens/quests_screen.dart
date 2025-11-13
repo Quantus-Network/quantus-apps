@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
 import 'package:resonance_network_wallet/features/components/quests_promo_video.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/loading_text_animation.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
@@ -67,7 +67,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
   }
 
   Future<void> _shareReferralLink() async {
-    final params = await _referralService.getShareLinkParameters();
+    final params = await _referralService.getShareLinkParameters(context.sharePositionRect());
     SharePlus.instance.share(params);
   }
 

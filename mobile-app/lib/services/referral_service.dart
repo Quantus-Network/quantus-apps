@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:http/http.dart' as http;
 import 'package:play_install_referrer/play_install_referrer.dart';
@@ -81,7 +82,7 @@ class ReferralService {
       print('getReferralData response: ${response.body}');
 
       // If account doesn't have referrer, it will return 404 code.
-      // Therefore we can confidently say it has been checked successfully. 
+      // Therefore we can confidently say it has been checked successfully.
       // We don't have to check it anymore.
       if (response.statusCode == 404) {
         _hasCheckedReferralData = true;
@@ -145,13 +146,19 @@ class ReferralService {
     return referralCode;
   }
 
-  Future<ShareParams> getShareLinkParameters() async {
+  Future<ShareParams> getShareLinkParameters(Rect? positionOrigin) async {
     final referralCode = await getMyInviteCode();
 
     String link = generateReferralLink(referralCode);
-    String message = "Most L1s aren't ready for quantum threats. This one is.\nI'm on the @QuantusNetwork testnet stacking early points for rewards.\nUse my referral link so we both earn points: $referralCode\n\nDownload the wallet & get in early\n$link";
+    String message =
+        "Most L1s aren't ready for quantum threats. This one is.\nI'm on the @QuantusNetwork testnet stacking early points for rewards.\nUse my referral link so we both earn points: $referralCode\n\nDownload the wallet & get in early\n$link";
 
-    return ShareParams(text: message, subject: 'Invite Link', title: 'Invite Link');
+    return ShareParams(
+      text: message,
+      subject: 'Invite Link',
+      title: 'Invite Link',
+      sharePositionOrigin: positionOrigin,
+    );
   }
 
   String? getReferralCode() {
