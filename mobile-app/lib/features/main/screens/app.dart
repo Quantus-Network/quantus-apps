@@ -51,20 +51,23 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
       routes: {
-        '/': (context) => const AuthenticationWrapper(child: WalletInitializer()),
+        '/': (context) => const WalletInitializer(),
 
         // The send route is really just an internal thing and not accessible
         // to the outside. So no fancy auth logic, it just doesn't work from
         // outside the app when not authenticated.
-        '/send': (context) => const AuthenticationWrapper(child: SendScreen()),
+        '/send': (context) => const SendScreen(),
 
         // These routes are for deep linking, each will carry an intent
-        '/account': (context) => const AuthenticationWrapper(child: WalletInitializer()),
-        '/transactions': (context) => const AuthenticationWrapper(child: WalletInitializer()),
+        '/account': (context) => const WalletInitializer(),
+        '/transactions': (context) => const WalletInitializer(),
       },
       theme: AppTheme.lightTheme(context),
       darkTheme: AppTheme.darkTheme(context),
       themeMode: ThemeMode.dark,
+      builder: (context, child) {
+        return Stack(children: [child!, const AuthenticationWrapper()]);
+      },
     );
   }
 }

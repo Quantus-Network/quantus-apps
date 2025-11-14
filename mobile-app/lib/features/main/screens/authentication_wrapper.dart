@@ -6,15 +6,18 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 
 class AuthenticationWrapper extends ConsumerWidget {
-  final Widget child;
-
-  const AuthenticationWrapper({super.key, required this.child});
+  const AuthenticationWrapper({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(localAuthProvider);
 
-    return authState.isAuthenticated ? child : _buildLockScreen(context, ref, authState.isAuthenticating);
+    if (authState.isAuthenticated) {
+      // If authenticated, be invisible.
+      return const SizedBox.shrink();
+    }
+
+    return _buildLockScreen(context, ref, authState.isAuthenticating);
   }
 
   Widget _buildLockScreen(BuildContext context, WidgetRef ref, bool isAuthenticating) {
