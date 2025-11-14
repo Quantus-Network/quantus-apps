@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
 /// Provider that holds the current app lifecycle state
@@ -24,11 +25,13 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
     WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final localAuthNotifier = ref.read(localAuthProvider.notifier);
       ref.read(appLifecycleStateProvider.notifier).state =
           WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
       _initializeTaskmasterLogin();
       _setupConnectivityListener();
+      localAuthNotifier.checkAuthentication();
     });
   }
 
@@ -65,6 +68,8 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     ref.read(appLifecycleStateProvider.notifier).state = state;
+    final localAuthNotifier = ref.read(localAuthProvider.notifier);
+    final isAuthenticated = ref.read(localAuthProvider).isAuthenticated;
 
     final pollingManager = ref.read(historyPollingManagerProvider);
     final isOnline = ref.read(isOnlineProvider);
@@ -76,6 +81,9 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         // Pause global polling when app goes to background
         // Transaction tracking continues for pending transactions
         pollingManager.pausePolling();
+
+        // When the app goes into the background, lock it.
+        localAuthNotifier.lockApp();
         break;
 
       case AppLifecycleState.resumed:
@@ -87,11 +95,21 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         } else {
           print('App resumed but offline - polling paused');
         }
+
+        // If the app is resumed and we are not authenticated,
+        // trigger a new auth check.
+        if (!isAuthenticated) {
+          localAuthNotifier.checkAuthentication();
+        }
+
         // Initialize Taskmaster login if wallet exists
         _initializeTaskmasterLogin();
         break;
 
       case AppLifecycleState.detached:
+        // When the app goes into the background, lock it.
+        localAuthNotifier.lockApp();
+
         // App is being terminated
         pollingManager.stopPolling();
         break;
