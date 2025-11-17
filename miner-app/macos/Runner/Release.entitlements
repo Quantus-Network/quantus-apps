@@ -12,5 +12,9 @@
 	<array>
 		<string>$(AppIdentifierPrefix)com.quantus.quantusMiner</string>
 	</array>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
 </dict>
 </plist>
