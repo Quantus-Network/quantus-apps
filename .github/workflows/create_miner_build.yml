@@ -135,6 +135,7 @@ jobs:
       - name: Create temporary ZIP for notarization
         run: |
           cd miner-app/build/macos/Build/Products/Release/
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_for_notarization.zip
 
       - name: Notarize macOS App
         env:
