@@ -135,7 +135,6 @@ jobs:
       - name: Create temporary ZIP for notarization
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          zip -r quantus_miner_for_notarization.zip "Quantus Miner.app"
 
       - name: Notarize macOS App
         env:
@@ -154,10 +153,10 @@ jobs:
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           # Extract the app from the zip, staple it, then re-zip
-          unzip -qo quantus_miner_for_notarization.zip
+          ditto -x -k quantus_miner_for_notarization.zip .
           xcrun stapler staple "Quantus Miner.app"
           # Create final distribution ZIP with stapled app
-          zip -r quantus_miner_macos.zip "Quantus Miner.app"
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
           # Clean up temporary files
           rm -f quantus_miner_for_notarization.zip
 
