@@ -41,15 +41,20 @@ jobs:
           GIT_TERMINAL_PROMPT: 0
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
+      - name: Configure Xcode project for manual signing
+        run: |
+          cd miner-app/macos/Runner.xcodeproj
+          # Disable automatic signing for Release configuration using perl (more reliable than sed)
+          perl -i -pe '
+            if (/33CC10FD2044A3C60003C045.*Release/../name = Release;/) {
+              s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/;
+              s/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/;
+              s/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";/;
+              s/DEVELOPMENT_TEAM = 8BRRAHLVW5;/DEVELOPMENT_TEAM = "";/;
+            }
+          ' project.pbxproj
+
       - name: Build macOS release (unsigned, will re-sign after)
-        env:
-          # Disable Xcode's code signing so we can sign manually later
-          CODE_SIGN_IDENTITY: ""
-          CODE_SIGNING_REQUIRED: "NO"
-          CODE_SIGNING_ALLOWED: "NO"
-          PROVISIONING_PROFILE_SPECIFIER: ""
-          PROVISIONING_PROFILE: ""
-          DEVELOPMENT_TEAM: ""
         run: |
           # Build without code signing to avoid provisioning profile issues
           # We'll re-sign everything with Developer ID after the build
