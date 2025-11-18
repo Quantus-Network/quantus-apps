@@ -114,10 +114,12 @@ jobs:
           # Check for hardened runtime
           codesign -d --entitlements - "$APP_PATH" | grep -q "com.apple.security.cs.allow-unsigned-executable-memory" || echo "Warning: Hardened runtime entitlements may be missing"
 
-      - name: Create temporary ZIP for notarization
+      # Create a single ZIP that we will both notarize AND ship to users.
+      # This guarantees the shipped bits are exactly what Apple accepted.
+      - name: Create ZIP for notarization and distribution
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_for_notarization.zip
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
 
       - name: Notarize macOS App
         env:
@@ -126,24 +128,11 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          xcrun notarytool submit quantus_miner_for_notarization.zip \
+          xcrun notarytool submit quantus_miner_macos.zip \
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --wait
-
-      - name: Staple notarization ticket
-        run: |
-          cd miner-app/build/macos/Build/Products/Release/
-          ditto -x -k quantus_miner_for_notarization.zip .
-          xcrun stapler staple "Quantus Miner.app"
-          rm -f quantus_miner_for_notarization.zip
-
-      # ← ONLY CHANGE FOR macOS: proper ZIP with --keepParent
-      - name: Package macOS Artifact (correct structure)
-        run: |
-          cd miner-app/build/macos/Build/Products/Release/
-          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
@@ -268,14 +257,8 @@ jobs:
 
       - name: List downloaded artifacts
         run: |
+          # For debugging only; artifact already contains the final ZIP we want
           find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -o -type d -name "*.app" | sort
-
-      - name: Package macOS App for Release
-        run: |
-          # The artifact is now already a correct ZIP → just rename/move it
-          mv ./artifacts/quantus_miner-macos/quantus_miner_macos.zip ./quantus_miner_macos.zip
-          mkdir -p ../../quantus_miner-macos
-          mv quantus_miner_macos.zip ../../quantus_miner-macos/
 
       - name: Create and push git tag
         env:
