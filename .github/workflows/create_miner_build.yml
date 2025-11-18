@@ -43,10 +43,13 @@ jobs:
 
       - name: Build macOS release (unsigned, will re-sign after)
         env:
-          # Disable Xcode's automatic code signing so we can sign manually later
+          # Disable Xcode's code signing so we can sign manually later
           CODE_SIGN_IDENTITY: ""
-          CODE_SIGN_STYLE: Manual
+          CODE_SIGNING_REQUIRED: "NO"
           CODE_SIGNING_ALLOWED: "NO"
+          PROVISIONING_PROFILE_SPECIFIER: ""
+          PROVISIONING_PROFILE: ""
+          DEVELOPMENT_TEAM: ""
         run: |
           # Build without code signing to avoid provisioning profile issues
           # We'll re-sign everything with Developer ID after the build
@@ -178,7 +181,15 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-14-dev
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libsecret-1-dev \
+            libstdc++-14-dev
 
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
