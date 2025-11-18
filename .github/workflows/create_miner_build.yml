@@ -154,7 +154,7 @@ jobs:
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           # Extract the app from the zip, staple it, then re-zip
-          unzip -q quantus_miner_for_notarization.zip
+          unzip -qo quantus_miner_for_notarization.zip
           xcrun stapler staple "Quantus Miner.app"
           # Create final distribution ZIP with stapled app
           zip -r quantus_miner_macos.zip "Quantus Miner.app"
