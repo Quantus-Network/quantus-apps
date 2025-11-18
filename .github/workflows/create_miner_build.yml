@@ -160,11 +160,16 @@ jobs:
           # Clean up temporary files
           rm -f quantus_miner_for_notarization.zip
 
+      - name: Create correct macOS ZIP for artifact
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
+
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: quantus_miner-macos
-          path: miner-app/build/macos/Build/Products/Release/Quantus Miner.app
+          path: miner-app/build/macos/Build/Products/Release/quantus_miner_macos.zip
 
   build-linux:
     name: Build Linux App
@@ -287,20 +292,10 @@ jobs:
 
       - name: Package macOS App for Release
         run: |
-          # Find the app bundle in artifacts
-          APP_PATH=$(find ./artifacts -name "Quantus Miner.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: Quantus Miner.app not found in artifacts"
-            find ./artifacts -type f -o -type d | head -20
-            exit 1
-          fi
-          echo "Found app bundle: $APP_PATH"
-          # Create ZIP from app bundle for distribution using ditto (preserves symlinks and metadata)
-          cd "$(dirname "$APP_PATH")"
-          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
+          # The artifact is now already a correct ZIP → just rename/move it
+          mv ./artifacts/quantus_miner-macos/quantus_miner_macos.zip ./quantus_miner_macos.zip
           mkdir -p ../../quantus_miner-macos
           mv quantus_miner_macos.zip ../../quantus_miner-macos/
-          echo "Created quantus_miner_macos.zip at $(pwd)/../../quantus_miner-macos/quantus_miner_macos.zip"
 
       - name: Create and push git tag
         env:
