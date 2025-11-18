@@ -154,11 +154,9 @@ jobs:
       - name: Staple notarization ticket
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          # Extract the app from the zip, staple it, then re-zip
+          # Extract the app from the zip, staple it
           ditto -x -k quantus_miner_for_notarization.zip .
           xcrun stapler staple "Quantus Miner.app"
-          # Create final distribution ZIP with stapled app
-          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
           # Clean up temporary files
           rm -f quantus_miner_for_notarization.zip
 
@@ -166,7 +164,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quantus_miner-macos
-          path: miner-app/build/macos/Build/Products/Release/quantus_miner_macos.zip
+          path: miner-app/build/macos/Build/Products/Release/Quantus Miner.app
 
   build-linux:
     name: Build Linux App
@@ -285,7 +283,20 @@ jobs:
 
       - name: List downloaded artifacts
         run: |
-          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) | sort
+          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.app" \) | sort
+
+      - name: Package macOS App for Release
+        run: |
+          # Find the app bundle in artifacts
+          APP_PATH=$(find ./artifacts -name "Quantus Miner.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Quantus Miner.app not found in artifacts"
+            exit 1
+          fi
+          # Create ZIP from app bundle for distribution
+          cd "$(dirname "$APP_PATH")"
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
+          echo "Created quantus_miner_macos.zip at $(pwd)/quantus_miner_macos.zip"
 
       - name: Create and push git tag
         env:
