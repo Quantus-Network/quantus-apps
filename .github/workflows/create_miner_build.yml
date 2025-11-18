@@ -283,7 +283,7 @@ jobs:
 
       - name: List downloaded artifacts
         run: |
-          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.app" \) | sort
+          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -o -type d -name "*.app" | sort
 
       - name: Package macOS App for Release
         run: |
@@ -291,12 +291,16 @@ jobs:
           APP_PATH=$(find ./artifacts -name "Quantus Miner.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: Quantus Miner.app not found in artifacts"
+            find ./artifacts -type f -o -type d | head -20
             exit 1
           fi
-          # Create ZIP from app bundle for distribution
+          echo "Found app bundle: $APP_PATH"
+          # Create ZIP from app bundle for distribution using ditto (preserves symlinks and metadata)
           cd "$(dirname "$APP_PATH")"
           ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
-          echo "Created quantus_miner_macos.zip at $(pwd)/quantus_miner_macos.zip"
+          mkdir -p ../../quantus_miner-macos
+          mv quantus_miner_macos.zip ../../quantus_miner-macos/
+          echo "Created quantus_miner_macos.zip at $(pwd)/../../quantus_miner-macos/quantus_miner_macos.zip"
 
       - name: Create and push git tag
         env:
