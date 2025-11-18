@@ -1,5 +1,4 @@
 name: Create Miner Build
-
 on:
   workflow_dispatch: # Manual trigger only
     inputs:
@@ -44,7 +43,6 @@ jobs:
       - name: Configure Xcode project for manual signing
         run: |
           cd miner-app/macos/Runner.xcodeproj
-          # Disable automatic signing for Release configuration using perl (more reliable than sed)
           perl -i -pe '
             if (/33CC10FD2044A3C60003C045.*Release/../name = Release;/) {
               s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/;
@@ -56,8 +54,6 @@ jobs:
 
       - name: Build macOS release (unsigned, will re-sign after)
         run: |
-          # Build without code signing to avoid provisioning profile issues
-          # We'll re-sign everything with Developer ID after the build
           flutter build macos --release
         working-directory: ./miner-app
 
@@ -65,9 +61,6 @@ jobs:
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           APP_PATH="Quantus Miner.app"
-          
-          # Find the Developer ID certificate that was just imported
-          # The certificate is imported by apple-actions/import-codesign-certs@v3 above
           CERT_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk '{print $2}')
           if [ -z "$CERT_IDENTITY" ]; then
             echo "Error: Developer ID Application certificate not found in keychain"
@@ -76,8 +69,6 @@ jobs:
             exit 1
           fi
           echo "Using certificate identity: $CERT_IDENTITY"
-          
-          # Sign all frameworks first
           find "$APP_PATH/Contents/Frameworks" -name "*.framework" -print0 | while IFS= read -r -d '' framework; do
             echo "Signing framework: $framework"
             codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
@@ -85,8 +76,6 @@ jobs:
               --timestamp \
               "$framework"
           done
-          
-          # Sign all dylibs and executables in Frameworks
           find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -perm +111 \) -print0 | while IFS= read -r -d '' binary; do
             if [ -f "$binary" ] && ! [[ "$binary" =~ \.framework ]]; then
               echo "Signing binary: $binary"
@@ -96,15 +85,11 @@ jobs:
                 "$binary"
             fi
           done
-          
-          # Get absolute path to entitlements file
           ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
           if [ ! -f "$ENTITLEMENTS_PATH" ]; then
             echo "Error: Entitlements file not found at $ENTITLEMENTS_PATH"
             exit 1
           fi
-          
-          # Sign the main executable
           EXECUTABLE="$APP_PATH/Contents/MacOS/Quantus Miner"
           if [ -f "$EXECUTABLE" ]; then
             echo "Signing main executable: $EXECUTABLE"
@@ -114,16 +99,12 @@ jobs:
               --entitlements "$ENTITLEMENTS_PATH" \
               "$EXECUTABLE"
           fi
-          
-          # Sign the app bundle itself
           echo "Signing app bundle: $APP_PATH"
           codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
             --options runtime \
             --timestamp \
             --entitlements "$ENTITLEMENTS_PATH" \
             "$APP_PATH"
-          
-          # Verify the signature
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           if [ $? -ne 0 ]; then
             echo "Error: Code signing verification failed"
@@ -154,13 +135,12 @@ jobs:
       - name: Staple notarization ticket
         run: |
           cd miner-app/build/macos/Build/Products/Release/
-          # Extract the app from the zip, staple it
           ditto -x -k quantus_miner_for_notarization.zip .
           xcrun stapler staple "Quantus Miner.app"
-          # Clean up temporary files
           rm -f quantus_miner_for_notarization.zip
 
-      - name: Create correct macOS ZIP for artifact
+      # ← ONLY CHANGE FOR macOS: proper ZIP with --keepParent
+      - name: Package macOS Artifact (correct structure)
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
@@ -216,7 +196,7 @@ jobs:
       - name: Package Linux App
         run: |
           cd miner-app/build/linux/x64/release/bundle/
-          tar -czvf quantus_miner_linux.tar.gz *
+          tar -czf quantus_miner_linux.tar.gz .
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
@@ -254,10 +234,10 @@ jobs:
         working-directory: ./miner-app
 
       - name: Package Windows App
+        shell: powershell
         run: |
           cd miner-app/build/windows/x64/runner/Release/
-          Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip
-        shell: powershell
+          Compress-Archive -Path * -DestinationPath quantus_miner_windows.zip -Force
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -322,23 +302,18 @@ jobs:
           release_name: Quantus Miner ${{ steps.get_version.outputs.version }}
           body: |
             ## Quantus Miner Release
-            
             This release includes binaries for:
             - 🍎 macOS (Intel/Apple Silicon)
             - 🐧 Linux (x64)
             - 🪟 Windows (x64)
-            
             ### Installation
-            
-            **macOS**: Download the `.zip` file, extract it, and run the `quantus_miner.app`
+            **macOS**: Download the `.zip` file, extract it, and run the `Quantus Miner.app`
             **Linux**: Download the `.tar.gz` file, extract it, and run the `quantus_miner` executable
             **Windows**: Download the `.zip` file, extract it, and run the `quantus_miner.exe`
-            
             ### What's Changed
             - Cross-platform mining support
             - External miner integration
             - Improved UI and stability
-            
             Built from commit: ${{ github.sha }}
           draft: false
           prerelease: false
