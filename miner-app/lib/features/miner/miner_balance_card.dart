@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -15,8 +16,6 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
   Timer? _balanceTimer;
-
-  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -37,51 +36,54 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
 
   Future<void> _fetchWalletBalance() async {
     // Implement actual wallet balance fetching using quantus_sdk
-    String? address;
     print('fetching wallet balance');
     try {
-      final mnemonic = await _storage.read(key: 'rewards_address_mnemonic');
-      print('mnemonic: ${mnemonic?.split(" ").length} words');
-      if (mnemonic != null) {
-        // Derive keypair from mnemonic using SubstrateService (exported by quantus_sdk)
-        // ignore: deprecated_member_use
-        final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
-          mnemonic,
-        );
-        // Use toAccountId function to get the SS58 address (exported by quantus_sdk)
-        address = toAccountId(obj: keypair);
+      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+      final rewardsFile = File('$quantusHome/rewards-address.txt');
 
-        print('address: $address');
+      if (await rewardsFile.exists()) {
+        final address = (await rewardsFile.readAsString()).trim();
 
-        // Fetch balance using SubstrateService (exported by quantus_sdk)
-        final balance = await SubstrateService().queryBalance(address);
+        if (address.isNotEmpty) {
+          print('address: $address');
 
-        print('balance: $balance');
+          // Fetch balance using SubstrateService (exported by quantus_sdk)
+          final balance = await SubstrateService().queryBalance(address);
 
-        setState(() {
-          // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-          _walletBalance = NumberFormattingService().formatBalance(
-            balance,
-            addSymbol: true,
-          );
-          _walletAddress = address;
-        });
+          print('balance: $balance');
+
+          setState(() {
+            // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
+            _walletBalance = NumberFormattingService().formatBalance(
+              balance,
+              addSymbol: true,
+            );
+            _walletAddress = address;
+          });
+        } else {
+           // Address file exists but is empty
+            _handleAddressNotSet();
+        }
       } else {
-        setState(() {
-          _walletBalance = 'Address not set';
-          _walletAddress = null;
-        });
-        print('Rewards address mnemonic not found. Redirecting to setup...');
-        // Example Navigation (requires go_router setup)
-        // context.go('/rewards_address_setup');
+         // Address file does not exist
+        _handleAddressNotSet();
       }
     } catch (e) {
       setState(() {
         _walletBalance = 'Error fetching balance';
-        _walletAddress = address;
       });
       print('Error fetching wallet balance: $e');
     }
+  }
+
+  void _handleAddressNotSet() {
+      setState(() {
+        _walletBalance = 'Address not set';
+        _walletAddress = null;
+      });
+      print('Rewards address file not found or empty.');
+      // Example Navigation (requires go_router setup)
+      // context.go('/rewards_address_setup');
   }
 
   @override

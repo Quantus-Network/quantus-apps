@@ -1,24 +1,13 @@
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart'; // Assuming this path is correct
 
 class MinerSettingsService {
-  final _storage = const FlutterSecureStorage();
 
   Future<void> logout() async {
     print('Starting app logout/reset...');
 
-    // 1. Delete stored mnemonic from secure storage
-    try {
-      await _storage.delete(key: 'rewards_address_mnemonic');
-      print('✅ Mnemonic deleted from secure storage.');
-    } catch (e) {
-      print('❌ Error deleting mnemonic: $e');
-      // Continue with other cleanup even if this fails
-    }
-
-    // 2. Delete node identity file (node_key.p2p)
+    // 1. Delete node identity file (node_key.p2p)
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final identityFile = File('$quantusHome/node_key.p2p');
@@ -32,7 +21,7 @@ class MinerSettingsService {
       print('❌ Error deleting node identity file: $e');
     }
 
-    // 3. Delete rewards address file
+    // 2. Delete rewards address file
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final rewardsFile = File('$quantusHome/rewards-address.txt');
@@ -46,7 +35,7 @@ class MinerSettingsService {
       print('❌ Error deleting rewards address file: $e');
     }
 
-    // 4. Delete node binary
+    // 3. Delete node binary
     try {
       final nodeBinaryPath = await BinaryManager.getNodeBinaryFilePath();
       final binaryFile = File(nodeBinaryPath);
@@ -60,7 +49,7 @@ class MinerSettingsService {
       print('❌ Error deleting node binary file: $e');
     }
 
-    // 5. Delete external miner binary
+    // 4. Delete external miner binary
     try {
       final minerBinaryPath =
           await BinaryManager.getExternalMinerBinaryFilePath();
@@ -75,7 +64,7 @@ class MinerSettingsService {
       print('❌ Error deleting external miner binary: $e');
     }
 
-    // 6. Delete node data directory (blockchain data)
+    // 5. Delete node data directory (blockchain data)
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final nodeDataDir = Directory('$quantusHome/node_data');
@@ -89,7 +78,7 @@ class MinerSettingsService {
       print('❌ Error deleting node data directory: $e');
     }
 
-    // 7. Clean up bin directory and leftover files
+    // 6. Clean up bin directory and leftover files
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final binDir = Directory('$quantusHome/bin');
@@ -118,7 +107,7 @@ class MinerSettingsService {
       print('❌ Error cleaning up bin directory: $e');
     }
 
-    // 8. Try to remove the entire .quantus directory if it's empty
+    // 7. Try to remove the entire .quantus directory if it's empty
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final quantusDir = Directory(quantusHome);

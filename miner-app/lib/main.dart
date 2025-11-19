@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import 'dart:ui';
 
@@ -61,7 +60,6 @@ Future<String?> initialRedirect(
   BuildContext context,
   GoRouterState state,
 ) async {
-  const storage = FlutterSecureStorage();
   final currentRoute = state.uri.toString();
 
   print('initialRedirect');
@@ -99,10 +97,15 @@ Future<String?> initialRedirect(
   }
 
   // Check 3: Rewards Address Set
-  final rewardsAddressMnemonic = await storage.read(
-    key: 'rewards_address_mnemonic',
-  );
-  final isRewardsAddressSet = rewardsAddressMnemonic != null;
+  bool isRewardsAddressSet = false;
+  try {
+    final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+    final rewardsFile = File('$quantusHome/rewards-address.txt');
+    isRewardsAddressSet = await rewardsFile.exists();
+  } catch (e) {
+    print('Error checking rewards address status: $e');
+    isRewardsAddressSet = false;
+  }
 
   if (!isRewardsAddressSet) {
     return (currentRoute == '/rewards_address_setup')

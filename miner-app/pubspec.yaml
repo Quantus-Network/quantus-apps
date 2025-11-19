@@ -18,7 +18,6 @@ dependencies:
   # Networking and storage
   http: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml
-  flutter_secure_storage: # Version managed by melos.yaml
   
   # State management and architecture
   provider: # Version managed by melos.yaml
@@ -55,4 +54,6 @@ flutter:
   assets:
     - assets/quantus_icon.svg
     - assets/logo/
+    - assets/tr-ee-u1vxT1-qrcode-black.svg
+    - assets/tr-ee-u1vxT1-qrcode-white.svg
   

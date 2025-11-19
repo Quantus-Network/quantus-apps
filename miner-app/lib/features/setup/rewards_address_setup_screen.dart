@@ -1,21 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for Clipboard
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Will need this for secure storage
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart'; // Import go_router
+import 'package:go_router/go_router.dart'; 
 import 'package:quantus_miner/src/services/binary_manager.dart';
-import 'package:quantus_sdk/quantus_sdk.dart'; // Assuming quantus_sdk has wallet/address functions
-
-enum RewardsAddressSetupStep {
-  checking,
-  notSet,
-  createOrImport,
-  createNew,
-  importExisting,
-  set,
-}
 
 class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
@@ -26,11 +14,9 @@ class RewardsAddressSetupScreen extends StatefulWidget {
 }
 
 class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
-  RewardsAddressSetupStep _currentStep = RewardsAddressSetupStep.checking;
-  String _generatedMnemonic = '';
-  final TextEditingController _importController = TextEditingController();
-
-  final _storage = const FlutterSecureStorage(); // For secure storage
+  bool _isLoading = true;
+  bool _showQrCode = false;
+  final TextEditingController _addressController = TextEditingController();
 
   @override
   void initState() {
@@ -40,346 +26,205 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   @override
   void dispose() {
-    _importController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
   Future<void> _checkRewardsAddress() async {
-    // This will involve checking if an address is stored securely.
-    final mnemonic = await _storage.read(
-      key: 'rewards_address_mnemonic',
-    ); // Read mnemonic
-
     setState(() {
-      if (mnemonic != null) {
-        _currentStep = RewardsAddressSetupStep.set;
-        print('Rewards address found in secure storage.');
-      } else {
-        _currentStep = RewardsAddressSetupStep.notSet;
-        print('No rewards address found in secure storage.');
-      }
-    });
-  }
-
-  void _showCreateOrImportOptions() {
-    setState(() {
-      _currentStep = RewardsAddressSetupStep.createOrImport;
-    });
-  }
-
-  void _showCreateNewAddress() async {
-    setState(() {
-      _currentStep = RewardsAddressSetupStep.createNew;
-      _generatedMnemonic = 'Generating mnemonic...'; // Placeholder
+      _isLoading = true;
     });
 
     try {
-      final newMnemonic = await SubstrateService().generateMnemonic();
+      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
+      final rewardsFile = File('$quantusHome/rewards-address.txt');
 
-      setState(() {
-        _generatedMnemonic = newMnemonic;
-      });
-
-      // Derive seed from mnemonic and securely store it
-      await _securelyStoreMnemonic(newMnemonic);
-
-      print('Seed securely stored.');
+      if (await rewardsFile.exists()) {
+        final address = await rewardsFile.readAsString();
+        if (address.trim().isNotEmpty) {
+          setState(() {
+            _addressController.text = address.trim();
+          });
+          print('Rewards address found: $address');
+        }
+      }
     } catch (e) {
-      print('Error generating mnemonic or storing seed: $e');
+      print('Error checking rewards address: $e');
+    } finally {
       setState(() {
-        _currentStep =
-            RewardsAddressSetupStep.notSet; // Go back to not set on error
+        _isLoading = false;
       });
     }
   }
 
-  void _showImportExistingAddress() {
-    setState(() {
-      _currentStep = RewardsAddressSetupStep.importExisting;
-    });
-  }
-
-  void _importAddress() async {
-    final mnemonic = _importController.text.trim();
-    if (mnemonic.isEmpty) {
-      print('Mnemonic/seed phrase cannot be empty.');
+  Future<void> _saveRewardsAddress() async {
+    final address = _addressController.text.trim();
+    if (address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid address')),
+      );
       return;
     }
 
-    print('Attempting to import address with mnemonic: $mnemonic');
     setState(() {
-      _currentStep = RewardsAddressSetupStep.checking; // Simulate processing
+      _isLoading = true;
     });
 
     try {
-      // Derive seed from mnemonic and securely store it
-      // ignore: deprecated_member_use
-      SubstrateService().nonHDdilithiumKeypairFromMnemonic(
-        mnemonic,
-      ); // Validate mnemonic by trying to derive keypair
-      await _securelyStoreMnemonic(mnemonic);
-
-      setState(() {
-        _currentStep = RewardsAddressSetupStep.set; // Simulate success
-      });
-    } catch (e) {
-      print('Error importing mnemonic or storing seed: $e');
-      setState(() {
-        _currentStep = RewardsAddressSetupStep
-            .importExisting; // Stay on import screen on error
-      });
-    }
-  }
-
-  Future<void> _securelyStoreMnemonic(String mnemonic) async {
-    try {
-      await _storage.write(key: 'rewards_address_mnemonic', value: mnemonic);
-      print('Mnemonic securely stored.');
-
-      // Also create the rewards-address.txt file for the miner process
-      await _createRewardsAddressFile(mnemonic);
-    } catch (e) {
-      print('Error securely storing seed: $e');
-      // Depending on the severity and platform, you might want to show a critical error message.
-      rethrow; // Rethrow to be caught by the calling function
-    }
-  }
-
-  Future<void> _createRewardsAddressFile(String mnemonic) async {
-    try {
-      // Derive address from mnemonic
-      // ignore: deprecated_member_use
-      final keypair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(
-        mnemonic,
-      );
-      final address = toAccountId(obj: keypair);
-
-      // Create the rewards address file
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final rewardsFile = File('$quantusHome/rewards-address.txt');
       await rewardsFile.writeAsString(address);
-
-      print(
-        'Rewards address file created: ${rewardsFile.path} with address: $address',
-      );
+      
+      print('Rewards address saved: $address');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rewards address saved successfully!')),
+        );
+        // Navigate to the main mining screen
+        context.go('/miner_dashboard');
+      }
     } catch (e) {
-      print('Error creating rewards address file: $e');
-      rethrow;
+      print('Error saving rewards address: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving address: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  void _onAddressSet() {
-    // Navigate to the main mining screen
-    print('Rewards Address set. Proceed to main screen.');
-    context.go('/miner_dashboard');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Rewards Address Setup')),
-      body: Center(child: _buildBody()),
-    );
-  }
-
-  Widget _buildBody() {
-    switch (_currentStep) {
-      case RewardsAddressSetupStep.checking:
-        return const CircularProgressIndicator();
-      case RewardsAddressSetupStep.notSet:
-        return _buildNotSetView();
-      case RewardsAddressSetupStep.createOrImport:
-        return _buildCreateOrImportView();
-      case RewardsAddressSetupStep.createNew:
-        return _buildCreateNewView();
-      case RewardsAddressSetupStep.importExisting:
-        return _buildImportExistingView();
-      case RewardsAddressSetupStep.set:
-        return _buildAddressSetView();
-    }
-  }
-
-  Widget _buildNotSetView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
-        const SizedBox(height: 16),
-        const Text(
-          'Rewards Address not set.',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'You need to set a rewards address to receive mining rewards.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton.icon(
-          onPressed: _showCreateOrImportOptions,
-          icon: const Icon(Icons.wallet_giftcard),
-          label: const Text('Set Rewards Address'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle: const TextStyle(fontSize: 18),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreateOrImportView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          'How would you like to set your rewards address?',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton.icon(
-          onPressed: _showCreateNewAddress,
-          icon: const Icon(Icons.add_card),
-          label: const Text('Create New Address'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle: const TextStyle(fontSize: 18),
-          ),
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
-          onPressed: _showImportExistingAddress,
-          icon: const Icon(Icons.download),
-          label: const Text('Import Existing Address'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle: const TextStyle(fontSize: 18),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreateNewView() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Your New Rewards Address Mnemonic:',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[850], // Dark background for the mnemonic
-              border: Border.all(color: Colors.grey[700]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _generatedMnemonic,
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-              ), // Light text color
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: _generatedMnemonic));
-              print('Mnemonic copied to clipboard');
-            },
-            icon: const Icon(Icons.copy),
-            label: const Text('Copy to Clipboard'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              textStyle: const TextStyle(fontSize: 18),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Please write down these 24 words and keep them in a safe place. You will need them to recover your wallet.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _onAddressSet, // Navigate to main screen
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              textStyle: const TextStyle(fontSize: 18),
-            ),
-            child: const Text('I have securely stored my mnemonic'),
-          ),
-        ],
+      body: Center(
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/logo/logo.svg',
+                      width: 80,
+                      height: 80,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Add Rewards Account',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your minted coins will go there.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Rewards Wallet Address',
+                        border: OutlineInputBorder(),
+                        hintText: 'Paste your address here',
+                        prefixIcon: Icon(Icons.account_balance_wallet),
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _saveRewardsAddress,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Set Rewards Address'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    const Divider(),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Don't have an account?",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Create one in the mobile wallet.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    if (!_showQrCode)
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showQrCode = true;
+                          });
+                        },
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text('Scan QR code to set up wallet'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    if (_showQrCode) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/tr-ee-u1vxT1-qrcode-black.svg', // Black QR on white bg for better scanning
+                              width: 200,
+                              height: 200,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Scan with your mobile phone',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _showQrCode = false;
+                          });
+                        },
+                        child: const Text('Hide QR Code'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
       ),
-    );
-  }
-
-  Widget _buildImportExistingView() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Enter your 24-word mnemonic or seed phrase:',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _importController,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Enter mnemonic or seed phrase',
-            ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _importAddress,
-            icon: const Icon(Icons.wallet),
-            label: const Text('Import Address'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              textStyle: const TextStyle(fontSize: 18),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddressSetView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.account_balance_wallet, color: Colors.green, size: 80),
-        const SizedBox(height: 16),
-        const Text(
-          'Rewards Address Set!',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: _onAddressSet, // Navigate to main screen
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle: const TextStyle(fontSize: 18),
-          ),
-          child: const Text('Continue to Miner'),
-        ),
-      ],
     );
   }
 }
