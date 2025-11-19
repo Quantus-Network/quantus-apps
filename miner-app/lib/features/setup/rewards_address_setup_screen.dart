@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart'; 
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
@@ -124,7 +125,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.useOpacity(0.5),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
