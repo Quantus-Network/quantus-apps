@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart'; 
 import 'package:quantus_miner/src/services/binary_manager.dart';
@@ -15,18 +16,22 @@ class RewardsAddressSetupScreen extends StatefulWidget {
 
 class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   bool _isLoading = true;
-  bool _showQrCode = false;
   final TextEditingController _addressController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _checkRewardsAddress();
+    _addressController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _addressController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -100,6 +105,106 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     }
   }
 
+  void _showQrOverlay() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Stack(
+          children: [
+            // Semi-transparent dark background handled by Dialog's barrierColor,
+            // but we can ensure high contrast content here
+            Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  margin: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            width: 40, // spacer for alignment
+                          ),
+                          // const Text(
+                          //   'Scan QR Code',
+                          //   style: TextStyle(
+                          //     color: Colors.white,
+                          //     fontSize: 20,
+                          //     fontWeight: FontWeight.bold,
+                          //   ),
+                          // ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Image.asset(
+                          'assets/tr-ee-u1vxT1-qrcode-white.png', // White QR on dark bg
+                          width: 250,
+                          height: 250,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Scan with your mobile phone\nto set up your wallet',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        ),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,11 +241,44 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                     const SizedBox(height: 32),
                     TextField(
                       controller: _addressController,
-                      decoration: const InputDecoration(
+                      focusNode: _focusNode,
+                      autofocus: true,
+                      enableInteractiveSelection: true,
+                      onSubmitted: (_) => _saveRewardsAddress(),
+                      contextMenuBuilder: (context, editableTextState) {
+                        return AdaptiveTextSelectionToolbar.editableText(
+                          editableTextState: editableTextState,
+                        );
+                      },
+                      decoration: InputDecoration(
                         labelText: 'Rewards Wallet Address',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         hintText: 'Paste your address here',
-                        prefixIcon: Icon(Icons.account_balance_wallet),
+                        prefixIcon: const Icon(Icons.account_balance_wallet),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_addressController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _addressController.clear();
+                                },
+                                tooltip: 'Clear',
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.paste),
+                              onPressed: () async {
+                                final data =
+                                    await Clipboard.getData(Clipboard.kTextPlain);
+                                if (data?.text != null) {
+                                  _addressController.text = data!.text!;
+                                }
+                              },
+                              tooltip: 'Paste',
+                            ),
+                          ],
+                        ),
                       ),
                       maxLines: 1,
                     ),
@@ -172,55 +310,14 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
-                    if (!_showQrCode)
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _showQrCode = true;
-                          });
-                        },
-                        icon: const Icon(Icons.qr_code),
-                        label: const Text('Scan QR code to set up wallet'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
+                    OutlinedButton.icon(
+                      onPressed: _showQrOverlay,
+                      icon: const Icon(Icons.qr_code),
+                      label: const Text('Scan QR code to set up wallet'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                    if (_showQrCode) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/tr-ee-u1vxT1-qrcode-black.svg', // Black QR on white bg for better scanning
-                              width: 200,
-                              height: 200,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Scan with your mobile phone',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _showQrCode = false;
-                          });
-                        },
-                        child: const Text('Hide QR Code'),
-                      ),
-                    ],
+                    ),
                   ],
                 ),
               ),

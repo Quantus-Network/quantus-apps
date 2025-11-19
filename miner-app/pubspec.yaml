@@ -54,6 +54,8 @@ flutter:
   assets:
     - assets/quantus_icon.svg
     - assets/logo/
+    - assets/tr-ee-u1vxT1-qrcode-black.png
+    - assets/tr-ee-u1vxT1-qrcode-white.png
     - assets/tr-ee-u1vxT1-qrcode-black.svg
     - assets/tr-ee-u1vxT1-qrcode-white.svg
   
