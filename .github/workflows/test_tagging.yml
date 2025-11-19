@@ -1,0 +1,36 @@
+name: Test Tag Creation
+on:
+  workflow_dispatch:
+
+jobs:
+  test-tagging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Test Tag Creation and Push
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          # Create a temporary test tag
+          TAG="test-tag-v$(date +%s)"
+          echo "Attempting to create and push tag: $TAG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Explicitly update remote with token to ensure correct authentication
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+
+          git tag "$TAG"
+          
+          echo "Pushing tag..."
+          git push origin "$TAG"
+          
+          echo "Tag pushed successfully. Cleaning up..."
+          git push --delete origin "$TAG"
+          echo "Cleanup complete."
+

@@ -268,6 +268,10 @@ jobs:
         run: |
           TAG="${{ steps.get_version.outputs.tag }}"
           echo "Tag to create: $TAG"
+
+          # Explicitly update remote with token to ensure correct authentication
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+
           if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
             echo "Tag $TAG already exists on remote, skipping tag creation."
           else
