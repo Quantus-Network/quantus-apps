@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:quantus_miner/src/services/prometheus_service.dart';
+import 'package:quantus_miner/src/shared/extensions/log_string_extension.dart';
 import './mining_stats_service.dart';
 import './external_miner_api_client.dart';
 import './chain_rpc_client.dart';
@@ -175,7 +176,7 @@ class MinerProcess {
           final logEntry = LogEntry(
             message: line,
             timestamp: DateTime.now(),
-            source: 'quantus-miner-error',
+            source: line.isMinerError ? 'quantus-miner-error' : 'quantus-miner',
           );
           _logsController.add(logEntry);
           print('[ext-miner-err] $line');
@@ -338,14 +339,7 @@ class MinerProcess {
 
       if (shouldPrint) {
         String source;
-        final lowerLine = line.toLowerCase();
-
-        if (lowerLine.contains('error') ||
-            lowerLine.contains('panic') ||
-            lowerLine.contains('fatal') ||
-            lowerLine.contains('critical') ||
-            lowerLine.contains('failed') ||
-            lowerLine.contains('warn')) {
+        if (line.isNodeError) {
           source = 'node-error';
         } else if (streamType == 'stdout') {
           source = 'node';
