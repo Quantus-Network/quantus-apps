@@ -48,6 +48,7 @@ class MigrationService {
     List<MigrationAccountData> migrationData,
   ) async {
     // Create new accounts with the same indices and names
+    List<Account> newAccounts = [];
     for (final data in migrationData) {
       print(
         'performMigration: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
@@ -59,8 +60,11 @@ class MigrationService {
         accountId: data.newAccountId,
       );
 
-      await _settingsService.addAccount(newAccount);
+      newAccounts.add(newAccount);
     }
+
+    // override any existing accounts wih new accounts
+    await _settingsService.saveAccounts(newAccounts);
 
     // Clear old accounts data
     await _settingsService.clearOldAccounts();
