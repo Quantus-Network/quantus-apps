@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/main/screens/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class WalletInitializer extends ConsumerStatefulWidget {
@@ -108,7 +109,14 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
     // Proceed with local migration immediately
     if (_migrationData != null) {
-      await _migrationService.performMigration(_migrationData!);
+      try {
+        await _migrationService.performMigration(_migrationData!);
+      } catch (e, stackTrace) {
+        print('error in tryLater: $e');
+        print('stack trace: $stackTrace');
+        TelemetryService().sendError('Error-Migration-TryLater', error: e, stackTrace: stackTrace);
+        rethrow;
+      }
     }
 
     _reloadAccounts();

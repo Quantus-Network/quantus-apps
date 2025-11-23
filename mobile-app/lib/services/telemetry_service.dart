@@ -16,6 +16,10 @@ class TelemetryService {
     Telemetrydecksdk.send(eventName, additionalPayload: parameters);
   }
 
+  void sendError(String errorName, {required Object error, required StackTrace stackTrace}) {
+    Telemetrydecksdk.send('Error', additionalPayload: {'errorName': errorName, 'error': error, 'stackTrace': stackTrace});
+  }
+
   /// Tracks that a screen has been viewed.
   void trackScreenView(String screenName, {Map<String, String>? parameters}) {
     sendEvent(
