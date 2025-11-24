@@ -55,6 +55,14 @@ class GlobalHistoryPollingService {
     }
   }
 
+  void startOrResumePolling() {
+    if (!_isPolling) {
+      startPolling();
+    } else if (_pollingTimer == null) {
+      resumePolling();
+    }
+  }
+
   void _scheduleNextPoll() {
     _pollingTimer = Timer(const Duration(minutes: 1), () {
       _performPoll();
@@ -87,22 +95,17 @@ class GlobalHistoryPollingService {
 
       // Silently refresh without showing loading indicators for global
       // and active filtered
-      await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      final active = _ref.read(activeAccountProvider).value;
-      if (active != null) {
-        await _ref
-            .read(
-              filteredPaginationControllerProviderFamily(
-                AccountIdListCache.get([active.accountId]),
-              ).notifier,
-            )
-            .silentRefresh();
+      _ref.read(paginationControllerProvider.notifier).silentRefresh();
+      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+      for (var id in accountIds) {
+        _ref.read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([id])).notifier).silentRefresh();
       }
+      _ref
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+          .silentRefresh();
 
       // Reconcile pending transactions with confirmed transactions
-      await _ref
-          .read(pendingTransactionReconciliationServiceProvider)
-          .reconcilePendingTransactions();
+      _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
 
       print('Global history poll completed');
     } catch (e) {
@@ -118,30 +121,24 @@ class GlobalHistoryPollingService {
   /// Manually trigger a history refresh (useful for pull-to-refresh)
   Future<void> triggerManualRefresh() async {
     print('Global polling manager: Manual Refresh!');
-    
+
     // Check connectivity before refreshing
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
       print('Skipping manual refresh - offline');
       return;
     }
-    
+
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
       await _ref
-          .read(
-            filteredPaginationControllerProviderFamily(
-              AccountIdListCache.get([active.accountId]),
-            ).notifier,
-          )
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.accountId])).notifier)
           .loadingRefresh();
     }
 
     // Also reconcile pending transactions during manual refresh
-    await _ref
-        .read(pendingTransactionReconciliationServiceProvider)
-        .reconcilePendingTransactions();
+    await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
   }
 
   void dispose() {
@@ -150,27 +147,26 @@ class GlobalHistoryPollingService {
 }
 
 /// Provider for the global history polling service
-final globalHistoryPollingServiceProvider =
-    Provider<GlobalHistoryPollingService>((ref) {
-      final service = GlobalHistoryPollingService(ref);
+final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService>((ref) {
+  final service = GlobalHistoryPollingService(ref);
 
-      // Automatically start polling when accounts become available
-      ref.listen(accountsProvider, (previous, next) {
-        next.when(
-          data: (accounts) {
-            if (accounts.isNotEmpty) {
-              service.startPolling();
-            } else {
-              service.stopPolling();
-            }
-          },
-          loading: () => service.stopPolling(),
-          error: (_, _) => service.stopPolling(),
-        );
-      });
+  // Automatically start polling when accounts become available
+  ref.listen(accountsProvider, (previous, next) {
+    next.when(
+      data: (accounts) {
+        if (accounts.isNotEmpty) {
+          service.startPolling();
+        } else {
+          service.stopPolling();
+        }
+      },
+      loading: () => service.stopPolling(),
+      error: (_, _) => service.stopPolling(),
+    );
+  });
 
-      // Clean up when provider is disposed
-      ref.onDispose(() => service.dispose());
+  // Clean up when provider is disposed
+  ref.onDispose(() => service.dispose());
 
-      return service;
-    });
+  return service;
+});
