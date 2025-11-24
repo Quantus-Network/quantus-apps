@@ -300,6 +300,12 @@ class TransactionSubmissionService {
             .silentRefresh();
       }
 
+      // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
+      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
+      _ref
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
+          .silentRefresh();
+
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {
       print('Error triggering silent history refresh: $e');
