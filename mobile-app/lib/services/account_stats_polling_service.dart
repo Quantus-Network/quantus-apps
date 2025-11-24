@@ -51,6 +51,14 @@ class AccountStatsPollingService {
     }
   }
 
+  void startOrResumePolling() {
+    if (!_isPolling) {
+      startPolling();
+    } else if (_pollingTimer == null) {
+      resumePolling();
+    }
+  }
+
   void _scheduleNextPoll() {
     _pollingTimer = Timer(const Duration(minutes: 1), () {
       _performPoll();
@@ -97,28 +105,26 @@ class AccountStatsPollingService {
 }
 
 /// Provider for the account stats polling service
-final accountStatsPollingServiceProvider = Provider<AccountStatsPollingService>(
-  (ref) {
-    final service = AccountStatsPollingService(ref);
+final accountStatsPollingServiceProvider = Provider<AccountStatsPollingService>((ref) {
+  final service = AccountStatsPollingService(ref);
 
-    // Automatically start polling when accounts become available
-    ref.listen(accountsProvider, (previous, next) {
-      next.when(
-        data: (accounts) {
-          if (accounts.isNotEmpty) {
-            service.startPolling();
-          } else {
-            service.stopPolling();
-          }
-        },
-        loading: () => service.stopPolling(),
-        error: (_, _) => service.stopPolling(),
-      );
-    });
+  // Automatically start polling when accounts become available
+  ref.listen(accountsProvider, (previous, next) {
+    next.when(
+      data: (accounts) {
+        if (accounts.isNotEmpty) {
+          service.startPolling();
+        } else {
+          service.stopPolling();
+        }
+      },
+      loading: () => service.stopPolling(),
+      error: (_, _) => service.stopPolling(),
+    );
+  });
 
-    // Clean up when provider is disposed
-    ref.onDispose(() => service.dispose());
+  // Clean up when provider is disposed
+  ref.onDispose(() => service.dispose());
 
-    return service;
-  },
-);
+  return service;
+});
