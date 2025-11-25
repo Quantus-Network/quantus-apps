@@ -24,9 +24,11 @@ class TransactionService {
     final seenIds = <String>{};
     final List<TransactionEvent> result = [];
 
-    // Add pending transactions first (highest priority)
+    // Add pending transactions that haven't not failed first (highest priority)
     for (final transaction in pendingTransactions) {
-      if (seenIds.add(transaction.id)) {
+      if (transaction.transactionState == TransactionState.failed) {
+        otherTransfers.add(transaction);
+      } else if (seenIds.add(transaction.id)) {
         if (transaction.isReversible && pendingCancellationIds.contains(transaction.id)) {
           result.add(transaction.copyWith(status: ReversibleTransferStatus.CANCELLED));
         } else {
@@ -49,6 +51,7 @@ class TransactionService {
     }
 
     // Add other transfers (lowest priority)
+    otherTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     for (final transaction in otherTransfers) {
       if (seenIds.add(transaction.id)) {
         result.add(transaction);

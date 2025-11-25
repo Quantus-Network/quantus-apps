@@ -19,6 +19,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -59,6 +60,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     final activeAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final activeAccountTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
+    final hasNotifications = ref.watch(notificationProvider).isNotEmpty;
 
     return activeAccountAsync.when(
       data: (activeAccount) {
@@ -76,7 +78,13 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             ),
             actions: [
               InkWell(
-                child: Image.asset('assets/notification/notification_top_icon.png', width: 26, height: 26),
+                child: Image.asset(
+                  hasNotifications
+                      ? 'assets/notification/notification_settings_icon.png'
+                      : 'assets/notification/notification_top_icon.png',
+                  width: 26,
+                  height: 26,
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
