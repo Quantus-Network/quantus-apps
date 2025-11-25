@@ -32,9 +32,10 @@ enum _SheetState { initial, confirmCancel, cancelled }
 
 class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTransactionActionSheet> {
   _SheetState _sheetState = _SheetState.initial;
-  Timer? _timer;
-  Duration? _remainingTime;
   bool _isCancelling = false;
+
+  late Timer _timer;
+  late Duration _remainingTime;
 
   final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
@@ -46,13 +47,13 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
     return HumanReadableChecksumService().getHumanReadableName(address);
   }
 
-  bool get _isReverseDisabled => _remainingTime == null || _remainingTime == Duration.zero;
+  bool get _isReverseDisabled => _remainingTime == Duration.zero;
 
   @override
   void initState() {
     super.initState();
     _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
-    if (_remainingTime != null && _remainingTime!.isNegative) {
+    if (_remainingTime.isNegative) {
       _remainingTime = Duration.zero;
     }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -61,8 +62,8 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         return;
       }
       setState(() {
-        if (_remainingTime != null && _remainingTime! > Duration.zero) {
-          _remainingTime = _remainingTime! - const Duration(seconds: 1);
+        if (_remainingTime > Duration.zero) {
+          _remainingTime = _remainingTime - const Duration(seconds: 1);
         } else {
           timer.cancel();
           // Maybe close the sheet or show a different state when timer ends.
@@ -74,7 +75,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
   }
 
@@ -146,7 +147,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
             color: context.themeColors.buttonGlass,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
-          child: ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
+          child: ReversibleTimer(remainingTime: _remainingTime),
         ),
         const SizedBox(height: 12),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 15.0), child: _buildTransactionDetails()),
@@ -381,7 +382,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         // Swallow provider update errors; UI will still show cancelled state below
       }
 
-      _timer?.cancel();
+      _timer.cancel();
       setState(() {
         _remainingTime = Duration.zero;
         _sheetState = _SheetState.cancelled;

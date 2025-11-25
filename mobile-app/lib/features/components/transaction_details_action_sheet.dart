@@ -32,8 +32,9 @@ class TransactionDetailsActionSheet extends ConsumerStatefulWidget {
 }
 
 class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetailsActionSheet> {
-  Timer? _timer;
-  Duration? _remainingTime;
+  late Timer _timer;
+  late Duration _remainingTime;
+
   Future<String> get _checksumFuture {
     // Miner reward does not have a real address as the counterpart
     if (widget.transaction is MinerRewardEvent) {
@@ -157,7 +158,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
   }
 
@@ -355,7 +356,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
           style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
         ),
         if (widget.role == TransactionRole.receiver && widget.transaction.isReversibleScheduled)
-          ReversibleTimer(remainingTime: _remainingTime ?? Duration.zero),
+          ReversibleTimer(remainingTime: _remainingTime),
         if (widget.transaction is! MinerRewardEvent) ...[
           // Normal Events
           FutureBuilder(
