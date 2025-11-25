@@ -69,6 +69,7 @@ class _NotificationGroupState extends State<NotificationGroup> with TickerProvid
                 children: reveresedNotifications
                     .map(
                       (notification) => NotificationCard(
+                        key: ValueKey(notification.id),
                         notification: notification,
                         onDismiss: () => widget.onDismissSingle(notification.id),
                       ),
