@@ -44,8 +44,8 @@ class HistoryPollingManager {
 
   /// Resume all polling (useful when app comes to foreground)
   void resumePolling() {
-    _globalPoller.startOrResumePolling();
-    _accountStatsPoller.startOrResumePolling();
+    _globalPoller.resumePolling();
+    _accountStatsPoller.resumePolling();
     // Transaction tracker automatically resumes
   }
 

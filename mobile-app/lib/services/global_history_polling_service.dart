@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -52,14 +53,6 @@ class GlobalHistoryPollingService {
     if (_isPolling && _pollingTimer == null) {
       _scheduleNextPoll();
       print('Global history polling resumed');
-    }
-  }
-
-  void startOrResumePolling() {
-    if (!_isPolling) {
-      startPolling();
-    } else if (_pollingTimer == null) {
-      resumePolling();
     }
   }
 
@@ -160,8 +153,12 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
           service.stopPolling();
         }
       },
-      loading: () => service.stopPolling(),
-      error: (_, _) => service.stopPolling(),
+      loading: () {},
+      error: (e, st) {
+        print('Error in account stats polling service: stopping polling');
+        TelemetryService().sendError('GlobalHistoryPollingService Error in accountsProvider: stopping polling', error: e, stackTrace: st);
+        service.stopPolling();
+      },
     );
   });
 

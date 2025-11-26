@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 /// Service that handles account stats polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -48,14 +49,6 @@ class AccountStatsPollingService {
     if (_isPolling && _pollingTimer == null) {
       _scheduleNextPoll();
       print('Account stats polling resumed');
-    }
-  }
-
-  void startOrResumePolling() {
-    if (!_isPolling) {
-      startPolling();
-    } else if (_pollingTimer == null) {
-      resumePolling();
     }
   }
 
@@ -118,8 +111,12 @@ final accountStatsPollingServiceProvider = Provider<AccountStatsPollingService>(
           service.stopPolling();
         }
       },
-      loading: () => service.stopPolling(),
-      error: (_, _) => service.stopPolling(),
+      loading: () => {},
+      error: (e, st) {
+        print('Error in account stats polling service: stopping polling');
+        TelemetryService().sendError('Accounts provider Error in Account stats polling service: stopping polling', error: e, stackTrace: st);
+        service.stopPolling();
+      },
     );
   });
 
