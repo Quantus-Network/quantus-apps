@@ -114,7 +114,11 @@ final accountStatsPollingServiceProvider = Provider<AccountStatsPollingService>(
       loading: () => {},
       error: (e, st) {
         print('Error in account stats polling service: stopping polling');
-        TelemetryService().sendError('Accounts provider Error in Account stats polling service: stopping polling', error: e, stackTrace: st);
+        TelemetryService().sendError(
+          'Accounts provider Error in Account stats polling service: stopping polling',
+          error: e,
+          stackTrace: st,
+        );
         service.stopPolling();
       },
     );

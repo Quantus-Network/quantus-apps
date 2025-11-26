@@ -156,7 +156,11 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
       loading: () {},
       error: (e, st) {
         print('Error in account stats polling service: stopping polling');
-        TelemetryService().sendError('GlobalHistoryPollingService Error in accountsProvider: stopping polling', error: e, stackTrace: st);
+        TelemetryService().sendError(
+          'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
+          error: e,
+          stackTrace: st,
+        );
         service.stopPolling();
       },
     );
