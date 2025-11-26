@@ -24,12 +24,7 @@ class BlockLength {
   Map<String, Map<String, int>> toJson() => {'max': max.toJson()};
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BlockLength && other.max == max;
+  bool operator ==(Object other) => identical(this, other) || other is BlockLength && other.max == max;
 
   @override
   int get hashCode => max.hashCode;
@@ -39,14 +34,8 @@ class $BlockLengthCodec with _i1.Codec<BlockLength> {
   const $BlockLengthCodec();
 
   @override
-  void encodeTo(
-    BlockLength obj,
-    _i1.Output output,
-  ) {
-    _i2.PerDispatchClass.codec.encodeTo(
-      obj.max,
-      output,
-    );
+  void encodeTo(BlockLength obj, _i1.Output output) {
+    _i2.PerDispatchClass.codec.encodeTo(obj.max, output);
   }
 
   @override

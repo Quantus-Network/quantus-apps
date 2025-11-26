@@ -36,10 +36,7 @@ class CustomTextField extends StatelessWidget {
     this.leftPadding,
     this.controller,
     this.disabled = false,
-  }) : assert(
-         initialValue == null || controller == null,
-         'Cannot provide both an initialValue and a controller.',
-       );
+  }) : assert(initialValue == null || controller == null, 'Cannot provide both an initialValue and a controller.');
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +48,7 @@ class CustomTextField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // The label is now optional and will only be displayed if labelText is not null.
-          if (labelText != null) ...[
-            Label(labelText!),
-            const SizedBox(height: 4),
-          ],
+          if (labelText != null) ...[Label(labelText!), const SizedBox(height: 4)],
           // The container that forms the background of the input field
           Stack(
             alignment: AlignmentGeometry.center,
@@ -71,14 +65,10 @@ class CustomTextField extends StatelessWidget {
                   fillColor: fillColor,
                   isDense: true, // Reduces vertical padding
                   enabledBorder: errorMsg != null
-                      ? const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                        )
+                      ? const OutlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 1))
                       : InputBorder.none,
                   focusedBorder: errorMsg != null
-                      ? const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                        )
+                      ? const OutlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 1))
                       : InputBorder.none,
                   contentPadding: EdgeInsets.only(
                     top: 10,
@@ -90,9 +80,7 @@ class CustomTextField extends StatelessWidget {
                   // Style for the hint text when the field is empty
                   hintStyle:
                       hintStyle ??
-                      context.themeText.smallTitle?.copyWith(
-                        color: context.themeColors.textPrimary.useOpacity(0.5),
-                      ),
+                      context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.5)),
                 ),
               ),
 
@@ -103,12 +91,7 @@ class CustomTextField extends StatelessWidget {
 
           if (errorMsg != null) ...[
             const SizedBox(height: 4),
-            Text(
-              errorMsg!,
-              style: context.themeText.tiny?.copyWith(
-                color: context.themeColors.textError,
-              ),
-            ),
+            Text(errorMsg!, style: context.themeText.tiny?.copyWith(color: context.themeColors.textError)),
           ],
         ],
       ),

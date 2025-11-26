@@ -2,16 +2,10 @@ class PendingCancellation {
   final String transactionId;
   final DateTime timestamp;
 
-  const PendingCancellation({
-    required this.transactionId,
-    required this.timestamp,
-  });
+  const PendingCancellation({required this.transactionId, required this.timestamp});
 
   Map<String, dynamic> toJson() {
-    return {
-      'transactionId': transactionId,
-      'timestamp': timestamp.millisecondsSinceEpoch,
-    };
+    return {'transactionId': transactionId, 'timestamp': timestamp.millisecondsSinceEpoch};
   }
 
   factory PendingCancellation.fromJson(Map<String, dynamic> json) {

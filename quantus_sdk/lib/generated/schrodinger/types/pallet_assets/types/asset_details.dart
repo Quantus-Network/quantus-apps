@@ -70,43 +70,28 @@ class AssetDetails {
   }
 
   Map<String, dynamic> toJson() => {
-        'owner': owner.toList(),
-        'issuer': issuer.toList(),
-        'admin': admin.toList(),
-        'freezer': freezer.toList(),
-        'supply': supply,
-        'deposit': deposit,
-        'minBalance': minBalance,
-        'isSufficient': isSufficient,
-        'accounts': accounts,
-        'sufficients': sufficients,
-        'approvals': approvals,
-        'status': status.toJson(),
-      };
+    'owner': owner.toList(),
+    'issuer': issuer.toList(),
+    'admin': admin.toList(),
+    'freezer': freezer.toList(),
+    'supply': supply,
+    'deposit': deposit,
+    'minBalance': minBalance,
+    'isSufficient': isSufficient,
+    'accounts': accounts,
+    'sufficients': sufficients,
+    'approvals': approvals,
+    'status': status.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AssetDetails &&
-          _i5.listsEqual(
-            other.owner,
-            owner,
-          ) &&
-          _i5.listsEqual(
-            other.issuer,
-            issuer,
-          ) &&
-          _i5.listsEqual(
-            other.admin,
-            admin,
-          ) &&
-          _i5.listsEqual(
-            other.freezer,
-            freezer,
-          ) &&
+          _i5.listsEqual(other.owner, owner) &&
+          _i5.listsEqual(other.issuer, issuer) &&
+          _i5.listsEqual(other.admin, admin) &&
+          _i5.listsEqual(other.freezer, freezer) &&
           other.supply == supply &&
           other.deposit == deposit &&
           other.minBalance == minBalance &&
@@ -118,77 +103,38 @@ class AssetDetails {
 
   @override
   int get hashCode => Object.hash(
-        owner,
-        issuer,
-        admin,
-        freezer,
-        supply,
-        deposit,
-        minBalance,
-        isSufficient,
-        accounts,
-        sufficients,
-        approvals,
-        status,
-      );
+    owner,
+    issuer,
+    admin,
+    freezer,
+    supply,
+    deposit,
+    minBalance,
+    isSufficient,
+    accounts,
+    sufficients,
+    approvals,
+    status,
+  );
 }
 
 class $AssetDetailsCodec with _i1.Codec<AssetDetails> {
   const $AssetDetailsCodec();
 
   @override
-  void encodeTo(
-    AssetDetails obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.owner,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.issuer,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.admin,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.freezer,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.supply,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.deposit,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.minBalance,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      obj.isSufficient,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.accounts,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.sufficients,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.approvals,
-      output,
-    );
-    _i3.AssetStatus.codec.encodeTo(
-      obj.status,
-      output,
-    );
+  void encodeTo(AssetDetails obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.owner, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.issuer, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.admin, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.freezer, output);
+    _i1.U128Codec.codec.encodeTo(obj.supply, output);
+    _i1.U128Codec.codec.encodeTo(obj.deposit, output);
+    _i1.U128Codec.codec.encodeTo(obj.minBalance, output);
+    _i1.BoolCodec.codec.encodeTo(obj.isSufficient, output);
+    _i1.U32Codec.codec.encodeTo(obj.accounts, output);
+    _i1.U32Codec.codec.encodeTo(obj.sufficients, output);
+    _i1.U32Codec.codec.encodeTo(obj.approvals, output);
+    _i3.AssetStatus.codec.encodeTo(obj.status, output);
   }
 
   @override

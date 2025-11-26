@@ -12,14 +12,8 @@ class CheckGenesisCodec with _i1.Codec<CheckGenesis> {
   }
 
   @override
-  void encodeTo(
-    CheckGenesis value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(CheckGenesis value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

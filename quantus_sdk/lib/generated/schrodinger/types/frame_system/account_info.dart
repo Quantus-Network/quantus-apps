@@ -40,19 +40,16 @@ class AccountInfo {
   }
 
   Map<String, dynamic> toJson() => {
-        'nonce': nonce,
-        'consumers': consumers,
-        'providers': providers,
-        'sufficients': sufficients,
-        'data': data.toJson(),
-      };
+    'nonce': nonce,
+    'consumers': consumers,
+    'providers': providers,
+    'sufficients': sufficients,
+    'data': data.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AccountInfo &&
           other.nonce == nonce &&
           other.consumers == consumers &&
@@ -61,43 +58,19 @@ class AccountInfo {
           other.data == data;
 
   @override
-  int get hashCode => Object.hash(
-        nonce,
-        consumers,
-        providers,
-        sufficients,
-        data,
-      );
+  int get hashCode => Object.hash(nonce, consumers, providers, sufficients, data);
 }
 
 class $AccountInfoCodec with _i1.Codec<AccountInfo> {
   const $AccountInfoCodec();
 
   @override
-  void encodeTo(
-    AccountInfo obj,
-    _i1.Output output,
-  ) {
-    _i1.U32Codec.codec.encodeTo(
-      obj.nonce,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.consumers,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.providers,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.sufficients,
-      output,
-    );
-    _i2.AccountData.codec.encodeTo(
-      obj.data,
-      output,
-    );
+  void encodeTo(AccountInfo obj, _i1.Output output) {
+    _i1.U32Codec.codec.encodeTo(obj.nonce, output);
+    _i1.U32Codec.codec.encodeTo(obj.consumers, output);
+    _i1.U32Codec.codec.encodeTo(obj.providers, output);
+    _i1.U32Codec.codec.encodeTo(obj.sufficients, output);
+    _i2.AccountData.codec.encodeTo(obj.data, output);
   }
 
   @override

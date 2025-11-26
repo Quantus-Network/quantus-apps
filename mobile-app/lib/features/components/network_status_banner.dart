@@ -8,11 +8,11 @@ class NetworkStatusBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isOnline = ref.watch(isOnlineProvider);
-    
+
     if (isOnline) {
       return const SizedBox.shrink();
     }
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -36,4 +36,3 @@ class NetworkStatusBanner extends ConsumerWidget {
     );
   }
 }
-

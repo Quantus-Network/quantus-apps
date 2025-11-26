@@ -12,14 +12,8 @@ class RuntimeFreezeReasonCodec with _i1.Codec<RuntimeFreezeReason> {
   }
 
   @override
-  void encodeTo(
-    RuntimeFreezeReason value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(RuntimeFreezeReason value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

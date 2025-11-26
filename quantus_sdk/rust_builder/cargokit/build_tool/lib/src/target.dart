@@ -90,8 +90,7 @@ class Target {
     required String darwinAarch,
   }) {
     return all.firstWhereOrNull((element) => //
-        element.darwinPlatform == platformName &&
-        element.darwinArch == darwinAarch);
+        element.darwinPlatform == platformName && element.darwinArch == darwinAarch);
   }
 
   static Target? forRustTriple(String triple) {
@@ -99,9 +98,7 @@ class Target {
   }
 
   static List<Target> androidTargets() {
-    return all
-        .where((element) => element.android != null)
-        .toList(growable: false);
+    return all.where((element) => element.android != null).toList(growable: false);
   }
 
   /// Returns buildable targets on current host platform ignoring Android targets.

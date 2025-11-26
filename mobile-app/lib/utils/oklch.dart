@@ -80,8 +80,7 @@ Color oklchToColor(OKLCH c) {
     // ok = r >= 0 && g >= 0 && b2 >= 0 && r <= 1 && g <= 1 && b2 <= 1;
 
     // sRGB gamma companding
-    double compand(double v) =>
-        v <= 0.0031308 ? 12.92 * v : 1.055 * pow(v, 1 / 2.4) - 0.055;
+    double compand(double v) => v <= 0.0031308 ? 12.92 * v : 1.055 * pow(v, 1 / 2.4) - 0.055;
 
     r = compand(r.clamp(0.0, 1.0));
     g = compand(g.clamp(0.0, 1.0));
@@ -144,9 +143,7 @@ GradientColors colorsFromAccountId(String id) {
   final colorB = oklchToColor(OKLCH(l2, c2, h2));
 
   // Subtle OKLCH highlight near center to mimic demo's glossy look
-  final highlight = oklchToColor(
-    OKLCH((l1 + 0.12).clamp(0.0, 1.0), max(0.02, c1 * 0.12), h1),
-  );
+  final highlight = oklchToColor(OKLCH((l1 + 0.12).clamp(0.0, 1.0), max(0.02, c1 * 0.12), h1));
 
   return GradientColors(colorA, colorB, h: highlight);
 }
@@ -169,9 +166,5 @@ LinearGradient linearAccountGradient(String accountId, {double angleDeg = 90}) {
   final gc = colorsFromAccountId(accountId);
   final rad = angleDeg * pi / 180.0;
   final x = cos(rad), y = sin(rad);
-  return LinearGradient(
-    begin: Alignment(-x, -y),
-    end: Alignment(x, y),
-    colors: [gc.a, gc.b],
-  );
+  return LinearGradient(begin: Alignment(-x, -y), end: Alignment(x, y), colors: [gc.a, gc.b]);
 }

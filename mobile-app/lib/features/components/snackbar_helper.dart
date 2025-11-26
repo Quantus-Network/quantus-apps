@@ -44,25 +44,15 @@ Future<void> showTopSnackBar(
   );
 }
 
-Future<void> showCopySnackbar(
-  BuildContext context, {
-  required String title,
-  required String message,
-}) async {
+Future<void> showCopySnackbar(BuildContext context, {required String title, required String message}) async {
   await showTopSnackBar(
     context,
     icon: Container(
       width: context.isTablet ? 44 : 36,
       height: context.isTablet ? 44 : 36,
-      decoration: const ShapeDecoration(
-        color: Color(0xFF494949),
-        shape: OvalBorder(),
-      ),
+      decoration: const ShapeDecoration(color: Color(0xFF494949), shape: OvalBorder()),
       alignment: Alignment.center,
-      child: SvgPicture.asset(
-        'assets/copy_icon.svg',
-        width: context.isTablet ? 24 : 16,
-      ),
+      child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
     ),
     title: title,
     message: message,

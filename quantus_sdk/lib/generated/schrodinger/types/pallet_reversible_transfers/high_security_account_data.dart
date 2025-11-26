@@ -8,10 +8,7 @@ import '../qp_scheduler/block_number_or_timestamp.dart' as _i3;
 import '../sp_core/crypto/account_id32.dart' as _i2;
 
 class HighSecurityAccountData {
-  const HighSecurityAccountData({
-    required this.interceptor,
-    required this.delay,
-  });
+  const HighSecurityAccountData({required this.interceptor, required this.delay});
 
   factory HighSecurityAccountData.decode(_i1.Input input) {
     return codec.decode(input);
@@ -23,54 +20,30 @@ class HighSecurityAccountData {
   /// Delay
   final _i3.BlockNumberOrTimestamp delay;
 
-  static const $HighSecurityAccountDataCodec codec =
-      $HighSecurityAccountDataCodec();
+  static const $HighSecurityAccountDataCodec codec = $HighSecurityAccountDataCodec();
 
   _i4.Uint8List encode() {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'interceptor': interceptor.toList(),
-        'delay': delay.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'interceptor': interceptor.toList(), 'delay': delay.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is HighSecurityAccountData &&
-          _i5.listsEqual(
-            other.interceptor,
-            interceptor,
-          ) &&
-          other.delay == delay;
+      identical(this, other) ||
+      other is HighSecurityAccountData && _i5.listsEqual(other.interceptor, interceptor) && other.delay == delay;
 
   @override
-  int get hashCode => Object.hash(
-        interceptor,
-        delay,
-      );
+  int get hashCode => Object.hash(interceptor, delay);
 }
 
 class $HighSecurityAccountDataCodec with _i1.Codec<HighSecurityAccountData> {
   const $HighSecurityAccountDataCodec();
 
   @override
-  void encodeTo(
-    HighSecurityAccountData obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.interceptor,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      obj.delay,
-      output,
-    );
+  void encodeTo(HighSecurityAccountData obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.interceptor, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(obj.delay, output);
   }
 
   @override

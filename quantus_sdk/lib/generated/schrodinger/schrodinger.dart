@@ -27,26 +27,26 @@ import 'pallets/vesting.dart' as _i9;
 
 class Queries {
   Queries(_i1.StateApi api)
-      : system = _i2.Queries(api),
-        timestamp = _i3.Queries(api),
-        balances = _i4.Queries(api),
-        transactionPayment = _i5.Queries(api),
-        sudo = _i6.Queries(api),
-        qPoW = _i7.Queries(api),
-        miningRewards = _i8.Queries(api),
-        vesting = _i9.Queries(api),
-        preimage = _i10.Queries(api),
-        scheduler = _i11.Queries(api),
-        referenda = _i12.Queries(api),
-        reversibleTransfers = _i13.Queries(api),
-        convictionVoting = _i14.Queries(api),
-        techCollective = _i15.Queries(api),
-        techReferenda = _i16.Queries(api),
-        merkleAirdrop = _i17.Queries(api),
-        treasuryPallet = _i18.Queries(api),
-        recovery = _i19.Queries(api),
-        assets = _i20.Queries(api),
-        assetsHolder = _i21.Queries(api);
+    : system = _i2.Queries(api),
+      timestamp = _i3.Queries(api),
+      balances = _i4.Queries(api),
+      transactionPayment = _i5.Queries(api),
+      sudo = _i6.Queries(api),
+      qPoW = _i7.Queries(api),
+      miningRewards = _i8.Queries(api),
+      vesting = _i9.Queries(api),
+      preimage = _i10.Queries(api),
+      scheduler = _i11.Queries(api),
+      referenda = _i12.Queries(api),
+      reversibleTransfers = _i13.Queries(api),
+      convictionVoting = _i14.Queries(api),
+      techCollective = _i15.Queries(api),
+      techReferenda = _i16.Queries(api),
+      merkleAirdrop = _i17.Queries(api),
+      treasuryPallet = _i18.Queries(api),
+      recovery = _i19.Queries(api),
+      assets = _i20.Queries(api),
+      assetsHolder = _i21.Queries(api);
 
   final _i2.Queries system;
 
@@ -166,10 +166,7 @@ class Constants {
 }
 
 class Rpc {
-  const Rpc({
-    required this.state,
-    required this.system,
-  });
+  const Rpc({required this.state, required this.system});
 
   final _i1.StateApi state;
 
@@ -182,43 +179,24 @@ class Registry {
   final int extrinsicVersion = 4;
 
   List getSignedExtensionTypes() {
-    return [
-      'CheckMortality',
-      'CheckNonce',
-      'ChargeTransactionPayment',
-      'CheckMetadataHash'
-    ];
+    return ['CheckMortality', 'CheckNonce', 'ChargeTransactionPayment', 'CheckMetadataHash'];
   }
 
   List getSignedExtensionExtra() {
-    return [
-      'CheckSpecVersion',
-      'CheckTxVersion',
-      'CheckGenesis',
-      'CheckMortality',
-      'CheckMetadataHash'
-    ];
+    return ['CheckSpecVersion', 'CheckTxVersion', 'CheckGenesis', 'CheckMortality', 'CheckMetadataHash'];
   }
 }
 
 class Schrodinger {
-  Schrodinger._(
-    this._provider,
-    this.rpc,
-  )   : query = Queries(rpc.state),
-        constant = Constants(),
-        tx = Extrinsics(),
-        registry = Registry();
+  Schrodinger._(this._provider, this.rpc)
+    : query = Queries(rpc.state),
+      constant = Constants(),
+      tx = Extrinsics(),
+      registry = Registry();
 
   factory Schrodinger(_i1.Provider provider) {
-    final rpc = Rpc(
-      state: _i1.StateApi(provider),
-      system: _i1.SystemApi(provider),
-    );
-    return Schrodinger._(
-      provider,
-      rpc,
-    );
+    final rpc = Rpc(state: _i1.StateApi(provider), system: _i1.SystemApi(provider));
+    return Schrodinger._(provider, rpc);
   }
 
   factory Schrodinger.url(Uri url) {

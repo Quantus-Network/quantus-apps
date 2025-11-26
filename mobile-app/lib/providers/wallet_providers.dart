@@ -35,10 +35,7 @@ final balancesServiceProvider = Provider<BalancesService>((ref) {
   return BalancesService();
 });
 
-final balanceProviderFamily = FutureProvider.family<BigInt, String>((
-  ref,
-  accountId,
-) async {
+final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
   print('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
@@ -77,10 +74,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
         return AsyncValue.data(BigInt.zero);
       }
 
-      final pendingOutgoing = _calculatePendingOutgoing(
-        pendingTransactions,
-        activeAccount.accountId,
-      );
+      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.accountId);
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       _cachedBalance = result;
@@ -96,10 +90,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
 
 /// Calculates the total amount of pending outgoing transactions for a
 /// specific account
-BigInt _calculatePendingOutgoing(
-  List<PendingTransactionEvent> pendingTransactions,
-  String accountId,
-) {
+BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactions, String accountId) {
   BigInt totalOutgoing = BigInt.zero;
 
   for (final transaction in pendingTransactions) {

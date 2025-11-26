@@ -88,9 +88,7 @@ class HistoryPollingManager {
       if (activeAccount != null) {
         _ref.invalidate(balanceProviderFamily);
       }
-      _ref.invalidate(
-        balanceProviderRaw,
-      ); // Invalidate raw balance for loading state
+      _ref.invalidate(balanceProviderRaw); // Invalidate raw balance for loading state
       // balanceProvider (effective) will auto-update when raw balance changes
     } else {
       // For silent refresh - just invalidate family to refresh data silently

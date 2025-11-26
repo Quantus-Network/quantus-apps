@@ -6,12 +6,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import 'extra_flags.dart' as _i2;
 
 class AccountData {
-  const AccountData({
-    required this.free,
-    required this.reserved,
-    required this.frozen,
-    required this.flags,
-  });
+  const AccountData({required this.free, required this.reserved, required this.frozen, required this.flags});
 
   factory AccountData.decode(_i1.Input input) {
     return codec.decode(input);
@@ -35,19 +30,11 @@ class AccountData {
     return codec.encode(this);
   }
 
-  Map<String, BigInt> toJson() => {
-        'free': free,
-        'reserved': reserved,
-        'frozen': frozen,
-        'flags': flags,
-      };
+  Map<String, BigInt> toJson() => {'free': free, 'reserved': reserved, 'frozen': frozen, 'flags': flags};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AccountData &&
           other.free == free &&
           other.reserved == reserved &&
@@ -55,38 +42,18 @@ class AccountData {
           other.flags == flags;
 
   @override
-  int get hashCode => Object.hash(
-        free,
-        reserved,
-        frozen,
-        flags,
-      );
+  int get hashCode => Object.hash(free, reserved, frozen, flags);
 }
 
 class $AccountDataCodec with _i1.Codec<AccountData> {
   const $AccountDataCodec();
 
   @override
-  void encodeTo(
-    AccountData obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.free,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.reserved,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.frozen,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.flags,
-      output,
-    );
+  void encodeTo(AccountData obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.free, output);
+    _i1.U128Codec.codec.encodeTo(obj.reserved, output);
+    _i1.U128Codec.codec.encodeTo(obj.frozen, output);
+    _i1.U128Codec.codec.encodeTo(obj.flags, output);
   }
 
   @override

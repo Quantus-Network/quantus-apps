@@ -34,14 +34,8 @@ abstract class RequestStatus {
 class $RequestStatus {
   const $RequestStatus();
 
-  Unrequested unrequested({
-    required _i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit> ticket,
-    required int len,
-  }) {
-    return Unrequested(
-      ticket: ticket,
-      len: len,
-    );
+  Unrequested unrequested({required _i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit> ticket, required int len}) {
+    return Unrequested(ticket: ticket, len: len);
   }
 
   Requested requested({
@@ -49,11 +43,7 @@ class $RequestStatus {
     required int count,
     int? maybeLen,
   }) {
-    return Requested(
-      maybeTicket: maybeTicket,
-      count: count,
-      maybeLen: maybeLen,
-    );
+    return Requested(maybeTicket: maybeTicket, count: count, maybeLen: maybeLen);
   }
 }
 
@@ -74,10 +64,7 @@ class $RequestStatusCodec with _i1.Codec<RequestStatus> {
   }
 
   @override
-  void encodeTo(
-    RequestStatus value,
-    _i1.Output output,
-  ) {
+  void encodeTo(RequestStatus value, _i1.Output output) {
     switch (value.runtimeType) {
       case Unrequested:
         (value as Unrequested).encodeTo(output);
@@ -86,8 +73,7 @@ class $RequestStatusCodec with _i1.Codec<RequestStatus> {
         (value as Requested).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'RequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('RequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -99,17 +85,13 @@ class $RequestStatusCodec with _i1.Codec<RequestStatus> {
       case Requested:
         return (value as Requested)._sizeHint();
       default:
-        throw Exception(
-            'RequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('RequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class Unrequested extends RequestStatus {
-  const Unrequested({
-    required this.ticket,
-    required this.len,
-  });
+  const Unrequested({required this.ticket, required this.len});
 
   factory Unrequested._decode(_i1.Input input) {
     return Unrequested(
@@ -129,18 +111,16 @@ class Unrequested extends RequestStatus {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Unrequested': {
-          'ticket': [
-            ticket.value0.toList(),
-            ticket.value1.toJson(),
-          ],
-          'len': len,
-        }
-      };
+    'Unrequested': {
+      'ticket': [ticket.value0.toList(), ticket.value1.toJson()],
+      'len': len,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(
           _i4.AccountId32Codec(),
           _i5.PreimageDeposit.codec,
@@ -150,53 +130,30 @@ class Unrequested extends RequestStatus {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
     const _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(
       _i4.AccountId32Codec(),
       _i5.PreimageDeposit.codec,
-    ).encodeTo(
-      ticket,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      len,
-      output,
-    );
+    ).encodeTo(ticket, output);
+    _i1.U32Codec.codec.encodeTo(len, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Unrequested && other.ticket == ticket && other.len == len;
+      identical(this, other) || other is Unrequested && other.ticket == ticket && other.len == len;
 
   @override
-  int get hashCode => Object.hash(
-        ticket,
-        len,
-      );
+  int get hashCode => Object.hash(ticket, len);
 }
 
 class Requested extends RequestStatus {
-  const Requested({
-    this.maybeTicket,
-    required this.count,
-    this.maybeLen,
-  });
+  const Requested({this.maybeTicket, required this.count, this.maybeLen});
 
   factory Requested._decode(_i1.Input input) {
     return Requested(
-      maybeTicket: const _i1
-          .OptionCodec<_i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit>>(
-          _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(
-        _i4.AccountId32Codec(),
-        _i5.PreimageDeposit.codec,
-      )).decode(input),
+      maybeTicket: const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit>>(
+        _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(_i4.AccountId32Codec(), _i5.PreimageDeposit.codec),
+      ).decode(input),
       count: _i1.U32Codec.codec.decode(input),
       maybeLen: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
     );
@@ -213,68 +170,39 @@ class Requested extends RequestStatus {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Requested': {
-          'maybeTicket': [
-            maybeTicket?.value0.toList(),
-            maybeTicket?.value1.toJson(),
-          ],
-          'count': count,
-          'maybeLen': maybeLen,
-        }
-      };
+    'Requested': {
+      'maybeTicket': [maybeTicket?.value0.toList(), maybeTicket?.value1.toJson()],
+      'count': count,
+      'maybeLen': maybeLen,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit>>(
-            _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(
-          _i4.AccountId32Codec(),
-          _i5.PreimageDeposit.codec,
-        )).sizeHint(maybeTicket);
+          _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(_i4.AccountId32Codec(), _i5.PreimageDeposit.codec),
+        ).sizeHint(maybeTicket);
     size = size + _i1.U32Codec.codec.sizeHint(count);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(maybeLen);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(maybeLen);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
     const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, _i5.PreimageDeposit>>(
-        _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(
-      _i4.AccountId32Codec(),
-      _i5.PreimageDeposit.codec,
-    )).encodeTo(
-      maybeTicket,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      count,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      maybeLen,
-      output,
-    );
+      _i3.Tuple2Codec<_i4.AccountId32, _i5.PreimageDeposit>(_i4.AccountId32Codec(), _i5.PreimageDeposit.codec),
+    ).encodeTo(maybeTicket, output);
+    _i1.U32Codec.codec.encodeTo(count, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(maybeLen, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Requested &&
-          other.maybeTicket == maybeTicket &&
-          other.count == count &&
-          other.maybeLen == maybeLen;
+      identical(this, other) ||
+      other is Requested && other.maybeTicket == maybeTicket && other.count == count && other.maybeLen == maybeLen;
 
   @override
-  int get hashCode => Object.hash(
-        maybeTicket,
-        count,
-        maybeLen,
-      );
+  int get hashCode => Object.hash(maybeTicket, count, maybeLen);
 }

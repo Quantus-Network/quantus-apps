@@ -12,14 +12,8 @@ class CheckWeightCodec with _i1.Codec<CheckWeight> {
   }
 
   @override
-  void encodeTo(
-    CheckWeight value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(CheckWeight value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

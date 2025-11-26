@@ -46,74 +46,40 @@ class SpendStatus {
   }
 
   Map<String, dynamic> toJson() => {
-        'assetKind': null,
-        'amount': amount,
-        'beneficiary': beneficiary.toList(),
-        'validFrom': validFrom,
-        'expireAt': expireAt,
-        'status': status.toJson(),
-      };
+    'assetKind': null,
+    'amount': amount,
+    'beneficiary': beneficiary.toList(),
+    'validFrom': validFrom,
+    'expireAt': expireAt,
+    'status': status.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is SpendStatus &&
           other.assetKind == assetKind &&
           other.amount == amount &&
-          _i5.listsEqual(
-            other.beneficiary,
-            beneficiary,
-          ) &&
+          _i5.listsEqual(other.beneficiary, beneficiary) &&
           other.validFrom == validFrom &&
           other.expireAt == expireAt &&
           other.status == status;
 
   @override
-  int get hashCode => Object.hash(
-        assetKind,
-        amount,
-        beneficiary,
-        validFrom,
-        expireAt,
-        status,
-      );
+  int get hashCode => Object.hash(assetKind, amount, beneficiary, validFrom, expireAt, status);
 }
 
 class $SpendStatusCodec with _i1.Codec<SpendStatus> {
   const $SpendStatusCodec();
 
   @override
-  void encodeTo(
-    SpendStatus obj,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      obj.assetKind,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.beneficiary,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.validFrom,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.expireAt,
-      output,
-    );
-    _i3.PaymentState.codec.encodeTo(
-      obj.status,
-      output,
-    );
+  void encodeTo(SpendStatus obj, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(obj.assetKind, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.beneficiary, output);
+    _i1.U32Codec.codec.encodeTo(obj.validFrom, output);
+    _i1.U32Codec.codec.encodeTo(obj.expireAt, output);
+    _i3.PaymentState.codec.encodeTo(obj.status, output);
   }
 
   @override

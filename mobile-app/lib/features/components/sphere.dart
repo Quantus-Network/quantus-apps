@@ -78,7 +78,7 @@ class Sphere extends StatelessWidget {
       opacity: 0.6,
       blur: 15.5,
     ),
-     8: (
+    8: (
       gradient: _createGradient(-90, [
         (const Color(0xFF1FFFA7), 0.2976),
         (const Color(0xFF0000FF), 0.7605),
@@ -87,7 +87,7 @@ class Sphere extends StatelessWidget {
       opacity: 0.4,
       blur: 40.0,
     ),
-     9: (
+    9: (
       gradient: _createGradient(-3, [
         (const Color(0xFFFF1F45), 0.2976),
         (const Color(0xFFED4CCE), 0.6423),
@@ -99,10 +99,7 @@ class Sphere extends StatelessWidget {
   };
 
   /// Helper function to create a LinearGradient with rotation.
-  static Gradient _createGradient(
-    double degrees,
-    List<(Color, double)> colorStops,
-  ) {
+  static Gradient _createGradient(double degrees, List<(Color, double)> colorStops) {
     return LinearGradient(
       colors: colorStops.map((cs) => cs.$1).toList(),
       stops: colorStops.map((cs) => cs.$2).toList(),
@@ -125,10 +122,7 @@ class Sphere extends StatelessWidget {
         child: Container(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: style.gradient,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, gradient: style.gradient),
         ),
       ),
     );

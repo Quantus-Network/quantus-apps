@@ -25,8 +25,10 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   String _errorMessage = '';
   final SettingsService _settingsService = SettingsService();
   final AccountsService _accountsService = AccountsService();
-  final AccountDiscoveryService _accountDiscoveryService =
-      AccountDiscoveryService(HdWalletService(), SubstrateService());
+  final AccountDiscoveryService _accountDiscoveryService = AccountDiscoveryService(
+    HdWalletService(),
+    SubstrateService(),
+  );
 
   Future<void> _discoverAccounts(String mnemonic) async {
     if (!mounted) return;
@@ -35,12 +37,9 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     });
 
     try {
-      final discoveredAccounts = await _accountDiscoveryService
-          .discoverAccounts(mnemonic: mnemonic);
+      final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(mnemonic: mnemonic);
 
-      final existingAccountsSet = (await _accountsService.getAccounts())
-          .map((e) => e.accountId)
-          .toSet();
+      final existingAccountsSet = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
 
       for (final account in discoveredAccounts) {
         if (!existingAccountsSet.contains(account.accountId)) {
@@ -75,10 +74,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
         debugPrint('Using derivation path: $mnemonic');
       } else {
         // Validate mnemonic
-        final words = mnemonic
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .toList();
+        final words = mnemonic.split(' ').where((word) => word.isNotEmpty).toList();
         if (words.length != 12 && words.length != 24) {
           throw Exception('Mnemonic must be 12 or 24 words');
         }
@@ -86,9 +82,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
 
       final key = HdWalletService().keyPairAtIndex(mnemonic, 0);
       await _settingsService.setMnemonic(mnemonic);
-      await _accountsService.addAccount(
-        Account(index: 0, name: 'Account 1', accountId: key.ss58Address),
-      );
+      await _accountsService.addAccount(Account(index: 0, name: 'Account 1', accountId: key.ss58Address));
 
       await _discoverAccounts(mnemonic);
       // We set check status to true so we will not prompt user to input refferal code.
@@ -125,14 +119,8 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: WalletAppBar(title:'Import Wallet'),
-      decorations: [
-        const Positioned(
-          bottom: 140,
-          right: 0,
-          child: Sphere(variant: 2, size: 200),
-        ),
-      ],
+      appBar: WalletAppBar(title: 'Import Wallet'),
+      decorations: [const Positioned(bottom: 140, right: 0, child: Sphere(variant: 2, size: 200))],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -142,9 +130,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
           Text(
             'Restore an existing wallet with your '
             '12 or 24 word recovery phrase',
-            style: context.themeText.smallParagraph?.copyWith(
-              color: context.themeColors.textMuted,
-            ),
+            style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
           ),
           const SizedBox(height: 21),
           Expanded(
@@ -156,32 +142,21 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
                 fillColor: context.themeColors.surface,
                 contentPadding: const EdgeInsets.all(13),
                 border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: context.themeColors.border,
-                    width: 1,
-                  ),
+                  borderSide: BorderSide(color: context.themeColors.border, width: 1),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    width: 1,
-                    color: context.themeColors.border,
-                  ),
+                  borderSide: BorderSide(width: 1, color: context.themeColors.border),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: context.themeColors.border,
-                    width: 1.5,
-                  ),
+                  borderSide: BorderSide(color: context.themeColors.border, width: 1.5),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 hintText:
                     'Type in or paste your recovery phrase. Separate'
                     ' words with spaces',
-                hintStyle: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.textMuted,
-                ),
+                hintStyle: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
               ),
               maxLines: null,
               minLines: 8,
@@ -192,10 +167,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
 
           if (_errorMessage.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(
-                top: 8.0,
-                bottom: 8.0,
-              ), // Added bottom padding
+              padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), // Added bottom padding
               child: Text(
                 _errorMessage,
                 style: const TextStyle(color: Colors.red, fontSize: 12),
@@ -210,10 +182,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
                 children: [
                   CircularProgressIndicator(color: Colors.white),
                   SizedBox(height: 16),
-                  Text(
-                    'Discovering existing accounts...',
-                    style: TextStyle(color: Colors.white70),
-                  ),
+                  Text('Discovering existing accounts...', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             )

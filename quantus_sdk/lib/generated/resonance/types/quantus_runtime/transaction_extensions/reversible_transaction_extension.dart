@@ -3,8 +3,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 typedef ReversibleTransactionExtension = dynamic;
 
-class ReversibleTransactionExtensionCodec
-    with _i1.Codec<ReversibleTransactionExtension> {
+class ReversibleTransactionExtensionCodec with _i1.Codec<ReversibleTransactionExtension> {
   const ReversibleTransactionExtensionCodec();
 
   @override
@@ -13,14 +12,8 @@ class ReversibleTransactionExtensionCodec
   }
 
   @override
-  void encodeTo(
-    ReversibleTransactionExtension value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(ReversibleTransactionExtension value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

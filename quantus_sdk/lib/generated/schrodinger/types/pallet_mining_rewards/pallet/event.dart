@@ -34,24 +34,12 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  MinerRewarded minerRewarded({
-    required _i3.AccountId32 miner,
-    required BigInt reward,
-  }) {
-    return MinerRewarded(
-      miner: miner,
-      reward: reward,
-    );
+  MinerRewarded minerRewarded({required _i3.AccountId32 miner, required BigInt reward}) {
+    return MinerRewarded(miner: miner, reward: reward);
   }
 
-  FeesCollected feesCollected({
-    required BigInt amount,
-    required BigInt total,
-  }) {
-    return FeesCollected(
-      amount: amount,
-      total: total,
-    );
+  FeesCollected feesCollected({required BigInt amount, required BigInt total}) {
+    return FeesCollected(amount: amount, total: total);
   }
 
   TreasuryRewarded treasuryRewarded({required BigInt reward}) {
@@ -78,10 +66,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case MinerRewarded:
         (value as MinerRewarded).encodeTo(output);
@@ -93,8 +78,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as TreasuryRewarded).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -108,24 +92,17 @@ class $EventCodec with _i1.Codec<Event> {
       case TreasuryRewarded:
         return (value as TreasuryRewarded)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// A miner has been identified for a block
 class MinerRewarded extends Event {
-  const MinerRewarded({
-    required this.miner,
-    required this.reward,
-  });
+  const MinerRewarded({required this.miner, required this.reward});
 
   factory MinerRewarded._decode(_i1.Input input) {
-    return MinerRewarded(
-      miner: const _i1.U8ArrayCodec(32).decode(input),
-      reward: _i1.U128Codec.codec.decode(input),
-    );
+    return MinerRewarded(miner: const _i1.U8ArrayCodec(32).decode(input), reward: _i1.U128Codec.codec.decode(input));
   }
 
   /// T::AccountId
@@ -138,11 +115,8 @@ class MinerRewarded extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'MinerRewarded': {
-          'miner': miner.toList(),
-          'reward': reward,
-        }
-      };
+    'MinerRewarded': {'miner': miner.toList(), 'reward': reward},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -152,52 +126,25 @@ class MinerRewarded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      miner,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      reward,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(miner, output);
+    _i1.U128Codec.codec.encodeTo(reward, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MinerRewarded &&
-          _i4.listsEqual(
-            other.miner,
-            miner,
-          ) &&
-          other.reward == reward;
+      identical(this, other) || other is MinerRewarded && _i4.listsEqual(other.miner, miner) && other.reward == reward;
 
   @override
-  int get hashCode => Object.hash(
-        miner,
-        reward,
-      );
+  int get hashCode => Object.hash(miner, reward);
 }
 
 /// Transaction fees were collected for later distribution
 class FeesCollected extends Event {
-  const FeesCollected({
-    required this.amount,
-    required this.total,
-  });
+  const FeesCollected({required this.amount, required this.total});
 
   factory FeesCollected._decode(_i1.Input input) {
-    return FeesCollected(
-      amount: _i1.U128Codec.codec.decode(input),
-      total: _i1.U128Codec.codec.decode(input),
-    );
+    return FeesCollected(amount: _i1.U128Codec.codec.decode(input), total: _i1.U128Codec.codec.decode(input));
   }
 
   /// BalanceOf<T>
@@ -210,11 +157,8 @@ class FeesCollected extends Event {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'FeesCollected': {
-          'amount': amount,
-          'total': total,
-        }
-      };
+    'FeesCollected': {'amount': amount, 'total': total},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -224,33 +168,17 @@ class FeesCollected extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      total,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U128Codec.codec.encodeTo(total, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is FeesCollected && other.amount == amount && other.total == total;
+      identical(this, other) || other is FeesCollected && other.amount == amount && other.total == total;
 
   @override
-  int get hashCode => Object.hash(
-        amount,
-        total,
-      );
+  int get hashCode => Object.hash(amount, total);
 }
 
 /// Rewards were sent to Treasury when no miner was specified
@@ -267,8 +195,8 @@ class TreasuryRewarded extends Event {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'TreasuryRewarded': {'reward': reward}
-      };
+    'TreasuryRewarded': {'reward': reward},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -277,23 +205,12 @@ class TreasuryRewarded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      reward,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U128Codec.codec.encodeTo(reward, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TreasuryRewarded && other.reward == reward;
+  bool operator ==(Object other) => identical(this, other) || other is TreasuryRewarded && other.reward == reward;
 
   @override
   int get hashCode => reward.hashCode;

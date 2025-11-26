@@ -7,10 +7,7 @@ import 'package:quiver/collection.dart' as _i4;
 import '../primitive_types/h256.dart' as _i2;
 
 class CodeUpgradeAuthorization {
-  const CodeUpgradeAuthorization({
-    required this.codeHash,
-    required this.checkVersion,
-  });
+  const CodeUpgradeAuthorization({required this.codeHash, required this.checkVersion});
 
   factory CodeUpgradeAuthorization.decode(_i1.Input input) {
     return codec.decode(input);
@@ -22,54 +19,32 @@ class CodeUpgradeAuthorization {
   /// bool
   final bool checkVersion;
 
-  static const $CodeUpgradeAuthorizationCodec codec =
-      $CodeUpgradeAuthorizationCodec();
+  static const $CodeUpgradeAuthorizationCodec codec = $CodeUpgradeAuthorizationCodec();
 
   _i3.Uint8List encode() {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'codeHash': codeHash.toList(),
-        'checkVersion': checkVersion,
-      };
+  Map<String, dynamic> toJson() => {'codeHash': codeHash.toList(), 'checkVersion': checkVersion};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is CodeUpgradeAuthorization &&
-          _i4.listsEqual(
-            other.codeHash,
-            codeHash,
-          ) &&
+          _i4.listsEqual(other.codeHash, codeHash) &&
           other.checkVersion == checkVersion;
 
   @override
-  int get hashCode => Object.hash(
-        codeHash,
-        checkVersion,
-      );
+  int get hashCode => Object.hash(codeHash, checkVersion);
 }
 
 class $CodeUpgradeAuthorizationCodec with _i1.Codec<CodeUpgradeAuthorization> {
   const $CodeUpgradeAuthorizationCodec();
 
   @override
-  void encodeTo(
-    CodeUpgradeAuthorization obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.codeHash,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      obj.checkVersion,
-      output,
-    );
+  void encodeTo(CodeUpgradeAuthorization obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.codeHash, output);
+    _i1.BoolCodec.codec.encodeTo(obj.checkVersion, output);
   }
 
   @override

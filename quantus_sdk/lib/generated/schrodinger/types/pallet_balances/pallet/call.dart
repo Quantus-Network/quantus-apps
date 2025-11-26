@@ -36,14 +36,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  TransferAllowDeath transferAllowDeath({
-    required _i3.MultiAddress dest,
-    required BigInt value,
-  }) {
-    return TransferAllowDeath(
-      dest: dest,
-      value: value,
-    );
+  TransferAllowDeath transferAllowDeath({required _i3.MultiAddress dest, required BigInt value}) {
+    return TransferAllowDeath(dest: dest, value: value);
   }
 
   ForceTransfer forceTransfer({
@@ -51,75 +45,38 @@ class $Call {
     required _i3.MultiAddress dest,
     required BigInt value,
   }) {
-    return ForceTransfer(
-      source: source,
-      dest: dest,
-      value: value,
-    );
+    return ForceTransfer(source: source, dest: dest, value: value);
   }
 
-  TransferKeepAlive transferKeepAlive({
-    required _i3.MultiAddress dest,
-    required BigInt value,
-  }) {
-    return TransferKeepAlive(
-      dest: dest,
-      value: value,
-    );
+  TransferKeepAlive transferKeepAlive({required _i3.MultiAddress dest, required BigInt value}) {
+    return TransferKeepAlive(dest: dest, value: value);
   }
 
-  TransferAll transferAll({
-    required _i3.MultiAddress dest,
-    required bool keepAlive,
-  }) {
-    return TransferAll(
-      dest: dest,
-      keepAlive: keepAlive,
-    );
+  TransferAll transferAll({required _i3.MultiAddress dest, required bool keepAlive}) {
+    return TransferAll(dest: dest, keepAlive: keepAlive);
   }
 
-  ForceUnreserve forceUnreserve({
-    required _i3.MultiAddress who,
-    required BigInt amount,
-  }) {
-    return ForceUnreserve(
-      who: who,
-      amount: amount,
-    );
+  ForceUnreserve forceUnreserve({required _i3.MultiAddress who, required BigInt amount}) {
+    return ForceUnreserve(who: who, amount: amount);
   }
 
   UpgradeAccounts upgradeAccounts({required List<_i4.AccountId32> who}) {
     return UpgradeAccounts(who: who);
   }
 
-  ForceSetBalance forceSetBalance({
-    required _i3.MultiAddress who,
-    required BigInt newFree,
-  }) {
-    return ForceSetBalance(
-      who: who,
-      newFree: newFree,
-    );
+  ForceSetBalance forceSetBalance({required _i3.MultiAddress who, required BigInt newFree}) {
+    return ForceSetBalance(who: who, newFree: newFree);
   }
 
   ForceAdjustTotalIssuance forceAdjustTotalIssuance({
     required _i5.AdjustmentDirection direction,
     required BigInt delta,
   }) {
-    return ForceAdjustTotalIssuance(
-      direction: direction,
-      delta: delta,
-    );
+    return ForceAdjustTotalIssuance(direction: direction, delta: delta);
   }
 
-  Burn burn({
-    required BigInt value,
-    required bool keepAlive,
-  }) {
-    return Burn(
-      value: value,
-      keepAlive: keepAlive,
-    );
+  Burn burn({required BigInt value, required bool keepAlive}) {
+    return Burn(value: value, keepAlive: keepAlive);
   }
 }
 
@@ -154,10 +111,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case TransferAllowDeath:
         (value as TransferAllowDeath).encodeTo(output);
@@ -187,8 +141,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as Burn).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -214,8 +167,7 @@ class $CallCodec with _i1.Codec<Call> {
       case Burn:
         return (value as Burn)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -228,10 +180,7 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// The dispatch origin for this call must be `Signed` by the transactor.
 class TransferAllowDeath extends Call {
-  const TransferAllowDeath({
-    required this.dest,
-    required this.value,
-  });
+  const TransferAllowDeath({required this.dest, required this.value});
 
   factory TransferAllowDeath._decode(_i1.Input input) {
     return TransferAllowDeath(
@@ -248,11 +197,8 @@ class TransferAllowDeath extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_allow_death': {
-          'dest': dest.toJson(),
-          'value': value,
-        }
-      };
+    'transfer_allow_death': {'dest': dest.toJson(), 'value': value},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -262,43 +208,23 @@ class TransferAllowDeath extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferAllowDeath && other.dest == dest && other.value == value;
+      identical(this, other) || other is TransferAllowDeath && other.dest == dest && other.value == value;
 
   @override
-  int get hashCode => Object.hash(
-        dest,
-        value,
-      );
+  int get hashCode => Object.hash(dest, value);
 }
 
 /// Exactly as `transfer_allow_death`, except the origin must be root and the source account
 /// may be specified.
 class ForceTransfer extends Call {
-  const ForceTransfer({
-    required this.source,
-    required this.dest,
-    required this.value,
-  });
+  const ForceTransfer({required this.source, required this.dest, required this.value});
 
   factory ForceTransfer._decode(_i1.Input input) {
     return ForceTransfer(
@@ -319,12 +245,8 @@ class ForceTransfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_transfer': {
-          'source': source.toJson(),
-          'dest': dest.toJson(),
-          'value': value,
-        }
-      };
+    'force_transfer': {'source': source.toJson(), 'dest': dest.toJson(), 'value': value},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -335,41 +257,19 @@ class ForceTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      source,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i3.MultiAddress.codec.encodeTo(source, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceTransfer &&
-          other.source == source &&
-          other.dest == dest &&
-          other.value == value;
+      identical(this, other) ||
+      other is ForceTransfer && other.source == source && other.dest == dest && other.value == value;
 
   @override
-  int get hashCode => Object.hash(
-        source,
-        dest,
-        value,
-      );
+  int get hashCode => Object.hash(source, dest, value);
 }
 
 /// Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
@@ -379,10 +279,7 @@ class ForceTransfer extends Call {
 ///
 /// [`transfer_allow_death`]: struct.Pallet.html#method.transfer
 class TransferKeepAlive extends Call {
-  const TransferKeepAlive({
-    required this.dest,
-    required this.value,
-  });
+  const TransferKeepAlive({required this.dest, required this.value});
 
   factory TransferKeepAlive._decode(_i1.Input input) {
     return TransferKeepAlive(
@@ -399,11 +296,8 @@ class TransferKeepAlive extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_keep_alive': {
-          'dest': dest.toJson(),
-          'value': value,
-        }
-      };
+    'transfer_keep_alive': {'dest': dest.toJson(), 'value': value},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -413,33 +307,17 @@ class TransferKeepAlive extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferKeepAlive && other.dest == dest && other.value == value;
+      identical(this, other) || other is TransferKeepAlive && other.dest == dest && other.value == value;
 
   @override
-  int get hashCode => Object.hash(
-        dest,
-        value,
-      );
+  int get hashCode => Object.hash(dest, value);
 }
 
 /// Transfer the entire transferable balance from the caller account.
@@ -458,16 +336,10 @@ class TransferKeepAlive extends Call {
 ///  transfer everything except at least the existential deposit, which will guarantee to
 ///  keep the sender account alive (true).
 class TransferAll extends Call {
-  const TransferAll({
-    required this.dest,
-    required this.keepAlive,
-  });
+  const TransferAll({required this.dest, required this.keepAlive});
 
   factory TransferAll._decode(_i1.Input input) {
-    return TransferAll(
-      dest: _i3.MultiAddress.codec.decode(input),
-      keepAlive: _i1.BoolCodec.codec.decode(input),
-    );
+    return TransferAll(dest: _i3.MultiAddress.codec.decode(input), keepAlive: _i1.BoolCodec.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -478,11 +350,8 @@ class TransferAll extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_all': {
-          'dest': dest.toJson(),
-          'keepAlive': keepAlive,
-        }
-      };
+    'transfer_all': {'dest': dest.toJson(), 'keepAlive': keepAlive},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -492,51 +361,27 @@ class TransferAll extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      keepAlive,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.BoolCodec.codec.encodeTo(keepAlive, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferAll &&
-          other.dest == dest &&
-          other.keepAlive == keepAlive;
+      identical(this, other) || other is TransferAll && other.dest == dest && other.keepAlive == keepAlive;
 
   @override
-  int get hashCode => Object.hash(
-        dest,
-        keepAlive,
-      );
+  int get hashCode => Object.hash(dest, keepAlive);
 }
 
 /// Unreserve some balance from a user by force.
 ///
 /// Can only be called by ROOT.
 class ForceUnreserve extends Call {
-  const ForceUnreserve({
-    required this.who,
-    required this.amount,
-  });
+  const ForceUnreserve({required this.who, required this.amount});
 
   factory ForceUnreserve._decode(_i1.Input input) {
-    return ForceUnreserve(
-      who: _i3.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return ForceUnreserve(who: _i3.MultiAddress.codec.decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -547,11 +392,8 @@ class ForceUnreserve extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_unreserve': {
-          'who': who.toJson(),
-          'amount': amount,
-        }
-      };
+    'force_unreserve': {'who': who.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -561,33 +403,17 @@ class ForceUnreserve extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceUnreserve && other.who == who && other.amount == amount;
+      identical(this, other) || other is ForceUnreserve && other.who == who && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(who, amount);
 }
 
 /// Upgrade a specified account.
@@ -602,9 +428,7 @@ class UpgradeAccounts extends Call {
   const UpgradeAccounts({required this.who});
 
   factory UpgradeAccounts._decode(_i1.Input input) {
-    return UpgradeAccounts(
-        who: const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec())
-            .decode(input));
+    return UpgradeAccounts(who: const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec()).decode(input));
   }
 
   /// Vec<T::AccountId>
@@ -612,39 +436,23 @@ class UpgradeAccounts extends Call {
 
   @override
   Map<String, Map<String, List<List<int>>>> toJson() => {
-        'upgrade_accounts': {'who': who.map((value) => value.toList()).toList()}
-      };
+    'upgrade_accounts': {'who': who.map((value) => value.toList()).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec())
-            .sizeHint(who);
+    size = size + const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec()).sizeHint(who);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec()).encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.SequenceCodec<_i4.AccountId32>(_i4.AccountId32Codec()).encodeTo(who, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is UpgradeAccounts &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          );
+      identical(this, other) || other is UpgradeAccounts && _i6.listsEqual(other.who, who);
 
   @override
   int get hashCode => who.hashCode;
@@ -654,10 +462,7 @@ class UpgradeAccounts extends Call {
 ///
 /// The dispatch origin for this call is `root`.
 class ForceSetBalance extends Call {
-  const ForceSetBalance({
-    required this.who,
-    required this.newFree,
-  });
+  const ForceSetBalance({required this.who, required this.newFree});
 
   factory ForceSetBalance._decode(_i1.Input input) {
     return ForceSetBalance(
@@ -674,11 +479,8 @@ class ForceSetBalance extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_set_balance': {
-          'who': who.toJson(),
-          'newFree': newFree,
-        }
-      };
+    'force_set_balance': {'who': who.toJson(), 'newFree': newFree},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -688,33 +490,17 @@ class ForceSetBalance extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      newFree,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(newFree, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceSetBalance && other.who == who && other.newFree == newFree;
+      identical(this, other) || other is ForceSetBalance && other.who == who && other.newFree == newFree;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        newFree,
-      );
+  int get hashCode => Object.hash(who, newFree);
 }
 
 /// Adjust the total issuance in a saturating way.
@@ -723,10 +509,7 @@ class ForceSetBalance extends Call {
 ///
 /// # Example
 class ForceAdjustTotalIssuance extends Call {
-  const ForceAdjustTotalIssuance({
-    required this.direction,
-    required this.delta,
-  });
+  const ForceAdjustTotalIssuance({required this.direction, required this.delta});
 
   factory ForceAdjustTotalIssuance._decode(_i1.Input input) {
     return ForceAdjustTotalIssuance(
@@ -743,11 +526,8 @@ class ForceAdjustTotalIssuance extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_adjust_total_issuance': {
-          'direction': direction.toJson(),
-          'delta': delta,
-        }
-      };
+    'force_adjust_total_issuance': {'direction': direction.toJson(), 'delta': delta},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -757,35 +537,18 @@ class ForceAdjustTotalIssuance extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    _i5.AdjustmentDirection.codec.encodeTo(
-      direction,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      delta,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    _i5.AdjustmentDirection.codec.encodeTo(direction, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(delta, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceAdjustTotalIssuance &&
-          other.direction == direction &&
-          other.delta == delta;
+      identical(this, other) ||
+      other is ForceAdjustTotalIssuance && other.direction == direction && other.delta == delta;
 
   @override
-  int get hashCode => Object.hash(
-        direction,
-        delta,
-      );
+  int get hashCode => Object.hash(direction, delta);
 }
 
 /// Burn the specified liquid free balance from the origin account.
@@ -796,16 +559,10 @@ class ForceAdjustTotalIssuance extends Call {
 /// Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
 /// this `burn` operation will reduce total issuance by the amount _burned_.
 class Burn extends Call {
-  const Burn({
-    required this.value,
-    required this.keepAlive,
-  });
+  const Burn({required this.value, required this.keepAlive});
 
   factory Burn._decode(_i1.Input input) {
-    return Burn(
-      value: _i1.CompactBigIntCodec.codec.decode(input),
-      keepAlive: _i1.BoolCodec.codec.decode(input),
-    );
+    return Burn(value: _i1.CompactBigIntCodec.codec.decode(input), keepAlive: _i1.BoolCodec.codec.decode(input));
   }
 
   /// T::Balance
@@ -816,11 +573,8 @@ class Burn extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'burn': {
-          'value': value,
-          'keepAlive': keepAlive,
-        }
-      };
+    'burn': {'value': value, 'keepAlive': keepAlive},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -830,31 +584,15 @@ class Burn extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      keepAlive,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
+    _i1.BoolCodec.codec.encodeTo(keepAlive, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Burn && other.value == value && other.keepAlive == keepAlive;
+      identical(this, other) || other is Burn && other.value == value && other.keepAlive == keepAlive;
 
   @override
-  int get hashCode => Object.hash(
-        value,
-        keepAlive,
-      );
+  int get hashCode => Object.hash(value, keepAlive);
 }

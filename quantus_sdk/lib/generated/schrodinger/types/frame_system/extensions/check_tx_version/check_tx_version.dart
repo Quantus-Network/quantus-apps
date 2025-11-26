@@ -12,14 +12,8 @@ class CheckTxVersionCodec with _i1.Codec<CheckTxVersion> {
   }
 
   @override
-  void encodeTo(
-    CheckTxVersion value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(CheckTxVersion value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

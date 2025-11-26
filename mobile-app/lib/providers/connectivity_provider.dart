@@ -3,9 +3,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
   final service = ConnectivityService();
-  
+
   ref.onDispose(() => service.dispose());
-  
+
   return service;
 });
 
@@ -22,4 +22,3 @@ final isOnlineProvider = Provider<bool>((ref) {
     error: (_, _) => false,
   );
 });
-

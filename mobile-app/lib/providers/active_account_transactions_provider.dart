@@ -9,29 +9,24 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 /// This provider handles the logic of watching the active account and fetching
 /// the appropriate transaction list. It returns an [AsyncValue] that can be
 /// in a loading, data, or error state.
-final activeAccountTransactionsProvider =
-    Provider<AsyncValue<CombinedTransactionsList>>((ref) {
-      final activeAccountValue = ref.watch(activeAccountProvider);
+final activeAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((ref) {
+  final activeAccountValue = ref.watch(activeAccountProvider);
 
-      return activeAccountValue.when(
-        data: (activeAccount) {
-          if (activeAccount == null) {
-            return AsyncValue.data(
-              CombinedTransactionsList(
-                pendingCancellationIds: <String>{},
-                pendingTransactions: [],
-                reversibleTransfers: [],
-                otherTransfers: [],
-              ),
-            );
-          }
-          return ref.watch(
-            filteredTransactionsProviderFamily(
-              AccountIdListCache.get([activeAccount.accountId]),
-            ),
-          );
-        },
-        loading: () => const AsyncValue.loading(),
-        error: (err, stack) => AsyncValue.error(err, stack),
-      );
-    });
+  return activeAccountValue.when(
+    data: (activeAccount) {
+      if (activeAccount == null) {
+        return AsyncValue.data(
+          CombinedTransactionsList(
+            pendingCancellationIds: <String>{},
+            pendingTransactions: [],
+            reversibleTransfers: [],
+            otherTransfers: [],
+          ),
+        );
+      }
+      return ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get([activeAccount.accountId])));
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+  );
+});

@@ -39,22 +39,15 @@ class $Event {
     return Sudid(sudoResult: sudoResult);
   }
 
-  KeyChanged keyChanged({
-    _i4.AccountId32? old,
-    required _i4.AccountId32 new_,
-  }) {
-    return KeyChanged(
-      old: old,
-      new_: new_,
-    );
+  KeyChanged keyChanged({_i4.AccountId32? old, required _i4.AccountId32 new_}) {
+    return KeyChanged(old: old, new_: new_);
   }
 
   KeyRemoved keyRemoved() {
     return KeyRemoved();
   }
 
-  SudoAsDone sudoAsDone(
-      {required _i1.Result<dynamic, _i3.DispatchError> sudoResult}) {
+  SudoAsDone sudoAsDone({required _i1.Result<dynamic, _i3.DispatchError> sudoResult}) {
     return SudoAsDone(sudoResult: sudoResult);
   }
 }
@@ -80,10 +73,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case Sudid:
         (value as Sudid).encodeTo(output);
@@ -98,8 +88,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as SudoAsDone).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -115,8 +104,7 @@ class $EventCodec with _i1.Codec<Event> {
       case SudoAsDone:
         return (value as SudoAsDone)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -127,10 +115,11 @@ class Sudid extends Event {
 
   factory Sudid._decode(_i1.Input input) {
     return Sudid(
-        sudoResult: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
-      _i1.NullCodec.codec,
-      _i3.DispatchError.codec,
-    ).decode(input));
+      sudoResult: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
+        _i1.NullCodec.codec,
+        _i3.DispatchError.codec,
+      ).decode(input),
+    );
   }
 
   /// DispatchResult
@@ -139,12 +128,13 @@ class Sudid extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'Sudid': {'sudoResult': sudoResult.toJson()}
-      };
+    'Sudid': {'sudoResult': sudoResult.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.ResultCodec<dynamic, _i3.DispatchError>(
           _i1.NullCodec.codec,
           _i3.DispatchError.codec,
@@ -153,26 +143,15 @@ class Sudid extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
     const _i1.ResultCodec<dynamic, _i3.DispatchError>(
       _i1.NullCodec.codec,
       _i3.DispatchError.codec,
-    ).encodeTo(
-      sudoResult,
-      output,
-    );
+    ).encodeTo(sudoResult, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Sudid && other.sudoResult == sudoResult;
+  bool operator ==(Object other) => identical(this, other) || other is Sudid && other.sudoResult == sudoResult;
 
   @override
   int get hashCode => sudoResult.hashCode;
@@ -180,15 +159,11 @@ class Sudid extends Event {
 
 /// The sudo key has been updated.
 class KeyChanged extends Event {
-  const KeyChanged({
-    this.old,
-    required this.new_,
-  });
+  const KeyChanged({this.old, required this.new_});
 
   factory KeyChanged._decode(_i1.Input input) {
     return KeyChanged(
-      old: const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec())
-          .decode(input),
+      old: const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec()).decode(input),
       new_: const _i1.U8ArrayCodec(32).decode(input),
     );
   }
@@ -203,54 +178,28 @@ class KeyChanged extends Event {
 
   @override
   Map<String, Map<String, List<int>?>> toJson() => {
-        'KeyChanged': {
-          'old': old?.toList(),
-          'new': new_.toList(),
-        }
-      };
+    'KeyChanged': {'old': old?.toList(), 'new': new_.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec())
-            .sizeHint(old);
+    size = size + const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec()).sizeHint(old);
     size = size + const _i4.AccountId32Codec().sizeHint(new_);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec()).encodeTo(
-      old,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      new_,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.OptionCodec<_i4.AccountId32>(_i4.AccountId32Codec()).encodeTo(old, output);
+    const _i1.U8ArrayCodec(32).encodeTo(new_, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is KeyChanged &&
-          other.old == old &&
-          _i5.listsEqual(
-            other.new_,
-            new_,
-          );
+      identical(this, other) || other is KeyChanged && other.old == old && _i5.listsEqual(other.new_, new_);
 
   @override
-  int get hashCode => Object.hash(
-        old,
-        new_,
-      );
+  int get hashCode => Object.hash(old, new_);
 }
 
 /// The key was permanently removed.
@@ -261,10 +210,7 @@ class KeyRemoved extends Event {
   Map<String, dynamic> toJson() => {'KeyRemoved': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
   }
 
   @override
@@ -280,10 +226,11 @@ class SudoAsDone extends Event {
 
   factory SudoAsDone._decode(_i1.Input input) {
     return SudoAsDone(
-        sudoResult: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
-      _i1.NullCodec.codec,
-      _i3.DispatchError.codec,
-    ).decode(input));
+      sudoResult: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
+        _i1.NullCodec.codec,
+        _i3.DispatchError.codec,
+      ).decode(input),
+    );
   }
 
   /// DispatchResult
@@ -292,12 +239,13 @@ class SudoAsDone extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'SudoAsDone': {'sudoResult': sudoResult.toJson()}
-      };
+    'SudoAsDone': {'sudoResult': sudoResult.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.ResultCodec<dynamic, _i3.DispatchError>(
           _i1.NullCodec.codec,
           _i3.DispatchError.codec,
@@ -306,26 +254,15 @@ class SudoAsDone extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
     const _i1.ResultCodec<dynamic, _i3.DispatchError>(
       _i1.NullCodec.codec,
       _i3.DispatchError.codec,
-    ).encodeTo(
-      sudoResult,
-      output,
-    );
+    ).encodeTo(sudoResult, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SudoAsDone && other.sudoResult == sudoResult;
+  bool operator ==(Object other) => identical(this, other) || other is SudoAsDone && other.sudoResult == sudoResult;
 
   @override
   int get hashCode => sudoResult.hashCode;

@@ -5,10 +5,8 @@ extension MediaQueryDataExtension on BuildContext {
   bool get isSmallHeight => MediaQuery.of(this).size.height < 750;
 
   double get containerHalfWidth => MediaQuery.of(this).size.width * 0.5;
-  double getHorizontalCenterPosition(double sphereWidth) =>
-      containerHalfWidth - (sphereWidth / 2);
+  double getHorizontalCenterPosition(double sphereWidth) => containerHalfWidth - (sphereWidth / 2);
 
   double get containerHalfHeight => MediaQuery.of(this).size.height * 0.5;
-   double getVerticalCenterPosition(double sphereHeight) =>
-      containerHalfHeight - (sphereHeight / 2);
+  double getVerticalCenterPosition(double sphereHeight) => containerHalfHeight - (sphereHeight / 2);
 }

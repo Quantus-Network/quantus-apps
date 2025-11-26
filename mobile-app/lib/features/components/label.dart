@@ -9,11 +9,6 @@ class Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      data,
-      style: context.themeText.tag?.copyWith(
-        color: context.themeColors.inputLabel,
-      ),
-    );
+    return Text(data, style: context.themeText.tag?.copyWith(color: context.themeColors.inputLabel));
   }
 }

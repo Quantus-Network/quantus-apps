@@ -12,14 +12,8 @@ class PermillCodec with _i1.Codec<Permill> {
   }
 
   @override
-  void encodeTo(
-    Permill value,
-    _i1.Output output,
-  ) {
-    _i1.U32Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(Permill value, _i1.Output output) {
+    _i1.U32Codec.codec.encodeTo(value, output);
   }
 
   @override

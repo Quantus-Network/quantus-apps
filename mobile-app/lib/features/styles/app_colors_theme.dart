@@ -232,37 +232,28 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       yellow: Color.lerp(yellow, other.yellow, t) ?? yellow,
       background: Color.lerp(background, other.background, t) ?? background,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
-      surfaceActive:
-          Color.lerp(surfaceActive, other.surfaceActive, t) ?? surfaceActive,
+      surfaceActive: Color.lerp(surfaceActive, other.surfaceActive, t) ?? surfaceActive,
       error: Color.lerp(error, other.error, t) ?? error,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
-      textSecondary:
-          Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textError: Color.lerp(textError, other.textError, t) ?? textError,
       inputLabel: Color.lerp(inputLabel, other.inputLabel, t) ?? inputLabel,
       light: Color.lerp(light, other.light, t) ?? light,
-      circularLoader:
-          Color.lerp(circularLoader, other.circularLoader, t) ?? circularLoader,
-      authButtonBg:
-          Color.lerp(authButtonBg, other.authButtonBg, t) ?? authButtonBg,
+      circularLoader: Color.lerp(circularLoader, other.circularLoader, t) ?? circularLoader,
+      authButtonBg: Color.lerp(authButtonBg, other.authButtonBg, t) ?? authButtonBg,
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
       border: Color.lerp(border, other.border, t) ?? border,
       borderLight: Color.lerp(borderLight, other.borderLight, t) ?? borderLight,
-      buttonDisabled:
-          Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
+      buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
       navbarBg: Color.lerp(navbarBg, other.navbarBg, t) ?? navbarBg,
       checksum: Color.lerp(checksum, other.checksum, t) ?? checksum,
-      checksumDarker:
-          Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
+      checksumDarker: Color.lerp(checksumDarker, other.checksumDarker, t) ?? checksumDarker,
       darkGray: Color.lerp(darkGray, other.darkGray, t) ?? darkGray,
       settingCard: Color.lerp(settingCard, other.settingCard, t) ?? settingCard,
       buttonGlass: Color.lerp(buttonGlass, other.buttonGlass, t) ?? buttonGlass,
-      buttonNeutral:
-          Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
-      buttonDanger:
-          Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
-      buttonSuccess:
-          Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
+      buttonNeutral: Color.lerp(buttonNeutral, other.buttonNeutral, t) ?? buttonNeutral,
+      buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
+      buttonSuccess: Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
       buttonPrimary: other.buttonPrimary,
       skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
       skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,

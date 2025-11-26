@@ -11,14 +11,7 @@ class CardInfo extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color? textColor;
 
-  const CardInfo({
-    super.key,
-    required this.text,
-    this.icon,
-    this.label,
-    this.onPressed,
-    this.textColor,
-  });
+  const CardInfo({super.key, required this.text, this.icon, this.label, this.onPressed, this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +25,7 @@ class CardInfo extends StatelessWidget {
           if (label != null) ...[Label(label!), const SizedBox(height: 4)],
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              vertical: verticalPadding,
-              horizontal: 10,
-            ),
+            padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 10),
             decoration: BoxDecoration(color: context.themeColors.buttonGlass),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -44,12 +34,7 @@ class CardInfo extends StatelessWidget {
               children: [
                 SizedBox(
                   width: context.isTablet ? 660 : 251,
-                  child: Text(
-                    text,
-                    style: context.themeText.tag?.copyWith(
-                      color: textColor,
-                    ),
-                  ),
+                  child: Text(text, style: context.themeText.tag?.copyWith(color: textColor)),
                 ),
                 if (icon != null) icon!,
               ],

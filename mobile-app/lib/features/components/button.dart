@@ -3,15 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-enum ButtonVariant {
-  transparent,
-  neutral,
-  primary,
-  success,
-  danger,
-  glass,
-  glassOutline,
-}
+enum ButtonVariant { transparent, neutral, primary, success, danger, glass, glassOutline }
 
 class Button extends StatelessWidget {
   final String label;
@@ -57,22 +49,15 @@ class Button extends StatelessWidget {
           ? SizedBox(
               width: (effectiveTextStyle.fontSize ?? 16) + 6,
               height: (effectiveTextStyle.fontSize ?? 16) + 6,
-              child: CircularProgressIndicator(
-                color: context.themeColors.background,
-                strokeWidth: 2.0,
-              ),
+              child: CircularProgressIndicator(color: context.themeColors.background, strokeWidth: 2.0),
             )
           : Opacity(
               opacity: disabled ? 0.6 : 1,
               child: Text(
                 label,
                 style: disabled
-                    ? effectiveTextStyle.copyWith(
-                        color: context.themeColors.textMuted,
-                      )
-                    : effectiveTextStyle.copyWith(
-                        color: _getTitleColor(context, variant),
-                      ),
+                    ? effectiveTextStyle.copyWith(color: context.themeColors.textMuted)
+                    : effectiveTextStyle.copyWith(color: _getTitleColor(context, variant)),
               ),
             ),
     );
@@ -93,9 +78,7 @@ class Button extends StatelessWidget {
                     colors: context.themeColors.buttonPrimary,
                   )
                 : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(buttonRadius),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
         );
@@ -105,11 +88,7 @@ class Button extends StatelessWidget {
         buttonWidget = Container(
           width: width,
           padding: padding,
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(buttonRadius),
-            ),
-          ),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius))),
           child: buttonContent,
         );
         break;
@@ -119,12 +98,8 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled
-                ? context.themeColors.buttonDisabled
-                : context.themeColors.buttonNeutral,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(buttonRadius),
-            ),
+            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonNeutral,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
         );
@@ -139,13 +114,9 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: disabled
-                    ? context.themeColors.buttonDisabled
-                    : context.themeColors.buttonGlass,
+                color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
                 shape: RoundedRectangleBorder(
-                  side: disabled
-                      ? BorderSide.none
-                      : BorderSide(color: context.themeColors.buttonNeutral),
+                  side: disabled ? BorderSide.none : BorderSide(color: context.themeColors.buttonNeutral),
                   borderRadius: BorderRadius.circular(buttonRadius),
                 ),
               ),
@@ -160,12 +131,8 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled
-                ? context.themeColors.buttonDisabled
-                : context.themeColors.buttonDanger,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(buttonRadius),
-            ),
+            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonDanger,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
         );
@@ -176,12 +143,8 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(
-            color: disabled
-                ? context.themeColors.buttonDisabled
-                : context.themeColors.buttonSuccess,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(buttonRadius),
-            ),
+            color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonSuccess,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
         );
@@ -196,12 +159,8 @@ class Button extends StatelessWidget {
               width: width,
               padding: padding,
               decoration: ShapeDecoration(
-                color: disabled
-                    ? context.themeColors.buttonDisabled
-                    : context.themeColors.buttonGlass,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(buttonRadius),
-                ),
+                color: disabled ? context.themeColors.buttonDisabled : context.themeColors.buttonGlass,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
               ),
               child: buttonContent,
             ),
@@ -210,9 +169,6 @@ class Button extends StatelessWidget {
         break;
     }
 
-    return GestureDetector(
-      onTap: disabled ? null : onPressed,
-      child: buttonWidget,
-    );
+    return GestureDetector(onTap: disabled ? null : onPressed, child: buttonWidget);
   }
 }

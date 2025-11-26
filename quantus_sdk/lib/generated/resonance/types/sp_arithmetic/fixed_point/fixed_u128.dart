@@ -12,14 +12,8 @@ class FixedU128Codec with _i1.Codec<FixedU128> {
   }
 
   @override
-  void encodeTo(
-    FixedU128 value,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(FixedU128 value, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(value, output);
   }
 
   @override

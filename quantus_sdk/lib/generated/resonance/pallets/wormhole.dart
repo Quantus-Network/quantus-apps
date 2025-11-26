@@ -14,43 +14,27 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<List<int>, bool> _usedNullifiers =
-      const _i1.StorageMap<List<int>, bool>(
+  final _i1.StorageMap<List<int>, bool> _usedNullifiers = const _i1.StorageMap<List<int>, bool>(
     prefix: 'Wormhole',
     storage: 'UsedNullifiers',
     valueCodec: _i2.BoolCodec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.U8ArrayCodec(32)),
   );
 
-  _i3.Future<bool> usedNullifiers(
-    List<int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i3.Future<bool> usedNullifiers(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _usedNullifiers.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _usedNullifiers.decodeValue(bytes);
     }
     return false; /* Default */
   }
 
-  _i3.Future<List<bool>> multiUsedNullifiers(
-    List<List<int>> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i3.Future<List<bool>> multiUsedNullifiers(List<List<int>> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _usedNullifiers.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _usedNullifiers.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => false).toList() as List<bool>); /* Default */
   }
@@ -71,14 +55,8 @@ class Queries {
 class Txs {
   const Txs();
 
-  _i5.Wormhole verifyWormholeProof({
-    required List<int> proofBytes,
-    required int blockNumber,
-  }) {
-    return _i5.Wormhole(_i6.VerifyWormholeProof(
-      proofBytes: proofBytes,
-      blockNumber: blockNumber,
-    ));
+  _i5.Wormhole verifyWormholeProof({required List<int> proofBytes, required int blockNumber}) {
+    return _i5.Wormhole(_i6.VerifyWormholeProof(proofBytes: proofBytes, blockNumber: blockNumber));
   }
 }
 

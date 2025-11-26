@@ -31,10 +31,10 @@ class ScaffoldBase extends StatelessWidget {
     this.dim = 0.25,
     this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
     required Widget this.child,
-  })  : slivers = null,
-        scrollController = null,
-        scrollPhysics = null,
-        onRefresh = null;
+  }) : slivers = null,
+       scrollController = null,
+       scrollPhysics = null,
+       onRefresh = null;
 
   // Scrollable constructor - SingleChildScrollView without refresh
   const ScaffoldBase.scrollable({
@@ -49,8 +49,8 @@ class ScaffoldBase extends StatelessWidget {
     required ScrollController this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
     required Widget this.child,
-  })  : slivers = null,
-        onRefresh = null;
+  }) : slivers = null,
+       onRefresh = null;
 
   // Refreshable constructor - CustomScrollView with pull-to-refresh
   const ScaffoldBase.refreshable({
@@ -78,11 +78,7 @@ class ScaffoldBase extends StatelessWidget {
         children: [
           if (decorations != null) ...decorations!,
           Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.useOpacity(dim),
-              ),
-            ),
+            child: Container(decoration: BoxDecoration(color: Colors.black.useOpacity(dim))),
           ),
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: backdropBlur, sigmaY: backdropBlur),
@@ -92,10 +88,7 @@ class ScaffoldBase extends StatelessWidget {
                 children: [
                   const NetworkStatusBanner(),
                   Expanded(
-                    child: Padding(
-                      padding: padding,
-                      child:  _buildChild(),
-                    ),
+                    child: Padding(padding: padding, child: _buildChild()),
                   ),
                 ],
               ),

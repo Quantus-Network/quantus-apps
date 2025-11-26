@@ -15,8 +15,7 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<_i2.AccountId32> _key =
-      const _i1.StorageValue<_i2.AccountId32>(
+  final _i1.StorageValue<_i2.AccountId32> _key = const _i1.StorageValue<_i2.AccountId32>(
     prefix: 'Sudo',
     storage: 'Key',
     valueCodec: _i2.AccountId32Codec(),
@@ -25,10 +24,7 @@ class Queries {
   /// The `AccountId` of the sudo key.
   _i3.Future<_i2.AccountId32?> key({_i1.BlockHash? at}) async {
     final hashedKey = _key.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _key.decodeValue(bytes);
     }
@@ -55,14 +51,8 @@ class Txs {
   /// Sudo user to specify the weight of the call.
   ///
   /// The dispatch origin for this call must be _Signed_.
-  _i5.Sudo sudoUncheckedWeight({
-    required _i5.RuntimeCall call,
-    required _i7.Weight weight,
-  }) {
-    return _i5.Sudo(_i6.SudoUncheckedWeight(
-      call: call,
-      weight: weight,
-    ));
+  _i5.Sudo sudoUncheckedWeight({required _i5.RuntimeCall call, required _i7.Weight weight}) {
+    return _i5.Sudo(_i6.SudoUncheckedWeight(call: call, weight: weight));
   }
 
   /// Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
@@ -75,14 +65,8 @@ class Txs {
   /// a given account.
   ///
   /// The dispatch origin for this call must be _Signed_.
-  _i5.Sudo sudoAs({
-    required _i8.MultiAddress who,
-    required _i5.RuntimeCall call,
-  }) {
-    return _i5.Sudo(_i6.SudoAs(
-      who: who,
-      call: call,
-    ));
+  _i5.Sudo sudoAs({required _i8.MultiAddress who, required _i5.RuntimeCall call}) {
+    return _i5.Sudo(_i6.SudoAs(who: who, call: call));
   }
 
   /// Permanently removes the sudo key.

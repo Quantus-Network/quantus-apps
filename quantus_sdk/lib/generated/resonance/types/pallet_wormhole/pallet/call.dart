@@ -32,14 +32,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  VerifyWormholeProof verifyWormholeProof({
-    required List<int> proofBytes,
-    required int blockNumber,
-  }) {
-    return VerifyWormholeProof(
-      proofBytes: proofBytes,
-      blockNumber: blockNumber,
-    );
+  VerifyWormholeProof verifyWormholeProof({required List<int> proofBytes, required int blockNumber}) {
+    return VerifyWormholeProof(proofBytes: proofBytes, blockNumber: blockNumber);
   }
 }
 
@@ -58,17 +52,13 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case VerifyWormholeProof:
         (value as VerifyWormholeProof).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -78,17 +68,13 @@ class $CallCodec with _i1.Codec<Call> {
       case VerifyWormholeProof:
         return (value as VerifyWormholeProof)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class VerifyWormholeProof extends Call {
-  const VerifyWormholeProof({
-    required this.proofBytes,
-    required this.blockNumber,
-  });
+  const VerifyWormholeProof({required this.proofBytes, required this.blockNumber});
 
   factory VerifyWormholeProof._decode(_i1.Input input) {
     return VerifyWormholeProof(
@@ -105,11 +91,8 @@ class VerifyWormholeProof extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'verify_wormhole_proof': {
-          'proofBytes': proofBytes,
-          'blockNumber': blockNumber,
-        }
-      };
+    'verify_wormhole_proof': {'proofBytes': proofBytes, 'blockNumber': blockNumber},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -119,36 +102,16 @@ class VerifyWormholeProof extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      proofBytes,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      blockNumber,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(proofBytes, output);
+    _i1.U32Codec.codec.encodeTo(blockNumber, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VerifyWormholeProof &&
-          _i3.listsEqual(
-            other.proofBytes,
-            proofBytes,
-          ) &&
-          other.blockNumber == blockNumber;
+      identical(this, other) ||
+      other is VerifyWormholeProof && _i3.listsEqual(other.proofBytes, proofBytes) && other.blockNumber == blockNumber;
 
   @override
-  int get hashCode => Object.hash(
-        proofBytes,
-        blockNumber,
-      );
+  int get hashCode => Object.hash(proofBytes, blockNumber);
 }

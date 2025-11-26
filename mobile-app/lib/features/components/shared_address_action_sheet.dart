@@ -15,8 +15,7 @@ class SharedAddressActionSheet extends StatefulWidget {
   const SharedAddressActionSheet({super.key, required this.address});
 
   @override
-  State<SharedAddressActionSheet> createState() =>
-      _SharedAddressActionSheetState();
+  State<SharedAddressActionSheet> createState() => _SharedAddressActionSheetState();
 }
 
 class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
@@ -24,8 +23,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   Future<String>? _checksumFuture;
   List<String>? _splittedAddress;
 
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
   @override
   void initState() {
@@ -37,9 +35,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
     try {
       setState(() {
         _checksumFuture = _checksumService.getHumanReadableName(widget.address);
-        _splittedAddress = AddressFormattingService.splitIntoChunks(
-          widget.address,
-        );
+        _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');
@@ -55,11 +51,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(
-        context,
-        _checksum!,
-        message: 'Checkphrase copied to clipboard',
-      );
+      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
     }
   }
 
@@ -98,20 +90,13 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(7),
-                  decoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
+                  decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       InkWell(
                         onTap: _closeSheet,
-                        child: Icon(
-                          Icons.close,
-                          size: context.isTablet ? 28 : 24,
-                        ),
+                        child: Icon(Icons.close, size: context.isTablet ? 28 : 24),
                       ),
                     ],
                   ),
@@ -125,8 +110,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                     FutureBuilder<String?>(
                       future: _checksumFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
                           return SizedBox(
                             height: 18,
                             child: Row(
@@ -135,17 +119,12 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                                 const SizedBox(
                                   width: 12,
                                   height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white54,
-                                  ),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Loading checkphrase...',
-                                  style: context.themeText.paragraph?.copyWith(
-                                    color: Colors.white54,
-                                  ),
+                                  style: context.themeText.paragraph?.copyWith(color: Colors.white54),
                                 ),
                               ],
                             ),
@@ -195,10 +174,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                               ),
                               InkWell(
                                 onTap: _copyChecksum,
-                                child: SvgPicture.asset(
-                                  'assets/copy_icon.svg',
-                                  width: context.isTablet ? 24 : 16,
-                                ),
+                                child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
                               ),
                             ],
                           );
@@ -215,9 +191,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                           padding: const EdgeInsets.all(10),
                           decoration: ShapeDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
                           child: Text(
                             '${_splittedAddress?.join(" ")}',
@@ -227,10 +201,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                         ),
                         InkWell(
                           onTap: _copyAddress,
-                          child: SvgPicture.asset(
-                            'assets/copy_icon.svg',
-                            width: context.isTablet ? 24 : 16,
-                          ),
+                          child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
                         ),
                       ],
                     ),
@@ -272,11 +243,7 @@ void showSharedAddressActionSheet(BuildContext context, String address) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),

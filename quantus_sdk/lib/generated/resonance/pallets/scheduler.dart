@@ -18,70 +18,57 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<int> _incompleteBlockSince =
-      const _i1.StorageValue<int>(
+  final _i1.StorageValue<int> _incompleteBlockSince = const _i1.StorageValue<int>(
     prefix: 'Scheduler',
     storage: 'IncompleteBlockSince',
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageValue<BigInt> _incompleteTimestampSince =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _incompleteTimestampSince = const _i1.StorageValue<BigInt>(
     prefix: 'Scheduler',
     storage: 'IncompleteTimestampSince',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<BigInt> _lastProcessedTimestamp =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _lastProcessedTimestamp = const _i1.StorageValue<BigInt>(
     prefix: 'Scheduler',
     storage: 'LastProcessedTimestamp',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageMap<_i3.BlockNumberOrTimestamp, List<_i4.Scheduled?>>
-      _agenda =
+  final _i1.StorageMap<_i3.BlockNumberOrTimestamp, List<_i4.Scheduled?>> _agenda =
       const _i1.StorageMap<_i3.BlockNumberOrTimestamp, List<_i4.Scheduled?>>(
-    prefix: 'Scheduler',
-    storage: 'Agenda',
-    valueCodec: _i2.SequenceCodec<_i4.Scheduled?>(
-        _i2.OptionCodec<_i4.Scheduled>(_i4.Scheduled.codec)),
-    hasher: _i1.StorageHasher.twoxx64Concat(_i3.BlockNumberOrTimestamp.codec),
-  );
+        prefix: 'Scheduler',
+        storage: 'Agenda',
+        valueCodec: _i2.SequenceCodec<_i4.Scheduled?>(_i2.OptionCodec<_i4.Scheduled>(_i4.Scheduled.codec)),
+        hasher: _i1.StorageHasher.twoxx64Concat(_i3.BlockNumberOrTimestamp.codec),
+      );
 
-  final _i1
-      .StorageMap<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>, _i6.RetryConfig>
-      _retries = const _i1.StorageMap<
-          _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>, _i6.RetryConfig>(
-    prefix: 'Scheduler',
-    storage: 'Retries',
-    valueCodec: _i6.RetryConfig.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(
-        _i5.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
-      _i3.BlockNumberOrTimestamp.codec,
-      _i2.U32Codec.codec,
-    )),
-  );
+  final _i1.StorageMap<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>, _i6.RetryConfig> _retries =
+      const _i1.StorageMap<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>, _i6.RetryConfig>(
+        prefix: 'Scheduler',
+        storage: 'Retries',
+        valueCodec: _i6.RetryConfig.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(
+          _i5.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(_i3.BlockNumberOrTimestamp.codec, _i2.U32Codec.codec),
+        ),
+      );
 
-  final _i1.StorageMap<List<int>, _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>>
-      _lookup = const _i1
-          .StorageMap<List<int>, _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>>(
-    prefix: 'Scheduler',
-    storage: 'Lookup',
-    valueCodec: _i5.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
-      _i3.BlockNumberOrTimestamp.codec,
-      _i2.U32Codec.codec,
-    ),
-    hasher: _i1.StorageHasher.twoxx64Concat(_i2.U8ArrayCodec(32)),
-  );
+  final _i1.StorageMap<List<int>, _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>> _lookup =
+      const _i1.StorageMap<List<int>, _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>>(
+        prefix: 'Scheduler',
+        storage: 'Lookup',
+        valueCodec: _i5.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
+          _i3.BlockNumberOrTimestamp.codec,
+          _i2.U32Codec.codec,
+        ),
+        hasher: _i1.StorageHasher.twoxx64Concat(_i2.U8ArrayCodec(32)),
+      );
 
   /// Tracks incomplete block-based agendas that need to be processed in a later block.
   _i7.Future<int?> incompleteBlockSince({_i1.BlockHash? at}) async {
     final hashedKey = _incompleteBlockSince.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _incompleteBlockSince.decodeValue(bytes);
     }
@@ -91,10 +78,7 @@ class Queries {
   /// Tracks incomplete timestamp-based agendas that need to be processed in a later block.
   _i7.Future<BigInt?> incompleteTimestampSince({_i1.BlockHash? at}) async {
     final hashedKey = _incompleteTimestampSince.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _incompleteTimestampSince.decodeValue(bytes);
     }
@@ -105,10 +89,7 @@ class Queries {
   /// Used to avoid reprocessing all buckets from 0 on every run.
   _i7.Future<BigInt?> lastProcessedTimestamp({_i1.BlockHash? at}) async {
     final hashedKey = _lastProcessedTimestamp.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastProcessedTimestamp.decodeValue(bytes);
     }
@@ -116,15 +97,9 @@ class Queries {
   }
 
   /// Items to be executed, indexed by the block number that they should be executed on.
-  _i7.Future<List<_i4.Scheduled?>> agenda(
-    _i3.BlockNumberOrTimestamp key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<_i4.Scheduled?>> agenda(_i3.BlockNumberOrTimestamp key1, {_i1.BlockHash? at}) async {
     final hashedKey = _agenda.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _agenda.decodeValue(bytes);
     }
@@ -132,15 +107,9 @@ class Queries {
   }
 
   /// Retry configurations for items to be executed, indexed by task address.
-  _i7.Future<_i6.RetryConfig?> retries(
-    _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i6.RetryConfig?> retries(_i5.Tuple2<_i3.BlockNumberOrTimestamp, int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _retries.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _retries.decodeValue(bytes);
     }
@@ -151,15 +120,9 @@ class Queries {
   ///
   /// For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
   /// identities.
-  _i7.Future<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>?> lookup(
-    List<int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>?> lookup(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _lookup.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lookup.decodeValue(bytes);
     }
@@ -167,22 +130,13 @@ class Queries {
   }
 
   /// Items to be executed, indexed by the block number that they should be executed on.
-  _i7.Future<List<List<_i4.Scheduled?>>> multiAgenda(
-    List<_i3.BlockNumberOrTimestamp> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<List<_i4.Scheduled?>>> multiAgenda(List<_i3.BlockNumberOrTimestamp> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _agenda.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _agenda.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _agenda.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i4.Scheduled?>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i4.Scheduled?>>); /* Default */
   }
 
   /// Retry configurations for items to be executed, indexed by task address.
@@ -191,14 +145,9 @@ class Queries {
     _i1.BlockHash? at,
   }) async {
     final hashedKeys = keys.map((key) => _retries.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _retries.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _retries.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -212,14 +161,9 @@ class Queries {
     _i1.BlockHash? at,
   }) async {
     final hashedKeys = keys.map((key) => _lookup.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _lookup.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _lookup.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -289,23 +233,12 @@ class Txs {
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(_i10.Schedule(
-      when: when,
-      maybePeriodic: maybePeriodic,
-      priority: priority,
-      call: call,
-    ));
+    return _i9.Scheduler(_i10.Schedule(when: when, maybePeriodic: maybePeriodic, priority: priority, call: call));
   }
 
   /// Cancel an anonymously scheduled task.
-  _i9.Scheduler cancel({
-    required _i3.BlockNumberOrTimestamp when,
-    required int index,
-  }) {
-    return _i9.Scheduler(_i10.Cancel(
-      when: when,
-      index: index,
-    ));
+  _i9.Scheduler cancel({required _i3.BlockNumberOrTimestamp when, required int index}) {
+    return _i9.Scheduler(_i10.Cancel(when: when, index: index));
   }
 
   /// Schedule a named task.
@@ -316,13 +249,9 @@ class Txs {
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(_i10.ScheduleNamed(
-      id: id,
-      when: when,
-      maybePeriodic: maybePeriodic,
-      priority: priority,
-      call: call,
-    ));
+    return _i9.Scheduler(
+      _i10.ScheduleNamed(id: id, when: when, maybePeriodic: maybePeriodic, priority: priority, call: call),
+    );
   }
 
   /// Cancel a named scheduled task.
@@ -337,12 +266,9 @@ class Txs {
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(_i10.ScheduleAfter(
-      after: after,
-      maybePeriodic: maybePeriodic,
-      priority: priority,
-      call: call,
-    ));
+    return _i9.Scheduler(
+      _i10.ScheduleAfter(after: after, maybePeriodic: maybePeriodic, priority: priority, call: call),
+    );
   }
 
   /// Schedule a named task after a delay.
@@ -353,13 +279,9 @@ class Txs {
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(_i10.ScheduleNamedAfter(
-      id: id,
-      after: after,
-      maybePeriodic: maybePeriodic,
-      priority: priority,
-      call: call,
-    ));
+    return _i9.Scheduler(
+      _i10.ScheduleNamedAfter(id: id, after: after, maybePeriodic: maybePeriodic, priority: priority, call: call),
+    );
   }
 
   /// Set a retry configuration for a task so that, in case its scheduled run fails, it will
@@ -379,11 +301,7 @@ class Txs {
     required int retries,
     required _i3.BlockNumberOrTimestamp period,
   }) {
-    return _i9.Scheduler(_i10.SetRetry(
-      task: task,
-      retries: retries,
-      period: period,
-    ));
+    return _i9.Scheduler(_i10.SetRetry(task: task, retries: retries, period: period));
   }
 
   /// Set a retry configuration for a named task so that, in case its scheduled run fails, it
@@ -403,16 +321,11 @@ class Txs {
     required int retries,
     required _i3.BlockNumberOrTimestamp period,
   }) {
-    return _i9.Scheduler(_i10.SetRetryNamed(
-      id: id,
-      retries: retries,
-      period: period,
-    ));
+    return _i9.Scheduler(_i10.SetRetryNamed(id: id, retries: retries, period: period));
   }
 
   /// Removes the retry configuration of a task.
-  _i9.Scheduler cancelRetry(
-      {required _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> task}) {
+  _i9.Scheduler cancelRetry({required _i5.Tuple2<_i3.BlockNumberOrTimestamp, int> task}) {
     return _i9.Scheduler(_i10.CancelRetry(task: task));
   }
 
@@ -428,10 +341,7 @@ class Constants {
   /// The maximum weight that may be scheduled per block for any dispatchables.
   final _i11.Weight maximumWeight = _i11.Weight(
     refTime: BigInt.from(4800000000000),
-    proofSize: BigInt.parse(
-      '14757395258967641292',
-      radix: 10,
-    ),
+    proofSize: BigInt.parse('14757395258967641292', radix: 10),
   );
 
   /// The maximum number of scheduled calls in the queue for a single block.

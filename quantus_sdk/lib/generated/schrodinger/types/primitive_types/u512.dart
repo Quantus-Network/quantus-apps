@@ -12,14 +12,8 @@ class U512Codec with _i1.Codec<U512> {
   }
 
   @override
-  void encodeTo(
-    U512 value,
-    _i1.Output output,
-  ) {
-    const _i1.U64ArrayCodec(8).encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(U512 value, _i1.Output output) {
+    const _i1.U64ArrayCodec(8).encodeTo(value, output);
   }
 
   @override

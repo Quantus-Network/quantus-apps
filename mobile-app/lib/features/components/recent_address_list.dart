@@ -7,11 +7,7 @@ class RecentAddressList extends StatefulWidget {
   final Function(String) onAddressSelected;
   final String currentAddress;
 
-  const RecentAddressList({
-    super.key,
-    required this.currentAddress,
-    required this.onAddressSelected,
-  });
+  const RecentAddressList({super.key, required this.currentAddress, required this.onAddressSelected});
 
   @override
   State<RecentAddressList> createState() => _RecentAddressListState();
@@ -34,19 +30,9 @@ class _RecentAddressListState extends State<RecentAddressList> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Error: ${snapshot.error}',
-              style: context.themeText.smallParagraph,
-            ),
-          );
+          return Center(child: Text('Error: ${snapshot.error}', style: context.themeText.smallParagraph));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Text(
-              'No recent addresses.',
-              style: context.themeText.smallParagraph,
-            ),
-          );
+          return Center(child: Text('No recent addresses.', style: context.themeText.smallParagraph));
         }
 
         final addresses = snapshot.data!;
@@ -57,10 +43,7 @@ class _RecentAddressListState extends State<RecentAddressList> {
           separatorBuilder: (context, index) => const SizedBox(height: 20),
           itemBuilder: (context, index) {
             final address = addresses[index];
-            return RecentAddressListItem(
-              address: address,
-              onTap: () => widget.onAddressSelected(address),
-            );
+            return RecentAddressListItem(address: address, onTap: () => widget.onAddressSelected(address));
           },
         );
       },

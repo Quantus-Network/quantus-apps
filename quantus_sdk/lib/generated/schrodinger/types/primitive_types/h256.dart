@@ -12,14 +12,8 @@ class H256Codec with _i1.Codec<H256> {
   }
 
   @override
-  void encodeTo(
-    H256 value,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(H256 value, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(value, output);
   }
 
   @override

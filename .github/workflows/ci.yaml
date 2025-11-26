@@ -27,6 +27,8 @@ jobs:
         run: dart pub global activate melos
       - name: Bootstrap Melos
         run: melos bootstrap
+      - name: Check Formatting
+        run: melos exec -- dart format . --line-length=120 --set-exit-if-changed
       - name: Clean Flutter projects
         run: melos exec --concurrency=1 -- "flutter clean"
       - name: Analyze

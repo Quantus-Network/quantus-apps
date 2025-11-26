@@ -5,10 +5,5 @@ class ExtrinsicData {
   int blockNumber;
   String blockHash;
   int nonce;
-  ExtrinsicData({
-    required this.payload,
-    required this.blockHash,
-    required this.blockNumber,
-    required this.nonce,
-  });
+  ExtrinsicData({required this.payload, required this.blockHash, required this.blockNumber, required this.nonce});
 }

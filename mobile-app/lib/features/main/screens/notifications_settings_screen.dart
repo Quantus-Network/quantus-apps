@@ -17,7 +17,7 @@ class NotificationsSettingsScreen extends ConsumerStatefulWidget {
 class _NotificationsSettingsScreenState extends ConsumerState<NotificationsSettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final config = ref.watch(notificationConfigProvider); 
+    final config = ref.watch(notificationConfigProvider);
     final configNotifier = ref.read(notificationConfigProvider.notifier);
 
     return ScaffoldBase(

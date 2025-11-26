@@ -23,8 +23,7 @@ class MnemonicGrid extends StatelessWidget {
           // constraints.maxWidth is the total width of the GridView
           // 2 * crossAxisSpacing (for the gaps between 3 items)
           // Adjust for any padding within the _buildMnemonicWord container
-          final double availableWidth =
-              constraints.maxWidth - (2 * 9.0); // 2 gaps of 9.0
+          final double availableWidth = constraints.maxWidth - (2 * 9.0); // 2 gaps of 9.0
           final double itemWidth = (availableWidth / 3); // 3 items per row
 
           // You might need to adjust this value slightly based on padding/margins
@@ -59,11 +58,7 @@ class MnemonicGrid extends StatelessWidget {
         ),
       ),
       alignment: Alignment.center,
-      child: Text(
-        '$index.$word',
-        textAlign: TextAlign.center,
-        style: context.themeText.detail,
-      ),
+      child: Text('$index.$word', textAlign: TextAlign.center, style: context.themeText.detail),
     );
   }
 }

@@ -8,10 +8,7 @@ enum AssetStatus {
   frozen('Frozen', 1),
   destroying('Destroying', 2);
 
-  const AssetStatus(
-    this.variantName,
-    this.codecIndex,
-  );
+  const AssetStatus(this.variantName, this.codecIndex);
 
   factory AssetStatus.decode(_i1.Input input) {
     return codec.decode(input);
@@ -48,13 +45,7 @@ class $AssetStatusCodec with _i1.Codec<AssetStatus> {
   }
 
   @override
-  void encodeTo(
-    AssetStatus value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(AssetStatus value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

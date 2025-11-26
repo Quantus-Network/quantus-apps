@@ -17,11 +17,7 @@ class RevealOverlay extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            Icons.visibility_off,
-            color: Colors.white,
-            size: context.isTablet ? 60 : 40,
-          ),
+          Icon(Icons.visibility_off, color: Colors.white, size: context.isTablet ? 60 : 40),
           const SizedBox(height: 17),
           SizedBox(
             width: context.isTablet ? 400 : null,
@@ -29,9 +25,7 @@ class RevealOverlay extends StatelessWidget {
               'This Recovery Phrase provides access to this wallet, '
               'only reveal if you are in a secure location',
               textAlign: TextAlign.center,
-              style: context.themeText.smallParagraph?.copyWith(
-                color: context.themeColors.textMuted,
-              ),
+              style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
             ),
           ),
           const SizedBox(height: 17),
@@ -40,19 +34,12 @@ class RevealOverlay extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black.useOpacity(0.25),
               shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  width: 1,
-                  color: Colors.white.useOpacity(0.15),
-                ),
+                side: BorderSide(width: 1, color: Colors.white.useOpacity(0.15)),
                 borderRadius: BorderRadius.circular(4),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
             ),
-            child: Text(
-              'Reveal',
-              textAlign: TextAlign.center,
-              style: context.themeText.smallParagraph,
-            ),
+            child: Text('Reveal', textAlign: TextAlign.center, style: context.themeText.smallParagraph),
           ),
         ],
       ),

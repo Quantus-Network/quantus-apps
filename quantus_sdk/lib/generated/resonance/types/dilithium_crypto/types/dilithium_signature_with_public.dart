@@ -14,8 +14,7 @@ class DilithiumSignatureWithPublic {
   /// [u8; Self::TOTAL_LEN]
   final List<int> bytes;
 
-  static const $DilithiumSignatureWithPublicCodec codec =
-      $DilithiumSignatureWithPublicCodec();
+  static const $DilithiumSignatureWithPublicCodec codec = $DilithiumSignatureWithPublicCodec();
 
   _i2.Uint8List encode() {
     return codec.encode(this);
@@ -25,39 +24,23 @@ class DilithiumSignatureWithPublic {
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DilithiumSignatureWithPublic &&
-          _i3.listsEqual(
-            other.bytes,
-            bytes,
-          );
+      identical(this, other) || other is DilithiumSignatureWithPublic && _i3.listsEqual(other.bytes, bytes);
 
   @override
   int get hashCode => bytes.hashCode;
 }
 
-class $DilithiumSignatureWithPublicCodec
-    with _i1.Codec<DilithiumSignatureWithPublic> {
+class $DilithiumSignatureWithPublicCodec with _i1.Codec<DilithiumSignatureWithPublic> {
   const $DilithiumSignatureWithPublicCodec();
 
   @override
-  void encodeTo(
-    DilithiumSignatureWithPublic obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(7219).encodeTo(
-      obj.bytes,
-      output,
-    );
+  void encodeTo(DilithiumSignatureWithPublic obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(7219).encodeTo(obj.bytes, output);
   }
 
   @override
   DilithiumSignatureWithPublic decode(_i1.Input input) {
-    return DilithiumSignatureWithPublic(
-        bytes: const _i1.U8ArrayCodec(7219).decode(input));
+    return DilithiumSignatureWithPublic(bytes: const _i1.U8ArrayCodec(7219).decode(input));
   }
 
   @override

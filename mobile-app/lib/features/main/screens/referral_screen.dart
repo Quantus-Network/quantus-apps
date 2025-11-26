@@ -73,7 +73,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: WalletAppBar(title:'Referral'),
+      appBar: WalletAppBar(title: 'Referral'),
       decorations: [
         const Positioned(left: -80, top: 150, child: Sphere(variant: 7, size: 248)),
         const Positioned(right: -50, bottom: 100, child: Sphere(variant: 2, size: 194)),

@@ -7,10 +7,7 @@ import 'package:quiver/collection.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i2;
 
 class Deposit {
-  const Deposit({
-    required this.who,
-    required this.amount,
-  });
+  const Deposit({required this.who, required this.amount});
 
   factory Deposit.decode(_i1.Input input) {
     return codec.decode(input);
@@ -28,55 +25,28 @@ class Deposit {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'who': who.toList(),
-        'amount': amount,
-      };
+  Map<String, dynamic> toJson() => {'who': who.toList(), 'amount': amount};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Deposit &&
-          _i4.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.amount == amount;
+      identical(this, other) || other is Deposit && _i4.listsEqual(other.who, who) && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(who, amount);
 }
 
 class $DepositCodec with _i1.Codec<Deposit> {
   const $DepositCodec();
 
   @override
-  void encodeTo(
-    Deposit obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
+  void encodeTo(Deposit obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.who, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
   }
 
   @override
   Deposit decode(_i1.Input input) {
-    return Deposit(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return Deposit(who: const _i1.U8ArrayCodec(32).decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   @override

@@ -8,10 +8,7 @@ enum ArithmeticError {
   overflow('Overflow', 1),
   divisionByZero('DivisionByZero', 2);
 
-  const ArithmeticError(
-    this.variantName,
-    this.codecIndex,
-  );
+  const ArithmeticError(this.variantName, this.codecIndex);
 
   factory ArithmeticError.decode(_i1.Input input) {
     return codec.decode(input);
@@ -48,13 +45,7 @@ class $ArithmeticErrorCodec with _i1.Codec<ArithmeticError> {
   }
 
   @override
-  void encodeTo(
-    ArithmeticError value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(ArithmeticError value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

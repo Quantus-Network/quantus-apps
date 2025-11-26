@@ -4,10 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class Approval {
-  const Approval({
-    required this.amount,
-    required this.deposit,
-  });
+  const Approval({required this.amount, required this.deposit});
 
   factory Approval.decode(_i1.Input input) {
     return codec.decode(input);
@@ -25,50 +22,28 @@ class Approval {
     return codec.encode(this);
   }
 
-  Map<String, BigInt> toJson() => {
-        'amount': amount,
-        'deposit': deposit,
-      };
+  Map<String, BigInt> toJson() => {'amount': amount, 'deposit': deposit};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Approval && other.amount == amount && other.deposit == deposit;
+      identical(this, other) || other is Approval && other.amount == amount && other.deposit == deposit;
 
   @override
-  int get hashCode => Object.hash(
-        amount,
-        deposit,
-      );
+  int get hashCode => Object.hash(amount, deposit);
 }
 
 class $ApprovalCodec with _i1.Codec<Approval> {
   const $ApprovalCodec();
 
   @override
-  void encodeTo(
-    Approval obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.deposit,
-      output,
-    );
+  void encodeTo(Approval obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
+    _i1.U128Codec.codec.encodeTo(obj.deposit, output);
   }
 
   @override
   Approval decode(_i1.Input input) {
-    return Approval(
-      amount: _i1.U128Codec.codec.decode(input),
-      deposit: _i1.U128Codec.codec.decode(input),
-    );
+    return Approval(amount: _i1.U128Codec.codec.decode(input), deposit: _i1.U128Codec.codec.decode(input));
   }
 
   @override

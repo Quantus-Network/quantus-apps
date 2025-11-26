@@ -19,12 +19,7 @@ class AccountGradient {
   final Color colorB; // darker/bottom
   final RadialGradient radial;
   final LinearGradient linear;
-  const AccountGradient({
-    required this.colorA,
-    required this.colorB,
-    required this.radial,
-    required this.linear,
-  });
+  const AccountGradient({required this.colorA, required this.colorB, required this.radial, required this.linear});
 }
 
 const quantusGradientOptions = GradientOptions(
@@ -73,18 +68,9 @@ AccountGradient buildAccountGradient(
   // Linear fallback/alt usage
   final rad = options.linearAngleDeg * pi / 180.0;
   final x = cos(rad), y = sin(rad);
-  final linear = LinearGradient(
-    begin: Alignment(-x, -y),
-    end: Alignment(x, y),
-    colors: [colors.$1, colors.$2],
-  );
+  final linear = LinearGradient(begin: Alignment(-x, -y), end: Alignment(x, y), colors: [colors.$1, colors.$2]);
 
-  return AccountGradient(
-    colorA: colors.$1,
-    colorB: colors.$2,
-    radial: radial,
-    linear: linear,
-  );
+  return AccountGradient(colorA: colors.$1, colorB: colors.$2, radial: radial, linear: linear);
 }
 
 /// Options that affect both color selection and gradient shaping.
@@ -223,35 +209,20 @@ Color _hsv(double h, double s, double v) {
   return Color.fromARGB(255, ch(r), ch(g), ch(b));
 }
 
-(double, double) _hsvHues(
-  _XorShift32 rng,
-  HueStrategy strategy,
-  double minSpreadDeg,
-  double maxSpreadDeg,
-) {
+(double, double) _hsvHues(_XorShift32 rng, HueStrategy strategy, double minSpreadDeg, double maxSpreadDeg) {
   final base = rng.next(); // 0..1
   final h1 = switch (strategy) {
     HueStrategy.golden => (base + 0.618033988749895) % 1.0, // golden step
     HueStrategy.crystal => (base * 2.0) % 1.0, // your “crystal spiral”
   };
-  final spread =
-      (minSpreadDeg + rng.next() * (maxSpreadDeg - minSpreadDeg)) / 360.0;
+  final spread = (minSpreadDeg + rng.next() * (maxSpreadDeg - minSpreadDeg)) / 360.0;
   final h2 = (h1 + spread) % 1.0;
   return (h1, h2);
 }
 
-(Color, Color) _hsvColorsFromAccount(
-  String accountKey,
-  HueStrategy strategy,
-  GradientOptions opt,
-) {
+(Color, Color) _hsvColorsFromAccount(String accountKey, HueStrategy strategy, GradientOptions opt) {
   final rng = _XorShift32(_fnv1a32(accountKey));
-  final (h1, h2) = _hsvHues(
-    rng,
-    strategy,
-    opt.hsvMinSpreadDeg,
-    opt.hsvMaxSpreadDeg,
-  );
+  final (h1, h2) = _hsvHues(rng, strategy, opt.hsvMinSpreadDeg, opt.hsvMaxSpreadDeg);
   final a = _hsv(h1, opt.hsvSaturation, opt.hsvValueTop);
   final b = _hsv(h2, opt.hsvSaturation, opt.hsvValueBottom);
   return (a, b);
@@ -283,8 +254,7 @@ Color _oklchToColor(_OKLCH c) {
     double g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
     double b2 = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
 
-    double compand(double v) =>
-        v <= 0.0031308 ? 12.92 * v : 1.055 * pow(v, 1 / 2.4) - 0.055;
+    double compand(double v) => v <= 0.0031308 ? 12.92 * v : 1.055 * pow(v, 1 / 2.4) - 0.055;
 
     r = compand(r.clamp(0.0, 1.0));
     g = compand(g.clamp(0.0, 1.0));
@@ -310,21 +280,13 @@ Color _oklchToColor(_OKLCH c) {
   final rng = _XorShift32(_fnv1a32(accountKey));
 
   final h1 = rng.next() * 360.0;
-  final spread =
-      opt.oklchMinSpreadDeg +
-      rng.next() * (opt.oklchMaxSpreadDeg - opt.oklchMinSpreadDeg);
+  final spread = opt.oklchMinSpreadDeg + rng.next() * (opt.oklchMaxSpreadDeg - opt.oklchMinSpreadDeg);
   final h2 = (h1 + spread) % 360.0;
 
-  final C =
-      opt.oklchChromaMin +
-      rng.next() * (opt.oklchChromaMax - opt.oklchChromaMin);
+  final C = opt.oklchChromaMin + rng.next() * (opt.oklchChromaMax - opt.oklchChromaMin);
 
-  final lightTop =
-      opt.oklchLightTopMin +
-      rng.next() * (opt.oklchLightTopMax - opt.oklchLightTopMin);
-  final lightBottom =
-      opt.oklchLightBotMin +
-      rng.next() * (opt.oklchLightBotMax - opt.oklchLightBotMin);
+  final lightTop = opt.oklchLightTopMin + rng.next() * (opt.oklchLightTopMax - opt.oklchLightTopMin);
+  final lightBottom = opt.oklchLightBotMin + rng.next() * (opt.oklchLightBotMax - opt.oklchLightBotMin);
 
   final a = _oklchToColor(_OKLCH(lightTop, C, h1));
   final b = _oklchToColor(_OKLCH(lightBottom, C, h2));

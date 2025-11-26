@@ -40,24 +40,12 @@ class $Event {
     return MemberAdded(who: who);
   }
 
-  RankChanged rankChanged({
-    required _i3.AccountId32 who,
-    required int rank,
-  }) {
-    return RankChanged(
-      who: who,
-      rank: rank,
-    );
+  RankChanged rankChanged({required _i3.AccountId32 who, required int rank}) {
+    return RankChanged(who: who, rank: rank);
   }
 
-  MemberRemoved memberRemoved({
-    required _i3.AccountId32 who,
-    required int rank,
-  }) {
-    return MemberRemoved(
-      who: who,
-      rank: rank,
-    );
+  MemberRemoved memberRemoved({required _i3.AccountId32 who, required int rank}) {
+    return MemberRemoved(who: who, rank: rank);
   }
 
   Voted voted({
@@ -66,22 +54,11 @@ class $Event {
     required _i4.VoteRecord vote,
     required _i5.Tally tally,
   }) {
-    return Voted(
-      who: who,
-      poll: poll,
-      vote: vote,
-      tally: tally,
-    );
+    return Voted(who: who, poll: poll, vote: vote, tally: tally);
   }
 
-  MemberExchanged memberExchanged({
-    required _i3.AccountId32 who,
-    required _i3.AccountId32 newWho,
-  }) {
-    return MemberExchanged(
-      who: who,
-      newWho: newWho,
-    );
+  MemberExchanged memberExchanged({required _i3.AccountId32 who, required _i3.AccountId32 newWho}) {
+    return MemberExchanged(who: who, newWho: newWho);
   }
 }
 
@@ -108,10 +85,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case MemberAdded:
         (value as MemberAdded).encodeTo(output);
@@ -129,8 +103,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as MemberExchanged).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -148,8 +121,7 @@ class $EventCodec with _i1.Codec<Event> {
       case MemberExchanged:
         return (value as MemberExchanged)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -167,8 +139,8 @@ class MemberAdded extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'MemberAdded': {'who': who.toList()}
-      };
+    'MemberAdded': {'who': who.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -177,27 +149,12 @@ class MemberAdded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MemberAdded &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is MemberAdded && _i6.listsEqual(other.who, who);
 
   @override
   int get hashCode => who.hashCode;
@@ -205,16 +162,10 @@ class MemberAdded extends Event {
 
 /// The member `who`se rank has been changed to the given `rank`.
 class RankChanged extends Event {
-  const RankChanged({
-    required this.who,
-    required this.rank,
-  });
+  const RankChanged({required this.who, required this.rank});
 
   factory RankChanged._decode(_i1.Input input) {
-    return RankChanged(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      rank: _i1.U16Codec.codec.decode(input),
-    );
+    return RankChanged(who: const _i1.U8ArrayCodec(32).decode(input), rank: _i1.U16Codec.codec.decode(input));
   }
 
   /// T::AccountId
@@ -225,11 +176,8 @@ class RankChanged extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'RankChanged': {
-          'who': who.toList(),
-          'rank': rank,
-        }
-      };
+    'RankChanged': {'who': who.toList(), 'rank': rank},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -239,52 +187,25 @@ class RankChanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      rank,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U16Codec.codec.encodeTo(rank, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RankChanged &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.rank == rank;
+      identical(this, other) || other is RankChanged && _i6.listsEqual(other.who, who) && other.rank == rank;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        rank,
-      );
+  int get hashCode => Object.hash(who, rank);
 }
 
 /// The member `who` of given `rank` has been removed from the collective.
 class MemberRemoved extends Event {
-  const MemberRemoved({
-    required this.who,
-    required this.rank,
-  });
+  const MemberRemoved({required this.who, required this.rank});
 
   factory MemberRemoved._decode(_i1.Input input) {
-    return MemberRemoved(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      rank: _i1.U16Codec.codec.decode(input),
-    );
+    return MemberRemoved(who: const _i1.U8ArrayCodec(32).decode(input), rank: _i1.U16Codec.codec.decode(input));
   }
 
   /// T::AccountId
@@ -295,11 +216,8 @@ class MemberRemoved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'MemberRemoved': {
-          'who': who.toList(),
-          'rank': rank,
-        }
-      };
+    'MemberRemoved': {'who': who.toList(), 'rank': rank},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -309,49 +227,23 @@ class MemberRemoved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      rank,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U16Codec.codec.encodeTo(rank, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MemberRemoved &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.rank == rank;
+      identical(this, other) || other is MemberRemoved && _i6.listsEqual(other.who, who) && other.rank == rank;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        rank,
-      );
+  int get hashCode => Object.hash(who, rank);
 }
 
 /// The member `who` has voted for the `poll` with the given `vote` leading to an updated
 /// `tally`.
 class Voted extends Event {
-  const Voted({
-    required this.who,
-    required this.poll,
-    required this.vote,
-    required this.tally,
-  });
+  const Voted({required this.who, required this.poll, required this.vote, required this.tally});
 
   factory Voted._decode(_i1.Input input) {
     return Voted(
@@ -376,13 +268,8 @@ class Voted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Voted': {
-          'who': who.toList(),
-          'poll': poll,
-          'vote': vote.toJson(),
-          'tally': tally.toJson(),
-        }
-      };
+    'Voted': {'who': who.toList(), 'poll': poll, 'vote': vote.toJson(), 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -394,58 +281,29 @@ class Voted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      poll,
-      output,
-    );
-    _i4.VoteRecord.codec.encodeTo(
-      vote,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U32Codec.codec.encodeTo(poll, output);
+    _i4.VoteRecord.codec.encodeTo(vote, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Voted &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i6.listsEqual(other.who, who) &&
           other.poll == poll &&
           other.vote == vote &&
           other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        poll,
-        vote,
-        tally,
-      );
+  int get hashCode => Object.hash(who, poll, vote, tally);
 }
 
 /// The member `who` had their `AccountId` changed to `new_who`.
 class MemberExchanged extends Event {
-  const MemberExchanged({
-    required this.who,
-    required this.newWho,
-  });
+  const MemberExchanged({required this.who, required this.newWho});
 
   factory MemberExchanged._decode(_i1.Input input) {
     return MemberExchanged(
@@ -462,11 +320,8 @@ class MemberExchanged extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'MemberExchanged': {
-          'who': who.toList(),
-          'newWho': newWho.toList(),
-        }
-      };
+    'MemberExchanged': {'who': who.toList(), 'newWho': newWho.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -476,39 +331,16 @@ class MemberExchanged extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      newWho,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    const _i1.U8ArrayCodec(32).encodeTo(newWho, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MemberExchanged &&
-          _i6.listsEqual(
-            other.who,
-            who,
-          ) &&
-          _i6.listsEqual(
-            other.newWho,
-            newWho,
-          );
+      identical(this, other) ||
+      other is MemberExchanged && _i6.listsEqual(other.who, who) && _i6.listsEqual(other.newWho, newWho);
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        newWho,
-      );
+  int get hashCode => Object.hash(who, newWho);
 }

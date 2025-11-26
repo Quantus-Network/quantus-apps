@@ -7,12 +7,7 @@ import 'account_status.dart' as _i2;
 import 'existence_reason.dart' as _i3;
 
 class AssetAccount {
-  const AssetAccount({
-    required this.balance,
-    required this.status,
-    required this.reason,
-    required this.extra,
-  });
+  const AssetAccount({required this.balance, required this.status, required this.reason, required this.extra});
 
   factory AssetAccount.decode(_i1.Input input) {
     return codec.decode(input);
@@ -37,18 +32,15 @@ class AssetAccount {
   }
 
   Map<String, dynamic> toJson() => {
-        'balance': balance,
-        'status': status.toJson(),
-        'reason': reason.toJson(),
-        'extra': null,
-      };
+    'balance': balance,
+    'status': status.toJson(),
+    'reason': reason.toJson(),
+    'extra': null,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AssetAccount &&
           other.balance == balance &&
           other.status == status &&
@@ -56,38 +48,18 @@ class AssetAccount {
           other.extra == extra;
 
   @override
-  int get hashCode => Object.hash(
-        balance,
-        status,
-        reason,
-        extra,
-      );
+  int get hashCode => Object.hash(balance, status, reason, extra);
 }
 
 class $AssetAccountCodec with _i1.Codec<AssetAccount> {
   const $AssetAccountCodec();
 
   @override
-  void encodeTo(
-    AssetAccount obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.balance,
-      output,
-    );
-    _i2.AccountStatus.codec.encodeTo(
-      obj.status,
-      output,
-    );
-    _i3.ExistenceReason.codec.encodeTo(
-      obj.reason,
-      output,
-    );
-    _i1.NullCodec.codec.encodeTo(
-      obj.extra,
-      output,
-    );
+  void encodeTo(AssetAccount obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.balance, output);
+    _i2.AccountStatus.codec.encodeTo(obj.status, output);
+    _i3.ExistenceReason.codec.encodeTo(obj.reason, output);
+    _i1.NullCodec.codec.encodeTo(obj.extra, output);
   }
 
   @override

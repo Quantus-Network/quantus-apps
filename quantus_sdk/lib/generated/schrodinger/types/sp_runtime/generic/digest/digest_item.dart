@@ -31,34 +31,16 @@ abstract class DigestItem {
 class $DigestItem {
   const $DigestItem();
 
-  PreRuntime preRuntime(
-    List<int> value0,
-    List<int> value1,
-  ) {
-    return PreRuntime(
-      value0,
-      value1,
-    );
+  PreRuntime preRuntime(List<int> value0, List<int> value1) {
+    return PreRuntime(value0, value1);
   }
 
-  Consensus consensus(
-    List<int> value0,
-    List<int> value1,
-  ) {
-    return Consensus(
-      value0,
-      value1,
-    );
+  Consensus consensus(List<int> value0, List<int> value1) {
+    return Consensus(value0, value1);
   }
 
-  Seal seal(
-    List<int> value0,
-    List<int> value1,
-  ) {
-    return Seal(
-      value0,
-      value1,
-    );
+  Seal seal(List<int> value0, List<int> value1) {
+    return Seal(value0, value1);
   }
 
   Other other(List<int> value0) {
@@ -93,10 +75,7 @@ class $DigestItemCodec with _i1.Codec<DigestItem> {
   }
 
   @override
-  void encodeTo(
-    DigestItem value,
-    _i1.Output output,
-  ) {
+  void encodeTo(DigestItem value, _i1.Output output) {
     switch (value.runtimeType) {
       case PreRuntime:
         (value as PreRuntime).encodeTo(output);
@@ -114,8 +93,7 @@ class $DigestItemCodec with _i1.Codec<DigestItem> {
         (value as RuntimeEnvironmentUpdated).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'DigestItem: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DigestItem: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -133,23 +111,16 @@ class $DigestItemCodec with _i1.Codec<DigestItem> {
       case RuntimeEnvironmentUpdated:
         return 1;
       default:
-        throw Exception(
-            'DigestItem: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DigestItem: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class PreRuntime extends DigestItem {
-  const PreRuntime(
-    this.value0,
-    this.value1,
-  );
+  const PreRuntime(this.value0, this.value1);
 
   factory PreRuntime._decode(_i1.Input input) {
-    return PreRuntime(
-      const _i1.U8ArrayCodec(4).decode(input),
-      _i1.U8SequenceCodec.codec.decode(input),
-    );
+    return PreRuntime(const _i1.U8ArrayCodec(4).decode(input), _i1.U8SequenceCodec.codec.decode(input));
   }
 
   /// ConsensusEngineId
@@ -160,11 +131,8 @@ class PreRuntime extends DigestItem {
 
   @override
   Map<String, List<List<int>>> toJson() => {
-        'PreRuntime': [
-          value0.toList(),
-          value1,
-        ]
-      };
+    'PreRuntime': [value0.toList(), value1],
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -174,54 +142,25 @@ class PreRuntime extends DigestItem {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.U8ArrayCodec(4).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(4).encodeTo(value0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value1, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PreRuntime &&
-          _i3.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          _i3.listsEqual(
-            other.value1,
-            value1,
-          );
+      identical(this, other) ||
+      other is PreRuntime && _i3.listsEqual(other.value0, value0) && _i3.listsEqual(other.value1, value1);
 
   @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-      );
+  int get hashCode => Object.hash(value0, value1);
 }
 
 class Consensus extends DigestItem {
-  const Consensus(
-    this.value0,
-    this.value1,
-  );
+  const Consensus(this.value0, this.value1);
 
   factory Consensus._decode(_i1.Input input) {
-    return Consensus(
-      const _i1.U8ArrayCodec(4).decode(input),
-      _i1.U8SequenceCodec.codec.decode(input),
-    );
+    return Consensus(const _i1.U8ArrayCodec(4).decode(input), _i1.U8SequenceCodec.codec.decode(input));
   }
 
   /// ConsensusEngineId
@@ -232,11 +171,8 @@ class Consensus extends DigestItem {
 
   @override
   Map<String, List<List<int>>> toJson() => {
-        'Consensus': [
-          value0.toList(),
-          value1,
-        ]
-      };
+    'Consensus': [value0.toList(), value1],
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -246,54 +182,25 @@ class Consensus extends DigestItem {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(4).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(4).encodeTo(value0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value1, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Consensus &&
-          _i3.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          _i3.listsEqual(
-            other.value1,
-            value1,
-          );
+      identical(this, other) ||
+      other is Consensus && _i3.listsEqual(other.value0, value0) && _i3.listsEqual(other.value1, value1);
 
   @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-      );
+  int get hashCode => Object.hash(value0, value1);
 }
 
 class Seal extends DigestItem {
-  const Seal(
-    this.value0,
-    this.value1,
-  );
+  const Seal(this.value0, this.value1);
 
   factory Seal._decode(_i1.Input input) {
-    return Seal(
-      const _i1.U8ArrayCodec(4).decode(input),
-      _i1.U8SequenceCodec.codec.decode(input),
-    );
+    return Seal(const _i1.U8ArrayCodec(4).decode(input), _i1.U8SequenceCodec.codec.decode(input));
   }
 
   /// ConsensusEngineId
@@ -304,11 +211,8 @@ class Seal extends DigestItem {
 
   @override
   Map<String, List<List<int>>> toJson() => {
-        'Seal': [
-          value0.toList(),
-          value1,
-        ]
-      };
+    'Seal': [value0.toList(), value1],
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -318,41 +222,18 @@ class Seal extends DigestItem {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(4).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(4).encodeTo(value0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value1, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Seal &&
-          _i3.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          _i3.listsEqual(
-            other.value1,
-            value1,
-          );
+      identical(this, other) ||
+      other is Seal && _i3.listsEqual(other.value0, value0) && _i3.listsEqual(other.value1, value1);
 
   @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-      );
+  int get hashCode => Object.hash(value0, value1);
 }
 
 class Other extends DigestItem {
@@ -375,27 +256,12 @@ class Other extends DigestItem {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Other &&
-          _i3.listsEqual(
-            other.value0,
-            value0,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Other && _i3.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;
@@ -408,10 +274,7 @@ class RuntimeEnvironmentUpdated extends DigestItem {
   Map<String, dynamic> toJson() => {'RuntimeEnvironmentUpdated': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
   }
 
   @override

@@ -53,14 +53,10 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       return accountIds!;
     }
 
-    final accountsState = await ref
-        .read(accountsProvider.notifier)
-        .stream
-        .firstWhere((state) => !state.isLoading);
+    final accountsState = await ref.read(accountsProvider.notifier).stream.firstWhere((state) => !state.isLoading);
 
     return accountsState.maybeWhen(
-      data: (accounts) =>
-          AccountIdListCache.get(accounts.map((e) => e.accountId).toList()),
+      data: (accounts) => AccountIdListCache.get(accounts.map((e) => e.accountId).toList()),
       orElse: () => throw Exception('Failed to load accounts'),
     );
   }
@@ -68,8 +64,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   List<String> _getAccountIds() {
     if (accountIds != null) return accountIds!;
     final accounts = ref.read(accountsProvider).value;
-    final List<String> filteredAccountIds =
-        accounts?.map((e) => e.accountId).toList() ?? [];
+    final List<String> filteredAccountIds = accounts?.map((e) => e.accountId).toList() ?? [];
     return AccountIdListCache.get(filteredAccountIds);
   }
 
@@ -82,11 +77,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(
-            accountIds: targetAccountIds,
-            limit: _limit,
-            offset: state.offset,
-          );
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: state.offset);
 
       final newItems = newTransactions.otherTransfers;
       print(
@@ -96,9 +87,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       );
       state = state.copyWith(
         items: [...state.items, ...newItems],
-        reversibleTransfers: state.offset == 0
-            ? newTransactions.reversibleTransfers
-            : state.reversibleTransfers,
+        reversibleTransfers: state.offset == 0 ? newTransactions.reversibleTransfers : state.reversibleTransfers,
         offset: state.offset + newItems.length,
         hasMore: newItems.length == _limit,
         isFetching: false,
@@ -162,11 +151,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       // Fetch without setting isFetching to avoid loading indicators
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(
-            accountIds: targetAccountIds,
-            limit: _limit,
-            offset: 0,
-          );
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: 0);
 
       final newItems = newTransactions.otherTransfers;
 
@@ -189,10 +174,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   /// Update a reversible transfer status to executed inline without full
   /// refresh.
   /// Moves the transfer from reversibleTransfers to the top of items list.
-  void updateReversibleTransferToExecuted(
-    String extrinsicHash,
-    ReversibleTransferStatus newStatus,
-  ) {
+  void updateReversibleTransferToExecuted(String extrinsicHash, ReversibleTransferStatus newStatus) {
     print('Updating reversible transfer to executed: $extrinsicHash');
 
     // Find the reversible transfer with the matching hash
@@ -229,10 +211,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     final updatedItems = [executedTransfer, ...state.items];
 
     // Update state
-    state = state.copyWith(
-      items: updatedItems,
-      reversibleTransfers: updatedReversibleTransfers,
-    );
+    state = state.copyWith(items: updatedItems, reversibleTransfers: updatedReversibleTransfers);
 
     print('Successfully moved transfer from reversible to executed');
   }
@@ -244,9 +223,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     // Check if transaction already exists to avoid duplicates
     final existsInItems = state.items.any((item) => item.id == transaction.id);
-    final existsInReversible = state.reversibleTransfers.any(
-      (item) => item.id == transaction.id,
-    );
+    final existsInReversible = state.reversibleTransfers.any((item) => item.id == transaction.id);
 
     if (existsInItems || existsInReversible) {
       print('Transaction ${transaction.id} already exists in history');
@@ -255,10 +232,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     if (transaction is ReversibleTransferEvent) {
       // Add to reversible transfers list
-      final updatedReversibleTransfers = [
-        transaction,
-        ...state.reversibleTransfers,
-      ];
+      final updatedReversibleTransfers = [transaction, ...state.reversibleTransfers];
       state = state.copyWith(reversibleTransfers: updatedReversibleTransfers);
     } else {
       // Add to regular transactions list at the top

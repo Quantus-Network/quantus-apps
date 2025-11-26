@@ -37,8 +37,7 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  ExtrinsicSuccess extrinsicSuccess(
-      {required _i3.DispatchEventInfo dispatchInfo}) {
+  ExtrinsicSuccess extrinsicSuccess({required _i3.DispatchEventInfo dispatchInfo}) {
     return ExtrinsicSuccess(dispatchInfo: dispatchInfo);
   }
 
@@ -46,10 +45,7 @@ class $Event {
     required _i4.DispatchError dispatchError,
     required _i3.DispatchEventInfo dispatchInfo,
   }) {
-    return ExtrinsicFailed(
-      dispatchError: dispatchError,
-      dispatchInfo: dispatchInfo,
-    );
+    return ExtrinsicFailed(dispatchError: dispatchError, dispatchInfo: dispatchInfo);
   }
 
   CodeUpdated codeUpdated() {
@@ -64,34 +60,19 @@ class $Event {
     return KilledAccount(account: account);
   }
 
-  Remarked remarked({
-    required _i5.AccountId32 sender,
-    required _i6.H256 hash,
-  }) {
-    return Remarked(
-      sender: sender,
-      hash: hash,
-    );
+  Remarked remarked({required _i5.AccountId32 sender, required _i6.H256 hash}) {
+    return Remarked(sender: sender, hash: hash);
   }
 
-  UpgradeAuthorized upgradeAuthorized({
-    required _i6.H256 codeHash,
-    required bool checkVersion,
-  }) {
-    return UpgradeAuthorized(
-      codeHash: codeHash,
-      checkVersion: checkVersion,
-    );
+  UpgradeAuthorized upgradeAuthorized({required _i6.H256 codeHash, required bool checkVersion}) {
+    return UpgradeAuthorized(codeHash: codeHash, checkVersion: checkVersion);
   }
 
   RejectedInvalidAuthorizedUpgrade rejectedInvalidAuthorizedUpgrade({
     required _i6.H256 codeHash,
     required _i4.DispatchError error,
   }) {
-    return RejectedInvalidAuthorizedUpgrade(
-      codeHash: codeHash,
-      error: error,
-    );
+    return RejectedInvalidAuthorizedUpgrade(codeHash: codeHash, error: error);
   }
 }
 
@@ -124,10 +105,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case ExtrinsicSuccess:
         (value as ExtrinsicSuccess).encodeTo(output);
@@ -154,8 +132,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as RejectedInvalidAuthorizedUpgrade).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -179,8 +156,7 @@ class $EventCodec with _i1.Codec<Event> {
       case RejectedInvalidAuthorizedUpgrade:
         return (value as RejectedInvalidAuthorizedUpgrade)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -190,8 +166,7 @@ class ExtrinsicSuccess extends Event {
   const ExtrinsicSuccess({required this.dispatchInfo});
 
   factory ExtrinsicSuccess._decode(_i1.Input input) {
-    return ExtrinsicSuccess(
-        dispatchInfo: _i3.DispatchEventInfo.codec.decode(input));
+    return ExtrinsicSuccess(dispatchInfo: _i3.DispatchEventInfo.codec.decode(input));
   }
 
   /// DispatchEventInfo
@@ -199,8 +174,8 @@ class ExtrinsicSuccess extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'ExtrinsicSuccess': {'dispatchInfo': dispatchInfo.toJson()}
-      };
+    'ExtrinsicSuccess': {'dispatchInfo': dispatchInfo.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -209,23 +184,13 @@ class ExtrinsicSuccess extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.DispatchEventInfo.codec.encodeTo(
-      dispatchInfo,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.DispatchEventInfo.codec.encodeTo(dispatchInfo, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ExtrinsicSuccess && other.dispatchInfo == dispatchInfo;
+      identical(this, other) || other is ExtrinsicSuccess && other.dispatchInfo == dispatchInfo;
 
   @override
   int get hashCode => dispatchInfo.hashCode;
@@ -233,10 +198,7 @@ class ExtrinsicSuccess extends Event {
 
 /// An extrinsic failed.
 class ExtrinsicFailed extends Event {
-  const ExtrinsicFailed({
-    required this.dispatchError,
-    required this.dispatchInfo,
-  });
+  const ExtrinsicFailed({required this.dispatchError, required this.dispatchInfo});
 
   factory ExtrinsicFailed._decode(_i1.Input input) {
     return ExtrinsicFailed(
@@ -253,11 +215,8 @@ class ExtrinsicFailed extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'ExtrinsicFailed': {
-          'dispatchError': dispatchError.toJson(),
-          'dispatchInfo': dispatchInfo.toJson(),
-        }
-      };
+    'ExtrinsicFailed': {'dispatchError': dispatchError.toJson(), 'dispatchInfo': dispatchInfo.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -267,35 +226,18 @@ class ExtrinsicFailed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i4.DispatchError.codec.encodeTo(
-      dispatchError,
-      output,
-    );
-    _i3.DispatchEventInfo.codec.encodeTo(
-      dispatchInfo,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i4.DispatchError.codec.encodeTo(dispatchError, output);
+    _i3.DispatchEventInfo.codec.encodeTo(dispatchInfo, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ExtrinsicFailed &&
-          other.dispatchError == dispatchError &&
-          other.dispatchInfo == dispatchInfo;
+      identical(this, other) ||
+      other is ExtrinsicFailed && other.dispatchError == dispatchError && other.dispatchInfo == dispatchInfo;
 
   @override
-  int get hashCode => Object.hash(
-        dispatchError,
-        dispatchInfo,
-      );
+  int get hashCode => Object.hash(dispatchError, dispatchInfo);
 }
 
 /// `:code` was updated.
@@ -306,10 +248,7 @@ class CodeUpdated extends Event {
   Map<String, dynamic> toJson() => {'CodeUpdated': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
   }
 
   @override
@@ -332,8 +271,8 @@ class NewAccount extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'NewAccount': {'account': account.toList()}
-      };
+    'NewAccount': {'account': account.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -342,27 +281,13 @@ class NewAccount extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is NewAccount &&
-          _i7.listsEqual(
-            other.account,
-            account,
-          );
+      identical(this, other) || other is NewAccount && _i7.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
@@ -381,8 +306,8 @@ class KilledAccount extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'KilledAccount': {'account': account.toList()}
-      };
+    'KilledAccount': {'account': account.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -391,27 +316,13 @@ class KilledAccount extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is KilledAccount &&
-          _i7.listsEqual(
-            other.account,
-            account,
-          );
+      identical(this, other) || other is KilledAccount && _i7.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
@@ -419,16 +330,10 @@ class KilledAccount extends Event {
 
 /// On on-chain remark happened.
 class Remarked extends Event {
-  const Remarked({
-    required this.sender,
-    required this.hash,
-  });
+  const Remarked({required this.sender, required this.hash});
 
   factory Remarked._decode(_i1.Input input) {
-    return Remarked(
-      sender: const _i1.U8ArrayCodec(32).decode(input),
-      hash: const _i1.U8ArrayCodec(32).decode(input),
-    );
+    return Remarked(sender: const _i1.U8ArrayCodec(32).decode(input), hash: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -439,11 +344,8 @@ class Remarked extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'Remarked': {
-          'sender': sender.toList(),
-          'hash': hash.toList(),
-        }
-      };
+    'Remarked': {'sender': sender.toList(), 'hash': hash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -453,49 +355,23 @@ class Remarked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      sender,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      hash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(sender, output);
+    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Remarked &&
-          _i7.listsEqual(
-            other.sender,
-            sender,
-          ) &&
-          _i7.listsEqual(
-            other.hash,
-            hash,
-          );
+      identical(this, other) ||
+      other is Remarked && _i7.listsEqual(other.sender, sender) && _i7.listsEqual(other.hash, hash);
 
   @override
-  int get hashCode => Object.hash(
-        sender,
-        hash,
-      );
+  int get hashCode => Object.hash(sender, hash);
 }
 
 /// An upgrade was authorized.
 class UpgradeAuthorized extends Event {
-  const UpgradeAuthorized({
-    required this.codeHash,
-    required this.checkVersion,
-  });
+  const UpgradeAuthorized({required this.codeHash, required this.checkVersion});
 
   factory UpgradeAuthorized._decode(_i1.Input input) {
     return UpgradeAuthorized(
@@ -512,11 +388,8 @@ class UpgradeAuthorized extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'UpgradeAuthorized': {
-          'codeHash': codeHash.toList(),
-          'checkVersion': checkVersion,
-        }
-      };
+    'UpgradeAuthorized': {'codeHash': codeHash.toList(), 'checkVersion': checkVersion},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -526,46 +399,23 @@ class UpgradeAuthorized extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      codeHash,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      checkVersion,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(32).encodeTo(codeHash, output);
+    _i1.BoolCodec.codec.encodeTo(checkVersion, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is UpgradeAuthorized &&
-          _i7.listsEqual(
-            other.codeHash,
-            codeHash,
-          ) &&
-          other.checkVersion == checkVersion;
+      identical(this, other) ||
+      other is UpgradeAuthorized && _i7.listsEqual(other.codeHash, codeHash) && other.checkVersion == checkVersion;
 
   @override
-  int get hashCode => Object.hash(
-        codeHash,
-        checkVersion,
-      );
+  int get hashCode => Object.hash(codeHash, checkVersion);
 }
 
 /// An invalid authorized upgrade was rejected while trying to apply it.
 class RejectedInvalidAuthorizedUpgrade extends Event {
-  const RejectedInvalidAuthorizedUpgrade({
-    required this.codeHash,
-    required this.error,
-  });
+  const RejectedInvalidAuthorizedUpgrade({required this.codeHash, required this.error});
 
   factory RejectedInvalidAuthorizedUpgrade._decode(_i1.Input input) {
     return RejectedInvalidAuthorizedUpgrade(
@@ -582,11 +432,8 @@ class RejectedInvalidAuthorizedUpgrade extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'RejectedInvalidAuthorizedUpgrade': {
-          'codeHash': codeHash.toList(),
-          'error': error.toJson(),
-        }
-      };
+    'RejectedInvalidAuthorizedUpgrade': {'codeHash': codeHash.toList(), 'error': error.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -596,36 +443,16 @@ class RejectedInvalidAuthorizedUpgrade extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      codeHash,
-      output,
-    );
-    _i4.DispatchError.codec.encodeTo(
-      error,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    const _i1.U8ArrayCodec(32).encodeTo(codeHash, output);
+    _i4.DispatchError.codec.encodeTo(error, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RejectedInvalidAuthorizedUpgrade &&
-          _i7.listsEqual(
-            other.codeHash,
-            codeHash,
-          ) &&
-          other.error == error;
+      identical(this, other) ||
+      other is RejectedInvalidAuthorizedUpgrade && _i7.listsEqual(other.codeHash, codeHash) && other.error == error;
 
   @override
-  int get hashCode => Object.hash(
-        codeHash,
-        error,
-      );
+  int get hashCode => Object.hash(codeHash, error);
 }

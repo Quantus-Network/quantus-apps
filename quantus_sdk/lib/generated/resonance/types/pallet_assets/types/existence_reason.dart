@@ -49,14 +49,8 @@ class $ExistenceReason {
     return DepositRefunded();
   }
 
-  DepositFrom depositFrom(
-    _i3.AccountId32 value0,
-    BigInt value1,
-  ) {
-    return DepositFrom(
-      value0,
-      value1,
-    );
+  DepositFrom depositFrom(_i3.AccountId32 value0, BigInt value1) {
+    return DepositFrom(value0, value1);
   }
 }
 
@@ -83,10 +77,7 @@ class $ExistenceReasonCodec with _i1.Codec<ExistenceReason> {
   }
 
   @override
-  void encodeTo(
-    ExistenceReason value,
-    _i1.Output output,
-  ) {
+  void encodeTo(ExistenceReason value, _i1.Output output) {
     switch (value.runtimeType) {
       case Consumer:
         (value as Consumer).encodeTo(output);
@@ -104,8 +95,7 @@ class $ExistenceReasonCodec with _i1.Codec<ExistenceReason> {
         (value as DepositFrom).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'ExistenceReason: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('ExistenceReason: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -123,8 +113,7 @@ class $ExistenceReasonCodec with _i1.Codec<ExistenceReason> {
       case DepositFrom:
         return (value as DepositFrom)._sizeHint();
       default:
-        throw Exception(
-            'ExistenceReason: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('ExistenceReason: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -136,10 +125,7 @@ class Consumer extends ExistenceReason {
   Map<String, dynamic> toJson() => {'Consumer': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
   }
 
   @override
@@ -156,10 +142,7 @@ class Sufficient extends ExistenceReason {
   Map<String, dynamic> toJson() => {'Sufficient': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
   }
 
   @override
@@ -189,23 +172,12 @@ class DepositHeld extends ExistenceReason {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U128Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DepositHeld && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is DepositHeld && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -218,10 +190,7 @@ class DepositRefunded extends ExistenceReason {
   Map<String, dynamic> toJson() => {'DepositRefunded': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
   }
 
   @override
@@ -232,16 +201,10 @@ class DepositRefunded extends ExistenceReason {
 }
 
 class DepositFrom extends ExistenceReason {
-  const DepositFrom(
-    this.value0,
-    this.value1,
-  );
+  const DepositFrom(this.value0, this.value1);
 
   factory DepositFrom._decode(_i1.Input input) {
-    return DepositFrom(
-      const _i1.U8ArrayCodec(32).decode(input),
-      _i1.U128Codec.codec.decode(input),
-    );
+    return DepositFrom(const _i1.U8ArrayCodec(32).decode(input), _i1.U128Codec.codec.decode(input));
   }
 
   /// AccountId
@@ -252,11 +215,8 @@ class DepositFrom extends ExistenceReason {
 
   @override
   Map<String, List<dynamic>> toJson() => {
-        'DepositFrom': [
-          value0.toList(),
-          value1,
-        ]
-      };
+    'DepositFrom': [value0.toList(), value1],
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -266,36 +226,15 @@ class DepositFrom extends ExistenceReason {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      value1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
+    _i1.U128Codec.codec.encodeTo(value1, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DepositFrom &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          ) &&
-          other.value1 == value1;
+      identical(this, other) || other is DepositFrom && _i4.listsEqual(other.value0, value0) && other.value1 == value1;
 
   @override
-  int get hashCode => Object.hash(
-        value0,
-        value1,
-      );
+  int get hashCode => Object.hash(value0, value1);
 }

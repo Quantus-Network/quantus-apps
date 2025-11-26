@@ -34,14 +34,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  VestingUpdated vestingUpdated({
-    required _i3.AccountId32 account,
-    required BigInt unvested,
-  }) {
-    return VestingUpdated(
-      account: account,
-      unvested: unvested,
-    );
+  VestingUpdated vestingUpdated({required _i3.AccountId32 account, required BigInt unvested}) {
+    return VestingUpdated(account: account, unvested: unvested);
   }
 
   VestingCompleted vestingCompleted({required _i3.AccountId32 account}) {
@@ -66,10 +60,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case VestingUpdated:
         (value as VestingUpdated).encodeTo(output);
@@ -78,8 +69,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as VestingCompleted).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -91,8 +81,7 @@ class $EventCodec with _i1.Codec<Event> {
       case VestingCompleted:
         return (value as VestingCompleted)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -100,10 +89,7 @@ class $EventCodec with _i1.Codec<Event> {
 /// The amount vested has been updated. This could indicate a change in funds available.
 /// The balance given is the amount which is left unvested (and thus locked).
 class VestingUpdated extends Event {
-  const VestingUpdated({
-    required this.account,
-    required this.unvested,
-  });
+  const VestingUpdated({required this.account, required this.unvested});
 
   factory VestingUpdated._decode(_i1.Input input) {
     return VestingUpdated(
@@ -120,11 +106,8 @@ class VestingUpdated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'VestingUpdated': {
-          'account': account.toList(),
-          'unvested': unvested,
-        }
-      };
+    'VestingUpdated': {'account': account.toList(), 'unvested': unvested},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -134,38 +117,18 @@ class VestingUpdated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      unvested,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
+    _i1.U128Codec.codec.encodeTo(unvested, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VestingUpdated &&
-          _i4.listsEqual(
-            other.account,
-            account,
-          ) &&
-          other.unvested == unvested;
+      identical(this, other) ||
+      other is VestingUpdated && _i4.listsEqual(other.account, account) && other.unvested == unvested;
 
   @override
-  int get hashCode => Object.hash(
-        account,
-        unvested,
-      );
+  int get hashCode => Object.hash(account, unvested);
 }
 
 /// An \[account\] has become fully vested.
@@ -181,8 +144,8 @@ class VestingCompleted extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'VestingCompleted': {'account': account.toList()}
-      };
+    'VestingCompleted': {'account': account.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -191,27 +154,13 @@ class VestingCompleted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VestingCompleted &&
-          _i4.listsEqual(
-            other.account,
-            account,
-          );
+      identical(this, other) || other is VestingCompleted && _i4.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;

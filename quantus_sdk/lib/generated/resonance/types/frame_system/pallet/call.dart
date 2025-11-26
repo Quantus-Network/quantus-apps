@@ -51,8 +51,7 @@ class $Call {
     return SetCodeWithoutChecks(code: code);
   }
 
-  SetStorage setStorage(
-      {required List<_i3.Tuple2<List<int>, List<int>>> items}) {
+  SetStorage setStorage({required List<_i3.Tuple2<List<int>, List<int>>> items}) {
     return SetStorage(items: items);
   }
 
@@ -60,14 +59,8 @@ class $Call {
     return KillStorage(keys: keys);
   }
 
-  KillPrefix killPrefix({
-    required List<int> prefix,
-    required int subkeys,
-  }) {
-    return KillPrefix(
-      prefix: prefix,
-      subkeys: subkeys,
-    );
+  KillPrefix killPrefix({required List<int> prefix, required int subkeys}) {
+    return KillPrefix(prefix: prefix, subkeys: subkeys);
   }
 
   RemarkWithEvent remarkWithEvent({required List<int> remark}) {
@@ -78,8 +71,7 @@ class $Call {
     return AuthorizeUpgrade(codeHash: codeHash);
   }
 
-  AuthorizeUpgradeWithoutChecks authorizeUpgradeWithoutChecks(
-      {required _i4.H256 codeHash}) {
+  AuthorizeUpgradeWithoutChecks authorizeUpgradeWithoutChecks({required _i4.H256 codeHash}) {
     return AuthorizeUpgradeWithoutChecks(codeHash: codeHash);
   }
 
@@ -123,10 +115,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Remark:
         (value as Remark).encodeTo(output);
@@ -162,8 +151,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as ApplyAuthorizedUpgrade).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -193,8 +181,7 @@ class $CallCodec with _i1.Codec<Call> {
       case ApplyAuthorizedUpgrade:
         return (value as ApplyAuthorizedUpgrade)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -214,8 +201,8 @@ class Remark extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'remark': {'remark': remark}
-      };
+    'remark': {'remark': remark},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -224,27 +211,12 @@ class Remark extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      remark,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8SequenceCodec.codec.encodeTo(remark, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Remark &&
-          _i5.listsEqual(
-            other.remark,
-            remark,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Remark && _i5.listsEqual(other.remark, remark);
 
   @override
   int get hashCode => remark.hashCode;
@@ -263,8 +235,8 @@ class SetHeapPages extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'set_heap_pages': {'pages': pages}
-      };
+    'set_heap_pages': {'pages': pages},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -273,23 +245,12 @@ class SetHeapPages extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      pages,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U64Codec.codec.encodeTo(pages, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetHeapPages && other.pages == pages;
+  bool operator ==(Object other) => identical(this, other) || other is SetHeapPages && other.pages == pages;
 
   @override
   int get hashCode => pages.hashCode;
@@ -308,8 +269,8 @@ class SetCode extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'set_code': {'code': code}
-      };
+    'set_code': {'code': code},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -318,27 +279,12 @@ class SetCode extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      code,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8SequenceCodec.codec.encodeTo(code, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetCode &&
-          _i5.listsEqual(
-            other.code,
-            code,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is SetCode && _i5.listsEqual(other.code, code);
 
   @override
   int get hashCode => code.hashCode;
@@ -360,8 +306,8 @@ class SetCodeWithoutChecks extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'set_code_without_checks': {'code': code}
-      };
+    'set_code_without_checks': {'code': code},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -370,27 +316,13 @@ class SetCodeWithoutChecks extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      code,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U8SequenceCodec.codec.encodeTo(code, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetCodeWithoutChecks &&
-          _i5.listsEqual(
-            other.code,
-            code,
-          );
+      identical(this, other) || other is SetCodeWithoutChecks && _i5.listsEqual(other.code, code);
 
   @override
   int get hashCode => code.hashCode;
@@ -402,11 +334,10 @@ class SetStorage extends Call {
 
   factory SetStorage._decode(_i1.Input input) {
     return SetStorage(
-        items: const _i1.SequenceCodec<_i3.Tuple2<List<int>, List<int>>>(
-            _i3.Tuple2Codec<List<int>, List<int>>(
-      _i1.U8SequenceCodec.codec,
-      _i1.U8SequenceCodec.codec,
-    )).decode(input));
+      items: const _i1.SequenceCodec<_i3.Tuple2<List<int>, List<int>>>(
+        _i3.Tuple2Codec<List<int>, List<int>>(_i1.U8SequenceCodec.codec, _i1.U8SequenceCodec.codec),
+      ).decode(input),
+    );
   }
 
   /// Vec<KeyValue>
@@ -414,53 +345,30 @@ class SetStorage extends Call {
 
   @override
   Map<String, Map<String, List<List<List<int>>>>> toJson() => {
-        'set_storage': {
-          'items': items
-              .map((value) => [
-                    value.value0,
-                    value.value1,
-                  ])
-              .toList()
-        }
-      };
+    'set_storage': {
+      'items': items.map((value) => [value.value0, value.value1]).toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.SequenceCodec<_i3.Tuple2<List<int>, List<int>>>(
-            _i3.Tuple2Codec<List<int>, List<int>>(
-          _i1.U8SequenceCodec.codec,
-          _i1.U8SequenceCodec.codec,
-        )).sizeHint(items);
+          _i3.Tuple2Codec<List<int>, List<int>>(_i1.U8SequenceCodec.codec, _i1.U8SequenceCodec.codec),
+        ).sizeHint(items);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
     const _i1.SequenceCodec<_i3.Tuple2<List<int>, List<int>>>(
-        _i3.Tuple2Codec<List<int>, List<int>>(
-      _i1.U8SequenceCodec.codec,
-      _i1.U8SequenceCodec.codec,
-    )).encodeTo(
-      items,
-      output,
-    );
+      _i3.Tuple2Codec<List<int>, List<int>>(_i1.U8SequenceCodec.codec, _i1.U8SequenceCodec.codec),
+    ).encodeTo(items, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetStorage &&
-          _i5.listsEqual(
-            other.items,
-            items,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is SetStorage && _i5.listsEqual(other.items, items);
 
   @override
   int get hashCode => items.hashCode;
@@ -471,9 +379,7 @@ class KillStorage extends Call {
   const KillStorage({required this.keys});
 
   factory KillStorage._decode(_i1.Input input) {
-    return KillStorage(
-        keys: const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec)
-            .decode(input));
+    return KillStorage(keys: const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec).decode(input));
   }
 
   /// Vec<Key>
@@ -481,39 +387,22 @@ class KillStorage extends Call {
 
   @override
   Map<String, Map<String, List<List<int>>>> toJson() => {
-        'kill_storage': {'keys': keys.map((value) => value).toList()}
-      };
+    'kill_storage': {'keys': keys.map((value) => value).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec)
-            .sizeHint(keys);
+    size = size + const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec).sizeHint(keys);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec).encodeTo(
-      keys,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.SequenceCodec<List<int>>(_i1.U8SequenceCodec.codec).encodeTo(keys, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is KillStorage &&
-          _i5.listsEqual(
-            other.keys,
-            keys,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is KillStorage && _i5.listsEqual(other.keys, keys);
 
   @override
   int get hashCode => keys.hashCode;
@@ -524,16 +413,10 @@ class KillStorage extends Call {
 /// **NOTE:** We rely on the Root origin to provide us the number of subkeys under
 /// the prefix we are removing to accurately calculate the weight of this function.
 class KillPrefix extends Call {
-  const KillPrefix({
-    required this.prefix,
-    required this.subkeys,
-  });
+  const KillPrefix({required this.prefix, required this.subkeys});
 
   factory KillPrefix._decode(_i1.Input input) {
-    return KillPrefix(
-      prefix: _i1.U8SequenceCodec.codec.decode(input),
-      subkeys: _i1.U32Codec.codec.decode(input),
-    );
+    return KillPrefix(prefix: _i1.U8SequenceCodec.codec.decode(input), subkeys: _i1.U32Codec.codec.decode(input));
   }
 
   /// Key
@@ -544,11 +427,8 @@ class KillPrefix extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'kill_prefix': {
-          'prefix': prefix,
-          'subkeys': subkeys,
-        }
-      };
+    'kill_prefix': {'prefix': prefix, 'subkeys': subkeys},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -558,38 +438,17 @@ class KillPrefix extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      prefix,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      subkeys,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U8SequenceCodec.codec.encodeTo(prefix, output);
+    _i1.U32Codec.codec.encodeTo(subkeys, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is KillPrefix &&
-          _i5.listsEqual(
-            other.prefix,
-            prefix,
-          ) &&
-          other.subkeys == subkeys;
+      identical(this, other) || other is KillPrefix && _i5.listsEqual(other.prefix, prefix) && other.subkeys == subkeys;
 
   @override
-  int get hashCode => Object.hash(
-        prefix,
-        subkeys,
-      );
+  int get hashCode => Object.hash(prefix, subkeys);
 }
 
 /// Make some on-chain remark and emit event.
@@ -605,8 +464,8 @@ class RemarkWithEvent extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'remark_with_event': {'remark': remark}
-      };
+    'remark_with_event': {'remark': remark},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -615,27 +474,13 @@ class RemarkWithEvent extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      remark,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U8SequenceCodec.codec.encodeTo(remark, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RemarkWithEvent &&
-          _i5.listsEqual(
-            other.remark,
-            remark,
-          );
+      identical(this, other) || other is RemarkWithEvent && _i5.listsEqual(other.remark, remark);
 
   @override
   int get hashCode => remark.hashCode;
@@ -657,8 +502,8 @@ class AuthorizeUpgrade extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'authorize_upgrade': {'codeHash': codeHash.toList()}
-      };
+    'authorize_upgrade': {'codeHash': codeHash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -667,27 +512,13 @@ class AuthorizeUpgrade extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      codeHash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    const _i1.U8ArrayCodec(32).encodeTo(codeHash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AuthorizeUpgrade &&
-          _i5.listsEqual(
-            other.codeHash,
-            codeHash,
-          );
+      identical(this, other) || other is AuthorizeUpgrade && _i5.listsEqual(other.codeHash, codeHash);
 
   @override
   int get hashCode => codeHash.hashCode;
@@ -705,8 +536,7 @@ class AuthorizeUpgradeWithoutChecks extends Call {
   const AuthorizeUpgradeWithoutChecks({required this.codeHash});
 
   factory AuthorizeUpgradeWithoutChecks._decode(_i1.Input input) {
-    return AuthorizeUpgradeWithoutChecks(
-        codeHash: const _i1.U8ArrayCodec(32).decode(input));
+    return AuthorizeUpgradeWithoutChecks(codeHash: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::Hash
@@ -714,8 +544,8 @@ class AuthorizeUpgradeWithoutChecks extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'authorize_upgrade_without_checks': {'codeHash': codeHash.toList()}
-      };
+    'authorize_upgrade_without_checks': {'codeHash': codeHash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -724,27 +554,13 @@ class AuthorizeUpgradeWithoutChecks extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      codeHash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    const _i1.U8ArrayCodec(32).encodeTo(codeHash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AuthorizeUpgradeWithoutChecks &&
-          _i5.listsEqual(
-            other.codeHash,
-            codeHash,
-          );
+      identical(this, other) || other is AuthorizeUpgradeWithoutChecks && _i5.listsEqual(other.codeHash, codeHash);
 
   @override
   int get hashCode => codeHash.hashCode;
@@ -763,8 +579,7 @@ class ApplyAuthorizedUpgrade extends Call {
   const ApplyAuthorizedUpgrade({required this.code});
 
   factory ApplyAuthorizedUpgrade._decode(_i1.Input input) {
-    return ApplyAuthorizedUpgrade(
-        code: _i1.U8SequenceCodec.codec.decode(input));
+    return ApplyAuthorizedUpgrade(code: _i1.U8SequenceCodec.codec.decode(input));
   }
 
   /// Vec<u8>
@@ -772,8 +587,8 @@ class ApplyAuthorizedUpgrade extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'apply_authorized_upgrade': {'code': code}
-      };
+    'apply_authorized_upgrade': {'code': code},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -782,27 +597,13 @@ class ApplyAuthorizedUpgrade extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      11,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      code,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U8SequenceCodec.codec.encodeTo(code, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ApplyAuthorizedUpgrade &&
-          _i5.listsEqual(
-            other.code,
-            code,
-          );
+      identical(this, other) || other is ApplyAuthorizedUpgrade && _i5.listsEqual(other.code, code);
 
   @override
   int get hashCode => code.hashCode;

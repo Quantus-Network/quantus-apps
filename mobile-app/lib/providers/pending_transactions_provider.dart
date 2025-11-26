@@ -11,8 +11,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 // 6. Transaction moves to inHistory
 // 7. Then removed from pending
 
-class PendingTransactionsNotifier
-    extends StateNotifier<List<PendingTransactionEvent>> {
+class PendingTransactionsNotifier extends StateNotifier<List<PendingTransactionEvent>> {
   PendingTransactionsNotifier() : super([]);
 
   /// Adds a new transaction to the list.
@@ -31,12 +30,7 @@ class PendingTransactionsNotifier
     state = [
       for (final tx in state)
         if (tx.id == id)
-          tx.copyWith(
-            transactionState: newState,
-            blockHash: blockHash,
-            scheduledAtTime: scheduledAtTime,
-            error: error,
-          )
+          tx.copyWith(transactionState: newState, blockHash: blockHash, scheduledAtTime: scheduledAtTime, error: error)
         else
           tx,
     ];
@@ -54,10 +48,8 @@ class PendingTransactionsNotifier
 }
 
 /// Provider that exposes the PendingTransactionsNotifier.
-final pendingTransactionsProvider =
-    StateNotifierProvider<
-      PendingTransactionsNotifier,
-      List<PendingTransactionEvent>
-    >((ref) {
-      return PendingTransactionsNotifier();
-    });
+final pendingTransactionsProvider = StateNotifierProvider<PendingTransactionsNotifier, List<PendingTransactionEvent>>((
+  ref,
+) {
+  return PendingTransactionsNotifier();
+});

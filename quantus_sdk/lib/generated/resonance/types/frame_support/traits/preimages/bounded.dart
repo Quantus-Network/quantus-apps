@@ -41,14 +41,8 @@ class $Bounded {
     return Inline(value0);
   }
 
-  Lookup lookup({
-    required _i3.H256 hash,
-    required int len,
-  }) {
-    return Lookup(
-      hash: hash,
-      len: len,
-    );
+  Lookup lookup({required _i3.H256 hash, required int len}) {
+    return Lookup(hash: hash, len: len);
   }
 }
 
@@ -71,10 +65,7 @@ class $BoundedCodec with _i1.Codec<Bounded> {
   }
 
   @override
-  void encodeTo(
-    Bounded value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Bounded value, _i1.Output output) {
     switch (value.runtimeType) {
       case Legacy:
         (value as Legacy).encodeTo(output);
@@ -86,8 +77,7 @@ class $BoundedCodec with _i1.Codec<Bounded> {
         (value as Lookup).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Bounded: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Bounded: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -101,8 +91,7 @@ class $BoundedCodec with _i1.Codec<Bounded> {
       case Lookup:
         return (value as Lookup)._sizeHint();
       default:
-        throw Exception(
-            'Bounded: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Bounded: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -119,8 +108,8 @@ class Legacy extends Bounded {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'Legacy': {'hash': hash.toList()}
-      };
+    'Legacy': {'hash': hash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -129,27 +118,12 @@ class Legacy extends Bounded {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      hash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Legacy &&
-          _i4.listsEqual(
-            other.hash,
-            hash,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Legacy && _i4.listsEqual(other.hash, hash);
 
   @override
   int get hashCode => hash.hashCode;
@@ -175,43 +149,22 @@ class Inline extends Bounded {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Inline &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Inline && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;
 }
 
 class Lookup extends Bounded {
-  const Lookup({
-    required this.hash,
-    required this.len,
-  });
+  const Lookup({required this.hash, required this.len});
 
   factory Lookup._decode(_i1.Input input) {
-    return Lookup(
-      hash: const _i1.U8ArrayCodec(32).decode(input),
-      len: _i1.U32Codec.codec.decode(input),
-    );
+    return Lookup(hash: const _i1.U8ArrayCodec(32).decode(input), len: _i1.U32Codec.codec.decode(input));
   }
 
   /// H::Output
@@ -222,11 +175,8 @@ class Lookup extends Bounded {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Lookup': {
-          'hash': hash.toList(),
-          'len': len,
-        }
-      };
+    'Lookup': {'hash': hash.toList(), 'len': len},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -236,36 +186,15 @@ class Lookup extends Bounded {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      hash,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      len,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U32Codec.codec.encodeTo(len, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Lookup &&
-          _i4.listsEqual(
-            other.hash,
-            hash,
-          ) &&
-          other.len == len;
+      identical(this, other) || other is Lookup && _i4.listsEqual(other.hash, hash) && other.len == len;
 
   @override
-  int get hashCode => Object.hash(
-        hash,
-        len,
-      );
+  int get hashCode => Object.hash(hash, len);
 }

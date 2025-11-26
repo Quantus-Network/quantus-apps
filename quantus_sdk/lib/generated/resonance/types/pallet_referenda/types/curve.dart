@@ -38,11 +38,7 @@ class $Curve {
     required _i3.Perbill floor,
     required _i3.Perbill ceil,
   }) {
-    return LinearDecreasing(
-      length: length,
-      floor: floor,
-      ceil: ceil,
-    );
+    return LinearDecreasing(length: length, floor: floor, ceil: ceil);
   }
 
   SteppedDecreasing steppedDecreasing({
@@ -51,24 +47,11 @@ class $Curve {
     required _i3.Perbill step,
     required _i3.Perbill period,
   }) {
-    return SteppedDecreasing(
-      begin: begin,
-      end: end,
-      step: step,
-      period: period,
-    );
+    return SteppedDecreasing(begin: begin, end: end, step: step, period: period);
   }
 
-  Reciprocal reciprocal({
-    required _i4.FixedI64 factor,
-    required _i4.FixedI64 xOffset,
-    required _i4.FixedI64 yOffset,
-  }) {
-    return Reciprocal(
-      factor: factor,
-      xOffset: xOffset,
-      yOffset: yOffset,
-    );
+  Reciprocal reciprocal({required _i4.FixedI64 factor, required _i4.FixedI64 xOffset, required _i4.FixedI64 yOffset}) {
+    return Reciprocal(factor: factor, xOffset: xOffset, yOffset: yOffset);
   }
 }
 
@@ -91,10 +74,7 @@ class $CurveCodec with _i1.Codec<Curve> {
   }
 
   @override
-  void encodeTo(
-    Curve value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Curve value, _i1.Output output) {
     switch (value.runtimeType) {
       case LinearDecreasing:
         (value as LinearDecreasing).encodeTo(output);
@@ -106,8 +86,7 @@ class $CurveCodec with _i1.Codec<Curve> {
         (value as Reciprocal).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Curve: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Curve: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -121,18 +100,13 @@ class $CurveCodec with _i1.Codec<Curve> {
       case Reciprocal:
         return (value as Reciprocal)._sizeHint();
       default:
-        throw Exception(
-            'Curve: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Curve: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class LinearDecreasing extends Curve {
-  const LinearDecreasing({
-    required this.length,
-    required this.floor,
-    required this.ceil,
-  });
+  const LinearDecreasing({required this.length, required this.floor, required this.ceil});
 
   factory LinearDecreasing._decode(_i1.Input input) {
     return LinearDecreasing(
@@ -153,12 +127,8 @@ class LinearDecreasing extends Curve {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'LinearDecreasing': {
-          'length': length,
-          'floor': floor,
-          'ceil': ceil,
-        }
-      };
+    'LinearDecreasing': {'length': length, 'floor': floor, 'ceil': ceil},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -169,50 +139,23 @@ class LinearDecreasing extends Curve {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      length,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      floor,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      ceil,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(length, output);
+    _i1.U32Codec.codec.encodeTo(floor, output);
+    _i1.U32Codec.codec.encodeTo(ceil, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is LinearDecreasing &&
-          other.length == length &&
-          other.floor == floor &&
-          other.ceil == ceil;
+      identical(this, other) ||
+      other is LinearDecreasing && other.length == length && other.floor == floor && other.ceil == ceil;
 
   @override
-  int get hashCode => Object.hash(
-        length,
-        floor,
-        ceil,
-      );
+  int get hashCode => Object.hash(length, floor, ceil);
 }
 
 class SteppedDecreasing extends Curve {
-  const SteppedDecreasing({
-    required this.begin,
-    required this.end,
-    required this.step,
-    required this.period,
-  });
+  const SteppedDecreasing({required this.begin, required this.end, required this.step, required this.period});
 
   factory SteppedDecreasing._decode(_i1.Input input) {
     return SteppedDecreasing(
@@ -237,13 +180,8 @@ class SteppedDecreasing extends Curve {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'SteppedDecreasing': {
-          'begin': begin,
-          'end': end,
-          'step': step,
-          'period': period,
-        }
-      };
+    'SteppedDecreasing': {'begin': begin, 'end': end, 'step': step, 'period': period},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -255,34 +193,16 @@ class SteppedDecreasing extends Curve {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      begin,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      end,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      step,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      period,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(begin, output);
+    _i1.U32Codec.codec.encodeTo(end, output);
+    _i1.U32Codec.codec.encodeTo(step, output);
+    _i1.U32Codec.codec.encodeTo(period, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is SteppedDecreasing &&
           other.begin == begin &&
           other.end == end &&
@@ -290,20 +210,11 @@ class SteppedDecreasing extends Curve {
           other.period == period;
 
   @override
-  int get hashCode => Object.hash(
-        begin,
-        end,
-        step,
-        period,
-      );
+  int get hashCode => Object.hash(begin, end, step, period);
 }
 
 class Reciprocal extends Curve {
-  const Reciprocal({
-    required this.factor,
-    required this.xOffset,
-    required this.yOffset,
-  });
+  const Reciprocal({required this.factor, required this.xOffset, required this.yOffset});
 
   factory Reciprocal._decode(_i1.Input input) {
     return Reciprocal(
@@ -324,12 +235,8 @@ class Reciprocal extends Curve {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'Reciprocal': {
-          'factor': factor,
-          'xOffset': xOffset,
-          'yOffset': yOffset,
-        }
-      };
+    'Reciprocal': {'factor': factor, 'xOffset': xOffset, 'yOffset': yOffset},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -340,39 +247,17 @@ class Reciprocal extends Curve {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.I64Codec.codec.encodeTo(
-      factor,
-      output,
-    );
-    _i1.I64Codec.codec.encodeTo(
-      xOffset,
-      output,
-    );
-    _i1.I64Codec.codec.encodeTo(
-      yOffset,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.I64Codec.codec.encodeTo(factor, output);
+    _i1.I64Codec.codec.encodeTo(xOffset, output);
+    _i1.I64Codec.codec.encodeTo(yOffset, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Reciprocal &&
-          other.factor == factor &&
-          other.xOffset == xOffset &&
-          other.yOffset == yOffset;
+      identical(this, other) ||
+      other is Reciprocal && other.factor == factor && other.xOffset == xOffset && other.yOffset == yOffset;
 
   @override
-  int get hashCode => Object.hash(
-        factor,
-        xOffset,
-        yOffset,
-      );
+  int get hashCode => Object.hash(factor, xOffset, yOffset);
 }

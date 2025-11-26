@@ -24,8 +24,7 @@ class Queries {
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageMap<int, _i3.Proposal> _proposals =
-      const _i1.StorageMap<int, _i3.Proposal>(
+  final _i1.StorageMap<int, _i3.Proposal> _proposals = const _i1.StorageMap<int, _i3.Proposal>(
     prefix: 'TreasuryPallet',
     storage: 'Proposals',
     valueCodec: _i3.Proposal.codec,
@@ -38,8 +37,7 @@ class Queries {
     valueCodec: _i2.U128Codec.codec,
   );
 
-  final _i1.StorageValue<List<int>> _approvals =
-      const _i1.StorageValue<List<int>>(
+  final _i1.StorageValue<List<int>> _approvals = const _i1.StorageValue<List<int>>(
     prefix: 'TreasuryPallet',
     storage: 'Approvals',
     valueCodec: _i2.U32SequenceCodec.codec,
@@ -51,8 +49,7 @@ class Queries {
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageMap<int, _i4.SpendStatus> _spends =
-      const _i1.StorageMap<int, _i4.SpendStatus>(
+  final _i1.StorageMap<int, _i4.SpendStatus> _spends = const _i1.StorageMap<int, _i4.SpendStatus>(
     prefix: 'TreasuryPallet',
     storage: 'Spends',
     valueCodec: _i4.SpendStatus.codec,
@@ -71,10 +68,7 @@ class Queries {
   /// Number of proposals that have been made.
   _i5.Future<int> proposalCount({_i1.BlockHash? at}) async {
     final hashedKey = _proposalCount.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _proposalCount.decodeValue(bytes);
     }
@@ -85,15 +79,9 @@ class Queries {
   /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
   ///
   /// Proposals that have been made.
-  _i5.Future<_i3.Proposal?> proposals(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<_i3.Proposal?> proposals(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _proposals.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _proposals.decodeValue(bytes);
     }
@@ -103,10 +91,7 @@ class Queries {
   /// The amount which has been reported as inactive to Currency.
   _i5.Future<BigInt> deactivated({_i1.BlockHash? at}) async {
     final hashedKey = _deactivated.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _deactivated.decodeValue(bytes);
     }
@@ -119,27 +104,17 @@ class Queries {
   /// Proposal indices that have been approved but not yet awarded.
   _i5.Future<List<int>> approvals({_i1.BlockHash? at}) async {
     final hashedKey = _approvals.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _approvals.decodeValue(bytes);
     }
-    return List<int>.filled(
-      0,
-      0,
-      growable: true,
-    ); /* Default */
+    return List<int>.filled(0, 0, growable: true); /* Default */
   }
 
   /// The count of spends that have been made.
   _i5.Future<int> spendCount({_i1.BlockHash? at}) async {
     final hashedKey = _spendCount.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _spendCount.decodeValue(bytes);
     }
@@ -147,15 +122,9 @@ class Queries {
   }
 
   /// Spends that have been approved and being processed.
-  _i5.Future<_i4.SpendStatus?> spends(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<_i4.SpendStatus?> spends(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _spends.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _spends.decodeValue(bytes);
     }
@@ -165,10 +134,7 @@ class Queries {
   /// The blocknumber for the last triggered spend period.
   _i5.Future<int?> lastSpendPeriod({_i1.BlockHash? at}) async {
     final hashedKey = _lastSpendPeriod.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastSpendPeriod.decodeValue(bytes);
     }
@@ -179,37 +145,21 @@ class Queries {
   /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
   ///
   /// Proposals that have been made.
-  _i5.Future<List<_i3.Proposal?>> multiProposals(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<List<_i3.Proposal?>> multiProposals(List<int> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _proposals.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _proposals.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _proposals.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
   /// Spends that have been approved and being processed.
-  _i5.Future<List<_i4.SpendStatus?>> multiSpends(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<List<_i4.SpendStatus?>> multiSpends(List<int> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _spends.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _spends.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _spends.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -289,14 +239,8 @@ class Txs {
   /// ## Events
   ///
   /// Emits [`Event::SpendApproved`] if successful.
-  _i7.TreasuryPallet spendLocal({
-    required BigInt amount,
-    required _i8.MultiAddress beneficiary,
-  }) {
-    return _i7.TreasuryPallet(_i9.SpendLocal(
-      amount: amount,
-      beneficiary: beneficiary,
-    ));
+  _i7.TreasuryPallet spendLocal({required BigInt amount, required _i8.MultiAddress beneficiary}) {
+    return _i7.TreasuryPallet(_i9.SpendLocal(amount: amount, beneficiary: beneficiary));
   }
 
   /// Force a previously approved proposal to be removed from the approval queue.
@@ -356,12 +300,9 @@ class Txs {
     required _i8.MultiAddress beneficiary,
     int? validFrom,
   }) {
-    return _i7.TreasuryPallet(_i9.Spend(
-      assetKind: assetKind,
-      amount: amount,
-      beneficiary: beneficiary,
-      validFrom: validFrom,
-    ));
+    return _i7.TreasuryPallet(
+      _i9.Spend(assetKind: assetKind, amount: amount, beneficiary: beneficiary, validFrom: validFrom),
+    );
   }
 
   /// Claim a spend.
@@ -441,16 +382,7 @@ class Constants {
   final _i10.Permill burn = 0;
 
   /// The treasury's pallet id, used for deriving its sovereign account ID.
-  final _i11.PalletId palletId = const <int>[
-    112,
-    121,
-    47,
-    116,
-    114,
-    115,
-    114,
-    121,
-  ];
+  final _i11.PalletId palletId = const <int>[112, 121, 47, 116, 114, 115, 114, 121];
 
   /// DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
   /// Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.

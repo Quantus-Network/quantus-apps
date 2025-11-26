@@ -19,41 +19,32 @@ class Queries {
 
   final _i1.StorageMap<_i2.H256, _i3.OldRequestStatus> _statusFor =
       const _i1.StorageMap<_i2.H256, _i3.OldRequestStatus>(
-    prefix: 'Preimage',
-    storage: 'StatusFor',
-    valueCodec: _i3.OldRequestStatus.codec,
-    hasher: _i1.StorageHasher.identity(_i2.H256Codec()),
-  );
+        prefix: 'Preimage',
+        storage: 'StatusFor',
+        valueCodec: _i3.OldRequestStatus.codec,
+        hasher: _i1.StorageHasher.identity(_i2.H256Codec()),
+      );
 
   final _i1.StorageMap<_i2.H256, _i4.RequestStatus> _requestStatusFor =
       const _i1.StorageMap<_i2.H256, _i4.RequestStatus>(
-    prefix: 'Preimage',
-    storage: 'RequestStatusFor',
-    valueCodec: _i4.RequestStatus.codec,
-    hasher: _i1.StorageHasher.identity(_i2.H256Codec()),
-  );
+        prefix: 'Preimage',
+        storage: 'RequestStatusFor',
+        valueCodec: _i4.RequestStatus.codec,
+        hasher: _i1.StorageHasher.identity(_i2.H256Codec()),
+      );
 
   final _i1.StorageMap<_i5.Tuple2<_i2.H256, int>, List<int>> _preimageFor =
       const _i1.StorageMap<_i5.Tuple2<_i2.H256, int>, List<int>>(
-    prefix: 'Preimage',
-    storage: 'PreimageFor',
-    valueCodec: _i6.U8SequenceCodec.codec,
-    hasher: _i1.StorageHasher.identity(_i5.Tuple2Codec<_i2.H256, int>(
-      _i2.H256Codec(),
-      _i6.U32Codec.codec,
-    )),
-  );
+        prefix: 'Preimage',
+        storage: 'PreimageFor',
+        valueCodec: _i6.U8SequenceCodec.codec,
+        hasher: _i1.StorageHasher.identity(_i5.Tuple2Codec<_i2.H256, int>(_i2.H256Codec(), _i6.U32Codec.codec)),
+      );
 
   /// The request status of a given hash.
-  _i7.Future<_i3.OldRequestStatus?> statusFor(
-    _i2.H256 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i3.OldRequestStatus?> statusFor(_i2.H256 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _statusFor.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _statusFor.decodeValue(bytes);
     }
@@ -61,30 +52,18 @@ class Queries {
   }
 
   /// The request status of a given hash.
-  _i7.Future<_i4.RequestStatus?> requestStatusFor(
-    _i2.H256 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i4.RequestStatus?> requestStatusFor(_i2.H256 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _requestStatusFor.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _requestStatusFor.decodeValue(bytes);
     }
     return null; /* Nullable */
   }
 
-  _i7.Future<List<int>?> preimageFor(
-    _i5.Tuple2<_i2.H256, int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<int>?> preimageFor(_i5.Tuple2<_i2.H256, int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _preimageFor.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _preimageFor.decodeValue(bytes);
     }
@@ -92,56 +71,30 @@ class Queries {
   }
 
   /// The request status of a given hash.
-  _i7.Future<List<_i3.OldRequestStatus?>> multiStatusFor(
-    List<_i2.H256> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<_i3.OldRequestStatus?>> multiStatusFor(List<_i2.H256> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _statusFor.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _statusFor.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _statusFor.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
   /// The request status of a given hash.
-  _i7.Future<List<_i4.RequestStatus?>> multiRequestStatusFor(
-    List<_i2.H256> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _requestStatusFor.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i7.Future<List<_i4.RequestStatus?>> multiRequestStatusFor(List<_i2.H256> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _requestStatusFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _requestStatusFor.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _requestStatusFor.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
-  _i7.Future<List<List<int>?>> multiPreimageFor(
-    List<_i5.Tuple2<_i2.H256, int>> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _preimageFor.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i7.Future<List<List<int>?>> multiPreimageFor(List<_i5.Tuple2<_i2.H256, int>> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _preimageFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _preimageFor.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _preimageFor.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }

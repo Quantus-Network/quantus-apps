@@ -27,8 +27,7 @@ class Queries {
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageMap<int, _i3.ReferendumInfo> _referendumInfoFor =
-      const _i1.StorageMap<int, _i3.ReferendumInfo>(
+  final _i1.StorageMap<int, _i3.ReferendumInfo> _referendumInfoFor = const _i1.StorageMap<int, _i3.ReferendumInfo>(
     prefix: 'TechReferenda',
     storage: 'ReferendumInfoFor',
     valueCodec: _i3.ReferendumInfo.codec,
@@ -37,26 +36,22 @@ class Queries {
 
   final _i1.StorageMap<int, List<_i4.Tuple2<int, int>>> _trackQueue =
       const _i1.StorageMap<int, List<_i4.Tuple2<int, int>>>(
-    prefix: 'TechReferenda',
-    storage: 'TrackQueue',
-    valueCodec:
-        _i2.SequenceCodec<_i4.Tuple2<int, int>>(_i4.Tuple2Codec<int, int>(
-      _i2.U32Codec.codec,
-      _i2.U32Codec.codec,
-    )),
-    hasher: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
-  );
+        prefix: 'TechReferenda',
+        storage: 'TrackQueue',
+        valueCodec: _i2.SequenceCodec<_i4.Tuple2<int, int>>(
+          _i4.Tuple2Codec<int, int>(_i2.U32Codec.codec, _i2.U32Codec.codec),
+        ),
+        hasher: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
+      );
 
-  final _i1.StorageMap<int, int> _decidingCount =
-      const _i1.StorageMap<int, int>(
+  final _i1.StorageMap<int, int> _decidingCount = const _i1.StorageMap<int, int>(
     prefix: 'TechReferenda',
     storage: 'DecidingCount',
     valueCodec: _i2.U32Codec.codec,
     hasher: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
   );
 
-  final _i1.StorageMap<int, _i5.H256> _metadataOf =
-      const _i1.StorageMap<int, _i5.H256>(
+  final _i1.StorageMap<int, _i5.H256> _metadataOf = const _i1.StorageMap<int, _i5.H256>(
     prefix: 'TechReferenda',
     storage: 'MetadataOf',
     valueCodec: _i5.H256Codec(),
@@ -66,10 +61,7 @@ class Queries {
   /// The next free referendum index, aka the number of referenda started so far.
   _i6.Future<int> referendumCount({_i1.BlockHash? at}) async {
     final hashedKey = _referendumCount.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _referendumCount.decodeValue(bytes);
     }
@@ -77,15 +69,9 @@ class Queries {
   }
 
   /// Information concerning any given referendum.
-  _i6.Future<_i3.ReferendumInfo?> referendumInfoFor(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<_i3.ReferendumInfo?> referendumInfoFor(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _referendumInfoFor.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _referendumInfoFor.decodeValue(bytes);
     }
@@ -96,15 +82,9 @@ class Queries {
   /// conviction-weighted approvals.
   ///
   /// This should be empty if `DecidingCount` is less than `TrackInfo::max_deciding`.
-  _i6.Future<List<_i4.Tuple2<int, int>>> trackQueue(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<_i4.Tuple2<int, int>>> trackQueue(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _trackQueue.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _trackQueue.decodeValue(bytes);
     }
@@ -112,15 +92,9 @@ class Queries {
   }
 
   /// The number of referenda being decided currently.
-  _i6.Future<int> decidingCount(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<int> decidingCount(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _decidingCount.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _decidingCount.decodeValue(bytes);
     }
@@ -133,15 +107,9 @@ class Queries {
   ///
   /// Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
   /// large preimages.
-  _i6.Future<_i5.H256?> metadataOf(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<_i5.H256?> metadataOf(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _metadataOf.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _metadataOf.decodeValue(bytes);
     }
@@ -149,20 +117,11 @@ class Queries {
   }
 
   /// Information concerning any given referendum.
-  _i6.Future<List<_i3.ReferendumInfo?>> multiReferendumInfoFor(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _referendumInfoFor.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<_i3.ReferendumInfo?>> multiReferendumInfoFor(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _referendumInfoFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _referendumInfoFor.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _referendumInfoFor.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -171,40 +130,21 @@ class Queries {
   /// conviction-weighted approvals.
   ///
   /// This should be empty if `DecidingCount` is less than `TrackInfo::max_deciding`.
-  _i6.Future<List<List<_i4.Tuple2<int, int>>>> multiTrackQueue(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _trackQueue.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<List<_i4.Tuple2<int, int>>>> multiTrackQueue(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _trackQueue.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _trackQueue.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _trackQueue.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i4.Tuple2<int, int>>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i4.Tuple2<int, int>>>); /* Default */
   }
 
   /// The number of referenda being decided currently.
-  _i6.Future<List<int>> multiDecidingCount(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _decidingCount.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<int>> multiDecidingCount(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _decidingCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _decidingCount.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _decidingCount.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => 0).toList() as List<int>); /* Default */
   }
@@ -215,20 +155,11 @@ class Queries {
   ///
   /// Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
   /// large preimages.
-  _i6.Future<List<_i5.H256?>> multiMetadataOf(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _metadataOf.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<_i5.H256?>> multiMetadataOf(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _metadataOf.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _metadataOf.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _metadataOf.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -305,11 +236,9 @@ class Txs {
     required _i10.Bounded proposal,
     required _i11.DispatchTime enactmentMoment,
   }) {
-    return _i8.TechReferenda(_i12.Submit(
-      proposalOrigin: proposalOrigin,
-      proposal: proposal,
-      enactmentMoment: enactmentMoment,
-    ));
+    return _i8.TechReferenda(
+      _i12.Submit(proposalOrigin: proposalOrigin, proposal: proposal, enactmentMoment: enactmentMoment),
+    );
   }
 
   /// Post the Decision Deposit for a referendum.
@@ -394,14 +323,8 @@ class Txs {
   ///  metadata of a finished referendum.
   /// - `index`:  The index of a referendum to set or clear metadata for.
   /// - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-  _i8.TechReferenda setMetadata({
-    required int index,
-    _i5.H256? maybeHash,
-  }) {
-    return _i8.TechReferenda(_i12.SetMetadata(
-      index: index,
-      maybeHash: maybeHash,
-    ));
+  _i8.TechReferenda setMetadata({required int index, _i5.H256? maybeHash}) {
+    return _i8.TechReferenda(_i12.SetMetadata(index: index, maybeHash: maybeHash));
   }
 }
 
@@ -437,17 +360,9 @@ class Constants {
         decisionPeriod: 7200,
         confirmPeriod: 100,
         minEnactmentPeriod: 100,
-        minApproval: const _i14.LinearDecreasing(
-          length: 1000000000,
-          floor: 500000000,
-          ceil: 1000000000,
-        ),
-        minSupport: const _i14.LinearDecreasing(
-          length: 1000000000,
-          floor: 0,
-          ceil: 0,
-        ),
+        minApproval: const _i14.LinearDecreasing(length: 1000000000, floor: 500000000, ceil: 1000000000),
+        minSupport: const _i14.LinearDecreasing(length: 1000000000, floor: 0, ceil: 0),
       ),
-    )
+    ),
   ];
 }

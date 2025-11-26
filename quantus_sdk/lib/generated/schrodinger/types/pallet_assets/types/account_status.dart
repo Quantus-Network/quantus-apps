@@ -8,10 +8,7 @@ enum AccountStatus {
   frozen('Frozen', 1),
   blocked('Blocked', 2);
 
-  const AccountStatus(
-    this.variantName,
-    this.codecIndex,
-  );
+  const AccountStatus(this.variantName, this.codecIndex);
 
   factory AccountStatus.decode(_i1.Input input) {
     return codec.decode(input);
@@ -48,13 +45,7 @@ class $AccountStatusCodec with _i1.Codec<AccountStatus> {
   }
 
   @override
-  void encodeTo(
-    AccountStatus value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(AccountStatus value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

@@ -12,14 +12,8 @@ class ChargeTransactionPaymentCodec with _i1.Codec<ChargeTransactionPayment> {
   }
 
   @override
-  void encodeTo(
-    ChargeTransactionPayment value,
-    _i1.Output output,
-  ) {
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(ChargeTransactionPayment value, _i1.Output output) {
+    _i1.CompactBigIntCodec.codec.encodeTo(value, output);
   }
 
   @override

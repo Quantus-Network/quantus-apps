@@ -83,7 +83,7 @@ scripts:
   # Format all packages
   format:
     description: Format all packages in the workspace
-    run: melos exec -- dart format .
+    run: melos exec -- dart format . --line-length=120
 
   # Test all packages
   test:

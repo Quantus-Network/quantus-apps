@@ -1580,10 +1580,7 @@ class $EraCodec with _i1.Codec<Era> {
   }
 
   @override
-  void encodeTo(
-    Era value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Era value, _i1.Output output) {
     switch (value.runtimeType) {
       case Immortal:
         (value as Immortal).encodeTo(output);
@@ -2354,8 +2351,7 @@ class $EraCodec with _i1.Codec<Era> {
         (value as Mortal255).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Era: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Era: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -2875,8 +2871,7 @@ class $EraCodec with _i1.Codec<Era> {
       case Mortal255:
         return (value as Mortal255)._sizeHint();
       default:
-        throw Exception(
-            'Era: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Era: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -2888,10 +2883,7 @@ class Immortal extends Era {
   Map<String, dynamic> toJson() => {'Immortal': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
   }
 
   @override
@@ -2920,23 +2912,12 @@ class Mortal1 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal1 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal1 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -2961,23 +2942,12 @@ class Mortal2 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal2 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal2 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3002,23 +2972,12 @@ class Mortal3 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal3 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal3 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3043,23 +3002,12 @@ class Mortal4 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal4 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal4 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3084,23 +3032,12 @@ class Mortal5 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal5 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal5 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3125,23 +3062,12 @@ class Mortal6 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal6 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal6 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3166,23 +3092,12 @@ class Mortal7 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal7 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal7 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3207,23 +3122,12 @@ class Mortal8 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal8 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal8 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3248,23 +3152,12 @@ class Mortal9 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal9 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal9 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3289,23 +3182,12 @@ class Mortal10 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal10 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal10 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3330,23 +3212,12 @@ class Mortal11 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      11,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal11 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal11 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3371,23 +3242,12 @@ class Mortal12 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      12,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(12, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal12 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal12 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3412,23 +3272,12 @@ class Mortal13 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      13,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal13 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal13 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3453,23 +3302,12 @@ class Mortal14 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      14,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(14, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal14 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal14 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3494,23 +3332,12 @@ class Mortal15 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      15,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(15, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal15 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal15 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3535,23 +3362,12 @@ class Mortal16 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      16,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(16, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal16 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal16 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3576,23 +3392,12 @@ class Mortal17 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      17,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(17, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal17 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal17 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3617,23 +3422,12 @@ class Mortal18 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      18,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(18, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal18 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal18 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3658,23 +3452,12 @@ class Mortal19 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      19,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(19, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal19 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal19 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3699,23 +3482,12 @@ class Mortal20 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      20,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(20, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal20 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal20 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3740,23 +3512,12 @@ class Mortal21 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(21, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal21 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal21 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3781,23 +3542,12 @@ class Mortal22 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      22,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(22, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal22 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal22 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3822,23 +3572,12 @@ class Mortal23 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      23,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(23, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal23 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal23 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3863,23 +3602,12 @@ class Mortal24 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      24,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(24, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal24 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal24 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3904,23 +3632,12 @@ class Mortal25 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      25,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(25, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal25 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal25 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3945,23 +3662,12 @@ class Mortal26 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      26,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(26, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal26 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal26 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -3986,23 +3692,12 @@ class Mortal27 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      27,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(27, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal27 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal27 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4027,23 +3722,12 @@ class Mortal28 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      28,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(28, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal28 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal28 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4068,23 +3752,12 @@ class Mortal29 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      29,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(29, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal29 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal29 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4109,23 +3782,12 @@ class Mortal30 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      30,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(30, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal30 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal30 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4150,23 +3812,12 @@ class Mortal31 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      31,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(31, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal31 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal31 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4191,23 +3842,12 @@ class Mortal32 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      32,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(32, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal32 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal32 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4232,23 +3872,12 @@ class Mortal33 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      33,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(33, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal33 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal33 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4273,23 +3902,12 @@ class Mortal34 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      34,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(34, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal34 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal34 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4314,23 +3932,12 @@ class Mortal35 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      35,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(35, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal35 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal35 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4355,23 +3962,12 @@ class Mortal36 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      36,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(36, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal36 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal36 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4396,23 +3992,12 @@ class Mortal37 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      37,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(37, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal37 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal37 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4437,23 +4022,12 @@ class Mortal38 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      38,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(38, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal38 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal38 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4478,23 +4052,12 @@ class Mortal39 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      39,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(39, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal39 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal39 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4519,23 +4082,12 @@ class Mortal40 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      40,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(40, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal40 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal40 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4560,23 +4112,12 @@ class Mortal41 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      41,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(41, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal41 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal41 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4601,23 +4142,12 @@ class Mortal42 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      42,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(42, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal42 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal42 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4642,23 +4172,12 @@ class Mortal43 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      43,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(43, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal43 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal43 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4683,23 +4202,12 @@ class Mortal44 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      44,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(44, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal44 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal44 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4724,23 +4232,12 @@ class Mortal45 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      45,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(45, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal45 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal45 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4765,23 +4262,12 @@ class Mortal46 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      46,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(46, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal46 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal46 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4806,23 +4292,12 @@ class Mortal47 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      47,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(47, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal47 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal47 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4847,23 +4322,12 @@ class Mortal48 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      48,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(48, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal48 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal48 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4888,23 +4352,12 @@ class Mortal49 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      49,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(49, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal49 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal49 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4929,23 +4382,12 @@ class Mortal50 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      50,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(50, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal50 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal50 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -4970,23 +4412,12 @@ class Mortal51 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      51,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(51, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal51 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal51 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5011,23 +4442,12 @@ class Mortal52 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      52,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(52, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal52 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal52 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5052,23 +4472,12 @@ class Mortal53 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      53,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(53, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal53 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal53 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5093,23 +4502,12 @@ class Mortal54 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      54,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(54, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal54 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal54 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5134,23 +4532,12 @@ class Mortal55 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      55,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(55, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal55 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal55 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5175,23 +4562,12 @@ class Mortal56 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      56,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(56, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal56 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal56 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5216,23 +4592,12 @@ class Mortal57 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      57,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(57, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal57 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal57 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5257,23 +4622,12 @@ class Mortal58 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      58,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(58, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal58 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal58 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5298,23 +4652,12 @@ class Mortal59 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      59,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(59, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal59 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal59 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5339,23 +4682,12 @@ class Mortal60 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      60,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(60, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal60 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal60 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5380,23 +4712,12 @@ class Mortal61 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      61,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(61, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal61 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal61 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5421,23 +4742,12 @@ class Mortal62 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      62,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(62, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal62 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal62 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5462,23 +4772,12 @@ class Mortal63 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      63,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(63, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal63 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal63 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5503,23 +4802,12 @@ class Mortal64 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      64,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(64, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal64 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal64 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5544,23 +4832,12 @@ class Mortal65 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      65,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(65, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal65 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal65 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5585,23 +4862,12 @@ class Mortal66 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      66,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(66, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal66 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal66 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5626,23 +4892,12 @@ class Mortal67 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      67,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(67, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal67 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal67 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5667,23 +4922,12 @@ class Mortal68 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      68,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(68, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal68 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal68 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5708,23 +4952,12 @@ class Mortal69 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      69,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(69, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal69 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal69 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5749,23 +4982,12 @@ class Mortal70 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      70,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(70, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal70 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal70 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5790,23 +5012,12 @@ class Mortal71 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      71,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(71, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal71 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal71 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5831,23 +5042,12 @@ class Mortal72 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      72,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(72, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal72 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal72 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5872,23 +5072,12 @@ class Mortal73 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      73,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(73, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal73 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal73 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5913,23 +5102,12 @@ class Mortal74 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      74,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(74, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal74 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal74 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5954,23 +5132,12 @@ class Mortal75 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      75,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(75, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal75 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal75 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -5995,23 +5162,12 @@ class Mortal76 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      76,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(76, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal76 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal76 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6036,23 +5192,12 @@ class Mortal77 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      77,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(77, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal77 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal77 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6077,23 +5222,12 @@ class Mortal78 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      78,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(78, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal78 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal78 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6118,23 +5252,12 @@ class Mortal79 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      79,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(79, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal79 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal79 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6159,23 +5282,12 @@ class Mortal80 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      80,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(80, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal80 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal80 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6200,23 +5312,12 @@ class Mortal81 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      81,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(81, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal81 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal81 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6241,23 +5342,12 @@ class Mortal82 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      82,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(82, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal82 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal82 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6282,23 +5372,12 @@ class Mortal83 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      83,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(83, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal83 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal83 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6323,23 +5402,12 @@ class Mortal84 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      84,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(84, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal84 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal84 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6364,23 +5432,12 @@ class Mortal85 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      85,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(85, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal85 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal85 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6405,23 +5462,12 @@ class Mortal86 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      86,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(86, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal86 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal86 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6446,23 +5492,12 @@ class Mortal87 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      87,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(87, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal87 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal87 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6487,23 +5522,12 @@ class Mortal88 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      88,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(88, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal88 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal88 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6528,23 +5552,12 @@ class Mortal89 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      89,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(89, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal89 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal89 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6569,23 +5582,12 @@ class Mortal90 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      90,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(90, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal90 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal90 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6610,23 +5612,12 @@ class Mortal91 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      91,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(91, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal91 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal91 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6651,23 +5642,12 @@ class Mortal92 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      92,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(92, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal92 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal92 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6692,23 +5672,12 @@ class Mortal93 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      93,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(93, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal93 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal93 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6733,23 +5702,12 @@ class Mortal94 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      94,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(94, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal94 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal94 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6774,23 +5732,12 @@ class Mortal95 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      95,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(95, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal95 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal95 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6815,23 +5762,12 @@ class Mortal96 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      96,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(96, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal96 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal96 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6856,23 +5792,12 @@ class Mortal97 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      97,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(97, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal97 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal97 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6897,23 +5822,12 @@ class Mortal98 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      98,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(98, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal98 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal98 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6938,23 +5852,12 @@ class Mortal99 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      99,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(99, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal99 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal99 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -6979,23 +5882,12 @@ class Mortal100 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      100,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(100, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal100 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal100 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7020,23 +5912,12 @@ class Mortal101 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      101,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(101, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal101 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal101 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7061,23 +5942,12 @@ class Mortal102 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      102,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(102, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal102 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal102 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7102,23 +5972,12 @@ class Mortal103 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      103,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(103, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal103 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal103 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7143,23 +6002,12 @@ class Mortal104 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      104,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(104, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal104 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal104 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7184,23 +6032,12 @@ class Mortal105 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      105,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(105, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal105 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal105 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7225,23 +6062,12 @@ class Mortal106 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      106,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(106, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal106 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal106 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7266,23 +6092,12 @@ class Mortal107 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      107,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(107, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal107 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal107 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7307,23 +6122,12 @@ class Mortal108 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      108,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(108, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal108 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal108 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7348,23 +6152,12 @@ class Mortal109 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      109,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(109, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal109 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal109 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7389,23 +6182,12 @@ class Mortal110 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      110,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(110, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal110 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal110 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7430,23 +6212,12 @@ class Mortal111 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      111,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(111, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal111 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal111 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7471,23 +6242,12 @@ class Mortal112 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      112,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(112, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal112 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal112 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7512,23 +6272,12 @@ class Mortal113 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      113,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(113, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal113 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal113 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7553,23 +6302,12 @@ class Mortal114 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      114,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(114, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal114 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal114 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7594,23 +6332,12 @@ class Mortal115 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      115,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(115, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal115 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal115 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7635,23 +6362,12 @@ class Mortal116 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      116,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(116, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal116 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal116 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7676,23 +6392,12 @@ class Mortal117 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      117,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(117, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal117 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal117 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7717,23 +6422,12 @@ class Mortal118 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      118,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(118, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal118 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal118 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7758,23 +6452,12 @@ class Mortal119 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      119,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(119, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal119 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal119 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7799,23 +6482,12 @@ class Mortal120 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      120,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(120, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal120 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal120 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7840,23 +6512,12 @@ class Mortal121 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      121,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(121, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal121 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal121 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7881,23 +6542,12 @@ class Mortal122 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      122,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(122, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal122 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal122 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7922,23 +6572,12 @@ class Mortal123 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      123,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(123, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal123 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal123 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -7963,23 +6602,12 @@ class Mortal124 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      124,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(124, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal124 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal124 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8004,23 +6632,12 @@ class Mortal125 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      125,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(125, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal125 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal125 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8045,23 +6662,12 @@ class Mortal126 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      126,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(126, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal126 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal126 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8086,23 +6692,12 @@ class Mortal127 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      127,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(127, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal127 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal127 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8127,23 +6722,12 @@ class Mortal128 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      128,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(128, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal128 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal128 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8168,23 +6752,12 @@ class Mortal129 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      129,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(129, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal129 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal129 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8209,23 +6782,12 @@ class Mortal130 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      130,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(130, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal130 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal130 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8250,23 +6812,12 @@ class Mortal131 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      131,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(131, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal131 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal131 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8291,23 +6842,12 @@ class Mortal132 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      132,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(132, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal132 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal132 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8332,23 +6872,12 @@ class Mortal133 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      133,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(133, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal133 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal133 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8373,23 +6902,12 @@ class Mortal134 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      134,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(134, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal134 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal134 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8414,23 +6932,12 @@ class Mortal135 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      135,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(135, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal135 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal135 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8455,23 +6962,12 @@ class Mortal136 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      136,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(136, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal136 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal136 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8496,23 +6992,12 @@ class Mortal137 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      137,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(137, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal137 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal137 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8537,23 +7022,12 @@ class Mortal138 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      138,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(138, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal138 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal138 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8578,23 +7052,12 @@ class Mortal139 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      139,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(139, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal139 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal139 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8619,23 +7082,12 @@ class Mortal140 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      140,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(140, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal140 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal140 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8660,23 +7112,12 @@ class Mortal141 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      141,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(141, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal141 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal141 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8701,23 +7142,12 @@ class Mortal142 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      142,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(142, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal142 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal142 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8742,23 +7172,12 @@ class Mortal143 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      143,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(143, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal143 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal143 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8783,23 +7202,12 @@ class Mortal144 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      144,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(144, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal144 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal144 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8824,23 +7232,12 @@ class Mortal145 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      145,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(145, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal145 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal145 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8865,23 +7262,12 @@ class Mortal146 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      146,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(146, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal146 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal146 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8906,23 +7292,12 @@ class Mortal147 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      147,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(147, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal147 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal147 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8947,23 +7322,12 @@ class Mortal148 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      148,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(148, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal148 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal148 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -8988,23 +7352,12 @@ class Mortal149 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      149,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(149, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal149 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal149 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9029,23 +7382,12 @@ class Mortal150 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      150,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(150, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal150 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal150 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9070,23 +7412,12 @@ class Mortal151 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      151,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(151, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal151 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal151 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9111,23 +7442,12 @@ class Mortal152 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      152,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(152, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal152 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal152 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9152,23 +7472,12 @@ class Mortal153 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      153,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(153, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal153 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal153 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9193,23 +7502,12 @@ class Mortal154 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      154,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(154, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal154 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal154 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9234,23 +7532,12 @@ class Mortal155 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      155,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(155, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal155 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal155 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9275,23 +7562,12 @@ class Mortal156 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      156,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(156, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal156 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal156 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9316,23 +7592,12 @@ class Mortal157 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      157,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(157, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal157 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal157 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9357,23 +7622,12 @@ class Mortal158 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      158,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(158, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal158 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal158 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9398,23 +7652,12 @@ class Mortal159 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      159,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(159, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal159 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal159 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9439,23 +7682,12 @@ class Mortal160 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      160,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(160, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal160 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal160 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9480,23 +7712,12 @@ class Mortal161 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      161,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(161, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal161 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal161 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9521,23 +7742,12 @@ class Mortal162 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      162,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(162, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal162 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal162 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9562,23 +7772,12 @@ class Mortal163 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      163,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(163, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal163 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal163 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9603,23 +7802,12 @@ class Mortal164 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      164,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(164, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal164 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal164 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9644,23 +7832,12 @@ class Mortal165 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      165,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(165, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal165 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal165 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9685,23 +7862,12 @@ class Mortal166 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      166,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(166, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal166 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal166 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9726,23 +7892,12 @@ class Mortal167 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      167,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(167, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal167 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal167 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9767,23 +7922,12 @@ class Mortal168 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      168,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(168, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal168 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal168 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9808,23 +7952,12 @@ class Mortal169 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      169,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(169, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal169 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal169 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9849,23 +7982,12 @@ class Mortal170 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      170,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(170, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal170 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal170 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9890,23 +8012,12 @@ class Mortal171 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      171,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(171, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal171 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal171 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9931,23 +8042,12 @@ class Mortal172 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      172,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(172, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal172 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal172 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -9972,23 +8072,12 @@ class Mortal173 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      173,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(173, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal173 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal173 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10013,23 +8102,12 @@ class Mortal174 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      174,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(174, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal174 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal174 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10054,23 +8132,12 @@ class Mortal175 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      175,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(175, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal175 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal175 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10095,23 +8162,12 @@ class Mortal176 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      176,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(176, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal176 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal176 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10136,23 +8192,12 @@ class Mortal177 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      177,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(177, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal177 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal177 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10177,23 +8222,12 @@ class Mortal178 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      178,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(178, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal178 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal178 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10218,23 +8252,12 @@ class Mortal179 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      179,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(179, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal179 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal179 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10259,23 +8282,12 @@ class Mortal180 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      180,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(180, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal180 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal180 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10300,23 +8312,12 @@ class Mortal181 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      181,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(181, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal181 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal181 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10341,23 +8342,12 @@ class Mortal182 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      182,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(182, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal182 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal182 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10382,23 +8372,12 @@ class Mortal183 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      183,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(183, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal183 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal183 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10423,23 +8402,12 @@ class Mortal184 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      184,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(184, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal184 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal184 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10464,23 +8432,12 @@ class Mortal185 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      185,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(185, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal185 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal185 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10505,23 +8462,12 @@ class Mortal186 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      186,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(186, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal186 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal186 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10546,23 +8492,12 @@ class Mortal187 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      187,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(187, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal187 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal187 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10587,23 +8522,12 @@ class Mortal188 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      188,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(188, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal188 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal188 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10628,23 +8552,12 @@ class Mortal189 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      189,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(189, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal189 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal189 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10669,23 +8582,12 @@ class Mortal190 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      190,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(190, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal190 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal190 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10710,23 +8612,12 @@ class Mortal191 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      191,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(191, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal191 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal191 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10751,23 +8642,12 @@ class Mortal192 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      192,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(192, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal192 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal192 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10792,23 +8672,12 @@ class Mortal193 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      193,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(193, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal193 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal193 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10833,23 +8702,12 @@ class Mortal194 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      194,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(194, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal194 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal194 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10874,23 +8732,12 @@ class Mortal195 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      195,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(195, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal195 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal195 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10915,23 +8762,12 @@ class Mortal196 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      196,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(196, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal196 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal196 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10956,23 +8792,12 @@ class Mortal197 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      197,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(197, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal197 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal197 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -10997,23 +8822,12 @@ class Mortal198 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      198,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(198, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal198 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal198 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11038,23 +8852,12 @@ class Mortal199 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      199,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(199, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal199 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal199 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11079,23 +8882,12 @@ class Mortal200 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      200,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(200, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal200 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal200 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11120,23 +8912,12 @@ class Mortal201 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      201,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(201, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal201 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal201 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11161,23 +8942,12 @@ class Mortal202 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      202,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(202, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal202 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal202 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11202,23 +8972,12 @@ class Mortal203 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      203,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(203, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal203 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal203 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11243,23 +9002,12 @@ class Mortal204 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      204,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(204, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal204 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal204 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11284,23 +9032,12 @@ class Mortal205 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      205,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(205, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal205 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal205 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11325,23 +9062,12 @@ class Mortal206 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      206,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(206, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal206 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal206 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11366,23 +9092,12 @@ class Mortal207 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      207,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(207, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal207 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal207 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11407,23 +9122,12 @@ class Mortal208 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      208,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(208, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal208 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal208 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11448,23 +9152,12 @@ class Mortal209 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      209,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(209, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal209 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal209 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11489,23 +9182,12 @@ class Mortal210 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      210,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(210, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal210 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal210 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11530,23 +9212,12 @@ class Mortal211 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      211,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(211, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal211 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal211 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11571,23 +9242,12 @@ class Mortal212 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      212,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(212, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal212 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal212 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11612,23 +9272,12 @@ class Mortal213 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      213,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(213, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal213 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal213 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11653,23 +9302,12 @@ class Mortal214 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      214,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(214, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal214 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal214 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11694,23 +9332,12 @@ class Mortal215 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      215,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(215, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal215 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal215 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11735,23 +9362,12 @@ class Mortal216 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      216,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(216, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal216 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal216 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11776,23 +9392,12 @@ class Mortal217 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      217,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(217, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal217 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal217 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11817,23 +9422,12 @@ class Mortal218 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      218,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(218, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal218 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal218 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11858,23 +9452,12 @@ class Mortal219 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      219,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(219, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal219 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal219 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11899,23 +9482,12 @@ class Mortal220 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      220,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(220, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal220 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal220 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11940,23 +9512,12 @@ class Mortal221 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      221,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(221, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal221 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal221 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -11981,23 +9542,12 @@ class Mortal222 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      222,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(222, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal222 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal222 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12022,23 +9572,12 @@ class Mortal223 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      223,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(223, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal223 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal223 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12063,23 +9602,12 @@ class Mortal224 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      224,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(224, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal224 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal224 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12104,23 +9632,12 @@ class Mortal225 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      225,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(225, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal225 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal225 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12145,23 +9662,12 @@ class Mortal226 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      226,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(226, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal226 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal226 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12186,23 +9692,12 @@ class Mortal227 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      227,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(227, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal227 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal227 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12227,23 +9722,12 @@ class Mortal228 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      228,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(228, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal228 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal228 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12268,23 +9752,12 @@ class Mortal229 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      229,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(229, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal229 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal229 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12309,23 +9782,12 @@ class Mortal230 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      230,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(230, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal230 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal230 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12350,23 +9812,12 @@ class Mortal231 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      231,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(231, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal231 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal231 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12391,23 +9842,12 @@ class Mortal232 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      232,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(232, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal232 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal232 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12432,23 +9872,12 @@ class Mortal233 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      233,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(233, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal233 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal233 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12473,23 +9902,12 @@ class Mortal234 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      234,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(234, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal234 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal234 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12514,23 +9932,12 @@ class Mortal235 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      235,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(235, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal235 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal235 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12555,23 +9962,12 @@ class Mortal236 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      236,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(236, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal236 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal236 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12596,23 +9992,12 @@ class Mortal237 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      237,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(237, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal237 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal237 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12637,23 +10022,12 @@ class Mortal238 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      238,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(238, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal238 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal238 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12678,23 +10052,12 @@ class Mortal239 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      239,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(239, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal239 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal239 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12719,23 +10082,12 @@ class Mortal240 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      240,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(240, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal240 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal240 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12760,23 +10112,12 @@ class Mortal241 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      241,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(241, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal241 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal241 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12801,23 +10142,12 @@ class Mortal242 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      242,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(242, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal242 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal242 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12842,23 +10172,12 @@ class Mortal243 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      243,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(243, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal243 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal243 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12883,23 +10202,12 @@ class Mortal244 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      244,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(244, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal244 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal244 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12924,23 +10232,12 @@ class Mortal245 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      245,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(245, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal245 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal245 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -12965,23 +10262,12 @@ class Mortal246 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      246,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(246, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal246 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal246 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13006,23 +10292,12 @@ class Mortal247 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      247,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(247, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal247 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal247 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13047,23 +10322,12 @@ class Mortal248 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      248,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(248, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal248 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal248 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13088,23 +10352,12 @@ class Mortal249 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      249,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(249, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal249 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal249 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13129,23 +10382,12 @@ class Mortal250 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      250,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(250, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal250 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal250 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13170,23 +10412,12 @@ class Mortal251 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      251,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(251, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal251 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal251 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13211,23 +10442,12 @@ class Mortal252 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      252,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(252, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal252 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal252 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13252,23 +10472,12 @@ class Mortal253 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      253,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(253, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal253 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal253 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13293,23 +10502,12 @@ class Mortal254 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      254,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(254, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal254 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal254 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -13334,23 +10532,12 @@ class Mortal255 extends Era {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      255,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(255, output);
+    _i1.U8Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mortal255 && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Mortal255 && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

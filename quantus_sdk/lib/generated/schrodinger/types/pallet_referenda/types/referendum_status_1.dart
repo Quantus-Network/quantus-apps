@@ -72,31 +72,25 @@ class ReferendumStatus {
   }
 
   Map<String, dynamic> toJson() => {
-        'track': track,
-        'origin': origin.toJson(),
-        'proposal': proposal.toJson(),
-        'enactment': enactment.toJson(),
-        'submitted': submitted,
-        'submissionDeposit': submissionDeposit.toJson(),
-        'decisionDeposit': decisionDeposit?.toJson(),
-        'deciding': deciding?.toJson(),
-        'tally': tally.toJson(),
-        'inQueue': inQueue,
-        'alarm': [
-          alarm?.value0,
-          [
-            alarm?.value1.value0.toJson(),
-            alarm?.value1.value1,
-          ],
-        ],
-      };
+    'track': track,
+    'origin': origin.toJson(),
+    'proposal': proposal.toJson(),
+    'enactment': enactment.toJson(),
+    'submitted': submitted,
+    'submissionDeposit': submissionDeposit.toJson(),
+    'decisionDeposit': decisionDeposit?.toJson(),
+    'deciding': deciding?.toJson(),
+    'tally': tally.toJson(),
+    'inQueue': inQueue,
+    'alarm': [
+      alarm?.value0,
+      [alarm?.value1.value0.toJson(), alarm?.value1.value1],
+    ],
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ReferendumStatus &&
           other.track == track &&
           other.origin == origin &&
@@ -112,81 +106,41 @@ class ReferendumStatus {
 
   @override
   int get hashCode => Object.hash(
-        track,
-        origin,
-        proposal,
-        enactment,
-        submitted,
-        submissionDeposit,
-        decisionDeposit,
-        deciding,
-        tally,
-        inQueue,
-        alarm,
-      );
+    track,
+    origin,
+    proposal,
+    enactment,
+    submitted,
+    submissionDeposit,
+    decisionDeposit,
+    deciding,
+    tally,
+    inQueue,
+    alarm,
+  );
 }
 
 class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
   const $ReferendumStatusCodec();
 
   @override
-  void encodeTo(
-    ReferendumStatus obj,
-    _i1.Output output,
-  ) {
-    _i1.U16Codec.codec.encodeTo(
-      obj.track,
-      output,
-    );
-    _i2.OriginCaller.codec.encodeTo(
-      obj.origin,
-      output,
-    );
-    _i3.Bounded.codec.encodeTo(
-      obj.proposal,
-      output,
-    );
-    _i4.DispatchTime.codec.encodeTo(
-      obj.enactment,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.submitted,
-      output,
-    );
-    _i5.Deposit.codec.encodeTo(
-      obj.submissionDeposit,
-      output,
-    );
-    const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec).encodeTo(
-      obj.decisionDeposit,
-      output,
-    );
-    const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec)
-        .encodeTo(
-      obj.deciding,
-      output,
-    );
-    _i7.Tally.codec.encodeTo(
-      obj.tally,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      obj.inQueue,
-      output,
-    );
-    const _i1.OptionCodec<
-            _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
-        _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
-      _i1.U32Codec.codec,
-      _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
-        _i10.BlockNumberOrTimestamp.codec,
+  void encodeTo(ReferendumStatus obj, _i1.Output output) {
+    _i1.U16Codec.codec.encodeTo(obj.track, output);
+    _i2.OriginCaller.codec.encodeTo(obj.origin, output);
+    _i3.Bounded.codec.encodeTo(obj.proposal, output);
+    _i4.DispatchTime.codec.encodeTo(obj.enactment, output);
+    _i1.U32Codec.codec.encodeTo(obj.submitted, output);
+    _i5.Deposit.codec.encodeTo(obj.submissionDeposit, output);
+    const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec).encodeTo(obj.decisionDeposit, output);
+    const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec).encodeTo(obj.deciding, output);
+    _i7.Tally.codec.encodeTo(obj.tally, output);
+    _i1.BoolCodec.codec.encodeTo(obj.inQueue, output);
+    const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+      _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
         _i1.U32Codec.codec,
+        _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(_i10.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
       ),
-    )).encodeTo(
-      obj.alarm,
-      output,
-    );
+    ).encodeTo(obj.alarm, output);
   }
 
   @override
@@ -198,22 +152,16 @@ class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
       enactment: _i4.DispatchTime.codec.decode(input),
       submitted: _i1.U32Codec.codec.decode(input),
       submissionDeposit: _i5.Deposit.codec.decode(input),
-      decisionDeposit:
-          const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec).decode(input),
-      deciding:
-          const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec)
-              .decode(input),
+      decisionDeposit: const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec).decode(input),
+      deciding: const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec).decode(input),
       tally: _i7.Tally.codec.decode(input),
       inQueue: _i1.BoolCodec.codec.decode(input),
-      alarm: const _i1.OptionCodec<
-              _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
-          _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
-        _i1.U32Codec.codec,
-        _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
-          _i10.BlockNumberOrTimestamp.codec,
+      alarm: const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+        _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
           _i1.U32Codec.codec,
+          _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(_i10.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
         ),
-      )).decode(input),
+      ).decode(input),
     );
   }
 
@@ -226,24 +174,18 @@ class $ReferendumStatusCodec with _i1.Codec<ReferendumStatus> {
     size = size + _i4.DispatchTime.codec.sizeHint(obj.enactment);
     size = size + _i1.U32Codec.codec.sizeHint(obj.submitted);
     size = size + _i5.Deposit.codec.sizeHint(obj.submissionDeposit);
-    size = size +
-        const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec)
-            .sizeHint(obj.decisionDeposit);
-    size = size +
-        const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec)
-            .sizeHint(obj.deciding);
+    size = size + const _i1.OptionCodec<_i5.Deposit>(_i5.Deposit.codec).sizeHint(obj.decisionDeposit);
+    size = size + const _i1.OptionCodec<_i6.DecidingStatus>(_i6.DecidingStatus.codec).sizeHint(obj.deciding);
     size = size + _i7.Tally.codec.sizeHint(obj.tally);
     size = size + _i1.BoolCodec.codec.sizeHint(obj.inQueue);
-    size = size +
-        const _i1.OptionCodec<
-                _i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
-            _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
-          _i1.U32Codec.codec,
-          _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(
-            _i10.BlockNumberOrTimestamp.codec,
+    size =
+        size +
+        const _i1.OptionCodec<_i8.Tuple2<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>>(
+          _i8.Tuple2Codec<int, _i9.Tuple2<_i10.BlockNumberOrTimestamp, int>>(
             _i1.U32Codec.codec,
+            _i9.Tuple2Codec<_i10.BlockNumberOrTimestamp, int>(_i10.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
           ),
-        )).sizeHint(obj.alarm);
+        ).sizeHint(obj.alarm);
     return size;
   }
 }

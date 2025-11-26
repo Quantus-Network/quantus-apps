@@ -35,36 +35,16 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  AirdropCreated airdropCreated({
-    required int airdropId,
-    required _i3.AirdropMetadata airdropMetadata,
-  }) {
-    return AirdropCreated(
-      airdropId: airdropId,
-      airdropMetadata: airdropMetadata,
-    );
+  AirdropCreated airdropCreated({required int airdropId, required _i3.AirdropMetadata airdropMetadata}) {
+    return AirdropCreated(airdropId: airdropId, airdropMetadata: airdropMetadata);
   }
 
-  AirdropFunded airdropFunded({
-    required int airdropId,
-    required BigInt amount,
-  }) {
-    return AirdropFunded(
-      airdropId: airdropId,
-      amount: amount,
-    );
+  AirdropFunded airdropFunded({required int airdropId, required BigInt amount}) {
+    return AirdropFunded(airdropId: airdropId, amount: amount);
   }
 
-  Claimed claimed({
-    required int airdropId,
-    required _i4.AccountId32 account,
-    required BigInt amount,
-  }) {
-    return Claimed(
-      airdropId: airdropId,
-      account: account,
-      amount: amount,
-    );
+  Claimed claimed({required int airdropId, required _i4.AccountId32 account, required BigInt amount}) {
+    return Claimed(airdropId: airdropId, account: account, amount: amount);
   }
 
   AirdropDeleted airdropDeleted({required int airdropId}) {
@@ -93,10 +73,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case AirdropCreated:
         (value as AirdropCreated).encodeTo(output);
@@ -111,8 +88,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as AirdropDeleted).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -128,8 +104,7 @@ class $EventCodec with _i1.Codec<Event> {
       case AirdropDeleted:
         return (value as AirdropDeleted)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -138,10 +113,7 @@ class $EventCodec with _i1.Codec<Event> {
 ///
 /// Parameters: [airdrop_id, merkle_root]
 class AirdropCreated extends Event {
-  const AirdropCreated({
-    required this.airdropId,
-    required this.airdropMetadata,
-  });
+  const AirdropCreated({required this.airdropId, required this.airdropMetadata});
 
   factory AirdropCreated._decode(_i1.Input input) {
     return AirdropCreated(
@@ -160,11 +132,8 @@ class AirdropCreated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'AirdropCreated': {
-          'airdropId': airdropId,
-          'airdropMetadata': airdropMetadata.toJson(),
-        }
-      };
+    'AirdropCreated': {'airdropId': airdropId, 'airdropMetadata': airdropMetadata.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -174,51 +143,28 @@ class AirdropCreated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
-    _i3.AirdropMetadata.codec.encodeTo(
-      airdropMetadata,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
+    _i3.AirdropMetadata.codec.encodeTo(airdropMetadata, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AirdropCreated &&
-          other.airdropId == airdropId &&
-          other.airdropMetadata == airdropMetadata;
+      identical(this, other) ||
+      other is AirdropCreated && other.airdropId == airdropId && other.airdropMetadata == airdropMetadata;
 
   @override
-  int get hashCode => Object.hash(
-        airdropId,
-        airdropMetadata,
-      );
+  int get hashCode => Object.hash(airdropId, airdropMetadata);
 }
 
 /// An airdrop has been funded with tokens.
 ///
 /// Parameters: [airdrop_id, amount]
 class AirdropFunded extends Event {
-  const AirdropFunded({
-    required this.airdropId,
-    required this.amount,
-  });
+  const AirdropFunded({required this.airdropId, required this.amount});
 
   factory AirdropFunded._decode(_i1.Input input) {
-    return AirdropFunded(
-      airdropId: _i1.U32Codec.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return AirdropFunded(airdropId: _i1.U32Codec.codec.decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// AirdropId
@@ -231,11 +177,8 @@ class AirdropFunded extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'AirdropFunded': {
-          'airdropId': airdropId,
-          'amount': amount,
-        }
-      };
+    'AirdropFunded': {'airdropId': airdropId, 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -245,46 +188,24 @@ class AirdropFunded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AirdropFunded &&
-          other.airdropId == airdropId &&
-          other.amount == amount;
+      identical(this, other) || other is AirdropFunded && other.airdropId == airdropId && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        airdropId,
-        amount,
-      );
+  int get hashCode => Object.hash(airdropId, amount);
 }
 
 /// A user has claimed tokens from an airdrop.
 ///
 /// Parameters: [airdrop_id, account, amount]
 class Claimed extends Event {
-  const Claimed({
-    required this.airdropId,
-    required this.account,
-    required this.amount,
-  });
+  const Claimed({required this.airdropId, required this.account, required this.amount});
 
   factory Claimed._decode(_i1.Input input) {
     return Claimed(
@@ -308,12 +229,8 @@ class Claimed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Claimed': {
-          'airdropId': airdropId,
-          'account': account.toList(),
-          'amount': amount,
-        }
-      };
+    'Claimed': {'airdropId': airdropId, 'account': account.toList(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -324,44 +241,22 @@ class Claimed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Claimed &&
           other.airdropId == airdropId &&
-          _i5.listsEqual(
-            other.account,
-            account,
-          ) &&
+          _i5.listsEqual(other.account, account) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        airdropId,
-        account,
-        amount,
-      );
+  int get hashCode => Object.hash(airdropId, account, amount);
 }
 
 /// An airdrop has been deleted.
@@ -380,8 +275,8 @@ class AirdropDeleted extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'AirdropDeleted': {'airdropId': airdropId}
-      };
+    'AirdropDeleted': {'airdropId': airdropId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -390,23 +285,12 @@ class AirdropDeleted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AirdropDeleted && other.airdropId == airdropId;
+  bool operator ==(Object other) => identical(this, other) || other is AirdropDeleted && other.airdropId == airdropId;
 
   @override
   int get hashCode => airdropId.hashCode;

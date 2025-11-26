@@ -129,16 +129,13 @@ class _MinerAppBarState extends State<MinerAppBar> {
                             ],
                           ),
                         ),
-                         PopupMenuItem<_MenuValues>(
+                        PopupMenuItem<_MenuValues>(
                           value: _MenuValues.setting,
                           child: Row(
                             children: [
                               Icon(Icons.settings, color: Colors.grey.useOpacity(0.8), size: 20),
                               const SizedBox(width: 12),
-                              Text(
-                                'Settings',
-                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
-                              ),
+                              Text('Settings', style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14)),
                             ],
                           ),
                         ),

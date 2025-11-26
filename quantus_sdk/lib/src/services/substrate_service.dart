@@ -17,7 +17,6 @@ const crystalAlice = '//Crystal Alice';
 const crystalBob = '//Crystal Bob';
 const crystalCharlie = '//Crystal Charlie';
 
-
 // equivalent to crypto.ss58ToAccountId(s: ss58Address)
 Uint8List getAccountId32(String ss58Address) {
   return Address.decode(ss58Address).addressBytes;
@@ -34,7 +33,7 @@ class SubstrateService {
   Future<BigInt> getFee(Uint8List signedExtrinsic) async {
     try {
       final hexEncodedSignedExtrinsic = bytesToHex(signedExtrinsic);
-      
+
       final result = await _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
         return await provider.send('payment_queryInfo', [hexEncodedSignedExtrinsic, null]);
@@ -68,7 +67,7 @@ class SubstrateService {
   Future<BigInt> queryBalance(String address) async {
     try {
       final accountID = crypto.ss58ToAccountId(s: address);
-      
+
       final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
         final resonanceApi = Schrodinger(provider);
@@ -96,10 +95,7 @@ class SubstrateService {
     return crypto.generateKeypair(mnemonicStr: senderSeed);
   }
 
-  Future<ExtrinsicFeeData> getFeeForCall(
-    Account account,
-    RuntimeCall call,
-  ) async {
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
     final extrinsic = await getExtrinsicPayload(account, call);
     final fee = await getFee(extrinsic.payload);
     return ExtrinsicFeeData(fee: fee, extrinsicData: extrinsic);
@@ -110,7 +106,7 @@ class SubstrateService {
   /// Note: Copied from author API
   Future<Uint8List> _submitExtrinsic(Uint8List extrinsic) async {
     final params = ['0x${hex.encode(extrinsic)}'];
-    
+
     final response = await _rpcEndpointService.rpcTask((uri) async {
       final provider = Provider.fromUri(uri);
       return await provider.send('author_submitExtrinsic', params);
@@ -125,11 +121,7 @@ class SubstrateService {
     return Uint8List.fromList(hex.decode(data.substring(2)));
   }
 
-  Future<Uint8List> submitExtrinsic(
-    Account account,
-    RuntimeCall call, {
-    int maxRetries = 3,
-  }) async {
+  Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async {
     int retryCount = 0;
     while (retryCount < maxRetries) {
       try {
@@ -154,16 +146,13 @@ class SubstrateService {
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
-  Future<ExtrinsicData> getExtrinsicPayload(
-    Account account,
-    RuntimeCall call,
-  ) async {
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call) async {
     final mnemonic = await account.getMnemonic();
     if (mnemonic == null) {
       throw Exception('Mnemonic not found for signing.');
     }
     final senderWallet = HdWalletService().keyPairAtIndex(mnemonic, account.index);
-    
+
     final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
       _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
@@ -195,7 +184,7 @@ class SubstrateService {
       final provider = Provider.fromUri(uri);
       return Schrodinger(provider).registry;
     });
-    
+
     final payload = payloadToSign.encode(registry);
 
     final signature = crypto.signMessage(keypair: senderWallet, message: payload);
@@ -211,12 +200,7 @@ class SubstrateService {
       tip: 0,
     ).encodeResonance(registry, ResonanceSignatureType.resonance);
 
-    return ExtrinsicData(
-      payload: extrinsic,
-      blockNumber: blockNumber,
-      blockHash: blockHash,
-      nonce: nonce,
-    );
+    return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
   }
 
   Future<int> _getNextAccountNonce(Keypair senderWallet) async {
@@ -268,10 +252,7 @@ class SubstrateService {
   Future<String> generateMnemonic() async {
     try {
       // Generate a random entropy
-      final entropy = List<int>.generate(
-        32,
-        (i) => Random.secure().nextInt(256),
-      );
+      final entropy = List<int>.generate(32, (i) => Random.secure().nextInt(256));
       // Generate mnemonic from entropy
       final mnemonic = Mnemonic(entropy, Language.english);
 

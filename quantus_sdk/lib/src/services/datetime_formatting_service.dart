@@ -17,8 +17,7 @@ class FormattedDuration {
 
   // Optional: Override toString for easy printing
   @override
-  String toString() =>
-      'FormattedDuration(hours: $hours, minutes: $minutes, seconds: $seconds, formatted: $formatted)';
+  String toString() => 'FormattedDuration(hours: $hours, minutes: $minutes, seconds: $seconds, formatted: $formatted)';
 }
 
 // A utility class to format DateTime objects into human-readable "time ago" strings.
@@ -48,35 +47,21 @@ class DatetimeFormattingService {
 
   static FormattedDuration formatDuration(Duration duration) {
     if (duration.isNegative) {
-      return const FormattedDuration(
-        days: null,
-        hours: '00',
-        minutes: '00',
-        seconds: '00',
-        formatted: '00:00:00',
-      );
+      return const FormattedDuration(days: null, hours: '00', minutes: '00', seconds: '00', formatted: '00:00:00');
     }
 
     // Use padLeft to ensure that single-digit numbers have a leading zero.
     String days = duration.inDays.toString().padLeft(2, '0');
     String hours = duration.inHours.remainder(24).toString().padLeft(2, '0');
-    String minutes = duration.inMinutes
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
-    String seconds = duration.inSeconds
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
+    String minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    String seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
 
     return FormattedDuration(
       days: days != '00' ? days : null,
       hours: hours,
       minutes: minutes,
       seconds: seconds,
-      formatted: days != '00'
-          ? '${days}d:${hours}h:${minutes}m'
-          : '${hours}h:${minutes}m:${seconds}s',
+      formatted: days != '00' ? '${days}d:${hours}h:${minutes}m' : '${hours}h:${minutes}m:${seconds}s',
     );
   }
 

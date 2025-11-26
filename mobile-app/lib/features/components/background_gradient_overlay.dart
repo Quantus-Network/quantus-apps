@@ -4,11 +4,7 @@ class BackgroundGradientOverlay extends StatelessWidget {
   final Widget child;
   final BorderRadiusGeometry? borderRadius;
 
-  const BackgroundGradientOverlay({
-    super.key,
-    required this.child,
-    this.borderRadius,
-  });
+  const BackgroundGradientOverlay({super.key, required this.child, this.borderRadius});
 
   @override
   Widget build(BuildContext context) {

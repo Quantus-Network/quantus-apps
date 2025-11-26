@@ -15,11 +15,7 @@ class ErrorDisplay extends ConsumerStatefulWidget {
   final AsyncValue<Account?> activeAccountAsync;
   final Function(bool) setIsErrorSheetDisplayed;
 
-  const ErrorDisplay({
-    super.key,
-    required this.activeAccountAsync,
-    required this.setIsErrorSheetDisplayed,
-  });
+  const ErrorDisplay({super.key, required this.activeAccountAsync, required this.setIsErrorSheetDisplayed});
 
   @override
   ConsumerState<ErrorDisplay> createState() => _ErrorDisplayState();
@@ -39,25 +35,15 @@ class _ErrorDisplayState extends ConsumerState<ErrorDisplay> {
         child: Column(
           children: [
             const Spacer(),
-            Icon(
-              Icons.error_outline,
-              color: context.themeColors.error,
-              size: 50,
-            ),
+            Icon(Icons.error_outline, color: context.themeColors.error, size: 50),
             const SizedBox(height: 20),
-            Text(
-              'Failed to Connect',
-              style: context.themeText.smallTitle,
-              textAlign: TextAlign.center,
-            ),
+            Text('Failed to Connect', style: context.themeText.smallTitle, textAlign: TextAlign.center),
             const SizedBox(height: 10),
             Text(
               widget.activeAccountAsync.error?.toString() ??
                   'Could not load wallet data. Please check your '
                       'network connection and try again.',
-              style: context.themeText.detail?.copyWith(
-                color: context.themeColors.textError,
-              ),
+              style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
               textAlign: TextAlign.center,
             ),
             const Spacer(),
@@ -70,7 +56,7 @@ class _ErrorDisplayState extends ConsumerState<ErrorDisplay> {
                 ref.invalidate(activeAccountProvider);
                 ref.invalidate(balanceProvider);
                 ref.invalidate(activeAccountTransactionsProvider);
-                
+
                 Navigator.pop(context);
               },
             ),
@@ -102,11 +88,7 @@ void showErrorDisplaySheet(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),

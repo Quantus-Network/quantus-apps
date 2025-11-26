@@ -98,9 +98,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             child: Text(
               'Position the QR code within the frame',
               textAlign: TextAlign.center,
-              style: context.themeText.paragraph?.copyWith(
-                color: context.themeColors.textPrimary.useOpacity(0.8),
-              ),
+              style: context.themeText.paragraph?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.8)),
             ),
           ),
         ],

@@ -96,8 +96,7 @@ class ArtifactProvider {
     return result;
   }
 
-  Future<Map<Target, List<Artifact>>> _getPrecompiledArtifacts(
-      List<Target> targets) async {
+  Future<Map<Target, List<Artifact>>> _getPrecompiledArtifacts(List<Target> targets) async {
     if (userOptions.usePrecompiledBinaries == false) {
       _log.info('Precompiled binaries are disabled');
       return {};
@@ -108,13 +107,10 @@ class ArtifactProvider {
     }
 
     final start = Stopwatch()..start();
-    final crateHash = CrateHash.compute(environment.manifestDir,
-        tempStorage: environment.targetTempDir);
-    _log.fine(
-        'Computed crate hash $crateHash in ${start.elapsedMilliseconds}ms');
+    final crateHash = CrateHash.compute(environment.manifestDir, tempStorage: environment.targetTempDir);
+    _log.fine('Computed crate hash $crateHash in ${start.elapsedMilliseconds}ms');
 
-    final downloadedArtifactsDir =
-        path.join(environment.targetTempDir, 'precompiled', crateHash);
+    final downloadedArtifactsDir = path.join(environment.targetTempDir, 'precompiled', crateHash);
     Directory(downloadedArtifactsDir).createSync(recursive: true);
 
     final res = <Target, List<Artifact>>{};
@@ -131,8 +127,7 @@ class ArtifactProvider {
         final fileName = PrecompileBinaries.fileName(target, artifact);
         final downloadedPath = path.join(downloadedArtifactsDir, fileName);
         if (!File(downloadedPath).existsSync()) {
-          final signatureFileName =
-              PrecompileBinaries.signatureFileName(target, artifact);
+          final signatureFileName = PrecompileBinaries.signatureFileName(target, artifact);
           await _tryDownloadArtifacts(
             crateHash: crateHash,
             fileName: fileName,
@@ -168,10 +163,8 @@ class ArtifactProvider {
         return await get(url, headers: headers);
       } on SocketException catch (e) {
         // Try to detect reset by peer error and retry.
-        if (attempt++ < maxAttempts &&
-            (e.osError?.errorCode == 54 || e.osError?.errorCode == 10054)) {
-          _log.severe(
-              'Failed to download $url: $e, attempt $attempt of $maxAttempts, will retry...');
+        if (attempt++ < maxAttempts && (e.osError?.errorCode == 54 || e.osError?.errorCode == 10054)) {
+          _log.severe('Failed to download $url: $e, attempt $attempt of $maxAttempts, will retry...');
           await Future.delayed(Duration(seconds: 1));
           continue;
         } else {
@@ -194,13 +187,11 @@ class ArtifactProvider {
     _log.fine('Downloading signature from $signatureUrl');
     final signature = await _get(signatureUrl);
     if (signature.statusCode == 404) {
-      _log.warning(
-          'Precompiled binaries not available for crate hash $crateHash ($fileName)');
+      _log.warning('Precompiled binaries not available for crate hash $crateHash ($fileName)');
       return;
     }
     if (signature.statusCode != 200) {
-      _log.severe(
-          'Failed to download signature $signatureUrl: status ${signature.statusCode}');
+      _log.severe('Failed to download signature $signatureUrl: status ${signature.statusCode}');
       return;
     }
     _log.fine('Downloading binary from $url');
@@ -209,8 +200,7 @@ class ArtifactProvider {
       _log.severe('Failed to download binary $url: status ${res.statusCode}');
       return;
     }
-    if (verify(
-        precompiledBinaries.publicKey, res.bodyBytes, signature.bodyBytes)) {
+    if (verify(precompiledBinaries.publicKey, res.bodyBytes, signature.bodyBytes)) {
       File(finalPath).writeAsBytesSync(res.bodyBytes);
     } else {
       _log.shout('Signature verification failed! Ignoring binary.');
@@ -248,11 +238,7 @@ List<String> getArtifactNames({
     if (aritifactType == AritifactType.staticlib) {
       return ['$libraryName.lib'];
     } else {
-      return [
-        '$libraryName.dll',
-        '$libraryName.dll.lib',
-        if (!remote) '$libraryName.pdb'
-      ];
+      return ['$libraryName.dll', '$libraryName.dll.lib', if (!remote) '$libraryName.pdb'];
     }
   } else if (target.rust.contains('-linux-')) {
     if (aritifactType == AritifactType.staticlib) {

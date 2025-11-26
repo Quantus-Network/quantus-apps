@@ -56,10 +56,7 @@ class $VoteRecordCodec with _i1.Codec<VoteRecord> {
   }
 
   @override
-  void encodeTo(
-    VoteRecord value,
-    _i1.Output output,
-  ) {
+  void encodeTo(VoteRecord value, _i1.Output output) {
     switch (value.runtimeType) {
       case Aye:
         (value as Aye).encodeTo(output);
@@ -68,8 +65,7 @@ class $VoteRecordCodec with _i1.Codec<VoteRecord> {
         (value as Nay).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'VoteRecord: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('VoteRecord: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -81,8 +77,7 @@ class $VoteRecordCodec with _i1.Codec<VoteRecord> {
       case Nay:
         return (value as Nay)._sizeHint();
       default:
-        throw Exception(
-            'VoteRecord: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('VoteRecord: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -107,23 +102,12 @@ class Aye extends VoteRecord {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Aye && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Aye && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -149,23 +133,12 @@ class Nay extends VoteRecord {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Nay && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Nay && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

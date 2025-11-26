@@ -45,9 +45,7 @@ class MigrationService {
   }
 
   /// Perform the migration by creating new accounts and clearing old data
-  Future<void> performMigration(
-    List<MigrationAccountData> migrationData,
-  ) async {
+  Future<void> performMigration(List<MigrationAccountData> migrationData) async {
     // Create new accounts with the same indices and names
     List<Account> newAccounts = [];
     for (final data in migrationData) {
@@ -74,7 +72,7 @@ class MigrationService {
   String _uint8ListToHex(Uint8List bytes) {
     return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   }
-  
+
   /// Debug method to create test old accounts
   Future<void> createDebugOldAccounts() async {
     final debugAccounts = [
@@ -86,7 +84,6 @@ class MigrationService {
     final jsonData = jsonEncode(debugAccounts.map((a) => a.toJson()).toList());
     await _settingsService.setOldAccountsData(jsonData);
   }
-
 }
 
 class MigrationAccountData {
@@ -94,9 +91,5 @@ class MigrationAccountData {
   final String publicKeyHex;
   final String newAccountId;
 
-  const MigrationAccountData({
-    required this.oldAccount,
-    required this.publicKeyHex,
-    required this.newAccountId,
-  });
+  const MigrationAccountData({required this.oldAccount, required this.publicKeyHex, required this.newAccountId});
 }

@@ -39,11 +39,7 @@ class $Event {
     required _i3.U512 difficulty,
     required _i3.U512 distanceAchieved,
   }) {
-    return ProofSubmitted(
-      nonce: nonce,
-      difficulty: difficulty,
-      distanceAchieved: distanceAchieved,
-    );
+    return ProofSubmitted(nonce: nonce, difficulty: difficulty, distanceAchieved: distanceAchieved);
   }
 
   DistanceThresholdAdjusted distanceThresholdAdjusted({
@@ -76,10 +72,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case ProofSubmitted:
         (value as ProofSubmitted).encodeTo(output);
@@ -88,8 +81,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as DistanceThresholdAdjusted).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -101,18 +93,13 @@ class $EventCodec with _i1.Codec<Event> {
       case DistanceThresholdAdjusted:
         return (value as DistanceThresholdAdjusted)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class ProofSubmitted extends Event {
-  const ProofSubmitted({
-    required this.nonce,
-    required this.difficulty,
-    required this.distanceAchieved,
-  });
+  const ProofSubmitted({required this.nonce, required this.difficulty, required this.distanceAchieved});
 
   factory ProofSubmitted._decode(_i1.Input input) {
     return ProofSubmitted(
@@ -133,12 +120,12 @@ class ProofSubmitted extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-        'ProofSubmitted': {
-          'nonce': nonce.toList(),
-          'difficulty': difficulty.toList(),
-          'distanceAchieved': distanceAchieved.toList(),
-        }
-      };
+    'ProofSubmitted': {
+      'nonce': nonce.toList(),
+      'difficulty': difficulty.toList(),
+      'distanceAchieved': distanceAchieved.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -149,50 +136,22 @@ class ProofSubmitted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(64).encodeTo(
-      nonce,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      difficulty,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      distanceAchieved,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(64).encodeTo(nonce, output);
+    const _i1.U64ArrayCodec(8).encodeTo(difficulty, output);
+    const _i1.U64ArrayCodec(8).encodeTo(distanceAchieved, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProofSubmitted &&
-          _i4.listsEqual(
-            other.nonce,
-            nonce,
-          ) &&
-          _i4.listsEqual(
-            other.difficulty,
-            difficulty,
-          ) &&
-          _i4.listsEqual(
-            other.distanceAchieved,
-            distanceAchieved,
-          );
+          _i4.listsEqual(other.nonce, nonce) &&
+          _i4.listsEqual(other.difficulty, difficulty) &&
+          _i4.listsEqual(other.distanceAchieved, distanceAchieved);
 
   @override
-  int get hashCode => Object.hash(
-        nonce,
-        difficulty,
-        distanceAchieved,
-      );
+  int get hashCode => Object.hash(nonce, difficulty, distanceAchieved);
 }
 
 class DistanceThresholdAdjusted extends Event {
@@ -221,12 +180,12 @@ class DistanceThresholdAdjusted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DistanceThresholdAdjusted': {
-          'oldDistanceThreshold': oldDistanceThreshold.toList(),
-          'newDistanceThreshold': newDistanceThreshold.toList(),
-          'observedBlockTime': observedBlockTime,
-        }
-      };
+    'DistanceThresholdAdjusted': {
+      'oldDistanceThreshold': oldDistanceThreshold.toList(),
+      'newDistanceThreshold': newDistanceThreshold.toList(),
+      'observedBlockTime': observedBlockTime,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -237,45 +196,20 @@ class DistanceThresholdAdjusted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      oldDistanceThreshold,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      newDistanceThreshold,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      observedBlockTime,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U64ArrayCodec(8).encodeTo(oldDistanceThreshold, output);
+    const _i1.U64ArrayCodec(8).encodeTo(newDistanceThreshold, output);
+    _i1.U64Codec.codec.encodeTo(observedBlockTime, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DistanceThresholdAdjusted &&
-          _i4.listsEqual(
-            other.oldDistanceThreshold,
-            oldDistanceThreshold,
-          ) &&
-          _i4.listsEqual(
-            other.newDistanceThreshold,
-            newDistanceThreshold,
-          ) &&
+          _i4.listsEqual(other.oldDistanceThreshold, oldDistanceThreshold) &&
+          _i4.listsEqual(other.newDistanceThreshold, newDistanceThreshold) &&
           other.observedBlockTime == observedBlockTime;
 
   @override
-  int get hashCode => Object.hash(
-        oldDistanceThreshold,
-        newDistanceThreshold,
-        observedBlockTime,
-      );
+  int get hashCode => Object.hash(oldDistanceThreshold, newDistanceThreshold, observedBlockTime);
 }
