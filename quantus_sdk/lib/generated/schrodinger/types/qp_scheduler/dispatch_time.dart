@@ -58,10 +58,7 @@ class $DispatchTimeCodec with _i1.Codec<DispatchTime> {
   }
 
   @override
-  void encodeTo(
-    DispatchTime value,
-    _i1.Output output,
-  ) {
+  void encodeTo(DispatchTime value, _i1.Output output) {
     switch (value.runtimeType) {
       case At:
         (value as At).encodeTo(output);
@@ -70,8 +67,7 @@ class $DispatchTimeCodec with _i1.Codec<DispatchTime> {
         (value as After).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'DispatchTime: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DispatchTime: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -83,8 +79,7 @@ class $DispatchTimeCodec with _i1.Codec<DispatchTime> {
       case After:
         return (value as After)._sizeHint();
       default:
-        throw Exception(
-            'DispatchTime: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DispatchTime: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -109,23 +104,12 @@ class At extends DispatchTime {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is At && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is At && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -151,23 +135,12 @@ class After extends DispatchTime {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is After && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is After && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

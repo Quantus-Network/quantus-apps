@@ -76,7 +76,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
           text: textToShare,
           subject: 'Shared Address',
           title: 'Shared Address',
-          sharePositionOrigin: context.sharePositionRect()
+          sharePositionOrigin: context.sharePositionRect(),
         ),
       );
     }

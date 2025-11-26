@@ -9,13 +9,7 @@ import '../quantus_runtime/origin_caller.dart' as _i5;
 import '../tuples_1.dart' as _i3;
 
 class Scheduled {
-  const Scheduled({
-    this.maybeId,
-    required this.priority,
-    required this.call,
-    this.maybePeriodic,
-    required this.origin,
-  });
+  const Scheduled({this.maybeId, required this.priority, required this.call, this.maybePeriodic, required this.origin});
 
   factory Scheduled.decode(_i1.Input input) {
     return codec.decode(input);
@@ -43,22 +37,16 @@ class Scheduled {
   }
 
   Map<String, dynamic> toJson() => {
-        'maybeId': maybeId?.toList(),
-        'priority': priority,
-        'call': call.toJson(),
-        'maybePeriodic': [
-          maybePeriodic?.value0.toJson(),
-          maybePeriodic?.value1,
-        ],
-        'origin': origin.toJson(),
-      };
+    'maybeId': maybeId?.toList(),
+    'priority': priority,
+    'call': call.toJson(),
+    'maybePeriodic': [maybePeriodic?.value0.toJson(), maybePeriodic?.value1],
+    'origin': origin.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Scheduled &&
           other.maybeId == maybeId &&
           other.priority == priority &&
@@ -67,62 +55,32 @@ class Scheduled {
           other.origin == origin;
 
   @override
-  int get hashCode => Object.hash(
-        maybeId,
-        priority,
-        call,
-        maybePeriodic,
-        origin,
-      );
+  int get hashCode => Object.hash(maybeId, priority, call, maybePeriodic, origin);
 }
 
 class $ScheduledCodec with _i1.Codec<Scheduled> {
   const $ScheduledCodec();
 
   @override
-  void encodeTo(
-    Scheduled obj,
-    _i1.Output output,
-  ) {
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      obj.maybeId,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      obj.priority,
-      output,
-    );
-    _i2.Bounded.codec.encodeTo(
-      obj.call,
-      output,
-    );
+  void encodeTo(Scheduled obj, _i1.Output output) {
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(obj.maybeId, output);
+    _i1.U8Codec.codec.encodeTo(obj.priority, output);
+    _i2.Bounded.codec.encodeTo(obj.call, output);
     const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
-        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
-      _i4.BlockNumberOrTimestamp.codec,
-      _i1.U32Codec.codec,
-    )).encodeTo(
-      obj.maybePeriodic,
-      output,
-    );
-    _i5.OriginCaller.codec.encodeTo(
-      obj.origin,
-      output,
-    );
+      _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(_i4.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
+    ).encodeTo(obj.maybePeriodic, output);
+    _i5.OriginCaller.codec.encodeTo(obj.origin, output);
   }
 
   @override
   Scheduled decode(_i1.Input input) {
     return Scheduled(
-      maybeId:
-          const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
+      maybeId: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
       priority: _i1.U8Codec.codec.decode(input),
       call: _i2.Bounded.codec.decode(input),
-      maybePeriodic:
-          const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
-              _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
-        _i4.BlockNumberOrTimestamp.codec,
-        _i1.U32Codec.codec,
-      )).decode(input),
+      maybePeriodic: const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
+        _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(_i4.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
+      ).decode(input),
       origin: _i5.OriginCaller.codec.decode(input),
     );
   }
@@ -130,17 +88,14 @@ class $ScheduledCodec with _i1.Codec<Scheduled> {
   @override
   int sizeHint(Scheduled obj) {
     int size = 0;
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32))
-            .sizeHint(obj.maybeId);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(obj.maybeId);
     size = size + _i1.U8Codec.codec.sizeHint(obj.priority);
     size = size + _i2.Bounded.codec.sizeHint(obj.call);
-    size = size +
+    size =
+        size +
         const _i1.OptionCodec<_i3.Tuple2<_i4.BlockNumberOrTimestamp, int>>(
-            _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
-          _i4.BlockNumberOrTimestamp.codec,
-          _i1.U32Codec.codec,
-        )).sizeHint(obj.maybePeriodic);
+          _i3.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(_i4.BlockNumberOrTimestamp.codec, _i1.U32Codec.codec),
+        ).sizeHint(obj.maybePeriodic);
     size = size + _i5.OriginCaller.codec.sizeHint(obj.origin);
     return size;
   }

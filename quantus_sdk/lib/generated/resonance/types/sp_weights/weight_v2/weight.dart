@@ -4,10 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class Weight {
-  const Weight({
-    required this.refTime,
-    required this.proofSize,
-  });
+  const Weight({required this.refTime, required this.proofSize});
 
   factory Weight.decode(_i1.Input input) {
     return codec.decode(input);
@@ -25,44 +22,23 @@ class Weight {
     return codec.encode(this);
   }
 
-  Map<String, BigInt> toJson() => {
-        'refTime': refTime,
-        'proofSize': proofSize,
-      };
+  Map<String, BigInt> toJson() => {'refTime': refTime, 'proofSize': proofSize};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Weight &&
-          other.refTime == refTime &&
-          other.proofSize == proofSize;
+      identical(this, other) || other is Weight && other.refTime == refTime && other.proofSize == proofSize;
 
   @override
-  int get hashCode => Object.hash(
-        refTime,
-        proofSize,
-      );
+  int get hashCode => Object.hash(refTime, proofSize);
 }
 
 class $WeightCodec with _i1.Codec<Weight> {
   const $WeightCodec();
 
   @override
-  void encodeTo(
-    Weight obj,
-    _i1.Output output,
-  ) {
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      obj.refTime,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      obj.proofSize,
-      output,
-    );
+  void encodeTo(Weight obj, _i1.Output output) {
+    _i1.CompactBigIntCodec.codec.encodeTo(obj.refTime, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(obj.proofSize, output);
   }
 
   @override

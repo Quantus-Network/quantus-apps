@@ -38,9 +38,6 @@ class AccountStatsNotifier extends StateNotifier<AsyncValue<AccountStats>> {
   }
 }
 
-final accountsStatsProvider =
-    StateNotifierProvider<AccountStatsNotifier, AsyncValue<AccountStats>>((
-      ref,
-    ) {
-      return AccountStatsNotifier();
-    });
+final accountsStatsProvider = StateNotifierProvider<AccountStatsNotifier, AsyncValue<AccountStats>>((ref) {
+  return AccountStatsNotifier();
+});

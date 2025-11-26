@@ -51,17 +51,13 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case ProofVerified:
         (value as ProofVerified).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -71,8 +67,7 @@ class $EventCodec with _i1.Codec<Event> {
       case ProofVerified:
         return (value as ProofVerified)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -89,8 +84,8 @@ class ProofVerified extends Event {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'ProofVerified': {'exitAmount': exitAmount}
-      };
+    'ProofVerified': {'exitAmount': exitAmount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -99,23 +94,12 @@ class ProofVerified extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      exitAmount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U128Codec.codec.encodeTo(exitAmount, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ProofVerified && other.exitAmount == exitAmount;
+  bool operator ==(Object other) => identical(this, other) || other is ProofVerified && other.exitAmount == exitAmount;
 
   @override
   int get hashCode => exitAmount.hashCode;

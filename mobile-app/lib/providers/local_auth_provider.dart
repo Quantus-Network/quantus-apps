@@ -5,15 +5,9 @@ class LocalAuthState {
   final bool isAuthenticated;
   final bool isAuthenticating;
 
-  LocalAuthState({
-    this.isAuthenticated = false,
-    this.isAuthenticating = false,
-  });
+  LocalAuthState({this.isAuthenticated = false, this.isAuthenticating = false});
 
-  LocalAuthState copyWith({
-    bool? isAuthenticated,
-    bool? isAuthenticating,
-  }) {
+  LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating}) {
     return LocalAuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
@@ -27,12 +21,10 @@ final localAuthProvider = StateNotifierProvider<LocalAuthController, LocalAuthSt
   return LocalAuthController(ref.read(localAuthServiceProvider));
 });
 
-
 class LocalAuthController extends StateNotifier<LocalAuthState> {
   final LocalAuthService _localAuthService;
 
   LocalAuthController(this._localAuthService) : super(LocalAuthState());
-
 
   Future<void> authenticate() async {
     if (state.isAuthenticating) return;
@@ -43,10 +35,7 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
       localizedReason: 'Please authenticate to access your wallet',
     );
 
-    state = state.copyWith(
-      isAuthenticated: didAuthenticate,
-      isAuthenticating: false,
-    );
+    state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false);
   }
 
   /// Checks if auth is required by user settings and triggers it.
@@ -60,7 +49,6 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
     }
   }
 
-  
   void lockApp() {
     if (_localAuthService.shouldRequireAuthentication()) {
       state = state.copyWith(isAuthenticated: false);

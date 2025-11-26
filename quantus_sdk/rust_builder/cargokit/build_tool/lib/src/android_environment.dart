@@ -24,13 +24,11 @@ class AndroidEnvironment {
   static void clangLinkerWrapper(List<String> args) {
     final clang = Platform.environment['_CARGOKIT_NDK_LINK_CLANG'];
     if (clang == null) {
-      throw Exception(
-          "cargo-ndk rustc linker: didn't find _CARGOKIT_NDK_LINK_CLANG env var");
+      throw Exception("cargo-ndk rustc linker: didn't find _CARGOKIT_NDK_LINK_CLANG env var");
     }
     final target = Platform.environment['_CARGOKIT_NDK_LINK_TARGET'];
     if (target == null) {
-      throw Exception(
-          "cargo-ndk rustc linker: didn't find _CARGOKIT_NDK_LINK_TARGET env var");
+      throw Exception("cargo-ndk rustc linker: didn't find _CARGOKIT_NDK_LINK_TARGET env var");
     }
 
     runCommand(clang, [
@@ -82,9 +80,7 @@ class AndroidEnvironment {
   }
 
   Future<Map<String, String>> buildEnvironment() async {
-    final hostArch = Platform.isMacOS
-        ? "darwin-x86_64"
-        : (Platform.isLinux ? "linux-x86_64" : "windows-x86_64");
+    final hostArch = Platform.isMacOS ? "darwin-x86_64" : (Platform.isLinux ? "linux-x86_64" : "windows-x86_64");
 
     final ndkPath = path.join(sdkPath, 'ndk', ndkVersion);
     final toolchainPath = path.join(
@@ -96,8 +92,7 @@ class AndroidEnvironment {
       'bin',
     );
 
-    final minSdkVersion =
-        math.max(target.androidMinSdkVersion!, this.minSdkVersion);
+    final minSdkVersion = math.max(target.androidMinSdkVersion!, this.minSdkVersion);
 
     final exe = Platform.isWindows ? '.exe' : '';
 
@@ -121,8 +116,7 @@ class AndroidEnvironment {
     final cxxFlagsKey = 'CXXFLAGS_${target.rust}';
     final cxxFlagsValue = targetArg;
 
-    final linkerKey =
-        'cargo_target_${target.rust.replaceAll('-', '_')}_linker'.toUpperCase();
+    final linkerKey = 'cargo_target_${target.rust.replaceAll('-', '_')}_linker'.toUpperCase();
 
     final ranlibKey = 'RANLIB_${target.rust}';
     final ranlibValue = path.join(toolchainPath, 'llvm-ranlib$exe');
@@ -131,12 +125,9 @@ class AndroidEnvironment {
     final rustFlagsKey = 'CARGO_ENCODED_RUSTFLAGS';
     final rustFlagsValue = _libGccWorkaround(targetTempDir, ndkVersionParsed);
 
-    final runRustTool =
-        Platform.isWindows ? 'run_build_tool.cmd' : 'run_build_tool.sh';
+    final runRustTool = Platform.isWindows ? 'run_build_tool.cmd' : 'run_build_tool.sh';
 
-    final packagePath = (await Isolate.resolvePackageUri(
-            Uri.parse('package:build_tool/buildtool.dart')))!
-        .toFilePath();
+    final packagePath = (await Isolate.resolvePackageUri(Uri.parse('package:build_tool/buildtool.dart')))!.toFilePath();
     final selfPath = path.canonicalize(path.join(
       packagePath,
       '..',
@@ -147,8 +138,7 @@ class AndroidEnvironment {
 
     // Make sure that run_build_tool is working properly even initially launched directly
     // through dart run.
-    final toolTempDir =
-        Platform.environment['CARGOKIT_TOOL_TEMP_DIR'] ?? targetTempDir;
+    final toolTempDir = Platform.environment['CARGOKIT_TOOL_TEMP_DIR'] ?? targetTempDir;
 
     return {
       arKey: arValue,
@@ -176,13 +166,11 @@ class AndroidEnvironment {
     );
     Directory(workaroundDir).createSync(recursive: true);
     if (ndkVersion.major >= 23) {
-      File(path.join(workaroundDir, 'libgcc.a'))
-          .writeAsStringSync('INPUT(-lunwind)');
+      File(path.join(workaroundDir, 'libgcc.a')).writeAsStringSync('INPUT(-lunwind)');
     } else {
       // Other way around, untested, forward libgcc.a from libunwind once Rust
       // gets updated for NDK23+.
-      File(path.join(workaroundDir, 'libunwind.a'))
-          .writeAsStringSync('INPUT(-lgcc)');
+      File(path.join(workaroundDir, 'libunwind.a')).writeAsStringSync('INPUT(-lgcc)');
     }
 
     var rustFlags = Platform.environment['CARGO_ENCODED_RUSTFLAGS'] ?? '';

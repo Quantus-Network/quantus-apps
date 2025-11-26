@@ -18,35 +18,15 @@ class WelcomeScreen extends StatelessWidget {
 
     return ScaffoldBase(
       decorations: [
-        const Positioned(
-          top: 60,
-          left: -30,
-          child: Sphere(variant: 1, size: 144.23),
-        ),
-        Positioned(
-          top: halfScreen,
-          left: 60,
-          child: const Sphere(variant: 2, size: 89.57),
-        ),
-        Positioned(
-          top: halfScreen,
-          right: -50,
-          child: const Sphere(variant: 2, size: 194),
-        ),
-        const Positioned(
-          bottom: -32,
-          right: 20,
-          child: Sphere(variant: 6, size: 194),
-        ),
+        const Positioned(top: 60, left: -30, child: Sphere(variant: 1, size: 144.23)),
+        Positioned(top: halfScreen, left: 60, child: const Sphere(variant: 2, size: 89.57)),
+        Positioned(top: halfScreen, right: -50, child: const Sphere(variant: 2, size: 194)),
+        const Positioned(bottom: -32, right: 20, child: Sphere(variant: 6, size: 194)),
       ],
       child: Column(
         children: [
           SizedBox(height: context.isSmallHeight ? 47.5 : 77.5),
-          Text(
-            'Welcome to',
-            textAlign: TextAlign.center,
-            style: context.themeText.smallTitle,
-          ),
+          Text('Welcome to', textAlign: TextAlign.center, style: context.themeText.smallTitle),
           const SizedBox(height: 36),
           Center(
             child: Column(
@@ -63,11 +43,7 @@ class WelcomeScreen extends StatelessWidget {
           const SizedBox(height: 18),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 0),
-            child: Text(
-              'Quantum-Secure Your crypto',
-              textAlign: TextAlign.center,
-              style: context.themeText.smallTitle,
-            ),
+            child: Text('Quantum-Secure Your crypto', textAlign: TextAlign.center, style: context.themeText.smallTitle),
           ),
           const SizedBox(height: 36),
           SizedBox(

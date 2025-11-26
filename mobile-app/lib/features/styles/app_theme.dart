@@ -18,31 +18,22 @@ class AppTheme {
         surface: appColors.surface,
         error: appColors.error,
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: appColors.surface,
-        elevation: 0,
-      ),
+      appBarTheme: AppBarTheme(backgroundColor: appColors.surface, elevation: 0),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: appColors.primary,
           foregroundColor: appColors.textPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: appColors.secondary,
           side: BorderSide(color: appColors.secondary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: appColors.textPrimary),
-      ),
+      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: appColors.textPrimary)),
       inputDecorationTheme: InputDecorationTheme(
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
@@ -67,31 +58,22 @@ class AppTheme {
         surface: appColors.surface,
         error: appColors.error,
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: appColors.surface,
-        elevation: 0,
-      ),
+      appBarTheme: AppBarTheme(backgroundColor: appColors.surface, elevation: 0),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: appColors.primary,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: appColors.secondary,
           side: BorderSide(color: appColors.secondary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: appColors.textPrimary),
-      ),
+      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: appColors.textPrimary)),
       inputDecorationTheme: InputDecorationTheme(
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
@@ -100,12 +82,8 @@ class AppTheme {
         fillColor: appColors.surface,
       ),
       extensions: [
-        isTablet
-            ? const AppTextTheme.iPad()
-            : const AppTextTheme.defaultTheme(),
-        isTablet
-            ? const AppSizeTheme.iPad()
-            : const AppSizeTheme.defaultTheme(),
+        isTablet ? const AppTextTheme.iPad() : const AppTextTheme.defaultTheme(),
+        isTablet ? const AppSizeTheme.iPad() : const AppSizeTheme.defaultTheme(),
         appColors,
       ],
     );

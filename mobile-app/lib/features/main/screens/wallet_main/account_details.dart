@@ -15,8 +15,7 @@ class AccountDetails extends StatefulWidget {
 }
 
 class _AccountDetailsState extends State<AccountDetails> {
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
   @override
   void initState() {
@@ -29,9 +28,7 @@ class _AccountDetailsState extends State<AccountDetails> {
 
   @override
   Widget build(BuildContext context) {
-    final checksumFuture = _checksumService.getHumanReadableName(
-      widget.activeAccount.accountId,
-    );
+    final checksumFuture = _checksumService.getHumanReadableName(widget.activeAccount.accountId);
 
     return GestureDetector(
       onTap: _showActionSheet,
@@ -42,10 +39,7 @@ class _AccountDetailsState extends State<AccountDetails> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image.asset(
-              'assets/active_dot.png',
-              width: context.isTablet ? 28 : 20,
-            ),
+            Image.asset('assets/active_dot.png', width: context.isTablet ? 28 : 20),
             const SizedBox(width: 12),
             Expanded(
               child: Row(
@@ -55,33 +49,22 @@ class _AccountDetailsState extends State<AccountDetails> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.activeAccount.name,
-                        style: context.themeText.smallParagraph,
-                      ),
+                      Text(widget.activeAccount.name, style: context.themeText.smallParagraph),
                       FutureBuilder(
                         future: checksumFuture,
                         builder: (context, snapshot) {
                           if (snapshot.hasError) {
-                            return Text(
-                              'Failed getting checksum',
-                              style: context.themeText.smallParagraph,
-                            );
+                            return Text('Failed getting checksum', style: context.themeText.smallParagraph);
                           }
 
                           if (snapshot.hasData) {
                             return Text(
                               snapshot.data!,
-                              style: context.themeText.tiny?.copyWith(
-                                color: context.themeColors.checksum,
-                              ),
+                              style: context.themeText.tiny?.copyWith(color: context.themeColors.checksum),
                             );
                           }
 
-                          return Text(
-                            'Loading checksum...',
-                            style: context.themeText.smallParagraph,
-                          );
+                          return Text('Loading checksum...', style: context.themeText.smallParagraph);
                         },
                       ),
                     ],

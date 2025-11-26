@@ -24,8 +24,7 @@ class AccountsScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsScreen> {
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final NumberFormattingService _formattingService = NumberFormattingService();
 
   bool _isCreatingAccount = false;
@@ -35,10 +34,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       _isCreatingAccount = true;
     });
     try {
-      await Navigator.push<bool?>(
-        context,
-        MaterialPageRoute(builder: (context) => const CreateAccountScreen()),
-      );
+      await Navigator.push<bool?>(context, MaterialPageRoute(builder: (context) => const CreateAccountScreen()));
       // Providers will automatically refresh when a new account is added
     } finally {
       if (mounted) {
@@ -58,13 +54,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           top: MediaQuery.of(context).size.height * 0.3,
           child: const Sphere(variant: 2, size: 194),
         ),
-        const Positioned(
-          left: -40,
-          bottom: 0,
-          child: Sphere(variant: 7, size: 240.681),
-        ),
+        const Positioned(left: -40, bottom: 0, child: Sphere(variant: 7, size: 240.681)),
       ],
-      appBar:  WalletAppBar(title:  'Your Accounts'),
+      appBar: WalletAppBar(title: 'Your Accounts'),
       child: Column(
         children: [
           Expanded(child: _buildAccountsList()),
@@ -75,7 +67,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             onPressed: _isCreatingAccount ? null : _createNewAccount,
           ),
 
-           SizedBox(height: context.themeSize.bottomButtonSpacing)
+          SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
     );
@@ -86,40 +78,24 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final activeAccountAsync = ref.watch(activeAccountProvider);
 
     return accountsAsync.when(
-      loading: () => Center(
-        child: CircularProgressIndicator(
-          color: context.themeColors.circularLoader,
-        ),
-      ),
+      loading: () => Center(child: CircularProgressIndicator(color: context.themeColors.circularLoader)),
       error: (error, _) => Center(
         child: Text(
           'Failed to load accounts: $error',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: Colors.white70,
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
         ),
       ),
       data: (accounts) {
         if (accounts.isEmpty) {
           return Center(
-            child: Text(
-              'No accounts found.',
-              style: context.themeText.smallParagraph?.copyWith(
-                color: Colors.white70,
-              ),
-            ),
+            child: Text('No accounts found.', style: context.themeText.smallParagraph?.copyWith(color: Colors.white70)),
           );
         }
 
         return activeAccountAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white),
-          ),
+          loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
           error: (error, _) => Center(
-            child: Text(
-              'Failed to load active account: $error',
-              style: const TextStyle(color: Colors.white70),
-            ),
+            child: Text('Failed to load active account: $error', style: const TextStyle(color: Colors.white70)),
           ),
           data: (activeAccount) {
             return ListView.separated(
@@ -128,8 +104,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               separatorBuilder: (context, index) => const SizedBox(height: 25),
               itemBuilder: (context, index) {
                 final account = accounts[index];
-                final bool isActive =
-                    account.accountId == activeAccount?.accountId;
+                final bool isActive = account.accountId == activeAccount?.accountId;
                 return _buildAccountListItem(account, isActive, index);
               },
             );
@@ -142,9 +117,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   Widget _buildAccountListItem(Account account, bool isActive, int index) {
     return InkWell(
       onTap: () async {
-        await ref
-            .read(activeAccountProvider.notifier)
-            .setActiveAccount(account);
+        await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
         if (mounted) Navigator.pop(context);
       },
       child: Stack(
@@ -154,19 +127,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             children: [
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.isTablet ? 20 : 8,
-                    vertical: 8,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: context.isTablet ? 20 : 8, vertical: 8),
                   decoration: ShapeDecoration(
-                    color: isActive
-                        ? context.themeColors.surfaceActive
-                        : context.themeColors.surface,
+                    color: isActive ? context.themeColors.surfaceActive : context.themeColors.surface,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        width: 1,
-                        color: context.themeColors.borderLight,
-                      ),
+                      side: BorderSide(width: 1, color: context.themeColors.borderLight),
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -176,29 +141,21 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                       Expanded(
                         child: Consumer(
                           builder: (context, ref, child) {
-                            final balanceAsync = ref.watch(
-                              balanceProviderFamily(account.accountId),
-                            );
+                            final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
 
                             return FutureBuilder<String>(
-                              future: _checksumService.getHumanReadableName(
-                                account.accountId,
-                              ),
+                              future: _checksumService.getHumanReadableName(account.accountId),
                               builder: (context, checksumSnapshot) {
-                                final humanChecksum =
-                                    checksumSnapshot.data ?? '';
+                                final humanChecksum = checksumSnapshot.data ?? '';
 
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       account.name,
-                                      style: context.themeText.paragraph
-                                          ?.copyWith(
-                                            color: isActive
-                                                ? Colors.black
-                                                : Colors.white,
-                                          ),
+                                      style: context.themeText.paragraph?.copyWith(
+                                        color: isActive ? Colors.black : Colors.white,
+                                      ),
                                     ),
                                     Text(
                                       humanChecksum,
@@ -214,19 +171,12 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                           context.isTablet
                                               ? account.accountId
                                               // ignore: lines_longer_than_80_chars
-                                              : AddressFormattingService.formatAddress(
-                                                  account.accountId,
-                                                ),
-                                          style: context.themeText.detail
-                                              ?.copyWith(
-                                                color: isActive
-                                                    ? context
-                                                          .themeColors
-                                                          .darkGray
-                                                    : context
-                                                          .themeColors
-                                                          .textMuted,
-                                              ),
+                                              : AddressFormattingService.formatAddress(account.accountId),
+                                          style: context.themeText.detail?.copyWith(
+                                            color: isActive
+                                                ? context.themeColors.darkGray
+                                                : context.themeColors.textMuted,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -234,54 +184,36 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                     balanceAsync.when(
                                       loading: () => Text(
                                         'loading balance...',
-                                        style: context.themeText.detail
-                                            ?.copyWith(
-                                              color: isActive
-                                                  ? context.themeColors.darkGray
-                                                  : context.themeColors.light,
-                                            ),
+                                        style: context.themeText.detail?.copyWith(
+                                          color: isActive ? context.themeColors.darkGray : context.themeColors.light,
+                                        ),
                                       ),
                                       error: (error, _) => Text(
                                         'error loading',
-                                        style: context.themeText.detail
-                                            ?.copyWith(
-                                              color: isActive
-                                                  ? context.themeColors.darkGray
-                                                  : context
-                                                        .themeColors
-                                                        .textPrimary,
-                                            ),
+                                        style: context.themeText.detail?.copyWith(
+                                          color: isActive
+                                              ? context.themeColors.darkGray
+                                              : context.themeColors.textPrimary,
+                                        ),
                                       ),
                                       data: (balance) => Text.rich(
                                         TextSpan(
                                           children: [
                                             TextSpan(
-                                              text: _formattingService
-                                                  .formatBalance(balance),
-                                              style: context.themeText.smallParagraph
-                                                  ?.copyWith(
-                                                    color: isActive
-                                                        ? context
-                                                              .themeColors
-                                                              .darkGray
-                                                        : context
-                                                              .themeColors
-                                                              .textPrimary,
-                                                  ),
+                                              text: _formattingService.formatBalance(balance),
+                                              style: context.themeText.smallParagraph?.copyWith(
+                                                color: isActive
+                                                    ? context.themeColors.darkGray
+                                                    : context.themeColors.textPrimary,
+                                              ),
                                             ),
                                             TextSpan(
-                                              text:
-                                                  ' ${AppConstants.tokenSymbol}',
-                                              style: context.themeText.detail
-                                                  ?.copyWith(
-                                                    color: isActive
-                                                        ? context
-                                                              .themeColors
-                                                              .darkGray
-                                                        : context
-                                                              .themeColors
-                                                              .textPrimary,
-                                                  ),
+                                              text: ' ${AppConstants.tokenSymbol}',
+                                              style: context.themeText.detail?.copyWith(
+                                                color: isActive
+                                                    ? context.themeColors.darkGray
+                                                    : context.themeColors.textPrimary,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -304,18 +236,12 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                 icon: SvgPicture.asset(
                   'assets/settings_icon_off.svg',
                   width: context.isTablet ? 28 : 21,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 onPressed: () async {
                   // Get current data from providers
-                  final balanceAsync = ref.read(
-                    balanceProviderFamily(account.accountId),
-                  );
-                  final checksumName = await _checksumService
-                      .getHumanReadableName(account.accountId);
+                  final balanceAsync = ref.read(balanceProviderFamily(account.accountId));
+                  final checksumName = await _checksumService.getHumanReadableName(account.accountId);
 
                   balanceAsync.when(
                     loading: () {
@@ -331,10 +257,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                         MaterialPageRoute(
                           builder: (context) => AccountSettingsScreen(
                             account: account,
-                            balance: _formattingService.formatBalance(
-                              balance,
-                              addSymbol: true,
-                            ),
+                            balance: _formattingService.formatBalance(balance, addSymbol: true),
                             checksumName: checksumName,
                           ),
                         ),
@@ -349,9 +272,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
           Positioned(
             // calculating the middle point
-            top:
-                (context.themeSize.accountListItemHeight / 2) -
-                (context.themeSize.accountListItemLogoWidth / 2),
+            top: (context.themeSize.accountListItemHeight / 2) - (context.themeSize.accountListItemLogoWidth / 2),
             left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
             child: AccountGradientImage(
               accountId: account.accountId,

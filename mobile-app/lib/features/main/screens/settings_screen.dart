@@ -109,10 +109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildInformationList(context),
                 const SizedBox(height: 42),
                 const SizedBox(height: 22),
-                if (AppConstants.globalDebug) ...[
-                  _buildDebugButton(context),
-                  const SizedBox(height: 22),
-                ],
+                if (AppConstants.globalDebug) ...[_buildDebugButton(context), const SizedBox(height: 22)],
 
                 _buildResetButton(context),
                 const SizedBox(height: 22),
@@ -255,15 +252,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-    Widget _buildDebugButton(BuildContext context) {
+  Widget _buildDebugButton(BuildContext context) {
     return GestureDetector(
       onTap: _createDebugOldAccounts,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: context.isTablet ? 16 : 12,
-          horizontal: 18,
-        ),
+        padding: EdgeInsets.symmetric(vertical: context.isTablet ? 16 : 12, horizontal: 18),
         decoration: ShapeDecoration(
           color: Colors.black,
           shape: RoundedRectangleBorder(
@@ -275,17 +269,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Debug: Create Old Accounts',
-              style: context.themeText.smallParagraph?.copyWith(
-                color: Colors.orange,
-              ),
-            ),
-            Icon(
-              Icons.bug_report,
-              size: context.themeSize.settingMenuIconSize,
-              color: Colors.orange,
-            ),
+            Text('Debug: Create Old Accounts', style: context.themeText.smallParagraph?.copyWith(color: Colors.orange)),
+            Icon(Icons.bug_report, size: context.themeSize.settingMenuIconSize, color: Colors.orange),
           ],
         ),
       ),
@@ -294,18 +279,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _createDebugOldAccounts() async {
     try {
-      final migrationService = MigrationService(
-        _settingsService,
-        HdWalletService(),
-      );
+      final migrationService = MigrationService(_settingsService, HdWalletService());
       await migrationService.createDebugOldAccounts();
 
       if (mounted) {
         showTopSnackBar(
           context,
           title: 'Debug',
-          message:
-              'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
+          message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
           icon: const Icon(Icons.check_circle, color: Colors.green),
         );
       }
@@ -320,5 +301,4 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     }
   }
-
 }

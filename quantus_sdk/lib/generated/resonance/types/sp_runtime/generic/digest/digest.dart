@@ -22,20 +22,10 @@ class Digest {
     return codec.encode(this);
   }
 
-  Map<String, List<Map<String, dynamic>>> toJson() =>
-      {'logs': logs.map((value) => value.toJson()).toList()};
+  Map<String, List<Map<String, dynamic>>> toJson() => {'logs': logs.map((value) => value.toJson()).toList()};
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Digest &&
-          _i4.listsEqual(
-            other.logs,
-            logs,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Digest && _i4.listsEqual(other.logs, logs);
 
   @override
   int get hashCode => logs.hashCode;
@@ -45,29 +35,19 @@ class $DigestCodec with _i1.Codec<Digest> {
   const $DigestCodec();
 
   @override
-  void encodeTo(
-    Digest obj,
-    _i1.Output output,
-  ) {
-    const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec).encodeTo(
-      obj.logs,
-      output,
-    );
+  void encodeTo(Digest obj, _i1.Output output) {
+    const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec).encodeTo(obj.logs, output);
   }
 
   @override
   Digest decode(_i1.Input input) {
-    return Digest(
-        logs: const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec)
-            .decode(input));
+    return Digest(logs: const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec).decode(input));
   }
 
   @override
   int sizeHint(Digest obj) {
     int size = 0;
-    size = size +
-        const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec)
-            .sizeHint(obj.logs);
+    size = size + const _i1.SequenceCodec<_i2.DigestItem>(_i2.DigestItem.codec).sizeHint(obj.logs);
     return size;
   }
 }

@@ -12,16 +12,19 @@ final notificationConfigProvider = StateNotifierProvider<NotificationConfigNotif
 });
 
 class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
-  NotificationConfigNotifier() : super(const NotificationConfig(
-    enabled: true,
-    sound: true,
-    vibration: true,
-    showBadge: true,
-    sentTokensEnabled: true,
-    receivedTokensEnabled: true,
-    recoveryTimerEndingEnabled: true,
-    reversibleTransactionsEnabled: true,
-  )) {
+  NotificationConfigNotifier()
+    : super(
+        const NotificationConfig(
+          enabled: true,
+          sound: true,
+          vibration: true,
+          showBadge: true,
+          sentTokensEnabled: true,
+          receivedTokensEnabled: true,
+          recoveryTimerEndingEnabled: true,
+          reversibleTransactionsEnabled: true,
+        ),
+      ) {
     _loadConfig();
   }
 

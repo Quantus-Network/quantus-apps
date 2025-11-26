@@ -5,15 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/pending_cancellation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final pendingCancellationsProvider =
-    StateNotifierProvider<PendingCancellationsNotifier, Set<String>>((ref) {
-      return PendingCancellationsNotifier();
-    });
+final pendingCancellationsProvider = StateNotifierProvider<PendingCancellationsNotifier, Set<String>>((ref) {
+  return PendingCancellationsNotifier();
+});
 
 class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
   static const String _key = 'pending_cancellations';
   static const Duration _expireDuration = Duration(minutes: 5);
-
 
   PendingCancellationsNotifier() : super(<String>{}) {
     _loadAndCleanupPendingCancellations();
@@ -39,9 +37,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
         if (isNotExpired) {
           validCancellations.add(cancellation);
         } else {
-          print(
-            'Removing expired pending cancellation: ${cancellation.transactionId}',
-          );
+          print('Removing expired pending cancellation: ${cancellation.transactionId}');
         }
       } catch (e) {
         throw FormatException('Error parsing pending cancellation: $e');
@@ -52,9 +48,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
     state = validCancellations.map((c) => c.transactionId).toSet();
   }
 
-  Future<void> _savePendingCancellations(
-    List<PendingCancellation> cancellations,
-  ) async {
+  Future<void> _savePendingCancellations(List<PendingCancellation> cancellations) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = cancellations.map((c) => jsonEncode(c.toJson())).toList();
     await prefs.setStringList(_key, jsonList);
@@ -64,10 +58,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
     // Don't add if already exists
     if (state.contains(transactionId)) return;
 
-    final newCancellation = PendingCancellation(
-      transactionId: transactionId,
-      timestamp: DateTime.now(),
-    );
+    final newCancellation = PendingCancellation(transactionId: transactionId, timestamp: DateTime.now());
 
     // Load existing cancellations
     final prefs = await SharedPreferences.getInstance();

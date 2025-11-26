@@ -42,14 +42,8 @@ class Txs {
   /// NOTE: Prior to version *12, this was called `as_limited_sub`.
   ///
   /// The dispatch origin for this call must be _Signed_.
-  _i1.Utility asDerivative({
-    required int index,
-    required _i1.RuntimeCall call,
-  }) {
-    return _i1.Utility(_i2.AsDerivative(
-      index: index,
-      call: call,
-    ));
+  _i1.Utility asDerivative({required int index, required _i1.RuntimeCall call}) {
+    return _i1.Utility(_i2.AsDerivative(index: index, call: call));
   }
 
   /// Send a batch of dispatch calls and atomically execute them.
@@ -75,14 +69,8 @@ class Txs {
   ///
   /// ## Complexity
   /// - O(1).
-  _i1.Utility dispatchAs({
-    required _i3.OriginCaller asOrigin,
-    required _i1.RuntimeCall call,
-  }) {
-    return _i1.Utility(_i2.DispatchAs(
-      asOrigin: asOrigin,
-      call: call,
-    ));
+  _i1.Utility dispatchAs({required _i3.OriginCaller asOrigin, required _i1.RuntimeCall call}) {
+    return _i1.Utility(_i2.DispatchAs(asOrigin: asOrigin, call: call));
   }
 
   /// Send a batch of dispatch calls.
@@ -108,14 +96,8 @@ class Txs {
   /// Root origin to specify the weight of the call.
   ///
   /// The dispatch origin for this call must be _Root_.
-  _i1.Utility withWeight({
-    required _i1.RuntimeCall call,
-    required _i4.Weight weight,
-  }) {
-    return _i1.Utility(_i2.WithWeight(
-      call: call,
-      weight: weight,
-    ));
+  _i1.Utility withWeight({required _i1.RuntimeCall call, required _i4.Weight weight}) {
+    return _i1.Utility(_i2.WithWeight(call: call, weight: weight));
   }
 }
 

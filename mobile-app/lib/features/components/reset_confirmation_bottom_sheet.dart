@@ -11,12 +11,10 @@ class ResetConfirmationBottomSheet extends StatefulWidget {
   const ResetConfirmationBottomSheet({super.key, required this.onReset});
 
   @override
-  State<ResetConfirmationBottomSheet> createState() =>
-      _ResetConfirmationBottomSheetState();
+  State<ResetConfirmationBottomSheet> createState() => _ResetConfirmationBottomSheetState();
 }
 
-class _ResetConfirmationBottomSheetState
-    extends State<ResetConfirmationBottomSheet> {
+class _ResetConfirmationBottomSheetState extends State<ResetConfirmationBottomSheet> {
   bool _isCheckboxChecked = false;
 
   @override
@@ -29,9 +27,7 @@ class _ResetConfirmationBottomSheetState
           padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
           decoration: ShapeDecoration(
             color: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -41,10 +37,7 @@ class _ResetConfirmationBottomSheetState
                 Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: context.themeSize.overlayCloseIconSize,
-                    ),
+                    icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -74,19 +67,14 @@ class _ResetConfirmationBottomSheetState
                   activeColor: context.themeColors.buttonSuccess,
                   checkColor: context.themeColors.buttonSuccess,
                   side: const BorderSide(color: Colors.white),
-                  title: Text(
-                    'I have backed up my recovery phrase',
-                    style: context.themeText.detail,
-                  ),
+                  title: Text('I have backed up my recovery phrase', style: context.themeText.detail),
                 ),
                 const SizedBox(height: 28),
                 Button(
                   variant: ButtonVariant.danger,
                   label: 'Reset & Clear Data',
                   onPressed: _isCheckboxChecked ? widget.onReset : null,
-                  textStyle: context.themeText.smallTitle?.copyWith(
-                    color: context.themeColors.textSecondary,
-                  ),
+                  textStyle: context.themeText.smallTitle?.copyWith(color: context.themeColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 Center(
@@ -94,9 +82,7 @@ class _ResetConfirmationBottomSheetState
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       'Cancel',
-                      style: context.themeText.smallParagraph?.copyWith(
-                        decoration: TextDecoration.underline,
-                      ),
+                      style: context.themeText.smallParagraph?.copyWith(decoration: TextDecoration.underline),
                     ),
                   ),
                 ),

@@ -12,14 +12,8 @@ class CowCodec with _i1.Codec<Cow> {
   }
 
   @override
-  void encodeTo(
-    Cow value,
-    _i1.Output output,
-  ) {
-    _i1.StrCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(Cow value, _i1.Output output) {
+    _i1.StrCodec.codec.encodeTo(value, output);
   }
 
   @override

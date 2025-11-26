@@ -14,10 +14,7 @@ void main() async {
   await dotenv.load();
 
   // Initialize Supabase
-  await Supabase.initialize(
-    url: EnvUtils.supabaseUrl,
-    anonKey: EnvUtils.supabaseKey,
-  );
+  await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
   await QuantusSdk.init();
   Telemetrydecksdk.start(
     const TelemetryManagerConfiguration(
@@ -29,9 +26,7 @@ void main() async {
 
   runApp(
     const ProviderScope(
-      child: AppInitializer(
-        child: AppLifecycleManager(child: ResonanceWalletApp()),
-      ),
+      child: AppInitializer(child: AppLifecycleManager(child: ResonanceWalletApp())),
     ),
   );
 }

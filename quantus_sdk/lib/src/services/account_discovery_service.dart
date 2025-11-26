@@ -16,16 +16,11 @@ class AccountDiscoveryService {
     }
   ''';
 
-  Future<List<Account>> discoverAccounts({
-    required String mnemonic,
-    int count = 20,
-  }) async {
+  Future<List<Account>> discoverAccounts({required String mnemonic, int count = 20}) async {
     final allPossibleAccounts = <Account>[];
 
     // Add raw account
-    final rawKeyPair = _substrateService.nonHDdilithiumKeypairFromMnemonic(
-      mnemonic,
-    );
+    final rawKeyPair = _substrateService.nonHDdilithiumKeypairFromMnemonic(mnemonic);
     final rawAccount = Account(
       index: -1, //  indicator for a raw account
       name: 'Primary Account',
@@ -36,11 +31,7 @@ class AccountDiscoveryService {
     // Add HD accounts
     for (var i = 0; i < count; i++) {
       final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
-      final account = Account(
-        index: i,
-        name: 'Account ${i + 1}',
-        accountId: keyPair.ss58Address,
-      );
+      final account = Account(index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address);
       allPossibleAccounts.add(account);
     }
 
@@ -60,9 +51,7 @@ class AccountDiscoveryService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -70,20 +59,15 @@ class AccountDiscoveryService {
         throw Exception('GraphQL errors: ${responseBody['errors']}');
       }
 
-      final List<dynamic>? foundAccountsData =
-          responseBody['data']?['accounts'];
+      final List<dynamic>? foundAccountsData = responseBody['data']?['accounts'];
 
       if (foundAccountsData == null) {
         return [];
       }
 
-      final foundAccountIds = foundAccountsData
-          .map((a) => a['id'] as String)
-          .toSet();
+      final foundAccountIds = foundAccountsData.map((a) => a['id'] as String).toSet();
 
-      return allPossibleAccounts
-          .where((account) => foundAccountIds.contains(account.accountId))
-          .toList();
+      return allPossibleAccounts.where((account) => foundAccountIds.contains(account.accountId)).toList();
     } catch (e, stackTrace) {
       print('Error discovering accounts: $e');
       print(stackTrace);

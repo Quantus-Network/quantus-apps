@@ -19,8 +19,7 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<int, _i2.AssetDetails> _asset =
-      const _i1.StorageMap<int, _i2.AssetDetails>(
+  final _i1.StorageMap<int, _i2.AssetDetails> _asset = const _i1.StorageMap<int, _i2.AssetDetails>(
     prefix: 'Assets',
     storage: 'Asset',
     valueCodec: _i2.AssetDetails.codec,
@@ -29,27 +28,24 @@ class Queries {
 
   final _i1.StorageDoubleMap<int, _i4.AccountId32, _i5.AssetAccount> _account =
       const _i1.StorageDoubleMap<int, _i4.AccountId32, _i5.AssetAccount>(
-    prefix: 'Assets',
-    storage: 'Account',
-    valueCodec: _i5.AssetAccount.codec,
-    hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
-    hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
-  );
+        prefix: 'Assets',
+        storage: 'Account',
+        valueCodec: _i5.AssetAccount.codec,
+        hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
+        hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
+      );
 
-  final _i1
-      .StorageTripleMap<int, _i4.AccountId32, _i4.AccountId32, _i6.Approval>
-      _approvals = const _i1.StorageTripleMap<int, _i4.AccountId32,
-          _i4.AccountId32, _i6.Approval>(
-    prefix: 'Assets',
-    storage: 'Approvals',
-    valueCodec: _i6.Approval.codec,
-    hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
-    hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
-    hasher3: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
-  );
+  final _i1.StorageTripleMap<int, _i4.AccountId32, _i4.AccountId32, _i6.Approval> _approvals =
+      const _i1.StorageTripleMap<int, _i4.AccountId32, _i4.AccountId32, _i6.Approval>(
+        prefix: 'Assets',
+        storage: 'Approvals',
+        valueCodec: _i6.Approval.codec,
+        hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
+        hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
+        hasher3: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
+      );
 
-  final _i1.StorageMap<int, _i7.AssetMetadata> _metadata =
-      const _i1.StorageMap<int, _i7.AssetMetadata>(
+  final _i1.StorageMap<int, _i7.AssetMetadata> _metadata = const _i1.StorageMap<int, _i7.AssetMetadata>(
     prefix: 'Assets',
     storage: 'Metadata',
     valueCodec: _i7.AssetMetadata.codec,
@@ -63,15 +59,9 @@ class Queries {
   );
 
   /// Details of an asset.
-  _i8.Future<_i2.AssetDetails?> asset(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i8.Future<_i2.AssetDetails?> asset(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _asset.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _asset.decodeValue(bytes);
     }
@@ -79,19 +69,9 @@ class Queries {
   }
 
   /// The holdings of a specific account for a specific asset.
-  _i8.Future<_i5.AssetAccount?> account(
-    int key1,
-    _i4.AccountId32 key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _account.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i8.Future<_i5.AssetAccount?> account(int key1, _i4.AccountId32 key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _account.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _account.decodeValue(bytes);
     }
@@ -101,21 +81,9 @@ class Queries {
   /// Approved balance transfers. First balance is the amount approved for transfer. Second
   /// is the amount of `T::Currency` reserved for storing this.
   /// First key is the asset ID, second key is the owner and third key is the delegate.
-  _i8.Future<_i6.Approval?> approvals(
-    int key1,
-    _i4.AccountId32 key2,
-    _i4.AccountId32 key3, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _approvals.hashedKeyFor(
-      key1,
-      key2,
-      key3,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i8.Future<_i6.Approval?> approvals(int key1, _i4.AccountId32 key2, _i4.AccountId32 key3, {_i1.BlockHash? at}) async {
+    final hashedKey = _approvals.hashedKeyFor(key1, key2, key3);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _approvals.decodeValue(bytes);
     }
@@ -123,30 +91,16 @@ class Queries {
   }
 
   /// Metadata of an asset.
-  _i8.Future<_i7.AssetMetadata> metadata(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i8.Future<_i7.AssetMetadata> metadata(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _metadata.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _metadata.decodeValue(bytes);
     }
     return _i7.AssetMetadata(
       deposit: BigInt.zero,
-      name: List<int>.filled(
-        0,
-        0,
-        growable: true,
-      ),
-      symbol: List<int>.filled(
-        0,
-        0,
-        growable: true,
-      ),
+      name: List<int>.filled(0, 0, growable: true),
+      symbol: List<int>.filled(0, 0, growable: true),
       decimals: 0,
       isFrozen: false,
     ); /* Default */
@@ -163,10 +117,7 @@ class Queries {
   /// [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
   _i8.Future<int?> nextAssetId({_i1.BlockHash? at}) async {
     final hashedKey = _nextAssetId.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _nextAssetId.decodeValue(bytes);
     }
@@ -174,15 +125,9 @@ class Queries {
   }
 
   /// Details of an asset.
-  _i8.Future<List<_i2.AssetDetails?>> multiAsset(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i8.Future<List<_i2.AssetDetails?>> multiAsset(List<int> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _asset.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
       return bytes.first.changes.map((v) => _asset.decodeValue(v.key)).toList();
     }
@@ -190,37 +135,24 @@ class Queries {
   }
 
   /// Metadata of an asset.
-  _i8.Future<List<_i7.AssetMetadata>> multiMetadata(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i8.Future<List<_i7.AssetMetadata>> multiMetadata(List<int> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _metadata.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _metadata.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _metadata.decodeValue(v.key)).toList();
     }
     return (keys
-        .map((key) => _i7.AssetMetadata(
-              deposit: BigInt.zero,
-              name: List<int>.filled(
-                0,
-                0,
-                growable: true,
+            .map(
+              (key) => _i7.AssetMetadata(
+                deposit: BigInt.zero,
+                name: List<int>.filled(0, 0, growable: true),
+                symbol: List<int>.filled(0, 0, growable: true),
+                decimals: 0,
+                isFrozen: false,
               ),
-              symbol: List<int>.filled(
-                0,
-                0,
-                growable: true,
-              ),
-              decimals: 0,
-              isFrozen: false,
-            ))
-        .toList() as List<_i7.AssetMetadata>); /* Default */
+            )
+            .toList()
+        as List<_i7.AssetMetadata>); /* Default */
   }
 
   /// Returns the storage key for `asset`.
@@ -230,28 +162,14 @@ class Queries {
   }
 
   /// Returns the storage key for `account`.
-  _i9.Uint8List accountKey(
-    int key1,
-    _i4.AccountId32 key2,
-  ) {
-    final hashedKey = _account.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i9.Uint8List accountKey(int key1, _i4.AccountId32 key2) {
+    final hashedKey = _account.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
   /// Returns the storage key for `approvals`.
-  _i9.Uint8List approvalsKey(
-    int key1,
-    _i4.AccountId32 key2,
-    _i4.AccountId32 key3,
-  ) {
-    final hashedKey = _approvals.hashedKeyFor(
-      key1,
-      key2,
-      key3,
-    );
+  _i9.Uint8List approvalsKey(int key1, _i4.AccountId32 key2, _i4.AccountId32 key3) {
+    final hashedKey = _approvals.hashedKeyFor(key1, key2, key3);
     return hashedKey;
   }
 
@@ -308,16 +226,8 @@ class Txs {
   /// Emits `Created` event when successful.
   ///
   /// Weight: `O(1)`
-  _i10.Assets create({
-    required BigInt id,
-    required _i11.MultiAddress admin,
-    required BigInt minBalance,
-  }) {
-    return _i10.Assets(_i12.Create(
-      id: id,
-      admin: admin,
-      minBalance: minBalance,
-    ));
+  _i10.Assets create({required BigInt id, required _i11.MultiAddress admin, required BigInt minBalance}) {
+    return _i10.Assets(_i12.Create(id: id, admin: admin, minBalance: minBalance));
   }
 
   /// Issue a new class of fungible assets from a privileged origin.
@@ -345,12 +255,7 @@ class Txs {
     required bool isSufficient,
     required BigInt minBalance,
   }) {
-    return _i10.Assets(_i12.ForceCreate(
-      id: id,
-      owner: owner,
-      isSufficient: isSufficient,
-      minBalance: minBalance,
-    ));
+    return _i10.Assets(_i12.ForceCreate(id: id, owner: owner, isSufficient: isSufficient, minBalance: minBalance));
   }
 
   /// Start the process of destroying a fungible asset class.
@@ -427,16 +332,8 @@ class Txs {
   ///
   /// Weight: `O(1)`
   /// Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
-  _i10.Assets mint({
-    required BigInt id,
-    required _i11.MultiAddress beneficiary,
-    required BigInt amount,
-  }) {
-    return _i10.Assets(_i12.Mint(
-      id: id,
-      beneficiary: beneficiary,
-      amount: amount,
-    ));
+  _i10.Assets mint({required BigInt id, required _i11.MultiAddress beneficiary, required BigInt amount}) {
+    return _i10.Assets(_i12.Mint(id: id, beneficiary: beneficiary, amount: amount));
   }
 
   /// Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
@@ -454,16 +351,8 @@ class Txs {
   ///
   /// Weight: `O(1)`
   /// Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
-  _i10.Assets burn({
-    required BigInt id,
-    required _i11.MultiAddress who,
-    required BigInt amount,
-  }) {
-    return _i10.Assets(_i12.Burn(
-      id: id,
-      who: who,
-      amount: amount,
-    ));
+  _i10.Assets burn({required BigInt id, required _i11.MultiAddress who, required BigInt amount}) {
+    return _i10.Assets(_i12.Burn(id: id, who: who, amount: amount));
   }
 
   /// Move some assets from the sender account to another.
@@ -484,16 +373,8 @@ class Txs {
   /// Weight: `O(1)`
   /// Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
   /// `target`.
-  _i10.Assets transfer({
-    required BigInt id,
-    required _i11.MultiAddress target,
-    required BigInt amount,
-  }) {
-    return _i10.Assets(_i12.Transfer(
-      id: id,
-      target: target,
-      amount: amount,
-    ));
+  _i10.Assets transfer({required BigInt id, required _i11.MultiAddress target, required BigInt amount}) {
+    return _i10.Assets(_i12.Transfer(id: id, target: target, amount: amount));
   }
 
   /// Move some assets from the sender account to another, keeping the sender account alive.
@@ -514,16 +395,8 @@ class Txs {
   /// Weight: `O(1)`
   /// Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
   /// `target`.
-  _i10.Assets transferKeepAlive({
-    required BigInt id,
-    required _i11.MultiAddress target,
-    required BigInt amount,
-  }) {
-    return _i10.Assets(_i12.TransferKeepAlive(
-      id: id,
-      target: target,
-      amount: amount,
-    ));
+  _i10.Assets transferKeepAlive({required BigInt id, required _i11.MultiAddress target, required BigInt amount}) {
+    return _i10.Assets(_i12.TransferKeepAlive(id: id, target: target, amount: amount));
   }
 
   /// Move some assets from one account to another.
@@ -551,12 +424,7 @@ class Txs {
     required _i11.MultiAddress dest,
     required BigInt amount,
   }) {
-    return _i10.Assets(_i12.ForceTransfer(
-      id: id,
-      source: source,
-      dest: dest,
-      amount: amount,
-    ));
+    return _i10.Assets(_i12.ForceTransfer(id: id, source: source, dest: dest, amount: amount));
   }
 
   /// Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -571,14 +439,8 @@ class Txs {
   /// Emits `Frozen`.
   ///
   /// Weight: `O(1)`
-  _i10.Assets freeze({
-    required BigInt id,
-    required _i11.MultiAddress who,
-  }) {
-    return _i10.Assets(_i12.Freeze(
-      id: id,
-      who: who,
-    ));
+  _i10.Assets freeze({required BigInt id, required _i11.MultiAddress who}) {
+    return _i10.Assets(_i12.Freeze(id: id, who: who));
   }
 
   /// Allow unprivileged transfers to and from an account again.
@@ -591,14 +453,8 @@ class Txs {
   /// Emits `Thawed`.
   ///
   /// Weight: `O(1)`
-  _i10.Assets thaw({
-    required BigInt id,
-    required _i11.MultiAddress who,
-  }) {
-    return _i10.Assets(_i12.Thaw(
-      id: id,
-      who: who,
-    ));
+  _i10.Assets thaw({required BigInt id, required _i11.MultiAddress who}) {
+    return _i10.Assets(_i12.Thaw(id: id, who: who));
   }
 
   /// Disallow further unprivileged transfers for the asset class.
@@ -637,14 +493,8 @@ class Txs {
   /// Emits `OwnerChanged`.
   ///
   /// Weight: `O(1)`
-  _i10.Assets transferOwnership({
-    required BigInt id,
-    required _i11.MultiAddress owner,
-  }) {
-    return _i10.Assets(_i12.TransferOwnership(
-      id: id,
-      owner: owner,
-    ));
+  _i10.Assets transferOwnership({required BigInt id, required _i11.MultiAddress owner}) {
+    return _i10.Assets(_i12.TransferOwnership(id: id, owner: owner));
   }
 
   /// Change the Issuer, Admin and Freezer of an asset.
@@ -665,12 +515,7 @@ class Txs {
     required _i11.MultiAddress admin,
     required _i11.MultiAddress freezer,
   }) {
-    return _i10.Assets(_i12.SetTeam(
-      id: id,
-      issuer: issuer,
-      admin: admin,
-      freezer: freezer,
-    ));
+    return _i10.Assets(_i12.SetTeam(id: id, issuer: issuer, admin: admin, freezer: freezer));
   }
 
   /// Set the metadata for an asset.
@@ -695,12 +540,7 @@ class Txs {
     required List<int> symbol,
     required int decimals,
   }) {
-    return _i10.Assets(_i12.SetMetadata(
-      id: id,
-      name: name,
-      symbol: symbol,
-      decimals: decimals,
-    ));
+    return _i10.Assets(_i12.SetMetadata(id: id, name: name, symbol: symbol, decimals: decimals));
   }
 
   /// Clear the metadata for an asset.
@@ -739,13 +579,9 @@ class Txs {
     required int decimals,
     required bool isFrozen,
   }) {
-    return _i10.Assets(_i12.ForceSetMetadata(
-      id: id,
-      name: name,
-      symbol: symbol,
-      decimals: decimals,
-      isFrozen: isFrozen,
-    ));
+    return _i10.Assets(
+      _i12.ForceSetMetadata(id: id, name: name, symbol: symbol, decimals: decimals, isFrozen: isFrozen),
+    );
   }
 
   /// Clear the metadata for an asset.
@@ -795,16 +631,18 @@ class Txs {
     required bool isSufficient,
     required bool isFrozen,
   }) {
-    return _i10.Assets(_i12.ForceAssetStatus(
-      id: id,
-      owner: owner,
-      issuer: issuer,
-      admin: admin,
-      freezer: freezer,
-      minBalance: minBalance,
-      isSufficient: isSufficient,
-      isFrozen: isFrozen,
-    ));
+    return _i10.Assets(
+      _i12.ForceAssetStatus(
+        id: id,
+        owner: owner,
+        issuer: issuer,
+        admin: admin,
+        freezer: freezer,
+        minBalance: minBalance,
+        isSufficient: isSufficient,
+        isFrozen: isFrozen,
+      ),
+    );
   }
 
   /// Approve an amount of asset for transfer by a delegated third-party account.
@@ -827,16 +665,8 @@ class Txs {
   /// Emits `ApprovedTransfer` on success.
   ///
   /// Weight: `O(1)`
-  _i10.Assets approveTransfer({
-    required BigInt id,
-    required _i11.MultiAddress delegate,
-    required BigInt amount,
-  }) {
-    return _i10.Assets(_i12.ApproveTransfer(
-      id: id,
-      delegate: delegate,
-      amount: amount,
-    ));
+  _i10.Assets approveTransfer({required BigInt id, required _i11.MultiAddress delegate, required BigInt amount}) {
+    return _i10.Assets(_i12.ApproveTransfer(id: id, delegate: delegate, amount: amount));
   }
 
   /// Cancel all of some asset approved for delegated transfer by a third-party account.
@@ -852,14 +682,8 @@ class Txs {
   /// Emits `ApprovalCancelled` on success.
   ///
   /// Weight: `O(1)`
-  _i10.Assets cancelApproval({
-    required BigInt id,
-    required _i11.MultiAddress delegate,
-  }) {
-    return _i10.Assets(_i12.CancelApproval(
-      id: id,
-      delegate: delegate,
-    ));
+  _i10.Assets cancelApproval({required BigInt id, required _i11.MultiAddress delegate}) {
+    return _i10.Assets(_i12.CancelApproval(id: id, delegate: delegate));
   }
 
   /// Cancel all of some asset approved for delegated transfer by a third-party account.
@@ -880,11 +704,7 @@ class Txs {
     required _i11.MultiAddress owner,
     required _i11.MultiAddress delegate,
   }) {
-    return _i10.Assets(_i12.ForceCancelApproval(
-      id: id,
-      owner: owner,
-      delegate: delegate,
-    ));
+    return _i10.Assets(_i12.ForceCancelApproval(id: id, owner: owner, delegate: delegate));
   }
 
   /// Transfer some asset balance from a previously delegated account to some third-party
@@ -911,12 +731,7 @@ class Txs {
     required _i11.MultiAddress destination,
     required BigInt amount,
   }) {
-    return _i10.Assets(_i12.TransferApproved(
-      id: id,
-      owner: owner,
-      destination: destination,
-      amount: amount,
-    ));
+    return _i10.Assets(_i12.TransferApproved(id: id, owner: owner, destination: destination, amount: amount));
   }
 
   /// Create an asset account for non-provider assets.
@@ -945,14 +760,8 @@ class Txs {
   /// the asset account contains holds or freezes in place.
   ///
   /// Emits `Refunded` event when successful.
-  _i10.Assets refund({
-    required BigInt id,
-    required bool allowBurn,
-  }) {
-    return _i10.Assets(_i12.Refund(
-      id: id,
-      allowBurn: allowBurn,
-    ));
+  _i10.Assets refund({required BigInt id, required bool allowBurn}) {
+    return _i10.Assets(_i12.Refund(id: id, allowBurn: allowBurn));
   }
 
   /// Sets the minimum balance of an asset.
@@ -967,14 +776,8 @@ class Txs {
   /// - `min_balance`: The new value of `min_balance`.
   ///
   /// Emits `AssetMinBalanceChanged` event when successful.
-  _i10.Assets setMinBalance({
-    required BigInt id,
-    required BigInt minBalance,
-  }) {
-    return _i10.Assets(_i12.SetMinBalance(
-      id: id,
-      minBalance: minBalance,
-    ));
+  _i10.Assets setMinBalance({required BigInt id, required BigInt minBalance}) {
+    return _i10.Assets(_i12.SetMinBalance(id: id, minBalance: minBalance));
   }
 
   /// Create an asset account for `who`.
@@ -987,14 +790,8 @@ class Txs {
   /// - `who`: The account to be created.
   ///
   /// Emits `Touched` event when successful.
-  _i10.Assets touchOther({
-    required BigInt id,
-    required _i11.MultiAddress who,
-  }) {
-    return _i10.Assets(_i12.TouchOther(
-      id: id,
-      who: who,
-    ));
+  _i10.Assets touchOther({required BigInt id, required _i11.MultiAddress who}) {
+    return _i10.Assets(_i12.TouchOther(id: id, who: who));
   }
 
   /// Return the deposit (if any) of a target asset account. Useful if you are the depositor.
@@ -1010,14 +807,8 @@ class Txs {
   /// the asset account contains holds or freezes in place.
   ///
   /// Emits `Refunded` event when successful.
-  _i10.Assets refundOther({
-    required BigInt id,
-    required _i11.MultiAddress who,
-  }) {
-    return _i10.Assets(_i12.RefundOther(
-      id: id,
-      who: who,
-    ));
+  _i10.Assets refundOther({required BigInt id, required _i11.MultiAddress who}) {
+    return _i10.Assets(_i12.RefundOther(id: id, who: who));
   }
 
   /// Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
@@ -1030,14 +821,8 @@ class Txs {
   /// Emits `Blocked`.
   ///
   /// Weight: `O(1)`
-  _i10.Assets block({
-    required BigInt id,
-    required _i11.MultiAddress who,
-  }) {
-    return _i10.Assets(_i12.Block(
-      id: id,
-      who: who,
-    ));
+  _i10.Assets block({required BigInt id, required _i11.MultiAddress who}) {
+    return _i10.Assets(_i12.Block(id: id, who: who));
   }
 
   /// Transfer the entire transferable balance from the caller asset account.
@@ -1056,16 +841,8 @@ class Txs {
   ///  of the funds the asset account has, causing the sender asset account to be killed
   ///  (false), or transfer everything except at least the minimum balance, which will
   ///  guarantee to keep the sender asset account alive (true).
-  _i10.Assets transferAll({
-    required BigInt id,
-    required _i11.MultiAddress dest,
-    required bool keepAlive,
-  }) {
-    return _i10.Assets(_i12.TransferAll(
-      id: id,
-      dest: dest,
-      keepAlive: keepAlive,
-    ));
+  _i10.Assets transferAll({required BigInt id, required _i11.MultiAddress dest, required bool keepAlive}) {
+    return _i10.Assets(_i12.TransferAll(id: id, dest: dest, keepAlive: keepAlive));
   }
 }
 

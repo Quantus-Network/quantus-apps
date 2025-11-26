@@ -62,10 +62,7 @@ class $PaymentStateCodec with _i1.Codec<PaymentState> {
   }
 
   @override
-  void encodeTo(
-    PaymentState value,
-    _i1.Output output,
-  ) {
+  void encodeTo(PaymentState value, _i1.Output output) {
     switch (value.runtimeType) {
       case Pending:
         (value as Pending).encodeTo(output);
@@ -77,8 +74,7 @@ class $PaymentStateCodec with _i1.Codec<PaymentState> {
         (value as Failed).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'PaymentState: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('PaymentState: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -92,8 +88,7 @@ class $PaymentStateCodec with _i1.Codec<PaymentState> {
       case Failed:
         return 1;
       default:
-        throw Exception(
-            'PaymentState: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('PaymentState: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -105,10 +100,7 @@ class Pending extends PaymentState {
   Map<String, dynamic> toJson() => {'Pending': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
   }
 
   @override
@@ -130,8 +122,8 @@ class Attempted extends PaymentState {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'Attempted': {'id': id}
-      };
+    'Attempted': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -140,23 +132,12 @@ class Attempted extends PaymentState {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Attempted && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is Attempted && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -169,10 +150,7 @@ class Failed extends PaymentState {
   Map<String, dynamic> toJson() => {'Failed': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
   }
 
   @override

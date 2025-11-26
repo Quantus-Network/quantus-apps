@@ -8,11 +8,7 @@ class TransferList {
   final bool hasMore;
   final int nextOffset;
 
-  TransferList({
-    required this.transfers,
-    required this.hasMore,
-    required this.nextOffset,
-  });
+  TransferList({required this.transfers, required this.hasMore, required this.nextOffset});
 }
 
 class TransferResult {
@@ -20,11 +16,7 @@ class TransferResult {
   final bool hasMore;
   final int nextOffset;
 
-  TransferResult({
-    required this.combinedTransfers,
-    required this.hasMore,
-    required this.nextOffset,
-  });
+  TransferResult({required this.combinedTransfers, required this.hasMore, required this.nextOffset});
 }
 
 class BlockQueryResponse {
@@ -406,10 +398,7 @@ query SearchPendingTransaction(
       printName: printName,
     );
 
-    return SortedTransactionsList(
-      reversibleTransfers: scheduled,
-      otherTransfers: other.transfers,
-    );
+    return SortedTransactionsList(reversibleTransfers: scheduled, otherTransfers: other.transfers);
   }
 
   // Make a graphQL query for specific transaction hashes, get the results back
@@ -429,22 +418,14 @@ query SearchPendingTransaction(
 
     final Map<String, dynamic> requestBody = {
       'query': _transactionsByHashQuery,
-      'variables': {
-        'transactionHashes': transactionHashes,
-        'limit': limit,
-        'offset': offset,
-      },
+      'variables': {'transactionHashes': transactionHashes, 'limit': limit, 'offset': offset},
     };
 
     try {
-      final http.Response response = await _graphQlEndpointService.post(
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -475,12 +456,9 @@ query SearchPendingTransaction(
           transferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(TransferEvent.fromJson(transferData));
         } else if (event['reversibleTransfer'] != null) {
-          final reversibleTransferData =
-              event['reversibleTransfer'] as Map<String, dynamic>;
+          final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
           reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
-          transactions.add(
-            ReversibleTransferEvent.fromJson(reversibleTransferData),
-          );
+          transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
         } else if (event['minerReward'] != null) {
           final minerRewardData = event['minerReward'] as Map<String, dynamic>;
           minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
@@ -492,9 +470,7 @@ query SearchPendingTransaction(
       //   'Found ${transactions.length} transactions for ${transactionHashes.length} hashes',
       // );
       for (final t in transactions) {
-        print(
-          '${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}',
-        );
+        print('${t.id} ${t.extrinsicHash} ${(t as ReversibleTransferEvent).status}');
       }
       return transactions;
     } catch (e, stackTrace) {
@@ -515,14 +491,10 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await _graphQlEndpointService.post(
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -535,12 +507,7 @@ query SearchPendingTransaction(
         return [];
       }
 
-      final result = events
-          .map(
-            (event) =>
-                ReversibleTransferEvent.fromJson(event['reversibleTransfer']),
-          )
-          .toList();
+      final result = events.map((event) => ReversibleTransferEvent.fromJson(event['reversibleTransfer'])).toList();
 
       return result;
     } catch (e, stackTrace) {
@@ -564,22 +531,14 @@ query SearchPendingTransaction(
     // Construct the GraphQL request body
     final Map<String, dynamic> requestBody = {
       'query': _eventsByAccountsWithRewardsQuery,
-      'variables': <String, dynamic>{
-        'accounts': accountIds,
-        'limit': limit,
-        'offset': offset,
-      },
+      'variables': <String, dynamic>{'accounts': accountIds, 'limit': limit, 'offset': offset},
     };
 
     try {
-      final http.Response response = await _graphQlEndpointService.post(
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -609,12 +568,9 @@ query SearchPendingTransaction(
           transferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(TransferEvent.fromJson(transferData));
         } else if (event['reversibleTransfer'] != null) {
-          final reversibleTransferData =
-              event['reversibleTransfer'] as Map<String, dynamic>;
+          final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
           reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
-          transactions.add(
-            ReversibleTransferEvent.fromJson(reversibleTransferData),
-          );
+          transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
         } else if (event['minerReward'] != null) {
           final minerRewardData = event['minerReward'] as Map<String, dynamic>;
           minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
@@ -625,11 +581,7 @@ query SearchPendingTransaction(
       final bool hasMore = events.length == limit;
       final int nextOffset = offset + events.length;
 
-      return TransferList(
-        transfers: transactions,
-        hasMore: hasMore,
-        nextOffset: nextOffset,
-      );
+      return TransferList(transfers: transactions, hasMore: hasMore, nextOffset: nextOffset);
     } catch (e, stackTrace) {
       print('Error fetching transfers: $e');
       print(stackTrace);
@@ -648,21 +600,15 @@ query SearchPendingTransaction(
     print('Fetching transactions in block: $blockHash');
 
     final Map<String, dynamic> requestBody = {
-      'query': isReversible
-          ? _reversibleTransactionsInBlockQuery
-          : _transferInBlockQuery,
+      'query': isReversible ? _reversibleTransactionsInBlockQuery : _transferInBlockQuery,
       'variables': {'blockHash': blockHash, 'from': from, 'to': to},
     };
 
     try {
-      final http.Response response = await _graphQlEndpointService.post(
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -695,12 +641,9 @@ query SearchPendingTransaction(
           transferData['extrinsicHash'] ??= event['extrinsicHash'];
           transactions.add(TransferEvent.fromJson(transferData));
         } else if (event['reversibleTransfer'] != null) {
-          final reversibleTransferData =
-              event['reversibleTransfer'] as Map<String, dynamic>;
+          final reversibleTransferData = event['reversibleTransfer'] as Map<String, dynamic>;
           reversibleTransferData['extrinsicHash'] ??= event['extrinsicHash'];
-          transactions.add(
-            ReversibleTransferEvent.fromJson(reversibleTransferData),
-          );
+          transactions.add(ReversibleTransferEvent.fromJson(reversibleTransferData));
         } else if (event['minerReward'] != null) {
           final minerRewardData = event['minerReward'] as Map<String, dynamic>;
           minerRewardData['extrinsicHash'] ??= event['extrinsicHash'];
@@ -709,10 +652,7 @@ query SearchPendingTransaction(
       }
 
       print('Found ${transactions.length} transactions in block $blockHash');
-      return BlockQueryResponse(
-        blockExists: blockExists,
-        transactions: transactions,
-      );
+      return BlockQueryResponse(blockExists: blockExists, transactions: transactions);
     } catch (e, stackTrace) {
       print('Error fetching transactions by block hash: $e');
       print(stackTrace);
@@ -737,9 +677,7 @@ query SearchPendingTransaction(
     );
 
     final Map<String, dynamic> requestBody = {
-      'query': isReversible
-          ? _searchPendingReversibleQuery
-          : _searchPendingTransferQuery,
+      'query': isReversible ? _searchPendingReversibleQuery : _searchPendingTransferQuery,
       'variables': {
         'from': from,
         'to': to,
@@ -750,14 +688,10 @@ query SearchPendingTransaction(
     };
 
     try {
-      final http.Response response = await _graphQlEndpointService.post(
-        body: jsonEncode(requestBody),
-      );
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-        );
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
@@ -783,8 +717,7 @@ query SearchPendingTransaction(
       var eventJson = events.first!;
 
       if (isReversible) {
-        final reversibleTransferData =
-            eventJson['reversibleTransfer'] as Map<String, dynamic>;
+        final reversibleTransferData = eventJson['reversibleTransfer'] as Map<String, dynamic>;
         transaction = ReversibleTransferEvent.fromJson(reversibleTransferData);
       } else {
         final transferData = eventJson['transfer'] as Map<String, dynamic>;

@@ -6,10 +6,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../cow_1.dart' as _i2;
 
 class LastRuntimeUpgradeInfo {
-  const LastRuntimeUpgradeInfo({
-    required this.specVersion,
-    required this.specName,
-  });
+  const LastRuntimeUpgradeInfo({required this.specVersion, required this.specName});
 
   factory LastRuntimeUpgradeInfo.decode(_i1.Input input) {
     return codec.decode(input);
@@ -21,51 +18,30 @@ class LastRuntimeUpgradeInfo {
   /// Cow<'static, str>
   final _i2.Cow specName;
 
-  static const $LastRuntimeUpgradeInfoCodec codec =
-      $LastRuntimeUpgradeInfoCodec();
+  static const $LastRuntimeUpgradeInfoCodec codec = $LastRuntimeUpgradeInfoCodec();
 
   _i3.Uint8List encode() {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'specVersion': specVersion,
-        'specName': specName,
-      };
+  Map<String, dynamic> toJson() => {'specVersion': specVersion, 'specName': specName};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is LastRuntimeUpgradeInfo &&
-          other.specVersion == specVersion &&
-          other.specName == specName;
+      identical(this, other) ||
+      other is LastRuntimeUpgradeInfo && other.specVersion == specVersion && other.specName == specName;
 
   @override
-  int get hashCode => Object.hash(
-        specVersion,
-        specName,
-      );
+  int get hashCode => Object.hash(specVersion, specName);
 }
 
 class $LastRuntimeUpgradeInfoCodec with _i1.Codec<LastRuntimeUpgradeInfo> {
   const $LastRuntimeUpgradeInfoCodec();
 
   @override
-  void encodeTo(
-    LastRuntimeUpgradeInfo obj,
-    _i1.Output output,
-  ) {
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      obj.specVersion,
-      output,
-    );
-    _i1.StrCodec.codec.encodeTo(
-      obj.specName,
-      output,
-    );
+  void encodeTo(LastRuntimeUpgradeInfo obj, _i1.Output output) {
+    _i1.CompactBigIntCodec.codec.encodeTo(obj.specVersion, output);
+    _i1.StrCodec.codec.encodeTo(obj.specName, output);
   }
 
   @override

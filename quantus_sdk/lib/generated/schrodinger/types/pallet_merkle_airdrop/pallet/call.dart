@@ -34,26 +34,12 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  CreateAirdrop createAirdrop({
-    required List<int> merkleRoot,
-    int? vestingPeriod,
-    int? vestingDelay,
-  }) {
-    return CreateAirdrop(
-      merkleRoot: merkleRoot,
-      vestingPeriod: vestingPeriod,
-      vestingDelay: vestingDelay,
-    );
+  CreateAirdrop createAirdrop({required List<int> merkleRoot, int? vestingPeriod, int? vestingDelay}) {
+    return CreateAirdrop(merkleRoot: merkleRoot, vestingPeriod: vestingPeriod, vestingDelay: vestingDelay);
   }
 
-  FundAirdrop fundAirdrop({
-    required int airdropId,
-    required BigInt amount,
-  }) {
-    return FundAirdrop(
-      airdropId: airdropId,
-      amount: amount,
-    );
+  FundAirdrop fundAirdrop({required int airdropId, required BigInt amount}) {
+    return FundAirdrop(airdropId: airdropId, amount: amount);
   }
 
   Claim claim({
@@ -62,12 +48,7 @@ class $Call {
     required BigInt amount,
     required List<List<int>> merkleProof,
   }) {
-    return Claim(
-      airdropId: airdropId,
-      recipient: recipient,
-      amount: amount,
-      merkleProof: merkleProof,
-    );
+    return Claim(airdropId: airdropId, recipient: recipient, amount: amount, merkleProof: merkleProof);
   }
 
   DeleteAirdrop deleteAirdrop({required int airdropId}) {
@@ -96,10 +77,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case CreateAirdrop:
         (value as CreateAirdrop).encodeTo(output);
@@ -114,8 +92,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as DeleteAirdrop).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -131,8 +108,7 @@ class $CallCodec with _i1.Codec<Call> {
       case DeleteAirdrop:
         return (value as DeleteAirdrop)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -150,19 +126,13 @@ class $CallCodec with _i1.Codec<Call> {
 /// * `vesting_period` - Optional vesting period for the airdrop
 /// * `vesting_delay` - Optional delay before vesting starts
 class CreateAirdrop extends Call {
-  const CreateAirdrop({
-    required this.merkleRoot,
-    this.vestingPeriod,
-    this.vestingDelay,
-  });
+  const CreateAirdrop({required this.merkleRoot, this.vestingPeriod, this.vestingDelay});
 
   factory CreateAirdrop._decode(_i1.Input input) {
     return CreateAirdrop(
       merkleRoot: const _i1.U8ArrayCodec(32).decode(input),
-      vestingPeriod:
-          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
-      vestingDelay:
-          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+      vestingPeriod: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+      vestingDelay: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
     );
   }
 
@@ -177,62 +147,34 @@ class CreateAirdrop extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'create_airdrop': {
-          'merkleRoot': merkleRoot.toList(),
-          'vestingPeriod': vestingPeriod,
-          'vestingDelay': vestingDelay,
-        }
-      };
+    'create_airdrop': {'merkleRoot': merkleRoot.toList(), 'vestingPeriod': vestingPeriod, 'vestingDelay': vestingDelay},
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(32).sizeHint(merkleRoot);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingPeriod);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingDelay);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingPeriod);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(vestingDelay);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      merkleRoot,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      vestingPeriod,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      vestingDelay,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(merkleRoot, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(vestingPeriod, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(vestingDelay, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is CreateAirdrop &&
-          _i4.listsEqual(
-            other.merkleRoot,
-            merkleRoot,
-          ) &&
+          _i4.listsEqual(other.merkleRoot, merkleRoot) &&
           other.vestingPeriod == vestingPeriod &&
           other.vestingDelay == vestingDelay;
 
   @override
-  int get hashCode => Object.hash(
-        merkleRoot,
-        vestingPeriod,
-        vestingDelay,
-      );
+  int get hashCode => Object.hash(merkleRoot, vestingPeriod, vestingDelay);
 }
 
 /// Fund an existing airdrop with tokens.
@@ -250,16 +192,10 @@ class CreateAirdrop extends Call {
 ///
 /// * `AirdropNotFound` - If the specified airdrop does not exist
 class FundAirdrop extends Call {
-  const FundAirdrop({
-    required this.airdropId,
-    required this.amount,
-  });
+  const FundAirdrop({required this.airdropId, required this.amount});
 
   factory FundAirdrop._decode(_i1.Input input) {
-    return FundAirdrop(
-      airdropId: _i1.U32Codec.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return FundAirdrop(airdropId: _i1.U32Codec.codec.decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// AirdropId
@@ -270,11 +206,8 @@ class FundAirdrop extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'fund_airdrop': {
-          'airdropId': airdropId,
-          'amount': amount,
-        }
-      };
+    'fund_airdrop': {'airdropId': airdropId, 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -284,35 +217,17 @@ class FundAirdrop extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is FundAirdrop &&
-          other.airdropId == airdropId &&
-          other.amount == amount;
+      identical(this, other) || other is FundAirdrop && other.airdropId == airdropId && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        airdropId,
-        amount,
-      );
+  int get hashCode => Object.hash(airdropId, amount);
 }
 
 /// Claim tokens from an airdrop by providing a Merkle proof.
@@ -335,20 +250,14 @@ class FundAirdrop extends Call {
 /// * `InvalidProof` - If the provided Merkle proof is invalid
 /// * `InsufficientAirdropBalance` - If the airdrop doesn't have enough tokens
 class Claim extends Call {
-  const Claim({
-    required this.airdropId,
-    required this.recipient,
-    required this.amount,
-    required this.merkleProof,
-  });
+  const Claim({required this.airdropId, required this.recipient, required this.amount, required this.merkleProof});
 
   factory Claim._decode(_i1.Input input) {
     return Claim(
       airdropId: _i1.U32Codec.codec.decode(input),
       recipient: const _i1.U8ArrayCodec(32).decode(input),
       amount: _i1.U128Codec.codec.decode(input),
-      merkleProof: const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32))
-          .decode(input),
+      merkleProof: const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
@@ -366,73 +275,42 @@ class Claim extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'claim': {
-          'airdropId': airdropId,
-          'recipient': recipient.toList(),
-          'amount': amount,
-          'merkleProof': merkleProof.map((value) => value.toList()).toList(),
-        }
-      };
+    'claim': {
+      'airdropId': airdropId,
+      'recipient': recipient.toList(),
+      'amount': amount,
+      'merkleProof': merkleProof.map((value) => value.toList()).toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(airdropId);
     size = size + const _i3.AccountId32Codec().sizeHint(recipient);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
-    size = size +
-        const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32))
-            .sizeHint(merkleProof);
+    size = size + const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(merkleProof);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      recipient,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      merkleProof,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
+    const _i1.U8ArrayCodec(32).encodeTo(recipient, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(merkleProof, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Claim &&
           other.airdropId == airdropId &&
-          _i4.listsEqual(
-            other.recipient,
-            recipient,
-          ) &&
+          _i4.listsEqual(other.recipient, recipient) &&
           other.amount == amount &&
-          _i4.listsEqual(
-            other.merkleProof,
-            merkleProof,
-          );
+          _i4.listsEqual(other.merkleProof, merkleProof);
 
   @override
-  int get hashCode => Object.hash(
-        airdropId,
-        recipient,
-        amount,
-        merkleProof,
-      );
+  int get hashCode => Object.hash(airdropId, recipient, amount, merkleProof);
 }
 
 /// Delete an airdrop and reclaim any remaining funds.
@@ -461,8 +339,8 @@ class DeleteAirdrop extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'delete_airdrop': {'airdropId': airdropId}
-      };
+    'delete_airdrop': {'airdropId': airdropId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -471,23 +349,12 @@ class DeleteAirdrop extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      airdropId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U32Codec.codec.encodeTo(airdropId, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DeleteAirdrop && other.airdropId == airdropId;
+  bool operator ==(Object other) => identical(this, other) || other is DeleteAirdrop && other.airdropId == airdropId;
 
   @override
   int get hashCode => airdropId.hashCode;

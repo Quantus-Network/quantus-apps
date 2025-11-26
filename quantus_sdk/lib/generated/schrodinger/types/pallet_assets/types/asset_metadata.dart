@@ -39,70 +39,37 @@ class AssetMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        'deposit': deposit,
-        'name': name,
-        'symbol': symbol,
-        'decimals': decimals,
-        'isFrozen': isFrozen,
-      };
+    'deposit': deposit,
+    'name': name,
+    'symbol': symbol,
+    'decimals': decimals,
+    'isFrozen': isFrozen,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AssetMetadata &&
           other.deposit == deposit &&
-          _i3.listsEqual(
-            other.name,
-            name,
-          ) &&
-          _i3.listsEqual(
-            other.symbol,
-            symbol,
-          ) &&
+          _i3.listsEqual(other.name, name) &&
+          _i3.listsEqual(other.symbol, symbol) &&
           other.decimals == decimals &&
           other.isFrozen == isFrozen;
 
   @override
-  int get hashCode => Object.hash(
-        deposit,
-        name,
-        symbol,
-        decimals,
-        isFrozen,
-      );
+  int get hashCode => Object.hash(deposit, name, symbol, decimals, isFrozen);
 }
 
 class $AssetMetadataCodec with _i1.Codec<AssetMetadata> {
   const $AssetMetadataCodec();
 
   @override
-  void encodeTo(
-    AssetMetadata obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.deposit,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      obj.name,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      obj.symbol,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      obj.decimals,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      obj.isFrozen,
-      output,
-    );
+  void encodeTo(AssetMetadata obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.deposit, output);
+    _i1.U8SequenceCodec.codec.encodeTo(obj.name, output);
+    _i1.U8SequenceCodec.codec.encodeTo(obj.symbol, output);
+    _i1.U8Codec.codec.encodeTo(obj.decimals, output);
+    _i1.BoolCodec.codec.encodeTo(obj.isFrozen, output);
   }
 
   @override

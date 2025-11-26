@@ -20,13 +20,10 @@ class Skeleton extends StatefulWidget {
   });
 
   /// Creates a circular skeleton (useful for avatars)
-  const Skeleton.circular({
-    super.key,
-    required double size,
-    this.duration = const Duration(milliseconds: 1500),
-  }) : width = size,
-       height = size,
-       borderRadius = null;
+  const Skeleton.circular({super.key, required double size, this.duration = const Duration(milliseconds: 1500)})
+    : width = size,
+      height = size,
+      borderRadius = null;
 
   @override
   State<Skeleton> createState() => _SkeletonState();
@@ -58,7 +55,7 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
     final themeColors = Theme.of(context).extension<AppColorsTheme>();
     final baseColor = themeColors?.skeletonBase ?? _defaultSkeletonBaseColor;
     final highlightColor = themeColors?.skeletonHighlight ?? _defaultSkeletonHighlightColor;
-    
+
     final borderRadius =
         widget.borderRadius ??
         (widget.width == widget.height ? BorderRadius.circular(widget.width ?? 0) : BorderRadius.circular(4));

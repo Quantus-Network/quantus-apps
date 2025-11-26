@@ -41,11 +41,7 @@ class $Call {
     required _i4.Bounded proposal,
     required _i5.DispatchTime enactmentMoment,
   }) {
-    return Submit(
-      proposalOrigin: proposalOrigin,
-      proposal: proposal,
-      enactmentMoment: enactmentMoment,
-    );
+    return Submit(proposalOrigin: proposalOrigin, proposal: proposal, enactmentMoment: enactmentMoment);
   }
 
   PlaceDecisionDeposit placeDecisionDeposit({required int index}) {
@@ -76,14 +72,8 @@ class $Call {
     return RefundSubmissionDeposit(index: index);
   }
 
-  SetMetadata setMetadata({
-    required int index,
-    _i6.H256? maybeHash,
-  }) {
-    return SetMetadata(
-      index: index,
-      maybeHash: maybeHash,
-    );
+  SetMetadata setMetadata({required int index, _i6.H256? maybeHash}) {
+    return SetMetadata(index: index, maybeHash: maybeHash);
   }
 }
 
@@ -118,10 +108,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Submit:
         (value as Submit).encodeTo(output);
@@ -151,8 +138,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as SetMetadata).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -178,8 +164,7 @@ class $CallCodec with _i1.Codec<Call> {
       case SetMetadata:
         return (value as SetMetadata)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -194,11 +179,7 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// Emits `Submitted`.
 class Submit extends Call {
-  const Submit({
-    required this.proposalOrigin,
-    required this.proposal,
-    required this.enactmentMoment,
-  });
+  const Submit({required this.proposalOrigin, required this.proposal, required this.enactmentMoment});
 
   factory Submit._decode(_i1.Input input) {
     return Submit(
@@ -219,12 +200,12 @@ class Submit extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'submit': {
-          'proposalOrigin': proposalOrigin.toJson(),
-          'proposal': proposal.toJson(),
-          'enactmentMoment': enactmentMoment.toJson(),
-        }
-      };
+    'submit': {
+      'proposalOrigin': proposalOrigin.toJson(),
+      'proposal': proposal.toJson(),
+      'enactmentMoment': enactmentMoment.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -235,41 +216,22 @@ class Submit extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.OriginCaller.codec.encodeTo(
-      proposalOrigin,
-      output,
-    );
-    _i4.Bounded.codec.encodeTo(
-      proposal,
-      output,
-    );
-    _i5.DispatchTime.codec.encodeTo(
-      enactmentMoment,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.OriginCaller.codec.encodeTo(proposalOrigin, output);
+    _i4.Bounded.codec.encodeTo(proposal, output);
+    _i5.DispatchTime.codec.encodeTo(enactmentMoment, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Submit &&
           other.proposalOrigin == proposalOrigin &&
           other.proposal == proposal &&
           other.enactmentMoment == enactmentMoment;
 
   @override
-  int get hashCode => Object.hash(
-        proposalOrigin,
-        proposal,
-        enactmentMoment,
-      );
+  int get hashCode => Object.hash(proposalOrigin, proposal, enactmentMoment);
 }
 
 /// Post the Decision Deposit for a referendum.
@@ -292,8 +254,8 @@ class PlaceDecisionDeposit extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'place_decision_deposit': {'index': index}
-      };
+    'place_decision_deposit': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -302,23 +264,12 @@ class PlaceDecisionDeposit extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PlaceDecisionDeposit && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is PlaceDecisionDeposit && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -343,8 +294,8 @@ class RefundDecisionDeposit extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'refund_decision_deposit': {'index': index}
-      };
+    'refund_decision_deposit': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -353,23 +304,12 @@ class RefundDecisionDeposit extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RefundDecisionDeposit && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is RefundDecisionDeposit && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -393,8 +333,8 @@ class Cancel extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'cancel': {'index': index}
-      };
+    'cancel': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -403,23 +343,12 @@ class Cancel extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Cancel && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is Cancel && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -443,8 +372,8 @@ class Kill extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'kill': {'index': index}
-      };
+    'kill': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -453,23 +382,12 @@ class Kill extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Kill && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is Kill && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -491,8 +409,8 @@ class NudgeReferendum extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'nudge_referendum': {'index': index}
-      };
+    'nudge_referendum': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -501,23 +419,12 @@ class NudgeReferendum extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is NudgeReferendum && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is NudgeReferendum && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -544,8 +451,8 @@ class OneFewerDeciding extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'one_fewer_deciding': {'track': track}
-      };
+    'one_fewer_deciding': {'track': track},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -554,23 +461,12 @@ class OneFewerDeciding extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      track,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U16Codec.codec.encodeTo(track, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is OneFewerDeciding && other.track == track;
+  bool operator ==(Object other) => identical(this, other) || other is OneFewerDeciding && other.track == track;
 
   @override
   int get hashCode => track.hashCode;
@@ -595,8 +491,8 @@ class RefundSubmissionDeposit extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'refund_submission_deposit': {'index': index}
-      };
+    'refund_submission_deposit': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -605,23 +501,12 @@ class RefundSubmissionDeposit extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RefundSubmissionDeposit && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is RefundSubmissionDeposit && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -635,10 +520,7 @@ class RefundSubmissionDeposit extends Call {
 /// - `index`:  The index of a referendum to set or clear metadata for.
 /// - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
 class SetMetadata extends Call {
-  const SetMetadata({
-    required this.index,
-    this.maybeHash,
-  });
+  const SetMetadata({required this.index, this.maybeHash});
 
   factory SetMetadata._decode(_i1.Input input) {
     return SetMetadata(
@@ -655,48 +537,26 @@ class SetMetadata extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_metadata': {
-          'index': index,
-          'maybeHash': maybeHash?.toList(),
-        }
-      };
+    'set_metadata': {'index': index, 'maybeHash': maybeHash?.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U32Codec.codec.sizeHint(index);
-    size = size +
-        const _i1.OptionCodec<_i6.H256>(_i6.H256Codec()).sizeHint(maybeHash);
+    size = size + const _i1.OptionCodec<_i6.H256>(_i6.H256Codec()).sizeHint(maybeHash);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.OptionCodec<_i6.H256>(_i6.H256Codec()).encodeTo(
-      maybeHash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.OptionCodec<_i6.H256>(_i6.H256Codec()).encodeTo(maybeHash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetMetadata &&
-          other.index == index &&
-          other.maybeHash == maybeHash;
+      identical(this, other) || other is SetMetadata && other.index == index && other.maybeHash == maybeHash;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        maybeHash,
-      );
+  int get hashCode => Object.hash(index, maybeHash);
 }

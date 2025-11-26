@@ -29,8 +29,7 @@ abstract class BuildCommand extends Command {
   Future<void> run() async {
     final options = CargokitUserOptions.load();
 
-    if (options.verboseLogging ||
-        Platform.environment['CARGOKIT_VERBOSE'] == '1') {
+    if (options.verboseLogging || Platform.environment['CARGOKIT_VERBOSE'] == '1') {
       enableVerboseLogging();
     }
 
@@ -170,14 +169,12 @@ class PrecompileBinariesCommand extends Command {
     if (!Directory(manifestDir).existsSync()) {
       throw ArgumentError('Manifest directory does not exist: $manifestDir');
     }
-    String? androidMinSdkVersionString =
-        argResults!['android-min-sdk-version'] as String?;
+    String? androidMinSdkVersionString = argResults!['android-min-sdk-version'] as String?;
     int? androidMinSdkVersion;
     if (androidMinSdkVersionString != null) {
       androidMinSdkVersion = int.tryParse(androidMinSdkVersionString);
       if (androidMinSdkVersion == null) {
-        throw ArgumentError(
-            'Invalid android-min-sdk-version: $androidMinSdkVersionString');
+        throw ArgumentError('Invalid android-min-sdk-version: $androidMinSdkVersionString');
       }
     }
     final targetStrigns = argResults!['target'] as List<String>;

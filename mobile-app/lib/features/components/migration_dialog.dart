@@ -13,12 +13,7 @@ class MigrationDialog extends StatefulWidget {
   final Future<void> Function() onMigrate;
   final Future<void> Function()? onTryLater;
 
-  const MigrationDialog({
-    super.key,
-    required this.migrationData,
-    required this.onMigrate,
-    this.onTryLater,
-  });
+  const MigrationDialog({super.key, required this.migrationData, required this.onMigrate, this.onTryLater});
 
   static Future<void> show({
     required BuildContext context,
@@ -41,11 +36,7 @@ class MigrationDialog extends StatefulWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black,
-                    const Color(0xFF312E6E).useOpacity(0.4),
-                    Colors.black,
-                  ],
+                  colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
                 ),
               ),
             ),
@@ -58,11 +49,7 @@ class MigrationDialog extends StatefulWidget {
               filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
               child: Container(
                 color: Colors.black.useOpacity(0.3),
-                child: MigrationDialog(
-                  migrationData: migrationData,
-                  onMigrate: onMigrate,
-                  onTryLater: onTryLater,
-                ),
+                child: MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
               ),
             ),
           ),
@@ -105,10 +92,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Migrate your accounts',
-                  style: context.themeText.mediumTitle,
-                ),
+                Text('Migrate your accounts', style: context.themeText.mediumTitle),
                 const SizedBox(height: 16),
                 Text(
                   'We\'ll record your old‑chain mining rewards and actions to determine '
@@ -129,10 +113,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                 if (_errorMessage != null) ...[
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: context.themeColors.error.useOpacity(0.15),
@@ -140,9 +121,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     ),
                     child: Text(
                       _errorMessage!,
-                      style: context.themeText.smallParagraph?.copyWith(
-                        color: context.themeColors.error,
-                      ),
+                      style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.error),
                     ),
                   ),
                 ],
@@ -164,8 +143,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                     } catch (e) {
                       if (mounted) {
                         setState(() {
-                          _errorMessage =
-                              'We couldn\'t upload migration data. Please retry or try later.';
+                          _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.';
                         });
                       }
                     } finally {
@@ -189,9 +167,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
                         Navigator.of(context).pop();
                       }
                     },
-                    textStyle: context.themeText.smallParagraph?.copyWith(
-                      decoration: TextDecoration.underline,
-                    ),
+                    textStyle: context.themeText.smallParagraph?.copyWith(decoration: TextDecoration.underline),
                   ),
                 ],
                 const SizedBox(height: 48),

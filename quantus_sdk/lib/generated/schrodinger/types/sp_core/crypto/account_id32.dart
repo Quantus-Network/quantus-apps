@@ -12,14 +12,8 @@ class AccountId32Codec with _i1.Codec<AccountId32> {
   }
 
   @override
-  void encodeTo(
-    AccountId32 value,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(AccountId32 value, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(value, output);
   }
 
   @override

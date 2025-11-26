@@ -5,15 +5,12 @@ import 'package:resonance_network_wallet/providers/controllers/unified_paginatio
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 
-final paginationControllerProvider =
-    StateNotifierProvider<UnifiedPaginationController, PaginationState>(
-      (ref) => UnifiedPaginationController(ref),
-    );
+final paginationControllerProvider = StateNotifierProvider<UnifiedPaginationController, PaginationState>(
+  (ref) => UnifiedPaginationController(ref),
+);
 
 // Combined provider that reacts to both pending and paginated data
-final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
-  ref,
-) {
+final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((ref) {
   final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
   final pending = ref.watch(pendingTransactionsProvider);
   final pagination = ref.watch(paginationControllerProvider);

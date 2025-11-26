@@ -10,8 +10,7 @@ abstract class BlockNumberOrTimestamp {
     return codec.decode(input);
   }
 
-  static const $BlockNumberOrTimestampCodec codec =
-      $BlockNumberOrTimestampCodec();
+  static const $BlockNumberOrTimestampCodec codec = $BlockNumberOrTimestampCodec();
 
   static const $BlockNumberOrTimestamp values = $BlockNumberOrTimestamp();
 
@@ -52,16 +51,12 @@ class $BlockNumberOrTimestampCodec with _i1.Codec<BlockNumberOrTimestamp> {
       case 1:
         return Timestamp._decode(input);
       default:
-        throw Exception(
-            'BlockNumberOrTimestamp: Invalid variant index: "$index"');
+        throw Exception('BlockNumberOrTimestamp: Invalid variant index: "$index"');
     }
   }
 
   @override
-  void encodeTo(
-    BlockNumberOrTimestamp value,
-    _i1.Output output,
-  ) {
+  void encodeTo(BlockNumberOrTimestamp value, _i1.Output output) {
     switch (value.runtimeType) {
       case BlockNumber:
         (value as BlockNumber).encodeTo(output);
@@ -70,8 +65,7 @@ class $BlockNumberOrTimestampCodec with _i1.Codec<BlockNumberOrTimestamp> {
         (value as Timestamp).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'BlockNumberOrTimestamp: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('BlockNumberOrTimestamp: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -83,8 +77,7 @@ class $BlockNumberOrTimestampCodec with _i1.Codec<BlockNumberOrTimestamp> {
       case Timestamp:
         return (value as Timestamp)._sizeHint();
       default:
-        throw Exception(
-            'BlockNumberOrTimestamp: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('BlockNumberOrTimestamp: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -109,23 +102,12 @@ class BlockNumber extends BlockNumberOrTimestamp {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BlockNumber && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is BlockNumber && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -151,23 +133,12 @@ class Timestamp extends BlockNumberOrTimestamp {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U64Codec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Timestamp && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Timestamp && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

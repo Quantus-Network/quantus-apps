@@ -7,10 +7,7 @@ enum AdjustmentDirection {
   increase('Increase', 0),
   decrease('Decrease', 1);
 
-  const AdjustmentDirection(
-    this.variantName,
-    this.codecIndex,
-  );
+  const AdjustmentDirection(this.variantName, this.codecIndex);
 
   factory AdjustmentDirection.decode(_i1.Input input) {
     return codec.decode(input);
@@ -45,13 +42,7 @@ class $AdjustmentDirectionCodec with _i1.Codec<AdjustmentDirection> {
   }
 
   @override
-  void encodeTo(
-    AdjustmentDirection value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(AdjustmentDirection value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

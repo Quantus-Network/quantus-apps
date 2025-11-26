@@ -11,12 +11,7 @@ class ActionButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool disabled;
 
-  const ActionButton({
-    super.key,
-    required this.type,
-    required this.onPressed,
-    this.disabled = false,
-  });
+  const ActionButton({super.key, required this.type, required this.onPressed, this.disabled = false});
 
   String get label {
     switch (type) {
@@ -36,15 +31,9 @@ class ActionButton extends StatelessWidget {
       case ActionType.send:
         return Image.asset('assets/transaction/send_icon.png');
       case ActionType.receive:
-        return SvgPicture.asset(
-          'assets/transaction/receive_icon.svg',
-          width: 19,
-        );
+        return SvgPicture.asset('assets/transaction/receive_icon.svg', width: 19);
       case ActionType.bridge:
-        return SvgPicture.asset(
-          'assets/transaction/bridge_icon.svg',
-          width: 19,
-        );
+        return SvgPicture.asset('assets/transaction/bridge_icon.svg', width: 19);
       case ActionType.swap:
         return SvgPicture.asset('assets/transaction/swap_icon.svg', width: 19);
     }
@@ -76,11 +65,7 @@ class ActionButton extends StatelessWidget {
         height: context.themeSize.mainMenuHeight,
       );
     } else if (iconWidget is Icon) {
-      finalIconWidget = Icon(
-        (iconWidget as Icon).icon,
-        color: color,
-        size: context.themeSize.mainMenuHeight,
-      );
+      finalIconWidget = Icon((iconWidget as Icon).icon, color: color, size: context.themeSize.mainMenuHeight);
     } else if (iconWidget is Image) {
       finalIconWidget = SizedBox(
         width: context.themeSize.mainMenuWidth,
@@ -99,10 +84,7 @@ class ActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: bgColor,
-            image: DecorationImage(
-              image: AssetImage(frameImagePath),
-              fit: BoxFit.contain,
-            ),
+            image: DecorationImage(image: AssetImage(frameImagePath), fit: BoxFit.contain),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Row(
@@ -111,11 +93,7 @@ class ActionButton extends StatelessWidget {
             children: [
               finalIconWidget,
               const SizedBox(width: 10),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: context.themeText.tag,
-              ),
+              Text(label, textAlign: TextAlign.center, style: context.themeText.tag),
             ],
           ),
         ),

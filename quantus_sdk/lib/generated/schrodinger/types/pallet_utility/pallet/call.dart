@@ -40,62 +40,32 @@ class $Call {
     return Batch(calls: calls);
   }
 
-  AsDerivative asDerivative({
-    required int index,
-    required _i3.RuntimeCall call,
-  }) {
-    return AsDerivative(
-      index: index,
-      call: call,
-    );
+  AsDerivative asDerivative({required int index, required _i3.RuntimeCall call}) {
+    return AsDerivative(index: index, call: call);
   }
 
   BatchAll batchAll({required List<_i3.RuntimeCall> calls}) {
     return BatchAll(calls: calls);
   }
 
-  DispatchAs dispatchAs({
-    required _i4.OriginCaller asOrigin,
-    required _i3.RuntimeCall call,
-  }) {
-    return DispatchAs(
-      asOrigin: asOrigin,
-      call: call,
-    );
+  DispatchAs dispatchAs({required _i4.OriginCaller asOrigin, required _i3.RuntimeCall call}) {
+    return DispatchAs(asOrigin: asOrigin, call: call);
   }
 
   ForceBatch forceBatch({required List<_i3.RuntimeCall> calls}) {
     return ForceBatch(calls: calls);
   }
 
-  WithWeight withWeight({
-    required _i3.RuntimeCall call,
-    required _i5.Weight weight,
-  }) {
-    return WithWeight(
-      call: call,
-      weight: weight,
-    );
+  WithWeight withWeight({required _i3.RuntimeCall call, required _i5.Weight weight}) {
+    return WithWeight(call: call, weight: weight);
   }
 
-  IfElse ifElse({
-    required _i3.RuntimeCall main,
-    required _i3.RuntimeCall fallback,
-  }) {
-    return IfElse(
-      main: main,
-      fallback: fallback,
-    );
+  IfElse ifElse({required _i3.RuntimeCall main, required _i3.RuntimeCall fallback}) {
+    return IfElse(main: main, fallback: fallback);
   }
 
-  DispatchAsFallible dispatchAsFallible({
-    required _i4.OriginCaller asOrigin,
-    required _i3.RuntimeCall call,
-  }) {
-    return DispatchAsFallible(
-      asOrigin: asOrigin,
-      call: call,
-    );
+  DispatchAsFallible dispatchAsFallible({required _i4.OriginCaller asOrigin, required _i3.RuntimeCall call}) {
+    return DispatchAsFallible(asOrigin: asOrigin, call: call);
   }
 }
 
@@ -128,10 +98,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Batch:
         (value as Batch).encodeTo(output);
@@ -158,8 +125,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as DispatchAsFallible).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -183,8 +149,7 @@ class $CallCodec with _i1.Codec<Call> {
       case DispatchAsFallible:
         return (value as DispatchAsFallible)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -211,50 +176,30 @@ class Batch extends Call {
   const Batch({required this.calls});
 
   factory Batch._decode(_i1.Input input) {
-    return Batch(
-        calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .decode(input));
+    return Batch(calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).decode(input));
   }
 
   /// Vec<<T as Config>::RuntimeCall>
   final List<_i3.RuntimeCall> calls;
 
   @override
-  Map<String, Map<String, List<Map<String, Map<String, dynamic>>>>> toJson() =>
-      {
-        'batch': {'calls': calls.map((value) => value.toJson()).toList()}
-      };
+  Map<String, Map<String, List<Map<String, Map<String, dynamic>>>>> toJson() => {
+    'batch': {'calls': calls.map((value) => value.toJson()).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .sizeHint(calls);
+    size = size + const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).sizeHint(calls);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(
-      calls,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(calls, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Batch &&
-          _i6.listsEqual(
-            other.calls,
-            calls,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Batch && _i6.listsEqual(other.calls, calls);
 
   @override
   int get hashCode => calls.hashCode;
@@ -274,16 +219,10 @@ class Batch extends Call {
 ///
 /// The dispatch origin for this call must be _Signed_.
 class AsDerivative extends Call {
-  const AsDerivative({
-    required this.index,
-    required this.call,
-  });
+  const AsDerivative({required this.index, required this.call});
 
   factory AsDerivative._decode(_i1.Input input) {
-    return AsDerivative(
-      index: _i1.U16Codec.codec.decode(input),
-      call: _i3.RuntimeCall.codec.decode(input),
-    );
+    return AsDerivative(index: _i1.U16Codec.codec.decode(input), call: _i3.RuntimeCall.codec.decode(input));
   }
 
   /// u16
@@ -294,11 +233,8 @@ class AsDerivative extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'as_derivative': {
-          'index': index,
-          'call': call.toJson(),
-        }
-      };
+    'as_derivative': {'index': index, 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -308,33 +244,17 @@ class AsDerivative extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U16Codec.codec.encodeTo(index, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AsDerivative && other.index == index && other.call == call;
+      identical(this, other) || other is AsDerivative && other.index == index && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        call,
-      );
+  int get hashCode => Object.hash(index, call);
 }
 
 /// Send a batch of dispatch calls and atomically execute them.
@@ -354,9 +274,7 @@ class BatchAll extends Call {
   const BatchAll({required this.calls});
 
   factory BatchAll._decode(_i1.Input input) {
-    return BatchAll(
-        calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .decode(input));
+    return BatchAll(calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).decode(input));
   }
 
   /// Vec<<T as Config>::RuntimeCall>
@@ -364,39 +282,22 @@ class BatchAll extends Call {
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-        'batch_all': {'calls': calls.map((value) => value.toJson()).toList()}
-      };
+    'batch_all': {'calls': calls.map((value) => value.toJson()).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .sizeHint(calls);
+    size = size + const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).sizeHint(calls);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(
-      calls,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(calls, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BatchAll &&
-          _i6.listsEqual(
-            other.calls,
-            calls,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is BatchAll && _i6.listsEqual(other.calls, calls);
 
   @override
   int get hashCode => calls.hashCode;
@@ -409,16 +310,10 @@ class BatchAll extends Call {
 /// ## Complexity
 /// - O(1).
 class DispatchAs extends Call {
-  const DispatchAs({
-    required this.asOrigin,
-    required this.call,
-  });
+  const DispatchAs({required this.asOrigin, required this.call});
 
   factory DispatchAs._decode(_i1.Input input) {
-    return DispatchAs(
-      asOrigin: _i4.OriginCaller.codec.decode(input),
-      call: _i3.RuntimeCall.codec.decode(input),
-    );
+    return DispatchAs(asOrigin: _i4.OriginCaller.codec.decode(input), call: _i3.RuntimeCall.codec.decode(input));
   }
 
   /// Box<T::PalletsOrigin>
@@ -429,11 +324,8 @@ class DispatchAs extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'dispatch_as': {
-          'asOrigin': asOrigin.toJson(),
-          'call': call.toJson(),
-        }
-      };
+    'dispatch_as': {'asOrigin': asOrigin.toJson(), 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -443,33 +335,17 @@ class DispatchAs extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i4.OriginCaller.codec.encodeTo(
-      asOrigin,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i4.OriginCaller.codec.encodeTo(asOrigin, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DispatchAs && other.asOrigin == asOrigin && other.call == call;
+      identical(this, other) || other is DispatchAs && other.asOrigin == asOrigin && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        asOrigin,
-        call,
-      );
+  int get hashCode => Object.hash(asOrigin, call);
 }
 
 /// Send a batch of dispatch calls.
@@ -489,9 +365,7 @@ class ForceBatch extends Call {
   const ForceBatch({required this.calls});
 
   factory ForceBatch._decode(_i1.Input input) {
-    return ForceBatch(
-        calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .decode(input));
+    return ForceBatch(calls: const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).decode(input));
   }
 
   /// Vec<<T as Config>::RuntimeCall>
@@ -499,39 +373,22 @@ class ForceBatch extends Call {
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-        'force_batch': {'calls': calls.map((value) => value.toJson()).toList()}
-      };
+    'force_batch': {'calls': calls.map((value) => value.toJson()).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec)
-            .sizeHint(calls);
+    size = size + const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).sizeHint(calls);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(
-      calls,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.SequenceCodec<_i3.RuntimeCall>(_i3.RuntimeCall.codec).encodeTo(calls, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceBatch &&
-          _i6.listsEqual(
-            other.calls,
-            calls,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is ForceBatch && _i6.listsEqual(other.calls, calls);
 
   @override
   int get hashCode => calls.hashCode;
@@ -544,16 +401,10 @@ class ForceBatch extends Call {
 ///
 /// The dispatch origin for this call must be _Root_.
 class WithWeight extends Call {
-  const WithWeight({
-    required this.call,
-    required this.weight,
-  });
+  const WithWeight({required this.call, required this.weight});
 
   factory WithWeight._decode(_i1.Input input) {
-    return WithWeight(
-      call: _i3.RuntimeCall.codec.decode(input),
-      weight: _i5.Weight.codec.decode(input),
-    );
+    return WithWeight(call: _i3.RuntimeCall.codec.decode(input), weight: _i5.Weight.codec.decode(input));
   }
 
   /// Box<<T as Config>::RuntimeCall>
@@ -564,11 +415,8 @@ class WithWeight extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'with_weight': {
-          'call': call.toJson(),
-          'weight': weight.toJson(),
-        }
-      };
+    'with_weight': {'call': call.toJson(), 'weight': weight.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -578,33 +426,17 @@ class WithWeight extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
-    _i5.Weight.codec.encodeTo(
-      weight,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
+    _i5.Weight.codec.encodeTo(weight, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is WithWeight && other.call == call && other.weight == weight;
+      identical(this, other) || other is WithWeight && other.call == call && other.weight == weight;
 
   @override
-  int get hashCode => Object.hash(
-        call,
-        weight,
-      );
+  int get hashCode => Object.hash(call, weight);
 }
 
 /// Dispatch a fallback call in the event the main call fails to execute.
@@ -631,16 +463,10 @@ class WithWeight extends Call {
 /// - Some use cases might involve submitting a `batch` type call in either main, fallback
 ///  or both.
 class IfElse extends Call {
-  const IfElse({
-    required this.main,
-    required this.fallback,
-  });
+  const IfElse({required this.main, required this.fallback});
 
   factory IfElse._decode(_i1.Input input) {
-    return IfElse(
-      main: _i3.RuntimeCall.codec.decode(input),
-      fallback: _i3.RuntimeCall.codec.decode(input),
-    );
+    return IfElse(main: _i3.RuntimeCall.codec.decode(input), fallback: _i3.RuntimeCall.codec.decode(input));
   }
 
   /// Box<<T as Config>::RuntimeCall>
@@ -651,11 +477,8 @@ class IfElse extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'if_else': {
-          'main': main.toJson(),
-          'fallback': fallback.toJson(),
-        }
-      };
+    'if_else': {'main': main.toJson(), 'fallback': fallback.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -665,33 +488,17 @@ class IfElse extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      main,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      fallback,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i3.RuntimeCall.codec.encodeTo(main, output);
+    _i3.RuntimeCall.codec.encodeTo(fallback, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is IfElse && other.main == main && other.fallback == fallback;
+      identical(this, other) || other is IfElse && other.main == main && other.fallback == fallback;
 
   @override
-  int get hashCode => Object.hash(
-        main,
-        fallback,
-      );
+  int get hashCode => Object.hash(main, fallback);
 }
 
 /// Dispatches a function call with a provided origin.
@@ -700,10 +507,7 @@ class IfElse extends Call {
 ///
 /// The dispatch origin for this call must be _Root_.
 class DispatchAsFallible extends Call {
-  const DispatchAsFallible({
-    required this.asOrigin,
-    required this.call,
-  });
+  const DispatchAsFallible({required this.asOrigin, required this.call});
 
   factory DispatchAsFallible._decode(_i1.Input input) {
     return DispatchAsFallible(
@@ -720,11 +524,8 @@ class DispatchAsFallible extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'dispatch_as_fallible': {
-          'asOrigin': asOrigin.toJson(),
-          'call': call.toJson(),
-        }
-      };
+    'dispatch_as_fallible': {'asOrigin': asOrigin.toJson(), 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -734,33 +535,15 @@ class DispatchAsFallible extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i4.OriginCaller.codec.encodeTo(
-      asOrigin,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i4.OriginCaller.codec.encodeTo(asOrigin, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DispatchAsFallible &&
-          other.asOrigin == asOrigin &&
-          other.call == call;
+      identical(this, other) || other is DispatchAsFallible && other.asOrigin == asOrigin && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        asOrigin,
-        call,
-      );
+  int get hashCode => Object.hash(asOrigin, call);
 }

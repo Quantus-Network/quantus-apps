@@ -59,10 +59,7 @@ class $VotingCodec with _i1.Codec<Voting> {
   }
 
   @override
-  void encodeTo(
-    Voting value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Voting value, _i1.Output output) {
     switch (value.runtimeType) {
       case Casting:
         (value as Casting).encodeTo(output);
@@ -71,8 +68,7 @@ class $VotingCodec with _i1.Codec<Voting> {
         (value as Delegating).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Voting: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Voting: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -84,8 +80,7 @@ class $VotingCodec with _i1.Codec<Voting> {
       case Delegating:
         return (value as Delegating)._sizeHint();
       default:
-        throw Exception(
-            'Voting: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Voting: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -110,23 +105,12 @@ class Casting extends Voting {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.Casting.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.Casting.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Casting && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Casting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -152,23 +136,12 @@ class Delegating extends Voting {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i4.Delegating.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i4.Delegating.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Delegating && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Delegating && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

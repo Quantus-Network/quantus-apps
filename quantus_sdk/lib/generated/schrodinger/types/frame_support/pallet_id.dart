@@ -12,14 +12,8 @@ class PalletIdCodec with _i1.Codec<PalletId> {
   }
 
   @override
-  void encodeTo(
-    PalletId value,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(8).encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(PalletId value, _i1.Output output) {
+    const _i1.U8ArrayCodec(8).encodeTo(value, output);
   }
 
   @override

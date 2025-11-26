@@ -38,8 +38,7 @@ class SegmentedControl<T> extends StatefulWidget {
   State<SegmentedControl<T>> createState() => _SegmentedControlState<T>();
 }
 
-class _SegmentedControlState<T> extends State<SegmentedControl<T>>
-    with SingleTickerProviderStateMixin {
+class _SegmentedControlState<T> extends State<SegmentedControl<T>> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _positionAnimation;
   late Animation<double> _widthAnimation;
@@ -51,10 +50,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: widget.animationDuration,
-      vsync: this,
-    );
+    _animationController = AnimationController(duration: widget.animationDuration, vsync: this);
 
     // Find initial selected index
     _updateSelectedIndex();
@@ -64,29 +60,17 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
     _positionAnimation = Tween<double>(
       begin: 0,
       end: 0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
     _widthAnimation = Tween<double>(
       begin: 0,
       end: 0,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
   }
 
   void _updateSelectedIndex() {
     if (widget.selectedValue != null) {
-      final index = widget.items.indexWhere(
-        (item) => item.value == widget.selectedValue,
-      );
+      final index = widget.items.indexWhere((item) => item.value == widget.selectedValue);
       if (index != -1) {
         _selectedIndex = index;
       }
@@ -104,7 +88,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
 
   void _calculateSegmentDimensions(BoxConstraints constraints) {
     final availableWidth = constraints.maxWidth - widget.padding.horizontal;
-    
+
     switch (widget.widthMode) {
       case SegmentWidthMode.equal:
         _calculateEqualWidths(availableWidth);
@@ -126,9 +110,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
   }
 
   void _calculateFitContentWidths(double availableWidth) {
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     List<double> contentWidths = [];
     double totalContentWidth = 0;
@@ -140,10 +122,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
 
       if (item.child is Text) {
         final text = item.child as Text;
-        textPainter.text = TextSpan(
-          text: text.data,
-          style: text.style ?? DefaultTextStyle.of(context).style,
-        );
+        textPainter.text = TextSpan(text: text.data, style: text.style ?? DefaultTextStyle.of(context).style);
         textPainter.layout();
         contentWidth = textPainter.width + 32; // Add padding
       } else {
@@ -227,22 +206,12 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
       _positionAnimation = Tween<double>(
         begin: previousPosition,
         end: newPosition,
-      ).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ),
-      );
+      ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
       _widthAnimation = Tween<double>(
         begin: previousWidth,
         end: newWidth,
-      ).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ),
-      );
+      ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
 
       _animationController.reset();
       _animationController.forward();
@@ -279,10 +248,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
 
         return Container(
           height: widget.height,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-          ),
+          decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(widget.borderRadius)),
           padding: widget.padding,
           child: Stack(
             children: [
@@ -291,15 +257,13 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
                 AnimatedBuilder(
                   animation: Listenable.merge([_positionAnimation, _widthAnimation]),
                   builder: (context, child) {
-                    final position = _segmentPositions.isNotEmpty 
-                        ? (_animationController.isAnimating 
-                            ? _positionAnimation.value 
-                            : _segmentPositions[_selectedIndex])
+                    final position = _segmentPositions.isNotEmpty
+                        ? (_animationController.isAnimating
+                              ? _positionAnimation.value
+                              : _segmentPositions[_selectedIndex])
                         : 0.0;
-                    final width = _segmentWidths.isNotEmpty 
-                        ? (_animationController.isAnimating 
-                            ? _widthAnimation.value 
-                            : _segmentWidths[_selectedIndex])
+                    final width = _segmentWidths.isNotEmpty
+                        ? (_animationController.isAnimating ? _widthAnimation.value : _segmentWidths[_selectedIndex])
                         : 0.0;
 
                     return Positioned(
@@ -310,15 +274,9 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
                       child: Container(
                         decoration: BoxDecoration(
                           color: selectedColor,
-                          borderRadius: BorderRadius.circular(
-                            widget.borderRadius - 2,
-                          ),
+                          borderRadius: BorderRadius.circular(widget.borderRadius - 2),
                           boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.useOpacity(0.1),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
+                            BoxShadow(color: Colors.black.useOpacity(0.1), blurRadius: 2, offset: const Offset(0, 1)),
                           ],
                         ),
                       ),
@@ -344,11 +302,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>>
                         alignment: Alignment.center,
                         child: AnimatedDefaultTextStyle(
                           duration: widget.animationDuration,
-                          style: TextStyle(
-                            color: isSelected
-                                ? selectedTextColor
-                                : unselectedTextColor,
-                          ),
+                          style: TextStyle(color: isSelected ? selectedTextColor : unselectedTextColor),
                           child: item.child,
                         ),
                       ),
@@ -369,9 +323,5 @@ class SegmentedControlItem<T> {
   final Widget child;
   final double? customWidth; // Custom width for this specific segment
 
-  const SegmentedControlItem({
-    required this.value,
-    required this.child,
-    this.customWidth,
-  });
+  const SegmentedControlItem({required this.value, required this.child, this.customWidth});
 }

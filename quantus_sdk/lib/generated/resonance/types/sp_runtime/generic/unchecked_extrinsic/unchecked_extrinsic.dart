@@ -12,14 +12,8 @@ class UncheckedExtrinsicCodec with _i1.Codec<UncheckedExtrinsic> {
   }
 
   @override
-  void encodeTo(
-    UncheckedExtrinsic value,
-    _i1.Output output,
-  ) {
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(UncheckedExtrinsic value, _i1.Output output) {
+    _i1.U8SequenceCodec.codec.encodeTo(value, output);
   }
 
   @override

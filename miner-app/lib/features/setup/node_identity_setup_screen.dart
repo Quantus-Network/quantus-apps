@@ -8,8 +8,7 @@ class NodeIdentitySetupScreen extends StatefulWidget {
   const NodeIdentitySetupScreen({super.key});
 
   @override
-  State<NodeIdentitySetupScreen> createState() =>
-      _NodeIdentitySetupScreenState();
+  State<NodeIdentitySetupScreen> createState() => _NodeIdentitySetupScreenState();
 }
 
 class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
@@ -89,10 +88,7 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
       children: [
         const Icon(Icons.check_circle, color: Colors.green, size: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Node Identity Set!',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Node Identity Set!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: () {
@@ -110,10 +106,7 @@ class _NodeIdentitySetupScreenState extends State<NodeIdentitySetupScreen> {
       children: [
         SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Node Identity not set.',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Node Identity not set.', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         const Text(
           'You need to set a node identity to continue.',

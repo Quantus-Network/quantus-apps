@@ -32,36 +32,16 @@ abstract class AccountVote {
 class $AccountVote {
   const $AccountVote();
 
-  Standard standard({
-    required _i3.Vote vote,
-    required BigInt balance,
-  }) {
-    return Standard(
-      vote: vote,
-      balance: balance,
-    );
+  Standard standard({required _i3.Vote vote, required BigInt balance}) {
+    return Standard(vote: vote, balance: balance);
   }
 
-  Split split({
-    required BigInt aye,
-    required BigInt nay,
-  }) {
-    return Split(
-      aye: aye,
-      nay: nay,
-    );
+  Split split({required BigInt aye, required BigInt nay}) {
+    return Split(aye: aye, nay: nay);
   }
 
-  SplitAbstain splitAbstain({
-    required BigInt aye,
-    required BigInt nay,
-    required BigInt abstain,
-  }) {
-    return SplitAbstain(
-      aye: aye,
-      nay: nay,
-      abstain: abstain,
-    );
+  SplitAbstain splitAbstain({required BigInt aye, required BigInt nay, required BigInt abstain}) {
+    return SplitAbstain(aye: aye, nay: nay, abstain: abstain);
   }
 }
 
@@ -84,10 +64,7 @@ class $AccountVoteCodec with _i1.Codec<AccountVote> {
   }
 
   @override
-  void encodeTo(
-    AccountVote value,
-    _i1.Output output,
-  ) {
+  void encodeTo(AccountVote value, _i1.Output output) {
     switch (value.runtimeType) {
       case Standard:
         (value as Standard).encodeTo(output);
@@ -99,8 +76,7 @@ class $AccountVoteCodec with _i1.Codec<AccountVote> {
         (value as SplitAbstain).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'AccountVote: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('AccountVote: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -114,23 +90,16 @@ class $AccountVoteCodec with _i1.Codec<AccountVote> {
       case SplitAbstain:
         return (value as SplitAbstain)._sizeHint();
       default:
-        throw Exception(
-            'AccountVote: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('AccountVote: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class Standard extends AccountVote {
-  const Standard({
-    required this.vote,
-    required this.balance,
-  });
+  const Standard({required this.vote, required this.balance});
 
   factory Standard._decode(_i1.Input input) {
-    return Standard(
-      vote: _i1.U8Codec.codec.decode(input),
-      balance: _i1.U128Codec.codec.decode(input),
-    );
+    return Standard(vote: _i1.U8Codec.codec.decode(input), balance: _i1.U128Codec.codec.decode(input));
   }
 
   /// Vote
@@ -141,11 +110,8 @@ class Standard extends AccountVote {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Standard': {
-          'vote': vote,
-          'balance': balance,
-        }
-      };
+    'Standard': {'vote': vote, 'balance': balance},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -155,46 +121,24 @@ class Standard extends AccountVote {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      vote,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      balance,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8Codec.codec.encodeTo(vote, output);
+    _i1.U128Codec.codec.encodeTo(balance, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Standard && other.vote == vote && other.balance == balance;
+      identical(this, other) || other is Standard && other.vote == vote && other.balance == balance;
 
   @override
-  int get hashCode => Object.hash(
-        vote,
-        balance,
-      );
+  int get hashCode => Object.hash(vote, balance);
 }
 
 class Split extends AccountVote {
-  const Split({
-    required this.aye,
-    required this.nay,
-  });
+  const Split({required this.aye, required this.nay});
 
   factory Split._decode(_i1.Input input) {
-    return Split(
-      aye: _i1.U128Codec.codec.decode(input),
-      nay: _i1.U128Codec.codec.decode(input),
-    );
+    return Split(aye: _i1.U128Codec.codec.decode(input), nay: _i1.U128Codec.codec.decode(input));
   }
 
   /// Balance
@@ -205,11 +149,8 @@ class Split extends AccountVote {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'Split': {
-          'aye': aye,
-          'nay': nay,
-        }
-      };
+    'Split': {'aye': aye, 'nay': nay},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -219,41 +160,20 @@ class Split extends AccountVote {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      aye,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      nay,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U128Codec.codec.encodeTo(aye, output);
+    _i1.U128Codec.codec.encodeTo(nay, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Split && other.aye == aye && other.nay == nay;
+  bool operator ==(Object other) => identical(this, other) || other is Split && other.aye == aye && other.nay == nay;
 
   @override
-  int get hashCode => Object.hash(
-        aye,
-        nay,
-      );
+  int get hashCode => Object.hash(aye, nay);
 }
 
 class SplitAbstain extends AccountVote {
-  const SplitAbstain({
-    required this.aye,
-    required this.nay,
-    required this.abstain,
-  });
+  const SplitAbstain({required this.aye, required this.nay, required this.abstain});
 
   factory SplitAbstain._decode(_i1.Input input) {
     return SplitAbstain(
@@ -274,12 +194,8 @@ class SplitAbstain extends AccountVote {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'SplitAbstain': {
-          'aye': aye,
-          'nay': nay,
-          'abstain': abstain,
-        }
-      };
+    'SplitAbstain': {'aye': aye, 'nay': nay, 'abstain': abstain},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -290,39 +206,17 @@ class SplitAbstain extends AccountVote {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      aye,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      nay,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      abstain,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U128Codec.codec.encodeTo(aye, output);
+    _i1.U128Codec.codec.encodeTo(nay, output);
+    _i1.U128Codec.codec.encodeTo(abstain, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SplitAbstain &&
-          other.aye == aye &&
-          other.nay == nay &&
-          other.abstain == abstain;
+      identical(this, other) ||
+      other is SplitAbstain && other.aye == aye && other.nay == nay && other.abstain == abstain;
 
   @override
-  int get hashCode => Object.hash(
-        aye,
-        nay,
-        abstain,
-      );
+  int get hashCode => Object.hash(aye, nay, abstain);
 }

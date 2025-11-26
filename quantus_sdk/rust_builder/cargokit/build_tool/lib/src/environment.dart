@@ -9,8 +9,7 @@ extension on String {
 
 class Environment {
   /// Current build configuration (debug or release).
-  static String get configuration =>
-      _getEnv("CARGOKIT_CONFIGURATION").toLowerCase();
+  static String get configuration => _getEnv("CARGOKIT_CONFIGURATION").toLowerCase();
 
   static bool get isDebug => configuration == 'debug';
   static bool get isRelease => configuration == 'release';
@@ -31,20 +30,17 @@ class Environment {
   // Pod
 
   /// Platform name (macosx, iphoneos, iphonesimulator).
-  static String get darwinPlatformName =>
-      _getEnv("CARGOKIT_DARWIN_PLATFORM_NAME");
+  static String get darwinPlatformName => _getEnv("CARGOKIT_DARWIN_PLATFORM_NAME");
 
   /// List of architectures to build for (arm64, armv7, x86_64).
-  static List<String> get darwinArchs =>
-      _getEnv("CARGOKIT_DARWIN_ARCHS").split(' ');
+  static List<String> get darwinArchs => _getEnv("CARGOKIT_DARWIN_ARCHS").split(' ');
 
   // Gradle
   static String get minSdkVersion => _getEnv("CARGOKIT_MIN_SDK_VERSION");
   static String get ndkVersion => _getEnv("CARGOKIT_NDK_VERSION");
   static String get sdkPath => _getEnvPath("CARGOKIT_SDK_DIR");
   static String get javaHome => _getEnvPath("CARGOKIT_JAVA_HOME");
-  static List<String> get targetPlatforms =>
-      _getEnv("CARGOKIT_TARGET_PLATFORMS").split(',');
+  static List<String> get targetPlatforms => _getEnv("CARGOKIT_TARGET_PLATFORMS").split(',');
 
   // CMAKE
   static String get targetPlatform => _getEnv("CARGOKIT_TARGET_PLATFORM");

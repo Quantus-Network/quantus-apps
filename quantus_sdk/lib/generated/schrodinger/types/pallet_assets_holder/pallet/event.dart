@@ -41,12 +41,7 @@ class $Event {
     required _i4.RuntimeHoldReason reason,
     required BigInt amount,
   }) {
-    return Held(
-      who: who,
-      assetId: assetId,
-      reason: reason,
-      amount: amount,
-    );
+    return Held(who: who, assetId: assetId, reason: reason, amount: amount);
   }
 
   Released released({
@@ -55,12 +50,7 @@ class $Event {
     required _i4.RuntimeHoldReason reason,
     required BigInt amount,
   }) {
-    return Released(
-      who: who,
-      assetId: assetId,
-      reason: reason,
-      amount: amount,
-    );
+    return Released(who: who, assetId: assetId, reason: reason, amount: amount);
   }
 
   Burned burned({
@@ -69,12 +59,7 @@ class $Event {
     required _i4.RuntimeHoldReason reason,
     required BigInt amount,
   }) {
-    return Burned(
-      who: who,
-      assetId: assetId,
-      reason: reason,
-      amount: amount,
-    );
+    return Burned(who: who, assetId: assetId, reason: reason, amount: amount);
   }
 }
 
@@ -97,10 +82,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case Held:
         (value as Held).encodeTo(output);
@@ -112,8 +94,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as Burned).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -127,20 +108,14 @@ class $EventCodec with _i1.Codec<Event> {
       case Burned:
         return (value as Burned)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// `who`s balance on hold was increased by `amount`.
 class Held extends Event {
-  const Held({
-    required this.who,
-    required this.assetId,
-    required this.reason,
-    required this.amount,
-  });
+  const Held({required this.who, required this.assetId, required this.reason, required this.amount});
 
   factory Held._decode(_i1.Input input) {
     return Held(
@@ -165,13 +140,8 @@ class Held extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Held': {
-          'who': who.toList(),
-          'assetId': assetId,
-          'reason': reason.toJson(),
-          'amount': amount,
-        }
-      };
+    'Held': {'who': who.toList(), 'assetId': assetId, 'reason': reason.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -183,60 +153,29 @@ class Held extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i4.RuntimeHoldReason.codec.encodeTo(
-      reason,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i4.RuntimeHoldReason.codec.encodeTo(reason, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Held &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i5.listsEqual(other.who, who) &&
           other.assetId == assetId &&
           other.reason == reason &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        assetId,
-        reason,
-        amount,
-      );
+  int get hashCode => Object.hash(who, assetId, reason, amount);
 }
 
 /// `who`s balance on hold was decreased by `amount`.
 class Released extends Event {
-  const Released({
-    required this.who,
-    required this.assetId,
-    required this.reason,
-    required this.amount,
-  });
+  const Released({required this.who, required this.assetId, required this.reason, required this.amount});
 
   factory Released._decode(_i1.Input input) {
     return Released(
@@ -261,13 +200,8 @@ class Released extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Released': {
-          'who': who.toList(),
-          'assetId': assetId,
-          'reason': reason.toJson(),
-          'amount': amount,
-        }
-      };
+    'Released': {'who': who.toList(), 'assetId': assetId, 'reason': reason.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -279,60 +213,29 @@ class Released extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i4.RuntimeHoldReason.codec.encodeTo(
-      reason,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i4.RuntimeHoldReason.codec.encodeTo(reason, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Released &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i5.listsEqual(other.who, who) &&
           other.assetId == assetId &&
           other.reason == reason &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        assetId,
-        reason,
-        amount,
-      );
+  int get hashCode => Object.hash(who, assetId, reason, amount);
 }
 
 /// `who`s balance on hold was burned by `amount`.
 class Burned extends Event {
-  const Burned({
-    required this.who,
-    required this.assetId,
-    required this.reason,
-    required this.amount,
-  });
+  const Burned({required this.who, required this.assetId, required this.reason, required this.amount});
 
   factory Burned._decode(_i1.Input input) {
     return Burned(
@@ -357,13 +260,8 @@ class Burned extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Burned': {
-          'who': who.toList(),
-          'assetId': assetId,
-          'reason': reason.toJson(),
-          'amount': amount,
-        }
-      };
+    'Burned': {'who': who.toList(), 'assetId': assetId, 'reason': reason.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -375,48 +273,22 @@ class Burned extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i4.RuntimeHoldReason.codec.encodeTo(
-      reason,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i4.RuntimeHoldReason.codec.encodeTo(reason, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Burned &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i5.listsEqual(other.who, who) &&
           other.assetId == assetId &&
           other.reason == reason &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        assetId,
-        reason,
-        amount,
-      );
+  int get hashCode => Object.hash(who, assetId, reason, amount);
 }

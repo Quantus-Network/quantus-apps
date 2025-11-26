@@ -4,11 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class VestingInfo {
-  const VestingInfo({
-    required this.locked,
-    required this.perBlock,
-    required this.startingBlock,
-  });
+  const VestingInfo({required this.locked, required this.perBlock, required this.startingBlock});
 
   factory VestingInfo.decode(_i1.Input input) {
     return codec.decode(input);
@@ -29,51 +25,28 @@ class VestingInfo {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'locked': locked,
-        'perBlock': perBlock,
-        'startingBlock': startingBlock,
-      };
+  Map<String, dynamic> toJson() => {'locked': locked, 'perBlock': perBlock, 'startingBlock': startingBlock};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is VestingInfo &&
           other.locked == locked &&
           other.perBlock == perBlock &&
           other.startingBlock == startingBlock;
 
   @override
-  int get hashCode => Object.hash(
-        locked,
-        perBlock,
-        startingBlock,
-      );
+  int get hashCode => Object.hash(locked, perBlock, startingBlock);
 }
 
 class $VestingInfoCodec with _i1.Codec<VestingInfo> {
   const $VestingInfoCodec();
 
   @override
-  void encodeTo(
-    VestingInfo obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.locked,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.perBlock,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.startingBlock,
-      output,
-    );
+  void encodeTo(VestingInfo obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.locked, output);
+    _i1.U128Codec.codec.encodeTo(obj.perBlock, output);
+    _i1.U32Codec.codec.encodeTo(obj.startingBlock, output);
   }
 
   @override

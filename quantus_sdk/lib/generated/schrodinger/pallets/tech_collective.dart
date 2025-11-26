@@ -26,41 +26,40 @@ class Queries {
 
   final _i1.StorageMap<_i3.AccountId32, _i4.MemberRecord> _members =
       const _i1.StorageMap<_i3.AccountId32, _i4.MemberRecord>(
-    prefix: 'TechCollective',
-    storage: 'Members',
-    valueCodec: _i4.MemberRecord.codec,
-    hasher: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'TechCollective',
+        storage: 'Members',
+        valueCodec: _i4.MemberRecord.codec,
+        hasher: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageDoubleMap<int, _i3.AccountId32, int> _idToIndex =
       const _i1.StorageDoubleMap<int, _i3.AccountId32, int>(
-    prefix: 'TechCollective',
-    storage: 'IdToIndex',
-    valueCodec: _i2.U32Codec.codec,
-    hasher1: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
-    hasher2: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'TechCollective',
+        storage: 'IdToIndex',
+        valueCodec: _i2.U32Codec.codec,
+        hasher1: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
+        hasher2: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageDoubleMap<int, int, _i3.AccountId32> _indexToId =
       const _i1.StorageDoubleMap<int, int, _i3.AccountId32>(
-    prefix: 'TechCollective',
-    storage: 'IndexToId',
-    valueCodec: _i3.AccountId32Codec(),
-    hasher1: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
-    hasher2: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
-  );
+        prefix: 'TechCollective',
+        storage: 'IndexToId',
+        valueCodec: _i3.AccountId32Codec(),
+        hasher1: _i1.StorageHasher.twoxx64Concat(_i2.U16Codec.codec),
+        hasher2: _i1.StorageHasher.twoxx64Concat(_i2.U32Codec.codec),
+      );
 
   final _i1.StorageDoubleMap<int, _i3.AccountId32, _i5.VoteRecord> _voting =
       const _i1.StorageDoubleMap<int, _i3.AccountId32, _i5.VoteRecord>(
-    prefix: 'TechCollective',
-    storage: 'Voting',
-    valueCodec: _i5.VoteRecord.codec,
-    hasher1: _i1.StorageHasher.blake2b128Concat(_i2.U32Codec.codec),
-    hasher2: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'TechCollective',
+        storage: 'Voting',
+        valueCodec: _i5.VoteRecord.codec,
+        hasher1: _i1.StorageHasher.blake2b128Concat(_i2.U32Codec.codec),
+        hasher2: _i1.StorageHasher.twoxx64Concat(_i3.AccountId32Codec()),
+      );
 
-  final _i1.StorageMap<int, List<int>> _votingCleanup =
-      const _i1.StorageMap<int, List<int>>(
+  final _i1.StorageMap<int, List<int>> _votingCleanup = const _i1.StorageMap<int, List<int>>(
     prefix: 'TechCollective',
     storage: 'VotingCleanup',
     valueCodec: _i2.U8SequenceCodec.codec,
@@ -69,15 +68,9 @@ class Queries {
 
   /// The number of members in the collective who have at least the rank according to the index
   /// of the vec.
-  _i6.Future<int> memberCount(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<int> memberCount(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _memberCount.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _memberCount.decodeValue(bytes);
     }
@@ -85,15 +78,9 @@ class Queries {
   }
 
   /// The current members of the collective.
-  _i6.Future<_i4.MemberRecord?> members(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<_i4.MemberRecord?> members(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _members.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _members.decodeValue(bytes);
     }
@@ -101,19 +88,9 @@ class Queries {
   }
 
   /// The index of each ranks's member into the group of members who have at least that rank.
-  _i6.Future<int?> idToIndex(
-    int key1,
-    _i3.AccountId32 key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _idToIndex.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i6.Future<int?> idToIndex(int key1, _i3.AccountId32 key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _idToIndex.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _idToIndex.decodeValue(bytes);
     }
@@ -122,19 +99,9 @@ class Queries {
 
   /// The members in the collective by index. All indices in the range `0..MemberCount` will
   /// return `Some`, however a member's index is not guaranteed to remain unchanged over time.
-  _i6.Future<_i3.AccountId32?> indexToId(
-    int key1,
-    int key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _indexToId.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i6.Future<_i3.AccountId32?> indexToId(int key1, int key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _indexToId.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _indexToId.decodeValue(bytes);
     }
@@ -142,34 +109,18 @@ class Queries {
   }
 
   /// Votes on a given proposal, if it is ongoing.
-  _i6.Future<_i5.VoteRecord?> voting(
-    int key1,
-    _i3.AccountId32 key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _voting.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i6.Future<_i5.VoteRecord?> voting(int key1, _i3.AccountId32 key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _voting.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _voting.decodeValue(bytes);
     }
     return null; /* Nullable */
   }
 
-  _i6.Future<List<int>?> votingCleanup(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<int>?> votingCleanup(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _votingCleanup.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _votingCleanup.decodeValue(bytes);
     }
@@ -178,56 +129,30 @@ class Queries {
 
   /// The number of members in the collective who have at least the rank according to the index
   /// of the vec.
-  _i6.Future<List<int>> multiMemberCount(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _memberCount.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<int>> multiMemberCount(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _memberCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _memberCount.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _memberCount.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => 0).toList() as List<int>); /* Default */
   }
 
   /// The current members of the collective.
-  _i6.Future<List<_i4.MemberRecord?>> multiMembers(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<_i4.MemberRecord?>> multiMembers(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _members.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _members.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _members.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
-  _i6.Future<List<List<int>?>> multiVotingCleanup(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _votingCleanup.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i6.Future<List<List<int>?>> multiVotingCleanup(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _votingCleanup.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _votingCleanup.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _votingCleanup.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -245,38 +170,20 @@ class Queries {
   }
 
   /// Returns the storage key for `idToIndex`.
-  _i7.Uint8List idToIndexKey(
-    int key1,
-    _i3.AccountId32 key2,
-  ) {
-    final hashedKey = _idToIndex.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i7.Uint8List idToIndexKey(int key1, _i3.AccountId32 key2) {
+    final hashedKey = _idToIndex.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
   /// Returns the storage key for `indexToId`.
-  _i7.Uint8List indexToIdKey(
-    int key1,
-    int key2,
-  ) {
-    final hashedKey = _indexToId.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i7.Uint8List indexToIdKey(int key1, int key2) {
+    final hashedKey = _indexToId.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
   /// Returns the storage key for `voting`.
-  _i7.Uint8List votingKey(
-    int key1,
-    _i3.AccountId32 key2,
-  ) {
-    final hashedKey = _voting.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i7.Uint8List votingKey(int key1, _i3.AccountId32 key2) {
+    final hashedKey = _voting.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
@@ -364,14 +271,8 @@ class Txs {
   /// - `min_rank`: The rank of the member or greater.
   ///
   /// Weight: `O(min_rank)`.
-  _i8.TechCollective removeMember({
-    required _i9.MultiAddress who,
-    required int minRank,
-  }) {
-    return _i8.TechCollective(_i10.RemoveMember(
-      who: who,
-      minRank: minRank,
-    ));
+  _i8.TechCollective removeMember({required _i9.MultiAddress who, required int minRank}) {
+    return _i8.TechCollective(_i10.RemoveMember(who: who, minRank: minRank));
   }
 
   /// Add an aye or nay vote for the sender to the given proposal.
@@ -385,14 +286,8 @@ class Txs {
   /// fee.
   ///
   /// Weight: `O(1)`, less if there was no previous vote on the poll by the member.
-  _i8.TechCollective vote({
-    required int poll,
-    required bool aye,
-  }) {
-    return _i8.TechCollective(_i10.Vote(
-      poll: poll,
-      aye: aye,
-    ));
+  _i8.TechCollective vote({required int poll, required bool aye}) {
+    return _i8.TechCollective(_i10.Vote(poll: poll, aye: aye));
   }
 
   /// Remove votes from the given poll. It must have ended.
@@ -405,14 +300,8 @@ class Txs {
   /// Transaction fees are waived if the operation is successful.
   ///
   /// Weight `O(max)` (less if there are fewer items to remove than `max`).
-  _i8.TechCollective cleanupPoll({
-    required int pollIndex,
-    required int max,
-  }) {
-    return _i8.TechCollective(_i10.CleanupPoll(
-      pollIndex: pollIndex,
-      max: max,
-    ));
+  _i8.TechCollective cleanupPoll({required int pollIndex, required int max}) {
+    return _i8.TechCollective(_i10.CleanupPoll(pollIndex: pollIndex, max: max));
   }
 
   /// Exchanges a member with a new account and the same existing rank.
@@ -420,13 +309,7 @@ class Txs {
   /// - `origin`: Must be the `ExchangeOrigin`.
   /// - `who`: Account of existing member of rank greater than zero to be exchanged.
   /// - `new_who`: New Account of existing member of rank greater than zero to exchanged to.
-  _i8.TechCollective exchangeMember({
-    required _i9.MultiAddress who,
-    required _i9.MultiAddress newWho,
-  }) {
-    return _i8.TechCollective(_i10.ExchangeMember(
-      who: who,
-      newWho: newWho,
-    ));
+  _i8.TechCollective exchangeMember({required _i9.MultiAddress who, required _i9.MultiAddress newWho}) {
+    return _i8.TechCollective(_i10.ExchangeMember(who: who, newWho: newWho));
   }
 }

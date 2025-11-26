@@ -12,29 +12,25 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<BigInt> _lastBlockTime =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _lastBlockTime = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockTime',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<BigInt> _lastBlockDuration =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _lastBlockDuration = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockDuration',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<_i3.U512> _currentDistanceThreshold =
-      const _i1.StorageValue<_i3.U512>(
+  final _i1.StorageValue<_i3.U512> _currentDistanceThreshold = const _i1.StorageValue<_i3.U512>(
     prefix: 'QPoW',
     storage: 'CurrentDistanceThreshold',
     valueCodec: _i3.U512Codec(),
   );
 
-  final _i1.StorageValue<_i3.U512> _totalWork =
-      const _i1.StorageValue<_i3.U512>(
+  final _i1.StorageValue<_i3.U512> _totalWork = const _i1.StorageValue<_i3.U512>(
     prefix: 'QPoW',
     storage: 'TotalWork',
     valueCodec: _i3.U512Codec(),
@@ -46,8 +42,7 @@ class Queries {
     valueCodec: _i2.U32Codec.codec,
   );
 
-  final _i1.StorageMap<int, BigInt> _blockTimeHistory =
-      const _i1.StorageMap<int, BigInt>(
+  final _i1.StorageMap<int, BigInt> _blockTimeHistory = const _i1.StorageMap<int, BigInt>(
     prefix: 'QPoW',
     storage: 'BlockTimeHistory',
     valueCodec: _i2.U64Codec.codec,
@@ -68,10 +63,7 @@ class Queries {
 
   _i4.Future<BigInt> lastBlockTime({_i1.BlockHash? at}) async {
     final hashedKey = _lastBlockTime.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastBlockTime.decodeValue(bytes);
     }
@@ -80,10 +72,7 @@ class Queries {
 
   _i4.Future<BigInt> lastBlockDuration({_i1.BlockHash? at}) async {
     final hashedKey = _lastBlockDuration.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastBlockDuration.decodeValue(bytes);
     }
@@ -92,57 +81,34 @@ class Queries {
 
   _i4.Future<_i3.U512> currentDistanceThreshold({_i1.BlockHash? at}) async {
     final hashedKey = _currentDistanceThreshold.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _currentDistanceThreshold.decodeValue(bytes);
     }
-    return List<BigInt>.filled(
-      8,
-      BigInt.zero,
-      growable: false,
-    ); /* Default */
+    return List<BigInt>.filled(8, BigInt.zero, growable: false); /* Default */
   }
 
   _i4.Future<_i3.U512> totalWork({_i1.BlockHash? at}) async {
     final hashedKey = _totalWork.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _totalWork.decodeValue(bytes);
     }
-    return List<BigInt>.filled(
-      8,
-      BigInt.zero,
-      growable: false,
-    ); /* Default */
+    return List<BigInt>.filled(8, BigInt.zero, growable: false); /* Default */
   }
 
   _i4.Future<int> blocksInPeriod({_i1.BlockHash? at}) async {
     final hashedKey = _blocksInPeriod.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _blocksInPeriod.decodeValue(bytes);
     }
     return 0; /* Default */
   }
 
-  _i4.Future<BigInt> blockTimeHistory(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i4.Future<BigInt> blockTimeHistory(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _blockTimeHistory.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _blockTimeHistory.decodeValue(bytes);
     }
@@ -151,10 +117,7 @@ class Queries {
 
   _i4.Future<int> historyIndex({_i1.BlockHash? at}) async {
     final hashedKey = _historyIndex.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _historyIndex.decodeValue(bytes);
     }
@@ -163,33 +126,20 @@ class Queries {
 
   _i4.Future<BigInt> blockTimeEma({_i1.BlockHash? at}) async {
     final hashedKey = _blockTimeEma.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _blockTimeEma.decodeValue(bytes);
     }
     return BigInt.zero; /* Default */
   }
 
-  _i4.Future<List<BigInt>> multiBlockTimeHistory(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _blockTimeHistory.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i4.Future<List<BigInt>> multiBlockTimeHistory(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _blockTimeHistory.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _blockTimeHistory.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _blockTimeHistory.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => BigInt.zero).toList()
-        as List<BigInt>); /* Default */
+    return (keys.map((key) => BigInt.zero).toList() as List<BigInt>); /* Default */
   }
 
   /// Returns the storage key for `lastBlockTime`.
@@ -263,10 +213,7 @@ class Constants {
   final int maxReorgDepth = 180;
 
   /// Fixed point scale for calculations (default: 10^18)
-  final BigInt fixedU128Scale = BigInt.parse(
-    '1000000000000000000',
-    radix: 10,
-  );
+  final BigInt fixedU128Scale = BigInt.parse('1000000000000000000', radix: 10);
 
   /// Maximum distance threshold multiplier (default: 4)
   final int maxDistanceMultiplier = 2;

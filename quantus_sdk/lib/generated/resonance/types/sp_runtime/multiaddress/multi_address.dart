@@ -77,10 +77,7 @@ class $MultiAddressCodec with _i1.Codec<MultiAddress> {
   }
 
   @override
-  void encodeTo(
-    MultiAddress value,
-    _i1.Output output,
-  ) {
+  void encodeTo(MultiAddress value, _i1.Output output) {
     switch (value.runtimeType) {
       case Id:
         (value as Id).encodeTo(output);
@@ -98,8 +95,7 @@ class $MultiAddressCodec with _i1.Codec<MultiAddress> {
         (value as Address20).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'MultiAddress: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('MultiAddress: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -117,8 +113,7 @@ class $MultiAddressCodec with _i1.Codec<MultiAddress> {
       case Address20:
         return (value as Address20)._sizeHint();
       default:
-        throw Exception(
-            'MultiAddress: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('MultiAddress: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -143,27 +138,12 @@ class Id extends MultiAddress {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Id &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Id && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;
@@ -189,23 +169,12 @@ class Index extends MultiAddress {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Index && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Index && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -231,27 +200,12 @@ class Raw extends MultiAddress {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8SequenceCodec.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Raw &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Raw && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;
@@ -277,27 +231,13 @@ class Address32 extends MultiAddress {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Address32 &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+      identical(this, other) || other is Address32 && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;
@@ -323,27 +263,13 @@ class Address20 extends MultiAddress {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(20).encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(20).encodeTo(value0, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Address20 &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+      identical(this, other) || other is Address20 && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;

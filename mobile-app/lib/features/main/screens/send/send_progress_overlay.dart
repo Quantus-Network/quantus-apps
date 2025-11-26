@@ -38,19 +38,14 @@ class SendConfirmationOverlay extends ConsumerStatefulWidget {
   SendConfirmationOverlayState createState() => SendConfirmationOverlayState();
 }
 
-class SendConfirmationOverlayState
-    extends ConsumerState<SendConfirmationOverlay> {
+class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay> {
   SendOverlayState currentState = SendOverlayState.confirm;
   String? _errorMessage;
   bool _isSending = false;
 
   void goHome() {
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const Navbar()),
-      (route) => false,
-    );
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const Navbar()), (route) => false);
   }
 
   void _handleDismiss() {
@@ -174,11 +169,7 @@ class SendConfirmationOverlayState
                   child: SizedBox(
                     width: context.themeSize.overlayCloseIconSize,
                     height: context.themeSize.overlayCloseIconSize,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: context.themeSize.overlayCloseIconSize,
-                    ),
+                    child: Icon(Icons.close, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
                   ),
                 ),
               ],
@@ -197,11 +188,7 @@ class SendConfirmationOverlayState
                 ),
               ),
               const SizedBox(height: 17),
-              Text(
-                'SEND',
-                textAlign: TextAlign.center,
-                style: context.themeText.largeTitle,
-              ),
+              Text('SEND', textAlign: TextAlign.center, style: context.themeText.largeTitle),
             ],
           ),
           const SizedBox(height: 28),
@@ -216,14 +203,8 @@ class SendConfirmationOverlayState
                   Text.rich(
                     TextSpan(
                       children: [
-                        TextSpan(
-                          text: formattedAmount,
-                          style: context.themeText.mediumTitle,
-                        ),
-                        TextSpan(
-                          text: ' ${AppConstants.tokenSymbol}',
-                          style: context.themeText.paragraph,
-                        ),
+                        TextSpan(text: formattedAmount, style: context.themeText.mediumTitle),
+                        TextSpan(text: ' ${AppConstants.tokenSymbol}', style: context.themeText.paragraph),
                       ],
                     ),
                   ),
@@ -235,19 +216,12 @@ class SendConfirmationOverlayState
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'To:',
-                    style: context.themeText.smallParagraph?.copyWith(
-                      color: context.themeColors.textMuted,
-                    ),
-                  ),
+                  Text('To:', style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted)),
                   const SizedBox(height: 12),
                   Text(
                     widget.recipientName,
                     textAlign: TextAlign.center,
-                    style: context.themeText.paragraph?.copyWith(
-                      color: context.themeColors.checksum,
-                    ),
+                    style: context.themeText.paragraph?.copyWith(color: context.themeColors.checksum),
                   ),
                   const SizedBox(height: 12),
                   Text(widget.recipientAddress, style: context.themeText.tiny),
@@ -262,9 +236,7 @@ class SendConfirmationOverlayState
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: ShapeDecoration(
                     color: const Color(0xFF313131),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -277,14 +249,8 @@ class SendConfirmationOverlayState
                         child: Text.rich(
                           TextSpan(
                             children: [
-                              TextSpan(
-                                text: 'Reversible for: ',
-                                style: context.themeText.smallParagraph,
-                              ),
-                              TextSpan(
-                                text: _formatReversibleTime(),
-                                style: context.themeText.detail,
-                              ),
+                              TextSpan(text: 'Reversible for: ', style: context.themeText.smallParagraph),
+                              TextSpan(text: _formatReversibleTime(), style: context.themeText.detail),
                             ],
                           ),
                           textAlign: TextAlign.center,
@@ -306,9 +272,7 @@ class SendConfirmationOverlayState
                 child: SingleChildScrollView(
                   child: Text(
                     _errorMessage!,
-                    style: context.themeText.detail?.copyWith(
-                      color: context.themeColors.textError,
-                    ),
+                    style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -323,36 +287,22 @@ class SendConfirmationOverlayState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Network fee',
-                      style: context.themeText.detail?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Network fee', style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w500)),
 
                     Row(
                       spacing: 8,
                       children: [
                         Text(
                           '$formattedFee ${AppConstants.tokenSymbol}',
-                          style: context.themeText.detail?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w500),
                         ),
-                        SvgPicture.asset(
-                          'assets/settings_icon.svg',
-                          width: context.isTablet ? 20 : 14,
-                        ),
+                        SvgPicture.asset('assets/settings_icon.svg', width: context.isTablet ? 20 : 14),
                       ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 15),
-                Button(
-                  variant: ButtonVariant.neutral,
-                  label: 'Confirm',
-                  onPressed: _isSending ? null : _confirmSend,
-                ),
+                Button(variant: ButtonVariant.neutral, label: 'Confirm', onPressed: _isSending ? null : _confirmSend),
               ],
             ),
           ),
@@ -380,11 +330,7 @@ class SendConfirmationOverlayState
                   child: SizedBox(
                     width: context.themeSize.overlayCloseIconSize,
                     height: context.themeSize.overlayCloseIconSize,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: context.themeSize.overlayCloseIconSize,
-                    ),
+                    child: Icon(Icons.close, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
                   ),
                 ),
               ],
@@ -399,11 +345,7 @@ class SendConfirmationOverlayState
                 height: context.isTablet ? 105 : 85,
                 child: SvgPicture.asset('assets/logo/logo.svg'),
               ),
-              Text(
-                'TRANSACTION \nIN PROGRESS',
-                textAlign: TextAlign.center,
-                style: context.themeText.largeTitle,
-              ),
+              Text('TRANSACTION \nIN PROGRESS', textAlign: TextAlign.center, style: context.themeText.largeTitle),
             ],
           ),
         ],
@@ -431,11 +373,7 @@ class SendConfirmationOverlayState
                   child: SizedBox(
                     width: 24,
                     height: 24,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: context.themeSize.overlayCloseIconSize,
-                    ),
+                    child: Icon(Icons.close, color: Colors.white, size: context.themeSize.overlayCloseIconSize),
                   ),
                 ),
               ],
@@ -454,11 +392,7 @@ class SendConfirmationOverlayState
                 ),
               ),
               const SizedBox(height: 17),
-              Text(
-                'SENDING',
-                textAlign: TextAlign.center,
-                style: context.themeText.largeTitle,
-              ),
+              Text('SENDING', textAlign: TextAlign.center, style: context.themeText.largeTitle),
             ],
           ),
           const SizedBox(height: 28),
@@ -474,14 +408,8 @@ class SendConfirmationOverlayState
                   Text.rich(
                     TextSpan(
                       children: [
-                        TextSpan(
-                          text: formattedAmount,
-                          style: context.themeText.mediumTitle,
-                        ),
-                        TextSpan(
-                          text: ' ${AppConstants.tokenSymbol}',
-                          style: context.themeText.paragraph,
-                        ),
+                        TextSpan(text: formattedAmount, style: context.themeText.mediumTitle),
+                        TextSpan(text: ' ${AppConstants.tokenSymbol}', style: context.themeText.paragraph),
                       ],
                     ),
                   ),
@@ -493,9 +421,7 @@ class SendConfirmationOverlayState
               Text(
                 'will be sent to',
                 textAlign: TextAlign.center,
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.textMuted,
-                ),
+                style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
               ),
               const SizedBox(height: 12),
               Column(
@@ -505,9 +431,7 @@ class SendConfirmationOverlayState
                     child: Text(
                       widget.recipientName,
                       textAlign: TextAlign.center,
-                      style: context.themeText.paragraph?.copyWith(
-                        color: context.themeColors.checksum,
-                      ),
+                      style: context.themeText.paragraph?.copyWith(color: context.themeColors.checksum),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -523,9 +447,7 @@ class SendConfirmationOverlayState
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: ShapeDecoration(
                     color: const Color(0xFF313131),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -538,14 +460,8 @@ class SendConfirmationOverlayState
                         child: Text.rich(
                           TextSpan(
                             children: [
-                              TextSpan(
-                                text: 'Reversible for: ',
-                                style: context.themeText.smallParagraph,
-                              ),
-                              TextSpan(
-                                text: _formatReversibleTime(),
-                                style: context.themeText.detail,
-                              ),
+                              TextSpan(text: 'Reversible for: ', style: context.themeText.smallParagraph),
+                              TextSpan(text: _formatReversibleTime(), style: context.themeText.detail),
                             ],
                           ),
                           textAlign: TextAlign.center,
@@ -559,11 +475,7 @@ class SendConfirmationOverlayState
 
           const Spacer(),
           // Done Button
-          Button(
-            variant: ButtonVariant.glassOutline,
-            label: 'Done',
-            onPressed: goHome,
-          ),
+          Button(variant: ButtonVariant.glassOutline, label: 'Done', onPressed: goHome),
           SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),
@@ -603,16 +515,12 @@ class SendConfirmationOverlayState
               ),
             ),
             Container(
-              height:
-                  MediaQuery.of(context).size.height *
-                  effectiveSheetHeightFraction,
+              height: MediaQuery.of(context).size.height * effectiveSheetHeightFraction,
               width: MediaQuery.of(context).size.width,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
               decoration: ShapeDecoration(
                 color: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
               ),
               child: content,
             ),

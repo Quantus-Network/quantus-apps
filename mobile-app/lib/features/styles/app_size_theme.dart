@@ -146,23 +146,17 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       floatingBtnHeight: floatingBtnHeight ?? this.floatingBtnHeight,
       floatingBtnWidth: floatingBtnWidth ?? this.floatingBtnWidth,
       settingMenuIconSize: settingMenuIconSize ?? this.settingMenuIconSize,
-      settingMenuShareIconSize:
-          settingMenuShareIconSize ?? this.settingMenuShareIconSize,
-      accountListItemHeight:
-          accountListItemHeight ?? this.accountListItemHeight,
-      accountListItemLogoWidth:
-          accountListItemLogoWidth ?? this.accountListItemLogoWidth,
+      settingMenuShareIconSize: settingMenuShareIconSize ?? this.settingMenuShareIconSize,
+      accountListItemHeight: accountListItemHeight ?? this.accountListItemHeight,
+      accountListItemLogoWidth: accountListItemLogoWidth ?? this.accountListItemLogoWidth,
       appbarIconSize: appbarIconSize ?? this.appbarIconSize,
-      sendOverlayContainerWidth:
-          sendOverlayContainerWidth ?? this.sendOverlayContainerWidth,
+      sendOverlayContainerWidth: sendOverlayContainerWidth ?? this.sendOverlayContainerWidth,
       overlayCloseIconSize: overlayCloseIconSize ?? this.overlayCloseIconSize,
-      mnemonicCellDesiredHeight:
-          mnemonicCellDesiredHeight ?? this.mnemonicCellDesiredHeight,
+      mnemonicCellDesiredHeight: mnemonicCellDesiredHeight ?? this.mnemonicCellDesiredHeight,
       txListItemIconWidth: txListItemIconWidth ?? this.txListItemIconWidth,
       txDetailsIconHeight: txDetailsIconHeight ?? this.txDetailsIconHeight,
       txDetailsIconWidth: txDetailsIconWidth ?? this.txDetailsIconWidth,
-      timePickerSubtitleWidth:
-          timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
+      timePickerSubtitleWidth: timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
       bottomButtonSpacing: bottomButtonSpacing ?? this.bottomButtonSpacing,
     );
   }
@@ -172,60 +166,32 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     if (other is! AppSizeTheme) return this;
     return AppSizeTheme(
       logoHeight: logoHeight + (other.logoHeight - logoHeight) * t,
-      mainMenuHeight:
-          mainMenuHeight + (other.mainMenuHeight - mainMenuHeight) * t,
+      mainMenuHeight: mainMenuHeight + (other.mainMenuHeight - mainMenuHeight) * t,
       mainMenuWidth: mainMenuWidth + (other.mainMenuWidth - mainMenuWidth) * t,
-      mainMenuIconSize:
-          mainMenuIconSize + (other.mainMenuIconSize - mainMenuIconSize) * t,
+      mainMenuIconSize: mainMenuIconSize + (other.mainMenuIconSize - mainMenuIconSize) * t,
       navbarHeight: navbarHeight + (other.navbarHeight - navbarHeight) * t,
-      navbarItemHeight:
-          navbarItemHeight + (other.navbarItemHeight - navbarItemHeight) * t,
-      navbarItemWidth:
-          navbarItemWidth + (other.navbarItemWidth - navbarItemWidth) * t,
-      navbarIconWidth:
-          navbarIconWidth + (other.navbarIconWidth - navbarIconWidth) * t,
-      floatingBtnHeight:
-          floatingBtnHeight + (other.floatingBtnHeight - floatingBtnHeight) * t,
-      floatingBtnWidth:
-          floatingBtnWidth + (other.floatingBtnWidth - floatingBtnWidth) * t,
-      settingMenuIconSize:
-          settingMenuIconSize +
-          (other.settingMenuIconSize - settingMenuIconSize) * t,
+      navbarItemHeight: navbarItemHeight + (other.navbarItemHeight - navbarItemHeight) * t,
+      navbarItemWidth: navbarItemWidth + (other.navbarItemWidth - navbarItemWidth) * t,
+      navbarIconWidth: navbarIconWidth + (other.navbarIconWidth - navbarIconWidth) * t,
+      floatingBtnHeight: floatingBtnHeight + (other.floatingBtnHeight - floatingBtnHeight) * t,
+      floatingBtnWidth: floatingBtnWidth + (other.floatingBtnWidth - floatingBtnWidth) * t,
+      settingMenuIconSize: settingMenuIconSize + (other.settingMenuIconSize - settingMenuIconSize) * t,
       settingMenuShareIconSize:
-          settingMenuShareIconSize +
-          (other.settingMenuShareIconSize - settingMenuShareIconSize) * t,
-      accountListItemHeight:
-          accountListItemHeight +
-          (other.accountListItemHeight - accountListItemHeight) * t,
+          settingMenuShareIconSize + (other.settingMenuShareIconSize - settingMenuShareIconSize) * t,
+      accountListItemHeight: accountListItemHeight + (other.accountListItemHeight - accountListItemHeight) * t,
       accountListItemLogoWidth:
-          accountListItemLogoWidth +
-          (other.accountListItemLogoWidth - accountListItemLogoWidth) * t,
-      appbarIconSize:
-          appbarIconSize + (other.appbarIconSize - appbarIconSize) * t,
+          accountListItemLogoWidth + (other.accountListItemLogoWidth - accountListItemLogoWidth) * t,
+      appbarIconSize: appbarIconSize + (other.appbarIconSize - appbarIconSize) * t,
       sendOverlayContainerWidth:
-          sendOverlayContainerWidth +
-          (other.sendOverlayContainerWidth - sendOverlayContainerWidth) * t,
-      overlayCloseIconSize:
-          overlayCloseIconSize +
-          (other.overlayCloseIconSize - overlayCloseIconSize) * t,
+          sendOverlayContainerWidth + (other.sendOverlayContainerWidth - sendOverlayContainerWidth) * t,
+      overlayCloseIconSize: overlayCloseIconSize + (other.overlayCloseIconSize - overlayCloseIconSize) * t,
       mnemonicCellDesiredHeight:
-          mnemonicCellDesiredHeight +
-          (other.mnemonicCellDesiredHeight - mnemonicCellDesiredHeight) * t,
-      txListItemIconWidth:
-          txListItemIconWidth +
-          (other.txListItemIconWidth - txListItemIconWidth) * t,
-      txDetailsIconHeight:
-          txDetailsIconHeight +
-          (other.txDetailsIconHeight - txDetailsIconHeight) * t,
-      txDetailsIconWidth:
-          txDetailsIconWidth +
-          (other.txDetailsIconWidth - txDetailsIconWidth) * t,
-      timePickerSubtitleWidth:
-          timePickerSubtitleWidth +
-          (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
-      bottomButtonSpacing:
-          bottomButtonSpacing +
-          (other.bottomButtonSpacing - bottomButtonSpacing) * t,
+          mnemonicCellDesiredHeight + (other.mnemonicCellDesiredHeight - mnemonicCellDesiredHeight) * t,
+      txListItemIconWidth: txListItemIconWidth + (other.txListItemIconWidth - txListItemIconWidth) * t,
+      txDetailsIconHeight: txDetailsIconHeight + (other.txDetailsIconHeight - txDetailsIconHeight) * t,
+      txDetailsIconWidth: txDetailsIconWidth + (other.txDetailsIconWidth - txDetailsIconWidth) * t,
+      timePickerSubtitleWidth: timePickerSubtitleWidth + (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
+      bottomButtonSpacing: bottomButtonSpacing + (other.bottomButtonSpacing - bottomButtonSpacing) * t,
     );
   }
 }

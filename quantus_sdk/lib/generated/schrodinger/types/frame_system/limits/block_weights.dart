@@ -7,11 +7,7 @@ import '../../frame_support/dispatch/per_dispatch_class_2.dart' as _i3;
 import '../../sp_weights/weight_v2/weight.dart' as _i2;
 
 class BlockWeights {
-  const BlockWeights({
-    required this.baseBlock,
-    required this.maxBlock,
-    required this.perClass,
-  });
+  const BlockWeights({required this.baseBlock, required this.maxBlock, required this.perClass});
 
   factory BlockWeights.decode(_i1.Input input) {
     return codec.decode(input);
@@ -33,50 +29,28 @@ class BlockWeights {
   }
 
   Map<String, Map<String, dynamic>> toJson() => {
-        'baseBlock': baseBlock.toJson(),
-        'maxBlock': maxBlock.toJson(),
-        'perClass': perClass.toJson(),
-      };
+    'baseBlock': baseBlock.toJson(),
+    'maxBlock': maxBlock.toJson(),
+    'perClass': perClass.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BlockWeights &&
-          other.baseBlock == baseBlock &&
-          other.maxBlock == maxBlock &&
-          other.perClass == perClass;
+      identical(this, other) ||
+      other is BlockWeights && other.baseBlock == baseBlock && other.maxBlock == maxBlock && other.perClass == perClass;
 
   @override
-  int get hashCode => Object.hash(
-        baseBlock,
-        maxBlock,
-        perClass,
-      );
+  int get hashCode => Object.hash(baseBlock, maxBlock, perClass);
 }
 
 class $BlockWeightsCodec with _i1.Codec<BlockWeights> {
   const $BlockWeightsCodec();
 
   @override
-  void encodeTo(
-    BlockWeights obj,
-    _i1.Output output,
-  ) {
-    _i2.Weight.codec.encodeTo(
-      obj.baseBlock,
-      output,
-    );
-    _i2.Weight.codec.encodeTo(
-      obj.maxBlock,
-      output,
-    );
-    _i3.PerDispatchClass.codec.encodeTo(
-      obj.perClass,
-      output,
-    );
+  void encodeTo(BlockWeights obj, _i1.Output output) {
+    _i2.Weight.codec.encodeTo(obj.baseBlock, output);
+    _i2.Weight.codec.encodeTo(obj.maxBlock, output);
+    _i3.PerDispatchClass.codec.encodeTo(obj.perClass, output);
   }
 
   @override

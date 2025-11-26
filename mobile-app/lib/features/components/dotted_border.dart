@@ -67,25 +67,13 @@ class _DottedBorderPainter extends CustomPainter {
       path = Path()
         ..addRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              strokeWidth / 2,
-              strokeWidth / 2,
-              size.width - strokeWidth,
-              size.height - strokeWidth,
-            ),
+            Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
             borderRadius!,
           ),
         );
     } else {
       path = Path()
-        ..addRect(
-          Rect.fromLTWH(
-            strokeWidth / 2,
-            strokeWidth / 2,
-            size.width - strokeWidth,
-            size.height - strokeWidth,
-          ),
-        );
+        ..addRect(Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth));
     }
 
     final Path dest = Path();

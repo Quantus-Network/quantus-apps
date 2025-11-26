@@ -59,10 +59,7 @@ class $DepositKindCodec with _i1.Codec<DepositKind> {
   }
 
   @override
-  void encodeTo(
-    DepositKind value,
-    _i1.Output output,
-  ) {
+  void encodeTo(DepositKind value, _i1.Output output) {
     switch (value.runtimeType) {
       case RecoveryConfig:
         (value as RecoveryConfig).encodeTo(output);
@@ -71,8 +68,7 @@ class $DepositKindCodec with _i1.Codec<DepositKind> {
         (value as ActiveRecoveryFor).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'DepositKind: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DepositKind: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -84,8 +80,7 @@ class $DepositKindCodec with _i1.Codec<DepositKind> {
       case ActiveRecoveryFor:
         return (value as ActiveRecoveryFor)._sizeHint();
       default:
-        throw Exception(
-            'DepositKind: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('DepositKind: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -97,10 +92,7 @@ class RecoveryConfig extends DepositKind {
   Map<String, dynamic> toJson() => {'RecoveryConfig': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
   }
 
   @override
@@ -130,27 +122,13 @@ class ActiveRecoveryFor extends DepositKind {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(value0, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ActiveRecoveryFor &&
-          _i4.listsEqual(
-            other.value0,
-            value0,
-          );
+      identical(this, other) || other is ActiveRecoveryFor && _i4.listsEqual(other.value0, value0);
 
   @override
   int get hashCode => value0.hashCode;

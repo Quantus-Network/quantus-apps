@@ -22,15 +22,13 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<BigInt> _totalIssuance =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _totalIssuance = const _i1.StorageValue<BigInt>(
     prefix: 'Balances',
     storage: 'TotalIssuance',
     valueCodec: _i2.U128Codec.codec,
   );
 
-  final _i1.StorageValue<BigInt> _inactiveIssuance =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _inactiveIssuance = const _i1.StorageValue<BigInt>(
     prefix: 'Balances',
     storage: 'InactiveIssuance',
     valueCodec: _i2.U128Codec.codec,
@@ -38,63 +36,60 @@ class Queries {
 
   final _i1.StorageMap<_i3.AccountId32, _i4.AccountData> _account =
       const _i1.StorageMap<_i3.AccountId32, _i4.AccountData>(
-    prefix: 'Balances',
-    storage: 'Account',
-    valueCodec: _i4.AccountData.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'Balances',
+        storage: 'Account',
+        valueCodec: _i4.AccountData.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageMap<_i3.AccountId32, List<_i5.BalanceLock>> _locks =
       const _i1.StorageMap<_i3.AccountId32, List<_i5.BalanceLock>>(
-    prefix: 'Balances',
-    storage: 'Locks',
-    valueCodec: _i2.SequenceCodec<_i5.BalanceLock>(_i5.BalanceLock.codec),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'Balances',
+        storage: 'Locks',
+        valueCodec: _i2.SequenceCodec<_i5.BalanceLock>(_i5.BalanceLock.codec),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageMap<_i3.AccountId32, List<_i6.ReserveData>> _reserves =
       const _i1.StorageMap<_i3.AccountId32, List<_i6.ReserveData>>(
-    prefix: 'Balances',
-    storage: 'Reserves',
-    valueCodec: _i2.SequenceCodec<_i6.ReserveData>(_i6.ReserveData.codec),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'Balances',
+        storage: 'Reserves',
+        valueCodec: _i2.SequenceCodec<_i6.ReserveData>(_i6.ReserveData.codec),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageMap<_i3.AccountId32, List<_i7.IdAmount>> _holds =
       const _i1.StorageMap<_i3.AccountId32, List<_i7.IdAmount>>(
-    prefix: 'Balances',
-    storage: 'Holds',
-    valueCodec: _i2.SequenceCodec<_i7.IdAmount>(_i7.IdAmount.codec),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'Balances',
+        storage: 'Holds',
+        valueCodec: _i2.SequenceCodec<_i7.IdAmount>(_i7.IdAmount.codec),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
+      );
 
   final _i1.StorageMap<_i3.AccountId32, List<_i8.IdAmount>> _freezes =
       const _i1.StorageMap<_i3.AccountId32, List<_i8.IdAmount>>(
-    prefix: 'Balances',
-    storage: 'Freezes',
-    valueCodec: _i2.SequenceCodec<_i8.IdAmount>(_i8.IdAmount.codec),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
-  );
+        prefix: 'Balances',
+        storage: 'Freezes',
+        valueCodec: _i2.SequenceCodec<_i8.IdAmount>(_i8.IdAmount.codec),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
+      );
 
-  final _i1.StorageMap<
-          _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>
-      _transferProof = const _i1.StorageMap<
-          _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>,
-          dynamic>(
-    prefix: 'Balances',
-    storage: 'TransferProof',
-    valueCodec: _i2.NullCodec.codec,
-    hasher: _i1.StorageHasher.identity(
-        _i9.Tuple4Codec<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>(
-      _i2.U64Codec.codec,
-      _i3.AccountId32Codec(),
-      _i3.AccountId32Codec(),
-      _i2.U128Codec.codec,
-    )),
-  );
+  final _i1.StorageMap<_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic> _transferProof =
+      const _i1.StorageMap<_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>, dynamic>(
+        prefix: 'Balances',
+        storage: 'TransferProof',
+        valueCodec: _i2.NullCodec.codec,
+        hasher: _i1.StorageHasher.identity(
+          _i9.Tuple4Codec<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>(
+            _i2.U64Codec.codec,
+            _i3.AccountId32Codec(),
+            _i3.AccountId32Codec(),
+            _i2.U128Codec.codec,
+          ),
+        ),
+      );
 
-  final _i1.StorageValue<BigInt> _transferCount =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _transferCount = const _i1.StorageValue<BigInt>(
     prefix: 'Balances',
     storage: 'TransferCount',
     valueCodec: _i2.U64Codec.codec,
@@ -103,10 +98,7 @@ class Queries {
   /// The total units issued in the system.
   _i10.Future<BigInt> totalIssuance({_i1.BlockHash? at}) async {
     final hashedKey = _totalIssuance.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _totalIssuance.decodeValue(bytes);
     }
@@ -116,10 +108,7 @@ class Queries {
   /// The total units of outstanding deactivated balance in the system.
   _i10.Future<BigInt> inactiveIssuance({_i1.BlockHash? at}) async {
     final hashedKey = _inactiveIssuance.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _inactiveIssuance.decodeValue(bytes);
     }
@@ -150,15 +139,9 @@ class Queries {
   /// `frame_system` data alongside the account data contrary to storing account balances in the
   /// `Balances` pallet, which uses a `StorageMap` to store balances data only.
   /// NOTE: This is only used in the case that this pallet is used to store balances.
-  _i10.Future<_i4.AccountData> account(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<_i4.AccountData> account(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _account.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _account.decodeValue(bytes);
     }
@@ -166,10 +149,7 @@ class Queries {
       free: BigInt.zero,
       reserved: BigInt.zero,
       frozen: BigInt.zero,
-      flags: BigInt.parse(
-        '170141183460469231731687303715884105728',
-        radix: 10,
-      ),
+      flags: BigInt.parse('170141183460469231731687303715884105728', radix: 10),
     ); /* Default */
   }
 
@@ -177,15 +157,9 @@ class Queries {
   /// NOTE: Should only be accessed when setting, changing and freeing a lock.
   ///
   /// Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
-  _i10.Future<List<_i5.BalanceLock>> locks(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<_i5.BalanceLock>> locks(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _locks.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _locks.decodeValue(bytes);
     }
@@ -195,15 +169,9 @@ class Queries {
   /// Named reserves on some account balances.
   ///
   /// Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
-  _i10.Future<List<_i6.ReserveData>> reserves(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<_i6.ReserveData>> reserves(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _reserves.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _reserves.decodeValue(bytes);
     }
@@ -211,15 +179,9 @@ class Queries {
   }
 
   /// Holds on account balances.
-  _i10.Future<List<_i7.IdAmount>> holds(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<_i7.IdAmount>> holds(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _holds.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _holds.decodeValue(bytes);
     }
@@ -227,15 +189,9 @@ class Queries {
   }
 
   /// Freeze locks on account balances.
-  _i10.Future<List<_i8.IdAmount>> freezes(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<_i8.IdAmount>> freezes(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _freezes.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _freezes.decodeValue(bytes);
     }
@@ -248,10 +204,7 @@ class Queries {
     _i1.BlockHash? at,
   }) async {
     final hashedKey = _transferProof.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _transferProof.decodeValue(bytes);
     }
@@ -260,10 +213,7 @@ class Queries {
 
   _i10.Future<BigInt> transferCount({_i1.BlockHash? at}) async {
     final hashedKey = _transferCount.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _transferCount.decodeValue(bytes);
     }
@@ -294,108 +244,68 @@ class Queries {
   /// `frame_system` data alongside the account data contrary to storing account balances in the
   /// `Balances` pallet, which uses a `StorageMap` to store balances data only.
   /// NOTE: This is only used in the case that this pallet is used to store balances.
-  _i10.Future<List<_i4.AccountData>> multiAccount(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<_i4.AccountData>> multiAccount(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _account.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _account.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _account.decodeValue(v.key)).toList();
     }
     return (keys
-        .map((key) => _i4.AccountData(
-              free: BigInt.zero,
-              reserved: BigInt.zero,
-              frozen: BigInt.zero,
-              flags: BigInt.parse(
-                '170141183460469231731687303715884105728',
-                radix: 10,
+            .map(
+              (key) => _i4.AccountData(
+                free: BigInt.zero,
+                reserved: BigInt.zero,
+                frozen: BigInt.zero,
+                flags: BigInt.parse('170141183460469231731687303715884105728', radix: 10),
               ),
-            ))
-        .toList() as List<_i4.AccountData>); /* Default */
+            )
+            .toList()
+        as List<_i4.AccountData>); /* Default */
   }
 
   /// Any liquidity locks on some account balances.
   /// NOTE: Should only be accessed when setting, changing and freeing a lock.
   ///
   /// Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
-  _i10.Future<List<List<_i5.BalanceLock>>> multiLocks(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<List<_i5.BalanceLock>>> multiLocks(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _locks.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
       return bytes.first.changes.map((v) => _locks.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i5.BalanceLock>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i5.BalanceLock>>); /* Default */
   }
 
   /// Named reserves on some account balances.
   ///
   /// Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
-  _i10.Future<List<List<_i6.ReserveData>>> multiReserves(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<List<_i6.ReserveData>>> multiReserves(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _reserves.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _reserves.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _reserves.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i6.ReserveData>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i6.ReserveData>>); /* Default */
   }
 
   /// Holds on account balances.
-  _i10.Future<List<List<_i7.IdAmount>>> multiHolds(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<List<_i7.IdAmount>>> multiHolds(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _holds.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
       return bytes.first.changes.map((v) => _holds.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i7.IdAmount>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i7.IdAmount>>); /* Default */
   }
 
   /// Freeze locks on account balances.
-  _i10.Future<List<List<_i8.IdAmount>>> multiFreezes(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i10.Future<List<List<_i8.IdAmount>>> multiFreezes(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _freezes.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _freezes.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _freezes.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i8.IdAmount>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i8.IdAmount>>); /* Default */
   }
 
   /// Transfer proofs for a wormhole transfers
@@ -403,16 +313,10 @@ class Queries {
     List<_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt>> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _transferProof.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _transferProof.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _transferProof.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _transferProof.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -460,8 +364,7 @@ class Queries {
   }
 
   /// Returns the storage key for `transferProof`.
-  _i11.Uint8List transferProofKey(
-      _i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt> key1) {
+  _i11.Uint8List transferProofKey(_i9.Tuple4<BigInt, _i3.AccountId32, _i3.AccountId32, BigInt> key1) {
     final hashedKey = _transferProof.hashedKeyFor(key1);
     return hashedKey;
   }
@@ -519,14 +422,8 @@ class Txs {
   /// of the transfer, the account will be reaped.
   ///
   /// The dispatch origin for this call must be `Signed` by the transactor.
-  _i12.Balances transferAllowDeath({
-    required _i13.MultiAddress dest,
-    required BigInt value,
-  }) {
-    return _i12.Balances(_i14.TransferAllowDeath(
-      dest: dest,
-      value: value,
-    ));
+  _i12.Balances transferAllowDeath({required _i13.MultiAddress dest, required BigInt value}) {
+    return _i12.Balances(_i14.TransferAllowDeath(dest: dest, value: value));
   }
 
   /// Exactly as `transfer_allow_death`, except the origin must be root and the source account
@@ -536,11 +433,7 @@ class Txs {
     required _i13.MultiAddress dest,
     required BigInt value,
   }) {
-    return _i12.Balances(_i14.ForceTransfer(
-      source: source,
-      dest: dest,
-      value: value,
-    ));
+    return _i12.Balances(_i14.ForceTransfer(source: source, dest: dest, value: value));
   }
 
   /// Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
@@ -549,14 +442,8 @@ class Txs {
   /// 99% of the time you want [`transfer_allow_death`] instead.
   ///
   /// [`transfer_allow_death`]: struct.Pallet.html#method.transfer
-  _i12.Balances transferKeepAlive({
-    required _i13.MultiAddress dest,
-    required BigInt value,
-  }) {
-    return _i12.Balances(_i14.TransferKeepAlive(
-      dest: dest,
-      value: value,
-    ));
+  _i12.Balances transferKeepAlive({required _i13.MultiAddress dest, required BigInt value}) {
+    return _i12.Balances(_i14.TransferKeepAlive(dest: dest, value: value));
   }
 
   /// Transfer the entire transferable balance from the caller account.
@@ -574,27 +461,15 @@ class Txs {
   ///  of the funds the account has, causing the sender account to be killed (false), or
   ///  transfer everything except at least the existential deposit, which will guarantee to
   ///  keep the sender account alive (true).
-  _i12.Balances transferAll({
-    required _i13.MultiAddress dest,
-    required bool keepAlive,
-  }) {
-    return _i12.Balances(_i14.TransferAll(
-      dest: dest,
-      keepAlive: keepAlive,
-    ));
+  _i12.Balances transferAll({required _i13.MultiAddress dest, required bool keepAlive}) {
+    return _i12.Balances(_i14.TransferAll(dest: dest, keepAlive: keepAlive));
   }
 
   /// Unreserve some balance from a user by force.
   ///
   /// Can only be called by ROOT.
-  _i12.Balances forceUnreserve({
-    required _i13.MultiAddress who,
-    required BigInt amount,
-  }) {
-    return _i12.Balances(_i14.ForceUnreserve(
-      who: who,
-      amount: amount,
-    ));
+  _i12.Balances forceUnreserve({required _i13.MultiAddress who, required BigInt amount}) {
+    return _i12.Balances(_i14.ForceUnreserve(who: who, amount: amount));
   }
 
   /// Upgrade a specified account.
@@ -612,14 +487,8 @@ class Txs {
   /// Set the regular balance of a given account.
   ///
   /// The dispatch origin for this call is `root`.
-  _i12.Balances forceSetBalance({
-    required _i13.MultiAddress who,
-    required BigInt newFree,
-  }) {
-    return _i12.Balances(_i14.ForceSetBalance(
-      who: who,
-      newFree: newFree,
-    ));
+  _i12.Balances forceSetBalance({required _i13.MultiAddress who, required BigInt newFree}) {
+    return _i12.Balances(_i14.ForceSetBalance(who: who, newFree: newFree));
   }
 
   /// Adjust the total issuance in a saturating way.
@@ -627,14 +496,8 @@ class Txs {
   /// Can only be called by root and always needs a positive `delta`.
   ///
   /// # Example
-  _i12.Balances forceAdjustTotalIssuance({
-    required _i15.AdjustmentDirection direction,
-    required BigInt delta,
-  }) {
-    return _i12.Balances(_i14.ForceAdjustTotalIssuance(
-      direction: direction,
-      delta: delta,
-    ));
+  _i12.Balances forceAdjustTotalIssuance({required _i15.AdjustmentDirection direction, required BigInt delta}) {
+    return _i12.Balances(_i14.ForceAdjustTotalIssuance(direction: direction, delta: delta));
   }
 
   /// Burn the specified liquid free balance from the origin account.
@@ -644,14 +507,8 @@ class Txs {
   ///
   /// Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
   /// this `burn` operation will reduce total issuance by the amount _burned_.
-  _i12.Balances burn({
-    required BigInt value,
-    required bool keepAlive,
-  }) {
-    return _i12.Balances(_i14.Burn(
-      value: value,
-      keepAlive: keepAlive,
-    ));
+  _i12.Balances burn({required BigInt value, required bool keepAlive}) {
+    return _i12.Balances(_i14.Burn(value: value, keepAlive: keepAlive));
   }
 }
 

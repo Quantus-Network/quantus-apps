@@ -41,9 +41,7 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
     super.initState();
 
     setState(() {
-      _currentStoryIndex = widget.startFromBeginning
-          ? 0
-          : (_settingsService.hasWatchedQuestsPromo() ? 2 : 0);
+      _currentStoryIndex = widget.startFromBeginning ? 0 : (_settingsService.hasWatchedQuestsPromo() ? 2 : 0);
     });
 
     _initializeVideo(_currentStoryIndex);
@@ -83,11 +81,11 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
     try {
       await _controller.initialize();
       setState(() {});
-      
+
       // Set looping only for the final video
       final isFinalVideo = index == _storyVideos.length - 1;
       _controller.setLooping(isFinalVideo);
-      
+
       _controller.play();
       widget.setIsFinalVideo(isFinalVideo);
 
@@ -157,10 +155,7 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
       child: Stack(
         children: [
           Center(
-            child: AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: VideoPlayer(_controller),
-            ),
+            child: AspectRatio(aspectRatio: _controller.value.aspectRatio, child: VideoPlayer(_controller)),
           ),
           _buildStoryProgressBars(),
         ],
@@ -195,10 +190,7 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
                         alignment: Alignment.centerLeft,
                         widthFactor: _getProgressForStory(index),
                         child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
                         ),
                       ),
                     ),
@@ -223,8 +215,7 @@ class _QuestsPromoVideoState extends State<QuestsPromoVideo> {
       return 1.0;
     } else if (index == _currentStoryIndex) {
       if (_controller.value.duration.inMilliseconds > 0) {
-        return _controller.value.position.inMilliseconds /
-            _controller.value.duration.inMilliseconds;
+        return _controller.value.position.inMilliseconds / _controller.value.duration.inMilliseconds;
       }
       return 0.0;
     } else {

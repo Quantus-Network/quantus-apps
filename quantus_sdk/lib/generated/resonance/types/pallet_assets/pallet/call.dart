@@ -34,16 +34,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  Create create({
-    required BigInt id,
-    required _i3.MultiAddress admin,
-    required BigInt minBalance,
-  }) {
-    return Create(
-      id: id,
-      admin: admin,
-      minBalance: minBalance,
-    );
+  Create create({required BigInt id, required _i3.MultiAddress admin, required BigInt minBalance}) {
+    return Create(id: id, admin: admin, minBalance: minBalance);
   }
 
   ForceCreate forceCreate({
@@ -52,12 +44,7 @@ class $Call {
     required bool isSufficient,
     required BigInt minBalance,
   }) {
-    return ForceCreate(
-      id: id,
-      owner: owner,
-      isSufficient: isSufficient,
-      minBalance: minBalance,
-    );
+    return ForceCreate(id: id, owner: owner, isSufficient: isSufficient, minBalance: minBalance);
   }
 
   StartDestroy startDestroy({required BigInt id}) {
@@ -76,52 +63,20 @@ class $Call {
     return FinishDestroy(id: id);
   }
 
-  Mint mint({
-    required BigInt id,
-    required _i3.MultiAddress beneficiary,
-    required BigInt amount,
-  }) {
-    return Mint(
-      id: id,
-      beneficiary: beneficiary,
-      amount: amount,
-    );
+  Mint mint({required BigInt id, required _i3.MultiAddress beneficiary, required BigInt amount}) {
+    return Mint(id: id, beneficiary: beneficiary, amount: amount);
   }
 
-  Burn burn({
-    required BigInt id,
-    required _i3.MultiAddress who,
-    required BigInt amount,
-  }) {
-    return Burn(
-      id: id,
-      who: who,
-      amount: amount,
-    );
+  Burn burn({required BigInt id, required _i3.MultiAddress who, required BigInt amount}) {
+    return Burn(id: id, who: who, amount: amount);
   }
 
-  Transfer transfer({
-    required BigInt id,
-    required _i3.MultiAddress target,
-    required BigInt amount,
-  }) {
-    return Transfer(
-      id: id,
-      target: target,
-      amount: amount,
-    );
+  Transfer transfer({required BigInt id, required _i3.MultiAddress target, required BigInt amount}) {
+    return Transfer(id: id, target: target, amount: amount);
   }
 
-  TransferKeepAlive transferKeepAlive({
-    required BigInt id,
-    required _i3.MultiAddress target,
-    required BigInt amount,
-  }) {
-    return TransferKeepAlive(
-      id: id,
-      target: target,
-      amount: amount,
-    );
+  TransferKeepAlive transferKeepAlive({required BigInt id, required _i3.MultiAddress target, required BigInt amount}) {
+    return TransferKeepAlive(id: id, target: target, amount: amount);
   }
 
   ForceTransfer forceTransfer({
@@ -130,32 +85,15 @@ class $Call {
     required _i3.MultiAddress dest,
     required BigInt amount,
   }) {
-    return ForceTransfer(
-      id: id,
-      source: source,
-      dest: dest,
-      amount: amount,
-    );
+    return ForceTransfer(id: id, source: source, dest: dest, amount: amount);
   }
 
-  Freeze freeze({
-    required BigInt id,
-    required _i3.MultiAddress who,
-  }) {
-    return Freeze(
-      id: id,
-      who: who,
-    );
+  Freeze freeze({required BigInt id, required _i3.MultiAddress who}) {
+    return Freeze(id: id, who: who);
   }
 
-  Thaw thaw({
-    required BigInt id,
-    required _i3.MultiAddress who,
-  }) {
-    return Thaw(
-      id: id,
-      who: who,
-    );
+  Thaw thaw({required BigInt id, required _i3.MultiAddress who}) {
+    return Thaw(id: id, who: who);
   }
 
   FreezeAsset freezeAsset({required BigInt id}) {
@@ -166,14 +104,8 @@ class $Call {
     return ThawAsset(id: id);
   }
 
-  TransferOwnership transferOwnership({
-    required BigInt id,
-    required _i3.MultiAddress owner,
-  }) {
-    return TransferOwnership(
-      id: id,
-      owner: owner,
-    );
+  TransferOwnership transferOwnership({required BigInt id, required _i3.MultiAddress owner}) {
+    return TransferOwnership(id: id, owner: owner);
   }
 
   SetTeam setTeam({
@@ -182,12 +114,7 @@ class $Call {
     required _i3.MultiAddress admin,
     required _i3.MultiAddress freezer,
   }) {
-    return SetTeam(
-      id: id,
-      issuer: issuer,
-      admin: admin,
-      freezer: freezer,
-    );
+    return SetTeam(id: id, issuer: issuer, admin: admin, freezer: freezer);
   }
 
   SetMetadata setMetadata({
@@ -196,12 +123,7 @@ class $Call {
     required List<int> symbol,
     required int decimals,
   }) {
-    return SetMetadata(
-      id: id,
-      name: name,
-      symbol: symbol,
-      decimals: decimals,
-    );
+    return SetMetadata(id: id, name: name, symbol: symbol, decimals: decimals);
   }
 
   ClearMetadata clearMetadata({required BigInt id}) {
@@ -215,13 +137,7 @@ class $Call {
     required int decimals,
     required bool isFrozen,
   }) {
-    return ForceSetMetadata(
-      id: id,
-      name: name,
-      symbol: symbol,
-      decimals: decimals,
-      isFrozen: isFrozen,
-    );
+    return ForceSetMetadata(id: id, name: name, symbol: symbol, decimals: decimals, isFrozen: isFrozen);
   }
 
   ForceClearMetadata forceClearMetadata({required BigInt id}) {
@@ -250,26 +166,12 @@ class $Call {
     );
   }
 
-  ApproveTransfer approveTransfer({
-    required BigInt id,
-    required _i3.MultiAddress delegate,
-    required BigInt amount,
-  }) {
-    return ApproveTransfer(
-      id: id,
-      delegate: delegate,
-      amount: amount,
-    );
+  ApproveTransfer approveTransfer({required BigInt id, required _i3.MultiAddress delegate, required BigInt amount}) {
+    return ApproveTransfer(id: id, delegate: delegate, amount: amount);
   }
 
-  CancelApproval cancelApproval({
-    required BigInt id,
-    required _i3.MultiAddress delegate,
-  }) {
-    return CancelApproval(
-      id: id,
-      delegate: delegate,
-    );
+  CancelApproval cancelApproval({required BigInt id, required _i3.MultiAddress delegate}) {
+    return CancelApproval(id: id, delegate: delegate);
   }
 
   ForceCancelApproval forceCancelApproval({
@@ -277,11 +179,7 @@ class $Call {
     required _i3.MultiAddress owner,
     required _i3.MultiAddress delegate,
   }) {
-    return ForceCancelApproval(
-      id: id,
-      owner: owner,
-      delegate: delegate,
-    );
+    return ForceCancelApproval(id: id, owner: owner, delegate: delegate);
   }
 
   TransferApproved transferApproved({
@@ -290,78 +188,35 @@ class $Call {
     required _i3.MultiAddress destination,
     required BigInt amount,
   }) {
-    return TransferApproved(
-      id: id,
-      owner: owner,
-      destination: destination,
-      amount: amount,
-    );
+    return TransferApproved(id: id, owner: owner, destination: destination, amount: amount);
   }
 
   Touch touch({required BigInt id}) {
     return Touch(id: id);
   }
 
-  Refund refund({
-    required BigInt id,
-    required bool allowBurn,
-  }) {
-    return Refund(
-      id: id,
-      allowBurn: allowBurn,
-    );
+  Refund refund({required BigInt id, required bool allowBurn}) {
+    return Refund(id: id, allowBurn: allowBurn);
   }
 
-  SetMinBalance setMinBalance({
-    required BigInt id,
-    required BigInt minBalance,
-  }) {
-    return SetMinBalance(
-      id: id,
-      minBalance: minBalance,
-    );
+  SetMinBalance setMinBalance({required BigInt id, required BigInt minBalance}) {
+    return SetMinBalance(id: id, minBalance: minBalance);
   }
 
-  TouchOther touchOther({
-    required BigInt id,
-    required _i3.MultiAddress who,
-  }) {
-    return TouchOther(
-      id: id,
-      who: who,
-    );
+  TouchOther touchOther({required BigInt id, required _i3.MultiAddress who}) {
+    return TouchOther(id: id, who: who);
   }
 
-  RefundOther refundOther({
-    required BigInt id,
-    required _i3.MultiAddress who,
-  }) {
-    return RefundOther(
-      id: id,
-      who: who,
-    );
+  RefundOther refundOther({required BigInt id, required _i3.MultiAddress who}) {
+    return RefundOther(id: id, who: who);
   }
 
-  Block block({
-    required BigInt id,
-    required _i3.MultiAddress who,
-  }) {
-    return Block(
-      id: id,
-      who: who,
-    );
+  Block block({required BigInt id, required _i3.MultiAddress who}) {
+    return Block(id: id, who: who);
   }
 
-  TransferAll transferAll({
-    required BigInt id,
-    required _i3.MultiAddress dest,
-    required bool keepAlive,
-  }) {
-    return TransferAll(
-      id: id,
-      dest: dest,
-      keepAlive: keepAlive,
-    );
+  TransferAll transferAll({required BigInt id, required _i3.MultiAddress dest, required bool keepAlive}) {
+    return TransferAll(id: id, dest: dest, keepAlive: keepAlive);
   }
 }
 
@@ -444,10 +299,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Create:
         (value as Create).encodeTo(output);
@@ -549,8 +401,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as TransferAll).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -624,8 +475,7 @@ class $CallCodec with _i1.Codec<Call> {
       case TransferAll:
         return (value as TransferAll)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -650,11 +500,7 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// Weight: `O(1)`
 class Create extends Call {
-  const Create({
-    required this.id,
-    required this.admin,
-    required this.minBalance,
-  });
+  const Create({required this.id, required this.admin, required this.minBalance});
 
   factory Create._decode(_i1.Input input) {
     return Create(
@@ -675,12 +521,8 @@ class Create extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'create': {
-          'id': id,
-          'admin': admin.toJson(),
-          'minBalance': minBalance,
-        }
-      };
+    'create': {'id': id, 'admin': admin.toJson(), 'minBalance': minBalance},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -691,41 +533,19 @@ class Create extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      admin,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      minBalance,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(admin, output);
+    _i1.U128Codec.codec.encodeTo(minBalance, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Create &&
-          other.id == id &&
-          other.admin == admin &&
-          other.minBalance == minBalance;
+      identical(this, other) ||
+      other is Create && other.id == id && other.admin == admin && other.minBalance == minBalance;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        admin,
-        minBalance,
-      );
+  int get hashCode => Object.hash(id, admin, minBalance);
 }
 
 /// Issue a new class of fungible assets from a privileged origin.
@@ -748,12 +568,7 @@ class Create extends Call {
 ///
 /// Weight: `O(1)`
 class ForceCreate extends Call {
-  const ForceCreate({
-    required this.id,
-    required this.owner,
-    required this.isSufficient,
-    required this.minBalance,
-  });
+  const ForceCreate({required this.id, required this.owner, required this.isSufficient, required this.minBalance});
 
   factory ForceCreate._decode(_i1.Input input) {
     return ForceCreate(
@@ -778,13 +593,8 @@ class ForceCreate extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_create': {
-          'id': id,
-          'owner': owner.toJson(),
-          'isSufficient': isSufficient,
-          'minBalance': minBalance,
-        }
-      };
+    'force_create': {'id': id, 'owner': owner.toJson(), 'isSufficient': isSufficient, 'minBalance': minBalance},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -796,34 +606,16 @@ class ForceCreate extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      owner,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      isSufficient,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      minBalance,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(owner, output);
+    _i1.BoolCodec.codec.encodeTo(isSufficient, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(minBalance, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ForceCreate &&
           other.id == id &&
           other.owner == owner &&
@@ -831,12 +623,7 @@ class ForceCreate extends Call {
           other.minBalance == minBalance;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        owner,
-        isSufficient,
-        minBalance,
-      );
+  int get hashCode => Object.hash(id, owner, isSufficient, minBalance);
 }
 
 /// Start the process of destroying a fungible asset class.
@@ -860,8 +647,8 @@ class StartDestroy extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'start_destroy': {'id': id}
-      };
+    'start_destroy': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -870,23 +657,12 @@ class StartDestroy extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is StartDestroy && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is StartDestroy && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -916,8 +692,8 @@ class DestroyAccounts extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'destroy_accounts': {'id': id}
-      };
+    'destroy_accounts': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -926,23 +702,12 @@ class DestroyAccounts extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DestroyAccounts && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is DestroyAccounts && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -972,8 +737,8 @@ class DestroyApprovals extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'destroy_approvals': {'id': id}
-      };
+    'destroy_approvals': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -982,23 +747,12 @@ class DestroyApprovals extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DestroyApprovals && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is DestroyApprovals && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -1026,8 +780,8 @@ class FinishDestroy extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'finish_destroy': {'id': id}
-      };
+    'finish_destroy': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1036,23 +790,12 @@ class FinishDestroy extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is FinishDestroy && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is FinishDestroy && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -1071,11 +814,7 @@ class FinishDestroy extends Call {
 /// Weight: `O(1)`
 /// Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
 class Mint extends Call {
-  const Mint({
-    required this.id,
-    required this.beneficiary,
-    required this.amount,
-  });
+  const Mint({required this.id, required this.beneficiary, required this.amount});
 
   factory Mint._decode(_i1.Input input) {
     return Mint(
@@ -1096,12 +835,8 @@ class Mint extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'mint': {
-          'id': id,
-          'beneficiary': beneficiary.toJson(),
-          'amount': amount,
-        }
-      };
+    'mint': {'id': id, 'beneficiary': beneficiary.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1112,41 +847,19 @@ class Mint extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      beneficiary,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(beneficiary, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Mint &&
-          other.id == id &&
-          other.beneficiary == beneficiary &&
-          other.amount == amount;
+      identical(this, other) ||
+      other is Mint && other.id == id && other.beneficiary == beneficiary && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        beneficiary,
-        amount,
-      );
+  int get hashCode => Object.hash(id, beneficiary, amount);
 }
 
 /// Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
@@ -1165,11 +878,7 @@ class Mint extends Call {
 /// Weight: `O(1)`
 /// Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
 class Burn extends Call {
-  const Burn({
-    required this.id,
-    required this.who,
-    required this.amount,
-  });
+  const Burn({required this.id, required this.who, required this.amount});
 
   factory Burn._decode(_i1.Input input) {
     return Burn(
@@ -1190,12 +899,8 @@ class Burn extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'burn': {
-          'id': id,
-          'who': who.toJson(),
-          'amount': amount,
-        }
-      };
+    'burn': {'id': id, 'who': who.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1206,41 +911,18 @@ class Burn extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Burn &&
-          other.id == id &&
-          other.who == who &&
-          other.amount == amount;
+      identical(this, other) || other is Burn && other.id == id && other.who == who && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(id, who, amount);
 }
 
 /// Move some assets from the sender account to another.
@@ -1262,11 +944,7 @@ class Burn extends Call {
 /// Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
 /// `target`.
 class Transfer extends Call {
-  const Transfer({
-    required this.id,
-    required this.target,
-    required this.amount,
-  });
+  const Transfer({required this.id, required this.target, required this.amount});
 
   factory Transfer._decode(_i1.Input input) {
     return Transfer(
@@ -1287,12 +965,8 @@ class Transfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer': {
-          'id': id,
-          'target': target.toJson(),
-          'amount': amount,
-        }
-      };
+    'transfer': {'id': id, 'target': target.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1303,41 +977,18 @@ class Transfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      target,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(target, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Transfer &&
-          other.id == id &&
-          other.target == target &&
-          other.amount == amount;
+      identical(this, other) || other is Transfer && other.id == id && other.target == target && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        target,
-        amount,
-      );
+  int get hashCode => Object.hash(id, target, amount);
 }
 
 /// Move some assets from the sender account to another, keeping the sender account alive.
@@ -1359,11 +1010,7 @@ class Transfer extends Call {
 /// Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
 /// `target`.
 class TransferKeepAlive extends Call {
-  const TransferKeepAlive({
-    required this.id,
-    required this.target,
-    required this.amount,
-  });
+  const TransferKeepAlive({required this.id, required this.target, required this.amount});
 
   factory TransferKeepAlive._decode(_i1.Input input) {
     return TransferKeepAlive(
@@ -1384,12 +1031,8 @@ class TransferKeepAlive extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_keep_alive': {
-          'id': id,
-          'target': target.toJson(),
-          'amount': amount,
-        }
-      };
+    'transfer_keep_alive': {'id': id, 'target': target.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1400,41 +1043,19 @@ class TransferKeepAlive extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      target,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(target, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferKeepAlive &&
-          other.id == id &&
-          other.target == target &&
-          other.amount == amount;
+      identical(this, other) ||
+      other is TransferKeepAlive && other.id == id && other.target == target && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        target,
-        amount,
-      );
+  int get hashCode => Object.hash(id, target, amount);
 }
 
 /// Move some assets from one account to another.
@@ -1457,12 +1078,7 @@ class TransferKeepAlive extends Call {
 /// Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
 /// `dest`.
 class ForceTransfer extends Call {
-  const ForceTransfer({
-    required this.id,
-    required this.source,
-    required this.dest,
-    required this.amount,
-  });
+  const ForceTransfer({required this.id, required this.source, required this.dest, required this.amount});
 
   factory ForceTransfer._decode(_i1.Input input) {
     return ForceTransfer(
@@ -1487,13 +1103,8 @@ class ForceTransfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_transfer': {
-          'id': id,
-          'source': source.toJson(),
-          'dest': dest.toJson(),
-          'amount': amount,
-        }
-      };
+    'force_transfer': {'id': id, 'source': source.toJson(), 'dest': dest.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1505,34 +1116,16 @@ class ForceTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      source,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(source, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ForceTransfer &&
           other.id == id &&
           other.source == source &&
@@ -1540,12 +1133,7 @@ class ForceTransfer extends Call {
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        source,
-        dest,
-        amount,
-      );
+  int get hashCode => Object.hash(id, source, dest, amount);
 }
 
 /// Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -1561,16 +1149,10 @@ class ForceTransfer extends Call {
 ///
 /// Weight: `O(1)`
 class Freeze extends Call {
-  const Freeze({
-    required this.id,
-    required this.who,
-  });
+  const Freeze({required this.id, required this.who});
 
   factory Freeze._decode(_i1.Input input) {
-    return Freeze(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      who: _i3.MultiAddress.codec.decode(input),
-    );
+    return Freeze(id: _i1.CompactBigIntCodec.codec.decode(input), who: _i3.MultiAddress.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -1581,11 +1163,8 @@ class Freeze extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'freeze': {
-          'id': id,
-          'who': who.toJson(),
-        }
-      };
+    'freeze': {'id': id, 'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1595,33 +1174,16 @@ class Freeze extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      11,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Freeze && other.id == id && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is Freeze && other.id == id && other.who == who;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-      );
+  int get hashCode => Object.hash(id, who);
 }
 
 /// Allow unprivileged transfers to and from an account again.
@@ -1635,16 +1197,10 @@ class Freeze extends Call {
 ///
 /// Weight: `O(1)`
 class Thaw extends Call {
-  const Thaw({
-    required this.id,
-    required this.who,
-  });
+  const Thaw({required this.id, required this.who});
 
   factory Thaw._decode(_i1.Input input) {
-    return Thaw(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      who: _i3.MultiAddress.codec.decode(input),
-    );
+    return Thaw(id: _i1.CompactBigIntCodec.codec.decode(input), who: _i3.MultiAddress.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -1655,11 +1211,8 @@ class Thaw extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'thaw': {
-          'id': id,
-          'who': who.toJson(),
-        }
-      };
+    'thaw': {'id': id, 'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1669,33 +1222,16 @@ class Thaw extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      12,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(12, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Thaw && other.id == id && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is Thaw && other.id == id && other.who == who;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-      );
+  int get hashCode => Object.hash(id, who);
 }
 
 /// Disallow further unprivileged transfers for the asset class.
@@ -1719,8 +1255,8 @@ class FreezeAsset extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'freeze_asset': {'id': id}
-      };
+    'freeze_asset': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1729,23 +1265,12 @@ class FreezeAsset extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      13,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is FreezeAsset && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is FreezeAsset && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -1772,8 +1297,8 @@ class ThawAsset extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'thaw_asset': {'id': id}
-      };
+    'thaw_asset': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1782,23 +1307,12 @@ class ThawAsset extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      14,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(14, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ThawAsset && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is ThawAsset && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -1815,10 +1329,7 @@ class ThawAsset extends Call {
 ///
 /// Weight: `O(1)`
 class TransferOwnership extends Call {
-  const TransferOwnership({
-    required this.id,
-    required this.owner,
-  });
+  const TransferOwnership({required this.id, required this.owner});
 
   factory TransferOwnership._decode(_i1.Input input) {
     return TransferOwnership(
@@ -1835,11 +1346,8 @@ class TransferOwnership extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_ownership': {
-          'id': id,
-          'owner': owner.toJson(),
-        }
-      };
+    'transfer_ownership': {'id': id, 'owner': owner.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1849,33 +1357,17 @@ class TransferOwnership extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      15,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      owner,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(15, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(owner, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferOwnership && other.id == id && other.owner == owner;
+      identical(this, other) || other is TransferOwnership && other.id == id && other.owner == owner;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        owner,
-      );
+  int get hashCode => Object.hash(id, owner);
 }
 
 /// Change the Issuer, Admin and Freezer of an asset.
@@ -1891,12 +1383,7 @@ class TransferOwnership extends Call {
 ///
 /// Weight: `O(1)`
 class SetTeam extends Call {
-  const SetTeam({
-    required this.id,
-    required this.issuer,
-    required this.admin,
-    required this.freezer,
-  });
+  const SetTeam({required this.id, required this.issuer, required this.admin, required this.freezer});
 
   factory SetTeam._decode(_i1.Input input) {
     return SetTeam(
@@ -1921,13 +1408,8 @@ class SetTeam extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_team': {
-          'id': id,
-          'issuer': issuer.toJson(),
-          'admin': admin.toJson(),
-          'freezer': freezer.toJson(),
-        }
-      };
+    'set_team': {'id': id, 'issuer': issuer.toJson(), 'admin': admin.toJson(), 'freezer': freezer.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1939,47 +1421,20 @@ class SetTeam extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      16,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      issuer,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      admin,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      freezer,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(16, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(issuer, output);
+    _i3.MultiAddress.codec.encodeTo(admin, output);
+    _i3.MultiAddress.codec.encodeTo(freezer, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetTeam &&
-          other.id == id &&
-          other.issuer == issuer &&
-          other.admin == admin &&
-          other.freezer == freezer;
+      identical(this, other) ||
+      other is SetTeam && other.id == id && other.issuer == issuer && other.admin == admin && other.freezer == freezer;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        issuer,
-        admin,
-        freezer,
-      );
+  int get hashCode => Object.hash(id, issuer, admin, freezer);
 }
 
 /// Set the metadata for an asset.
@@ -1999,12 +1454,7 @@ class SetTeam extends Call {
 ///
 /// Weight: `O(1)`
 class SetMetadata extends Call {
-  const SetMetadata({
-    required this.id,
-    required this.name,
-    required this.symbol,
-    required this.decimals,
-  });
+  const SetMetadata({required this.id, required this.name, required this.symbol, required this.decimals});
 
   factory SetMetadata._decode(_i1.Input input) {
     return SetMetadata(
@@ -2029,13 +1479,8 @@ class SetMetadata extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_metadata': {
-          'id': id,
-          'name': name,
-          'symbol': symbol,
-          'decimals': decimals,
-        }
-      };
+    'set_metadata': {'id': id, 'name': name, 'symbol': symbol, 'decimals': decimals},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2047,53 +1492,24 @@ class SetMetadata extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      17,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      name,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      symbol,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      decimals,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(17, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i1.U8SequenceCodec.codec.encodeTo(name, output);
+    _i1.U8SequenceCodec.codec.encodeTo(symbol, output);
+    _i1.U8Codec.codec.encodeTo(decimals, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is SetMetadata &&
           other.id == id &&
-          _i4.listsEqual(
-            other.name,
-            name,
-          ) &&
-          _i4.listsEqual(
-            other.symbol,
-            symbol,
-          ) &&
+          _i4.listsEqual(other.name, name) &&
+          _i4.listsEqual(other.symbol, symbol) &&
           other.decimals == decimals;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        name,
-        symbol,
-        decimals,
-      );
+  int get hashCode => Object.hash(id, name, symbol, decimals);
 }
 
 /// Clear the metadata for an asset.
@@ -2119,8 +1535,8 @@ class ClearMetadata extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'clear_metadata': {'id': id}
-      };
+    'clear_metadata': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2129,23 +1545,12 @@ class ClearMetadata extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      18,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(18, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ClearMetadata && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is ClearMetadata && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -2201,14 +1606,8 @@ class ForceSetMetadata extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_set_metadata': {
-          'id': id,
-          'name': name,
-          'symbol': symbol,
-          'decimals': decimals,
-          'isFrozen': isFrozen,
-        }
-      };
+    'force_set_metadata': {'id': id, 'name': name, 'symbol': symbol, 'decimals': decimals, 'isFrozen': isFrozen},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2221,59 +1620,26 @@ class ForceSetMetadata extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      19,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      name,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      symbol,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      decimals,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      isFrozen,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(19, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i1.U8SequenceCodec.codec.encodeTo(name, output);
+    _i1.U8SequenceCodec.codec.encodeTo(symbol, output);
+    _i1.U8Codec.codec.encodeTo(decimals, output);
+    _i1.BoolCodec.codec.encodeTo(isFrozen, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ForceSetMetadata &&
           other.id == id &&
-          _i4.listsEqual(
-            other.name,
-            name,
-          ) &&
-          _i4.listsEqual(
-            other.symbol,
-            symbol,
-          ) &&
+          _i4.listsEqual(other.name, name) &&
+          _i4.listsEqual(other.symbol, symbol) &&
           other.decimals == decimals &&
           other.isFrozen == isFrozen;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        name,
-        symbol,
-        decimals,
-        isFrozen,
-      );
+  int get hashCode => Object.hash(id, name, symbol, decimals, isFrozen);
 }
 
 /// Clear the metadata for an asset.
@@ -2299,8 +1665,8 @@ class ForceClearMetadata extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'force_clear_metadata': {'id': id}
-      };
+    'force_clear_metadata': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2309,23 +1675,12 @@ class ForceClearMetadata extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      20,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(20, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceClearMetadata && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is ForceClearMetadata && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -2404,17 +1759,17 @@ class ForceAssetStatus extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_asset_status': {
-          'id': id,
-          'owner': owner.toJson(),
-          'issuer': issuer.toJson(),
-          'admin': admin.toJson(),
-          'freezer': freezer.toJson(),
-          'minBalance': minBalance,
-          'isSufficient': isSufficient,
-          'isFrozen': isFrozen,
-        }
-      };
+    'force_asset_status': {
+      'id': id,
+      'owner': owner.toJson(),
+      'issuer': issuer.toJson(),
+      'admin': admin.toJson(),
+      'freezer': freezer.toJson(),
+      'minBalance': minBalance,
+      'isSufficient': isSufficient,
+      'isFrozen': isFrozen,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2430,50 +1785,20 @@ class ForceAssetStatus extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      owner,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      issuer,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      admin,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      freezer,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      minBalance,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      isSufficient,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      isFrozen,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(21, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(owner, output);
+    _i3.MultiAddress.codec.encodeTo(issuer, output);
+    _i3.MultiAddress.codec.encodeTo(admin, output);
+    _i3.MultiAddress.codec.encodeTo(freezer, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(minBalance, output);
+    _i1.BoolCodec.codec.encodeTo(isSufficient, output);
+    _i1.BoolCodec.codec.encodeTo(isFrozen, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ForceAssetStatus &&
           other.id == id &&
           other.owner == owner &&
@@ -2485,16 +1810,7 @@ class ForceAssetStatus extends Call {
           other.isFrozen == isFrozen;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        owner,
-        issuer,
-        admin,
-        freezer,
-        minBalance,
-        isSufficient,
-        isFrozen,
-      );
+  int get hashCode => Object.hash(id, owner, issuer, admin, freezer, minBalance, isSufficient, isFrozen);
 }
 
 /// Approve an amount of asset for transfer by a delegated third-party account.
@@ -2518,11 +1834,7 @@ class ForceAssetStatus extends Call {
 ///
 /// Weight: `O(1)`
 class ApproveTransfer extends Call {
-  const ApproveTransfer({
-    required this.id,
-    required this.delegate,
-    required this.amount,
-  });
+  const ApproveTransfer({required this.id, required this.delegate, required this.amount});
 
   factory ApproveTransfer._decode(_i1.Input input) {
     return ApproveTransfer(
@@ -2543,12 +1855,8 @@ class ApproveTransfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'approve_transfer': {
-          'id': id,
-          'delegate': delegate.toJson(),
-          'amount': amount,
-        }
-      };
+    'approve_transfer': {'id': id, 'delegate': delegate.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2559,41 +1867,19 @@ class ApproveTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      22,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      delegate,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(22, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(delegate, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ApproveTransfer &&
-          other.id == id &&
-          other.delegate == delegate &&
-          other.amount == amount;
+      identical(this, other) ||
+      other is ApproveTransfer && other.id == id && other.delegate == delegate && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        delegate,
-        amount,
-      );
+  int get hashCode => Object.hash(id, delegate, amount);
 }
 
 /// Cancel all of some asset approved for delegated transfer by a third-party account.
@@ -2610,10 +1896,7 @@ class ApproveTransfer extends Call {
 ///
 /// Weight: `O(1)`
 class CancelApproval extends Call {
-  const CancelApproval({
-    required this.id,
-    required this.delegate,
-  });
+  const CancelApproval({required this.id, required this.delegate});
 
   factory CancelApproval._decode(_i1.Input input) {
     return CancelApproval(
@@ -2630,11 +1913,8 @@ class CancelApproval extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'cancel_approval': {
-          'id': id,
-          'delegate': delegate.toJson(),
-        }
-      };
+    'cancel_approval': {'id': id, 'delegate': delegate.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2644,33 +1924,17 @@ class CancelApproval extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      23,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      delegate,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(23, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(delegate, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CancelApproval && other.id == id && other.delegate == delegate;
+      identical(this, other) || other is CancelApproval && other.id == id && other.delegate == delegate;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        delegate,
-      );
+  int get hashCode => Object.hash(id, delegate);
 }
 
 /// Cancel all of some asset approved for delegated transfer by a third-party account.
@@ -2687,11 +1951,7 @@ class CancelApproval extends Call {
 ///
 /// Weight: `O(1)`
 class ForceCancelApproval extends Call {
-  const ForceCancelApproval({
-    required this.id,
-    required this.owner,
-    required this.delegate,
-  });
+  const ForceCancelApproval({required this.id, required this.owner, required this.delegate});
 
   factory ForceCancelApproval._decode(_i1.Input input) {
     return ForceCancelApproval(
@@ -2712,12 +1972,8 @@ class ForceCancelApproval extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'force_cancel_approval': {
-          'id': id,
-          'owner': owner.toJson(),
-          'delegate': delegate.toJson(),
-        }
-      };
+    'force_cancel_approval': {'id': id, 'owner': owner.toJson(), 'delegate': delegate.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2728,41 +1984,19 @@ class ForceCancelApproval extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      24,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      owner,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      delegate,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(24, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(owner, output);
+    _i3.MultiAddress.codec.encodeTo(delegate, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ForceCancelApproval &&
-          other.id == id &&
-          other.owner == owner &&
-          other.delegate == delegate;
+      identical(this, other) ||
+      other is ForceCancelApproval && other.id == id && other.owner == owner && other.delegate == delegate;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        owner,
-        delegate,
-      );
+  int get hashCode => Object.hash(id, owner, delegate);
 }
 
 /// Transfer some asset balance from a previously delegated account to some third-party
@@ -2784,12 +2018,7 @@ class ForceCancelApproval extends Call {
 ///
 /// Weight: `O(1)`
 class TransferApproved extends Call {
-  const TransferApproved({
-    required this.id,
-    required this.owner,
-    required this.destination,
-    required this.amount,
-  });
+  const TransferApproved({required this.id, required this.owner, required this.destination, required this.amount});
 
   factory TransferApproved._decode(_i1.Input input) {
     return TransferApproved(
@@ -2814,13 +2043,8 @@ class TransferApproved extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_approved': {
-          'id': id,
-          'owner': owner.toJson(),
-          'destination': destination.toJson(),
-          'amount': amount,
-        }
-      };
+    'transfer_approved': {'id': id, 'owner': owner.toJson(), 'destination': destination.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2832,34 +2056,16 @@ class TransferApproved extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      25,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      owner,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      destination,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(25, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(owner, output);
+    _i3.MultiAddress.codec.encodeTo(destination, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is TransferApproved &&
           other.id == id &&
           other.owner == owner &&
@@ -2867,12 +2073,7 @@ class TransferApproved extends Call {
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        owner,
-        destination,
-        amount,
-      );
+  int get hashCode => Object.hash(id, owner, destination, amount);
 }
 
 /// Create an asset account for non-provider assets.
@@ -2896,8 +2097,8 @@ class Touch extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'touch': {'id': id}
-      };
+    'touch': {'id': id},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2906,23 +2107,12 @@ class Touch extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      26,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(26, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Touch && other.id == id;
+  bool operator ==(Object other) => identical(this, other) || other is Touch && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -2939,16 +2129,10 @@ class Touch extends Call {
 ///
 /// Emits `Refunded` event when successful.
 class Refund extends Call {
-  const Refund({
-    required this.id,
-    required this.allowBurn,
-  });
+  const Refund({required this.id, required this.allowBurn});
 
   factory Refund._decode(_i1.Input input) {
-    return Refund(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      allowBurn: _i1.BoolCodec.codec.decode(input),
-    );
+    return Refund(id: _i1.CompactBigIntCodec.codec.decode(input), allowBurn: _i1.BoolCodec.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -2959,11 +2143,8 @@ class Refund extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'refund': {
-          'id': id,
-          'allowBurn': allowBurn,
-        }
-      };
+    'refund': {'id': id, 'allowBurn': allowBurn},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -2973,33 +2154,17 @@ class Refund extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      27,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      allowBurn,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(27, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i1.BoolCodec.codec.encodeTo(allowBurn, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Refund && other.id == id && other.allowBurn == allowBurn;
+      identical(this, other) || other is Refund && other.id == id && other.allowBurn == allowBurn;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        allowBurn,
-      );
+  int get hashCode => Object.hash(id, allowBurn);
 }
 
 /// Sets the minimum balance of an asset.
@@ -3015,16 +2180,10 @@ class Refund extends Call {
 ///
 /// Emits `AssetMinBalanceChanged` event when successful.
 class SetMinBalance extends Call {
-  const SetMinBalance({
-    required this.id,
-    required this.minBalance,
-  });
+  const SetMinBalance({required this.id, required this.minBalance});
 
   factory SetMinBalance._decode(_i1.Input input) {
-    return SetMinBalance(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      minBalance: _i1.U128Codec.codec.decode(input),
-    );
+    return SetMinBalance(id: _i1.CompactBigIntCodec.codec.decode(input), minBalance: _i1.U128Codec.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -3035,11 +2194,8 @@ class SetMinBalance extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'set_min_balance': {
-          'id': id,
-          'minBalance': minBalance,
-        }
-      };
+    'set_min_balance': {'id': id, 'minBalance': minBalance},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -3049,35 +2205,17 @@ class SetMinBalance extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      28,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      minBalance,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(28, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i1.U128Codec.codec.encodeTo(minBalance, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetMinBalance &&
-          other.id == id &&
-          other.minBalance == minBalance;
+      identical(this, other) || other is SetMinBalance && other.id == id && other.minBalance == minBalance;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        minBalance,
-      );
+  int get hashCode => Object.hash(id, minBalance);
 }
 
 /// Create an asset account for `who`.
@@ -3091,16 +2229,10 @@ class SetMinBalance extends Call {
 ///
 /// Emits `Touched` event when successful.
 class TouchOther extends Call {
-  const TouchOther({
-    required this.id,
-    required this.who,
-  });
+  const TouchOther({required this.id, required this.who});
 
   factory TouchOther._decode(_i1.Input input) {
-    return TouchOther(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      who: _i3.MultiAddress.codec.decode(input),
-    );
+    return TouchOther(id: _i1.CompactBigIntCodec.codec.decode(input), who: _i3.MultiAddress.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -3111,11 +2243,8 @@ class TouchOther extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'touch_other': {
-          'id': id,
-          'who': who.toJson(),
-        }
-      };
+    'touch_other': {'id': id, 'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -3125,33 +2254,16 @@ class TouchOther extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      29,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(29, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TouchOther && other.id == id && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is TouchOther && other.id == id && other.who == who;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-      );
+  int get hashCode => Object.hash(id, who);
 }
 
 /// Return the deposit (if any) of a target asset account. Useful if you are the depositor.
@@ -3165,16 +2277,10 @@ class TouchOther extends Call {
 ///
 /// Emits `Refunded` event when successful.
 class RefundOther extends Call {
-  const RefundOther({
-    required this.id,
-    required this.who,
-  });
+  const RefundOther({required this.id, required this.who});
 
   factory RefundOther._decode(_i1.Input input) {
-    return RefundOther(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      who: _i3.MultiAddress.codec.decode(input),
-    );
+    return RefundOther(id: _i1.CompactBigIntCodec.codec.decode(input), who: _i3.MultiAddress.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -3185,11 +2291,8 @@ class RefundOther extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'refund_other': {
-          'id': id,
-          'who': who.toJson(),
-        }
-      };
+    'refund_other': {'id': id, 'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -3199,33 +2302,17 @@ class RefundOther extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      30,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(30, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RefundOther && other.id == id && other.who == who;
+      identical(this, other) || other is RefundOther && other.id == id && other.who == who;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-      );
+  int get hashCode => Object.hash(id, who);
 }
 
 /// Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
@@ -3239,16 +2326,10 @@ class RefundOther extends Call {
 ///
 /// Weight: `O(1)`
 class Block extends Call {
-  const Block({
-    required this.id,
-    required this.who,
-  });
+  const Block({required this.id, required this.who});
 
   factory Block._decode(_i1.Input input) {
-    return Block(
-      id: _i1.CompactBigIntCodec.codec.decode(input),
-      who: _i3.MultiAddress.codec.decode(input),
-    );
+    return Block(id: _i1.CompactBigIntCodec.codec.decode(input), who: _i3.MultiAddress.codec.decode(input));
   }
 
   /// T::AssetIdParameter
@@ -3259,11 +2340,8 @@ class Block extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'block': {
-          'id': id,
-          'who': who.toJson(),
-        }
-      };
+    'block': {'id': id, 'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -3273,33 +2351,16 @@ class Block extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      31,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(31, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Block && other.id == id && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is Block && other.id == id && other.who == who;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        who,
-      );
+  int get hashCode => Object.hash(id, who);
 }
 
 /// Transfer the entire transferable balance from the caller asset account.
@@ -3319,11 +2380,7 @@ class Block extends Call {
 ///  (false), or transfer everything except at least the minimum balance, which will
 ///  guarantee to keep the sender asset account alive (true).
 class TransferAll extends Call {
-  const TransferAll({
-    required this.id,
-    required this.dest,
-    required this.keepAlive,
-  });
+  const TransferAll({required this.id, required this.dest, required this.keepAlive});
 
   factory TransferAll._decode(_i1.Input input) {
     return TransferAll(
@@ -3344,12 +2401,8 @@ class TransferAll extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'transfer_all': {
-          'id': id,
-          'dest': dest.toJson(),
-          'keepAlive': keepAlive,
-        }
-      };
+    'transfer_all': {'id': id, 'dest': dest.toJson(), 'keepAlive': keepAlive},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -3360,39 +2413,17 @@ class TransferAll extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      32,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      id,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      keepAlive,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(32, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    _i3.MultiAddress.codec.encodeTo(dest, output);
+    _i1.BoolCodec.codec.encodeTo(keepAlive, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferAll &&
-          other.id == id &&
-          other.dest == dest &&
-          other.keepAlive == keepAlive;
+      identical(this, other) ||
+      other is TransferAll && other.id == id && other.dest == dest && other.keepAlive == keepAlive;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        dest,
-        keepAlive,
-      );
+  int get hashCode => Object.hash(id, dest, keepAlive);
 }

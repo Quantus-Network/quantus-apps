@@ -39,28 +39,16 @@ class $Call {
     return Sudo(call: call);
   }
 
-  SudoUncheckedWeight sudoUncheckedWeight({
-    required _i3.RuntimeCall call,
-    required _i4.Weight weight,
-  }) {
-    return SudoUncheckedWeight(
-      call: call,
-      weight: weight,
-    );
+  SudoUncheckedWeight sudoUncheckedWeight({required _i3.RuntimeCall call, required _i4.Weight weight}) {
+    return SudoUncheckedWeight(call: call, weight: weight);
   }
 
   SetKey setKey({required _i5.MultiAddress new_}) {
     return SetKey(new_: new_);
   }
 
-  SudoAs sudoAs({
-    required _i5.MultiAddress who,
-    required _i3.RuntimeCall call,
-  }) {
-    return SudoAs(
-      who: who,
-      call: call,
-    );
+  SudoAs sudoAs({required _i5.MultiAddress who, required _i3.RuntimeCall call}) {
+    return SudoAs(who: who, call: call);
   }
 
   RemoveKey removeKey() {
@@ -91,10 +79,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Sudo:
         (value as Sudo).encodeTo(output);
@@ -112,8 +97,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as RemoveKey).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -131,8 +115,7 @@ class $CallCodec with _i1.Codec<Call> {
       case RemoveKey:
         return 1;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -150,8 +133,8 @@ class Sudo extends Call {
 
   @override
   Map<String, Map<String, Map<String, Map<String, dynamic>>>> toJson() => {
-        'sudo': {'call': call.toJson()}
-      };
+    'sudo': {'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -160,23 +143,12 @@ class Sudo extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Sudo && other.call == call;
+  bool operator ==(Object other) => identical(this, other) || other is Sudo && other.call == call;
 
   @override
   int get hashCode => call.hashCode;
@@ -188,16 +160,10 @@ class Sudo extends Call {
 ///
 /// The dispatch origin for this call must be _Signed_.
 class SudoUncheckedWeight extends Call {
-  const SudoUncheckedWeight({
-    required this.call,
-    required this.weight,
-  });
+  const SudoUncheckedWeight({required this.call, required this.weight});
 
   factory SudoUncheckedWeight._decode(_i1.Input input) {
-    return SudoUncheckedWeight(
-      call: _i3.RuntimeCall.codec.decode(input),
-      weight: _i4.Weight.codec.decode(input),
-    );
+    return SudoUncheckedWeight(call: _i3.RuntimeCall.codec.decode(input), weight: _i4.Weight.codec.decode(input));
   }
 
   /// Box<<T as Config>::RuntimeCall>
@@ -208,11 +174,8 @@ class SudoUncheckedWeight extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'sudo_unchecked_weight': {
-          'call': call.toJson(),
-          'weight': weight.toJson(),
-        }
-      };
+    'sudo_unchecked_weight': {'call': call.toJson(), 'weight': weight.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -222,35 +185,17 @@ class SudoUncheckedWeight extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
-    _i4.Weight.codec.encodeTo(
-      weight,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
+    _i4.Weight.codec.encodeTo(weight, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SudoUncheckedWeight &&
-          other.call == call &&
-          other.weight == weight;
+      identical(this, other) || other is SudoUncheckedWeight && other.call == call && other.weight == weight;
 
   @override
-  int get hashCode => Object.hash(
-        call,
-        weight,
-      );
+  int get hashCode => Object.hash(call, weight);
 }
 
 /// Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
@@ -267,8 +212,8 @@ class SetKey extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'set_key': {'new': new_.toJson()}
-      };
+    'set_key': {'new': new_.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -277,23 +222,12 @@ class SetKey extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i5.MultiAddress.codec.encodeTo(
-      new_,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i5.MultiAddress.codec.encodeTo(new_, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetKey && other.new_ == new_;
+  bool operator ==(Object other) => identical(this, other) || other is SetKey && other.new_ == new_;
 
   @override
   int get hashCode => new_.hashCode;
@@ -304,16 +238,10 @@ class SetKey extends Call {
 ///
 /// The dispatch origin for this call must be _Signed_.
 class SudoAs extends Call {
-  const SudoAs({
-    required this.who,
-    required this.call,
-  });
+  const SudoAs({required this.who, required this.call});
 
   factory SudoAs._decode(_i1.Input input) {
-    return SudoAs(
-      who: _i5.MultiAddress.codec.decode(input),
-      call: _i3.RuntimeCall.codec.decode(input),
-    );
+    return SudoAs(who: _i5.MultiAddress.codec.decode(input), call: _i3.RuntimeCall.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -324,11 +252,8 @@ class SudoAs extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'sudo_as': {
-          'who': who.toJson(),
-          'call': call.toJson(),
-        }
-      };
+    'sudo_as': {'who': who.toJson(), 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -338,33 +263,16 @@ class SudoAs extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i5.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i5.MultiAddress.codec.encodeTo(who, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SudoAs && other.who == who && other.call == call;
+  bool operator ==(Object other) => identical(this, other) || other is SudoAs && other.who == who && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        call,
-      );
+  int get hashCode => Object.hash(who, call);
 }
 
 /// Permanently removes the sudo key.
@@ -377,10 +285,7 @@ class RemoveKey extends Call {
   Map<String, dynamic> toJson() => {'remove_key': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
   }
 
   @override

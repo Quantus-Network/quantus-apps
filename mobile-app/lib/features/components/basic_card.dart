@@ -9,8 +9,7 @@ class BasicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectivePadding =
-        padding ?? const EdgeInsets.symmetric(vertical: 5, horizontal: 14);
+    final effectivePadding = padding ?? const EdgeInsets.symmetric(vertical: 5, horizontal: 14);
 
     return Container(
       width: double.infinity,

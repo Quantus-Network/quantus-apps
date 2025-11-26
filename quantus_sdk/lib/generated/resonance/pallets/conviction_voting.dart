@@ -24,69 +24,46 @@ class Queries {
 
   final _i1.StorageDoubleMap<_i2.AccountId32, int, _i3.Voting> _votingFor =
       const _i1.StorageDoubleMap<_i2.AccountId32, int, _i3.Voting>(
-    prefix: 'ConvictionVoting',
-    storage: 'VotingFor',
-    valueCodec: _i3.Voting.codec,
-    hasher1: _i1.StorageHasher.twoxx64Concat(_i2.AccountId32Codec()),
-    hasher2: _i1.StorageHasher.twoxx64Concat(_i4.U16Codec.codec),
-  );
+        prefix: 'ConvictionVoting',
+        storage: 'VotingFor',
+        valueCodec: _i3.Voting.codec,
+        hasher1: _i1.StorageHasher.twoxx64Concat(_i2.AccountId32Codec()),
+        hasher2: _i1.StorageHasher.twoxx64Concat(_i4.U16Codec.codec),
+      );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i5.Tuple2<int, BigInt>>>
-      _classLocksFor =
+  final _i1.StorageMap<_i2.AccountId32, List<_i5.Tuple2<int, BigInt>>> _classLocksFor =
       const _i1.StorageMap<_i2.AccountId32, List<_i5.Tuple2<int, BigInt>>>(
-    prefix: 'ConvictionVoting',
-    storage: 'ClassLocksFor',
-    valueCodec:
-        _i4.SequenceCodec<_i5.Tuple2<int, BigInt>>(_i5.Tuple2Codec<int, BigInt>(
-      _i4.U16Codec.codec,
-      _i4.U128Codec.codec,
-    )),
-    hasher: _i1.StorageHasher.twoxx64Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'ConvictionVoting',
+        storage: 'ClassLocksFor',
+        valueCodec: _i4.SequenceCodec<_i5.Tuple2<int, BigInt>>(
+          _i5.Tuple2Codec<int, BigInt>(_i4.U16Codec.codec, _i4.U128Codec.codec),
+        ),
+        hasher: _i1.StorageHasher.twoxx64Concat(_i2.AccountId32Codec()),
+      );
 
   /// All voting for a particular voter in a particular voting class. We store the balance for the
   /// number of votes that we have recorded.
-  _i6.Future<_i3.Voting> votingFor(
-    _i2.AccountId32 key1,
-    int key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _votingFor.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i6.Future<_i3.Voting> votingFor(_i2.AccountId32 key1, int key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _votingFor.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _votingFor.decodeValue(bytes);
     }
-    return _i3.Casting(_i7.Casting(
-      votes: [],
-      delegations: _i8.Delegations(
-        votes: BigInt.zero,
-        capital: BigInt.zero,
+    return _i3.Casting(
+      _i7.Casting(
+        votes: [],
+        delegations: _i8.Delegations(votes: BigInt.zero, capital: BigInt.zero),
+        prior: _i9.PriorLock(0, BigInt.zero),
       ),
-      prior: _i9.PriorLock(
-        0,
-        BigInt.zero,
-      ),
-    )); /* Default */
+    ); /* Default */
   }
 
   /// The voting classes which have a non-zero lock requirement and the lock amounts which they
   /// require. The actual amount locked on behalf of this pallet should always be the maximum of
   /// this list.
-  _i6.Future<List<_i5.Tuple2<int, BigInt>>> classLocksFor(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<_i5.Tuple2<int, BigInt>>> classLocksFor(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _classLocksFor.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _classLocksFor.decodeValue(bytes);
     }
@@ -100,30 +77,17 @@ class Queries {
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _classLocksFor.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _classLocksFor.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _classLocksFor.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _classLocksFor.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i5.Tuple2<int, BigInt>>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i5.Tuple2<int, BigInt>>>); /* Default */
   }
 
   /// Returns the storage key for `votingFor`.
-  _i10.Uint8List votingForKey(
-    _i2.AccountId32 key1,
-    int key2,
-  ) {
-    final hashedKey = _votingFor.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i10.Uint8List votingForKey(_i2.AccountId32 key1, int key2) {
+    final hashedKey = _votingFor.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
@@ -158,14 +122,8 @@ class Txs {
   /// - `vote`: The vote configuration.
   ///
   /// Weight: `O(R)` where R is the number of polls the voter has voted on.
-  _i11.ConvictionVoting vote({
-    required BigInt pollIndex,
-    required _i12.AccountVote vote,
-  }) {
-    return _i11.ConvictionVoting(_i13.Vote(
-      pollIndex: pollIndex,
-      vote: vote,
-    ));
+  _i11.ConvictionVoting vote({required BigInt pollIndex, required _i12.AccountVote vote}) {
+    return _i11.ConvictionVoting(_i13.Vote(pollIndex: pollIndex, vote: vote));
   }
 
   /// Delegate the voting power (with some given conviction) of the sending account for a
@@ -197,12 +155,7 @@ class Txs {
     required _i15.Conviction conviction,
     required BigInt balance,
   }) {
-    return _i11.ConvictionVoting(_i13.Delegate(
-      class_: class_,
-      to: to,
-      conviction: conviction,
-      balance: balance,
-    ));
+    return _i11.ConvictionVoting(_i13.Delegate(class_: class_, to: to, conviction: conviction, balance: balance));
   }
 
   /// Undelegate the voting power of the sending account for a particular class of polls.
@@ -232,14 +185,8 @@ class Txs {
   /// - `target`: The account to remove the lock on.
   ///
   /// Weight: `O(R)` with R number of vote of target.
-  _i11.ConvictionVoting unlock({
-    required int class_,
-    required _i14.MultiAddress target,
-  }) {
-    return _i11.ConvictionVoting(_i13.Unlock(
-      class_: class_,
-      target: target,
-    ));
+  _i11.ConvictionVoting unlock({required int class_, required _i14.MultiAddress target}) {
+    return _i11.ConvictionVoting(_i13.Unlock(class_: class_, target: target));
   }
 
   /// Remove a vote for a poll.
@@ -271,14 +218,8 @@ class Txs {
   ///
   /// Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
   ///  Weight is calculated for the maximum number of vote.
-  _i11.ConvictionVoting removeVote({
-    int? class_,
-    required int index,
-  }) {
-    return _i11.ConvictionVoting(_i13.RemoveVote(
-      class_: class_,
-      index: index,
-    ));
+  _i11.ConvictionVoting removeVote({int? class_, required int index}) {
+    return _i11.ConvictionVoting(_i13.RemoveVote(class_: class_, index: index));
   }
 
   /// Remove a vote for a poll.
@@ -297,16 +238,8 @@ class Txs {
   ///
   /// Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
   ///  Weight is calculated for the maximum number of vote.
-  _i11.ConvictionVoting removeOtherVote({
-    required _i14.MultiAddress target,
-    required int class_,
-    required int index,
-  }) {
-    return _i11.ConvictionVoting(_i13.RemoveOtherVote(
-      target: target,
-      class_: class_,
-      index: index,
-    ));
+  _i11.ConvictionVoting removeOtherVote({required _i14.MultiAddress target, required int class_, required int index}) {
+    return _i11.ConvictionVoting(_i13.RemoveOtherVote(target: target, class_: class_, index: index));
   }
 }
 

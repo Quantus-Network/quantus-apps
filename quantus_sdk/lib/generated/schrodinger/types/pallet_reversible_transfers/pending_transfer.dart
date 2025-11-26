@@ -42,73 +42,37 @@ class PendingTransfer {
   }
 
   Map<String, dynamic> toJson() => {
-        'from': from.toList(),
-        'to': to.toList(),
-        'interceptor': interceptor.toList(),
-        'call': call.toJson(),
-        'amount': amount,
-      };
+    'from': from.toList(),
+    'to': to.toList(),
+    'interceptor': interceptor.toList(),
+    'call': call.toJson(),
+    'amount': amount,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is PendingTransfer &&
-          _i5.listsEqual(
-            other.from,
-            from,
-          ) &&
-          _i5.listsEqual(
-            other.to,
-            to,
-          ) &&
-          _i5.listsEqual(
-            other.interceptor,
-            interceptor,
-          ) &&
+          _i5.listsEqual(other.from, from) &&
+          _i5.listsEqual(other.to, to) &&
+          _i5.listsEqual(other.interceptor, interceptor) &&
           other.call == call &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        from,
-        to,
-        interceptor,
-        call,
-        amount,
-      );
+  int get hashCode => Object.hash(from, to, interceptor, call, amount);
 }
 
 class $PendingTransferCodec with _i1.Codec<PendingTransfer> {
   const $PendingTransferCodec();
 
   @override
-  void encodeTo(
-    PendingTransfer obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.from,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.to,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.interceptor,
-      output,
-    );
-    _i3.Bounded.codec.encodeTo(
-      obj.call,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
+  void encodeTo(PendingTransfer obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.from, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.to, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.interceptor, output);
+    _i3.Bounded.codec.encodeTo(obj.call, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
   }
 
   @override

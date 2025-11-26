@@ -21,12 +21,7 @@ class GetStarted extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Get Started',
-              style: context.themeText.paragraph?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('Get Started', style: context.themeText.paragraph?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 22),
             GestureDetector(
               onTap: () {
@@ -35,9 +30,7 @@ class GetStarted extends StatelessWidget {
               },
               child: Text(
                 'Get Testnet Tokens →',
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.pink,
-                ),
+                style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.pink),
               ),
             ),
             const SizedBox(height: 25),
@@ -46,10 +39,7 @@ class GetStarted extends StatelessWidget {
                 final Uri url = Uri.parse(AppConstants.tutorialsAndGuidesUrl);
                 launchUrl(url);
               },
-              child: Text(
-                'Tutorials & Guides →',
-                style: context.themeText.smallParagraph,
-              ),
+              child: Text('Tutorials & Guides →', style: context.themeText.smallParagraph),
             ),
             const SizedBox(height: 25),
             GestureDetector(
@@ -57,10 +47,7 @@ class GetStarted extends StatelessWidget {
                 final Uri url = Uri.parse(AppConstants.communityUrl);
                 launchUrl(url);
               },
-              child: Text(
-                'Community →',
-                style: context.themeText.smallParagraph,
-              ),
+              child: Text('Community →', style: context.themeText.smallParagraph),
             ),
             const SizedBox(height: 25),
             GestureDetector(
@@ -68,10 +55,7 @@ class GetStarted extends StatelessWidget {
                 final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
                 launchUrl(url);
               },
-              child: Text(
-                'Tech Support →',
-                style: context.themeText.smallParagraph,
-              ),
+              child: Text('Tech Support →', style: context.themeText.smallParagraph),
             ),
           ],
         ),

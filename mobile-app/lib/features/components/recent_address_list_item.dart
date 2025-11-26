@@ -7,11 +7,7 @@ class RecentAddressListItem extends StatefulWidget {
   final String address;
   final VoidCallback onTap;
 
-  const RecentAddressListItem({
-    super.key,
-    required this.address,
-    required this.onTap,
-  });
+  const RecentAddressListItem({super.key, required this.address, required this.onTap});
 
   @override
   State<RecentAddressListItem> createState() => _RecentAddressListItemState();
@@ -23,8 +19,7 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
   @override
   void initState() {
     super.initState();
-    _humanReadableNameFuture = HumanReadableChecksumService()
-        .getHumanReadableName(widget.address);
+    _humanReadableNameFuture = HumanReadableChecksumService().getHumanReadableName(widget.address);
   }
 
   @override
@@ -42,25 +37,17 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Text(
                   'Loading name...',
-                  style: context.themeText.smallParagraph?.copyWith(
-                    color: context.themeColors.checksum,
-                  ),
+                  style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
                 );
-              } else if (snapshot.hasError ||
-                  !snapshot.hasData ||
-                  snapshot.data!.isEmpty) {
+              } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
                 return Text(
                   'Unknown Name',
-                  style: context.themeText.smallParagraph?.copyWith(
-                    color: context.themeColors.checksum,
-                  ),
+                  style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
                 );
               }
               return Text(
                 snapshot.data!,
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.checksum,
-                ),
+                style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
               );
             },
           ),
@@ -69,9 +56,7 @@ class _RecentAddressListItemState extends State<RecentAddressListItem> {
             width: 217,
             child: Text(
               AddressFormattingService.splitIntoChunks(widget.address).join(' '),
-              style: context.themeText.detail?.copyWith(
-                color: context.themeColors.textMuted,
-              ),
+              style: context.themeText.detail?.copyWith(color: context.themeColors.textMuted),
             ),
           ),
         ],

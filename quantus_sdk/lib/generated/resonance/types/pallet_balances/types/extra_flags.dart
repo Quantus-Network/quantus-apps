@@ -12,14 +12,8 @@ class ExtraFlagsCodec with _i1.Codec<ExtraFlags> {
   }
 
   @override
-  void encodeTo(
-    ExtraFlags value,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(ExtraFlags value, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(value, output);
   }
 
   @override

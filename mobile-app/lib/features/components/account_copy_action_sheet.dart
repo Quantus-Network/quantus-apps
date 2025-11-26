@@ -14,8 +14,7 @@ class AccountCopyActionSheet extends StatefulWidget {
 }
 
 class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
-  final HumanReadableChecksumService _checksumService =
-      HumanReadableChecksumService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   String? _checksum;
   bool _isLoading = true;
 
@@ -27,9 +26,7 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
 
   Future<void> _loadChecksum() async {
     try {
-      final checksum = await _checksumService.getHumanReadableName(
-        widget.activeAccount.accountId,
-      );
+      final checksum = await _checksumService.getHumanReadableName(widget.activeAccount.accountId);
       setState(() {
         _checksum = checksum;
         _isLoading = false;
@@ -43,20 +40,13 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
   }
 
   void _copyAddress() {
-    ClipboardExtensions.copyTextWithSnackbar(
-      context,
-      widget.activeAccount.accountId,
-    );
+    ClipboardExtensions.copyTextWithSnackbar(context, widget.activeAccount.accountId);
     Navigator.pop(context);
   }
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(
-        context,
-        _checksum!,
-        message: 'Checkphrase copied to clipboard',
-      );
+      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
       Navigator.pop(context);
     }
   }
@@ -80,9 +70,7 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
                 'Copy Address',
-                style: context.themeText.paragraph?.copyWith(
-                  color: context.themeColors.light,
-                ),
+                style: context.themeText.paragraph?.copyWith(color: context.themeColors.light),
               ),
             ),
           ),
@@ -93,9 +81,7 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
               child: Text(
                 _isLoading ? 'Loading...' : 'Copy Checkphrase',
                 style: context.themeText.paragraph?.copyWith(
-                  color: _isLoading
-                      ? context.themeColors.textSecondary
-                      : context.themeColors.light,
+                  color: _isLoading ? context.themeColors.textSecondary : context.themeColors.light,
                 ),
               ),
             ),

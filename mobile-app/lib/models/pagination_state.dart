@@ -20,13 +20,8 @@ class PaginationState {
     this.stackTrace,
   });
 
-  factory PaginationState.initial() => PaginationState(
-    items: [],
-    reversibleTransfers: [],
-    offset: 0,
-    hasMore: true,
-    isFetching: false,
-  );
+  factory PaginationState.initial() =>
+      PaginationState(items: [], reversibleTransfers: [], offset: 0, hasMore: true, isFetching: false);
 
   PaginationState copyWith({
     List<TransactionEvent>? items,

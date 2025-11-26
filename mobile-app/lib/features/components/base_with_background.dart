@@ -18,10 +18,7 @@ class BaseWithBackground extends StatelessWidget {
           Positioned.fill(
             child: Opacity(
               opacity: 0.54,
-              child: Image.asset(
-                'assets/light_leak_effect_background.jpg',
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset('assets/light_leak_effect_background.jpg', fit: BoxFit.cover),
             ),
           ),
           SafeArea(child: child),

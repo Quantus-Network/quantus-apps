@@ -6,12 +6,7 @@ class AccountGradientImage extends StatelessWidget {
   final dynamic width;
   final dynamic height;
 
-  const AccountGradientImage({
-    super.key,
-    required this.accountId,
-    required this.width,
-    required this.height,
-  });
+  const AccountGradientImage({super.key, required this.accountId, required this.width, required this.height});
 
   @override
   Widget build(BuildContext context) {

@@ -33,21 +33,9 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
   const AppTextTheme.defaultTheme()
     : this(
         lockTitle: const TextStyle(fontSize: 24, fontFamily: 'Fira Code'),
-        extraLargeTitle: const TextStyle(
-          fontSize: 40,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w600,
-        ),
-        largeTitle: const TextStyle(
-          fontSize: 30,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w300,
-        ),
-        mediumTitle: const TextStyle(
-          fontSize: 24,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w500,
-        ),
+        extraLargeTitle: const TextStyle(fontSize: 40, fontFamily: 'Fira Code', fontWeight: FontWeight.w600),
+        largeTitle: const TextStyle(fontSize: 30, fontFamily: 'Fira Code', fontWeight: FontWeight.w300),
+        mediumTitle: const TextStyle(fontSize: 24, fontFamily: 'Fira Code', fontWeight: FontWeight.w500),
         smallTitle: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w500,
@@ -76,16 +64,8 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontStyle: FontStyle.normal,
           decoration: TextDecoration.none,
         ),
-        tag: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w300,
-          fontFamily: 'Fira Code',
-        ),
-        timer: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Fira Code',
-        ),
+        tag: const TextStyle(fontSize: 12, fontWeight: FontWeight.w300, fontFamily: 'Fira Code'),
+        timer: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, fontFamily: 'Fira Code'),
         detail: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w400,
@@ -104,26 +84,10 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
 
   const AppTextTheme.iPad()
     : this(
-        lockTitle: const TextStyle(
-          color: Colors.white,
-          fontSize: 28,
-          fontFamily: 'Fira Code',
-        ),
-        extraLargeTitle: const TextStyle(
-          fontSize: 52,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w600,
-        ),
-        largeTitle: const TextStyle(
-          fontSize: 36,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w300,
-        ),
-        mediumTitle: const TextStyle(
-          fontSize: 28,
-          fontFamily: 'Fira Code',
-          fontWeight: FontWeight.w400,
-        ),
+        lockTitle: const TextStyle(color: Colors.white, fontSize: 28, fontFamily: 'Fira Code'),
+        extraLargeTitle: const TextStyle(fontSize: 52, fontFamily: 'Fira Code', fontWeight: FontWeight.w600),
+        largeTitle: const TextStyle(fontSize: 36, fontFamily: 'Fira Code', fontWeight: FontWeight.w300),
+        mediumTitle: const TextStyle(fontSize: 28, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
         smallTitle: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w500,
@@ -152,16 +116,8 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
           fontStyle: FontStyle.normal,
           decoration: TextDecoration.none,
         ),
-        tag: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w300,
-          fontFamily: 'Fira Code',
-        ),
-        timer: const TextStyle(
-          fontSize: 36,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Fira Code',
-        ),
+        tag: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300, fontFamily: 'Fira Code'),
+        timer: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600, fontFamily: 'Fira Code'),
         detail: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
@@ -214,11 +170,7 @@ class AppTextTheme extends ThemeExtension<AppTextTheme> {
     if (other is! AppTextTheme) return this;
     return AppTextTheme(
       lockTitle: TextStyle.lerp(lockTitle, other.lockTitle, t),
-      extraLargeTitle: TextStyle.lerp(
-        extraLargeTitle,
-        other.extraLargeTitle,
-        t,
-      ),
+      extraLargeTitle: TextStyle.lerp(extraLargeTitle, other.extraLargeTitle, t),
       largeTitle: TextStyle.lerp(largeTitle, other.largeTitle, t),
       mediumTitle: TextStyle.lerp(mediumTitle, other.mediumTitle, t),
       smallTitle: TextStyle.lerp(smallTitle, other.smallTitle, t),

@@ -15,8 +15,7 @@ class ShowRecoveryPhraseScreen extends StatefulWidget {
   const ShowRecoveryPhraseScreen({super.key});
 
   @override
-  State<ShowRecoveryPhraseScreen> createState() =>
-      _ShowRecoveryPhraseScreenState();
+  State<ShowRecoveryPhraseScreen> createState() => _ShowRecoveryPhraseScreenState();
 }
 
 class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
@@ -42,7 +41,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      appBar: WalletAppBar(title:'Your Recovery Phrase'),
+      appBar: WalletAppBar(title: 'Your Recovery Phrase'),
       child: Column(
         children: [
           Expanded(
@@ -55,10 +54,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                   const SizedBox(height: 18),
                   _buildCopyToClipboard(),
                   const SizedBox(height: 30),
-                  if (!_isRevealed) ...[
-                    _buildWarning(),
-                    const SizedBox(height: 24),
-                  ],
+                  if (!_isRevealed) ...[_buildWarning(), const SizedBox(height: 24)],
                 ],
               ),
             ),
@@ -79,17 +75,12 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Keep your Recovery Phrase Safe',
-          style: context.themeText.smallTitle,
-        ),
+        Text('Keep your Recovery Phrase Safe', style: context.themeText.smallTitle),
         const SizedBox(height: 13),
         Text(
           // ignore: lines_longer_than_80_chars
           'This is the only way to recover your wallet. Anyone who has this phrase will have full access to this wallet, your funds may be lost.',
-          style: context.themeText.smallParagraph?.copyWith(
-            color: context.themeColors.textMuted,
-          ),
+          style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
         ),
       ],
     );
@@ -97,10 +88,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
 
   Widget _buildMnemonicContainer() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.useOpacity(0.70),
-        borderRadius: BorderRadius.circular(5),
-      ),
+      decoration: BoxDecoration(color: Colors.black.useOpacity(0.70), borderRadius: BorderRadius.circular(5)),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -123,9 +111,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
                   ),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: RevealOverlay(
-                  onReveal: () => setState(() => _isRevealed = true),
-                ),
+                child: RevealOverlay(onReveal: () => setState(() => _isRevealed = true)),
               ),
             ),
         ],
@@ -151,16 +137,9 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.copy,
-                color: Colors.white,
-                size: context.isTablet ? 28 : 24,
-              ),
+              Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 28 : 24),
               const SizedBox(width: 8),
-              Text(
-                'Copy to Clipboard',
-                style: context.themeText.smallParagraph,
-              ),
+              Text('Copy to Clipboard', style: context.themeText.smallParagraph),
             ],
           ),
         ),
@@ -172,9 +151,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
     return Text(
       // ignore: lines_longer_than_80_chars
       'Do not share your Recovery Phrase with any 3rd party, person, website or application',
-      style: context.themeText.smallParagraph?.copyWith(
-        color: context.themeColors.textMuted,
-      ),
+      style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
     );
   }
 }

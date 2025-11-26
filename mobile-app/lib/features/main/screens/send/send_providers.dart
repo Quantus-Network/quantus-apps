@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart'
-    as balances;
+import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 // Local provider for existential deposit toggle in send screen
@@ -10,18 +9,12 @@ final existentialDepositToggleProvider = StateProvider<bool>((ref) => true);
 final effectiveMaxBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final existentialDeposit = balances.Constants().existentialDeposit;
   final balanceAsyncValue = ref.watch(balanceProvider);
-  final includeExistentialDeposit = ref.watch(
-    existentialDepositToggleProvider,
-  );
+  final includeExistentialDeposit = ref.watch(existentialDepositToggleProvider);
 
   return balanceAsyncValue.when(
     data: (balance) {
       if (includeExistentialDeposit) {
-        return AsyncValue.data(
-          balance > existentialDeposit
-              ? balance - existentialDeposit
-              : BigInt.zero,
-        );
+        return AsyncValue.data(balance > existentialDeposit ? balance - existentialDeposit : BigInt.zero);
       } else {
         return AsyncValue.data(balance);
       }

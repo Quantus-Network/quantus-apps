@@ -48,16 +48,12 @@ enum Error {
   invalidReverser('InvalidReverser', 13),
 
   /// Cannot schedule one time reversible transaction when account is reversible (theft deterrence)
-  accountAlreadyReversibleCannotScheduleOneTime(
-      'AccountAlreadyReversibleCannotScheduleOneTime', 14),
+  accountAlreadyReversibleCannotScheduleOneTime('AccountAlreadyReversibleCannotScheduleOneTime', 14),
 
   /// The interceptor has reached the maximum number of accounts they can intercept for.
   tooManyInterceptorAccounts('TooManyInterceptorAccounts', 15);
 
-  const Error(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Error(this.variantName, this.codecIndex);
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -120,13 +116,7 @@ class $ErrorCodec with _i1.Codec<Error> {
   }
 
   @override
-  void encodeTo(
-    Error value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Error value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

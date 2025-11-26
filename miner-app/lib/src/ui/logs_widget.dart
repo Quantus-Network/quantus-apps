@@ -108,35 +108,18 @@ class _LogsWidgetState extends State<LogsWidget> {
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor.useOpacity(0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
             ),
             child: Row(
               children: [
-                const Text(
-                  'Live Logs',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                const Text('Live Logs', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(
-                    _autoScroll
-                        ? Icons.vertical_align_bottom
-                        : Icons.vertical_align_top,
-                    size: 20,
-                  ),
+                  icon: Icon(_autoScroll ? Icons.vertical_align_bottom : Icons.vertical_align_top, size: 20),
                   onPressed: _toggleAutoScroll,
-                  tooltip: _autoScroll
-                      ? 'Disable auto-scroll'
-                      : 'Enable auto-scroll',
+                  tooltip: _autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll',
                 ),
-                IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: _clearLogs,
-                  tooltip: 'Clear logs',
-                ),
+                IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearLogs, tooltip: 'Clear logs'),
               ],
             ),
           ),
@@ -150,10 +133,7 @@ class _LogsWidgetState extends State<LogsWidget> {
                       child: Text(
                         'No logs available\nStart mining to see live logs',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                       ),
                     )
                   : ListView.builder(
@@ -170,15 +150,8 @@ class _LogsWidgetState extends State<LogsWidget> {
                               SizedBox(
                                 width: 80,
                                 child: Text(
-                                  log.timestamp.toIso8601String().substring(
-                                    11,
-                                    19,
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                    fontFamily: 'monospace',
-                                  ),
+                                  log.timestamp.toIso8601String().substring(11, 19),
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
                                 ),
                               ),
 
@@ -187,10 +160,7 @@ class _LogsWidgetState extends State<LogsWidget> {
                                 width: 12,
                                 height: 12,
                                 margin: const EdgeInsets.only(right: 8, top: 2),
-                                decoration: BoxDecoration(
-                                  color: _getLogColor(log.source),
-                                  shape: BoxShape.circle,
-                                ),
+                                decoration: BoxDecoration(color: _getLogColor(log.source), shape: BoxShape.circle),
                               ),
 
                               // Source label
@@ -210,11 +180,7 @@ class _LogsWidgetState extends State<LogsWidget> {
                               Expanded(
                                 child: SelectableText(
                                   log.message,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontFamily: 'monospace',
-                                    height: 1.2,
-                                  ),
+                                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace', height: 1.2),
                                 ),
                               ),
                             ],
@@ -230,32 +196,19 @@ class _LogsWidgetState extends State<LogsWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor.useOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Total logs: ${_logs.length}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
+                Text('Total logs: ${_logs.length}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 if (widget.minerProcess != null)
                   Text(
                     'Live',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.green,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
                   )
                 else
-                  Text(
-                    'Not connected',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text('Not connected', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),

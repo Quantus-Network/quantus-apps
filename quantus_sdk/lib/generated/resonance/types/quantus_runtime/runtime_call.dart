@@ -171,10 +171,7 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
   }
 
   @override
-  void encodeTo(
-    RuntimeCall value,
-    _i1.Output output,
-  ) {
+  void encodeTo(RuntimeCall value, _i1.Output output) {
     switch (value.runtimeType) {
       case System:
         (value as System).encodeTo(output);
@@ -231,8 +228,7 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
         (value as Assets).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -276,8 +272,7 @@ class $RuntimeCallCodec with _i1.Codec<RuntimeCall> {
       case Assets:
         return (value as Assets)._sizeHint();
       default:
-        throw Exception(
-            'RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('RuntimeCall: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -294,8 +289,7 @@ class System extends RuntimeCall {
   final _i3.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'System': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'System': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -304,23 +298,12 @@ class System extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is System && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is System && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -338,8 +321,7 @@ class Timestamp extends RuntimeCall {
   final _i4.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, BigInt>>> toJson() =>
-      {'Timestamp': value0.toJson()};
+  Map<String, Map<String, Map<String, BigInt>>> toJson() => {'Timestamp': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -348,23 +330,12 @@ class Timestamp extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i4.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i4.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Timestamp && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Timestamp && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -382,8 +353,7 @@ class Balances extends RuntimeCall {
   final _i5.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Balances': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Balances': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -392,23 +362,12 @@ class Balances extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i5.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i5.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Balances && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Balances && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -435,23 +394,12 @@ class Sudo extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i6.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i6.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Sudo && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Sudo && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -469,8 +417,7 @@ class Wormhole extends RuntimeCall {
   final _i7.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Wormhole': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Wormhole': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -479,23 +426,12 @@ class Wormhole extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i7.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i7.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Wormhole && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Wormhole && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -522,23 +458,12 @@ class Vesting extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i8.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i8.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Vesting && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Vesting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -556,8 +481,7 @@ class Preimage extends RuntimeCall {
   final _i9.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, List<dynamic>>>> toJson() =>
-      {'Preimage': value0.toJson()};
+  Map<String, Map<String, Map<String, List<dynamic>>>> toJson() => {'Preimage': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -566,23 +490,12 @@ class Preimage extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    _i9.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    _i9.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Preimage && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Preimage && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -600,8 +513,7 @@ class Scheduler extends RuntimeCall {
   final _i10.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Scheduler': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Scheduler': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -610,23 +522,12 @@ class Scheduler extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    _i10.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    _i10.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Scheduler && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Scheduler && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -644,8 +545,7 @@ class Utility extends RuntimeCall {
   final _i11.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Utility': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Utility': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -654,23 +554,12 @@ class Utility extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      11,
-      output,
-    );
-    _i11.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i11.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Utility && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Utility && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -688,8 +577,7 @@ class Referenda extends RuntimeCall {
   final _i12.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Referenda': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Referenda': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -698,23 +586,12 @@ class Referenda extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      12,
-      output,
-    );
-    _i12.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(12, output);
+    _i12.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Referenda && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Referenda && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -732,8 +609,7 @@ class ReversibleTransfers extends RuntimeCall {
   final _i13.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'ReversibleTransfers': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'ReversibleTransfers': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -742,23 +618,12 @@ class ReversibleTransfers extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      13,
-      output,
-    );
-    _i13.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(13, output);
+    _i13.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ReversibleTransfers && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is ReversibleTransfers && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -776,8 +641,7 @@ class ConvictionVoting extends RuntimeCall {
   final _i14.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'ConvictionVoting': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'ConvictionVoting': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -786,23 +650,12 @@ class ConvictionVoting extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      14,
-      output,
-    );
-    _i14.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(14, output);
+    _i14.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ConvictionVoting && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is ConvictionVoting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -820,8 +673,7 @@ class TechCollective extends RuntimeCall {
   final _i15.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'TechCollective': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TechCollective': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -830,23 +682,12 @@ class TechCollective extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      15,
-      output,
-    );
-    _i15.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(15, output);
+    _i15.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TechCollective && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is TechCollective && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -864,8 +705,7 @@ class TechReferenda extends RuntimeCall {
   final _i16.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'TechReferenda': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TechReferenda': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -874,23 +714,12 @@ class TechReferenda extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      16,
-      output,
-    );
-    _i16.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(16, output);
+    _i16.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TechReferenda && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is TechReferenda && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -908,8 +737,7 @@ class MerkleAirdrop extends RuntimeCall {
   final _i17.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'MerkleAirdrop': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'MerkleAirdrop': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -918,23 +746,12 @@ class MerkleAirdrop extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      17,
-      output,
-    );
-    _i17.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(17, output);
+    _i17.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MerkleAirdrop && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is MerkleAirdrop && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -952,8 +769,7 @@ class TreasuryPallet extends RuntimeCall {
   final _i18.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -962,23 +778,12 @@ class TreasuryPallet extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      18,
-      output,
-    );
-    _i18.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(18, output);
+    _i18.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TreasuryPallet && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is TreasuryPallet && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -1005,23 +810,12 @@ class Recovery extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      20,
-      output,
-    );
-    _i19.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(20, output);
+    _i19.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Recovery && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Recovery && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -1039,8 +833,7 @@ class Assets extends RuntimeCall {
   final _i20.Call value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
-      {'Assets': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Assets': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -1049,23 +842,12 @@ class Assets extends RuntimeCall {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      21,
-      output,
-    );
-    _i20.Call.codec.encodeTo(
-      value0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(21, output);
+    _i20.Call.codec.encodeTo(value0, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Assets && other.value0 == value0;
+  bool operator ==(Object other) => identical(this, other) || other is Assets && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

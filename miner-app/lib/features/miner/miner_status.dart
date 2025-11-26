@@ -47,9 +47,7 @@ class MinerStatus extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _StatusBadge(config: config),
-        ],
+        children: [_StatusBadge(config: config)],
       ),
     );
   }
@@ -90,23 +88,18 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
   @override
   void initState() {
     super.initState();
-    
+
     // Rotation animation for syncing
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
+    _rotationController = AnimationController(duration: const Duration(seconds: 2), vsync: this);
 
     // Pickaxe animation for mining (arcing back and forth)
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    
+    _pulseController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+
     // Arc rotation: -30 degrees to +30 degrees (in radians)
-    _pulseAnimation = Tween<double>(begin: -0.5, end: 0.5).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: -0.5,
+      end: 0.5,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     _updateAnimations();
   }
@@ -159,13 +152,7 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: widget.config.glowColor.useOpacity(0.4),
-                blurRadius: 12,
-                spreadRadius: 2,
-              ),
-            ],
+            boxShadow: [BoxShadow(color: widget.config.glowColor.useOpacity(0.4), blurRadius: 12, spreadRadius: 2)],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -173,16 +160,12 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
               // Animated icon with arcing pickaxe motion
               Transform(
                 alignment: Alignment.bottomLeft,
-                transform: widget.config.isPulsing 
+                transform: widget.config.isPulsing
                     ? (Matrix4.identity()..rotateZ(_pulseAnimation.value))
                     : Matrix4.identity(),
                 child: RotationTransition(
                   turns: widget.config.isAnimated ? _rotationController : AlwaysStoppedAnimation(0),
-                  child: Icon(
-                    widget.config.icon,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: Icon(widget.config.icon, color: Colors.white, size: 18),
                 ),
               ),
               const SizedBox(width: 10),

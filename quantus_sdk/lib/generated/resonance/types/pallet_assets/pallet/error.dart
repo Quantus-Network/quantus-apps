@@ -71,10 +71,7 @@ enum Error {
   /// The asset ID must be equal to the [`NextAssetId`].
   badAssetId('BadAssetId', 20);
 
-  const Error(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Error(this.variantName, this.codecIndex);
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -147,13 +144,7 @@ class $ErrorCodec with _i1.Codec<Error> {
   }
 
   @override
-  void encodeTo(
-    Error value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Error value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

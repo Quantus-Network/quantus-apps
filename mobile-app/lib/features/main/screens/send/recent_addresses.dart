@@ -19,16 +19,12 @@ class RecentAddresses extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height:
-          MediaQuery.of(context).size.height *
-          0.8, // Adjustable height for scrollability
+      height: MediaQuery.of(context).size.height * 0.8, // Adjustable height for scrollability
       padding: const EdgeInsets.fromLTRB(35, 16, 35, 16),
       decoration: const ShapeDecoration(
         color: Colors.black,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20),
-          ), // Softer radius for modal
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)), // Softer radius for modal
         ),
       ),
       child: Column(
@@ -51,13 +47,7 @@ class RecentAddresses extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 226,
-                  child: Text(
-                    'Recently Used',
-                    style: context.themeText.largeTag,
-                  ),
-                ),
+                SizedBox(width: 226, child: Text('Recently Used', style: context.themeText.largeTag)),
                 const SizedBox(height: 20), // Spacing from Figma
                 Expanded(
                   child: RecentAddressList(

@@ -5,8 +5,7 @@ enum NetworkStatus { online, offline }
 
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
-  final StreamController<NetworkStatus> _statusController =
-      StreamController<NetworkStatus>.broadcast();
+  final StreamController<NetworkStatus> _statusController = StreamController<NetworkStatus>.broadcast();
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   NetworkStatus _currentStatus = NetworkStatus.online;
   bool _initialized = false;
@@ -21,14 +20,11 @@ class ConnectivityService {
   Future<void> _initialize() async {
     if (_initialized) return;
     _initialized = true;
-    
+
     final initialResult = await _connectivity.checkConnectivity();
     _updateStatus(initialResult, emitInitial: true);
-    
-    _subscription = _connectivity.onConnectivityChanged.listen(
-      _onConnectivityChanged,
-      onError: _onError,
-    );
+
+    _subscription = _connectivity.onConnectivityChanged.listen(_onConnectivityChanged, onError: _onError);
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
@@ -41,9 +37,7 @@ class ConnectivityService {
   }
 
   void _updateStatus(List<ConnectivityResult> results, {bool emitInitial = false}) {
-    final newStatus = results.contains(ConnectivityResult.none)
-        ? NetworkStatus.offline
-        : NetworkStatus.online;
+    final newStatus = results.contains(ConnectivityResult.none) ? NetworkStatus.offline : NetworkStatus.online;
 
     if (emitInitial || newStatus != _currentStatus) {
       _currentStatus = newStatus;
@@ -57,4 +51,3 @@ class ConnectivityService {
     _statusController.close();
   }
 }
-

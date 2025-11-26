@@ -150,7 +150,6 @@ class _NotificationCardState extends ConsumerState<NotificationCard> with Ticker
     final notification = widget.notification;
     final txService = ref.read(transactionServiceProvider);
     final transaction = txService.deserializeTxEventFromJsonIfPossible(notification.metadata);
-    
 
     return GestureDetector(
       onHorizontalDragUpdate: (details) {

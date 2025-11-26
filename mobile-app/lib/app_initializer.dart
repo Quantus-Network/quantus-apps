@@ -19,7 +19,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    _initialize(); 
+    _initialize();
   }
 
   Future<void> _initialize() async {

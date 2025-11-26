@@ -27,10 +27,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
     return Container(
       padding: const EdgeInsets.all(40),
       margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white.useOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white.useOpacity(0.05), borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -39,16 +36,11 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.white.useOpacity(0.6),
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white.useOpacity(0.6)),
             ),
           ),
           const SizedBox(width: 16),
-          Text(
-            'Loading mining stats...',
-            style: TextStyle(color: Colors.white.useOpacity(0.6), fontSize: 16),
-          ),
+          Text('Loading mining stats...', style: TextStyle(color: Colors.white.useOpacity(0.6), fontSize: 16)),
         ],
       ),
     );
@@ -66,12 +58,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.useOpacity(0.1), width: 1),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.useOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 1,
-            offset: const Offset(0, 8),
-          ),
+          BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 20, spreadRadius: 1, offset: const Offset(0, 8)),
         ],
       ),
       child: Padding(
@@ -93,20 +80,12 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
-                    Icons.analytics,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.analytics, color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Text(
                   'Mining Performance - ${_miningStats!.chainName}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.useOpacity(0.9),
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white.useOpacity(0.9)),
                 ),
               ],
             ),
@@ -118,17 +97,12 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                 Expanded(
                   child: Column(
                     children: [
-                      _buildCompactStat(
-                        icon: Icons.people,
-                        label: 'Peers',
-                        value: '${_miningStats!.peerCount}',
-                      ),
+                      _buildCompactStat(icon: Icons.people, label: 'Peers', value: '${_miningStats!.peerCount}'),
                       const SizedBox(height: 16),
                       _buildCompactStat(
                         icon: Icons.settings,
                         label: 'Workers',
-                        value:
-                            '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
+                        value: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
                       ),
                     ],
                   ),
@@ -141,15 +115,13 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                       _buildCompactStat(
                         icon: Icons.speed,
                         label: 'Hashrate',
-                        value:
-                            '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                        value: '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
                       ),
                       const SizedBox(height: 16),
                       _buildCompactStat(
                         icon: Icons.block,
                         label: 'Block',
-                        value:
-                            '${_miningStats!.currentBlock} / ${_miningStats!.targetBlock}',
+                        value: '${_miningStats!.currentBlock} / ${_miningStats!.targetBlock}',
                       ),
                     ],
                   ),
@@ -162,11 +134,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
     );
   }
 
-  Widget _buildCompactStat({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildCompactStat({required IconData icon, required String label, required String value}) {
     return Row(
       children: [
         Container(

@@ -19,18 +19,15 @@ class BuildPod {
 
   Future<void> build() async {
     final targets = Environment.darwinArchs.map((arch) {
-      final target = Target.forDarwin(
-          platformName: Environment.darwinPlatformName, darwinAarch: arch);
+      final target = Target.forDarwin(platformName: Environment.darwinPlatformName, darwinAarch: arch);
       if (target == null) {
-        throw Exception(
-            "Unknown darwin target or platform: $arch, ${Environment.darwinPlatformName}");
+        throw Exception("Unknown darwin target or platform: $arch, ${Environment.darwinPlatformName}");
       }
       return target;
     }).toList();
 
     final environment = BuildEnvironment.fromEnvironment(isAndroid: false);
-    final provider =
-        ArtifactProvider(environment: environment, userOptions: userOptions);
+    final provider = ArtifactProvider(environment: environment, userOptions: userOptions);
     final artifacts = await provider.getArtifacts(targets);
 
     void performLipo(String targetFile, Iterable<String> sourceFiles) {
@@ -50,10 +47,8 @@ class BuildPod {
         .expand((element) => element)
         .where((element) => element.type == AritifactType.staticlib)
         .toList();
-    final dynamicLibs = artifacts.values
-        .expand((element) => element)
-        .where((element) => element.type == AritifactType.dylib)
-        .toList();
+    final dynamicLibs =
+        artifacts.values.expand((element) => element).where((element) => element.type == AritifactType.dylib).toList();
 
     final libName = environment.crateInfo.packageName;
 
