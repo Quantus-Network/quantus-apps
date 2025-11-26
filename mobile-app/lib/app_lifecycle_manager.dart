@@ -109,9 +109,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       case AppLifecycleState.detached:
         // When the app goes into the background, lock it.
         localAuthNotifier.lockApp();
-
-        // App is being terminated
-        pollingManager.stopPolling();
         break;
     }
   }
