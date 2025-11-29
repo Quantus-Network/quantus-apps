@@ -180,10 +180,7 @@ class MinerProcess {
     try {
       // Check if the process has exited by looking at its PID
       final pid = _externalMinerProcess!.pid;
-      final result = await Process.run('kill', ['-0', pid.toString()]);
-      if (result.exitCode != 0) {
-        minerStillRunning = false;
-      }
+      minerStillRunning = await _isProcessRunning(pid);
     } catch (e) {
       minerStillRunning = false;
     }
@@ -346,8 +343,7 @@ class MinerProcess {
         Future.delayed(const Duration(seconds: 2)).then((_) async {
           // Check if process is still running and force kill if necessary
           try {
-            final result = await Process.run('kill', ['-0', _externalMinerProcess!.pid.toString()]);
-            if (result.exitCode == 0) {
+            if (await _isProcessRunning(_externalMinerProcess!.pid)) {
               print('MinerProcess: External miner still running, force killing...');
               _externalMinerProcess!.kill(ProcessSignal.sigkill);
             }
@@ -378,8 +374,7 @@ class MinerProcess {
       Future.delayed(const Duration(seconds: 2)).then((_) async {
         // Check if process is still running and force kill if necessary
         try {
-          final result = await Process.run('kill', ['-0', _nodeProcess.pid.toString()]);
-          if (result.exitCode == 0) {
+          if (await _isProcessRunning(_nodeProcess.pid)) {
             print('MinerProcess: Node process still running, force killing...');
             _nodeProcess.kill(ProcessSignal.sigkill);
           }
@@ -447,30 +442,67 @@ class MinerProcess {
     }
   }
 
+  /// Check if a process with the given PID is running
+  Future<bool> _isProcessRunning(int pid) async {
+    try {
+      if (Platform.isWindows) {
+        final result = await Process.run('tasklist', ['/FI', 'PID eq $pid']);
+        return result.stdout.toString().contains(' $pid ');
+      } else {
+        final result = await Process.run('kill', ['-0', pid.toString()]);
+        return result.exitCode == 0;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Helper method to force kill a process by PID with verification
   Future<void> _forceKillProcess(int pid, String processName) async {
     try {
       print('MinerProcess: Force killing $processName process (PID: $pid)');
 
-      // First try SIGKILL via kill command for better reliability
-      final killResult = await Process.run('kill', ['-9', pid.toString()]);
+      if (Platform.isWindows) {
+        final killResult = await Process.run('taskkill', ['/F', '/PID', pid.toString()]);
+        if (killResult.exitCode == 0) {
+          print('MinerProcess: Successfully force killed $processName (PID: $pid)');
+        } else {
+          print('MinerProcess: taskkill failed for $processName (PID: $pid), exit code: ${killResult.exitCode}');
+        }
 
-      if (killResult.exitCode == 0) {
-        print('MinerProcess: Successfully force killed $processName (PID: $pid)');
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Verify
+        final checkResult = await Process.run('tasklist', ['/FI', 'PID eq $pid']);
+        if (checkResult.stdout.toString().contains(' $pid ')) {
+          print('MinerProcess: WARNING - $processName (PID: $pid) may still be running');
+          // Try by name as last resort
+          final binaryName = processName.contains('miner') ? 'quantus-miner.exe' : 'quantus-node.exe';
+          await Process.run('taskkill', ['/F', '/IM', binaryName]);
+        } else {
+          print('MinerProcess: Verified $processName (PID: $pid) is terminated');
+        }
       } else {
-        print('MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}');
-      }
+        // First try SIGKILL via kill command for better reliability
+        final killResult = await Process.run('kill', ['-9', pid.toString()]);
 
-      // Wait a moment then verify the process is dead
-      await Future.delayed(const Duration(milliseconds: 500));
+        if (killResult.exitCode == 0) {
+          print('MinerProcess: Successfully force killed $processName (PID: $pid)');
+        } else {
+          print('MinerProcess: kill command failed for $processName (PID: $pid), exit code: ${killResult.exitCode}');
+        }
 
-      final checkResult = await Process.run('kill', ['-0', pid.toString()]);
-      if (checkResult.exitCode != 0) {
-        print('MinerProcess: Verified $processName (PID: $pid) is terminated');
-      } else {
-        print('MinerProcess: WARNING - $processName (PID: $pid) may still be running');
-        // Try pkill as last resort
-        await Process.run('pkill', ['-9', '-f', processName.contains('miner') ? 'quantus-miner' : 'quantus-node']);
+        // Wait a moment then verify the process is dead
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        final checkResult = await Process.run('kill', ['-0', pid.toString()]);
+        if (checkResult.exitCode != 0) {
+          print('MinerProcess: Verified $processName (PID: $pid) is terminated');
+        } else {
+          print('MinerProcess: WARNING - $processName (PID: $pid) may still be running');
+          // Try pkill as last resort
+          await Process.run('pkill', ['-9', '-f', processName.contains('miner') ? 'quantus-miner' : 'quantus-node']);
+        }
       }
     } catch (e) {
       print('MinerProcess: Error in _forceKillProcess for $processName: $e');
@@ -575,8 +607,13 @@ class MinerProcess {
   /// Check if a port is currently in use
   Future<bool> _isPortInUse(int port) async {
     try {
-      final result = await Process.run('lsof', ['-i', ':$port']);
-      return result.exitCode == 0 && result.stdout.toString().isNotEmpty;
+      if (Platform.isWindows) {
+        final result = await Process.run('netstat', ['-ano']);
+        return result.exitCode == 0 && result.stdout.toString().contains(':$port');
+      } else {
+        final result = await Process.run('lsof', ['-i', ':$port']);
+        return result.exitCode == 0 && result.stdout.toString().isNotEmpty;
+      }
     } catch (e) {
       // lsof might not be available, try netstat as fallback
       try {
@@ -592,13 +629,32 @@ class MinerProcess {
   /// Kill process using a specific port
   Future<void> _killProcessOnPort(int port) async {
     try {
-      // Find process using the port
-      final result = await Process.run('lsof', ['-ti', ':$port']);
-      if (result.exitCode == 0) {
-        final pids = result.stdout.toString().trim().split('\n');
-        for (final pid in pids) {
-          if (pid.isNotEmpty) {
-            await Process.run('kill', ['-9', pid.trim()]);
+      if (Platform.isWindows) {
+        final result = await Process.run('netstat', ['-ano']);
+        if (result.exitCode == 0) {
+          final lines = result.stdout.toString().split('\n');
+          for (final line in lines) {
+            if (line.contains(':$port')) {
+              final parts = line.trim().split(RegExp(r'\s+'));
+              if (parts.isNotEmpty) {
+                final pid = parts.last;
+                // Verify it's a valid PID number
+                if (int.tryParse(pid) != null) {
+                  await Process.run('taskkill', ['/F', '/PID', pid]);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Find process using the port
+        final result = await Process.run('lsof', ['-ti', ':$port']);
+        if (result.exitCode == 0) {
+          final pids = result.stdout.toString().trim().split('\n');
+          for (final pid in pids) {
+            if (pid.isNotEmpty) {
+              await Process.run('kill', ['-9', pid.trim()]);
+            }
           }
         }
       }
@@ -618,30 +674,39 @@ class MinerProcess {
   /// Cleanup any existing quantus-miner processes
   Future<void> _cleanupExistingMinerProcesses() async {
     try {
-      // Find all quantus-miner processes
-      final result = await Process.run('pgrep', ['-f', 'quantus-miner']);
-      if (result.exitCode == 0) {
-        final pids = result.stdout.toString().trim().split('\n');
-        for (final pid in pids) {
-          if (pid.isNotEmpty) {
-            try {
-              // Try graceful termination first
-              await Process.run('kill', ['-15', pid.trim()]);
-              await Future.delayed(const Duration(seconds: 1));
+      if (Platform.isWindows) {
+        try {
+          await Process.run('taskkill', ['/F', '/IM', 'quantus-miner.exe']);
+          await Future.delayed(const Duration(seconds: 2));
+        } catch (_) {
+          // Process might not exist
+        }
+      } else {
+        // Find all quantus-miner processes
+        final result = await Process.run('pgrep', ['-f', 'quantus-miner']);
+        if (result.exitCode == 0) {
+          final pids = result.stdout.toString().trim().split('\n');
+          for (final pid in pids) {
+            if (pid.isNotEmpty) {
+              try {
+                // Try graceful termination first
+                await Process.run('kill', ['-15', pid.trim()]);
+                await Future.delayed(const Duration(seconds: 1));
 
-              // Check if still running, force kill if needed
-              final checkResult = await Process.run('kill', ['-0', pid.trim()]);
-              if (checkResult.exitCode == 0) {
-                await Process.run('kill', ['-9', pid.trim()]);
+                // Check if still running, force kill if needed
+                final checkResult = await Process.run('kill', ['-0', pid.trim()]);
+                if (checkResult.exitCode == 0) {
+                  await Process.run('kill', ['-9', pid.trim()]);
+                }
+              } catch (e) {
+                // Ignore cleanup errors
               }
-            } catch (e) {
-              // Ignore cleanup errors
             }
           }
-        }
 
-        // Wait a moment for processes to fully terminate
-        await Future.delayed(const Duration(seconds: 2));
+          // Wait a moment for processes to fully terminate
+          await Future.delayed(const Duration(seconds: 2));
+        }
       }
     } catch (e) {
       // Ignore cleanup errors
@@ -651,30 +716,39 @@ class MinerProcess {
   /// Cleanup any existing quantus-node processes
   Future<void> _cleanupExistingNodeProcesses() async {
     try {
-      // Find all quantus-node processes
-      final result = await Process.run('pgrep', ['-f', 'quantus-node']);
-      if (result.exitCode == 0) {
-        final pids = result.stdout.toString().trim().split('\n');
-        for (final pid in pids) {
-          if (pid.isNotEmpty) {
-            try {
-              // Try graceful termination first
-              await Process.run('kill', ['-15', pid.trim()]);
-              await Future.delayed(const Duration(seconds: 2));
+      if (Platform.isWindows) {
+        try {
+          await Process.run('taskkill', ['/F', '/IM', 'quantus-node.exe']);
+          await Future.delayed(const Duration(seconds: 2));
+        } catch (_) {
+          // Process might not exist
+        }
+      } else {
+        // Find all quantus-node processes
+        final result = await Process.run('pgrep', ['-f', 'quantus-node']);
+        if (result.exitCode == 0) {
+          final pids = result.stdout.toString().trim().split('\n');
+          for (final pid in pids) {
+            if (pid.isNotEmpty) {
+              try {
+                // Try graceful termination first
+                await Process.run('kill', ['-15', pid.trim()]);
+                await Future.delayed(const Duration(seconds: 2));
 
-              // Check if still running, force kill if needed
-              final checkResult = await Process.run('kill', ['-0', pid.trim()]);
-              if (checkResult.exitCode == 0) {
-                await Process.run('kill', ['-9', pid.trim()]);
+                // Check if still running, force kill if needed
+                final checkResult = await Process.run('kill', ['-0', pid.trim()]);
+                if (checkResult.exitCode == 0) {
+                  await Process.run('kill', ['-9', pid.trim()]);
+                }
+              } catch (e) {
+                // Ignore cleanup errors
               }
-            } catch (e) {
-              // Ignore cleanup errors
             }
           }
-        }
 
-        // Wait a moment for processes to fully terminate
-        await Future.delayed(const Duration(seconds: 3));
+          // Wait a moment for processes to fully terminate
+          await Future.delayed(const Duration(seconds: 3));
+        }
       }
     } catch (e) {
       // Ignore cleanup errors
