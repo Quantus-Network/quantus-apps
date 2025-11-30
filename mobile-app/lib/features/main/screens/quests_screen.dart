@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
@@ -8,9 +9,11 @@ import 'package:resonance_network_wallet/features/components/quests_promo_video.
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
+import 'package:resonance_network_wallet/features/main/screens/account_associations_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_stats_providers.dart';
 import 'package:resonance_network_wallet/providers/opt_in_position_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -89,8 +92,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
     super.dispose();
   }
 
-  void refreshData() {
+  void refreshStatsData() {
     ref.invalidate(accountsStatsProvider);
+  }
+
+  void refreshAssociationsData() {
+    ref.invalidate(accountAssociationsProvider);
   }
 
   void setVideoVisibility(bool isVisible) {
@@ -141,6 +148,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
+    final associationsAsync = ref.watch(accountAssociationsProvider);
     final positionAsync = ref.watch(optInPositionProvider);
 
     // Show videos for users who haven't opted in to the reward program
@@ -206,7 +214,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
     return ScaffoldBase.refreshable(
       padding: const EdgeInsetsGeometry.all(0),
       onRefresh: () async {
-        ref.invalidate(accountsStatsProvider);
+        refreshStatsData();
+        refreshAssociationsData();
       },
       scrollController: _scrollController,
       decorations: [
@@ -232,12 +241,14 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(height: 112),
+                                const SizedBox(height: 96),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [_buildOptInPosition(context, positionAsync), const SizedBox(width: 71)],
                                 ),
+                                SizedBox(height: context.isSmallHeight ? 18 : 37.0),
+                                _buildAccountAssociations(context, associationsAsync),
                                 SizedBox(height: context.isSmallHeight ? 18 : 37.0),
                                 ..._buildAccountStats(context, statsAsync),
                                 const SizedBox(height: 16),
@@ -260,27 +271,32 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
                       ),
                     ),
                     SizedBox(height: context.isSmallHeight ? 18 : 40),
-                    Text('Click to Copy Referral Code', style: context.themeText.smallParagraph),
-                    const SizedBox(height: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: InkWell(
                         onTap: _copyReferralCode,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 21, vertical: 11),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                           decoration: ShapeDecoration(
                             color: context.themeColors.background,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
-                          child: Text(
-                            _referralCode ?? 'Loading...',
-                            style: context.themeText.paragraph,
-                            textAlign: TextAlign.center,
+                          child: Row(
+                            spacing: 12.0,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _referralCode ?? 'Loading...',
+                                style: context.themeText.smallParagraph,
+                                textAlign: TextAlign.center,
+                              ),
+                              Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 27),
+                    const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Button(
@@ -292,7 +308,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
                   ],
                 ),
               ),
-              Padding(padding: const EdgeInsets.only(top: 40), child: _buildQuestTitle()),
+              Padding(padding: const EdgeInsets.only(top: 24), child: _buildQuestTitle()),
             ],
           ),
         ),
@@ -357,8 +373,110 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
           style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
         ),
         const SizedBox(height: 12),
-        Button(variant: ButtonVariant.neutral, label: 'Try again', onPressed: refreshData),
+        Button(variant: ButtonVariant.neutral, label: 'Try again', onPressed: refreshStatsData),
       ],
+    );
+  }
+
+  Widget _buildAccountAssociations(BuildContext context, AsyncValue<AccountAssociations> associationsAsync) {
+    final titleEth = 'ETH Address';
+    final titleX = 'X Account';
+
+    return associationsAsync.when(
+      data: (associations) => Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        spacing: 12.0,
+        children: [
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAssociationCard(
+                  context,
+                  title: titleEth,
+                  isLoading: false,
+                  isAssociated: associations.ethAddress != null,
+                ),
+                _buildAssociationCard(
+                  context,
+                  title: titleX,
+                  isLoading: false,
+                  isAssociated: associations.xUsername != null,
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            child: SvgPicture.asset(
+              'assets/settings_icon_off.svg',
+              width: context.isTablet ? 28 : 21,
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountAssociationsScreen()));
+            },
+          ),
+        ],
+      ),
+      loading: () => Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        spacing: 12.0,
+        children: [
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAssociationCard(context, title: titleEth, isLoading: true),
+                _buildAssociationCard(context, title: titleX, isLoading: true),
+              ],
+            ),
+          ),
+          InkWell(
+            child: SvgPicture.asset(
+              'assets/settings_icon_off.svg',
+              width: context.isTablet ? 28 : 21,
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
+          ),
+        ],
+      ),
+      error: (error, stack) => Column(
+        children: [
+          Text(
+            'Error fetching associated accounts.',
+            style: context.themeText.detail?.copyWith(color: context.themeColors.textError),
+          ),
+          const SizedBox(height: 12),
+          Button(variant: ButtonVariant.neutral, label: 'Try again', onPressed: refreshAssociationsData),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssociationCard(
+    BuildContext context, {
+    required String title,
+    required bool isLoading,
+    bool isAssociated = false,
+  }) {
+    Widget getIcon() {
+      if (isLoading) return const Skeleton(width: 40, height: 16);
+      if (isAssociated == false) return Icon(Icons.close, color: context.themeColors.buttonDanger);
+
+      return Icon(Icons.check, color: context.themeColors.buttonSuccess);
+    }
+
+    return BasicCard(
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: context.themeText.paragraph),
+          getIcon(),
+        ],
+      ),
     );
   }
 
@@ -379,7 +497,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
   Widget _buildDecoration() {
     return Container(
       width: 85,
-      height: context.isSmallHeight ? 360 : 425,
+      height: context.isSmallHeight ? 415 : 480,
       decoration: const ShapeDecoration(
         gradient: LinearGradient(
           begin: Alignment(0.03, -1.00),

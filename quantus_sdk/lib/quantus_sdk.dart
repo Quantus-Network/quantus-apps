@@ -16,6 +16,7 @@ export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/models/account.dart';
 export 'src/models/account_stats.dart';
+export 'src/models/account_associations.dart';
 export 'src/models/event_type.dart';
 export 'src/models/extrinsic_data.dart';
 export 'src/models/extrinsic_fee_data.dart';

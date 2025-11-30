@@ -140,7 +140,7 @@ class _NavbarState extends ConsumerState<Navbar> {
     // Handle quest screen visibility
     if (newIndex == 3) {
       // quests screen index - make video visible
-      (_questsScreenKey.currentState as dynamic)?.refreshData();
+      (_questsScreenKey.currentState as dynamic)?.refreshStatsData();
       (_questsScreenKey.currentState as dynamic)?.setVideoVisibility(true);
     } else if (_selectedIndex == 3) {
       // leaving quests screen - hide video
