@@ -221,7 +221,11 @@ class BinaryManager {
       throw Exception('Unsupported platform: ${Platform.operatingSystem}');
     }
 
-    if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+    if (Platform.isWindows) {
+      // Force x86_64 on Windows to support x64 emulation on ARM devices
+      // unless we specifically start releasing native ARM64 Windows binaries
+      arch = 'x86_64';
+    } else if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
       arch = 'aarch64';
     } else {
       arch = 'x86_64';
@@ -487,7 +491,11 @@ class BinaryManager {
       throw Exception('Unsupported platform: ${Platform.operatingSystem}');
     }
 
-    if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+    if (Platform.isWindows) {
+      // Force x86_64 on Windows to support x64 emulation on ARM devices
+      // unless we specifically start releasing native ARM64 Windows binaries
+      arch = 'x86_64';
+    } else if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
       arch = 'aarch64';
     } else {
       arch = 'x86_64';
@@ -659,6 +667,13 @@ class BinaryManager {
 
   static String _targetTriple() {
     final os = Platform.isMacOS ? 'apple-darwin' : (Platform.isWindows ? 'pc-windows-msvc' : 'unknown-linux-gnu');
+
+    // Force x86_64 on Windows to ensure we download the x64 binary even on ARM devices
+    // (since they can emulate x64, and we don't likely have a native ARM build for Windows yet)
+    if (Platform.isWindows) {
+      return 'x86_64-$os';
+    }
+
     final arch = Platform.version.contains('arm64') || Platform.version.contains('aarch64') ? 'aarch64' : 'x86_64';
     return '$arch-$os';
   }
