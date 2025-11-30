@@ -380,7 +380,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
 
   Widget _buildAccountAssociations(BuildContext context, AsyncValue<AccountAssociations> associationsAsync) {
     final titleEth = 'ETH Address';
-    final titleX = 'X Account';
+    // final titleX = 'X Account';
 
     return associationsAsync.when(
       data: (associations) => Row(
@@ -398,12 +398,12 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
                   isLoading: false,
                   isAssociated: associations.ethAddress != null,
                 ),
-                _buildAssociationCard(
-                  context,
-                  title: titleX,
-                  isLoading: false,
-                  isAssociated: associations.xUsername != null,
-                ),
+                // _buildAssociationCard(
+                //   context,
+                //   title: titleX,
+                //   isLoading: false,
+                //   isAssociated: associations.xUsername != null,
+                // ),
               ],
             ),
           ),
@@ -429,7 +429,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> with WidgetsBinding
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildAssociationCard(context, title: titleEth, isLoading: true),
-                _buildAssociationCard(context, title: titleX, isLoading: true),
+                // _buildAssociationCard(context, title: titleX, isLoading: true),
               ],
             ),
           ),
