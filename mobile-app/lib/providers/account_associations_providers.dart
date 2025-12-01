@@ -10,6 +10,11 @@ class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssoci
 
   Future<void> fetchAssociations() async {
     try {
+      final hasWallet = await SettingsService().getHasWallet();
+      if (!hasWallet) {
+        state = AsyncValue.error('Logged out', StackTrace.current);
+        return;
+      }
       final associations = await _taskmasterService.getAccountAssociations();
 
       state = AsyncValue.data(associations);

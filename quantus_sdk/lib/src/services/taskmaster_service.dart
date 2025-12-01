@@ -291,7 +291,10 @@ class TaskmasterService {
 
   Future<Account> getMainAccount() async {
     final account = await _settingsService.getAccount(_mainAccountIndex);
-    return account!;
+    if (account == null) {
+      throw Exception('No main account - this method should probably not be called when logged out');
+    }
+    return account;
   }
 
   Future<bool> getRewardProgramParticipation() async {

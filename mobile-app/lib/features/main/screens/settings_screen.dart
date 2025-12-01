@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/features/main/screens/welcome_screen.da
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
@@ -52,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       ref.read(accountsProvider.notifier).reset();
       ref.read(activeAccountProvider.notifier).reset();
+      ref.read(accountAssociationsProvider.notifier).reset();
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -65,6 +67,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         print('invalidating all providers');
         ref.invalidate(accountsProvider);
         ref.invalidate(activeAccountProvider);
+        ref.invalidate(accountAssociationsProvider);
         ref.invalidate(pendingTransactionsProvider); // If needed for transactions
       });
 
