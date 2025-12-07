@@ -202,18 +202,11 @@ class TransactionSubmissionService {
     // Start periodic search
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > timeoutDuration) {
-        print('Search timed out for transaction: ${pendingTx.id}');
+        print('Search timed out for transaction: ${pendingTx.id} - removing from pending but not marking as failed since we cannot verify failure on-chain');
 
         _stopSearchingForBroadcastTransaction(pendingTx.id);
-
-        _ref
-            .read(pendingTransactionsProvider.notifier)
-            .updateState(
-              pendingTx.id,
-              TransactionState.failed,
-              error:
-                  "Transaction successfully submitted but couldn't find the transaction in block history. It could be the transaction is not correctly formed like below existential deposit or receiving account is not exist or other unknown error.",
-            );
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        return;
       }
 
       _searchForBroadcastTransaction(pendingTx);
