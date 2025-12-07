@@ -681,7 +681,7 @@ query SearchPendingTransaction(
       'variables': {
         'from': from,
         'to': to,
-        'amount': amount.toInt(),
+        'amount': amount.toString(),
         'blockHeightAfter': blockHeightAfter,
         'limit': limit,
       },
