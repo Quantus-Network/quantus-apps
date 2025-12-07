@@ -202,7 +202,9 @@ class TransactionSubmissionService {
     // Start periodic search
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > timeoutDuration) {
-        print('Search timed out for transaction: ${pendingTx.id} - removing from pending but not marking as failed since we cannot verify failure on-chain');
+        print(
+          'Search timed out for transaction: ${pendingTx.id} - removing from pending but not marking as failed since we cannot verify failure on-chain',
+        );
 
         _stopSearchingForBroadcastTransaction(pendingTx.id);
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
