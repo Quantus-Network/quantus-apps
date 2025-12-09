@@ -44,8 +44,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
+                <data android:scheme="quantusapp" android:host="callback" />
                 <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/account" />
-                <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/oauth" />
             </intent-filter>
         </activity>
 

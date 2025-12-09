@@ -4,6 +4,7 @@ class AppConstants {
   static const String tokenSymbol = 'QU'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
+  static const String appCallbackScheme = 'quantusapp';
 
   // static const List<String> rpcEndpoints = ['ws://127.0.0.1:9944']; // local testing
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350']; // local testing

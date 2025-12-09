@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
@@ -51,10 +50,6 @@ class DeepLinkService {
       } else {
         print('Missing or empty account id');
       }
-    }
-
-    if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'oauth') {
-      _ref.invalidate(accountAssociationsProvider);
     }
   }
 

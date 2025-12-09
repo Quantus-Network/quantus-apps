@@ -17,7 +17,7 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 class AccountAssociationsScreen extends ConsumerStatefulWidget {
   const AccountAssociationsScreen({super.key});
@@ -90,9 +90,9 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       });
 
       final oauthRequest = await _taskmasterService.generateAssociateXLink();
-      final Uri url = Uri.parse(oauthRequest.url);
+      await FlutterWebAuth2.authenticate(url: oauthRequest.url, callbackUrlScheme: AppConstants.appCallbackScheme);
 
-      launchUrl(url, mode: LaunchMode.externalApplication);
+      ref.invalidate(accountAssociationsProvider);
     } catch (e) {
       print('Failed associating X account: $e');
 
