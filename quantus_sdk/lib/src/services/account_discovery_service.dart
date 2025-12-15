@@ -33,7 +33,12 @@ class AccountDiscoveryService {
     // Add HD accounts
     for (var i = 0; i < count; i++) {
       final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
-      final account = Account(walletIndex: baseWalletIndex, index: i, name: 'Account ${i + 1}', accountId: keyPair.ss58Address);
+      final account = Account(
+        walletIndex: baseWalletIndex,
+        index: i,
+        name: 'Account ${i + 1}',
+        accountId: keyPair.ss58Address,
+      );
       allPossibleAccounts.add(account);
     }
 
