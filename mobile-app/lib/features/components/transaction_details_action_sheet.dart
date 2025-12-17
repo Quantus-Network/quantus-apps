@@ -32,7 +32,7 @@ class TransactionDetailsActionSheet extends ConsumerStatefulWidget {
 }
 
 class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetailsActionSheet> {
-  late Timer _timer;
+  Timer? _timer;
   late Duration _remainingTime;
 
   Future<String> get _checksumFuture {
@@ -77,6 +77,10 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
       return 'RECEIVING';
     }
 
+    if (widget.transaction is PendingTransactionEvent) {
+      return widget.role == TransactionRole.sender ? 'SENDING' : 'RECEIVING';
+    }
+
     if (widget.role == TransactionRole.sender) {
       return 'SENT';
     }
@@ -98,7 +102,13 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
       return 'from';
     }
     if (widget.role == TransactionRole.sender) {
+      if (widget.transaction is PendingTransactionEvent) {
+        return 'sending to';
+      }
       return 'was successfully sent to';
+    }
+    if (widget.transaction is PendingTransactionEvent) {
+      return 'receiving from';
     }
     return 'received from';
   }
@@ -158,7 +168,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
