@@ -55,11 +55,11 @@ class LocalAuthService {
     _settingsService.setAuthEnabled(enabled);
   }
 
-  int getAuthTimeout() {
-    return _settingsService.getAuthTimeout() ?? 0;
+  int getAuthTimeoutMinutes() {
+    return _settingsService.getAuthTimeout() ?? 1;
   }
 
-  void setAuthTimeout(int timeoutDurationInMinutes) {
+  void setAuthTimeoutMinutes(int timeoutDurationInMinutes) {
     return _settingsService.setAuthTimeout(timeoutDurationInMinutes);
   }
 
@@ -175,9 +175,10 @@ class LocalAuthService {
       if (!isEnabled) return false;
 
       final DateTime? lastAuthTime = _settingsService.getLastSuccessfulAuthTime();
+      
       if (lastAuthTime == null) return true;
 
-      final int timeoutDurationInMinutes = _settingsService.getAuthTimeout() ?? 5;
+      final int timeoutDurationInMinutes = getAuthTimeoutMinutes();
 
       final Duration authTimeout = Duration(minutes: timeoutDurationInMinutes);
 
@@ -186,7 +187,8 @@ class LocalAuthService {
         'auth time difference: ${DateTime.now().difference(lastAuthTime).inSeconds}',
       );
 
-      return DateTime.now().difference(lastAuthTime) > authTimeout;
+      final isTimeout = DateTime.now().difference(lastAuthTime) > authTimeout;      
+      return isTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
       return true; // Err on the side of caution

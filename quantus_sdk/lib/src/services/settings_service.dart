@@ -225,6 +225,7 @@ class SettingsService {
     _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
   }
 
+  // Do not call this directly - call local auth service getAuthTimeoutMinutes() instead.
   int? getAuthTimeout() {
     final int? authTimeout = _prefs.getInt(_authTimeoutKey);
     if (authTimeout == null) return null;
@@ -232,6 +233,7 @@ class SettingsService {
     return authTimeout;
   }
 
+  // Do not call this directly - call local auth service setAuthTimeoutMinutes() instead.
   void setAuthTimeout(int timeoutDurationInMinutes) {
     _prefs.setInt(_authTimeoutKey, timeoutDurationInMinutes);
   }
