@@ -175,7 +175,7 @@ class LocalAuthService {
       if (!isEnabled) return false;
 
       final DateTime? lastAuthTime = _settingsService.getLastSuccessfulAuthTime();
-      
+
       if (lastAuthTime == null) return true;
 
       final int timeoutDurationInMinutes = getAuthTimeoutMinutes();
@@ -187,7 +187,7 @@ class LocalAuthService {
         'auth time difference: ${DateTime.now().difference(lastAuthTime).inSeconds}',
       );
 
-      final isTimeout = DateTime.now().difference(lastAuthTime) > authTimeout;      
+      final isTimeout = DateTime.now().difference(lastAuthTime) > authTimeout;
       return isTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');

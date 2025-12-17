@@ -49,9 +49,9 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
     }
   }
 
-// this feels wrong. One bug is it will count from last authenticated time, so if I run the app for 1 minute, then 
-// go away to another app, then come back immediately, it will require auth.
-// TODO: Fix.
+  // this feels wrong. One bug is it will count from last authenticated time, so if I run the app for 1 minute, then
+  // go away to another app, then come back immediately, it will require auth.
+  // TODO: Fix.
   void lockApp() {
     if (_localAuthService.shouldRequireAuthentication()) {
       state = state.copyWith(isAuthenticated: false);
