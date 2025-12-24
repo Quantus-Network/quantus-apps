@@ -270,11 +270,7 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: 4,
                           children: [
-                            Text(
-                              'Active Raid',
-                              style: context.themeText.smallParagraph,
-                              textAlign: TextAlign.start,
-                            ),
+                            Text('Active Raid', style: context.themeText.smallParagraph, textAlign: TextAlign.start),
                             BasicCard(child: Text('Alpha', style: context.themeText.smallTitle)),
                             LinkText(
                               label: 'Learn more about QQ',
