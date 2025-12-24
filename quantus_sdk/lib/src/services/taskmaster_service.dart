@@ -245,11 +245,11 @@ class TaskmasterService {
     }
   }
 
-  Future<void> addRaidSubmission(String targetTweetLink, String replyTweetLink) async {
-    print('add raid submission $targetTweetLink and $replyTweetLink');
+  Future<void> addRaidSubmission(String replyTweetLink) async {
+    print('add raid submission $replyTweetLink');
 
     final raiderSubmissionsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/submissions');
-    final Map<String, dynamic> requestBody = {'target_tweet_link': targetTweetLink, 'tweet_reply_link': replyTweetLink};
+    final Map<String, dynamic> requestBody = {'tweet_reply_link': replyTweetLink};
 
     final http.Response response = await _authenticatedHttpClient.post(
       raiderSubmissionsEndpoint,
