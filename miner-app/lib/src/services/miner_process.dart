@@ -549,6 +549,10 @@ class MinerProcess {
       }
 
       onStatsUpdate?.call(_statsService.currentStats);
+    } else if (metrics.hashRate == 0.0 && _lastValidHashrate > 0) {
+      // Received 0.0 but we have a valid hashrate - ignore it and keep the last valid one
+      _statsService.updateHashrate(_lastValidHashrate);
+      onStatsUpdate?.call(_statsService.currentStats);
     } else {
       // Invalid or zero metrics
       _consecutiveMetricsFailures++;
