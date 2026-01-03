@@ -148,6 +148,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
     required String value2,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(8),
@@ -164,61 +165,67 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    value1,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
+          child: Transform.translate(
+            offset: const Offset(0, -4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value1,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(width: 1, height: 12, color: Colors.white.useOpacity(0.3)),
-                  const SizedBox(width: 8),
-                  Text(
-                    value2,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
+                    // const SizedBox(height: 0),
+                    Text(
+                      label1,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.useOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    label1,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.useOpacity(0.6),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
+                  ],
+                ),
+                const SizedBox(width: 8),
+                Container(width: 1, height: 28, color: Colors.white.useOpacity(0.3)),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value2,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Invisible separator to align with value separator (approximate)
-                  const SizedBox(width: 1, height: 12),
-                  const SizedBox(width: 8),
-                  Text(
-                    label2,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.useOpacity(0.6),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
+                    // const SizedBox(height: 2),
+                    Text(
+                      label2,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.useOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
