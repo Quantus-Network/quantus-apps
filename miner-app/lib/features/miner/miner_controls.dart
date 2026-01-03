@@ -175,9 +175,9 @@ class _MinerControlsState extends State<MinerControls> {
               ),
               Slider(
                 value: _cpuWorkers.toDouble(),
-                min: 1,
+                min: 0,
                 max: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16).toDouble(),
-                divisions: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16) - 1,
+                divisions: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16),
                 label: _cpuWorkers.toString(),
                 onChanged: widget.minerProcess == null ? (value) => setState(() => _cpuWorkers = value.round()) : null,
               ),
