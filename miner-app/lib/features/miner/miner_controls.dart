@@ -9,6 +9,7 @@ import '../../main.dart';
 import '../../src/services/binary_manager.dart';
 import '../../src/services/gpu_detection_service.dart';
 import '../../src/services/miner_process.dart';
+import '../../src/services/miner_settings_service.dart';
 
 class MinerControls extends StatefulWidget {
   final MinerProcess? minerProcess;
@@ -33,12 +34,25 @@ class _MinerControlsState extends State<MinerControls> {
   int _cpuWorkers = 8;
   int _gpuDevices = 0;
   int _detectedGpuCount = 0;
+  final _settingsService = MinerSettingsService();
 
   @override
   void initState() {
     super.initState();
-    _cpuWorkers = Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8;
+    _loadSettings();
     _detectHardware();
+  }
+
+  Future<void> _loadSettings() async {
+    final savedCpuWorkers = await _settingsService.getCpuWorkers();
+    final savedGpuDevices = await _settingsService.getGpuDevices();
+
+    if (mounted) {
+      setState(() {
+        _cpuWorkers = savedCpuWorkers ?? (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
+        _gpuDevices = savedGpuDevices ?? 0;
+      });
+    }
   }
 
   Future<void> _detectHardware() async {
@@ -179,7 +193,13 @@ class _MinerControlsState extends State<MinerControls> {
                 max: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16).toDouble(),
                 divisions: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16),
                 label: _cpuWorkers.toString(),
-                onChanged: widget.minerProcess == null ? (value) => setState(() => _cpuWorkers = value.round()) : null,
+                onChanged: widget.minerProcess == null
+                    ? (value) {
+                        final rounded = value.round();
+                        setState(() => _cpuWorkers = rounded);
+                        _settingsService.saveCpuWorkers(rounded);
+                      }
+                    : null,
               ),
             ],
           ),
@@ -204,7 +224,13 @@ class _MinerControlsState extends State<MinerControls> {
                 max: _detectedGpuCount > 0 ? _detectedGpuCount.toDouble() : 1,
                 divisions: _detectedGpuCount > 0 ? _detectedGpuCount : 1,
                 label: _gpuDevices.toString(),
-                onChanged: widget.minerProcess == null ? (value) => setState(() => _gpuDevices = value.round()) : null,
+                onChanged: widget.minerProcess == null
+                    ? (value) {
+                        final rounded = value.round();
+                        setState(() => _gpuDevices = rounded);
+                        _settingsService.saveGpuDevices(rounded);
+                      }
+                    : null,
               ),
             ],
           ),
