@@ -151,14 +151,11 @@ class MinerProcess {
       externalMinerPort.toString(),
       '--cpu-workers',
       cpuWorkers.toString(),
+      '--gpu-devices',
+      gpuDevices.toString(),
       '--metrics-port',
       await _getMetricsPort().then((port) => port.toString()),
     ];
-
-    if (gpuDevices > 0) {
-      minerArgs.add('--gpu-devices');
-      minerArgs.add(gpuDevices.toString());
-    }
 
     try {
       _externalMinerProcess = await Process.start(externalMinerBin.path, minerArgs);
@@ -546,8 +543,10 @@ class MinerProcess {
         _statsService.updateCpuCapacity(metrics.cpuCapacity);
       }
 
-      // Update GPU devices count from external miner
-      _statsService.updateGpuDevices(metrics.gpuDevices);
+      // Update GPU devices count from external miner if available
+      if (metrics.gpuDevices > 0) {
+        _statsService.updateGpuDevices(metrics.gpuDevices);
+      }
 
       onStatsUpdate?.call(_statsService.currentStats);
     } else {

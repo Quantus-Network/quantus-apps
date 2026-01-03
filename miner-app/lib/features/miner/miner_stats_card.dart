@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/miner_app_constants.dart';
+import 'package:quantus_miner/src/utils/hashrate_formatter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MinerStatsCard extends StatefulWidget {
@@ -107,7 +108,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                         value1: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
                         label2: 'GPU',
                         value2:
-                            '${_miningStats!.gpuDevices} / ${_miningStats!.gpuCapacity > 0 ? _miningStats!.gpuCapacity : "-"}',
+                            '${_miningStats!.gpuDevices} / ${_miningStats!.gpuCapacity > 0 ? _miningStats!.gpuCapacity : (_miningStats!.gpuDevices > 0 ? _miningStats!.gpuDevices : "-")}',
                       ),
                     ],
                   ),
@@ -120,7 +121,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                       _buildCompactStat(
                         icon: Icons.speed,
                         label: 'Hashrate',
-                        value: '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                        value: HashrateFormatter.format(_miningStats!.hashrate),
                       ),
                       const SizedBox(height: 16),
                       _buildCompactStat(
