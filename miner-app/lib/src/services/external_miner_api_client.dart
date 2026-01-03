@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 class ExternalMinerMetrics {
@@ -7,6 +8,7 @@ class ExternalMinerMetrics {
   final int totalHashes;
   final int workers;
   final int cpuCapacity;
+  final int gpuDevices;
   final bool isHealthy;
 
   ExternalMinerMetrics({
@@ -15,12 +17,13 @@ class ExternalMinerMetrics {
     required this.totalHashes,
     required this.workers,
     required this.cpuCapacity,
+    this.gpuDevices = 0,
     required this.isHealthy,
   });
 
   @override
   String toString() {
-    return 'ExternalMinerMetrics(hashRate: ${hashRate.toStringAsFixed(2)} H/s, activeJobs: $activeJobs, totalHashes: $totalHashes, workers: $workers, cpuCapacity: $cpuCapacity, isHealthy: $isHealthy)';
+    return 'ExternalMinerMetrics(hashRate: ${hashRate.toStringAsFixed(2)} H/s, activeJobs: $activeJobs, totalHashes: $totalHashes, workers: $workers, cpuCapacity: $cpuCapacity, gpuDevices: $gpuDevices, isHealthy: $isHealthy)';
   }
 }
 
@@ -82,6 +85,7 @@ class ExternalMinerApiClient {
     int totalHashes = 0;
     int workers = 0;
     int cpuCapacity = 0;
+    int gpuDevices = 0;
 
     for (final line in lines) {
       if (line.startsWith('#')) continue; // Skip comments
@@ -113,6 +117,11 @@ class ExternalMinerApiClient {
           if (parts.length >= 2) {
             cpuCapacity = int.tryParse(parts.last) ?? 0;
           }
+        } else if (line.startsWith('miner_gpu_devices ')) {
+          final parts = line.split(' ');
+          if (parts.length >= 2) {
+            gpuDevices = int.tryParse(parts.last) ?? 0;
+          }
         }
       } catch (e) {
         // Skip invalid lines
@@ -126,6 +135,7 @@ class ExternalMinerApiClient {
       totalHashes: totalHashes,
       workers: workers,
       cpuCapacity: cpuCapacity,
+      gpuDevices: gpuDevices,
       isHealthy: hashRate > 0 || activeJobs > 0,
     );
 
@@ -147,6 +157,7 @@ class ExternalMinerApiClient {
             totalHashes: 0,
             workers: 0,
             cpuCapacity: 0,
+            gpuDevices: 0,
             isHealthy: false,
           ),
         );

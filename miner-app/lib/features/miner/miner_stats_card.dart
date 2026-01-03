@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
+import 'package:quantus_miner/src/shared/miner_app_constants.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MinerStatsCard extends StatefulWidget {
@@ -49,6 +50,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
   Container _buildStatsDisplay() {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
+      height: MinerAppConstants.cardHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -99,10 +101,13 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                     children: [
                       _buildCompactStat(icon: Icons.people, label: 'Peers', value: '${_miningStats!.peerCount}'),
                       const SizedBox(height: 16),
-                      _buildCompactStat(
-                        icon: Icons.settings,
-                        label: 'Workers',
-                        value: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
+                      _buildDualStat(
+                        icon: Icons.memory,
+                        label1: 'CPU',
+                        value1: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
+                        label2: 'GPU',
+                        value2:
+                            '${_miningStats!.gpuDevices} / ${_miningStats!.gpuCapacity > 0 ? _miningStats!.gpuCapacity : "-"}',
                       ),
                     ],
                   ),
@@ -131,6 +136,91 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDualStat({
+    required IconData icon,
+    required String label1,
+    required String value1,
+    required String label2,
+    required String value2,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF6366F1), // Deep purple
+                Color(0xFF1E3A8A), // Deep blue
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    value1,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(width: 1, height: 12, color: Colors.white.useOpacity(0.3)),
+                  const SizedBox(width: 8),
+                  Text(
+                    value2,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    label1,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.useOpacity(0.6),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Invisible separator to align with value separator (approximate)
+                  const SizedBox(width: 1, height: 12),
+                  const SizedBox(width: 8),
+                  Text(
+                    label2,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.useOpacity(0.6),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
