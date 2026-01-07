@@ -30,14 +30,17 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     SubstrateService(),
   );
 
-  Future<void> _discoverAccounts(String mnemonic) async {
+  Future<void> _discoverAccounts(String mnemonic, int walletIndex) async {
     if (!mounted) return;
     setState(() {
       _isDiscovering = true;
     });
 
     try {
-      final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(mnemonic: mnemonic);
+      final discoveredAccounts = await _accountDiscoveryService.discoverAccounts(
+        mnemonic: mnemonic,
+        walletIndex: walletIndex,
+      );
 
       final existingAccountsSet = (await _accountsService.getAccounts()).map((e) => e.accountId).toSet();
 
@@ -86,7 +89,7 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
         Account(walletIndex: walletIndex, index: 0, name: 'Account 1', accountId: key.ss58Address),
       );
 
-      await _discoverAccounts(mnemonic);
+      await _discoverAccounts(mnemonic, walletIndex);
       // We set check status to true so we will not prompt user to input refferal code.
       // This is because we know they can only import if they have gone through create process.
       _settingsService.setReferralCheckCompleted();

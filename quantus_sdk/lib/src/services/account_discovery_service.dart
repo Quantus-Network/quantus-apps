@@ -16,14 +16,13 @@ class AccountDiscoveryService {
     }
   ''';
 
-  Future<List<Account>> discoverAccounts({required String mnemonic, int count = 20}) async {
+  Future<List<Account>> discoverAccounts({required String mnemonic, required int walletIndex, int count = 20}) async {
     final allPossibleAccounts = <Account>[];
 
     // Add raw account
     final rawKeyPair = _substrateService.nonHDdilithiumKeypairFromMnemonic(mnemonic);
-    final baseWalletIndex = 0;
     final rawAccount = Account(
-      walletIndex: baseWalletIndex,
+      walletIndex: walletIndex,
       index: -1, //  indicator for a raw account
       name: 'Primary Account',
       accountId: rawKeyPair.ss58Address,
@@ -34,7 +33,7 @@ class AccountDiscoveryService {
     for (var i = 0; i < count; i++) {
       final keyPair = _hdWalletService.keyPairAtIndex(mnemonic, i);
       final account = Account(
-        walletIndex: baseWalletIndex,
+        walletIndex: walletIndex,
         index: i,
         name: 'Account ${i + 1}',
         accountId: keyPair.ss58Address,
