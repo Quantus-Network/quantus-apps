@@ -28,6 +28,8 @@ export 'src/models/reversible_transfer_status.dart';
 export 'src/models/sorted_transactions.dart';
 export 'src/models/transaction_event.dart';
 export 'src/models/transaction_state.dart';
+export 'src/models/raider_submissions.dart';
+export 'src/models/raid_quest.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;

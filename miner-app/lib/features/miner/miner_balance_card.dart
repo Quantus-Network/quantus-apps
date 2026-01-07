@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
+import 'package:quantus_miner/src/shared/miner_app_constants.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MinerBalanceCard extends StatefulWidget {
@@ -87,6 +89,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
+      height: MinerAppConstants.cardHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

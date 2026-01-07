@@ -7,6 +7,8 @@ class MiningStats {
   final double hashrate;
   final int workers;
   final int cpuCapacity;
+  final int gpuDevices;
+  final int gpuCapacity;
   final bool isSyncing;
   final MiningStatus status;
   final String chainName;
@@ -18,6 +20,8 @@ class MiningStats {
     required this.hashrate,
     required this.workers,
     required this.cpuCapacity,
+    this.gpuDevices = 0,
+    this.gpuCapacity = 0,
     required this.isSyncing,
     required this.status,
     required this.chainName,
@@ -30,6 +34,8 @@ class MiningStats {
       hashrate = 0.0,
       workers = 0,
       cpuCapacity = 0,
+      gpuDevices = 0,
+      gpuCapacity = 0,
       isSyncing = false,
       status = MiningStatus.idle,
       chainName = '';
@@ -41,6 +47,8 @@ class MiningStats {
     double? hashrate,
     int? workers,
     int? cpuCapacity,
+    int? gpuDevices,
+    int? gpuCapacity,
     bool? isSyncing,
     MiningStatus? status,
     String? chainName,
@@ -52,6 +60,8 @@ class MiningStats {
       hashrate: hashrate ?? this.hashrate,
       workers: workers ?? this.workers,
       cpuCapacity: cpuCapacity ?? this.cpuCapacity,
+      gpuDevices: gpuDevices ?? this.gpuDevices,
+      gpuCapacity: gpuCapacity ?? this.gpuCapacity,
       isSyncing: isSyncing ?? this.isSyncing,
       status: status ?? this.status,
       chainName: chainName ?? this.chainName,
@@ -61,7 +71,7 @@ class MiningStats {
   @override
   String toString() {
     return 'Mining Stats - Hashrate: ${hashrate.toStringAsFixed(2)} H/s, '
-        'Workers: $workers, Block: $currentBlock/$targetBlock, '
+        'Workers: $workers, GPUs: $gpuDevices/$gpuCapacity, Block: $currentBlock/$targetBlock, '
         'Peers: $peerCount, Chain: $chainName, Status: ${status.name}';
   }
 }
@@ -98,6 +108,20 @@ class MiningStatsService {
   void updateCpuCapacity(int cpuCapacity) {
     if (_currentStats.cpuCapacity != cpuCapacity) {
       _currentStats = _currentStats.copyWith(cpuCapacity: cpuCapacity);
+    }
+  }
+
+  /// Update GPU devices count (active)
+  void updateGpuDevices(int gpuDevices) {
+    if (_currentStats.gpuDevices != gpuDevices) {
+      _currentStats = _currentStats.copyWith(gpuDevices: gpuDevices);
+    }
+  }
+
+  /// Update GPU capacity (detected total)
+  void updateGpuCapacity(int gpuCapacity) {
+    if (_currentStats.gpuCapacity != gpuCapacity) {
+      _currentStats = _currentStats.copyWith(gpuCapacity: gpuCapacity);
     }
   }
 

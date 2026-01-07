@@ -5,12 +5,12 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:quantus_miner/src/services/prometheus_service.dart';
 import 'package:quantus_miner/src/shared/extensions/log_string_extension.dart';
-import './mining_stats_service.dart';
-import './external_miner_api_client.dart';
-import './chain_rpc_client.dart';
 
 import './binary_manager.dart';
+import './chain_rpc_client.dart';
+import './external_miner_api_client.dart';
 import './log_filter_service.dart';
+import './mining_stats_service.dart';
 
 class LogEntry {
   final String message;
@@ -42,9 +42,11 @@ class MinerProcess {
   late PollingChainRpcClient _chainRpcClient;
 
   Timer? _syncStatusTimer;
-  final int minerCores;
+  final int cpuWorkers;
+  final int gpuDevices;
 
   final int externalMinerPort;
+  final int detectedGpuCount;
 
   // Track metrics state to prevent premature hashrate reset
   double _lastValidHashrate = 0.0;
@@ -79,7 +81,9 @@ class MinerProcess {
     this.identityPath,
     this.rewardsPath, {
     this.onStatsUpdate,
-    this.minerCores = 8,
+    this.cpuWorkers = 8,
+    this.gpuDevices = 0,
+    this.detectedGpuCount = 0,
     this.externalMinerPort = 9833,
   }) {
     // Initialize services
@@ -104,7 +108,13 @@ class MinerProcess {
     _chainRpcClient.onError = _handleChainRpcError;
 
     // Initialize stats with the configured worker count
-    _statsService.updateWorkers(minerCores);
+    _statsService.updateWorkers(cpuWorkers);
+    // Initialize stats with total CPU capacity from platform
+    _statsService.updateCpuCapacity(Platform.numberOfProcessors);
+    // Initialize stats with the configured GPU devices
+    _statsService.updateGpuDevices(gpuDevices);
+    // Initialize stats with total GPU capacity from detection
+    _statsService.updateGpuCapacity(detectedGpuCount);
   }
 
   Future<void> start() async {
@@ -135,15 +145,20 @@ class MinerProcess {
 
     // Start the external miner first with metrics enabled
 
+    final minerArgs = [
+      'serve',
+      '--port',
+      externalMinerPort.toString(),
+      '--cpu-workers',
+      cpuWorkers.toString(),
+      '--gpu-devices',
+      gpuDevices.toString(),
+      '--metrics-port',
+      await _getMetricsPort().then((port) => port.toString()),
+    ];
+
     try {
-      _externalMinerProcess = await Process.start(externalMinerBin.path, [
-        '--port',
-        externalMinerPort.toString(),
-        '--workers',
-        minerCores.toString(),
-        '--metrics-port',
-        await _getMetricsPort().then((port) => port.toString()),
-      ]);
+      _externalMinerProcess = await Process.start(externalMinerBin.path, minerArgs);
     } catch (e) {
       throw Exception('Failed to start external miner: $e');
     }
@@ -528,6 +543,15 @@ class MinerProcess {
         _statsService.updateCpuCapacity(metrics.cpuCapacity);
       }
 
+      // Update GPU devices count from external miner if available
+      if (metrics.gpuDevices > 0) {
+        _statsService.updateGpuDevices(metrics.gpuDevices);
+      }
+
+      onStatsUpdate?.call(_statsService.currentStats);
+    } else if (metrics.hashRate == 0.0 && _lastValidHashrate > 0) {
+      // Received 0.0 but we have a valid hashrate - ignore it and keep the last valid one
+      _statsService.updateHashrate(_lastValidHashrate);
       onStatsUpdate?.call(_statsService.currentStats);
     } else {
       // Invalid or zero metrics

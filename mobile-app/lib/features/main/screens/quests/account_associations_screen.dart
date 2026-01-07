@@ -11,13 +11,14 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
+import 'package:resonance_network_wallet/features/main/screens/quests/update_x_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
+import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AccountAssociationsScreen extends ConsumerStatefulWidget {
   const AccountAssociationsScreen({super.key});
@@ -33,8 +34,6 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
   String? _ethAddressError;
   bool _isEditingEthAddress = false;
   bool _isSubmittingEthAddress = false;
-
-  bool _isStartingOauth = false;
 
   void _saveEthAddress() async {
     final associations = ref.watch(accountAssociationsProvider).value;
@@ -83,27 +82,8 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
     ref.invalidate(accountAssociationsProvider);
   }
 
-  void _handleOauthX() async {
-    try {
-      setState(() {
-        _isStartingOauth = true;
-      });
-
-      final oauthRequest = await _taskmasterService.generateAssociateXLink();
-      final Uri url = Uri.parse(oauthRequest.url);
-
-      launchUrl(url, mode: LaunchMode.inAppBrowserView);
-    } catch (e) {
-      print('Failed associating X account: $e');
-
-      if (mounted) {
-        context.showErrorSnackbar(title: 'Failed associating', message: e.toString());
-      }
-    } finally {
-      setState(() {
-        _isStartingOauth = false;
-      });
-    }
+  void _navigateToUpdateXScreen() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const UpdateXScreen()));
   }
 
   Future<void> _removeXAccount() async {
@@ -134,6 +114,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
 
       case AppLifecycleState.resumed:
         ref.invalidate(accountAssociationsProvider);
+        ref.invalidate(raiderSubmissionsProvider);
         break;
     }
   }
@@ -345,17 +326,6 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
         Row(
           spacing: 12.0,
           children: [
-            SizedBox(
-              width: 100.0,
-              child: Button(
-                variant: ButtonVariant.neutral,
-                label: 'Update',
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                onPressed: _handleOauthX,
-                isLoading: _isStartingOauth,
-              ),
-            ),
-
             if (hasXUsername)
               SizedBox(
                 width: 100.0,
@@ -367,6 +337,16 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
                     showRemoveAssociationConfirmationSheet(context, _removeXAccount);
                   },
                   isDisabled: isLoading,
+                ),
+              )
+            else
+              SizedBox(
+                width: 100.0,
+                child: Button(
+                  variant: ButtonVariant.neutral,
+                  label: 'Update',
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  onPressed: _navigateToUpdateXScreen,
                 ),
               ),
           ],

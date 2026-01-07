@@ -19,10 +19,18 @@ class AppLifecycleManager extends ConsumerStatefulWidget {
 }
 
 class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with WidgetsBindingObserver {
+  // Track if we have already performed background/pause actions to avoid duplicates
+  // as the OS can cycle through multiple states (inactive -> hidden -> paused)
+  bool _isBackgrounded = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize background state
+    final currentState = WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
+    _isBackgrounded = currentState != AppLifecycleState.resumed;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final localAuthNotifier = ref.read(localAuthProvider.notifier);
@@ -69,26 +77,16 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   void didChangeAppLifecycleState(AppLifecycleState state) {
     ref.read(appLifecycleStateProvider.notifier).state = state;
     final localAuthNotifier = ref.read(localAuthProvider.notifier);
-    final isAuthenticated = ref.read(localAuthProvider).isAuthenticated;
-
     final pollingManager = ref.read(historyPollingManagerProvider);
     final isOnline = ref.read(isOnlineProvider);
 
-    switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.hidden:
-        // Pause global polling when app goes to background
-        // Transaction tracking continues for pending transactions
-        pollingManager.pausePolling();
+    if (state == AppLifecycleState.resumed) {
+      // Only resume if we were previously backgrounded
+      if (_isBackgrounded) {
+        print('AppLifecycleState.resumed - resuming from background');
+        _isBackgrounded = false;
 
-        // When the app goes into the background, lock it.
-        localAuthNotifier.lockApp();
-        break;
-
-      case AppLifecycleState.resumed:
-        print('AppLifecycleState.resumed');
-        // Only resume if online
+        // Only resume polling if online
         if (isOnline) {
           pollingManager.resumePolling();
           pollingManager.triggerSilentRefresh();
@@ -96,20 +94,28 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           print('App resumed but offline - polling paused');
         }
 
-        // If the app is resumed and we are not authenticated,
-        // trigger a new auth check.
-        if (!isAuthenticated) {
-          localAuthNotifier.checkAuthentication();
-        }
+        // Always check authentication on resume to enforce inactivity timeout
+        localAuthNotifier.checkAuthentication();
 
         // Initialize Taskmaster login if wallet exists
         _initializeTaskmasterLogin();
-        break;
+      }
+    } else {
+      // Handle background states (inactive, paused, hidden, detached)
+      // Only act if we haven't already processed a background transition
+      if (!_isBackgrounded) {
+        print('AppLifecycleState.$state - pausing and locking');
+        _isBackgrounded = true;
 
-      case AppLifecycleState.detached:
+        // Pause global polling when app goes to background
+        // Transaction tracking continues for pending transactions
+        pollingManager.pausePolling();
+
         // When the app goes into the background, lock it.
         localAuthNotifier.lockApp();
-        break;
+      } else {
+        print('AppLifecycleState.$state - already backgrounded, skipping actions');
+      }
     }
   }
 

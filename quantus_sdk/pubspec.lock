@@ -390,8 +390,8 @@ packages:
     dependency: "direct main"
     description:
       path: dart
-      ref: HEAD
-      resolved-ref: "1a12c851561b4000350830d55b3bd96a35922b38"
+      ref: "v1.0.0"
+      resolved-ref: fa788c17e08ae463f8f3a9690e2ecdc4d0b8565f
       url: "https://github.com/Quantus-Network/human-checkphrase.git"
     source: git
     version: "0.1.0"

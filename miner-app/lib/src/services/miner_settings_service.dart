@@ -1,8 +1,32 @@
 import 'dart:io';
 
-import 'package:quantus_miner/src/services/binary_manager.dart'; // Assuming this path is correct
+import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MinerSettingsService {
+  static const String _keyCpuWorkers = 'cpu_workers';
+  static const String _keyGpuDevices = 'gpu_devices';
+
+  Future<void> saveCpuWorkers(int cpuWorkers) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyCpuWorkers, cpuWorkers);
+  }
+
+  Future<int?> getCpuWorkers() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyCpuWorkers);
+  }
+
+  Future<void> saveGpuDevices(int gpuDevices) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyGpuDevices, gpuDevices);
+  }
+
+  Future<int?> getGpuDevices() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyGpuDevices);
+  }
+
   Future<void> logout() async {
     print('Starting app logout/reset...');
 
@@ -118,6 +142,15 @@ class MinerSettingsService {
       }
     } catch (e) {
       print('❌ Error removing .quantus directory: $e');
+    }
+
+    // 8. Clear SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      print('✅ SharedPreferences cleared');
+    } catch (e) {
+      print('❌ Error clearing SharedPreferences: $e');
     }
 
     print('🎉 App logout/reset complete! You can now go through setup again.');

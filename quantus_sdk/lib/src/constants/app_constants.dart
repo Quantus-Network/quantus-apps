@@ -25,7 +25,8 @@ class AppConstants {
   static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
   static const String termsOfServiceUrl = 'https://www.quantus.com/terms-and-privacy';
   static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
-  static const String questsPageUrl = 'https://www.quantus.com/quests';
+  static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';
+  static const String raidQuestsPageUrl = 'https://www.quantus.com/quests/raid';
   static const String communityUrl = 'https://t.me/quantusnetwork';
   static const String faucetBotUrl = 'https://t.me/QuantusFaucetBot';
 

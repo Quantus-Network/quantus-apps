@@ -38,18 +38,19 @@ class _AuthenticationSettingsScreenState extends State<AuthenticationSettingsScr
   bool _isDeviceAuthEnabled = false;
   bool _isLoading = true;
   String _biometricDescription = 'Use Device Authentication';
-  int _authTimeout = 0;
+  late int _authTimeout;
 
   @override
   void initState() {
     super.initState();
+    _authTimeout = _localAuthService.getAuthTimeoutMinutes();
     _loadAuthenticationSettings();
   }
 
   Future<void> _loadAuthenticationSettings() async {
     try {
       final isEnabled = _localAuthService.isLocalAuthEnabled();
-      final authTimeout = _localAuthService.getAuthTimeout();
+      final authTimeout = _localAuthService.getAuthTimeoutMinutes();
       final isAvailable = await _localAuthService.isBiometricAvailable();
       final description = await _localAuthService.getBiometricDescription();
 
@@ -143,7 +144,7 @@ class _AuthenticationSettingsScreenState extends State<AuthenticationSettingsScr
   }
 
   void _setAuthTimeout(int timeoutDurationInMinutes) {
-    _localAuthService.setAuthTimeout(timeoutDurationInMinutes);
+    _localAuthService.setAuthTimeoutMinutes(timeoutDurationInMinutes);
     setState(() {
       _authTimeout = timeoutDurationInMinutes;
     });

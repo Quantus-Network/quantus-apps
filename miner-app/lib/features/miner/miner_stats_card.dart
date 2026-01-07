@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
+import 'package:quantus_miner/src/shared/miner_app_constants.dart';
+import 'package:quantus_miner/src/utils/hashrate_formatter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class MinerStatsCard extends StatefulWidget {
@@ -49,6 +51,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
   Container _buildStatsDisplay() {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
+      height: MinerAppConstants.cardHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -99,10 +102,13 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                     children: [
                       _buildCompactStat(icon: Icons.people, label: 'Peers', value: '${_miningStats!.peerCount}'),
                       const SizedBox(height: 16),
-                      _buildCompactStat(
-                        icon: Icons.settings,
-                        label: 'Workers',
-                        value: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
+                      _buildDualStat(
+                        icon: Icons.memory,
+                        label1: 'CPU',
+                        value1: '${_miningStats!.workers} / ${_miningStats!.cpuCapacity}',
+                        label2: 'GPU',
+                        value2:
+                            '${_miningStats!.gpuDevices} / ${_miningStats!.gpuCapacity > 0 ? _miningStats!.gpuCapacity : (_miningStats!.gpuDevices > 0 ? _miningStats!.gpuDevices : "-")}',
                       ),
                     ],
                   ),
@@ -115,7 +121,7 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
                       _buildCompactStat(
                         icon: Icons.speed,
                         label: 'Hashrate',
-                        value: '${_miningStats!.hashrate.toStringAsFixed(2)} H/s',
+                        value: HashrateFormatter.format(_miningStats!.hashrate),
                       ),
                       const SizedBox(height: 16),
                       _buildCompactStat(
@@ -131,6 +137,98 @@ class _MinerStatsCardState extends State<MinerStatsCard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDualStat({
+    required IconData icon,
+    required String label1,
+    required String value1,
+    required String label2,
+    required String value2,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF6366F1), // Deep purple
+                Color(0xFF1E3A8A), // Deep blue
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Transform.translate(
+            offset: const Offset(0, -4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value1,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    // const SizedBox(height: 0),
+                    Text(
+                      label1,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.useOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                Container(width: 1, height: 28, color: Colors.white.useOpacity(0.3)),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      value2,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    // const SizedBox(height: 2),
+                    Text(
+                      label2,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.useOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

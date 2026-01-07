@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/list_item.dart';
 import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
@@ -132,28 +133,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSettingsItem(context, 'Manage Accounts', () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
-        }),
+        ListItem(
+          title: 'Manage Accounts',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+          },
+        ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Notifications', () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()));
-        }),
+        ListItem(
+          title: 'Notifications',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()));
+          },
+        ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Authentication', () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthenticationSettingsScreen()));
-        }),
+        ListItem(
+          title: 'Authentication',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthenticationSettingsScreen()));
+          },
+        ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Show Recovery Phrase', () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ShowRecoveryPhraseScreen()));
-        }),
+        ListItem(
+          title: 'Show Recovery Phrase',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ShowRecoveryPhraseScreen()));
+          },
+        ),
         const SizedBox(height: 22),
-        _buildSettingsItem(context, 'Referral', () {
-          showReferralAndRewardActionSheet(
-            context,
-            showRewardProgram: false, // only show referral code section
-          );
-        }),
+        ListItem(
+          title: 'Referral',
+          onTap: () {
+            showReferralAndRewardActionSheet(
+              context,
+              showRewardProgram: false, // only show referral code section
+            );
+          },
+        ),
       ],
     );
   }
@@ -164,10 +180,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         _buildSectionTitle('Information'),
         const SizedBox(height: 14),
-        _buildSettingsItem(
-          context,
-          'Help & Support',
-          () {
+        ListItem(
+          title: 'Help & Support',
+          onTap: () {
             final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
             launchUrl(url);
           },
@@ -175,17 +190,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           showArrow: false,
         ),
         const SizedBox(height: 22),
-        _buildSettingsItem(
-          context,
-          'Invite & Share',
-          _share,
+        ListItem(
+          title: 'Invite & Share',
+          onTap: _share,
           trailing: Icon(Icons.share_outlined, size: context.themeSize.settingMenuShareIconSize),
         ),
         const SizedBox(height: 22),
-        _buildSettingsItem(
-          context,
-          'Term of Service',
-          () {
+        ListItem(
+          title: 'Term of Service',
+          onTap: () {
             final Uri url = Uri.parse(AppConstants.termsOfServiceUrl);
             launchUrl(url);
           },
@@ -193,37 +206,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           showArrow: false,
         ),
       ],
-    );
-  }
-
-  Widget _buildSettingsItem(
-    BuildContext context,
-    String title,
-    VoidCallback onTap, {
-    Widget? trailing,
-    bool showArrow = true,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: context.isTablet ? 16 : 12, horizontal: 18),
-        decoration: ShapeDecoration(
-          color: context.themeColors.buttonGlass,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(title, style: context.themeText.smallParagraph),
-            trailing ??
-                (showArrow
-                    ? Icon(Icons.arrow_forward_ios, size: context.themeSize.settingMenuIconSize)
-                    : const SizedBox()),
-          ],
-        ),
-      ),
     );
   }
 
