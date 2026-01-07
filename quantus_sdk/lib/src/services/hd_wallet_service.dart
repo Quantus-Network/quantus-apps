@@ -13,7 +13,7 @@ class HdWalletService {
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
     // m/44'/189189'/0'/0/0
     final derivationPath = "m/44'/189189'/$account'/$change/$addressIndex";
-    print('derivationPath: $derivationPath');
+    // print('derivationPath: $derivationPath');
     return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
   }
 

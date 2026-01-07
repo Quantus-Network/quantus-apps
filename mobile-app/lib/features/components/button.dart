@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
-enum ButtonVariant { transparent, neutral, primary, success, danger, glass, glassOutline }
+enum ButtonVariant { transparent, neutral, primary, success, danger, glass, glassOutline, dangerOutline }
 
 class Button extends StatelessWidget {
   final String label;
@@ -135,6 +135,23 @@ class Button extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
+        );
+        break;
+
+      case ButtonVariant.dangerOutline:
+        buttonWidget = Container(
+          width: width,
+          padding: padding,
+          decoration: ShapeDecoration(
+            color: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonRadius),
+              side: BorderSide(color: context.themeColors.buttonDanger, width: 1),
+            ),
+          ),
+          child: Center(
+            child: Text(label, style: effectiveTextStyle.copyWith(color: context.themeColors.buttonDanger)),
+          ),
         );
         break;
 

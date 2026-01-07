@@ -124,9 +124,6 @@ class SettingsService {
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
-    if (account.index == 0) {
-      throw Exception("Can't remove the root account");
-    }
     if (account.accountId == await _getActiveAccountId()) {
       await _setActiveAccountId(accounts[0].accountId);
     }

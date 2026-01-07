@@ -1,10 +1,17 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
@@ -14,7 +21,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class AccountSettingsScreen extends StatefulWidget {
+class AccountSettingsScreen extends ConsumerStatefulWidget {
   final Account account;
   final String balance;
   final String checksumName;
@@ -22,10 +29,10 @@ class AccountSettingsScreen extends StatefulWidget {
   const AccountSettingsScreen({super.key, required this.account, required this.balance, required this.checksumName});
 
   @override
-  State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
+  ConsumerState<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
 }
 
-class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
+class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   void _editAccountName() {
     Navigator.push<bool?>(
       context,
@@ -36,6 +43,103 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         Navigator.of(context).pop(true);
       }
     });
+  }
+
+  Widget _buildDisconnectWalletButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Button(
+        label: 'Disconnect Wallet',
+        onPressed: _showDisconnectConfirmation,
+        variant: ButtonVariant.dangerOutline,
+      ),
+    );
+  }
+
+  void _showDisconnectConfirmation() {
+    showAppModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 16),
+              decoration: ShapeDecoration(
+                color: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(Icons.close, size: context.themeSize.overlayCloseIconSize),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Disconnect Wallet?', style: context.themeText.mediumTitle),
+                    const SizedBox(height: 13),
+                    Text(
+                      'This will remove this account from your wallet. If this is the last account for this hardware wallet, the wallet connection will be removed.',
+                      style: context.themeText.smallParagraph,
+                    ),
+                    const SizedBox(height: 28),
+                    Button(
+                      variant: ButtonVariant.danger,
+                      label: 'Disconnect',
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _disconnectWallet();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(
+                          'Cancel',
+                          style: context.themeText.smallParagraph?.copyWith(decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _disconnectWallet() async {
+    try {
+      final accountsService = AccountsService();
+      await accountsService.removeAccount(widget.account);
+
+      // Invalidate providers to refresh UI
+      // Use ref.read() for actions, but in this case ref is available on ConsumerState
+      // We don't need to read the providers, just invalidate them
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
+      ref.invalidate(accountAssociationsProvider);
+      ref.invalidate(balanceProviderFamily(widget.account.accountId));
+
+      if (mounted) {
+        Navigator.of(context).pop(true); // Return true to indicate change
+      }
+    } catch (e) {
+      print('Failed to disconnect: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to disconnect: $e')));
+      }
+    }
   }
 
   @override
@@ -66,6 +170,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               _buildAddressSection(),
               const SizedBox(height: 20),
               _buildSecuritySection(),
+              const SizedBox(height: 20),
+              if (widget.account.accountType == AccountType.keystone) _buildDisconnectWalletButton(),
+              const SizedBox(height: 30),
             ],
           ),
         ],
@@ -145,23 +252,23 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return _buildSettingCard(
       child: Padding(
         padding: const EdgeInsets.only(top: 10.0, left: 10.0, bottom: 10.0, right: 18.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              width: context.isTablet ? 550 : 251,
-              child: Text(
-                context.isTablet
-                    ? widget.account.accountId
-                    : AddressFormattingService.splitIntoChunks(widget.account.accountId).join(' '),
-                style: context.themeText.smallParagraph,
+        child: InkWell(
+          onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: context.isTablet ? 550 : 251,
+                child: Text(
+                  context.isTablet
+                      ? widget.account.accountId
+                      : AddressFormattingService.splitIntoChunks(widget.account.accountId).join(' '),
+                  style: context.themeText.smallParagraph,
+                ),
               ),
-            ),
-            InkWell(
-              child: Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
-              onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
-            ),
-          ],
+              Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
+            ],
+          ),
         ),
       ),
     );

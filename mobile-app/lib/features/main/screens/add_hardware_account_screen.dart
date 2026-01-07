@@ -125,20 +125,12 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           Row(
             children: [
               Expanded(
-                child: Button(
-                  variant: ButtonVariant.neutral,
-                  label: 'Scan QR Code',
-                  onPressed: _scanQRCode,
-                ),
+                child: Button(variant: ButtonVariant.neutral, label: 'Scan QR Code', onPressed: _scanQRCode),
               ),
               if (kDebugMode) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Button(
-                    variant: ButtonVariant.neutral,
-                    label: 'Debug Fill',
-                    onPressed: _fillDebugAddress,
-                  ),
+                  child: Button(variant: ButtonVariant.neutral, label: 'Debug Fill', onPressed: _fillDebugAddress),
                 ),
               ],
             ],

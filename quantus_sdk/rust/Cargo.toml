@@ -16,6 +16,7 @@ flutter_rust_bridge = "=2.11.1"
 hex = "0.4.3"
 nam-tiny-hderive = "0.3.1-nam.0"
 sp-core = "35.0.0"
+quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.0.1" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

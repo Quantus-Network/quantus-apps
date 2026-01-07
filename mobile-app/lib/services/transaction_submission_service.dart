@@ -53,7 +53,7 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('send_transfer');
 
     // D. Submit and track the transaction
-    await _submitAndTrack(submissionBuilder, pendingTx);
+    await submitAndTrackTransaction(submissionBuilder, pendingTx);
   }
 
   Future<void> scheduleReversibleTransferWithDelaySeconds({
@@ -90,7 +90,7 @@ class TransactionSubmissionService {
 
     TelemetryService().sendEvent('send_reversible');
 
-    await _submitAndTrack(submissionBuilder, pending, maxRetries: maxRetries);
+    await submitAndTrackTransaction(submissionBuilder, pending, maxRetries: maxRetries);
   }
 
   PendingTransactionEvent createPendingTransaction({
@@ -123,7 +123,7 @@ class TransactionSubmissionService {
   /// waiting.
   /// Handles retries in the background for 'invalid' status.
   /// submissionBuilder: Function that creates fresh submission on each retry
-  Future<void> _submitAndTrack(
+  Future<void> submitAndTrackTransaction(
     Future<Uint8List> Function() submissionBuilder,
     PendingTransactionEvent pendingTx, {
     int maxRetries = 3,

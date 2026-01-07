@@ -723,8 +723,9 @@ query SearchPendingTransaction(
         final transferData = eventJson['transfer'] as Map<String, dynamic>;
         transaction = TransferEvent.fromJson(transferData);
       }
+      final block = transaction.blockNumber;
 
-      print('Found 1 matching transactions for pending transaction');
+      print('Found 1 matching transactions for pending transaction at block $block');
       return transaction;
     } catch (e, stackTrace) {
       print('Error searching for pending transaction: $e');

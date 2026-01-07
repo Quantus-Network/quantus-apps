@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/extensions/account_extension.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:ss58/ss58.dart';
@@ -151,8 +150,7 @@ class SubstrateService {
     throw Exception('Failed to submit extrinsic after $maxRetries retries.');
   }
 
-  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call,
-      {bool isSigned = true}) async {
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
     final [runtimeVersion, genesisHash, blockNumber, blockHash, nonce] = await Future.wait([
       _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
@@ -225,7 +223,7 @@ class SubstrateService {
       ).encodeResonance(registry, ResonanceSignatureType.resonance);
 
       return ExtrinsicData(payload: extrinsic, blockNumber: blockNumber, blockHash: blockHash, nonce: nonce);
-    } 
+    }
   }
 
   Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {
@@ -246,7 +244,7 @@ class SubstrateService {
     final [specVersion, transactionVersion] = [runtimeVersion.specVersion, runtimeVersion.transactionVersion];
     final encodedCall = call.encode();
 
-    final payloadToSign = SigningPayload(
+    final payloadToSign = QuantusSigningPayload(
       method: encodedCall,
       specVersion: specVersion,
       transactionVersion: transactionVersion,
@@ -263,19 +261,7 @@ class SubstrateService {
       return Schrodinger(provider).registry;
     });
 
-    final payload = payloadToSign.encode(registry);
-
-    return UnsignedTransactionData(
-      payloadToSign: payload,
-      signer: accountIdBytes,
-      method: encodedCall,
-      eraPeriod: 64,
-      blockNumber: blockNumber,
-      blockHash: blockHash,
-      nonce: nonce,
-      tip: 0,
-      registry: registry,
-    );
+    return UnsignedTransactionData(payloadToSign: payloadToSign, signer: accountIdBytes, registry: registry);
   }
 
   Future<Uint8List> submitExtrinsicWithExternalSignature(
@@ -285,14 +271,16 @@ class SubstrateService {
   ) async {
     final signatureWithPublicKeyBytes = _combineSignatureAndPubkey(signature, publicKey);
 
+    final payload = unsignedData.payloadToSign;
+
     final extrinsic = ResonanceExtrinsicPayload(
       signer: unsignedData.signer,
-      method: unsignedData.method,
+      method: payload.method,
       signature: signatureWithPublicKeyBytes,
-      eraPeriod: unsignedData.eraPeriod,
-      blockNumber: unsignedData.blockNumber,
-      nonce: unsignedData.nonce,
-      tip: unsignedData.tip,
+      eraPeriod: payload.eraPeriod,
+      blockNumber: payload.blockNumber,
+      nonce: payload.nonce,
+      tip: payload.tip,
     ).encodeResonance(unsignedData.registry, ResonanceSignatureType.resonance);
 
     return await _submitExtrinsic(extrinsic);
