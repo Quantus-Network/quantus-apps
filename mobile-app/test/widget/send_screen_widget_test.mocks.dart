@@ -169,7 +169,7 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
           as _i3.Future<bool>);
 
   @override
-  _i3.Future<void> setMnemonic(String? mnemonic, int? mnemonicIndex) =>
+  _i3.Future<void> setMnemonic(String? mnemonic, int? walletIndex) =>
       (super.noSuchMethod(
             Invocation.method(#setMnemonic, [mnemonic]),
             returnValue: _i3.Future<void>.value(),
@@ -178,7 +178,7 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<String?> getMnemonic(int? mnemonicIndex) =>
+  _i3.Future<String?> getMnemonic(int? walletIndex) =>
       (super.noSuchMethod(Invocation.method(#getMnemonic, []), returnValue: _i3.Future<String?>.value())
           as _i3.Future<String?>);
 

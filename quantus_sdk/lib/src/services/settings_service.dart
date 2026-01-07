@@ -179,15 +179,15 @@ class SettingsService {
     return accounts.isEmpty;
   }
 
-  String getMnemonicKey(int mnemonicIndex) => mnemonicIndex == 0 ? 'mnemonic' : 'mnemonic_$mnemonicIndex';
+  String getMnemonicKey(int walletIndex) => walletIndex == 0 ? 'mnemonic' : 'mnemonic_$walletIndex';
 
   // Mnemonic Settings - Using secure storage
-  Future<void> setMnemonic(String mnemonic, int mnemonicIndex) async {
-    await _secureStorage.write(key: getMnemonicKey(mnemonicIndex), value: mnemonic);
+  Future<void> setMnemonic(String mnemonic, int walletIndex) async {
+    await _secureStorage.write(key: getMnemonicKey(walletIndex), value: mnemonic);
   }
 
-  Future<String?> getMnemonic(int mnemonicIndex) async {
-    return await _secureStorage.read(key: getMnemonicKey(mnemonicIndex));
+  Future<String?> getMnemonic(int walletIndex) async {
+    return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
   // Reversible Time Settings
