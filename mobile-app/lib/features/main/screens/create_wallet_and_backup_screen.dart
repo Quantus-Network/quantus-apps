@@ -110,7 +110,12 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
         await _accountsService.addAccount(
           Account(walletIndex: walletIndex, index: 0, name: _accountName.value.text, accountId: _address),
         );
-        await _referralService.submitAddressToBackend();
+        try {
+          // this is more like a shortcut - it will happen anyway any time we try to log in.
+          _referralService.submitAddressToBackend();
+        } catch (e) {
+          print('Failed to submit address to backend: $e');
+        }
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);

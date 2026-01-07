@@ -116,7 +116,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         TelemetryService().sendEvent('edit_account');
       } else {
         final accountToSave = _provisionalAccount.copyWith(name: _nameController.text);
-        await _referralService.submitAddressToBackend(); // ensure the user is logged in
+        try {
+          // this is more like a shortcut - it will happen anyway any time we try to log in.
+          _referralService.submitAddressToBackend();
+        } catch (e) {
+          print('Failed to submit address to backend: $e');
+        }
         await _accountsService.addAccount(accountToSave);
 
         // Invalidate the accounts provider to reload the entire list

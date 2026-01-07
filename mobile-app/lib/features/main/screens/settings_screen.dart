@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/list_item.dart';
-import 'package:resonance_network_wallet/features/components/referral_and_reward_action_sheet.dart';
+import 'package:resonance_network_wallet/features/components/referral_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
@@ -164,10 +164,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Referral',
           onTap: () {
-            showReferralAndRewardActionSheet(
-              context,
-              showRewardProgram: false, // only show referral code section
-            );
+            showReferralFormActionSheet(context, true);
           },
         ),
       ],

@@ -21,7 +21,8 @@ import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class QuestsScreen extends ConsumerStatefulWidget {
-  const QuestsScreen({super.key});
+  final bool playPromoVideo;
+  const QuestsScreen({super.key, required this.playPromoVideo});
 
   @override
   ConsumerState<QuestsScreen> createState() => _QuestsScreenState();
@@ -118,8 +119,8 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Show videos for users who haven't opted in to the reward program
-    if (_isLoadingParticipation) {
+    // Show loading state for users who haven't opted in to the reward program or if the promo video is not playing yet
+    if (_isLoadingParticipation || !widget.playPromoVideo) {
       return const ScaffoldBase(
         child: Center(
           child: Column(
