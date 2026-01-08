@@ -54,8 +54,7 @@ class AppConstants {
   // Default sheet height in percentage of screen height
   static const double sendingSheetHeightFraction = 0.72;
 
-  // This starts the hardware wallet flow using a soft wallet - quite useful for debugging 
-  // hardware wallet flow without using a hardware wallet. 
+  // This starts the hardware wallet flow using a soft wallet - quite useful for debugging
+  // hardware wallet flow without using a hardware wallet.
   static const debugHardwareWallet = false;
-
 }
