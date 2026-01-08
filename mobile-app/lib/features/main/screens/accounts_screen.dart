@@ -181,34 +181,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     return _isHardwareWallet(selectedAccounts) ? 'Add Hardware Account' : 'Add Account';
   }
 
-  // Widget _buildWalletSelector() {
-  //   final accounts = ref.watch(accountsProvider).value ?? <Account>[];
-  //   final grouped = _groupByWallet(accounts);
-  //   if (grouped.length <= 1) return const SizedBox(height: 0);
-
-  //   final walletIndexes = grouped.keys.toList()..sort();
-  //   final initialWallet = _selectedWalletIndex ?? walletIndexes.first;
-
-  //   final items = walletIndexes
-  //       .map((ix) => Item<int>(value: ix, label: _walletLabel(ix, grouped[ix] ?? const <Account>[])))
-  //       .toList();
-
-  //   return Padding(
-  //     padding: const EdgeInsets.only(top: 8, bottom: 10),
-  //     child: Align(
-  //       alignment: Alignment.centerLeft,
-  //       child: Select<int>(
-  //         width: 220,
-  //         items: items,
-  //         initialValue: initialWallet,
-  //         onSelect: (item) {
-  //           setState(() => _selectedWalletIndex = item.value);
-  //         },
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildAccountsList() {
     final accountsAsync = ref.watch(accountsProvider);
     final activeAccountAsync = ref.watch(activeAccountProvider);
