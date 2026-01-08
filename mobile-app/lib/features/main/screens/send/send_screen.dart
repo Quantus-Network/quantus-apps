@@ -79,7 +79,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   bool get isButtonDisabled => SendScreenLogic.isButtonDisabled(
     hasAddressError: _hasAddressError,
-    hasAmountError: _hasAmountError,
+    amountStatus: SendScreenLogic.getAmountStatus(_amount, _maxBalance, _networkFee),
     recipientText: _recipientController.text,
     activeAccountId: activeAccount?.accountId ?? '',
     isFetchingFee: _isFetchingFee,
