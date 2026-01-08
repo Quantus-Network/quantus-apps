@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/card_info.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/mnemonic_grid.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
@@ -206,7 +207,7 @@ class CreateWalletAndBackupScreenState extends ConsumerState<CreateWalletAndBack
                     text: _isLoading
                         ? 'Loading address...'
                         : AddressFormattingService.splitIntoChunks(_address).join(' '),
-                    icon: const Icon(Icons.copy),
+                    icon: const CopyIcon(),
                     onPressed: () {
                       ClipboardExtensions.copyTextWithSnackbar(context, _address);
                     },
@@ -347,7 +348,7 @@ void showRecoveryPhraseSheet(BuildContext context, List<String> words, bool isLo
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.copy, color: Colors.white, size: 24),
+                                  const CopyIcon(),
                                   const SizedBox(width: 8),
                                   Text('Copy to Clipboard', style: context.themeText.smallParagraph),
                                 ],

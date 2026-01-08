@@ -14,7 +14,7 @@ void main() {
     group('getAmountStatus', () {
       test('returns zeroOrNegative for zero', () {
         final status = SendScreenLogic.getAmountStatus(BigInt.zero, BigInt.from(1000), BigInt.from(10));
-        expect(status, AmountStatus.zeroOrNegative);
+        expect(status, AmountStatus.zero);
       });
 
       test('returns belowExistential when < ED', () {
@@ -74,7 +74,7 @@ void main() {
       test('returns true when address has error', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: true,
-          hasAmountError: false,
+          amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
           isFetchingFee: false,
@@ -85,7 +85,7 @@ void main() {
       test('returns true when amount has error', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          hasAmountError: true, // Simulates an amount error calculated elsewhere
+          amountStatus: AmountStatus.belowExistential,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
           isFetchingFee: false,
@@ -96,7 +96,7 @@ void main() {
       test('returns true when recipient text is empty', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          hasAmountError: false,
+          amountStatus: AmountStatus.valid,
           recipientText: '',
           activeAccountId: 'sender_address',
           isFetchingFee: false,
@@ -107,7 +107,7 @@ void main() {
       test('returns true when fetching fee', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          hasAmountError: false,
+          amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
           isFetchingFee: true,
@@ -118,7 +118,7 @@ void main() {
       test('returns true for self transfer', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          hasAmountError: false,
+          amountStatus: AmountStatus.valid,
           recipientText: 'same_address',
           activeAccountId: 'same_address',
           isFetchingFee: false,
@@ -129,7 +129,7 @@ void main() {
       test('returns false for valid input', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          hasAmountError: false,
+          amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
           isFetchingFee: false,
@@ -154,7 +154,7 @@ void main() {
       test('returns "Enter Amount" when status is zeroOrNegative', () {
         final result = SendScreenLogic.getButtonText(
           hasAddressError: false,
-          amountStatus: AmountStatus.zeroOrNegative,
+          amountStatus: AmountStatus.zero,
           recipientText: 'valid_address',
           amount: BigInt.zero,
           activeAccountId: 'sender_address',

@@ -2,10 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/features/components/paste_icon.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -155,7 +155,7 @@ class _ReferralActionSheetState extends State<ReferralActionSheet> {
                 _referralCodeController.text = data.text!;
               }
             },
-            child: SvgPicture.asset('assets/paste_icon_1.svg', width: context.isTablet ? 24 : 18),
+            child: const PasteIcon(),
           ),
         ),
         const SizedBox(height: 24),

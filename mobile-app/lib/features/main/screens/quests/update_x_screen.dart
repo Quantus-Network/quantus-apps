@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
+import 'package:resonance_network_wallet/features/components/paste_icon.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
@@ -192,7 +192,7 @@ class _UpdateXScreenState extends ConsumerState<UpdateXScreen> {
                           _handleController.text = data.text!;
                         }
                       },
-                      child: SvgPicture.asset('assets/paste_icon_1.svg', width: context.isTablet ? 24 : 18),
+                      child: const PasteIcon(),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -243,7 +243,7 @@ class _UpdateXScreenState extends ConsumerState<UpdateXScreen> {
                           _postUrlController.text = data.text!;
                         }
                       },
-                      child: SvgPicture.asset('assets/paste_icon_1.svg', width: context.isTablet ? 24 : 18),
+                      child: const PasteIcon(),
                     ),
                   ),
                   const SizedBox(height: 24),

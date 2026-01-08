@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/card_info.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
@@ -213,7 +214,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                           text: _isLoading
                               ? 'Loading address...'
                               : AddressFormattingService.splitIntoChunks(_provisionalAccount.accountId).join(' '),
-                          icon: const Icon(Icons.copy),
+                          icon: const CopyIcon(),
                           onPressed: () {
                             ClipboardExtensions.copyTextWithSnackbar(context, _provisionalAccount.accountId);
                           },

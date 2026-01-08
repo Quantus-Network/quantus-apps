@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class CardInfo extends StatelessWidget {
   final String text;
-  final Icon? icon;
+  final Widget? icon;
   final String? label;
   final VoidCallback? onPressed;
   final Color? textColor;

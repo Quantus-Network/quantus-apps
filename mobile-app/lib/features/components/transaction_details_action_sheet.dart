@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/error_details_display.dart';
 import 'package:resonance_network_wallet/features/components/reversible_timer.dart';
@@ -258,7 +259,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
                             crossAxisAlignment: CrossAxisAlignment.center,
                             spacing: 8,
                             children: [
-                              SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+                              const CopyIcon(),
                               Text('Copy Address', style: context.themeText.smallParagraph),
                             ],
                           ),

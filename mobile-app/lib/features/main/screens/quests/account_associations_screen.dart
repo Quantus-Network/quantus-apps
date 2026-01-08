@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/remove_association_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
@@ -190,7 +190,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
               ? const Skeleton(width: 40, height: 16)
               : Text(getDisplayText(), style: context.themeText.smallParagraph),
         ),
-        if (hasEthAddress) SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+        if (hasEthAddress) const CopyIcon(),
       ],
     );
 
@@ -316,7 +316,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
                         ? const Skeleton(width: 40, height: 16)
                         : Text(getDisplayText(), style: context.themeText.smallParagraph),
                   ),
-                  if (hasXUsername) SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 28 : 20),
+                  if (hasXUsername) const CopyIcon(),
                 ],
               ),
             ),

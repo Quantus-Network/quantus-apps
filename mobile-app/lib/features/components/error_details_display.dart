@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -160,11 +161,10 @@ class _ErrorDetailsSheetState extends State<ErrorDetailsSheet> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          _copied ? Icons.check : Icons.copy,
-                          size: context.isTablet ? 20 : 18,
-                          color: _copied ? context.themeColors.buttonSuccess : context.themeColors.textPrimary,
-                        ),
+                        if (_copied)
+                          Icon(Icons.check, size: context.isTablet ? 20 : 18, color: context.themeColors.buttonSuccess)
+                        else
+                          CopyIcon(color: context.themeColors.textPrimary),
                         const SizedBox(width: 8),
                         Text(
                           _copied ? 'Copied!' : 'Copy Error',

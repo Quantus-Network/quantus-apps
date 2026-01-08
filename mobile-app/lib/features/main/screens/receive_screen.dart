@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -241,7 +242,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                  SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
+                                  const CopyIcon(),
                                 ],
                               ),
                             );
@@ -268,7 +269,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                                 style: context.themeText.smallParagraph,
                               ),
                             ),
-                            SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
+                            const CopyIcon(),
                           ],
                         ),
                       ),

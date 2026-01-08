@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/basic_card.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/link_text.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
@@ -154,7 +155,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> wit
                                 style: context.themeText.smallParagraph,
                                 textAlign: TextAlign.center,
                               ),
-                              Icon(Icons.copy, color: Colors.white, size: context.isTablet ? 26 : 22),
+                              const CopyIcon(),
                             ],
                           ),
                         ),

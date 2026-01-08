@@ -1,7 +1,7 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
 
-enum AmountStatus { valid, zeroOrNegative, belowExistential, insufficientBalance }
+enum AmountStatus { valid, negative, zero, belowExistential, insufficientBalance }
 
 class SendScreenLogic {
   static bool _isSelfTransfer(String recipient, String activeAccountId) {
@@ -9,26 +9,31 @@ class SendScreenLogic {
   }
 
   static AmountStatus getAmountStatus(BigInt amount, BigInt balance, BigInt networkFee) {
-    if (amount <= BigInt.zero) return AmountStatus.zeroOrNegative;
+    if (amount < BigInt.zero) return AmountStatus.negative;
+    if (amount == BigInt.zero) return AmountStatus.zero;
     if (amount < balances.Constants().existentialDeposit) return AmountStatus.belowExistential;
     if ((amount + networkFee) > balance) return AmountStatus.insufficientBalance;
     return AmountStatus.valid;
   }
 
   static bool hasAmountError({required BigInt amount, required BigInt balance, required BigInt networkFee}) {
-    return getAmountStatus(amount, balance, networkFee) != AmountStatus.valid;
+    final status = getAmountStatus(amount, balance, networkFee);
+    return status == AmountStatus.belowExistential ||
+        status == AmountStatus.insufficientBalance ||
+        status == AmountStatus.negative;
   }
 
   static bool isButtonDisabled({
     required bool hasAddressError,
-    required bool hasAmountError,
+    required AmountStatus amountStatus,
     required String recipientText,
     required String activeAccountId,
     required bool isFetchingFee,
   }) {
     final isSelfTransfer = _isSelfTransfer(recipientText, activeAccountId);
+    final amountIsValid = amountStatus == AmountStatus.valid;
 
-    return hasAddressError || hasAmountError || recipientText.isEmpty || isFetchingFee || isSelfTransfer;
+    return hasAddressError || !amountIsValid || recipientText.isEmpty || isFetchingFee || isSelfTransfer;
   }
 
   static String getButtonText({
@@ -43,8 +48,10 @@ class SendScreenLogic {
     if (_isSelfTransfer(recipientText, activeAccountId)) return "Can't Self Transfer";
 
     switch (amountStatus) {
-      case AmountStatus.zeroOrNegative:
+      case AmountStatus.zero:
         return 'Enter Amount';
+      case AmountStatus.negative:
+        return 'Invalid Amount';
       case AmountStatus.belowExistential:
         return 'Below Existential Deposit';
       case AmountStatus.insufficientBalance:

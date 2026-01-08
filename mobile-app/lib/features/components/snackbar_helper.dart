@@ -1,7 +1,7 @@
 import 'package:flash/flash.dart';
 import 'package:flash/flash_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/top_snackbar_content.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -52,7 +52,7 @@ Future<void> showCopySnackbar(BuildContext context, {required String title, requ
       height: context.isTablet ? 44 : 36,
       decoration: const ShapeDecoration(color: Color(0xFF494949), shape: OvalBorder()),
       alignment: Alignment.center,
-      child: SvgPicture.asset('assets/copy_icon.svg', width: context.isTablet ? 24 : 16),
+      child: const CopyIcon(),
     ),
     title: title,
     message: message,
