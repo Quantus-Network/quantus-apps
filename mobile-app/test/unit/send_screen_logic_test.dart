@@ -85,7 +85,7 @@ void main() {
       test('returns true when amount has error', () {
         final result = SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
-          amountStatus: AmountStatus.belowExistential, 
+          amountStatus: AmountStatus.belowExistential,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
           isFetchingFee: false,

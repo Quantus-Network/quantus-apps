@@ -1,13 +1,7 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
 
-enum AmountStatus { 
-  valid, 
-  negative, 
-  zero, 
-  belowExistential, 
-  insufficientBalance 
-}
+enum AmountStatus { valid, negative, zero, belowExistential, insufficientBalance }
 
 class SendScreenLogic {
   static bool _isSelfTransfer(String recipient, String activeAccountId) {
@@ -24,7 +18,9 @@ class SendScreenLogic {
 
   static bool hasAmountError({required BigInt amount, required BigInt balance, required BigInt networkFee}) {
     final status = getAmountStatus(amount, balance, networkFee);
-    return status == AmountStatus.belowExistential || status == AmountStatus.insufficientBalance || status == AmountStatus.negative;
+    return status == AmountStatus.belowExistential ||
+        status == AmountStatus.insufficientBalance ||
+        status == AmountStatus.negative;
   }
 
   static bool isButtonDisabled({
