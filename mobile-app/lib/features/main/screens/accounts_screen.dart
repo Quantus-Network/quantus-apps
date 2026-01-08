@@ -70,7 +70,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     });
     try {
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+      int selectedWallet = getSelectedWalletIndex(accounts);
       final grouped = _groupByWallet(accounts);
       final selectedWalletAccounts = grouped[selectedWallet] ?? const <Account>[];
 
@@ -93,6 +93,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         });
       }
     }
+  }
+
+  int getSelectedWalletIndex(List<Account> accounts) {
+    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+    return selectedWallet;
   }
 
   Future<void> _openWalletMoreActions() async {
@@ -171,7 +176,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   String _walletActionLabel() {
     final accounts = ref.watch(accountsProvider).value ?? <Account>[];
     final grouped = _groupByWallet(accounts);
-    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
+    final selectedWallet = getSelectedWalletIndex(accounts);
     final selectedAccounts = grouped[selectedWallet] ?? const <Account>[];
     return _isHardwareWallet(selectedAccounts) ? 'Add Hardware Account' : 'Add Account';
   }
