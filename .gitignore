@@ -129,3 +129,4 @@ app.*.symbols
 /mobile-app/android/.idea
 mobile-app/.env
 /rust-transaction-parser/target
+/.cursor
