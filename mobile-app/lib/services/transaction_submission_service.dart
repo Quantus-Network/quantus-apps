@@ -255,7 +255,7 @@ class TransactionSubmissionService {
         _stopSearchingForBroadcastTransaction(pendingTx.id);
 
         // Trigger silent refresh of history to include the new transaction
-        _triggerSilentHistoryRefresh(affectedAccountIds: {pendingTx.from, pendingTx.to});
+        _triggerSilentHistoryRefresh(affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
 
         // Update to inHistory state
         _ref
@@ -272,10 +272,8 @@ class TransactionSubmissionService {
               .addReversibleTransactionReminder(account: account, transactionData: result);
         }
 
-        // Remove after a short delay to show completion
-        Timer(const Duration(seconds: 2), () {
-          _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-        });
+        // Remove immediately to prevent duplication/glitches as we've already added it to history
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
 
         // Refresh balance since transaction was completed
         _ref.invalidate(balanceProviderFamily);
@@ -289,12 +287,16 @@ class TransactionSubmissionService {
   }
 
   /// Triggers silent refresh on relevant history providers
-  void _triggerSilentHistoryRefresh({Set<String>? affectedAccountIds}) {
+  void _triggerSilentHistoryRefresh({Set<String>? affectedAccountIds, TransactionEvent? newTransaction}) {
     print('Triggering silent history refresh for found transaction');
 
     try {
       // Trigger silent refresh on the main pagination controller (all accounts)
-      _ref.read(paginationControllerProvider.notifier).silentRefresh();
+      final mainController = _ref.read(paginationControllerProvider.notifier);
+      if (newTransaction != null) {
+        mainController.addTransactionToHistory(newTransaction);
+      }
+      mainController.silentRefresh();
 
       final targets = <String>{...?(affectedAccountIds)};
       final active = _ref.read(activeAccountProvider).value;
@@ -303,16 +305,24 @@ class TransactionSubmissionService {
       }
 
       for (final accountId in targets) {
-        _ref
-            .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
-            .silentRefresh();
+        final controller = _ref.read(
+          filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
+        );
+        if (newTransaction != null) {
+          controller.addTransactionToHistory(newTransaction); 
+        }
+        controller.silentRefresh();
       }
 
       // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
       final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
-          .silentRefresh();
+      final allAccountsController = _ref.read(
+        filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier,
+      );
+      if (newTransaction != null) {
+        allAccountsController.addTransactionToHistory(newTransaction);
+      }
+      allAccountsController.silentRefresh();
 
       print('Silent history refresh triggered successfully');
     } catch (e, stackTrace) {
