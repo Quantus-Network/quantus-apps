@@ -10,8 +10,8 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
-import 'package:resonance_network_wallet/services/feature_flags.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -215,8 +215,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           // Show test buttons only if feature flag is enabled
           Consumer(
             builder: (context, ref, child) {
-              final featureFlags = ref.watch(featureFlagsProvider);
-              final enableTestButtons = featureFlags.isEnabled('test_buttons');
+              final enableTestButtons = FeatureFlags.enableTestButtons;
 
               if (!enableTestButtons) return const SizedBox.shrink();
 
@@ -245,8 +244,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
           Consumer(
             builder: (context, ref, child) {
-              final featureFlags = ref.watch(featureFlagsProvider);
-              final enableTestButtons = featureFlags.isEnabled('test_buttons');
+              final enableTestButtons = FeatureFlags.enableTestButtons;
               return enableTestButtons ? const SizedBox(height: 24) : const SizedBox.shrink();
             },
           ),
