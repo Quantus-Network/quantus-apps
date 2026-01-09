@@ -30,7 +30,6 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double buttonsHorizontalSpacing;
   final double infoSheetTitleIcon;
 
-
   const AppSizeTheme({
     required this.logoHeight,
     required this.mainMenuHeight,
@@ -217,7 +216,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       pasteIconSize: pasteIconSize + (other.pasteIconSize - pasteIconSize) * t,
       timePickerSubtitleWidth: timePickerSubtitleWidth + (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
       bottomButtonSpacing: bottomButtonSpacing + (other.bottomButtonSpacing - bottomButtonSpacing) * t,
-      buttonsHorizontalSpacing: buttonsHorizontalSpacing + (other.buttonsHorizontalSpacing - buttonsHorizontalSpacing) * t,
+      buttonsHorizontalSpacing:
+          buttonsHorizontalSpacing + (other.buttonsHorizontalSpacing - buttonsHorizontalSpacing) * t,
       infoSheetTitleIcon: infoSheetTitleIcon + (other.infoSheetTitleIcon - infoSheetTitleIcon) * t,
     );
   }

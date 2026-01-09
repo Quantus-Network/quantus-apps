@@ -407,9 +407,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                       await Navigator.push<bool?>(
                         context,
                         MaterialPageRoute(
-                          settings: const RouteSettings(
-                            name: AppConstants.accountSettingsRouteName,
-                          ),
+                          settings: const RouteSettings(name: AppConstants.accountSettingsRouteName),
                           builder: (context) => AccountSettingsScreen(
                             account: account,
                             balance: _formattingService.formatBalance(balance, addSymbol: true),

@@ -16,12 +16,10 @@ class HighSecurityConfirmationSheet extends ConsumerStatefulWidget {
   const HighSecurityConfirmationSheet({super.key});
 
   @override
-  ConsumerState<HighSecurityConfirmationSheet> createState() =>
-      _HighSecurityConfirmationSheetState();
+  ConsumerState<HighSecurityConfirmationSheet> createState() => _HighSecurityConfirmationSheetState();
 }
 
-class _HighSecurityConfirmationSheetState
-    extends ConsumerState<HighSecurityConfirmationSheet> {
+class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConfirmationSheet> {
   final HighSecurityService _highSecurityService = HighSecurityService();
   final SettingsService _settingsService = SettingsService();
 
@@ -36,10 +34,7 @@ class _HighSecurityConfirmationSheetState
     final formData = ref.read(highSecurityFormProvider);
     final activeAccount = (await _settingsService.getActiveAccount())!;
 
-    await _highSecurityService.setupHighSecurityAccount(
-      activeAccount,
-      formData,
-    );
+    await _highSecurityService.setupHighSecurityAccount(activeAccount, formData);
 
     setState(() {
       _isSubmitting = false;
@@ -58,10 +53,7 @@ class _HighSecurityConfirmationSheetState
     final activeAccount = (await _settingsService.getActiveAccount())!;
     final formData = ref.read(highSecurityFormProvider);
 
-    final fee = await _highSecurityService.getHighSecuritySetupFee(
-      activeAccount,
-      formData,
-    );
+    final fee = await _highSecurityService.getHighSecuritySetupFee(activeAccount, formData);
 
     setState(() {
       _networkFee = fee.fee;
@@ -92,11 +84,7 @@ class _HighSecurityConfirmationSheetState
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(7),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+              decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -108,12 +96,7 @@ class _HighSecurityConfirmationSheetState
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'WARNING:',
-              style: context.themeText.largeTitle?.copyWith(
-                color: context.themeColors.buttonDanger,
-              ),
-            ),
+            Text('WARNING:', style: context.themeText.largeTitle?.copyWith(color: context.themeColors.buttonDanger)),
             const SizedBox(height: 11),
             Text(
               'These features are designed to help keep your funds safer, but once confirmed this account CANNOT:',
@@ -125,30 +108,12 @@ class _HighSecurityConfirmationSheetState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '• Turn off High Security',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Text(
-                    '• Reverse a transaction',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Text(
-                    '• Change the Guardian account',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Text(
-                    '• Change the Recovery account',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Text(
-                    '• Change the Safeguard window',
-                    style: context.themeText.smallParagraph,
-                  ),
-                  Text(
-                    '• Deny a recovery request',
-                    style: context.themeText.smallParagraph,
-                  ),
+                  Text('• Turn off High Security', style: context.themeText.smallParagraph),
+                  Text('• Reverse a transaction', style: context.themeText.smallParagraph),
+                  Text('• Change the Guardian account', style: context.themeText.smallParagraph),
+                  Text('• Change the Recovery account', style: context.themeText.smallParagraph),
+                  Text('• Change the Safeguard window', style: context.themeText.smallParagraph),
+                  Text('• Deny a recovery request', style: context.themeText.smallParagraph),
                 ],
               ),
             ),
@@ -161,17 +126,10 @@ class _HighSecurityConfirmationSheetState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Network Fee',
-                  style: context.themeText.detail?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Network Fee', style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600)),
                 Text(
                   '${_networkFee ?? 'Fetching...'} ${AppConstants.tokenSymbol}',
-                  style: context.themeText.detail?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -217,11 +175,7 @@ void showHighSecurityConfirmationSheet(BuildContext context) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
@@ -232,10 +186,7 @@ void showHighSecurityConfirmationSheet(BuildContext context) {
           right: 0,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.useOpacity(0.3),
-              child: const HighSecurityConfirmationSheet(),
-            ),
+            child: Container(color: Colors.black.useOpacity(0.3), child: const HighSecurityConfirmationSheet()),
           ),
         ),
       ],

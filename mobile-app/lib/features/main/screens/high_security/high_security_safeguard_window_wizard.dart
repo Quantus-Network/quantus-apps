@@ -18,27 +18,21 @@ class HighSecuritySafeguardWindowWizard extends ConsumerStatefulWidget {
   const HighSecuritySafeguardWindowWizard({super.key});
 
   @override
-  ConsumerState<HighSecuritySafeguardWindowWizard> createState() =>
-      _HighSecuritySafeguardWindowWizardState();
+  ConsumerState<HighSecuritySafeguardWindowWizard> createState() => _HighSecuritySafeguardWindowWizardState();
 }
 
-class _HighSecuritySafeguardWindowWizardState
-    extends ConsumerState<HighSecuritySafeguardWindowWizard> {
+class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecuritySafeguardWindowWizard> {
   @override
   Widget build(BuildContext context) {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
-    final safeguardTimeSeconds = ref
-        .watch(highSecurityFormProvider)
-        .safeguardWindow;
+    final safeguardTimeSeconds = ref.watch(highSecurityFormProvider).safeguardWindow;
 
     final int secondsInADay = 86400;
-    final int secondsInAMonth =
-        secondsInADay * 30; // 86400 seconds/day * 30 days/month
+    final int secondsInAMonth = secondsInADay * 30; // 86400 seconds/day * 30 days/month
 
     /// This is an approximation.
     final int safeguardTimeMonths = safeguardTimeSeconds ~/ secondsInAMonth;
-    final int safeguardTimeDays =
-        (safeguardTimeSeconds % secondsInAMonth) ~/ secondsInADay;
+    final int safeguardTimeDays = (safeguardTimeSeconds % secondsInAMonth) ~/ secondsInADay;
     final int safeguardTimeHours = (safeguardTimeSeconds % secondsInADay) ~/ 3600;
 
     final bool isDisabled = safeguardTimeSeconds == 0;
@@ -54,19 +48,12 @@ class _HighSecuritySafeguardWindowWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(
-                  currentStep: 2,
-                  totalSteps: AppConstants.highSecurityStepsCount,
-                ),
+                child: StepsIndicator(currentStep: 2, totalSteps: AppConstants.highSecurityStepsCount),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          GradientText(
-            'SAFEGUARD WINDOW',
-            colors: context.themeColors.aquaBlue,
-            style: context.themeText.largeTitle,
-          ),
+          GradientText('SAFEGUARD WINDOW', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
           const SizedBox(height: 4),
           Text(
             'The time window in which the Guardian  can deny or intercept a transaction.',
@@ -75,9 +62,7 @@ class _HighSecuritySafeguardWindowWizardState
           const SizedBox(height: 38),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Safeguard Window', style: context.themeText.largeTag),
-            ],
+            children: [Text('Safeguard Window', style: context.themeText.largeTag)],
           ),
           const SizedBox(height: 4),
           Text(
@@ -100,9 +85,7 @@ class _HighSecuritySafeguardWindowWizardState
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: ShapeDecoration(
                 color: const Color(0xFF313131),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,11 +99,7 @@ class _HighSecuritySafeguardWindowWizardState
                     ),
                     style: context.themeText.smallParagraph,
                   ),
-                  Icon(
-                    Icons.edit,
-                    color: Colors.white70,
-                    size: context.isTablet ? 22 : 14,
-                  ),
+                  Icon(Icons.edit, color: Colors.white70, size: context.isTablet ? 22 : 14),
                 ],
               ),
             ),
@@ -128,9 +107,7 @@ class _HighSecuritySafeguardWindowWizardState
           const SizedBox(height: 13),
           Text(
             'Allow a reasonable window for your Guardian account to respond in an emergency.',
-            style: context.themeText.smallParagraph?.copyWith(
-              color: context.themeColors.textMuted,
-            ),
+            style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
           ),
           const Expanded(child: SizedBox()),
           Row(
@@ -150,13 +127,7 @@ class _HighSecuritySafeguardWindowWizardState
                   variant: ButtonVariant.neutral,
                   label: 'Next',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const HighSecuritySummaryWizard(),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecuritySummaryWizard()));
                   },
                 ),
               ),

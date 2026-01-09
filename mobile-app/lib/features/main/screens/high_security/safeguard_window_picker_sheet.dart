@@ -44,9 +44,7 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
               Text(
                 'Set Safeguard Window',
                 textAlign: TextAlign.center,
-                style: context.themeText.smallTitle?.copyWith(
-                  color: context.themeColors.checksum,
-                ),
+                style: context.themeText.smallTitle?.copyWith(color: context.themeColors.checksum),
               ),
               const SizedBox(height: 4),
               SizedBox(
@@ -70,24 +68,16 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
-                        'Months',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
+                      Text('Months', style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: Row(
                           children: [
                             Expanded(
                               child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedMonths,
-                                ),
+                                scrollController: FixedExtentScrollController(initialItem: selectedMonths),
                                 itemExtent: 40,
-                                onSelectedItemChanged: (index) =>
-                                    selectedMonths = index,
+                                onSelectedItemChanged: (index) => selectedMonths = index,
                                 children: List.generate(
                                   13,
                                   (index) => Center(
@@ -104,13 +94,7 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const Text(
-                              ':',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                              ),
-                            ),
+                            const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
                           ],
                         ),
                       ),
@@ -121,24 +105,16 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
-                        'Days',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
+                      Text('Days', style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: Row(
                           children: [
                             Expanded(
                               child: CupertinoPicker(
-                                scrollController: FixedExtentScrollController(
-                                  initialItem: selectedDays,
-                                ),
+                                scrollController: FixedExtentScrollController(initialItem: selectedDays),
                                 itemExtent: 40,
-                                onSelectedItemChanged: (index) =>
-                                    selectedDays = index,
+                                onSelectedItemChanged: (index) => selectedDays = index,
                                 children: List.generate(
                                   30,
                                   (index) => Center(
@@ -155,13 +131,7 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const Text(
-                              ':',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                              ),
-                            ),
+                            const Text(':', style: TextStyle(color: Colors.white, fontSize: 28)),
                           ],
                         ),
                       ),
@@ -172,21 +142,13 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
-                        'Hours',
-                        style: context.themeText.largeTag?.copyWith(
-                          color: context.themeColors.textMuted,
-                        ),
-                      ),
+                      Text('Hours', style: context.themeText.largeTag?.copyWith(color: context.themeColors.textMuted)),
                       const SizedBox(height: 8),
                       Expanded(
                         child: CupertinoPicker(
-                          scrollController: FixedExtentScrollController(
-                            initialItem: selectedHours,
-                          ),
+                          scrollController: FixedExtentScrollController(initialItem: selectedHours),
                           itemExtent: 40,
-                          onSelectedItemChanged: (index) =>
-                              selectedHours = index,
+                          onSelectedItemChanged: (index) => selectedHours = index,
                           children: List.generate(
                             24,
                             (index) => Center(
@@ -238,12 +200,9 @@ class SafeguardWindowPickerSheet extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                   onPressed: () {
-                    final int secondsInAMonth =
-                        86400 * 30; // 86400 seconds/day * 30 days/month
+                    final int secondsInAMonth = 86400 * 30; // 86400 seconds/day * 30 days/month
                     final newTimeSeconds =
-                        (selectedMonths * secondsInAMonth) +
-                        (selectedDays * 86400) +
-                        (selectedHours * 3600);
+                        (selectedMonths * secondsInAMonth) + (selectedDays * 86400) + (selectedHours * 3600);
 
                     setSafeguardTimeSeconds(newTimeSeconds);
                     Navigator.pop(context);

@@ -16,21 +16,17 @@ class HighSecuritySummaryWizard extends ConsumerStatefulWidget {
   const HighSecuritySummaryWizard({super.key});
 
   @override
-  ConsumerState<HighSecuritySummaryWizard> createState() =>
-      _HighSecuritySummaryWizardState();
+  ConsumerState<HighSecuritySummaryWizard> createState() => _HighSecuritySummaryWizardState();
 }
 
-class _HighSecuritySummaryWizardState
-    extends ConsumerState<HighSecuritySummaryWizard> {
-  final HumanReadableChecksumService _humanReadableChecksumService =
-      HumanReadableChecksumService();
+class _HighSecuritySummaryWizardState extends ConsumerState<HighSecuritySummaryWizard> {
+  final HumanReadableChecksumService _humanReadableChecksumService = HumanReadableChecksumService();
 
   @override
   Widget build(BuildContext context) {
     final formData = ref.read(highSecurityFormProvider);
 
-    final guardianChecksumFuture = _humanReadableChecksumService
-        .getHumanReadableName(formData.guardianAddress);
+    final guardianChecksumFuture = _humanReadableChecksumService.getHumanReadableName(formData.guardianAddress);
 
     return ScaffoldBase(
       appBar: WalletAppBar.simpleWithBackButton(title: 'Summary'),
@@ -43,19 +39,12 @@ class _HighSecuritySummaryWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(
-                  currentStep: 3,
-                  totalSteps: AppConstants.highSecurityStepsCount,
-                ),
+                child: StepsIndicator(currentStep: 3, totalSteps: AppConstants.highSecurityStepsCount),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          GradientText(
-            'SUMMARY',
-            colors: context.themeColors.aquaBlue,
-            style: context.themeText.largeTitle,
-          ),
+          GradientText('SUMMARY', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
           const SizedBox(height: 19),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,17 +54,13 @@ class _HighSecuritySummaryWizardState
               Text('Everyday Account', style: context.themeText.smallTitle),
               Text(
                 'Grain-Red-Flash-Hyper-Cloud',
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: context.themeColors.checksumDarker,
-                ),
+                style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksumDarker),
               ),
               SizedBox(
                 width: 220,
                 child: Text(
                   '5FEUm MJ6w5 36upW fhFcK n61jN UniW3 norvT ULjwj MhbfN cs4N',
-                  style: context.themeText.detail?.copyWith(
-                    color: Colors.white.useOpacity(0.6000000238418579),
-                  ),
+                  style: context.themeText.detail?.copyWith(color: Colors.white.useOpacity(0.6000000238418579)),
                 ),
               ),
             ],
@@ -84,9 +69,7 @@ class _HighSecuritySummaryWizardState
           SummaryCard(
             type: SummaryType.guardian,
             checksumFuture: guardianChecksumFuture,
-            address: AddressFormattingService.splitIntoChunks(
-              formData.guardianAddress,
-            ).join(' '),
+            address: AddressFormattingService.splitIntoChunks(formData.guardianAddress).join(' '),
           ),
           const Expanded(child: SizedBox()),
           Row(
@@ -125,18 +108,11 @@ class SummaryCard extends StatelessWidget {
   final Future<String> checksumFuture;
   final String address;
 
-  const SummaryCard({
-    super.key,
-    required this.type,
-    required this.checksumFuture,
-    required this.address,
-  });
+  const SummaryCard({super.key, required this.type, required this.checksumFuture, required this.address});
 
   @override
   Widget build(BuildContext context) {
-    final String label = type == SummaryType.guardian
-        ? 'GUARDIAN ACCOUNT:'
-        : 'RECOVERY ACCOUNT:';
+    final String label = type == SummaryType.guardian ? 'GUARDIAN ACCOUNT:' : 'RECOVERY ACCOUNT:';
     final Color checksumColor = type == SummaryType.guardian
         ? context.themeColors.yellow
         : context.themeColors.buttonDanger;
@@ -164,21 +140,14 @@ class SummaryCard extends StatelessWidget {
                 text = snapshot.data!;
               }
 
-              return Text(
-                text,
-                style: context.themeText.smallParagraph?.copyWith(
-                  color: checksumColor,
-                ),
-              );
+              return Text(text, style: context.themeText.smallParagraph?.copyWith(color: checksumColor));
             },
           ),
           SizedBox(
             width: 220,
             child: Text(
               address,
-              style: context.themeText.detail?.copyWith(
-                color: Colors.white.useOpacity(0.6000000238418579),
-              ),
+              style: context.themeText.detail?.copyWith(color: Colors.white.useOpacity(0.6000000238418579)),
             ),
           ),
         ],

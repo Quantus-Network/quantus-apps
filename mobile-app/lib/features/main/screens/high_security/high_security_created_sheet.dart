@@ -13,16 +13,13 @@ class HighSecurityCreatedSheet extends StatefulWidget {
   const HighSecurityCreatedSheet({super.key});
 
   @override
-  State<HighSecurityCreatedSheet> createState() =>
-      _HighSecurityCreatedSheetState();
+  State<HighSecurityCreatedSheet> createState() => _HighSecurityCreatedSheetState();
 }
 
 class _HighSecurityCreatedSheetState extends State<HighSecurityCreatedSheet> {
   void _returnToAccountSetting() {
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
+    Navigator.of(context).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
   }
 
   @override
@@ -41,11 +38,7 @@ class _HighSecurityCreatedSheetState extends State<HighSecurityCreatedSheet> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(7),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+              decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -67,12 +60,7 @@ class _HighSecurityCreatedSheetState extends State<HighSecurityCreatedSheet> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 46),
-            Button(
-              variant: ButtonVariant.neutral,
-              label: 'Done',
-              width: 188,
-              onPressed: _returnToAccountSetting,
-            ),
+            Button(variant: ButtonVariant.neutral, label: 'Done', width: 188, onPressed: _returnToAccountSetting),
             SizedBox(height: context.themeSize.bottomButtonSpacing),
           ],
         ),
@@ -83,9 +71,7 @@ class _HighSecurityCreatedSheetState extends State<HighSecurityCreatedSheet> {
 
 void showHighSecurityCreatedSheet(BuildContext context) {
   void returnToAccountSetting() {
-    Navigator.of(
-      context,
-    ).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
+    Navigator.of(context).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
   }
 
   showModalBottomSheet(
@@ -103,11 +89,7 @@ void showHighSecurityCreatedSheet(BuildContext context) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
@@ -118,10 +100,7 @@ void showHighSecurityCreatedSheet(BuildContext context) {
           right: 0,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.useOpacity(0.3),
-              child: const HighSecurityCreatedSheet(),
-            ),
+            child: Container(color: Colors.black.useOpacity(0.3), child: const HighSecurityCreatedSheet()),
           ),
         ),
       ],

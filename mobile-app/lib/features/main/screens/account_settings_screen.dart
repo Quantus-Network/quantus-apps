@@ -279,10 +279,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     return _buildSettingCard(
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HighSecurityGetStartedScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecurityGetStartedScreen()));
         },
         child: Padding(
           padding: const EdgeInsets.only(top: 12.0, left: 12.0, bottom: 12.0, right: 26.0),

@@ -17,7 +17,6 @@ class HighSecurityFormNotifier extends StateNotifier<HighSecurityData> {
 }
 
 // Provider
-final highSecurityFormProvider =
-    StateNotifierProvider<HighSecurityFormNotifier, HighSecurityData>((ref) {
-      return HighSecurityFormNotifier();
-    });
+final highSecurityFormProvider = StateNotifierProvider<HighSecurityFormNotifier, HighSecurityData>((ref) {
+  return HighSecurityFormNotifier();
+});

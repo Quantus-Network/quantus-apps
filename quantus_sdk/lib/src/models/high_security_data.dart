@@ -7,10 +7,7 @@ class HighSecurityData {
     this.safeguardWindow = 10 * 60 * 60, // 10 hours in seconds
   });
 
-  HighSecurityData copyWith({
-    String? guardianAddress,
-    int? safeguardWindow,
-  }) {
+  HighSecurityData copyWith({String? guardianAddress, int? safeguardWindow}) {
     return HighSecurityData(
       guardianAddress: guardianAddress ?? this.guardianAddress,
       safeguardWindow: safeguardWindow ?? this.safeguardWindow,

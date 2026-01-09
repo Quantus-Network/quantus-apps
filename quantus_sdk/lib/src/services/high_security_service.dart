@@ -10,10 +10,7 @@ class HighSecurityService {
   // ignore: unused_field
   final SubstrateService _substrateService = SubstrateService();
 
-  Future<void> setupHighSecurityAccount(
-    Account account,
-    HighSecurityData formData,
-  ) async {
+  Future<void> setupHighSecurityAccount(Account account, HighSecurityData formData) async {
     try {
       await Future.delayed(const Duration(seconds: 2));
       // Submit the extrinsic and return its result
@@ -26,13 +23,10 @@ class HighSecurityService {
   }
 
   // TODO replace with actual fee calculation
-  Future<ExtrinsicFeeData> getHighSecuritySetupFee(
-    Account account,
-    HighSecurityData formData,
-  ) async {
+  Future<ExtrinsicFeeData> getHighSecuritySetupFee(Account account, HighSecurityData formData) async {
     try {
       await Future.delayed(const Duration(seconds: 2));
-      
+
       // Mock fetch
       return ExtrinsicFeeData(
         fee: BigInt.from(1000000000000000000), // 1.0

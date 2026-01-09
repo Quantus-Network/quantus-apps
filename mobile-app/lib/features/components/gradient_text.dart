@@ -5,12 +5,7 @@ class GradientText extends StatelessWidget {
   final List<Color> colors;
   final TextStyle? style;
 
-  const GradientText(
-    this.text, {
-    super.key,
-    required this.colors,
-    required this.style,
-  });
+  const GradientText(this.text, {super.key, required this.colors, required this.style});
 
   @override
   Widget build(BuildContext context) {

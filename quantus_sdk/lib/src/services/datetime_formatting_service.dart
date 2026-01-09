@@ -138,5 +138,4 @@ class DatetimeFormattingService {
       return '$hours hr${hours != 1 ? 's' : ''}';
     }
   }
-
 }

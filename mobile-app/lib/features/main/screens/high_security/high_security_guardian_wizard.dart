@@ -21,21 +21,16 @@ class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
   const HighSecurityGuardianWizard({super.key});
 
   @override
-  ConsumerState<HighSecurityGuardianWizard> createState() =>
-      _HighSecurityGuardianWizardState();
+  ConsumerState<HighSecurityGuardianWizard> createState() => _HighSecurityGuardianWizardState();
 }
 
-class _HighSecurityGuardianWizardState
-    extends ConsumerState<HighSecurityGuardianWizard> {
+class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardianWizard> {
   Future<void> _scanQRCode() async {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
 
     final scannedAddress = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-        fullscreenDialog: true,
-      ),
+      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
     );
 
     if (scannedAddress != null && mounted) {
@@ -71,19 +66,12 @@ class _HighSecurityGuardianWizardState
             children: [
               SizedBox(
                 width: 204,
-                child: StepsIndicator(
-                  currentStep: 1,
-                  totalSteps: AppConstants.highSecurityStepsCount,
-                ),
+                child: StepsIndicator(currentStep: 1, totalSteps: AppConstants.highSecurityStepsCount),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          GradientText(
-            'THEFT DETERRENCE',
-            colors: context.themeColors.aquaBlue,
-            style: context.themeText.largeTitle,
-          ),
+          GradientText('THEFT DETERRENCE', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
           const SizedBox(height: 4),
           Text(
             'Intercept any transaction or “pull” all funds in the case of theft.',
@@ -118,9 +106,7 @@ class _HighSecurityGuardianWizardState
                     formNotifier.updateGuardianAddress(data.text!);
                   }
                 },
-                child: const WalletActionButton(
-                  assetPath: 'assets/paste_icon_1.svg',
-                ),
+                child: const WalletActionButton(assetPath: 'assets/paste_icon_1.svg'),
               ),
               const SizedBox(width: 12),
               GestureDetector(
@@ -139,9 +125,7 @@ class _HighSecurityGuardianWizardState
           const SizedBox(height: 13),
           Text(
             'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
-            style: context.themeText.smallParagraph?.copyWith(
-              color: context.themeColors.textMuted,
-            ),
+            style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
           ),
           const Expanded(child: SizedBox()),
           Row(
@@ -163,10 +147,7 @@ class _HighSecurityGuardianWizardState
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const HighSecuritySafeguardWindowWizard(),
-                      ),
+                      MaterialPageRoute(builder: (context) => const HighSecuritySafeguardWindowWizard()),
                     );
                   },
                 ),

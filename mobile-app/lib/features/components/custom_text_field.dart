@@ -49,9 +49,7 @@ class CustomTextField extends StatelessWidget {
         : context.themeText.paragraph;
     final effectiveHintStyle = variant == TextFieldVariant.primary
         ? context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.5))
-        : context.themeText.paragraph?.copyWith(
-            color: context.themeColors.textPrimary.useOpacity(0.5),
-          );
+        : context.themeText.paragraph?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.5));
 
     // The main container for the entire widget
     return SizedBox(
@@ -91,8 +89,7 @@ class CustomTextField extends StatelessWidget {
                   ), // Removes default padding
                   hintText: hintText,
                   // Style for the hint text when the field is empty
-                  hintStyle:
-                      hintStyle ?? effectiveHintStyle,
+                  hintStyle: hintStyle ?? effectiveHintStyle,
                 ),
               ),
 

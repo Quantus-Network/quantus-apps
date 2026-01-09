@@ -21,11 +21,7 @@ class HighSecurityGetStartedScreen extends ConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 73),
-          SvgPicture.asset(
-            'assets/high_security/security_icon_big.svg',
-            width: 140,
-            height: 175,
-          ),
+          SvgPicture.asset('assets/high_security/security_icon_big.svg', width: 140, height: 175),
           const SizedBox(height: 26),
           Text('HIGH SECURITY', style: context.themeText.largeTitle),
           const SizedBox(height: 25),
@@ -38,9 +34,7 @@ class HighSecurityGetStartedScreen extends ConsumerWidget {
           Text(
             'Once you enable this feature it cannot be disabled',
             textAlign: TextAlign.center,
-            style: context.themeText.paragraph?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: context.themeText.paragraph?.copyWith(fontWeight: FontWeight.w600),
           ),
           const Expanded(child: SizedBox()),
           Button(
@@ -48,12 +42,7 @@ class HighSecurityGetStartedScreen extends ConsumerWidget {
             label: 'Start',
             onPressed: () {
               formNotifier.resetState();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HighSecurityGuardianWizard(),
-                ),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecurityGuardianWizard()));
             },
           ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

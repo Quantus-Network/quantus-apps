@@ -9,8 +9,9 @@ abstract class WalletAppBar extends StatelessWidget implements PreferredSizeWidg
       _StandardWalletAppBar(key: key, title: title, onBack: onBack, actions: actions);
 
   factory WalletAppBar.simple({Key? key, required String title}) => _SimpleWalletAppBar(key: key, title: title);
-  
-  factory WalletAppBar.simpleWithBackButton({Key? key, required String title, VoidCallback? onBack}) => _StandardWalletAppBar(key: key, title: title, onBack: onBack);
+
+  factory WalletAppBar.simpleWithBackButton({Key? key, required String title, VoidCallback? onBack}) =>
+      _StandardWalletAppBar(key: key, title: title, onBack: onBack);
 
   factory WalletAppBar.custom({Key? key, required Widget titleWidget, Widget? leadingWidget, List<Widget>? actions}) =>
       _CustomWalletAppBar(key: key, titleWidget: titleWidget, leadingWidget: leadingWidget, actions: actions);

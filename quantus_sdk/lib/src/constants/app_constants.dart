@@ -60,5 +60,4 @@ class AppConstants {
 
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;
-
 }

@@ -12,17 +12,13 @@ class HighSecurityCancelWarningSheet extends StatefulWidget {
   const HighSecurityCancelWarningSheet({super.key});
 
   @override
-  State<HighSecurityCancelWarningSheet> createState() =>
-      _HighSecurityCancelWarningSheetState();
+  State<HighSecurityCancelWarningSheet> createState() => _HighSecurityCancelWarningSheetState();
 }
 
-class _HighSecurityCancelWarningSheetState
-    extends State<HighSecurityCancelWarningSheet> {
+class _HighSecurityCancelWarningSheetState extends State<HighSecurityCancelWarningSheet> {
   void _returnToAccountSetting() {
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
+    Navigator.of(context).popUntil(ModalRoute.withName(AppConstants.accountSettingsRouteName));
   }
 
   void _continueSetup() {
@@ -45,11 +41,7 @@ class _HighSecurityCancelWarningSheetState
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(7),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+              decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -80,9 +72,7 @@ class _HighSecurityCancelWarningSheetState
                   child: Button(
                     variant: ButtonVariant.danger,
                     label: 'Exit anyway',
-                    textStyle: context.themeText.smallParagraph?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    textStyle: context.themeText.smallParagraph?.copyWith(fontWeight: FontWeight.w600),
                     onPressed: () {
                       _returnToAccountSetting();
                     },
@@ -92,9 +82,7 @@ class _HighSecurityCancelWarningSheetState
                   child: Button(
                     variant: ButtonVariant.neutral,
                     label: 'Continue',
-                    textStyle: context.themeText.smallParagraph?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    textStyle: context.themeText.smallParagraph?.copyWith(fontWeight: FontWeight.w600),
                     onPressed: _continueSetup,
                   ),
                 ),
@@ -124,11 +112,7 @@ void showHighSecurityCancelWarningSheet(BuildContext context) {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black,
-                  const Color(0xFF312E6E).useOpacity(0.4),
-                  Colors.black,
-                ],
+                colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
               ),
             ),
           ),
@@ -139,10 +123,7 @@ void showHighSecurityCancelWarningSheet(BuildContext context) {
           right: 0,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: Colors.black.useOpacity(0.3),
-              child: const HighSecurityCancelWarningSheet(),
-            ),
+            child: Container(color: Colors.black.useOpacity(0.3), child: const HighSecurityCancelWarningSheet()),
           ),
         ),
       ],
