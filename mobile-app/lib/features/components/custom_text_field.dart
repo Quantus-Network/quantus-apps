@@ -4,6 +4,8 @@ import 'package:resonance_network_wallet/features/components/label.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 
+enum TextFieldVariant { primary, secondary }
+
 class CustomTextField extends StatelessWidget {
   final String? labelText;
   final TextStyle? textStyle;
@@ -19,6 +21,7 @@ class CustomTextField extends StatelessWidget {
   final String? errorMsg;
   final double? leftPadding;
   final bool? disabled;
+  final TextFieldVariant variant;
 
   const CustomTextField({
     super.key,
@@ -36,10 +39,20 @@ class CustomTextField extends StatelessWidget {
     this.leftPadding,
     this.controller,
     this.disabled = false,
+    this.variant = TextFieldVariant.primary,
   }) : assert(initialValue == null || controller == null, 'Cannot provide both an initialValue and a controller.');
 
   @override
   Widget build(BuildContext context) {
+    final effectiveTextStyle = variant == TextFieldVariant.primary
+        ? context.themeText.smallTitle
+        : context.themeText.paragraph;
+    final effectiveHintStyle = variant == TextFieldVariant.primary
+        ? context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.5))
+        : context.themeText.paragraph?.copyWith(
+            color: context.themeColors.textPrimary.useOpacity(0.5),
+          );
+
     // The main container for the entire widget
     return SizedBox(
       width: double.infinity,
@@ -60,7 +73,7 @@ class CustomTextField extends StatelessWidget {
                 onChanged: onChanged,
                 obscureText: obscureText,
                 // Styling for the text inside the input field
-                style: textStyle ?? context.themeText.smallTitle,
+                style: textStyle ?? effectiveTextStyle,
                 decoration: InputDecoration(
                   fillColor: fillColor,
                   isDense: true, // Reduces vertical padding
@@ -79,8 +92,7 @@ class CustomTextField extends StatelessWidget {
                   hintText: hintText,
                   // Style for the hint text when the field is empty
                   hintStyle:
-                      hintStyle ??
-                      context.themeText.smallTitle?.copyWith(color: context.themeColors.textPrimary.useOpacity(0.5)),
+                      hintStyle ?? effectiveHintStyle,
                 ),
               ),
 

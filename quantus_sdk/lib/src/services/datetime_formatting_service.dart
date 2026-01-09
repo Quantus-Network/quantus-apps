@@ -125,4 +125,18 @@ class DatetimeFormattingService {
   static String _pluralize(int count) {
     return count == 1 ? '' : 's';
   }
+
+  static String formatSafeguardTime(int months, int days, int hours) {
+    if (months > 0) {
+      return '$months month${months > 1 ? 's' : ''}, '
+          '$days day${days != 1 ? 's' : ''}, \n'
+          '$hours hr${hours != 1 ? 's' : ''}';
+    } else if (days > 0) {
+      return '$days day${days != 1 ? 's' : ''}, '
+          '$hours hr${hours != 1 ? 's' : ''}';
+    } else {
+      return '$hours hr${hours != 1 ? 's' : ''}';
+    }
+  }
+
 }

@@ -8,6 +8,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color secondary;
 
   // What we use
+  final List<Color> aquaBlue;
   final Color purple;
   final Color pink;
   final Color yellow;
@@ -43,6 +44,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.primary,
     required this.secondary,
 
+    required this.aquaBlue,
     required this.purple,
     required this.pink,
     required this.yellow,
@@ -80,6 +82,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         primary: const Color(0xFF6B46C1),
         secondary: const Color(0xFF9F7AEA),
 
+        aquaBlue: const [Color(0xFF16CECE), Color(0xFF0000FF)],
         purple: const Color(0xFFB259F2),
         pink: const Color(0xFFED4CCE),
         yellow: const Color(0xFFFFE91F),
@@ -117,6 +120,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         primary: const Color(0xFF6B46C1),
         secondary: const Color(0xFF9F7AEA),
 
+        aquaBlue: const [Color(0xFF16CECE), Color(0xFF0000FF)],
         purple: const Color(0xFFB259F2),
         pink: const Color(0xFFED4CCE),
         yellow: const Color(0xFFFFE91F),
@@ -153,6 +157,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   AppColorsTheme copyWith({
     Color? primary,
     Color? secondary,
+    List<Color>? aquaBlue,
     Color? purple,
     Color? pink,
     Color? yellow,
@@ -188,6 +193,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     return AppColorsTheme(
       primary: primary ?? this.primary,
       secondary: secondary ?? this.secondary,
+      aquaBlue: aquaBlue ?? this.aquaBlue,
       purple: purple ?? this.purple,
       pink: pink ?? this.pink,
       yellow: yellow ?? this.yellow,
@@ -227,6 +233,7 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     return AppColorsTheme(
       primary: Color.lerp(primary, other.primary, t) ?? primary,
       secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
+      aquaBlue: other.aquaBlue,
       purple: Color.lerp(purple, other.purple, t) ?? purple,
       pink: Color.lerp(pink, other.pink, t) ?? pink,
       yellow: Color.lerp(yellow, other.yellow, t) ?? yellow,

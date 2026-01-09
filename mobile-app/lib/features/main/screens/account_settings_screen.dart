@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_get_started_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -276,25 +277,27 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
 
   Widget _buildSecuritySection() {
     return _buildSettingCard(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 12.0, left: 12.0, bottom: 12.0, right: 26.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                SvgPicture.asset('assets/high_security_icon.svg', width: context.isTablet ? 28 : 20),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('High Security', style: context.themeText.largeTag),
-                    Text('COMING SOON', style: context.themeText.detail?.copyWith(color: context.themeColors.checksum)),
-                  ],
-                ),
-              ],
-            ),
-          ],
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HighSecurityGetStartedScreen()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(top: 12.0, left: 12.0, bottom: 12.0, right: 26.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  SvgPicture.asset('assets/high_security_icon.svg', width: context.isTablet ? 28 : 20),
+                  const SizedBox(width: 12),
+                  Text('High Security', style: context.themeText.largeTag),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

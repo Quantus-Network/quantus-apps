@@ -27,6 +27,9 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
   final double pasteIconSize;
   final double timePickerSubtitleWidth;
   final double bottomButtonSpacing;
+  final double buttonsHorizontalSpacing;
+  final double infoSheetTitleIcon;
+
 
   const AppSizeTheme({
     required this.logoHeight,
@@ -54,6 +57,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
     required this.pasteIconSize,
     required this.timePickerSubtitleWidth,
     required this.bottomButtonSpacing,
+    required this.buttonsHorizontalSpacing,
+    required this.infoSheetTitleIcon,
   });
 
   const AppSizeTheme.defaultTheme()
@@ -83,6 +88,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         pasteIconSize: 18.0,
         timePickerSubtitleWidth: 249,
         bottomButtonSpacing: 16,
+        buttonsHorizontalSpacing: 28,
+        infoSheetTitleIcon: 25,
       );
 
   const AppSizeTheme.iPad()
@@ -112,6 +119,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
         pasteIconSize: 24.0,
         timePickerSubtitleWidth: 400,
         bottomButtonSpacing: 16,
+        buttonsHorizontalSpacing: 28,
+        infoSheetTitleIcon: 28,
       );
 
   @override
@@ -170,6 +179,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       pasteIconSize: pasteIconSize ?? this.pasteIconSize,
       timePickerSubtitleWidth: timePickerSubtitleWidth ?? this.timePickerSubtitleWidth,
       bottomButtonSpacing: bottomButtonSpacing ?? this.bottomButtonSpacing,
+      buttonsHorizontalSpacing: buttonsHorizontalSpacing ?? this.buttonsHorizontalSpacing,
+      infoSheetTitleIcon: infoSheetTitleIcon ?? this.infoSheetTitleIcon,
     );
   }
 
@@ -206,6 +217,8 @@ class AppSizeTheme extends ThemeExtension<AppSizeTheme> {
       pasteIconSize: pasteIconSize + (other.pasteIconSize - pasteIconSize) * t,
       timePickerSubtitleWidth: timePickerSubtitleWidth + (other.timePickerSubtitleWidth - timePickerSubtitleWidth) * t,
       bottomButtonSpacing: bottomButtonSpacing + (other.bottomButtonSpacing - bottomButtonSpacing) * t,
+      buttonsHorizontalSpacing: buttonsHorizontalSpacing + (other.buttonsHorizontalSpacing - buttonsHorizontalSpacing) * t,
+      infoSheetTitleIcon: infoSheetTitleIcon + (other.infoSheetTitleIcon - infoSheetTitleIcon) * t,
     );
   }
 }

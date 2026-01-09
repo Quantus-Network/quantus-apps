@@ -15,6 +15,7 @@ export 'src/extensions/keypair_extensions.dart';
 export 'src/extensions/string_extensions.dart';
 // UI-related exports
 export 'src/models/account.dart';
+export 'src/models/high_security_data.dart';
 export 'src/models/account_stats.dart';
 export 'src/models/account_associations.dart';
 export 'src/models/event_type.dart';
@@ -43,6 +44,7 @@ export 'src/services/chain_history_service.dart';
 export 'src/services/connectivity_service.dart';
 export 'src/services/datetime_formatting_service.dart';
 export 'src/services/hd_wallet_service.dart';
+export 'src/services/high_security_service.dart';
 export 'src/services/human_readable_checksum_service.dart';
 export 'src/services/migration_service.dart';
 export 'src/services/network/redundant_endpoint.dart';

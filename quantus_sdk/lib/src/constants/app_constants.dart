@@ -57,4 +57,8 @@ class AppConstants {
   // This starts the hardware wallet flow using a soft wallet - quite useful for debugging
   // hardware wallet flow without using a hardware wallet.
   static const debugHardwareWallet = false;
+
+  static const String accountSettingsRouteName = 'account-settings';
+  static const int highSecurityStepsCount = 3;
+
 }
