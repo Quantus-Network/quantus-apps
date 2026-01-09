@@ -33,7 +33,7 @@ class _HighSecuritySummaryWizardState
         .getHumanReadableName(formData.guardianAddress);
 
     return ScaffoldBase(
-      appBar: WalletAppBar.simple(title: 'Summary'),
+      appBar: WalletAppBar.simpleWithBackButton(title: 'Summary'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

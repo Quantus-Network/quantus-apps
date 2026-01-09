@@ -17,7 +17,7 @@ class HighSecurityGetStartedScreen extends ConsumerWidget {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
 
     return ScaffoldBase(
-      appBar: WalletAppBar.simple(title: 'Security Settings'),
+      appBar: WalletAppBar.simpleWithBackButton(title: 'Security Settings'),
       child: Column(
         children: [
           const SizedBox(height: 73),

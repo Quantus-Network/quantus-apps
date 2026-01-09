@@ -61,7 +61,7 @@ class _HighSecurityGuardianWizardState
     final bool isDisabled = guardianAddress.isEmpty;
 
     return ScaffoldBase(
-      appBar: WalletAppBar.simple(title: 'Theft Deterrence'),
+      appBar: WalletAppBar.simpleWithBackButton(title: 'Theft Deterrence'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

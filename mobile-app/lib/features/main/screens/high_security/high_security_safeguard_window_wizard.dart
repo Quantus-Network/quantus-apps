@@ -44,7 +44,7 @@ class _HighSecuritySafeguardWindowWizardState
     final bool isDisabled = safeguardTimeSeconds == 0;
 
     return ScaffoldBase(
-      appBar: WalletAppBar.simple(title: 'Safeguard Window'),
+      appBar: WalletAppBar.simpleWithBackButton(title: 'Safeguard Window'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

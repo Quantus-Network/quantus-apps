@@ -46,7 +46,7 @@ dependencies:
   share_plus: ^12.0.1
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
-  telemetrydecksdk: ^2.5.0
+  telemetrydecksdk: ^3.0.0
   async: ^2.13.0
   app_links: ^6.4.1
   flutter_dotenv: ^5.1.0
@@ -94,6 +94,9 @@ flutter:
     - assets/qq-logo.png
     - assets/navbar/qcat_navbar_icon.png
     - assets/notification/notification_top_icon.png
+    - assets/high_security/security_icon_big.svg
+    - assets/high_security/step_indicator_active_icon.svg
+    - assets/high_security/step_indicator_icon.svg
 
   fonts:
     - family: Fira Code
