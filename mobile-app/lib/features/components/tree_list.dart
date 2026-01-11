@@ -6,11 +6,7 @@ class TreeNode<T> {
   final List<TreeNode<T>> children;
   bool isExpanded;
 
-  TreeNode({
-    required this.data,
-    this.children = const [],
-    this.isExpanded = true,
-  });
+  TreeNode({required this.data, this.children = const [], this.isExpanded = true});
 
   bool get hasChildren => children.isNotEmpty;
   bool get isLeaf => children.isEmpty;
@@ -19,9 +15,8 @@ class TreeNode<T> {
 // Tree structure list widget
 class TreeListView<T> extends StatefulWidget {
   final List<TreeNode<T>> nodes;
-  final Widget Function(BuildContext context, TreeNode<T> node, int depth)
-  nodeBuilder;
-  
+  final Widget Function(BuildContext context, TreeNode<T> node, int depth) nodeBuilder;
+
   final bool showExpandCollapse;
   final EdgeInsetsGeometry? padding;
   final ScrollPhysics? physics;
@@ -56,11 +51,7 @@ class _TreeListViewState<T> extends State<TreeListView<T>> {
     );
   }
 
-  List<Widget> _buildTreeNodes(
-    List<TreeNode<T>> nodes,
-    int depth,
-    List<bool> parentLines,
-  ) {
+  List<Widget> _buildTreeNodes(List<TreeNode<T>> nodes, int depth, List<bool> parentLines) {
     List<Widget> widgets = [];
 
     for (int i = 0; i < nodes.length; i++) {
@@ -88,9 +79,7 @@ class _TreeListViewState<T> extends State<TreeListView<T>> {
       );
 
       if (node.hasChildren && node.isExpanded) {
-        widgets.addAll(
-          _buildTreeNodes(node.children, depth + 1, currentParentLines),
-        );
+        widgets.addAll(_buildTreeNodes(node.children, depth + 1, currentParentLines));
       }
     }
 
@@ -107,8 +96,7 @@ class _TreeNodeWidget<T> extends StatelessWidget {
   final Color lineColor;
   final double lineWidth;
   final bool showExpandCollapse;
-  final Widget Function(BuildContext context, TreeNode<T> node, int depth)
-  nodeBuilder;
+  final Widget Function(BuildContext context, TreeNode<T> node, int depth) nodeBuilder;
   final VoidCallback onToggleExpanded;
 
   const _TreeNodeWidget({
@@ -155,11 +143,7 @@ class _TreeNodeWidget<T> extends StatelessWidget {
                 border: Border.all(color: lineColor),
                 color: Colors.white,
               ),
-              child: Icon(
-                node.isExpanded ? Icons.remove : Icons.add,
-                size: 12,
-                color: lineColor,
-              ),
+              child: Icon(node.isExpanded ? Icons.remove : Icons.add, size: 12, color: lineColor),
             ),
           )
         else if (showExpandCollapse)
@@ -200,11 +184,7 @@ class TreeLinePainter extends CustomPainter {
     for (int i = 0; i < parentLines.length; i++) {
       if (parentLines[i]) {
         final x = (i + 1) * indentWidth - indentWidth / 2;
-        canvas.drawLine(
-          Offset(x, 0),
-          Offset(x, size.height),
-          paint,
-        );
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
       }
     }
 
@@ -214,26 +194,14 @@ class TreeLinePainter extends CustomPainter {
 
       // Draw vertical line (up to center or full height)
       if (!isLast) {
-        canvas.drawLine(
-          Offset(x, 0),
-          Offset(x, size.height),
-          paint,
-        );
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
       } else {
-        canvas.drawLine(
-          Offset(x, 0),
-          Offset(x, centerY),
-          paint,
-        );
+        canvas.drawLine(Offset(x, 0), Offset(x, centerY), paint);
       }
 
       // Draw horizontal line to the node (shorter to make room for arrow)
       final horizontalEndX = x + indentWidth / 2 - 6; // Leave space for arrow
-      canvas.drawLine(
-        Offset(x, centerY),
-        Offset(horizontalEndX, centerY),
-        paint,
-      );
+      canvas.drawLine(Offset(x, centerY), Offset(horizontalEndX, centerY), paint);
 
       // Draw arrow at the end of horizontal line
       _drawArrow(canvas, paint, Offset(horizontalEndX, centerY));
@@ -242,14 +210,10 @@ class TreeLinePainter extends CustomPainter {
 
   void _drawArrow(Canvas canvas, Paint paint, Offset position) {
     final arrowSize = 5.0;
-    
+
     // Draw horizontal line for arrow shaft
-    canvas.drawLine(
-      Offset(position.dx, position.dy),
-      Offset(position.dx + arrowSize, position.dy),
-      paint,
-    );
-    
+    canvas.drawLine(Offset(position.dx, position.dy), Offset(position.dx + arrowSize, position.dy), paint);
+
     // Draw arrow head (two diagonal lines forming >)
     canvas.drawLine(
       Offset(position.dx + arrowSize, position.dy),
@@ -268,29 +232,17 @@ class TreeLinePainter extends CustomPainter {
 }
 
 // Simple tree builder utility functions
-List<TreeNode<T>> buildTreeFromMap<T>(
-  Map<String, dynamic> data,
-  T Function(String key, dynamic value) converter,
-) {
+List<TreeNode<T>> buildTreeFromMap<T>(Map<String, dynamic> data, T Function(String key, dynamic value) converter) {
   List<TreeNode<T>> nodes = [];
 
   data.forEach((key, value) {
     if (value is Map<String, dynamic>) {
-      nodes.add(
-        TreeNode(
-          data: converter(key, value),
-          children: buildTreeFromMap(value, converter),
-        ),
-      );
+      nodes.add(TreeNode(data: converter(key, value), children: buildTreeFromMap(value, converter)));
     } else if (value is List) {
       nodes.add(
         TreeNode(
           data: converter(key, value),
-          children: value
-              .map<TreeNode<T>>(
-                (item) => TreeNode(data: converter(item.toString(), item)),
-              )
-              .toList(),
+          children: value.map<TreeNode<T>>((item) => TreeNode(data: converter(item.toString(), item))).toList(),
         ),
       );
     } else {
@@ -307,11 +259,7 @@ class FileSystemItem {
   final bool isDirectory;
   final String? extension;
 
-  FileSystemItem({
-    required this.name,
-    required this.isDirectory,
-    this.extension,
-  });
+  FileSystemItem({required this.name, required this.isDirectory, this.extension});
 
   IconData get icon {
     if (isDirectory) return Icons.folder;
@@ -355,25 +303,13 @@ class TreeListViewDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fileSystem = [
-      TreeNode<FileSystemItem>(
-        data: FileSystemItem(name: 'lib', isDirectory: true),
-      ),
-      TreeNode<FileSystemItem>(
-        data: FileSystemItem(name: 'assets', isDirectory: true),
+      TreeNode<FileSystemItem>(data: FileSystemItem(name: 'lib', isDirectory: true)),
+      TreeNode<FileSystemItem>(data: FileSystemItem(name: 'assets', isDirectory: true)),
+      TreeNode(
+        data: FileSystemItem(name: 'pubspec.yaml', isDirectory: false, extension: 'yaml'),
       ),
       TreeNode(
-        data: FileSystemItem(
-          name: 'pubspec.yaml',
-          isDirectory: false,
-          extension: 'yaml',
-        ),
-      ),
-      TreeNode(
-        data: FileSystemItem(
-          name: 'README.md',
-          isDirectory: false,
-          extension: 'md',
-        ),
+        data: FileSystemItem(name: 'README.md', isDirectory: false, extension: 'md'),
       ),
     ];
 
@@ -388,10 +324,7 @@ class TreeListViewDemo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'File System Tree:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            const Text('File System Tree:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Expanded(
               child: TreeListView<FileSystemItem>(
@@ -402,19 +335,13 @@ class TreeListViewDemo extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
                       children: [
-                        Icon(
-                          node.data.icon,
-                          size: 18,
-                          color: node.data.iconColor,
-                        ),
+                        Icon(node.data.icon, size: 18, color: node.data.iconColor),
                         const SizedBox(width: 8),
                         Text(
                           node.data.name,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: node.data.isDirectory
-                                ? FontWeight.w500
-                                : FontWeight.normal,
+                            fontWeight: node.data.isDirectory ? FontWeight.w500 : FontWeight.normal,
                           ),
                         ),
                       ],

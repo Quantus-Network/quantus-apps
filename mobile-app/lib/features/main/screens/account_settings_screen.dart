@@ -167,10 +167,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              if (FeatureFlags.enableHighSecurity) ...[
-                const SizedBox(height: 20),
-                _buildSecuritySection(),
-              ],
+              if (FeatureFlags.enableHighSecurity) ...[const SizedBox(height: 20), _buildSecuritySection()],
               if (widget.account.accountType == AccountType.keystone) ...[
                 const SizedBox(height: 20),
                 _buildDisconnectWalletButton(),

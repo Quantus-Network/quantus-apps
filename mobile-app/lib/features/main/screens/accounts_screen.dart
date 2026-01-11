@@ -273,9 +273,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final entrustedAccountsAsync = ref.watch(entrustedAccountsProvider(account));
     final entrustedAccountsData = entrustedAccountsAsync.value ?? [];
 
-    final entrustedNodes = entrustedAccountsData
-        .map((entrusted) => TreeNode<Account>(data: entrusted))
-        .toList();
+    final entrustedNodes = entrustedAccountsData.map((entrusted) => TreeNode<Account>(data: entrusted)).toList();
 
     final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
 
@@ -328,7 +326,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                               ),
                                             ),
                                             if (entrustedNodes.isNotEmpty)
-                                               const AccountTag('Guardian', color: Color(0xFF9747FF)),
+                                              const AccountTag('Guardian', color: Color(0xFF9747FF)),
                                           ],
                                         ),
                                         Text(
@@ -359,7 +357,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                           loading: () => Text(
                                             'loading balance...',
                                             style: context.themeText.detail?.copyWith(
-                                              color: isActive ? context.themeColors.darkGray : context.themeColors.light,
+                                              color: isActive
+                                                  ? context.themeColors.darkGray
+                                                  : context.themeColors.light,
                                             ),
                                           ),
                                           error: (error, _) => Text(
@@ -467,10 +467,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    entrusted.name,
-                                    style: context.themeText.smallParagraph,
-                                  ),
+                                  Text(entrusted.name, style: context.themeText.smallParagraph),
                                   const AccountTag('Entrusted'),
                                 ],
                               ),
@@ -548,11 +545,7 @@ class AccountTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: context.themeText.tiny?.copyWith(
-          color: Colors.black, 
-          fontWeight: FontWeight.bold,
-          fontSize: 10
-        ),
+        style: context.themeText.tiny?.copyWith(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
       ),
     );
   }
