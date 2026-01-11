@@ -22,6 +22,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class AccountSettingsScreen extends ConsumerStatefulWidget {
   final Account account;
@@ -166,10 +167,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              const SizedBox(height: 20),
-              _buildSecuritySection(),
-              const SizedBox(height: 20),
-              if (widget.account.accountType == AccountType.keystone) _buildDisconnectWalletButton(),
+              if (FeatureFlags.enableHighSecurity) ...[
+                const SizedBox(height: 20),
+                _buildSecuritySection(),
+              ],
+              if (widget.account.accountType == AccountType.keystone) ...[
+                const SizedBox(height: 20),
+                _buildDisconnectWalletButton(),
+              ],
               const SizedBox(height: 30),
             ],
           ),

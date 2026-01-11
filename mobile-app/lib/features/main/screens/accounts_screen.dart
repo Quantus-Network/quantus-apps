@@ -112,7 +112,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       Item(value: _WalletMoreAction.importWallet, label: 'Import wallet'),
     ];
 
-    if (FeatureFlags.showKeystoneHardwareWallet) {
+    if (FeatureFlags.enableKeystoneHardwareWallet) {
       items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
     }
 
