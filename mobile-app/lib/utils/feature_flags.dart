@@ -2,5 +2,5 @@
 class FeatureFlags {
   static const bool enableTestButtons = false; // Only show in debug mode
   static const bool enableKeystoneHardwareWallet = false; // turn keystone hw wallet on and off
-  static const bool enableHighSecurity = false; // turn keystone hw wallet on and off
+  static const bool enableHighSecurity = true; // turn keystone hw wallet on and off
 }

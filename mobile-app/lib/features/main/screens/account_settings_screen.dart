@@ -2,10 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/features/components/account_tag.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
@@ -22,14 +22,21 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/svg_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class AccountSettingsScreen extends ConsumerStatefulWidget {
   final Account account;
   final String balance;
   final String checksumName;
-
-  const AccountSettingsScreen({super.key, required this.account, required this.balance, required this.checksumName});
+  final bool isHighSecurity;
+  const AccountSettingsScreen({
+    super.key,
+    required this.account,
+    required this.balance,
+    required this.checksumName,
+    this.isHighSecurity = true,
+  });
 
   @override
   ConsumerState<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
@@ -167,7 +174,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              if (FeatureFlags.enableHighSecurity) ...[const SizedBox(height: 20), _buildSecuritySection()],
+              if (FeatureFlags.enableHighSecurity) ...[const SizedBox(height: 20), _buildHighSecuritySection(context)],
               if (widget.account.accountType == AccountType.keystone) ...[
                 const SizedBox(height: 20),
                 _buildDisconnectWalletButton(),
@@ -180,14 +187,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildSettingCard({required Widget child}) {
+  Widget _buildSettingCard({required Widget child, Color? color}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
         child: Container(
           decoration: ShapeDecoration(
-            color: context.themeColors.settingCard,
+            color: color ?? context.themeColors.settingCard,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
           child: child,
@@ -197,6 +204,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Widget _buildAccountHeader() {
+    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
     return _buildSettingCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
@@ -214,7 +222,11 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 5),
+            if (isHighSecurity) ...[
+              const SizedBox(height: 10),
+              AccountTag(text: 'High-Security', color: context.themeColors.accountTagHighSecurity, width: 177.0),
+            ],
+            const SizedBox(height: 10),
             Text(
               widget.checksumName,
               style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
@@ -277,22 +289,53 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildSecuritySection() {
+  Widget _buildHighSecuritySection(BuildContext context) {
+    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
+    final textColor = isHighSecurity ? context.themeColors.textSecondary : context.themeColors.textPrimary;
+    final secondRowTextColor = isHighSecurity ? context.themeColors.darkGray : context.themeColors.textPrimary;
+    final iconColor = isHighSecurity ? context.themeColors.textSecondary : context.themeColors.checksum;
+    final buttonBackgroundColor = isHighSecurity ? context.themeColors.checksum : context.themeColors.settingCard;
+    final subtitle = 'VIEW SETTINGS';
+
     return _buildSettingCard(
+      color: buttonBackgroundColor,
       child: InkWell(
         onTap: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecurityGetStartedScreen()));
         },
-        child: Padding(
-          padding: const EdgeInsets.only(top: 12.0, left: 12.0, bottom: 12.0, right: 26.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(top: 12, left: 12, right: 26, bottom: 12),
+
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 60,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 12,
                 children: [
-                  SvgPicture.asset('assets/high_security_icon.svg', width: context.isTablet ? 28 : 20),
-                  const SizedBox(width: 12),
-                  Text('High Security', style: context.themeText.largeTag),
+                  SvgPictureExtensions.assetWithColor(
+                    'assets/high_security_icon.svg',
+                    width: context.isTablet ? 28 : 20,
+                    color: iconColor,
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [
+                      Text('High Security', style: context.themeText.largeTag?.copyWith(color: textColor)),
+                      if (isHighSecurity) ...[
+                        Text(subtitle, style: context.themeText.tag?.copyWith(color: secondRowTextColor)),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ],
