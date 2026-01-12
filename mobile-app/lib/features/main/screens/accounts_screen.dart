@@ -278,6 +278,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
     final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
 
+    final isHighSecurityAsync = ref.read(isHighSecurityProvider(account));
+    final isHighSecurity = isHighSecurityAsync.value ?? false;
+
     return InkWell(
       onTap: () async {
         await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
@@ -308,13 +311,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                             child: Consumer(
                               builder: (context, ref, child) {
                                 final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
-                                final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
 
                                 return FutureBuilder<String>(
                                   future: _checksumService.getHumanReadableName(account.accountId),
                                   builder: (context, checksumSnapshot) {
                                     final humanChecksum = checksumSnapshot.data ?? '';
-                                    final isHighSecurity = isHighSecurityAsync.value ?? false;
 
                                     return Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,6 +453,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 account: account,
                                 balance: _formattingService.formatBalance(balance, addSymbol: true),
                                 checksumName: checksumName,
+                                isHighSecurity: isHighSecurity,
                               ),
                             ),
                           );
@@ -517,6 +519,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                         account: entrusted,
                                         balance: _formattingService.formatBalance(balance, addSymbol: true),
                                         checksumName: checksumName,
+                                        isHighSecurity: isHighSecurity,
                                       ),
                                     ),
                                   );
