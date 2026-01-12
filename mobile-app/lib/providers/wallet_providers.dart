@@ -35,6 +35,15 @@ final balancesServiceProvider = Provider<BalancesService>((ref) {
   return BalancesService();
 });
 
+final highSecurityServiceProvider = Provider<HighSecurityService>((ref) {
+  return HighSecurityService();
+});
+
+final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, account) async {
+  final highSecurityService = ref.watch(highSecurityServiceProvider);
+  return await highSecurityService.isHighSecurity(account);
+});
+
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
   print('query balance for $accountId');

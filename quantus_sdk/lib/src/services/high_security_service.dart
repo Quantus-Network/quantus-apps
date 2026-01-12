@@ -40,7 +40,9 @@ class HighSecurityService {
     }
   }
 
-  void getHighSecuritySetupCall(HighSecurityData formData) {
-    throw Exception('No Implementation');
+  Future<bool> isHighSecurity(Account account) async {
+    await Future.delayed(const Duration(seconds: 1));
+    // just for testing
+    return account.name.startsWith('High');
   }
 }

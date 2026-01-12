@@ -308,11 +308,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                             child: Consumer(
                               builder: (context, ref, child) {
                                 final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+                                final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
 
                                 return FutureBuilder<String>(
                                   future: _checksumService.getHumanReadableName(account.accountId),
                                   builder: (context, checksumSnapshot) {
                                     final humanChecksum = checksumSnapshot.data ?? '';
+                                    final isHighSecurity = isHighSecurityAsync.value ?? false;
 
                                     return Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,11 +328,23 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                                 color: isActive ? Colors.black : Colors.white,
                                               ),
                                             ),
-                                            if (entrustedNodes.isNotEmpty)
-                                              AccountTag(
-                                                text: 'Guardian',
-                                                color: context.themeColors.accountTagGuardian,
-                                              ),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (isHighSecurity)
+                                                  AccountTag(
+                                                    text: 'High Security',
+                                                    color: context.themeColors.accountTagEntrusted,
+                                                  ),
+                                                if (isHighSecurity && entrustedNodes.isNotEmpty)
+                                                  const SizedBox(width: 6),
+                                                if (entrustedNodes.isNotEmpty)
+                                                  AccountTag(
+                                                    text: 'Guardian',
+                                                    color: context.themeColors.accountTagGuardian,
+                                                  ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                         Text(
