@@ -44,7 +44,7 @@ class _HighSecuritySummaryWizardState extends ConsumerState<HighSecuritySummaryW
             ],
           ),
           const SizedBox(height: 32),
-          GradientText('SUMMARY', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
+          GradientText.highSecurity('SUMMARY', context),
           const SizedBox(height: 19),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

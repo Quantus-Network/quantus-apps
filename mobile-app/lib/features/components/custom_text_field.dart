@@ -74,7 +74,7 @@ class CustomTextField extends StatelessWidget {
                 style: textStyle ?? effectiveTextStyle,
                 decoration: InputDecoration(
                   fillColor: fillColor,
-                  isDense: true, // Reduces vertical padding
+                  isDense: true,
                   enabledBorder: errorMsg != null
                       ? const OutlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 1))
                       : InputBorder.none,
@@ -86,9 +86,8 @@ class CustomTextField extends StatelessWidget {
                     bottom: 10,
                     left: leftPadding ?? 11,
                     right: (trailing != null || icon != null) ? 40 : 11,
-                  ), // Removes default padding
+                  ),
                   hintText: hintText,
-                  // Style for the hint text when the field is empty
                   hintStyle: hintStyle ?? effectiveHintStyle,
                 ),
               ),

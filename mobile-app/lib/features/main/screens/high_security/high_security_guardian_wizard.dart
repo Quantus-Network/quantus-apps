@@ -25,6 +25,8 @@ class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
 }
 
 class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardianWizard> {
+  late final TextEditingController _guardianController;
+
   Future<void> _scanQRCode() async {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
 
@@ -35,16 +37,19 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
 
     if (scannedAddress != null && mounted) {
       formNotifier.updateGuardianAddress(scannedAddress);
+      _guardianController.text = scannedAddress;
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _guardianController = TextEditingController(text: ref.read(highSecurityFormProvider).guardianAccountId);
   }
 
   @override
   void dispose() {
+    _guardianController.dispose();
     super.dispose();
   }
 
@@ -71,7 +76,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
             ],
           ),
           const SizedBox(height: 32),
-          GradientText('THEFT DETERRENCE', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
+          GradientText.highSecurity('THEFT DETERRENCE', context),
           const SizedBox(height: 4),
           Text(
             'Intercept any transaction or “pull” all funds in the case of theft.',
@@ -104,6 +109,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                   final data = await Clipboard.getData('text/plain');
                   if (data != null && data.text != null) {
                     formNotifier.updateGuardianAddress(data.text!);
+                    _guardianController.text = data.text!;
                   }
                 },
                 child: const WalletActionButton(assetPath: 'assets/paste_icon_1.svg'),
@@ -118,9 +124,10 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
           const SizedBox(height: 13),
           CustomTextField(
             variant: TextFieldVariant.secondary,
-            initialValue: guardianAddress,
+            controller: _guardianController,
             onChanged: formNotifier.updateGuardianAddress,
             hintText: 'Enter address',
+            fillColor: context.themeColors.darkGray,
           ),
           const SizedBox(height: 13),
           Text(

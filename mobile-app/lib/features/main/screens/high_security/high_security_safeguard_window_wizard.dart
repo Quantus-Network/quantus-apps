@@ -53,7 +53,7 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
             ],
           ),
           const SizedBox(height: 32),
-          GradientText('SAFEGUARD WINDOW', colors: context.themeColors.aquaBlue, style: context.themeText.largeTitle),
+          GradientText.highSecurity('SAFEGUARD WINDOW', context),
           const SizedBox(height: 4),
           Text(
             'The time window in which the Guardian  can deny or intercept a transaction.',
