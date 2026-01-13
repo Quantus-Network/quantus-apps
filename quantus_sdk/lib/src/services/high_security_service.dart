@@ -47,7 +47,7 @@ class HighSecurityService {
 
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
-
+    print('getHighSecurityConfig: $address -> $hsData');
     if (hsData != null) {
       final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.interceptor));
       if (hsData.delay is! qp.Timestamp) {

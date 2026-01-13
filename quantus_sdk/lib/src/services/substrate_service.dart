@@ -112,6 +112,7 @@ class SubstrateService {
     final params = ['0x${hex.encode(extrinsic)}'];
 
     final response = await _rpcEndpointService.rpcTask((uri) async {
+      print('submitExtrinsic to $uri');
       final provider = Provider.fromUri(uri);
       return await provider.send('author_submitExtrinsic', params);
     });

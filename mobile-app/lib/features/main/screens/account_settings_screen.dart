@@ -301,7 +301,10 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       color: buttonBackgroundColor,
       child: InkWell(
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecurityGetStartedScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => HighSecurityGetStartedScreen(account: widget.account)),
+          );
         },
         child: Container(
           width: double.infinity,

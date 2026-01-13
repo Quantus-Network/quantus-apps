@@ -21,7 +21,8 @@ import 'package:resonance_network_wallet/providers/high_security_form_provider.d
 final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
 
 class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
-  const HighSecurityGuardianWizard({super.key});
+  final Account account;
+  const HighSecurityGuardianWizard({super.key, required this.account});
 
   @override
   ConsumerState<HighSecurityGuardianWizard> createState() => _HighSecurityGuardianWizardState();
@@ -192,7 +193,9 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const HighSecuritySafeguardWindowWizard()),
+                      MaterialPageRoute(
+                        builder: (context) => HighSecuritySafeguardWindowWizard(account: widget.account),
+                      ),
                     );
                   },
                 ),

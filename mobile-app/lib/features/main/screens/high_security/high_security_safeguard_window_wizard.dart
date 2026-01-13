@@ -15,7 +15,8 @@ import 'package:resonance_network_wallet/providers/high_security_form_provider.d
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class HighSecuritySafeguardWindowWizard extends ConsumerStatefulWidget {
-  const HighSecuritySafeguardWindowWizard({super.key});
+  final Account account;
+  const HighSecuritySafeguardWindowWizard({super.key, required this.account});
 
   @override
   ConsumerState<HighSecuritySafeguardWindowWizard> createState() => _HighSecuritySafeguardWindowWizardState();
@@ -127,7 +128,10 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
                   variant: ButtonVariant.neutral,
                   label: 'Next',
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecuritySummaryWizard()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HighSecuritySummaryWizard(account: widget.account)),
+                    );
                   },
                 ),
               ),

@@ -145,6 +145,22 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     });
   }
 
+  Future<void> _refreshAccounts() async {
+    // Invalidate main accounts provider
+    ref.invalidate(accountsProvider);
+
+    // Invalidate per-account providers
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    for (final account in accounts) {
+      ref.invalidate(isHighSecurityProvider(account));
+      ref.invalidate(entrustedAccountsProvider(account));
+      ref.invalidate(balanceProviderFamily(account.accountId));
+    }
+
+    // Wait for accounts to reload
+    await ref.read(accountsProvider.notifier).stream.firstWhere((state) => !state.isLoading);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
@@ -220,15 +236,18 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             final grouped = _groupByWallet(accounts);
             if (grouped.length <= 1) {
               final walletAccounts = grouped.values.first;
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                itemCount: walletAccounts.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 25),
-                itemBuilder: (context, index) {
-                  final account = walletAccounts[index];
-                  final bool isActive = account.accountId == activeAccount?.accountId;
-                  return _buildAccountListItem(account, isActive, index);
-                },
+              return RefreshIndicator(
+                onRefresh: _refreshAccounts,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  itemCount: walletAccounts.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 25),
+                  itemBuilder: (context, index) {
+                    final account = walletAccounts[index];
+                    final bool isActive = account.accountId == activeAccount?.accountId;
+                    return _buildAccountListItem(account, isActive, index);
+                  },
+                ),
               );
             }
 
@@ -263,7 +282,10 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               sectionIndex++;
             }
 
-            return ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children);
+            return RefreshIndicator(
+              onRefresh: _refreshAccounts,
+              child: ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children),
+            );
           },
         );
       },
@@ -278,7 +300,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
     final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
 
-    final isHighSecurityAsync = ref.read(isHighSecurityProvider(account));
+    final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
     final isHighSecurity = isHighSecurityAsync.value ?? false;
 
     return InkWell(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
@@ -10,7 +11,8 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 
 class HighSecurityGetStartedScreen extends ConsumerWidget {
-  const HighSecurityGetStartedScreen({super.key});
+  final Account account;
+  const HighSecurityGetStartedScreen({super.key, required this.account});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,7 +44,10 @@ class HighSecurityGetStartedScreen extends ConsumerWidget {
             label: 'Start',
             onPressed: () {
               formNotifier.resetState();
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const HighSecurityGuardianWizard()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HighSecurityGuardianWizard(account: account)),
+              );
             },
           ),
           SizedBox(height: context.themeSize.bottomButtonSpacing),

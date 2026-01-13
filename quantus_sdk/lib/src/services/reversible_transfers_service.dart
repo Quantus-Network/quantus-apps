@@ -124,6 +124,7 @@ class ReversibleTransfersService {
 
   /// Query account's reversibility configuration
   Future<HighSecurityAccountData?> getHighSecurityConfig(String address) async {
+    print('getHighSecurityConfig: $address');
     try {
       final resonanceApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
@@ -214,24 +215,23 @@ class ReversibleTransfersService {
   Future<Uint8List> setHighSecurity({
     required Account account,
     required String guardianAccountId,
-    required qp.BlockNumberOrTimestamp delay,
+    required qp.Timestamp delay,
   }) async {
     print(
-      'setHighSecurity: $account, $guardianAccountId, ${(delay as Timestamp).value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay as qp.Timestamp)}',
+      'setHighSecurity: $account, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
     );
     try {
       final resonanceApi = Schrodinger(_substrateService.provider!);
+      final accountId = crypto.ss58ToAccountId(s: account.accountId);
 
       // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
-        delay: delay,
-        interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
-      );
+      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: accountId);
 
       // Submit the transaction using substrate service
       return _substrateService.submitExtrinsic(account, call);
     } catch (e) {
-      throw Exception('Failed to enable reversibility: $e');
+      print('Failed to enable high security: $e');
+      throw Exception('Failed to enable high security: $e');
     }
   }
 
@@ -241,7 +241,7 @@ class ReversibleTransfersService {
       final config = await getHighSecurityConfig(address);
       return config != null;
     } catch (e) {
-      throw Exception('Failed to check reversibility status: $e');
+      throw Exception('Failed to check high security status: $e');
     }
   }
 
