@@ -12,8 +12,14 @@ class CheckSpecVersionCodec with _i1.Codec<CheckSpecVersion> {
   }
 
   @override
-  void encodeTo(CheckSpecVersion value, _i1.Output output) {
-    _i1.NullCodec.codec.encodeTo(value, output);
+  void encodeTo(
+    CheckSpecVersion value,
+    _i1.Output output,
+  ) {
+    _i1.NullCodec.codec.encodeTo(
+      value,
+      output,
+    );
   }
 
   @override

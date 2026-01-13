@@ -37,19 +37,23 @@ class $Event {
   ProofSubmitted proofSubmitted({
     required List<int> nonce,
     required _i3.U512 difficulty,
-    required _i3.U512 distanceAchieved,
+    required _i3.U512 hashAchieved,
   }) {
-    return ProofSubmitted(nonce: nonce, difficulty: difficulty, distanceAchieved: distanceAchieved);
+    return ProofSubmitted(
+      nonce: nonce,
+      difficulty: difficulty,
+      hashAchieved: hashAchieved,
+    );
   }
 
-  DistanceThresholdAdjusted distanceThresholdAdjusted({
-    required _i3.U512 oldDistanceThreshold,
-    required _i3.U512 newDistanceThreshold,
+  DifficultyAdjusted difficultyAdjusted({
+    required _i3.U512 oldDifficulty,
+    required _i3.U512 newDifficulty,
     required BigInt observedBlockTime,
   }) {
-    return DistanceThresholdAdjusted(
-      oldDistanceThreshold: oldDistanceThreshold,
-      newDistanceThreshold: newDistanceThreshold,
+    return DifficultyAdjusted(
+      oldDifficulty: oldDifficulty,
+      newDifficulty: newDifficulty,
       observedBlockTime: observedBlockTime,
     );
   }
@@ -65,23 +69,27 @@ class $EventCodec with _i1.Codec<Event> {
       case 0:
         return ProofSubmitted._decode(input);
       case 1:
-        return DistanceThresholdAdjusted._decode(input);
+        return DifficultyAdjusted._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case ProofSubmitted:
         (value as ProofSubmitted).encodeTo(output);
         break;
-      case DistanceThresholdAdjusted:
-        (value as DistanceThresholdAdjusted).encodeTo(output);
+      case DifficultyAdjusted:
+        (value as DifficultyAdjusted).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -90,22 +98,27 @@ class $EventCodec with _i1.Codec<Event> {
     switch (value.runtimeType) {
       case ProofSubmitted:
         return (value as ProofSubmitted)._sizeHint();
-      case DistanceThresholdAdjusted:
-        return (value as DistanceThresholdAdjusted)._sizeHint();
+      case DifficultyAdjusted:
+        return (value as DifficultyAdjusted)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class ProofSubmitted extends Event {
-  const ProofSubmitted({required this.nonce, required this.difficulty, required this.distanceAchieved});
+  const ProofSubmitted({
+    required this.nonce,
+    required this.difficulty,
+    required this.hashAchieved,
+  });
 
   factory ProofSubmitted._decode(_i1.Input input) {
     return ProofSubmitted(
       nonce: const _i1.U8ArrayCodec(64).decode(input),
       difficulty: const _i1.U64ArrayCodec(8).decode(input),
-      distanceAchieved: const _i1.U64ArrayCodec(8).decode(input),
+      hashAchieved: const _i1.U64ArrayCodec(8).decode(input),
     );
   }
 
@@ -116,100 +129,153 @@ class ProofSubmitted extends Event {
   final _i3.U512 difficulty;
 
   /// U512
-  final _i3.U512 distanceAchieved;
+  final _i3.U512 hashAchieved;
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-    'ProofSubmitted': {
-      'nonce': nonce.toList(),
-      'difficulty': difficulty.toList(),
-      'distanceAchieved': distanceAchieved.toList(),
-    },
-  };
+        'ProofSubmitted': {
+          'nonce': nonce.toList(),
+          'difficulty': difficulty.toList(),
+          'hashAchieved': hashAchieved.toList(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i1.U8ArrayCodec(64).sizeHint(nonce);
     size = size + const _i3.U512Codec().sizeHint(difficulty);
-    size = size + const _i3.U512Codec().sizeHint(distanceAchieved);
+    size = size + const _i3.U512Codec().sizeHint(hashAchieved);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    const _i1.U8ArrayCodec(64).encodeTo(nonce, output);
-    const _i1.U64ArrayCodec(8).encodeTo(difficulty, output);
-    const _i1.U64ArrayCodec(8).encodeTo(distanceAchieved, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    const _i1.U8ArrayCodec(64).encodeTo(
+      nonce,
+      output,
+    );
+    const _i1.U64ArrayCodec(8).encodeTo(
+      difficulty,
+      output,
+    );
+    const _i1.U64ArrayCodec(8).encodeTo(
+      hashAchieved,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
+      identical(
+        this,
+        other,
+      ) ||
       other is ProofSubmitted &&
-          _i4.listsEqual(other.nonce, nonce) &&
-          _i4.listsEqual(other.difficulty, difficulty) &&
-          _i4.listsEqual(other.distanceAchieved, distanceAchieved);
+          _i4.listsEqual(
+            other.nonce,
+            nonce,
+          ) &&
+          _i4.listsEqual(
+            other.difficulty,
+            difficulty,
+          ) &&
+          _i4.listsEqual(
+            other.hashAchieved,
+            hashAchieved,
+          );
 
   @override
-  int get hashCode => Object.hash(nonce, difficulty, distanceAchieved);
+  int get hashCode => Object.hash(
+        nonce,
+        difficulty,
+        hashAchieved,
+      );
 }
 
-class DistanceThresholdAdjusted extends Event {
-  const DistanceThresholdAdjusted({
-    required this.oldDistanceThreshold,
-    required this.newDistanceThreshold,
+class DifficultyAdjusted extends Event {
+  const DifficultyAdjusted({
+    required this.oldDifficulty,
+    required this.newDifficulty,
     required this.observedBlockTime,
   });
 
-  factory DistanceThresholdAdjusted._decode(_i1.Input input) {
-    return DistanceThresholdAdjusted(
-      oldDistanceThreshold: const _i1.U64ArrayCodec(8).decode(input),
-      newDistanceThreshold: const _i1.U64ArrayCodec(8).decode(input),
+  factory DifficultyAdjusted._decode(_i1.Input input) {
+    return DifficultyAdjusted(
+      oldDifficulty: const _i1.U64ArrayCodec(8).decode(input),
+      newDifficulty: const _i1.U64ArrayCodec(8).decode(input),
       observedBlockTime: _i1.U64Codec.codec.decode(input),
     );
   }
 
-  /// DistanceThreshold
-  final _i3.U512 oldDistanceThreshold;
+  /// Difficulty
+  final _i3.U512 oldDifficulty;
 
-  /// DistanceThreshold
-  final _i3.U512 newDistanceThreshold;
+  /// Difficulty
+  final _i3.U512 newDifficulty;
 
   /// BlockDuration
   final BigInt observedBlockTime;
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'DistanceThresholdAdjusted': {
-      'oldDistanceThreshold': oldDistanceThreshold.toList(),
-      'newDistanceThreshold': newDistanceThreshold.toList(),
-      'observedBlockTime': observedBlockTime,
-    },
-  };
+        'DifficultyAdjusted': {
+          'oldDifficulty': oldDifficulty.toList(),
+          'newDifficulty': newDifficulty.toList(),
+          'observedBlockTime': observedBlockTime,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
-    size = size + const _i3.U512Codec().sizeHint(oldDistanceThreshold);
-    size = size + const _i3.U512Codec().sizeHint(newDistanceThreshold);
+    size = size + const _i3.U512Codec().sizeHint(oldDifficulty);
+    size = size + const _i3.U512Codec().sizeHint(newDifficulty);
     size = size + _i1.U64Codec.codec.sizeHint(observedBlockTime);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    const _i1.U64ArrayCodec(8).encodeTo(oldDistanceThreshold, output);
-    const _i1.U64ArrayCodec(8).encodeTo(newDistanceThreshold, output);
-    _i1.U64Codec.codec.encodeTo(observedBlockTime, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U64ArrayCodec(8).encodeTo(
+      oldDifficulty,
+      output,
+    );
+    const _i1.U64ArrayCodec(8).encodeTo(
+      newDifficulty,
+      output,
+    );
+    _i1.U64Codec.codec.encodeTo(
+      observedBlockTime,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DistanceThresholdAdjusted &&
-          _i4.listsEqual(other.oldDistanceThreshold, oldDistanceThreshold) &&
-          _i4.listsEqual(other.newDistanceThreshold, newDistanceThreshold) &&
+      identical(
+        this,
+        other,
+      ) ||
+      other is DifficultyAdjusted &&
+          _i4.listsEqual(
+            other.oldDifficulty,
+            oldDifficulty,
+          ) &&
+          _i4.listsEqual(
+            other.newDifficulty,
+            newDifficulty,
+          ) &&
           other.observedBlockTime == observedBlockTime;
 
   @override
-  int get hashCode => Object.hash(oldDistanceThreshold, newDistanceThreshold, observedBlockTime);
+  int get hashCode => Object.hash(
+        oldDifficulty,
+        newDifficulty,
+        observedBlockTime,
+      );
 }

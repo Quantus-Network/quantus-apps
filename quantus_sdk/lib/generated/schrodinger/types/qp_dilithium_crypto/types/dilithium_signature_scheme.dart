@@ -12,7 +12,8 @@ abstract class DilithiumSignatureScheme {
     return codec.decode(input);
   }
 
-  static const $DilithiumSignatureSchemeCodec codec = $DilithiumSignatureSchemeCodec();
+  static const $DilithiumSignatureSchemeCodec codec =
+      $DilithiumSignatureSchemeCodec();
 
   static const $DilithiumSignatureScheme values = $DilithiumSignatureScheme();
 
@@ -47,18 +48,23 @@ class $DilithiumSignatureSchemeCodec with _i1.Codec<DilithiumSignatureScheme> {
       case 0:
         return Dilithium._decode(input);
       default:
-        throw Exception('DilithiumSignatureScheme: Invalid variant index: "$index"');
+        throw Exception(
+            'DilithiumSignatureScheme: Invalid variant index: "$index"');
     }
   }
 
   @override
-  void encodeTo(DilithiumSignatureScheme value, _i1.Output output) {
+  void encodeTo(
+    DilithiumSignatureScheme value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Dilithium:
         (value as Dilithium).encodeTo(output);
         break;
       default:
-        throw Exception('DilithiumSignatureScheme: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'DilithiumSignatureScheme: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -68,7 +74,8 @@ class $DilithiumSignatureSchemeCodec with _i1.Codec<DilithiumSignatureScheme> {
       case Dilithium:
         return (value as Dilithium)._sizeHint();
       default:
-        throw Exception('DilithiumSignatureScheme: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'DilithiumSignatureScheme: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -84,7 +91,8 @@ class Dilithium extends DilithiumSignatureScheme {
   final _i3.DilithiumSignatureWithPublic value0;
 
   @override
-  Map<String, Map<String, List<int>>> toJson() => {'Dilithium': value0.toJson()};
+  Map<String, Map<String, List<int>>> toJson() =>
+      {'Dilithium': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -93,12 +101,23 @@ class Dilithium extends DilithiumSignatureScheme {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i3.DilithiumSignatureWithPublic.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i3.DilithiumSignatureWithPublic.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Dilithium && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Dilithium && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

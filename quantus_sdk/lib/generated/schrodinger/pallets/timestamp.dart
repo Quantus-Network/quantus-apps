@@ -28,7 +28,10 @@ class Queries {
   /// The current time for the current block.
   _i3.Future<BigInt> now({_i1.BlockHash? at}) async {
     final hashedKey = _now.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _now.decodeValue(bytes);
     }
@@ -41,7 +44,10 @@ class Queries {
   /// It is then checked at the end of each block execution in the `on_finalize` hook.
   _i3.Future<bool> didUpdate({_i1.BlockHash? at}) async {
     final hashedKey = _didUpdate.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _didUpdate.decodeValue(bytes);
     }

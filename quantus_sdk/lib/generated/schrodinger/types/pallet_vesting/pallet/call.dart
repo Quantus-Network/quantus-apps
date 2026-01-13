@@ -42,8 +42,14 @@ class $Call {
     return VestOther(target: target);
   }
 
-  VestedTransfer vestedTransfer({required _i3.MultiAddress target, required _i4.VestingInfo schedule}) {
-    return VestedTransfer(target: target, schedule: schedule);
+  VestedTransfer vestedTransfer({
+    required _i3.MultiAddress target,
+    required _i4.VestingInfo schedule,
+  }) {
+    return VestedTransfer(
+      target: target,
+      schedule: schedule,
+    );
   }
 
   ForceVestedTransfer forceVestedTransfer({
@@ -51,18 +57,31 @@ class $Call {
     required _i3.MultiAddress target,
     required _i4.VestingInfo schedule,
   }) {
-    return ForceVestedTransfer(source: source, target: target, schedule: schedule);
+    return ForceVestedTransfer(
+      source: source,
+      target: target,
+      schedule: schedule,
+    );
   }
 
-  MergeSchedules mergeSchedules({required int schedule1Index, required int schedule2Index}) {
-    return MergeSchedules(schedule1Index: schedule1Index, schedule2Index: schedule2Index);
+  MergeSchedules mergeSchedules({
+    required int schedule1Index,
+    required int schedule2Index,
+  }) {
+    return MergeSchedules(
+      schedule1Index: schedule1Index,
+      schedule2Index: schedule2Index,
+    );
   }
 
   ForceRemoveVestingSchedule forceRemoveVestingSchedule({
     required _i3.MultiAddress target,
     required int scheduleIndex,
   }) {
-    return ForceRemoveVestingSchedule(target: target, scheduleIndex: scheduleIndex);
+    return ForceRemoveVestingSchedule(
+      target: target,
+      scheduleIndex: scheduleIndex,
+    );
   }
 }
 
@@ -91,7 +110,10 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(Call value, _i1.Output output) {
+  void encodeTo(
+    Call value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Vest:
         (value as Vest).encodeTo(output);
@@ -112,7 +134,8 @@ class $CallCodec with _i1.Codec<Call> {
         (value as ForceRemoveVestingSchedule).encodeTo(output);
         break;
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -132,7 +155,8 @@ class $CallCodec with _i1.Codec<Call> {
       case ForceRemoveVestingSchedule:
         return (value as ForceRemoveVestingSchedule)._sizeHint();
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -153,7 +177,10 @@ class Vest extends Call {
   Map<String, dynamic> toJson() => {'vest': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
   }
 
   @override
@@ -186,8 +213,8 @@ class VestOther extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-    'vest_other': {'target': target.toJson()},
-  };
+        'vest_other': {'target': target.toJson()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -196,12 +223,23 @@ class VestOther extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    _i3.MultiAddress.codec.encodeTo(target, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      target,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VestOther && other.target == target;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is VestOther && other.target == target;
 
   @override
   int get hashCode => target.hashCode;
@@ -221,10 +259,16 @@ class VestOther extends Call {
 /// ## Complexity
 /// - `O(1)`.
 class VestedTransfer extends Call {
-  const VestedTransfer({required this.target, required this.schedule});
+  const VestedTransfer({
+    required this.target,
+    required this.schedule,
+  });
 
   factory VestedTransfer._decode(_i1.Input input) {
-    return VestedTransfer(target: _i3.MultiAddress.codec.decode(input), schedule: _i4.VestingInfo.codec.decode(input));
+    return VestedTransfer(
+      target: _i3.MultiAddress.codec.decode(input),
+      schedule: _i4.VestingInfo.codec.decode(input),
+    );
   }
 
   /// AccountIdLookupOf<T>
@@ -235,8 +279,11 @@ class VestedTransfer extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-    'vested_transfer': {'target': target.toJson(), 'schedule': schedule.toJson()},
-  };
+        'vested_transfer': {
+          'target': target.toJson(),
+          'schedule': schedule.toJson(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -246,17 +293,35 @@ class VestedTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    _i3.MultiAddress.codec.encodeTo(target, output);
-    _i4.VestingInfo.codec.encodeTo(schedule, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      target,
+      output,
+    );
+    _i4.VestingInfo.codec.encodeTo(
+      schedule,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is VestedTransfer && other.target == target && other.schedule == schedule;
+      identical(
+        this,
+        other,
+      ) ||
+      other is VestedTransfer &&
+          other.target == target &&
+          other.schedule == schedule;
 
   @override
-  int get hashCode => Object.hash(target, schedule);
+  int get hashCode => Object.hash(
+        target,
+        schedule,
+      );
 }
 
 /// Force a vested transfer.
@@ -274,7 +339,11 @@ class VestedTransfer extends Call {
 /// ## Complexity
 /// - `O(1)`.
 class ForceVestedTransfer extends Call {
-  const ForceVestedTransfer({required this.source, required this.target, required this.schedule});
+  const ForceVestedTransfer({
+    required this.source,
+    required this.target,
+    required this.schedule,
+  });
 
   factory ForceVestedTransfer._decode(_i1.Input input) {
     return ForceVestedTransfer(
@@ -295,8 +364,12 @@ class ForceVestedTransfer extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-    'force_vested_transfer': {'source': source.toJson(), 'target': target.toJson(), 'schedule': schedule.toJson()},
-  };
+        'force_vested_transfer': {
+          'source': source.toJson(),
+          'target': target.toJson(),
+          'schedule': schedule.toJson(),
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -307,19 +380,41 @@ class ForceVestedTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    _i3.MultiAddress.codec.encodeTo(source, output);
-    _i3.MultiAddress.codec.encodeTo(target, output);
-    _i4.VestingInfo.codec.encodeTo(schedule, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      source,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      target,
+      output,
+    );
+    _i4.VestingInfo.codec.encodeTo(
+      schedule,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ForceVestedTransfer && other.source == source && other.target == target && other.schedule == schedule;
+      identical(
+        this,
+        other,
+      ) ||
+      other is ForceVestedTransfer &&
+          other.source == source &&
+          other.target == target &&
+          other.schedule == schedule;
 
   @override
-  int get hashCode => Object.hash(source, target, schedule);
+  int get hashCode => Object.hash(
+        source,
+        target,
+        schedule,
+      );
 }
 
 /// Merge two vesting schedules together, creating a new vesting schedule that unlocks over
@@ -344,7 +439,10 @@ class ForceVestedTransfer extends Call {
 /// - `schedule1_index`: index of the first schedule to merge.
 /// - `schedule2_index`: index of the second schedule to merge.
 class MergeSchedules extends Call {
-  const MergeSchedules({required this.schedule1Index, required this.schedule2Index});
+  const MergeSchedules({
+    required this.schedule1Index,
+    required this.schedule2Index,
+  });
 
   factory MergeSchedules._decode(_i1.Input input) {
     return MergeSchedules(
@@ -361,8 +459,11 @@ class MergeSchedules extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-    'merge_schedules': {'schedule1Index': schedule1Index, 'schedule2Index': schedule2Index},
-  };
+        'merge_schedules': {
+          'schedule1Index': schedule1Index,
+          'schedule2Index': schedule2Index,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -372,18 +473,35 @@ class MergeSchedules extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    _i1.U32Codec.codec.encodeTo(schedule1Index, output);
-    _i1.U32Codec.codec.encodeTo(schedule2Index, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      schedule1Index,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      schedule2Index,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MergeSchedules && other.schedule1Index == schedule1Index && other.schedule2Index == schedule2Index;
+      identical(
+        this,
+        other,
+      ) ||
+      other is MergeSchedules &&
+          other.schedule1Index == schedule1Index &&
+          other.schedule2Index == schedule2Index;
 
   @override
-  int get hashCode => Object.hash(schedule1Index, schedule2Index);
+  int get hashCode => Object.hash(
+        schedule1Index,
+        schedule2Index,
+      );
 }
 
 /// Force remove a vesting schedule
@@ -393,7 +511,10 @@ class MergeSchedules extends Call {
 /// - `target`: An account that has a vesting schedule
 /// - `schedule_index`: The vesting schedule index that should be removed
 class ForceRemoveVestingSchedule extends Call {
-  const ForceRemoveVestingSchedule({required this.target, required this.scheduleIndex});
+  const ForceRemoveVestingSchedule({
+    required this.target,
+    required this.scheduleIndex,
+  });
 
   factory ForceRemoveVestingSchedule._decode(_i1.Input input) {
     return ForceRemoveVestingSchedule(
@@ -410,8 +531,11 @@ class ForceRemoveVestingSchedule extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'force_remove_vesting_schedule': {'target': target.toJson(), 'scheduleIndex': scheduleIndex},
-  };
+        'force_remove_vesting_schedule': {
+          'target': target.toJson(),
+          'scheduleIndex': scheduleIndex,
+        }
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -421,16 +545,33 @@ class ForceRemoveVestingSchedule extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(5, output);
-    _i3.MultiAddress.codec.encodeTo(target, output);
-    _i1.U32Codec.codec.encodeTo(scheduleIndex, output);
+    _i1.U8Codec.codec.encodeTo(
+      5,
+      output,
+    );
+    _i3.MultiAddress.codec.encodeTo(
+      target,
+      output,
+    );
+    _i1.U32Codec.codec.encodeTo(
+      scheduleIndex,
+      output,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ForceRemoveVestingSchedule && other.target == target && other.scheduleIndex == scheduleIndex;
+      identical(
+        this,
+        other,
+      ) ||
+      other is ForceRemoveVestingSchedule &&
+          other.target == target &&
+          other.scheduleIndex == scheduleIndex;
 
   @override
-  int get hashCode => Object.hash(target, scheduleIndex);
+  int get hashCode => Object.hash(
+        target,
+        scheduleIndex,
+      );
 }

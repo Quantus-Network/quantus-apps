@@ -185,7 +185,10 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
   }
 
   @override
-  void encodeTo(RuntimeEvent value, _i1.Output output) {
+  void encodeTo(
+    RuntimeEvent value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case System:
         (value as System).encodeTo(output);
@@ -248,7 +251,8 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
         (value as AssetsHolder).encodeTo(output);
         break;
       default:
-        throw Exception('RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -296,7 +300,8 @@ class $RuntimeEventCodec with _i1.Codec<RuntimeEvent> {
       case AssetsHolder:
         return (value as AssetsHolder)._sizeHint();
       default:
-        throw Exception('RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RuntimeEvent: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -321,12 +326,23 @@ class System extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i3.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i3.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is System && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is System && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -343,7 +359,8 @@ class Balances extends RuntimeEvent {
   final _i4.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Balances': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Balances': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -352,12 +369,23 @@ class Balances extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    _i4.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    _i4.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Balances && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Balances && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -374,7 +402,8 @@ class TransactionPayment extends RuntimeEvent {
   final _i5.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TransactionPayment': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TransactionPayment': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -383,12 +412,23 @@ class TransactionPayment extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(3, output);
-    _i5.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      3,
+      output,
+    );
+    _i5.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TransactionPayment && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TransactionPayment && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -414,12 +454,23 @@ class Sudo extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(4, output);
-    _i6.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      4,
+      output,
+    );
+    _i6.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Sudo && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Sudo && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -436,7 +487,8 @@ class QPoW extends RuntimeEvent {
   final _i7.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'QPoW': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'QPoW': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -445,12 +497,23 @@ class QPoW extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(5, output);
-    _i7.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      5,
+      output,
+    );
+    _i7.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is QPoW && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is QPoW && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -467,7 +530,8 @@ class MiningRewards extends RuntimeEvent {
   final _i8.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'MiningRewards': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MiningRewards': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -476,12 +540,23 @@ class MiningRewards extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(7, output);
-    _i8.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      7,
+      output,
+    );
+    _i8.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is MiningRewards && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MiningRewards && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -498,7 +573,8 @@ class Vesting extends RuntimeEvent {
   final _i9.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Vesting': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Vesting': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -507,12 +583,23 @@ class Vesting extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(8, output);
-    _i9.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      8,
+      output,
+    );
+    _i9.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Vesting && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Vesting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -529,7 +616,8 @@ class Preimage extends RuntimeEvent {
   final _i10.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, List<int>>>> toJson() => {'Preimage': value0.toJson()};
+  Map<String, Map<String, Map<String, List<int>>>> toJson() =>
+      {'Preimage': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -538,12 +626,23 @@ class Preimage extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(9, output);
-    _i10.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i10.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Preimage && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Preimage && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -560,7 +659,8 @@ class Scheduler extends RuntimeEvent {
   final _i11.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Scheduler': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Scheduler': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -569,12 +669,23 @@ class Scheduler extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(10, output);
-    _i11.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      10,
+      output,
+    );
+    _i11.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Scheduler && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Scheduler && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -600,12 +711,23 @@ class Utility extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(11, output);
-    _i12.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      11,
+      output,
+    );
+    _i12.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Utility && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Utility && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -622,7 +744,8 @@ class Referenda extends RuntimeEvent {
   final _i13.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Referenda': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Referenda': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -631,12 +754,23 @@ class Referenda extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(12, output);
-    _i13.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      12,
+      output,
+    );
+    _i13.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Referenda && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Referenda && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -653,7 +787,8 @@ class ReversibleTransfers extends RuntimeEvent {
   final _i14.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'ReversibleTransfers': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'ReversibleTransfers': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -662,12 +797,23 @@ class ReversibleTransfers extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(13, output);
-    _i14.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      13,
+      output,
+    );
+    _i14.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ReversibleTransfers && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ReversibleTransfers && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -684,7 +830,8 @@ class ConvictionVoting extends RuntimeEvent {
   final _i15.Event value0;
 
   @override
-  Map<String, Map<String, dynamic>> toJson() => {'ConvictionVoting': value0.toJson()};
+  Map<String, Map<String, dynamic>> toJson() =>
+      {'ConvictionVoting': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -693,12 +840,23 @@ class ConvictionVoting extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(14, output);
-    _i15.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      14,
+      output,
+    );
+    _i15.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ConvictionVoting && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ConvictionVoting && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -715,7 +873,8 @@ class TechCollective extends RuntimeEvent {
   final _i16.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TechCollective': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechCollective': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -724,12 +883,23 @@ class TechCollective extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(15, output);
-    _i16.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      15,
+      output,
+    );
+    _i16.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TechCollective && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechCollective && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -746,7 +916,8 @@ class TechReferenda extends RuntimeEvent {
   final _i17.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TechReferenda': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TechReferenda': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -755,12 +926,23 @@ class TechReferenda extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(16, output);
-    _i17.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      16,
+      output,
+    );
+    _i17.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TechReferenda && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TechReferenda && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -777,7 +959,8 @@ class MerkleAirdrop extends RuntimeEvent {
   final _i18.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'MerkleAirdrop': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'MerkleAirdrop': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -786,12 +969,23 @@ class MerkleAirdrop extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(17, output);
-    _i18.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      17,
+      output,
+    );
+    _i18.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is MerkleAirdrop && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MerkleAirdrop && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -808,7 +1002,8 @@ class TreasuryPallet extends RuntimeEvent {
   final _i19.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'TreasuryPallet': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'TreasuryPallet': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -817,12 +1012,23 @@ class TreasuryPallet extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(18, output);
-    _i19.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      18,
+      output,
+    );
+    _i19.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TreasuryPallet && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is TreasuryPallet && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -839,7 +1045,8 @@ class Recovery extends RuntimeEvent {
   final _i20.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Recovery': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Recovery': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -848,12 +1055,23 @@ class Recovery extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(20, output);
-    _i20.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      20,
+      output,
+    );
+    _i20.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Recovery && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Recovery && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -870,7 +1088,8 @@ class Assets extends RuntimeEvent {
   final _i21.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'Assets': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'Assets': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -879,12 +1098,23 @@ class Assets extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(21, output);
-    _i21.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      21,
+      output,
+    );
+    _i21.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Assets && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Assets && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -901,7 +1131,8 @@ class AssetsHolder extends RuntimeEvent {
   final _i22.Event value0;
 
   @override
-  Map<String, Map<String, Map<String, dynamic>>> toJson() => {'AssetsHolder': value0.toJson()};
+  Map<String, Map<String, Map<String, dynamic>>> toJson() =>
+      {'AssetsHolder': value0.toJson()};
 
   int _sizeHint() {
     int size = 1;
@@ -910,12 +1141,23 @@ class AssetsHolder extends RuntimeEvent {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(22, output);
-    _i22.Event.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      22,
+      output,
+    );
+    _i22.Event.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AssetsHolder && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is AssetsHolder && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

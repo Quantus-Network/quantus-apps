@@ -66,7 +66,10 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(Event value, _i1.Output output) {
+  void encodeTo(
+    Event value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Noted:
         (value as Noted).encodeTo(output);
@@ -78,7 +81,8 @@ class $EventCodec with _i1.Codec<Event> {
         (value as Cleared).encodeTo(output);
         break;
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -92,7 +96,8 @@ class $EventCodec with _i1.Codec<Event> {
       case Cleared:
         return (value as Cleared)._sizeHint();
       default:
-        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -110,8 +115,8 @@ class Noted extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'Noted': {'hash': hash.toList()},
-  };
+        'Noted': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -120,12 +125,27 @@ class Noted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Noted && _i4.listsEqual(other.hash, hash);
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Noted &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;
@@ -144,8 +164,8 @@ class Requested extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'Requested': {'hash': hash.toList()},
-  };
+        'Requested': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -154,12 +174,27 @@ class Requested extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(1, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      1,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Requested && _i4.listsEqual(other.hash, hash);
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Requested &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;
@@ -178,8 +213,8 @@ class Cleared extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-    'Cleared': {'hash': hash.toList()},
-  };
+        'Cleared': {'hash': hash.toList()}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -188,12 +223,27 @@ class Cleared extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(2, output);
-    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
+    _i1.U8Codec.codec.encodeTo(
+      2,
+      output,
+    );
+    const _i1.U8ArrayCodec(32).encodeTo(
+      hash,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Cleared && _i4.listsEqual(other.hash, hash);
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Cleared &&
+          _i4.listsEqual(
+            other.hash,
+            hash,
+          );
 
   @override
   int get hashCode => hash.hashCode;

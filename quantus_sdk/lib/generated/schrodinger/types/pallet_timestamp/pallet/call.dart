@@ -51,13 +51,17 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(Call value, _i1.Output output) {
+  void encodeTo(
+    Call value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Set:
         (value as Set).encodeTo(output);
         break;
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -67,7 +71,8 @@ class $CallCodec with _i1.Codec<Call> {
       case Set:
         return (value as Set)._sizeHint();
       default:
-        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -103,8 +108,8 @@ class Set extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-    'set': {'now': now},
-  };
+        'set': {'now': now}
+      };
 
   int _sizeHint() {
     int size = 1;
@@ -113,12 +118,23 @@ class Set extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(0, output);
-    _i1.CompactBigIntCodec.codec.encodeTo(now, output);
+    _i1.U8Codec.codec.encodeTo(
+      0,
+      output,
+    );
+    _i1.CompactBigIntCodec.codec.encodeTo(
+      now,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Set && other.now == now;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Set && other.now == now;
 
   @override
   int get hashCode => now.hashCode;

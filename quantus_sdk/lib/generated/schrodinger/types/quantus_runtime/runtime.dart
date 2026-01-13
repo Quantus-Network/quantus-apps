@@ -12,8 +12,14 @@ class RuntimeCodec with _i1.Codec<Runtime> {
   }
 
   @override
-  void encodeTo(Runtime value, _i1.Output output) {
-    _i1.NullCodec.codec.encodeTo(value, output);
+  void encodeTo(
+    Runtime value,
+    _i1.Output output,
+  ) {
+    _i1.NullCodec.codec.encodeTo(
+      value,
+      output,
+    );
   }
 
   @override

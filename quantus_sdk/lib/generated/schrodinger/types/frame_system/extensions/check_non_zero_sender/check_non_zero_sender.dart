@@ -12,8 +12,14 @@ class CheckNonZeroSenderCodec with _i1.Codec<CheckNonZeroSender> {
   }
 
   @override
-  void encodeTo(CheckNonZeroSender value, _i1.Output output) {
-    _i1.NullCodec.codec.encodeTo(value, output);
+  void encodeTo(
+    CheckNonZeroSender value,
+    _i1.Output output,
+  ) {
+    _i1.NullCodec.codec.encodeTo(
+      value,
+      output,
+    );
   }
 
   @override

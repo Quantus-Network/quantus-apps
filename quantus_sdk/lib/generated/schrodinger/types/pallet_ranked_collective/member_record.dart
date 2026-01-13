@@ -22,7 +22,12 @@ class MemberRecord {
   Map<String, int> toJson() => {'rank': rank};
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is MemberRecord && other.rank == rank;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is MemberRecord && other.rank == rank;
 
   @override
   int get hashCode => rank.hashCode;
@@ -32,8 +37,14 @@ class $MemberRecordCodec with _i1.Codec<MemberRecord> {
   const $MemberRecordCodec();
 
   @override
-  void encodeTo(MemberRecord obj, _i1.Output output) {
-    _i1.U16Codec.codec.encodeTo(obj.rank, output);
+  void encodeTo(
+    MemberRecord obj,
+    _i1.Output output,
+  ) {
+    _i1.U16Codec.codec.encodeTo(
+      obj.rank,
+      output,
+    );
   }
 
   @override

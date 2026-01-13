@@ -59,7 +59,10 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
   }
 
   @override
-  void encodeTo(RuntimeHoldReason value, _i1.Output output) {
+  void encodeTo(
+    RuntimeHoldReason value,
+    _i1.Output output,
+  ) {
     switch (value.runtimeType) {
       case Preimage:
         (value as Preimage).encodeTo(output);
@@ -68,7 +71,8 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
         (value as ReversibleTransfers).encodeTo(output);
         break;
       default:
-        throw Exception('RuntimeHoldReason: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RuntimeHoldReason: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -80,7 +84,8 @@ class $RuntimeHoldReasonCodec with _i1.Codec<RuntimeHoldReason> {
       case ReversibleTransfers:
         return (value as ReversibleTransfers)._sizeHint();
       default:
-        throw Exception('RuntimeHoldReason: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception(
+            'RuntimeHoldReason: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -105,12 +110,23 @@ class Preimage extends RuntimeHoldReason {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(9, output);
-    _i3.HoldReason.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      9,
+      output,
+    );
+    _i3.HoldReason.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Preimage && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is Preimage && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;
@@ -136,12 +152,23 @@ class ReversibleTransfers extends RuntimeHoldReason {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(13, output);
-    _i4.HoldReason.codec.encodeTo(value0, output);
+    _i1.U8Codec.codec.encodeTo(
+      13,
+      output,
+    );
+    _i4.HoldReason.codec.encodeTo(
+      value0,
+      output,
+    );
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ReversibleTransfers && other.value0 == value0;
+  bool operator ==(Object other) =>
+      identical(
+        this,
+        other,
+      ) ||
+      other is ReversibleTransfers && other.value0 == value0;
 
   @override
   int get hashCode => value0.hashCode;

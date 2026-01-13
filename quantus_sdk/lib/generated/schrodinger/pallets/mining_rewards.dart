@@ -13,7 +13,8 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<BigInt> _collectedFees = const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _collectedFees =
+      const _i1.StorageValue<BigInt>(
     prefix: 'MiningRewards',
     storage: 'CollectedFees',
     valueCodec: _i2.U128Codec.codec,
@@ -21,7 +22,10 @@ class Queries {
 
   _i3.Future<BigInt> collectedFees({_i1.BlockHash? at}) async {
     final hashedKey = _collectedFees.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _collectedFees.decodeValue(bytes);
     }
@@ -42,10 +46,19 @@ class Constants {
   final BigInt minerBlockReward = BigInt.from(10000000000000);
 
   /// The base block reward given to treasury
-  final BigInt treasuryBlockReward = BigInt.from(1000000000000);
+  final BigInt treasuryBlockReward = BigInt.zero;
 
   /// The treasury pallet ID
-  final _i5.PalletId treasuryPalletId = const <int>[112, 121, 47, 116, 114, 115, 114, 121];
+  final _i5.PalletId treasuryPalletId = const <int>[
+    112,
+    121,
+    47,
+    116,
+    114,
+    115,
+    114,
+    121,
+  ];
 
   /// Account ID used as the "from" account when creating transfer proofs for minted tokens
   final _i6.AccountId32 mintingAccount = const <int>[

@@ -12,7 +12,10 @@ enum Conviction {
   locked5x('Locked5x', 5),
   locked6x('Locked6x', 6);
 
-  const Conviction(this.variantName, this.codecIndex);
+  const Conviction(
+    this.variantName,
+    this.codecIndex,
+  );
 
   factory Conviction.decode(_i1.Input input) {
     return codec.decode(input);
@@ -57,7 +60,13 @@ class $ConvictionCodec with _i1.Codec<Conviction> {
   }
 
   @override
-  void encodeTo(Conviction value, _i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
+  void encodeTo(
+    Conviction value,
+    _i1.Output output,
+  ) {
+    _i1.U8Codec.codec.encodeTo(
+      value.codecIndex,
+      output,
+    );
   }
 }

@@ -19,22 +19,29 @@ class Queries {
 
   final _i1.StorageMap<_i2.AccountId32, List<_i3.VestingInfo>> _vesting =
       const _i1.StorageMap<_i2.AccountId32, List<_i3.VestingInfo>>(
-        prefix: 'Vesting',
-        storage: 'Vesting',
-        valueCodec: _i4.SequenceCodec<_i3.VestingInfo>(_i3.VestingInfo.codec),
-        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-      );
+    prefix: 'Vesting',
+    storage: 'Vesting',
+    valueCodec: _i4.SequenceCodec<_i3.VestingInfo>(_i3.VestingInfo.codec),
+    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+  );
 
-  final _i1.StorageValue<_i5.Releases> _storageVersion = const _i1.StorageValue<_i5.Releases>(
+  final _i1.StorageValue<_i5.Releases> _storageVersion =
+      const _i1.StorageValue<_i5.Releases>(
     prefix: 'Vesting',
     storage: 'StorageVersion',
     valueCodec: _i5.Releases.codec,
   );
 
   /// Information regarding the vesting of a given account.
-  _i6.Future<List<_i3.VestingInfo>?> vesting(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
+  _i6.Future<List<_i3.VestingInfo>?> vesting(
+    _i2.AccountId32 key1, {
+    _i1.BlockHash? at,
+  }) async {
     final hashedKey = _vesting.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _vesting.decodeValue(bytes);
     }
@@ -46,7 +53,10 @@ class Queries {
   /// New networks start with latest version, as determined by the genesis build.
   _i6.Future<_i5.Releases> storageVersion({_i1.BlockHash? at}) async {
     final hashedKey = _storageVersion.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
+    final bytes = await __api.getStorage(
+      hashedKey,
+      at: at,
+    );
     if (bytes != null) {
       return _storageVersion.decodeValue(bytes);
     }
@@ -54,11 +64,19 @@ class Queries {
   }
 
   /// Information regarding the vesting of a given account.
-  _i6.Future<List<List<_i3.VestingInfo>?>> multiVesting(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+  _i6.Future<List<List<_i3.VestingInfo>?>> multiVesting(
+    List<_i2.AccountId32> keys, {
+    _i1.BlockHash? at,
+  }) async {
     final hashedKeys = keys.map((key) => _vesting.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
+    final bytes = await __api.queryStorageAt(
+      hashedKeys,
+      at: at,
+    );
     if (bytes.isNotEmpty) {
-      return bytes.first.changes.map((v) => _vesting.decodeValue(v.key)).toList();
+      return bytes.first.changes
+          .map((v) => _vesting.decodeValue(v.key))
+          .toList();
     }
     return []; /* Nullable */
   }
@@ -126,8 +144,14 @@ class Txs {
   ///
   /// ## Complexity
   /// - `O(1)`.
-  _i8.Vesting vestedTransfer({required _i10.MultiAddress target, required _i3.VestingInfo schedule}) {
-    return _i8.Vesting(_i9.VestedTransfer(target: target, schedule: schedule));
+  _i8.Vesting vestedTransfer({
+    required _i10.MultiAddress target,
+    required _i3.VestingInfo schedule,
+  }) {
+    return _i8.Vesting(_i9.VestedTransfer(
+      target: target,
+      schedule: schedule,
+    ));
   }
 
   /// Force a vested transfer.
@@ -149,7 +173,11 @@ class Txs {
     required _i10.MultiAddress target,
     required _i3.VestingInfo schedule,
   }) {
-    return _i8.Vesting(_i9.ForceVestedTransfer(source: source, target: target, schedule: schedule));
+    return _i8.Vesting(_i9.ForceVestedTransfer(
+      source: source,
+      target: target,
+      schedule: schedule,
+    ));
   }
 
   /// Merge two vesting schedules together, creating a new vesting schedule that unlocks over
@@ -173,8 +201,14 @@ class Txs {
   ///
   /// - `schedule1_index`: index of the first schedule to merge.
   /// - `schedule2_index`: index of the second schedule to merge.
-  _i8.Vesting mergeSchedules({required int schedule1Index, required int schedule2Index}) {
-    return _i8.Vesting(_i9.MergeSchedules(schedule1Index: schedule1Index, schedule2Index: schedule2Index));
+  _i8.Vesting mergeSchedules({
+    required int schedule1Index,
+    required int schedule2Index,
+  }) {
+    return _i8.Vesting(_i9.MergeSchedules(
+      schedule1Index: schedule1Index,
+      schedule2Index: schedule2Index,
+    ));
   }
 
   /// Force remove a vesting schedule
@@ -183,8 +217,14 @@ class Txs {
   ///
   /// - `target`: An account that has a vesting schedule
   /// - `schedule_index`: The vesting schedule index that should be removed
-  _i8.Vesting forceRemoveVestingSchedule({required _i10.MultiAddress target, required int scheduleIndex}) {
-    return _i8.Vesting(_i9.ForceRemoveVestingSchedule(target: target, scheduleIndex: scheduleIndex));
+  _i8.Vesting forceRemoveVestingSchedule({
+    required _i10.MultiAddress target,
+    required int scheduleIndex,
+  }) {
+    return _i8.Vesting(_i9.ForceRemoveVestingSchedule(
+      target: target,
+      scheduleIndex: scheduleIndex,
+    ));
   }
 }
 
