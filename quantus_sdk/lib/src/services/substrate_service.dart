@@ -190,7 +190,7 @@ class SubstrateService {
           print('Failed to submit extrinsic after $maxRetries retries: $e');
           rethrow;
         }
-        print('Failed to submit extrinsic, retrying... $retryCount');
+        print('Failed to submit extrinsic, retrying... $retryCount error: $e');
         await Future.delayed(Duration(milliseconds: 500 * retryCount));
       }
     }

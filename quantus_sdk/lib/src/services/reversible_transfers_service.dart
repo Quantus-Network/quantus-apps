@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:polkadart/polkadart.dart';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/pallet_reversible_transfers/high_security_account_data.dart';
@@ -215,20 +216,31 @@ class ReversibleTransfersService {
   Future<Uint8List> setHighSecurity({
     required Account account,
     required String guardianAccountId,
-    required qp.Timestamp delay,
+    required qp.BlockNumberOrTimestamp delay,
   }) async {
-    print(
-      'X setHighSecurity: ${account.accountId}, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
-    );
+    final delayValue = delay is qp.BlockNumber
+        ? '${(delay).value0} blocks'
+        : delay is qp.Timestamp
+        ? '${(delay).value0} ms'
+        : delay.toJson().toString();
+    print('setHighSecurity: ${account.accountId}, $guardianAccountId, $delayValue');
     try {
       final quantusApi = Schrodinger(_substrateService.provider!);
       final guardianAccountId32 = crypto.ss58ToAccountId(s: guardianAccountId);
 
       // Create the call
-      final call = quantusApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: guardianAccountId32);
+      ReversibleTransfers call = quantusApi.tx.reversibleTransfers.setHighSecurity(
+        delay: delay,
+        interceptor: guardianAccountId32,
+      );
+      print('Encoded Call: ${call.encode()}');
+      print('Encoded Call Hex: ${hex.encode(call.encode())}');
 
       // Submit the transaction using substrate service
-      return await _substrateService.submitExtrinsic(account, call);
+      final res = await _substrateService.submitExtrinsic(account, call);
+
+      print('setHighSecurity done with result: $res');
+      return res;
     } catch (e) {
       print('Failed to enable high security: $e');
       throw Exception('Failed to enable high security: $e');
