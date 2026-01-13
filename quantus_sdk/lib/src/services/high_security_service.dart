@@ -15,8 +15,8 @@ class HighSecurityService {
   final SubstrateService _substrateService = SubstrateService();
   final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
-  Future<void> setHighSecurity(Account account, String guardianAccountId, Duration safeguardDuration) async {
-    _reversibleTransfersService.setHighSecurity(
+  Future<Uint8List> setHighSecurity(Account account, String guardianAccountId, Duration safeguardDuration) async {
+    return await _reversibleTransfersService.setHighSecurity(
       account: account,
       guardianAccountId: guardianAccountId,
       delay: safeguardDuration.qpTimestamp,

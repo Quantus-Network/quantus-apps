@@ -38,11 +38,12 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
 
     print('delay: ${highSecurityData.safeguardWindow}');
 
-    await _highSecurityService.setHighSecurity(
+    final res = await _highSecurityService.setHighSecurity(
       widget.account,
       highSecurityData.guardianAccountId,
       highSecurityData.safeguardWindow,
     );
+    print('setHighSecurity result: $res');
 
     ref.invalidate(isHighSecurityProvider(widget.account));
     ref.invalidate(entrustedAccountsProvider(widget.account));
@@ -68,7 +69,8 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
   }
 
   void _cancelSetup() {
-    showHighSecurityCancelWarningSheet(context);
+    Navigator.pop(context);
+    // showHighSecurityCancelWarningSheet(context);
   }
 
   void _fetchNetworkFee() async {

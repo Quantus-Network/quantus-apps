@@ -218,7 +218,7 @@ class ReversibleTransfersService {
     required qp.Timestamp delay,
   }) async {
     print(
-      'setHighSecurity: $account, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
+      'setHighSecurity: ${account.accountId}, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
     );
     try {
       final resonanceApi = Schrodinger(_substrateService.provider!);
@@ -228,7 +228,7 @@ class ReversibleTransfersService {
       final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: accountId);
 
       // Submit the transaction using substrate service
-      return _substrateService.submitExtrinsic(account, call);
+      return await _substrateService.submitExtrinsic(account, call);
     } catch (e) {
       print('Failed to enable high security: $e');
       throw Exception('Failed to enable high security: $e');
