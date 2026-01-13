@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:ss58/ss58.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/gradient_text.dart';
@@ -17,6 +18,8 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 
+final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+
 class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
   const HighSecurityGuardianWizard({super.key});
 
@@ -26,6 +29,15 @@ class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
 
 class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardianWizard> {
   late final TextEditingController _guardianController;
+
+  Future<String?> _getHumanCheckphrase(String address) async {
+    try {
+      Address.decode(address);
+      return await _checksumService.getHumanReadableName(address);
+    } catch (e) {
+      return null;
+    }
+  }
 
   Future<void> _scanQRCode() async {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
@@ -129,11 +141,37 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
             hintText: 'Enter address',
             fillColor: context.themeColors.darkGray,
           ),
-          const SizedBox(height: 13),
-          Text(
-            'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
-            style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
-          ),
+          if (guardianAddress.isNotEmpty)
+            FutureBuilder<String?>(
+              key: ValueKey(guardianAddress),
+              future: _getHumanCheckphrase(guardianAddress),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox.shrink();
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'invalid address',
+                      style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textError),
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    snapshot.data!,
+                    style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.checksum),
+                  ),
+                );
+              },
+            ),
+          // const SizedBox(height: 13),
+          // Text(
+          //   'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
+          //   style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
+          // ),
           const Expanded(child: SizedBox()),
           Row(
             spacing: 36,

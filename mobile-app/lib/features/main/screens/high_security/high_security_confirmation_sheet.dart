@@ -139,7 +139,7 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
               children: [
                 Text('Network Fee', style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600)),
                 Text(
-                  '${_networkFee ?? 'Fetching...'} ${AppConstants.tokenSymbol}',
+                  '${NumberFormattingService().formatBalance(_networkFee ?? BigInt.zero, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
                   style: context.themeText.detail?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],

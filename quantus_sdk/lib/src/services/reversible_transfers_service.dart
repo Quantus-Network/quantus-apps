@@ -9,13 +9,11 @@ import 'package:quantus_sdk/generated/schrodinger/types/primitive_types/h256.dar
 import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/src/constants/app_constants.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
-import 'package:ss58/ss58.dart';
 
 import 'substrate_service.dart';
 
@@ -218,7 +216,9 @@ class ReversibleTransfersService {
     required String guardianAccountId,
     required qp.BlockNumberOrTimestamp delay,
   }) async {
-    print('setHighSecurity: $account, $guardianAccountId, $delay');
+    print(
+      'setHighSecurity: $account, $guardianAccountId, ${(delay as Timestamp).value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay as qp.Timestamp)}',
+    );
     try {
       final resonanceApi = Schrodinger(_substrateService.provider!);
 
