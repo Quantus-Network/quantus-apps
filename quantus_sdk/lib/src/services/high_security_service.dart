@@ -35,6 +35,16 @@ class HighSecurityService {
     return await getHighSecurityConfig(account.accountId) != null;
   }
 
+  Future<bool> isGuardian(Account account) async {
+    return await _reversibleTransfersService.isGuardian(account.accountId);
+  }
+
+  Future<List<Account>> getEntrustedAccounts(Account account) async {
+    return (await _reversibleTransfersService.getInterceptedAccounts(
+      account.accountId,
+    )).map((account) => Account.fromSs58Address(account)).toList();
+  }
+
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
 

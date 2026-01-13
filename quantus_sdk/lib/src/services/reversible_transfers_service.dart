@@ -10,6 +10,7 @@ import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_numbe
 import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/src/constants/app_constants.dart';
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
@@ -194,14 +195,7 @@ class ReversibleTransfersService {
 
   /// Check if account is a guardian (interceptor) for any accounts
   Future<bool> isGuardian(String address) async {
-    try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: address);
-      final interceptedAccounts = await resonanceApi.query.reversibleTransfers.interceptorIndex(accountId);
-      return interceptedAccounts.isNotEmpty;
-    } catch (e) {
-      throw Exception('Failed to check guardian status: $e');
-    }
+    return (await getInterceptedAccounts(address)).isNotEmpty;
   }
 
   /// Get list of accounts that the given account is a guardian (interceptor) for
@@ -211,8 +205,9 @@ class ReversibleTransfersService {
       final accountId = crypto.ss58ToAccountId(s: guardianAddress);
       final interceptedAccounts = await resonanceApi.query.reversibleTransfers.interceptorIndex(accountId);
       return interceptedAccounts.map((id) {
-        final address = Address(prefix: AppConstants.ss58prefix, pubkey: Uint8List.fromList(id));
-        return address.encode();
+        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
+        print('intercepted account: $address');
+        return address;
       }).toList();
     } catch (e) {
       throw Exception('Failed to get intercepted accounts: $e');
