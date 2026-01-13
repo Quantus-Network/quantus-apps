@@ -253,4 +253,18 @@ class ReversibleTransfersService {
       throw Exception('Failed to get reversible transfers constants: $e');
     }
   }
+
+  Future<ExtrinsicFeeData> getHighSecuritySetupFee(
+    Account account,
+    String guardianAccountId,
+    Duration safeguardDuration,
+  ) async {
+    final delay = safeguardDuration.qpTimestamp;
+    final resonanceApi = Schrodinger(_substrateService.provider!);
+    final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
+      delay: delay,
+      interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
+    );
+    return _substrateService.getFeeForCall(account, call);
+  }
 }

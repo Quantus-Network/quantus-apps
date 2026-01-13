@@ -20,22 +20,12 @@ class HighSecurityService {
     );
   }
 
-  // TODO replace with actual fee calculation
-  Future<ExtrinsicFeeData> getHighSecuritySetupFee(Account account, HighSecurityData formData) async {
-    try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Mock fetch
-      return ExtrinsicFeeData(
-        fee: BigInt.from(1000000000000000000), // 1.0
-        blockHash: '0x0',
-        blockNumber: 0,
-      );
-    } catch (e, stackTrace) {
-      print('Failed to get setup fee: $e');
-      print('Failed to get setup fee: $stackTrace');
-      throw Exception('Failed to get setup fee: $e');
-    }
+  Future<ExtrinsicFeeData> getHighSecuritySetupFee(
+    Account account,
+    String guardianAccountId,
+    Duration safeguardDuration,
+  ) async {
+    return _reversibleTransfersService.getHighSecuritySetupFee(account, guardianAccountId, safeguardDuration);
   }
 
   Future<bool> isHighSecurity(Account account) async {

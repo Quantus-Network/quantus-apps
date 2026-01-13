@@ -31,16 +31,16 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
       _isSubmitting = true;
     });
 
-    final formData = ref.read(highSecurityFormProvider);
+    final highSecurityData = ref.read(highSecurityFormProvider);
 
-    print('delay: ${formData.safeguardWindowSeconds}');
+    print('delay: ${highSecurityData.safeguardWindowSeconds}');
 
     final activeAccount = (await _settingsService.getActiveAccount())!;
 
     await _highSecurityService.setupHighSecurityAccount(
       activeAccount,
-      formData.guardianAccountId,
-      Duration(seconds: formData.safeguardWindowSeconds),
+      highSecurityData.guardianAccountId,
+      Duration(seconds: highSecurityData.safeguardWindowSeconds),
     );
 
     setState(() {
@@ -58,9 +58,13 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
 
   void _fetchNetworkFee() async {
     final activeAccount = (await _settingsService.getActiveAccount())!;
-    final formData = ref.read(highSecurityFormProvider);
+    final highSecurityData = ref.read(highSecurityFormProvider);
 
-    final fee = await _highSecurityService.getHighSecuritySetupFee(activeAccount, formData);
+    final fee = await _highSecurityService.getHighSecuritySetupFee(
+      activeAccount,
+      highSecurityData.guardianAccountId,
+      Duration(seconds: highSecurityData.safeguardWindowSeconds),
+    );
 
     setState(() {
       _networkFee = fee.fee;
