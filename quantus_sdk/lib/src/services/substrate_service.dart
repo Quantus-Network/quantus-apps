@@ -126,6 +126,51 @@ class SubstrateService {
     return Uint8List.fromList(hex.decode(data.substring(2)));
   }
 
+  // Utility method to submit and watch an extrinsic.
+  // Good for debugging - overall direct fire and forget calls are more reliable.
+  // ignore: unused_element
+  Future<Uint8List> _submitExtrinsicAndWatch(Uint8List extrinsic) async {
+    final params = ['0x${hex.encode(extrinsic)}'];
+
+    // For debugging: calculate the hash locally since submitAndWatch returns a sub ID
+    final txHash = Hasher.blake2b256.hash(extrinsic);
+    final txHashHex = '0x${hex.encode(txHash)}';
+    print('Calculated Tx Hash: $txHashHex');
+
+    // We don't await this because we want to return the hash immediately
+    // but keep the listener running
+    _rpcEndpointService.rpcTask((uri) async {
+      final wsUri = uri.replace(scheme: uri.scheme == 'https' ? 'wss' : 'ws');
+      print('submitExtrinsic (Watch) to $wsUri');
+
+      final provider = Provider.fromUri(wsUri);
+
+      try {
+        final subscription = await provider.subscribe('author_submitAndWatchExtrinsic', params);
+        print('Subscribed to extrinsic updates: ${subscription.id}');
+
+        subscription.stream.listen((message) {
+          print('Extrinsic Status Update [${message.subscription}]: ${message.result}');
+
+          // Check for error/invalid
+          final result = message.result;
+          if (result is Map &&
+              (result.containsKey('invalid') || result.containsKey('dropped') || result.containsKey('error'))) {
+            print('Extrinsic FAILED/DROPPED: $result');
+          }
+        });
+      } catch (e) {
+        print('Error watching extrinsic: $e');
+      }
+
+      // Keep alive for logs
+      await Future.delayed(const Duration(seconds: 20));
+      // await provider.disconnect(); // Optional cleanup
+    });
+
+    return txHash;
+  }
+
   Future<Uint8List> submitExtrinsic(Account account, RuntimeCall call, {int maxRetries = 3}) async {
     int retryCount = 0;
     while (retryCount < maxRetries) {
