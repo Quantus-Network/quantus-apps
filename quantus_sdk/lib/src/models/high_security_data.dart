@@ -1,16 +1,16 @@
 class HighSecurityData {
   final String guardianAccountId;
-  final int safeguardWindowSeconds;
+  final Duration safeguardWindow;
 
   const HighSecurityData({
     this.guardianAccountId = '',
-    this.safeguardWindowSeconds = 10 * 60 * 60, // 10 hours in seconds
+    this.safeguardWindow = const Duration(hours: 10), // 10 hours in seconds
   });
 
-  HighSecurityData copyWith({String? guardianAddress, int? safeguardWindow}) {
+  HighSecurityData copyWith({String? guardianAddress, Duration? safeguardWindow}) {
     return HighSecurityData(
       guardianAccountId: guardianAddress ?? guardianAccountId,
-      safeguardWindowSeconds: safeguardWindow ?? safeguardWindowSeconds,
+      safeguardWindow: safeguardWindow ?? this.safeguardWindow,
     );
   }
 }

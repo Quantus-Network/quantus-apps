@@ -685,7 +685,7 @@ class MockReversibleTransfersService extends _i1.Mock implements _i2.ReversibleT
           as _i3.Future<_i6.Uint8List>);
 
   @override
-  _i3.Future<_i9.HighSecurityAccountData?> getAccountReversibilityConfig(String? address) =>
+  _i3.Future<_i9.HighSecurityAccountData?> getHighSecurityConfig(String? address) =>
       (super.noSuchMethod(
             Invocation.method(#getAccountReversibilityConfig, [address]),
             returnValue: _i3.Future<_i9.HighSecurityAccountData?>.value(),

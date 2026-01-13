@@ -33,14 +33,14 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
 
     final highSecurityData = ref.read(highSecurityFormProvider);
 
-    print('delay: ${highSecurityData.safeguardWindowSeconds}');
+    print('delay: ${highSecurityData.safeguardWindow}');
 
     final activeAccount = (await _settingsService.getActiveAccount())!;
 
     await _highSecurityService.setupHighSecurityAccount(
       activeAccount,
       highSecurityData.guardianAccountId,
-      Duration(seconds: highSecurityData.safeguardWindowSeconds),
+      highSecurityData.safeguardWindow,
     );
 
     setState(() {
@@ -63,7 +63,7 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
     final fee = await _highSecurityService.getHighSecuritySetupFee(
       activeAccount,
       highSecurityData.guardianAccountId,
-      Duration(seconds: highSecurityData.safeguardWindowSeconds),
+      highSecurityData.safeguardWindow,
     );
 
     setState(() {

@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/extensions/address_extension.dart';
 import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 
 class HighSecurityService {
@@ -29,8 +32,22 @@ class HighSecurityService {
   }
 
   Future<bool> isHighSecurity(Account account) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // just for testing
-    return account.name.startsWith('High');
+    return await getHighSecurityConfig(account.accountId) != null;
+  }
+
+  Future<HighSecurityData?> getHighSecurityConfig(String address) async {
+    final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
+
+    if (hsData != null) {
+      final accountId = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(hsData.interceptor));
+      if (hsData.delay is! qp.Timestamp) {
+        throw ArgumentError('Expected timestamp delay, got block number');
+      }
+      final safeguardWindow = DurationToTimestampExtension.fromQpTimestamp(hsData.delay as qp.Timestamp);
+      return HighSecurityData(guardianAccountId: accountId, safeguardWindow: safeguardWindow);
+    } else {
+      // not a high security account
+      return null;
+    }
   }
 }

@@ -8,7 +8,7 @@ class HighSecurityFormNotifier extends StateNotifier<HighSecurityData> {
   }
 
   void updateSafeguardWindow(int window) {
-    state = state.copyWith(safeguardWindow: window);
+    state = state.copyWith(safeguardWindow: Duration(seconds: window));
   }
 
   void resetState() {

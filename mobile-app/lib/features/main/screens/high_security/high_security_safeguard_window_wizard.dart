@@ -25,7 +25,7 @@ class _HighSecuritySafeguardWindowWizardState extends ConsumerState<HighSecurity
   @override
   Widget build(BuildContext context) {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
-    final safeguardTimeSeconds = ref.watch(highSecurityFormProvider).safeguardWindowSeconds;
+    final safeguardTimeSeconds = ref.watch(highSecurityFormProvider).safeguardWindow.inSeconds;
 
     final int secondsInADay = 86400;
     final int secondsInAMonth = secondsInADay * 30; // 86400 seconds/day * 30 days/month
