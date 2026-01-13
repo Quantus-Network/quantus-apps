@@ -4,9 +4,8 @@ import 'dart:typed_data';
 import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/active_recovery.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/recovery_config.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
-import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
 import 'substrate_service.dart';
@@ -18,6 +17,12 @@ class RecoveryService {
   RecoveryService._internal();
 
   final SubstrateService _substrateService = SubstrateService();
+
+  final dummyQuantusApi = Schrodinger.url(Uri.parse(AppConstants.rpcEndpoints[0]));
+  late final BigInt configDepositBase = dummyQuantusApi.constant.recovery.configDepositBase;
+  late final BigInt friendDepositFactor = dummyQuantusApi.constant.recovery.friendDepositFactor;
+  late final int maxFriends = dummyQuantusApi.constant.recovery.maxFriends;
+  late final BigInt recoveryDeposit = dummyQuantusApi.constant.recovery.recoveryDeposit;
 
   /// Create a recovery configuration for an account
   /// This makes the account recoverable by trusted friends

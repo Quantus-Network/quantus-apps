@@ -28,7 +28,18 @@ class HighSecurityService {
     String guardianAccountId,
     Duration safeguardDuration,
   ) async {
-    return _reversibleTransfersService.getHighSecuritySetupFee(account, guardianAccountId, safeguardDuration);
+    final transactionFee = await _reversibleTransfersService.getHighSecuritySetupFee(
+      account,
+      guardianAccountId,
+      safeguardDuration,
+    );
+    final recoveryPalletFee = RecoveryService().configDepositBase + RecoveryService().friendDepositFactor;
+
+    return ExtrinsicFeeData(
+      fee: transactionFee.fee + recoveryPalletFee,
+      blockHash: transactionFee.blockHash,
+      blockNumber: transactionFee.blockNumber,
+    );
   }
 
   Future<bool> isHighSecurity(Account account) async {
