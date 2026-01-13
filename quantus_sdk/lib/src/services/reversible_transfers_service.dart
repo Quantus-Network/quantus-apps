@@ -27,30 +27,6 @@ class ReversibleTransfersService {
 
   final SubstrateService _substrateService = SubstrateService();
 
-  /// Enable reversibility for the calling account with specified delay and policy
-  /// Used for theft deterrence - enables all future transfers to be reversible
-  Future<Uint8List> setHighSecurity({
-    required Account account,
-    required String guardianAccountId,
-    required qp.BlockNumberOrTimestamp delay,
-  }) async {
-    print('Not implemented - add reverser to params');
-    try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-
-      // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
-        delay: delay,
-        interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
-      );
-
-      // Submit the transaction using substrate service
-      return _substrateService.submitExtrinsic(account, call);
-    } catch (e) {
-      throw Exception('Failed to enable reversibility: $e');
-    }
-  }
-
   /// Schedule a reversible transfer using account's default settings
   Future<Uint8List> scheduleReversibleTransfer({
     required Account account,
@@ -183,37 +159,6 @@ class ReversibleTransfersService {
     }
   }
 
-  /// Check if account has reversibility enabled
-  Future<bool> isHighSecurity(String address) async {
-    try {
-      final config = await getHighSecurityConfig(address);
-      return config != null;
-    } catch (e) {
-      throw Exception('Failed to check reversibility status: $e');
-    }
-  }
-
-  /// Check if account is a guardian (interceptor) for any accounts
-  Future<bool> isGuardian(String address) async {
-    return (await getInterceptedAccounts(address)).isNotEmpty;
-  }
-
-  /// Get list of accounts that the given account is a guardian (interceptor) for
-  Future<List<String>> getInterceptedAccounts(String guardianAddress) async {
-    try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: guardianAddress);
-      final interceptedAccounts = await resonanceApi.query.reversibleTransfers.interceptorIndex(accountId);
-      return interceptedAccounts.map((id) {
-        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
-        print('intercepted account: $address');
-        return address;
-      }).toList();
-    } catch (e) {
-      throw Exception('Failed to get intercepted accounts: $e');
-    }
-  }
-
   /// Get all pending transfers for an account by querying storage
   Future<List<PendingTransfer>> getAccountPendingTransfers(String address) async {
     try {
@@ -260,6 +205,67 @@ class ReversibleTransfersService {
       };
     } catch (e) {
       throw Exception('Failed to get reversible transfers constants: $e');
+    }
+  }
+
+  // ==============================================================================
+  // High security accounts
+  // ==============================================================================
+
+  // Set the account has a high security account with a guardian
+  Future<Uint8List> setHighSecurity({
+    required Account account,
+    required String guardianAccountId,
+    required qp.BlockNumberOrTimestamp delay,
+  }) async {
+    print('setHighSecurity: $account, $guardianAccountId, $delay');
+    try {
+      final resonanceApi = Schrodinger(_substrateService.provider!);
+
+      // Create the call
+      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
+        delay: delay,
+        interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
+      );
+
+      // Submit the transaction using substrate service
+      return _substrateService.submitExtrinsic(account, call);
+    } catch (e) {
+      throw Exception('Failed to enable reversibility: $e');
+    }
+  }
+
+  Future<bool> isHighSecurity(String address) async {
+    print('isHighSecurity: $address');
+    try {
+      final config = await getHighSecurityConfig(address);
+      return config != null;
+    } catch (e) {
+      throw Exception('Failed to check reversibility status: $e');
+    }
+  }
+
+  /// Check if account is a guardian (interceptor) for any accounts
+  Future<bool> isGuardian(String address) async {
+    print('isGuardian: $address');
+    return (await getInterceptedAccounts(address)).isNotEmpty;
+  }
+
+  /// Get list of accounts that the given account is a guardian (interceptor) for
+  Future<List<String>> getInterceptedAccounts(String guardianAddress) async {
+    print('getInterceptedAccounts: $guardianAddress');
+
+    try {
+      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final accountId = crypto.ss58ToAccountId(s: guardianAddress);
+      final interceptedAccounts = await resonanceApi.query.reversibleTransfers.interceptorIndex(accountId);
+      return interceptedAccounts.map((id) {
+        final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
+        print('intercepted account: $address');
+        return address;
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to get intercepted accounts: $e');
     }
   }
 
