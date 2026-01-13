@@ -38,9 +38,9 @@ class BalancesService {
   }
 
   Balances getBalanceTransferCall(String targetAddress, BigInt amount) {
-    final resonanceApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Schrodinger(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));
-    final runtimeCall = resonanceApi.tx.balances.transferAllowDeath(dest: multiDest, value: amount);
+    final runtimeCall = quantusApi.tx.balances.transferAllowDeath(dest: multiDest, value: amount);
     return runtimeCall;
   }
 }

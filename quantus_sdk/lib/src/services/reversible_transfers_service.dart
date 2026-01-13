@@ -32,11 +32,11 @@ class ReversibleTransfersService {
     required BigInt amount,
   }) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
       // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.scheduleTransfer(dest: multiDest, amount: amount);
+      final call = quantusApi.tx.reversibleTransfers.scheduleTransfer(dest: multiDest, amount: amount);
       call.hashCode;
 
       // Submit the transaction using substrate service
@@ -78,10 +78,10 @@ class ReversibleTransfersService {
     BigInt amount,
     qp.BlockNumberOrTimestamp delay,
   ) {
-    final resonanceApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Schrodinger(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recipientAddress));
 
-    final call = resonanceApi.tx.reversibleTransfers.scheduleTransferWithDelay(
+    final call = quantusApi.tx.reversibleTransfers.scheduleTransferWithDelay(
       dest: multiDest,
       amount: amount,
       delay: delay,
@@ -110,10 +110,10 @@ class ReversibleTransfersService {
   /// Cancel a pending reversible transaction (theft deterrence - reverse a transaction)
   Future<Uint8List> cancelReversibleTransfer({required Account account, required H256 transactionId}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
 
       // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.cancel(txId: transactionId);
+      final call = quantusApi.tx.reversibleTransfers.cancel(txId: transactionId);
 
       // Submit the transaction using substrate service
       return _substrateService.submitExtrinsic(account, call);
@@ -126,10 +126,10 @@ class ReversibleTransfersService {
   Future<HighSecurityAccountData?> getHighSecurityConfig(String address) async {
     print('getHighSecurityConfig: $address');
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
-      return await resonanceApi.query.reversibleTransfers.highSecurityAccounts(accountId);
+      return await quantusApi.query.reversibleTransfers.highSecurityAccounts(accountId);
     } catch (e) {
       throw Exception('Failed to get account reversibility config: $e');
     }
@@ -138,9 +138,9 @@ class ReversibleTransfersService {
   /// Query pending transfer details
   Future<PendingTransfer?> getPendingTransfer(H256 transactionId) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
 
-      return await resonanceApi.query.reversibleTransfers.pendingTransfers(transactionId);
+      return await quantusApi.query.reversibleTransfers.pendingTransfers(transactionId);
     } catch (e) {
       throw Exception('Failed to get pending transfer: $e');
     }
@@ -149,10 +149,10 @@ class ReversibleTransfersService {
   /// Get account's pending transaction index
   Future<int> getAccountPendingIndex(String address) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
-      return await resonanceApi.query.reversibleTransfers.accountPendingIndex(accountId);
+      return await quantusApi.query.reversibleTransfers.accountPendingIndex(accountId);
     } catch (e) {
       throw Exception('Failed to get account pending index: $e');
     }
@@ -193,8 +193,8 @@ class ReversibleTransfersService {
   /// Get constants related to reversible transfers
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-      final constants = resonanceApi.constant.reversibleTransfers;
+      final quantusApi = Schrodinger(_substrateService.provider!);
+      final constants = quantusApi.constant.reversibleTransfers;
 
       return {
         'maxPendingPerAccount': constants.maxPendingPerAccount,
@@ -221,11 +221,11 @@ class ReversibleTransfersService {
       'setHighSecurity: ${account.accountId}, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
     );
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: account.accountId);
+      final quantusApi = Schrodinger(_substrateService.provider!);
+      final guardianId = crypto.ss58ToAccountId(s: guardianAccountId);
 
       // Create the call
-      final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: accountId);
+      final call = quantusApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: guardianId);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(account, call);
@@ -256,9 +256,9 @@ class ReversibleTransfersService {
     print('getInterceptedAccounts: $guardianAddress');
 
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: guardianAddress);
-      final interceptedAccounts = await resonanceApi.query.reversibleTransfers.interceptorIndex(accountId);
+      final interceptedAccounts = await quantusApi.query.reversibleTransfers.interceptorIndex(accountId);
       return interceptedAccounts.map((id) {
         final address = AddressExtension.ss58AddressFromBytes(Uint8List.fromList(id));
         print('intercepted account: $address');
@@ -275,8 +275,8 @@ class ReversibleTransfersService {
     Duration safeguardDuration,
   ) async {
     final delay = safeguardDuration.qpTimestamp;
-    final resonanceApi = Schrodinger(_substrateService.provider!);
-    final call = resonanceApi.tx.reversibleTransfers.setHighSecurity(
+    final quantusApi = Schrodinger(_substrateService.provider!);
+    final call = quantusApi.tx.reversibleTransfers.setHighSecurity(
       delay: delay,
       interceptor: crypto.ss58ToAccountId(s: guardianAccountId),
     );

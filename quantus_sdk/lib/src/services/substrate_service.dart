@@ -72,8 +72,8 @@ class SubstrateService {
 
       final accountInfo = await _rpcEndpointService.rpcTask((uri) async {
         final provider = Provider.fromUri(uri);
-        final resonanceApi = Schrodinger(provider);
-        return await resonanceApi.query.system.account(accountID);
+        final quantusApi = Schrodinger(provider);
+        return await quantusApi.query.system.account(accountID);
       });
 
       print('user balance $address: ${accountInfo.data.free}');

@@ -28,11 +28,11 @@ class RecoveryService {
     required int delayPeriod,
   }) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final friends = friendAddresses.map((addr) => crypto.ss58ToAccountId(s: addr)).toList();
 
       // Create the call
-      final call = resonanceApi.tx.recovery.createRecovery(
+      final call = quantusApi.tx.recovery.createRecovery(
         friends: friends,
         threshold: threshold,
         delayPeriod: delayPeriod,
@@ -48,11 +48,11 @@ class RecoveryService {
   /// Initiate recovery process for a lost account
   Future<Uint8List> initiateRecovery({required Account rescuerAccount, required String lostAccountAddress}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
 
       // Create the call
-      final call = resonanceApi.tx.recovery.initiateRecovery(account: lostAccount);
+      final call = quantusApi.tx.recovery.initiateRecovery(account: lostAccount);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
@@ -68,12 +68,12 @@ class RecoveryService {
     required String rescuerAddress,
   }) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
       final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
 
       // Create the call
-      final call = resonanceApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
+      final call = quantusApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(friendAccount, call);
@@ -85,11 +85,11 @@ class RecoveryService {
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
   Future<Uint8List> claimRecovery({required Account rescuerAccount, required String lostAccountAddress}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
 
       // Create the call
-      final call = resonanceApi.tx.recovery.claimRecovery(account: lostAccount);
+      final call = quantusApi.tx.recovery.claimRecovery(account: lostAccount);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
@@ -101,11 +101,11 @@ class RecoveryService {
   /// Close an active recovery process (called by the lost account owner)
   Future<Uint8List> closeRecovery({required Account lostAccount, required String rescuerAddress}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
 
       // Create the call
-      final call = resonanceApi.tx.recovery.closeRecovery(rescuer: rescuer);
+      final call = quantusApi.tx.recovery.closeRecovery(rescuer: rescuer);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(lostAccount, call);
@@ -117,10 +117,10 @@ class RecoveryService {
   /// Remove recovery configuration from account
   Future<Uint8List> removeRecoveryConfig({required Account senderAccount}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
 
       // Create the call
-      final call = resonanceApi.tx.recovery.removeRecovery();
+      final call = quantusApi.tx.recovery.removeRecovery();
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(senderAccount, call);
@@ -136,13 +136,13 @@ class RecoveryService {
     required RuntimeCall call,
   }) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: recoveredAccountAddress),
       );
 
       // Create the call
-      final proxyCall = resonanceApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
+      final proxyCall = quantusApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, proxyCall);
@@ -154,13 +154,13 @@ class RecoveryService {
   /// Cancel the ability to use a recovered account
   Future<Uint8List> cancelRecovered({required Account rescuerAccount, required String recoveredAccountAddress}) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: recoveredAccountAddress),
       );
 
       // Create the call
-      final call = resonanceApi.tx.recovery.cancelRecovered(account: recoveredAccount);
+      final call = quantusApi.tx.recovery.cancelRecovered(account: recoveredAccount);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
@@ -172,10 +172,10 @@ class RecoveryService {
   /// Query recovery configuration for an account
   Future<RecoveryConfig?> getRecoveryConfig(String address) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
-      return await resonanceApi.query.recovery.recoverable(accountId);
+      return await quantusApi.query.recovery.recoverable(accountId);
     } catch (e) {
       throw Exception('Failed to get recovery config: $e');
     }
@@ -184,11 +184,11 @@ class RecoveryService {
   /// Query active recovery process
   Future<ActiveRecovery?> getActiveRecovery(String lostAccountAddress, String rescuerAddress) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
       final rescuerId = crypto.ss58ToAccountId(s: rescuerAddress);
 
-      return await resonanceApi.query.recovery.activeRecoveries(lostAccountId, rescuerId);
+      return await quantusApi.query.recovery.activeRecoveries(lostAccountId, rescuerId);
     } catch (e) {
       throw Exception('Failed to get active recovery: $e');
     }
@@ -197,10 +197,10 @@ class RecoveryService {
   /// Check if an account can act as proxy for a recovered account
   Future<String?> getProxyRecoveredAccount(String proxyAddress) async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Schrodinger(_substrateService.provider!);
       final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
-      final recoveredAccountId = await resonanceApi.query.recovery.proxy(proxyId);
+      final recoveredAccountId = await quantusApi.query.recovery.proxy(proxyId);
       return recoveredAccountId != null
           ? crypto.toAccountId(
               obj: crypto.Keypair(publicKey: Uint8List.fromList(recoveredAccountId), secretKey: Uint8List(0)),
@@ -255,8 +255,8 @@ class RecoveryService {
   /// Get recovery constants
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final resonanceApi = Schrodinger(_substrateService.provider!);
-      final constants = resonanceApi.constant.recovery;
+      final quantusApi = Schrodinger(_substrateService.provider!);
+      final constants = quantusApi.constant.recovery;
 
       return {
         'configDepositBase': constants.configDepositBase,
@@ -271,10 +271,10 @@ class RecoveryService {
 
   /// Helper to create a balance transfer call for recovered account
   Balances createBalanceTransferCall(String recipientAddress, BigInt amount) {
-    final resonanceApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Schrodinger(_substrateService.provider!);
     final accountID = crypto.ss58ToAccountId(s: recipientAddress);
     final dest = const multi_address.$MultiAddress().id(accountID);
-    final call = resonanceApi.tx.balances.transferAllowDeath(dest: dest, value: amount);
+    final call = quantusApi.tx.balances.transferAllowDeath(dest: dest, value: amount);
     return call;
   }
 
