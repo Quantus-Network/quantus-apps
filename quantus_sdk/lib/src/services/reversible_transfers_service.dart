@@ -218,14 +218,14 @@ class ReversibleTransfersService {
     required qp.Timestamp delay,
   }) async {
     print(
-      'setHighSecurity: ${account.accountId}, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
+      'X setHighSecurity: ${account.accountId}, $guardianAccountId, ${delay.value0} ms -> ${DurationToTimestampExtension.fromQpTimestamp(delay)}',
     );
     try {
       final quantusApi = Schrodinger(_substrateService.provider!);
-      final guardianId = crypto.ss58ToAccountId(s: guardianAccountId);
+      final guardianAccountId32 = crypto.ss58ToAccountId(s: guardianAccountId);
 
       // Create the call
-      final call = quantusApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: guardianId);
+      final call = quantusApi.tx.reversibleTransfers.setHighSecurity(delay: delay, interceptor: guardianAccountId32);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(account, call);
