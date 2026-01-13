@@ -26,7 +26,7 @@ class _HighSecuritySummaryWizardState extends ConsumerState<HighSecuritySummaryW
   Widget build(BuildContext context) {
     final formData = ref.read(highSecurityFormProvider);
 
-    final guardianChecksumFuture = _humanReadableChecksumService.getHumanReadableName(formData.guardianAddress);
+    final guardianChecksumFuture = _humanReadableChecksumService.getHumanReadableName(formData.guardianAccountId);
 
     return ScaffoldBase(
       appBar: WalletAppBar.simpleWithBackButton(title: 'Summary'),
@@ -69,7 +69,7 @@ class _HighSecuritySummaryWizardState extends ConsumerState<HighSecuritySummaryW
           SummaryCard(
             type: SummaryType.guardian,
             checksumFuture: guardianChecksumFuture,
-            address: AddressFormattingService.splitIntoChunks(formData.guardianAddress).join(' '),
+            address: AddressFormattingService.splitIntoChunks(formData.guardianAccountId).join(' '),
           ),
           const Expanded(child: SizedBox()),
           Row(

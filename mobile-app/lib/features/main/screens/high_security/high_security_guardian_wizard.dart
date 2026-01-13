@@ -51,7 +51,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
   @override
   Widget build(BuildContext context) {
     final formNotifier = ref.read(highSecurityFormProvider.notifier);
-    final guardianAddress = ref.watch(highSecurityFormProvider).guardianAddress;
+    final guardianAddress = ref.watch(highSecurityFormProvider).guardianAccountId;
 
     final bool isDisabled = guardianAddress.isEmpty;
 

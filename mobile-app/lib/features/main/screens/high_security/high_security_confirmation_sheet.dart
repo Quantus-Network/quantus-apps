@@ -32,9 +32,16 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
     });
 
     final formData = ref.read(highSecurityFormProvider);
+
+    print('delay: ${formData.safeguardWindowSeconds}');
+
     final activeAccount = (await _settingsService.getActiveAccount())!;
 
-    await _highSecurityService.setupHighSecurityAccount(activeAccount, formData);
+    await _highSecurityService.setupHighSecurityAccount(
+      activeAccount,
+      formData.guardianAccountId,
+      Duration(seconds: formData.safeguardWindowSeconds),
+    );
 
     setState(() {
       _isSubmitting = false;

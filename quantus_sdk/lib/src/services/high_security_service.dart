@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/extensions/duration_extension.dart';
 
 class HighSecurityService {
   static final HighSecurityService _instance = HighSecurityService._internal();
@@ -9,17 +10,14 @@ class HighSecurityService {
 
   // ignore: unused_field
   final SubstrateService _substrateService = SubstrateService();
+  final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
-  Future<void> setupHighSecurityAccount(Account account, HighSecurityData formData) async {
-    try {
-      await Future.delayed(const Duration(seconds: 2));
-      // Submit the extrinsic and return its result
-      // return await _substrateService.submitExtrinsic(account, runtimeCall);
-    } catch (e, stackTrace) {
-      print('Failed to setup: $e');
-      print('Failed to setup: $stackTrace');
-      throw Exception('Failed to setup: $e');
-    }
+  Future<void> setupHighSecurityAccount(Account account, String guardianAccountId, Duration safeguardDuration) async {
+    _reversibleTransfersService.setHighSecurity(
+      account: account,
+      guardianAccountId: guardianAccountId,
+      delay: safeguardDuration.qpTimestamp,
+    );
   }
 
   // TODO replace with actual fee calculation
