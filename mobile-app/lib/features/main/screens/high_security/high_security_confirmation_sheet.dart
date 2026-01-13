@@ -37,7 +37,7 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
 
     final activeAccount = (await _settingsService.getActiveAccount())!;
 
-    await _highSecurityService.setupHighSecurityAccount(
+    await _highSecurityService.setHighSecurity(
       activeAccount,
       highSecurityData.guardianAccountId,
       highSecurityData.safeguardWindow,
