@@ -299,15 +299,6 @@ class XIcon extends StatelessWidget {
   }
 }
 
-// class _AddReminderIcon extends StatelessWidget {
-//   const _AddReminderIcon();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Transform.rotate(angle: 0.79, child: const SizedBox(width: 12, height: 8, child: Stack()));
-//   }
-// }
-
 class _StatusCard extends StatelessWidget {
   const _StatusCard();
 
