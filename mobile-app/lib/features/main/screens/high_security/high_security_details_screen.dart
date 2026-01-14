@@ -167,7 +167,7 @@ class _SafeguardWindowSection extends StatelessWidget {
   }
 }
 
-// TODO: add a reminder service - implement this
+// TO-DO: add a reminder service - implement this
 // ignore: unused_element
 class _RemindersSection extends StatelessWidget {
   final List<String> reminders;
