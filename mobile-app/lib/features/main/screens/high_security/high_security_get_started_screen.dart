@@ -12,17 +12,6 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/high_security_form_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-final highSecurityEstimatedFeeProvider = FutureProvider.family<BigInt, Account>((ref, account) async {
-  final highSecurityService = ref.read(highSecurityServiceProvider);
-  // Invent fake parameters for estimation
-  final feeData = await highSecurityService.getHighSecuritySetupFee(
-    account,
-    account.accountId, // Use self as dummy guardian
-    const Duration(days: 14), // Fake duration
-  );
-  return feeData.fee;
-});
-
 class HighSecurityGetStartedScreen extends ConsumerWidget {
   final Account account;
   const HighSecurityGetStartedScreen({super.key, required this.account});

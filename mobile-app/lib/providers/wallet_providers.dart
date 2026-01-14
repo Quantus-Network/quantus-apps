@@ -117,9 +117,19 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
   return totalOutgoing;
 }
 
+// fetch high security config
 final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
   final service = ref.watch(highSecurityServiceProvider);
   return service.getHighSecurityConfig(account.accountId);
 });
 
-// Deprecated legacy history providers removed in favor of unified pagination
+final highSecurityEstimatedFeeProvider = FutureProvider.family<BigInt, Account>((ref, account) async {
+  final highSecurityService = ref.read(highSecurityServiceProvider);
+  // Invent fake parameters for estimation
+  final feeData = await highSecurityService.getHighSecuritySetupFee(
+    account,
+    account.accountId, // Use self as dummy guardian
+    const Duration(days: 14), // Fake duration
+  );
+  return feeData.fee;
+});
