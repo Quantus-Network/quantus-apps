@@ -119,7 +119,7 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
 
 // fetch high security config
 final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
-  final service = ref.watch(highSecurityServiceProvider);
+  final service = ref.read(highSecurityServiceProvider);
   return service.getHighSecurityConfig(account.accountId);
 });
 
