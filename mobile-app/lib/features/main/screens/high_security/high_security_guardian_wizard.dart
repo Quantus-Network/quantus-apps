@@ -168,11 +168,6 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                 );
               },
             ),
-          // const SizedBox(height: 13),
-          // Text(
-          //   'The harder the Guardian account is to access the higher the security. An address on a cold storage wallet is the most secure.',
-          //   style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textMuted),
-          // ),
           const Expanded(child: SizedBox()),
           Row(
             spacing: 36,
