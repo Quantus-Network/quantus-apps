@@ -33,26 +33,12 @@ abstract class OldRequestStatus {
 class $OldRequestStatus {
   const $OldRequestStatus();
 
-  Unrequested unrequested({
-    required _i3.Tuple2<_i4.AccountId32, BigInt> deposit,
-    required int len,
-  }) {
-    return Unrequested(
-      deposit: deposit,
-      len: len,
-    );
+  Unrequested unrequested({required _i3.Tuple2<_i4.AccountId32, BigInt> deposit, required int len}) {
+    return Unrequested(deposit: deposit, len: len);
   }
 
-  Requested requested({
-    _i3.Tuple2<_i4.AccountId32, BigInt>? deposit,
-    required int count,
-    int? len,
-  }) {
-    return Requested(
-      deposit: deposit,
-      count: count,
-      len: len,
-    );
+  Requested requested({_i3.Tuple2<_i4.AccountId32, BigInt>? deposit, required int count, int? len}) {
+    return Requested(deposit: deposit, count: count, len: len);
   }
 }
 
@@ -73,10 +59,7 @@ class $OldRequestStatusCodec with _i1.Codec<OldRequestStatus> {
   }
 
   @override
-  void encodeTo(
-    OldRequestStatus value,
-    _i1.Output output,
-  ) {
+  void encodeTo(OldRequestStatus value, _i1.Output output) {
     switch (value.runtimeType) {
       case Unrequested:
         (value as Unrequested).encodeTo(output);
@@ -85,8 +68,7 @@ class $OldRequestStatusCodec with _i1.Codec<OldRequestStatus> {
         (value as Requested).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'OldRequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('OldRequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -98,17 +80,13 @@ class $OldRequestStatusCodec with _i1.Codec<OldRequestStatus> {
       case Requested:
         return (value as Requested)._sizeHint();
       default:
-        throw Exception(
-            'OldRequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('OldRequestStatus: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class Unrequested extends OldRequestStatus {
-  const Unrequested({
-    required this.deposit,
-    required this.len,
-  });
+  const Unrequested({required this.deposit, required this.len});
 
   factory Unrequested._decode(_i1.Input input) {
     return Unrequested(
@@ -128,73 +106,46 @@ class Unrequested extends OldRequestStatus {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Unrequested': {
-          'deposit': [
-            deposit.value0.toList(),
-            deposit.value1,
-          ],
-          'len': len,
-        }
-      };
+    'Unrequested': {
+      'deposit': [deposit.value0.toList(), deposit.value1],
+      'len': len,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i3.Tuple2Codec<_i4.AccountId32, BigInt>(
-          _i4.AccountId32Codec(),
-          _i1.U128Codec.codec,
-        ).sizeHint(deposit);
+    size =
+        size +
+        const _i3.Tuple2Codec<_i4.AccountId32, BigInt>(_i4.AccountId32Codec(), _i1.U128Codec.codec).sizeHint(deposit);
     size = size + _i1.U32Codec.codec.sizeHint(len);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
     const _i3.Tuple2Codec<_i4.AccountId32, BigInt>(
       _i4.AccountId32Codec(),
       _i1.U128Codec.codec,
-    ).encodeTo(
-      deposit,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      len,
-      output,
-    );
+    ).encodeTo(deposit, output);
+    _i1.U32Codec.codec.encodeTo(len, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Unrequested && other.deposit == deposit && other.len == len;
+      identical(this, other) || other is Unrequested && other.deposit == deposit && other.len == len;
 
   @override
-  int get hashCode => Object.hash(
-        deposit,
-        len,
-      );
+  int get hashCode => Object.hash(deposit, len);
 }
 
 class Requested extends OldRequestStatus {
-  const Requested({
-    this.deposit,
-    required this.count,
-    this.len,
-  });
+  const Requested({this.deposit, required this.count, this.len});
 
   factory Requested._decode(_i1.Input input) {
     return Requested(
       deposit: const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, BigInt>>(
-          _i3.Tuple2Codec<_i4.AccountId32, BigInt>(
-        _i4.AccountId32Codec(),
-        _i1.U128Codec.codec,
-      )).decode(input),
+        _i3.Tuple2Codec<_i4.AccountId32, BigInt>(_i4.AccountId32Codec(), _i1.U128Codec.codec),
+      ).decode(input),
       count: _i1.U32Codec.codec.decode(input),
       len: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
     );
@@ -211,67 +162,39 @@ class Requested extends OldRequestStatus {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Requested': {
-          'deposit': [
-            deposit?.value0.toList(),
-            deposit?.value1,
-          ],
-          'count': count,
-          'len': len,
-        }
-      };
+    'Requested': {
+      'deposit': [deposit?.value0.toList(), deposit?.value1],
+      'count': count,
+      'len': len,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, BigInt>>(
-            _i3.Tuple2Codec<_i4.AccountId32, BigInt>(
-          _i4.AccountId32Codec(),
-          _i1.U128Codec.codec,
-        )).sizeHint(deposit);
+          _i3.Tuple2Codec<_i4.AccountId32, BigInt>(_i4.AccountId32Codec(), _i1.U128Codec.codec),
+        ).sizeHint(deposit);
     size = size + _i1.U32Codec.codec.sizeHint(count);
     size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(len);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
     const _i1.OptionCodec<_i3.Tuple2<_i4.AccountId32, BigInt>>(
-        _i3.Tuple2Codec<_i4.AccountId32, BigInt>(
-      _i4.AccountId32Codec(),
-      _i1.U128Codec.codec,
-    )).encodeTo(
-      deposit,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      count,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      len,
-      output,
-    );
+      _i3.Tuple2Codec<_i4.AccountId32, BigInt>(_i4.AccountId32Codec(), _i1.U128Codec.codec),
+    ).encodeTo(deposit, output);
+    _i1.U32Codec.codec.encodeTo(count, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(len, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Requested &&
-          other.deposit == deposit &&
-          other.count == count &&
-          other.len == len;
+      identical(this, other) ||
+      other is Requested && other.deposit == deposit && other.count == count && other.len == len;
 
   @override
-  int get hashCode => Object.hash(
-        deposit,
-        count,
-        len,
-      );
+  int get hashCode => Object.hash(deposit, count, len);
 }

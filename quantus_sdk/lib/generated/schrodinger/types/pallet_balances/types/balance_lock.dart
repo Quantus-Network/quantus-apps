@@ -7,11 +7,7 @@ import 'package:quiver/collection.dart' as _i4;
 import 'reasons.dart' as _i2;
 
 class BalanceLock {
-  const BalanceLock({
-    required this.id,
-    required this.amount,
-    required this.reasons,
-  });
+  const BalanceLock({required this.id, required this.amount, required this.reasons});
 
   factory BalanceLock.decode(_i1.Input input) {
     return codec.decode(input);
@@ -32,54 +28,25 @@ class BalanceLock {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id.toList(),
-        'amount': amount,
-        'reasons': reasons.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'id': id.toList(), 'amount': amount, 'reasons': reasons.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BalanceLock &&
-          _i4.listsEqual(
-            other.id,
-            id,
-          ) &&
-          other.amount == amount &&
-          other.reasons == reasons;
+      identical(this, other) ||
+      other is BalanceLock && _i4.listsEqual(other.id, id) && other.amount == amount && other.reasons == reasons;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        amount,
-        reasons,
-      );
+  int get hashCode => Object.hash(id, amount, reasons);
 }
 
 class $BalanceLockCodec with _i1.Codec<BalanceLock> {
   const $BalanceLockCodec();
 
   @override
-  void encodeTo(
-    BalanceLock obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(8).encodeTo(
-      obj.id,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
-    _i2.Reasons.codec.encodeTo(
-      obj.reasons,
-      output,
-    );
+  void encodeTo(BalanceLock obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(8).encodeTo(obj.id, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
+    _i2.Reasons.codec.encodeTo(obj.reasons, output);
   }
 
   @override

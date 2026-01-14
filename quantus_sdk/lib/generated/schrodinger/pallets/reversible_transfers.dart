@@ -5,8 +5,7 @@ import 'dart:typed_data' as _i8;
 import 'package:polkadart/polkadart.dart' as _i1;
 import 'package:polkadart/scale_codec.dart' as _i6;
 
-import '../types/pallet_reversible_transfers/high_security_account_data.dart'
-    as _i3;
+import '../types/pallet_reversible_transfers/high_security_account_data.dart' as _i3;
 import '../types/pallet_reversible_transfers/pallet/call.dart' as _i11;
 import '../types/pallet_reversible_transfers/pending_transfer.dart' as _i5;
 import '../types/primitive_types/h256.dart' as _i4;
@@ -21,57 +20,52 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<_i2.AccountId32, _i3.HighSecurityAccountData>
-      _highSecurityAccounts =
+  final _i1.StorageMap<_i2.AccountId32, _i3.HighSecurityAccountData> _highSecurityAccounts =
       const _i1.StorageMap<_i2.AccountId32, _i3.HighSecurityAccountData>(
-    prefix: 'ReversibleTransfers',
-    storage: 'HighSecurityAccounts',
-    valueCodec: _i3.HighSecurityAccountData.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'ReversibleTransfers',
+        storage: 'HighSecurityAccounts',
+        valueCodec: _i3.HighSecurityAccountData.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
   final _i1.StorageMap<_i4.H256, _i5.PendingTransfer> _pendingTransfers =
       const _i1.StorageMap<_i4.H256, _i5.PendingTransfer>(
-    prefix: 'ReversibleTransfers',
-    storage: 'PendingTransfers',
-    valueCodec: _i5.PendingTransfer.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i4.H256Codec()),
-  );
+        prefix: 'ReversibleTransfers',
+        storage: 'PendingTransfers',
+        valueCodec: _i5.PendingTransfer.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(_i4.H256Codec()),
+      );
 
-  final _i1.StorageMap<_i2.AccountId32, int> _accountPendingIndex =
-      const _i1.StorageMap<_i2.AccountId32, int>(
+  final _i1.StorageMap<_i2.AccountId32, int> _accountPendingIndex = const _i1.StorageMap<_i2.AccountId32, int>(
     prefix: 'ReversibleTransfers',
     storage: 'AccountPendingIndex',
     valueCodec: _i6.U32Codec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
   );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>
-      _pendingTransfersBySender =
+  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>> _pendingTransfersBySender =
       const _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>(
-    prefix: 'ReversibleTransfers',
-    storage: 'PendingTransfersBySender',
-    valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'ReversibleTransfers',
+        storage: 'PendingTransfersBySender',
+        valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>
-      _pendingTransfersByRecipient =
+  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>> _pendingTransfersByRecipient =
       const _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>(
-    prefix: 'ReversibleTransfers',
-    storage: 'PendingTransfersByRecipient',
-    valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'ReversibleTransfers',
+        storage: 'PendingTransfersByRecipient',
+        valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>
-      _interceptorIndex =
+  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>> _interceptorIndex =
       const _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>(
-    prefix: 'ReversibleTransfers',
-    storage: 'InterceptorIndex',
-    valueCodec: _i6.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'ReversibleTransfers',
+        storage: 'InterceptorIndex',
+        valueCodec: _i6.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
   final _i1.StorageValue<BigInt> _globalNonce = const _i1.StorageValue<BigInt>(
     prefix: 'ReversibleTransfers',
@@ -81,15 +75,9 @@ class Queries {
 
   /// Maps accounts to their chosen reversibility delay period (in milliseconds).
   /// Accounts present in this map have reversibility enabled.
-  _i7.Future<_i3.HighSecurityAccountData?> highSecurityAccounts(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i3.HighSecurityAccountData?> highSecurityAccounts(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _highSecurityAccounts.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _highSecurityAccounts.decodeValue(bytes);
     }
@@ -98,15 +86,9 @@ class Queries {
 
   /// Stores the details of pending transactions scheduled for delayed execution.
   /// Keyed by the unique transaction ID.
-  _i7.Future<_i5.PendingTransfer?> pendingTransfers(
-    _i4.H256 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<_i5.PendingTransfer?> pendingTransfers(_i4.H256 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfers.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _pendingTransfers.decodeValue(bytes);
     }
@@ -115,15 +97,9 @@ class Queries {
 
   /// Indexes pending transaction IDs per account for efficient lookup and cancellation.
   /// Also enforces the maximum pending transactions limit per account.
-  _i7.Future<int> accountPendingIndex(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<int> accountPendingIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _accountPendingIndex.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _accountPendingIndex.decodeValue(bytes);
     }
@@ -132,15 +108,9 @@ class Queries {
 
   /// Maps sender accounts to their list of pending transaction IDs.
   /// This allows users to query all their outgoing pending transfers.
-  _i7.Future<List<_i4.H256>> pendingTransfersBySender(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<_i4.H256>> pendingTransfersBySender(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfersBySender.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _pendingTransfersBySender.decodeValue(bytes);
     }
@@ -149,15 +119,9 @@ class Queries {
 
   /// Maps recipient accounts to their list of pending incoming transaction IDs.
   /// This allows users to query all their incoming pending transfers.
-  _i7.Future<List<_i4.H256>> pendingTransfersByRecipient(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<_i4.H256>> pendingTransfersByRecipient(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfersByRecipient.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _pendingTransfersByRecipient.decodeValue(bytes);
     }
@@ -167,15 +131,9 @@ class Queries {
   /// Maps interceptor accounts to the list of accounts they can intercept for.
   /// This allows the UI to efficiently query all accounts for which a given account is an
   /// interceptor.
-  _i7.Future<List<_i2.AccountId32>> interceptorIndex(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i7.Future<List<_i2.AccountId32>> interceptorIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _interceptorIndex.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _interceptorIndex.decodeValue(bytes);
     }
@@ -185,10 +143,7 @@ class Queries {
   /// Global nonce for generating unique transaction IDs.
   _i7.Future<BigInt> globalNonce({_i1.BlockHash? at}) async {
     final hashedKey = _globalNonce.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _globalNonce.decodeValue(bytes);
     }
@@ -201,56 +156,32 @@ class Queries {
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _highSecurityAccounts.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _highSecurityAccounts.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _highSecurityAccounts.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _highSecurityAccounts.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
   /// Stores the details of pending transactions scheduled for delayed execution.
   /// Keyed by the unique transaction ID.
-  _i7.Future<List<_i5.PendingTransfer?>> multiPendingTransfers(
-    List<_i4.H256> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _pendingTransfers.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i7.Future<List<_i5.PendingTransfer?>> multiPendingTransfers(List<_i4.H256> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _pendingTransfers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _pendingTransfers.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _pendingTransfers.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
 
   /// Indexes pending transaction IDs per account for efficient lookup and cancellation.
   /// Also enforces the maximum pending transactions limit per account.
-  _i7.Future<List<int>> multiAccountPendingIndex(
-    List<_i2.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _accountPendingIndex.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i7.Future<List<int>> multiAccountPendingIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _accountPendingIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _accountPendingIndex.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _accountPendingIndex.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => 0).toList() as List<int>); /* Default */
   }
@@ -261,19 +192,12 @@ class Queries {
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _pendingTransfersBySender.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _pendingTransfersBySender.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _pendingTransfersBySender.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _pendingTransfersBySender.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i4.H256>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
   }
 
   /// Maps recipient accounts to their list of pending incoming transaction IDs.
@@ -282,42 +206,24 @@ class Queries {
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys = keys
-        .map((key) => _pendingTransfersByRecipient.hashedKeyFor(key))
-        .toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _pendingTransfersByRecipient.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _pendingTransfersByRecipient.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _pendingTransfersByRecipient.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i4.H256>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
   }
 
   /// Maps interceptor accounts to the list of accounts they can intercept for.
   /// This allows the UI to efficiently query all accounts for which a given account is an
   /// interceptor.
-  _i7.Future<List<List<_i2.AccountId32>>> multiInterceptorIndex(
-    List<_i2.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _interceptorIndex.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i7.Future<List<List<_i2.AccountId32>>> multiInterceptorIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _interceptorIndex.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _interceptorIndex.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _interceptorIndex.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => []).toList()
-        as List<List<_i2.AccountId32>>); /* Default */
+    return (keys.map((key) => []).toList() as List<List<_i2.AccountId32>>); /* Default */
   }
 
   /// Returns the storage key for `highSecurityAccounts`.
@@ -419,10 +325,7 @@ class Txs {
     required _i10.BlockNumberOrTimestamp delay,
     required _i2.AccountId32 interceptor,
   }) {
-    return _i9.ReversibleTransfers(_i11.SetHighSecurity(
-      delay: delay,
-      interceptor: interceptor,
-    ));
+    return _i9.ReversibleTransfers(_i11.SetHighSecurity(delay: delay, interceptor: interceptor));
   }
 
   /// Cancel a pending reversible transaction scheduled by the caller.
@@ -440,14 +343,8 @@ class Txs {
   }
 
   /// Schedule a transaction for delayed execution.
-  _i9.ReversibleTransfers scheduleTransfer({
-    required _i12.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleTransfer(
-      dest: dest,
-      amount: amount,
-    ));
+  _i9.ReversibleTransfers scheduleTransfer({required _i12.MultiAddress dest, required BigInt amount}) {
+    return _i9.ReversibleTransfers(_i11.ScheduleTransfer(dest: dest, amount: amount));
   }
 
   /// Schedule a transaction for delayed execution with a custom, one-time delay.
@@ -461,11 +358,7 @@ class Txs {
     required BigInt amount,
     required _i10.BlockNumberOrTimestamp delay,
   }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleTransferWithDelay(
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    ));
+    return _i9.ReversibleTransfers(_i11.ScheduleTransferWithDelay(dest: dest, amount: amount, delay: delay));
   }
 
   /// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
@@ -475,11 +368,7 @@ class Txs {
     required _i12.MultiAddress dest,
     required BigInt amount,
   }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransfer(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-    ));
+    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransfer(assetId: assetId, dest: dest, amount: amount));
   }
 
   /// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
@@ -489,12 +378,9 @@ class Txs {
     required BigInt amount,
     required _i10.BlockNumberOrTimestamp delay,
   }) {
-    return _i9.ReversibleTransfers(_i11.ScheduleAssetTransferWithDelay(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    ));
+    return _i9.ReversibleTransfers(
+      _i11.ScheduleAssetTransferWithDelay(assetId: assetId, dest: dest, amount: amount, delay: delay),
+    );
   }
 }
 

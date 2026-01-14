@@ -35,14 +35,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  Vote vote({
-    required BigInt pollIndex,
-    required _i3.AccountVote vote,
-  }) {
-    return Vote(
-      pollIndex: pollIndex,
-      vote: vote,
-    );
+  Vote vote({required BigInt pollIndex, required _i3.AccountVote vote}) {
+    return Vote(pollIndex: pollIndex, vote: vote);
   }
 
   Delegate delegate({
@@ -51,48 +45,23 @@ class $Call {
     required _i5.Conviction conviction,
     required BigInt balance,
   }) {
-    return Delegate(
-      class_: class_,
-      to: to,
-      conviction: conviction,
-      balance: balance,
-    );
+    return Delegate(class_: class_, to: to, conviction: conviction, balance: balance);
   }
 
   Undelegate undelegate({required int class_}) {
     return Undelegate(class_: class_);
   }
 
-  Unlock unlock({
-    required int class_,
-    required _i4.MultiAddress target,
-  }) {
-    return Unlock(
-      class_: class_,
-      target: target,
-    );
+  Unlock unlock({required int class_, required _i4.MultiAddress target}) {
+    return Unlock(class_: class_, target: target);
   }
 
-  RemoveVote removeVote({
-    int? class_,
-    required int index,
-  }) {
-    return RemoveVote(
-      class_: class_,
-      index: index,
-    );
+  RemoveVote removeVote({int? class_, required int index}) {
+    return RemoveVote(class_: class_, index: index);
   }
 
-  RemoveOtherVote removeOtherVote({
-    required _i4.MultiAddress target,
-    required int class_,
-    required int index,
-  }) {
-    return RemoveOtherVote(
-      target: target,
-      class_: class_,
-      index: index,
-    );
+  RemoveOtherVote removeOtherVote({required _i4.MultiAddress target, required int class_, required int index}) {
+    return RemoveOtherVote(target: target, class_: class_, index: index);
   }
 }
 
@@ -121,10 +90,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Vote:
         (value as Vote).encodeTo(output);
@@ -145,8 +111,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as RemoveOtherVote).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -166,8 +131,7 @@ class $CallCodec with _i1.Codec<Call> {
       case RemoveOtherVote:
         return (value as RemoveOtherVote)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -182,16 +146,10 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// Weight: `O(R)` where R is the number of polls the voter has voted on.
 class Vote extends Call {
-  const Vote({
-    required this.pollIndex,
-    required this.vote,
-  });
+  const Vote({required this.pollIndex, required this.vote});
 
   factory Vote._decode(_i1.Input input) {
-    return Vote(
-      pollIndex: _i1.CompactBigIntCodec.codec.decode(input),
-      vote: _i3.AccountVote.codec.decode(input),
-    );
+    return Vote(pollIndex: _i1.CompactBigIntCodec.codec.decode(input), vote: _i3.AccountVote.codec.decode(input));
   }
 
   /// PollIndexOf<T, I>
@@ -202,11 +160,8 @@ class Vote extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'vote': {
-          'pollIndex': pollIndex,
-          'vote': vote.toJson(),
-        }
-      };
+    'vote': {'pollIndex': pollIndex, 'vote': vote.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -216,33 +171,17 @@ class Vote extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      pollIndex,
-      output,
-    );
-    _i3.AccountVote.codec.encodeTo(
-      vote,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(pollIndex, output);
+    _i3.AccountVote.codec.encodeTo(vote, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Vote && other.pollIndex == pollIndex && other.vote == vote;
+      identical(this, other) || other is Vote && other.pollIndex == pollIndex && other.vote == vote;
 
   @override
-  int get hashCode => Object.hash(
-        pollIndex,
-        vote,
-      );
+  int get hashCode => Object.hash(pollIndex, vote);
 }
 
 /// Delegate the voting power (with some given conviction) of the sending account for a
@@ -269,12 +208,7 @@ class Vote extends Call {
 /// Weight: `O(R)` where R is the number of polls the voter delegating to has
 ///  voted on. Weight is initially charged as if maximum votes, but is refunded later.
 class Delegate extends Call {
-  const Delegate({
-    required this.class_,
-    required this.to,
-    required this.conviction,
-    required this.balance,
-  });
+  const Delegate({required this.class_, required this.to, required this.conviction, required this.balance});
 
   factory Delegate._decode(_i1.Input input) {
     return Delegate(
@@ -299,13 +233,8 @@ class Delegate extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'delegate': {
-          'class': class_,
-          'to': to.toJson(),
-          'conviction': conviction.toJson(),
-          'balance': balance,
-        }
-      };
+    'delegate': {'class': class_, 'to': to.toJson(), 'conviction': conviction.toJson(), 'balance': balance},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -317,34 +246,16 @@ class Delegate extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      class_,
-      output,
-    );
-    _i4.MultiAddress.codec.encodeTo(
-      to,
-      output,
-    );
-    _i5.Conviction.codec.encodeTo(
-      conviction,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      balance,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U16Codec.codec.encodeTo(class_, output);
+    _i4.MultiAddress.codec.encodeTo(to, output);
+    _i5.Conviction.codec.encodeTo(conviction, output);
+    _i1.U128Codec.codec.encodeTo(balance, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Delegate &&
           other.class_ == class_ &&
           other.to == to &&
@@ -352,12 +263,7 @@ class Delegate extends Call {
           other.balance == balance;
 
   @override
-  int get hashCode => Object.hash(
-        class_,
-        to,
-        conviction,
-        balance,
-      );
+  int get hashCode => Object.hash(class_, to, conviction, balance);
 }
 
 /// Undelegate the voting power of the sending account for a particular class of polls.
@@ -386,8 +292,8 @@ class Undelegate extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'undelegate': {'class': class_}
-      };
+    'undelegate': {'class': class_},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -396,23 +302,12 @@ class Undelegate extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      class_,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U16Codec.codec.encodeTo(class_, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Undelegate && other.class_ == class_;
+  bool operator ==(Object other) => identical(this, other) || other is Undelegate && other.class_ == class_;
 
   @override
   int get hashCode => class_.hashCode;
@@ -428,16 +323,10 @@ class Undelegate extends Call {
 ///
 /// Weight: `O(R)` with R number of vote of target.
 class Unlock extends Call {
-  const Unlock({
-    required this.class_,
-    required this.target,
-  });
+  const Unlock({required this.class_, required this.target});
 
   factory Unlock._decode(_i1.Input input) {
-    return Unlock(
-      class_: _i1.U16Codec.codec.decode(input),
-      target: _i4.MultiAddress.codec.decode(input),
-    );
+    return Unlock(class_: _i1.U16Codec.codec.decode(input), target: _i4.MultiAddress.codec.decode(input));
   }
 
   /// ClassOf<T, I>
@@ -448,11 +337,8 @@ class Unlock extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'unlock': {
-          'class': class_,
-          'target': target.toJson(),
-        }
-      };
+    'unlock': {'class': class_, 'target': target.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -462,33 +348,17 @@ class Unlock extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      class_,
-      output,
-    );
-    _i4.MultiAddress.codec.encodeTo(
-      target,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.U16Codec.codec.encodeTo(class_, output);
+    _i4.MultiAddress.codec.encodeTo(target, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Unlock && other.class_ == class_ && other.target == target;
+      identical(this, other) || other is Unlock && other.class_ == class_ && other.target == target;
 
   @override
-  int get hashCode => Object.hash(
-        class_,
-        target,
-      );
+  int get hashCode => Object.hash(class_, target);
 }
 
 /// Remove a vote for a poll.
@@ -521,10 +391,7 @@ class Unlock extends Call {
 /// Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
 ///  Weight is calculated for the maximum number of vote.
 class RemoveVote extends Call {
-  const RemoveVote({
-    this.class_,
-    required this.index,
-  });
+  const RemoveVote({this.class_, required this.index});
 
   factory RemoveVote._decode(_i1.Input input) {
     return RemoveVote(
@@ -541,48 +408,28 @@ class RemoveVote extends Call {
 
   @override
   Map<String, Map<String, int?>> toJson() => {
-        'remove_vote': {
-          'class': class_,
-          'index': index,
-        }
-      };
+    'remove_vote': {'class': class_, 'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size =
-        size + const _i1.OptionCodec<int>(_i1.U16Codec.codec).sizeHint(class_);
+    size = size + const _i1.OptionCodec<int>(_i1.U16Codec.codec).sizeHint(class_);
     size = size + _i1.U32Codec.codec.sizeHint(index);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U16Codec.codec).encodeTo(
-      class_,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.OptionCodec<int>(_i1.U16Codec.codec).encodeTo(class_, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RemoveVote && other.class_ == class_ && other.index == index;
+      identical(this, other) || other is RemoveVote && other.class_ == class_ && other.index == index;
 
   @override
-  int get hashCode => Object.hash(
-        class_,
-        index,
-      );
+  int get hashCode => Object.hash(class_, index);
 }
 
 /// Remove a vote for a poll.
@@ -602,11 +449,7 @@ class RemoveVote extends Call {
 /// Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
 ///  Weight is calculated for the maximum number of vote.
 class RemoveOtherVote extends Call {
-  const RemoveOtherVote({
-    required this.target,
-    required this.class_,
-    required this.index,
-  });
+  const RemoveOtherVote({required this.target, required this.class_, required this.index});
 
   factory RemoveOtherVote._decode(_i1.Input input) {
     return RemoveOtherVote(
@@ -627,12 +470,8 @@ class RemoveOtherVote extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'remove_other_vote': {
-          'target': target.toJson(),
-          'class': class_,
-          'index': index,
-        }
-      };
+    'remove_other_vote': {'target': target.toJson(), 'class': class_, 'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -643,39 +482,17 @@ class RemoveOtherVote extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i4.MultiAddress.codec.encodeTo(
-      target,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      class_,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i4.MultiAddress.codec.encodeTo(target, output);
+    _i1.U16Codec.codec.encodeTo(class_, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RemoveOtherVote &&
-          other.target == target &&
-          other.class_ == class_ &&
-          other.index == index;
+      identical(this, other) ||
+      other is RemoveOtherVote && other.target == target && other.class_ == class_ && other.index == index;
 
   @override
-  int get hashCode => Object.hash(
-        target,
-        class_,
-        index,
-      );
+  int get hashCode => Object.hash(target, class_, index);
 }

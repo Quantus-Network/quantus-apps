@@ -4,10 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class DecidingStatus {
-  const DecidingStatus({
-    required this.since,
-    this.confirming,
-  });
+  const DecidingStatus({required this.since, this.confirming});
 
   factory DecidingStatus.decode(_i1.Input input) {
     return codec.decode(input);
@@ -25,44 +22,23 @@ class DecidingStatus {
     return codec.encode(this);
   }
 
-  Map<String, int?> toJson() => {
-        'since': since,
-        'confirming': confirming,
-      };
+  Map<String, int?> toJson() => {'since': since, 'confirming': confirming};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DecidingStatus &&
-          other.since == since &&
-          other.confirming == confirming;
+      identical(this, other) || other is DecidingStatus && other.since == since && other.confirming == confirming;
 
   @override
-  int get hashCode => Object.hash(
-        since,
-        confirming,
-      );
+  int get hashCode => Object.hash(since, confirming);
 }
 
 class $DecidingStatusCodec with _i1.Codec<DecidingStatus> {
   const $DecidingStatusCodec();
 
   @override
-  void encodeTo(
-    DecidingStatus obj,
-    _i1.Output output,
-  ) {
-    _i1.U32Codec.codec.encodeTo(
-      obj.since,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      obj.confirming,
-      output,
-    );
+  void encodeTo(DecidingStatus obj, _i1.Output output) {
+    _i1.U32Codec.codec.encodeTo(obj.since, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(obj.confirming, output);
   }
 
   @override
@@ -77,8 +53,7 @@ class $DecidingStatusCodec with _i1.Codec<DecidingStatus> {
   int sizeHint(DecidingStatus obj) {
     int size = 0;
     size = size + _i1.U32Codec.codec.sizeHint(obj.since);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.confirming);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.confirming);
     return size;
   }
 }

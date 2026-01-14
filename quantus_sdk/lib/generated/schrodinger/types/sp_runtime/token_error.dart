@@ -15,10 +15,7 @@ enum TokenError {
   notExpendable('NotExpendable', 8),
   blocked('Blocked', 9);
 
-  const TokenError(
-    this.variantName,
-    this.codecIndex,
-  );
+  const TokenError(this.variantName, this.codecIndex);
 
   factory TokenError.decode(_i1.Input input) {
     return codec.decode(input);
@@ -69,13 +66,7 @@ class $TokenErrorCodec with _i1.Codec<TokenError> {
   }
 
   @override
-  void encodeTo(
-    TokenError value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(TokenError value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

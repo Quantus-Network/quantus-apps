@@ -33,14 +33,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  SpendLocal spendLocal({
-    required BigInt amount,
-    required _i3.MultiAddress beneficiary,
-  }) {
-    return SpendLocal(
-      amount: amount,
-      beneficiary: beneficiary,
-    );
+  SpendLocal spendLocal({required BigInt amount, required _i3.MultiAddress beneficiary}) {
+    return SpendLocal(amount: amount, beneficiary: beneficiary);
   }
 
   RemoveApproval removeApproval({required BigInt proposalId}) {
@@ -53,12 +47,7 @@ class $Call {
     required _i3.MultiAddress beneficiary,
     int? validFrom,
   }) {
-    return Spend(
-      assetKind: assetKind,
-      amount: amount,
-      beneficiary: beneficiary,
-      validFrom: validFrom,
-    );
+    return Spend(assetKind: assetKind, amount: amount, beneficiary: beneficiary, validFrom: validFrom);
   }
 
   Payout payout({required int index}) {
@@ -99,10 +88,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case SpendLocal:
         (value as SpendLocal).encodeTo(output);
@@ -123,8 +109,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as VoidSpend).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -144,8 +129,7 @@ class $CallCodec with _i1.Codec<Call> {
       case VoidSpend:
         return (value as VoidSpend)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -168,10 +152,7 @@ class $CallCodec with _i1.Codec<Call> {
 ///
 /// Emits [`Event::SpendApproved`] if successful.
 class SpendLocal extends Call {
-  const SpendLocal({
-    required this.amount,
-    required this.beneficiary,
-  });
+  const SpendLocal({required this.amount, required this.beneficiary});
 
   factory SpendLocal._decode(_i1.Input input) {
     return SpendLocal(
@@ -188,11 +169,8 @@ class SpendLocal extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'spend_local': {
-          'amount': amount,
-          'beneficiary': beneficiary.toJson(),
-        }
-      };
+    'spend_local': {'amount': amount, 'beneficiary': beneficiary.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -202,35 +180,17 @@ class SpendLocal extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      beneficiary,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
+    _i3.MultiAddress.codec.encodeTo(beneficiary, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SpendLocal &&
-          other.amount == amount &&
-          other.beneficiary == beneficiary;
+      identical(this, other) || other is SpendLocal && other.amount == amount && other.beneficiary == beneficiary;
 
   @override
-  int get hashCode => Object.hash(
-        amount,
-        beneficiary,
-      );
+  int get hashCode => Object.hash(amount, beneficiary);
 }
 
 /// Force a previously approved proposal to be removed from the approval queue.
@@ -258,8 +218,7 @@ class RemoveApproval extends Call {
   const RemoveApproval({required this.proposalId});
 
   factory RemoveApproval._decode(_i1.Input input) {
-    return RemoveApproval(
-        proposalId: _i1.CompactBigIntCodec.codec.decode(input));
+    return RemoveApproval(proposalId: _i1.CompactBigIntCodec.codec.decode(input));
   }
 
   /// ProposalIndex
@@ -267,8 +226,8 @@ class RemoveApproval extends Call {
 
   @override
   Map<String, Map<String, BigInt>> toJson() => {
-        'remove_approval': {'proposalId': proposalId}
-      };
+    'remove_approval': {'proposalId': proposalId},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -277,23 +236,12 @@ class RemoveApproval extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(proposalId, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RemoveApproval && other.proposalId == proposalId;
+  bool operator ==(Object other) => identical(this, other) || other is RemoveApproval && other.proposalId == proposalId;
 
   @override
   int get hashCode => proposalId.hashCode;
@@ -326,12 +274,7 @@ class RemoveApproval extends Call {
 ///
 /// Emits [`Event::AssetSpendApproved`] if successful.
 class Spend extends Call {
-  const Spend({
-    required this.assetKind,
-    required this.amount,
-    required this.beneficiary,
-    this.validFrom,
-  });
+  const Spend({required this.assetKind, required this.amount, required this.beneficiary, this.validFrom});
 
   factory Spend._decode(_i1.Input input) {
     return Spend(
@@ -356,53 +299,29 @@ class Spend extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'spend': {
-          'assetKind': null,
-          'amount': amount,
-          'beneficiary': beneficiary.toJson(),
-          'validFrom': validFrom,
-        }
-      };
+    'spend': {'assetKind': null, 'amount': amount, 'beneficiary': beneficiary.toJson(), 'validFrom': validFrom},
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.NullCodec.codec.sizeHint(assetKind);
     size = size + _i1.CompactBigIntCodec.codec.sizeHint(amount);
     size = size + _i3.MultiAddress.codec.sizeHint(beneficiary);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(validFrom);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(validFrom);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.NullCodec.codec.encodeTo(
-      assetKind,
-      output,
-    );
-    _i1.CompactBigIntCodec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      beneficiary,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      validFrom,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.NullCodec.codec.encodeTo(assetKind, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(amount, output);
+    _i3.MultiAddress.codec.encodeTo(beneficiary, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(validFrom, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Spend &&
           other.assetKind == assetKind &&
           other.amount == amount &&
@@ -410,12 +329,7 @@ class Spend extends Call {
           other.validFrom == validFrom;
 
   @override
-  int get hashCode => Object.hash(
-        assetKind,
-        amount,
-        beneficiary,
-        validFrom,
-      );
+  int get hashCode => Object.hash(assetKind, amount, beneficiary, validFrom);
 }
 
 /// Claim a spend.
@@ -449,8 +363,8 @@ class Payout extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'payout': {'index': index}
-      };
+    'payout': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -459,23 +373,12 @@ class Payout extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Payout && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is Payout && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -512,8 +415,8 @@ class CheckStatus extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'check_status': {'index': index}
-      };
+    'check_status': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -522,23 +425,12 @@ class CheckStatus extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CheckStatus && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is CheckStatus && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -572,8 +464,8 @@ class VoidSpend extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'void_spend': {'index': index}
-      };
+    'void_spend': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -582,23 +474,12 @@ class VoidSpend extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VoidSpend && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is VoidSpend && other.index == index;
 
   @override
   int get hashCode => index.hashCode;

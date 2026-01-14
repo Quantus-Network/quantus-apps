@@ -72,10 +72,7 @@ class Tuple10Codec<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>
   final _i1.Codec<T9> codec9;
 
   @override
-  void encodeTo(
-    Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple,
-    _i1.Output output,
-  ) {
+  void encodeTo(Tuple10<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple, _i1.Output output) {
     codec0.encodeTo(tuple.value0, output);
     codec1.encodeTo(tuple.value1, output);
     codec2.encodeTo(tuple.value2, output);

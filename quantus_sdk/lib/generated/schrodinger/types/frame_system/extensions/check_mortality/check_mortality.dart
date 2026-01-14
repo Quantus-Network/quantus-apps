@@ -14,14 +14,8 @@ class CheckMortalityCodec with _i2.Codec<CheckMortality> {
   }
 
   @override
-  void encodeTo(
-    CheckMortality value,
-    _i2.Output output,
-  ) {
-    _i1.Era.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(CheckMortality value, _i2.Output output) {
+    _i1.Era.codec.encodeTo(value, output);
   }
 
   @override

@@ -4,11 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class Tally {
-  const Tally({
-    required this.ayes,
-    required this.nays,
-    required this.support,
-  });
+  const Tally({required this.ayes, required this.nays, required this.support});
 
   factory Tally.decode(_i1.Input input) {
     return codec.decode(input);
@@ -29,51 +25,24 @@ class Tally {
     return codec.encode(this);
   }
 
-  Map<String, BigInt> toJson() => {
-        'ayes': ayes,
-        'nays': nays,
-        'support': support,
-      };
+  Map<String, BigInt> toJson() => {'ayes': ayes, 'nays': nays, 'support': support};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Tally &&
-          other.ayes == ayes &&
-          other.nays == nays &&
-          other.support == support;
+      identical(this, other) || other is Tally && other.ayes == ayes && other.nays == nays && other.support == support;
 
   @override
-  int get hashCode => Object.hash(
-        ayes,
-        nays,
-        support,
-      );
+  int get hashCode => Object.hash(ayes, nays, support);
 }
 
 class $TallyCodec with _i1.Codec<Tally> {
   const $TallyCodec();
 
   @override
-  void encodeTo(
-    Tally obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.ayes,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.nays,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.support,
-      output,
-    );
+  void encodeTo(Tally obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.ayes, output);
+    _i1.U128Codec.codec.encodeTo(obj.nays, output);
+    _i1.U128Codec.codec.encodeTo(obj.support, output);
   }
 
   @override

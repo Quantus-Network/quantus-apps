@@ -42,14 +42,8 @@ class Txs {
   /// NOTE: Prior to version *12, this was called `as_limited_sub`.
   ///
   /// The dispatch origin for this call must be _Signed_.
-  _i1.Utility asDerivative({
-    required int index,
-    required _i1.RuntimeCall call,
-  }) {
-    return _i1.Utility(_i2.AsDerivative(
-      index: index,
-      call: call,
-    ));
+  _i1.Utility asDerivative({required int index, required _i1.RuntimeCall call}) {
+    return _i1.Utility(_i2.AsDerivative(index: index, call: call));
   }
 
   /// Send a batch of dispatch calls and atomically execute them.
@@ -75,14 +69,8 @@ class Txs {
   ///
   /// ## Complexity
   /// - O(1).
-  _i1.Utility dispatchAs({
-    required _i3.OriginCaller asOrigin,
-    required _i1.RuntimeCall call,
-  }) {
-    return _i1.Utility(_i2.DispatchAs(
-      asOrigin: asOrigin,
-      call: call,
-    ));
+  _i1.Utility dispatchAs({required _i3.OriginCaller asOrigin, required _i1.RuntimeCall call}) {
+    return _i1.Utility(_i2.DispatchAs(asOrigin: asOrigin, call: call));
   }
 
   /// Send a batch of dispatch calls.
@@ -108,14 +96,8 @@ class Txs {
   /// Root origin to specify the weight of the call.
   ///
   /// The dispatch origin for this call must be _Root_.
-  _i1.Utility withWeight({
-    required _i1.RuntimeCall call,
-    required _i4.Weight weight,
-  }) {
-    return _i1.Utility(_i2.WithWeight(
-      call: call,
-      weight: weight,
-    ));
+  _i1.Utility withWeight({required _i1.RuntimeCall call, required _i4.Weight weight}) {
+    return _i1.Utility(_i2.WithWeight(call: call, weight: weight));
   }
 
   /// Dispatch a fallback call in the event the main call fails to execute.
@@ -141,14 +123,8 @@ class Txs {
   /// ## Use Case
   /// - Some use cases might involve submitting a `batch` type call in either main, fallback
   ///  or both.
-  _i1.Utility ifElse({
-    required _i1.RuntimeCall main,
-    required _i1.RuntimeCall fallback,
-  }) {
-    return _i1.Utility(_i2.IfElse(
-      main: main,
-      fallback: fallback,
-    ));
+  _i1.Utility ifElse({required _i1.RuntimeCall main, required _i1.RuntimeCall fallback}) {
+    return _i1.Utility(_i2.IfElse(main: main, fallback: fallback));
   }
 
   /// Dispatches a function call with a provided origin.
@@ -156,14 +132,8 @@ class Txs {
   /// Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
   ///
   /// The dispatch origin for this call must be _Root_.
-  _i1.Utility dispatchAsFallible({
-    required _i3.OriginCaller asOrigin,
-    required _i1.RuntimeCall call,
-  }) {
-    return _i1.Utility(_i2.DispatchAsFallible(
-      asOrigin: asOrigin,
-      call: call,
-    ));
+  _i1.Utility dispatchAsFallible({required _i3.OriginCaller asOrigin, required _i1.RuntimeCall call}) {
+    return _i1.Utility(_i2.DispatchAsFallible(asOrigin: asOrigin, call: call));
   }
 }
 

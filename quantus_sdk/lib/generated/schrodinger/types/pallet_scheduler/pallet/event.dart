@@ -35,24 +35,12 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  Scheduled scheduled({
-    required _i3.BlockNumberOrTimestamp when,
-    required int index,
-  }) {
-    return Scheduled(
-      when: when,
-      index: index,
-    );
+  Scheduled scheduled({required _i3.BlockNumberOrTimestamp when, required int index}) {
+    return Scheduled(when: when, index: index);
   }
 
-  Canceled canceled({
-    required _i3.BlockNumberOrTimestamp when,
-    required int index,
-  }) {
-    return Canceled(
-      when: when,
-      index: index,
-    );
+  Canceled canceled({required _i3.BlockNumberOrTimestamp when, required int index}) {
+    return Canceled(when: when, index: index);
   }
 
   Dispatched dispatched({
@@ -60,11 +48,7 @@ class $Event {
     List<int>? id,
     required _i1.Result<dynamic, _i5.DispatchError> result,
   }) {
-    return Dispatched(
-      task: task,
-      id: id,
-      result: result,
-    );
+    return Dispatched(task: task, id: id, result: result);
   }
 
   RetrySet retrySet({
@@ -73,62 +57,30 @@ class $Event {
     required _i3.BlockNumberOrTimestamp period,
     required int retries,
   }) {
-    return RetrySet(
-      task: task,
-      id: id,
-      period: period,
-      retries: retries,
-    );
+    return RetrySet(task: task, id: id, period: period, retries: retries);
   }
 
-  RetryCancelled retryCancelled({
-    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
-    List<int>? id,
-  }) {
-    return RetryCancelled(
-      task: task,
-      id: id,
-    );
+  RetryCancelled retryCancelled({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
+    return RetryCancelled(task: task, id: id);
   }
 
-  CallUnavailable callUnavailable({
-    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
-    List<int>? id,
-  }) {
-    return CallUnavailable(
-      task: task,
-      id: id,
-    );
+  CallUnavailable callUnavailable({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
+    return CallUnavailable(task: task, id: id);
   }
 
-  PeriodicFailed periodicFailed({
-    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
-    List<int>? id,
-  }) {
-    return PeriodicFailed(
-      task: task,
-      id: id,
-    );
+  PeriodicFailed periodicFailed({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
+    return PeriodicFailed(task: task, id: id);
   }
 
-  RetryFailed retryFailed({
-    required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
-    List<int>? id,
-  }) {
-    return RetryFailed(
-      task: task,
-      id: id,
-    );
+  RetryFailed retryFailed({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
+    return RetryFailed(task: task, id: id);
   }
 
   PermanentlyOverweight permanentlyOverweight({
     required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task,
     List<int>? id,
   }) {
-    return PermanentlyOverweight(
-      task: task,
-      id: id,
-    );
+    return PermanentlyOverweight(task: task, id: id);
   }
 }
 
@@ -163,10 +115,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case Scheduled:
         (value as Scheduled).encodeTo(output);
@@ -196,8 +145,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as PermanentlyOverweight).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -223,24 +171,17 @@ class $EventCodec with _i1.Codec<Event> {
       case PermanentlyOverweight:
         return (value as PermanentlyOverweight)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// Scheduled some task.
 class Scheduled extends Event {
-  const Scheduled({
-    required this.when,
-    required this.index,
-  });
+  const Scheduled({required this.when, required this.index});
 
   factory Scheduled._decode(_i1.Input input) {
-    return Scheduled(
-      when: _i3.BlockNumberOrTimestamp.codec.decode(input),
-      index: _i1.U32Codec.codec.decode(input),
-    );
+    return Scheduled(when: _i3.BlockNumberOrTimestamp.codec.decode(input), index: _i1.U32Codec.codec.decode(input));
   }
 
   /// BlockNumberOrTimestampOf<T>
@@ -251,11 +192,8 @@ class Scheduled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Scheduled': {
-          'when': when.toJson(),
-          'index': index,
-        }
-      };
+    'Scheduled': {'when': when.toJson(), 'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -265,47 +203,25 @@ class Scheduled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      when,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(when, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Scheduled && other.when == when && other.index == index;
+      identical(this, other) || other is Scheduled && other.when == when && other.index == index;
 
   @override
-  int get hashCode => Object.hash(
-        when,
-        index,
-      );
+  int get hashCode => Object.hash(when, index);
 }
 
 /// Canceled some task.
 class Canceled extends Event {
-  const Canceled({
-    required this.when,
-    required this.index,
-  });
+  const Canceled({required this.when, required this.index});
 
   factory Canceled._decode(_i1.Input input) {
-    return Canceled(
-      when: _i3.BlockNumberOrTimestamp.codec.decode(input),
-      index: _i1.U32Codec.codec.decode(input),
-    );
+    return Canceled(when: _i3.BlockNumberOrTimestamp.codec.decode(input), index: _i1.U32Codec.codec.decode(input));
   }
 
   /// BlockNumberOrTimestampOf<T>
@@ -316,11 +232,8 @@ class Canceled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Canceled': {
-          'when': when.toJson(),
-          'index': index,
-        }
-      };
+    'Canceled': {'when': when.toJson(), 'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -330,42 +243,22 @@ class Canceled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      when,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(when, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Canceled && other.when == when && other.index == index;
+      identical(this, other) || other is Canceled && other.when == when && other.index == index;
 
   @override
-  int get hashCode => Object.hash(
-        when,
-        index,
-      );
+  int get hashCode => Object.hash(when, index);
 }
 
 /// Dispatched some task.
 class Dispatched extends Event {
-  const Dispatched({
-    required this.task,
-    this.id,
-    required this.result,
-  });
+  const Dispatched({required this.task, this.id, required this.result});
 
   factory Dispatched._decode(_i1.Input input) {
     return Dispatched(
@@ -392,26 +285,24 @@ class Dispatched extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Dispatched': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-          'result': result.toJson(),
-        }
-      };
+    'Dispatched': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+      'result': result.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
-    size = size +
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size =
+        size +
         const _i1.ResultCodec<dynamic, _i5.DispatchError>(
           _i1.NullCodec.codec,
           _i5.DispatchError.codec,
@@ -420,57 +311,29 @@ class Dispatched extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
     const _i1.ResultCodec<dynamic, _i5.DispatchError>(
       _i1.NullCodec.codec,
       _i5.DispatchError.codec,
-    ).encodeTo(
-      result,
-      output,
-    );
+    ).encodeTo(result, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Dispatched &&
-          other.task == task &&
-          other.id == id &&
-          other.result == result;
+      identical(this, other) || other is Dispatched && other.task == task && other.id == id && other.result == result;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-        result,
-      );
+  int get hashCode => Object.hash(task, id, result);
 }
 
 /// Set a retry configuration for some task.
 class RetrySet extends Event {
-  const RetrySet({
-    required this.task,
-    this.id,
-    required this.period,
-    required this.retries,
-  });
+  const RetrySet({required this.task, this.id, required this.period, required this.retries});
 
   factory RetrySet._decode(_i1.Input input) {
     return RetrySet(
@@ -498,84 +361,51 @@ class RetrySet extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'RetrySet': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-          'period': period.toJson(),
-          'retries': retries,
-        }
-      };
+    'RetrySet': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+      'period': period.toJson(),
+      'retries': retries,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     size = size + _i3.BlockNumberOrTimestamp.codec.sizeHint(period);
     size = size + _i1.U8Codec.codec.sizeHint(retries);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      period,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      retries,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(period, output);
+    _i1.U8Codec.codec.encodeTo(retries, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RetrySet &&
-          other.task == task &&
-          other.id == id &&
-          other.period == period &&
-          other.retries == retries;
+      identical(this, other) ||
+      other is RetrySet && other.task == task && other.id == id && other.period == period && other.retries == retries;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-        period,
-        retries,
-      );
+  int get hashCode => Object.hash(task, id, period, retries);
 }
 
 /// Cancel a retry configuration for some task.
 class RetryCancelled extends Event {
-  const RetryCancelled({
-    required this.task,
-    this.id,
-  });
+  const RetryCancelled({required this.task, this.id});
 
   factory RetryCancelled._decode(_i1.Input input) {
     return RetryCancelled(
@@ -595,66 +425,44 @@ class RetryCancelled extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>?>> toJson() => {
-        'RetryCancelled': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-        }
-      };
+    'RetryCancelled': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RetryCancelled && other.task == task && other.id == id;
+      identical(this, other) || other is RetryCancelled && other.task == task && other.id == id;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-      );
+  int get hashCode => Object.hash(task, id);
 }
 
 /// The call for the provided hash was not found so the task has been aborted.
 class CallUnavailable extends Event {
-  const CallUnavailable({
-    required this.task,
-    this.id,
-  });
+  const CallUnavailable({required this.task, this.id});
 
   factory CallUnavailable._decode(_i1.Input input) {
     return CallUnavailable(
@@ -674,66 +482,44 @@ class CallUnavailable extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>?>> toJson() => {
-        'CallUnavailable': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-        }
-      };
+    'CallUnavailable': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CallUnavailable && other.task == task && other.id == id;
+      identical(this, other) || other is CallUnavailable && other.task == task && other.id == id;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-      );
+  int get hashCode => Object.hash(task, id);
 }
 
 /// The given task was unable to be renewed since the agenda is full at that block.
 class PeriodicFailed extends Event {
-  const PeriodicFailed({
-    required this.task,
-    this.id,
-  });
+  const PeriodicFailed({required this.task, this.id});
 
   factory PeriodicFailed._decode(_i1.Input input) {
     return PeriodicFailed(
@@ -753,67 +539,45 @@ class PeriodicFailed extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>?>> toJson() => {
-        'PeriodicFailed': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-        }
-      };
+    'PeriodicFailed': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PeriodicFailed && other.task == task && other.id == id;
+      identical(this, other) || other is PeriodicFailed && other.task == task && other.id == id;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-      );
+  int get hashCode => Object.hash(task, id);
 }
 
 /// The given task was unable to be retried since the agenda is full at that block or there
 /// was not enough weight to reschedule it.
 class RetryFailed extends Event {
-  const RetryFailed({
-    required this.task,
-    this.id,
-  });
+  const RetryFailed({required this.task, this.id});
 
   factory RetryFailed._decode(_i1.Input input) {
     return RetryFailed(
@@ -833,66 +597,44 @@ class RetryFailed extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>?>> toJson() => {
-        'RetryFailed': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-        }
-      };
+    'RetryFailed': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RetryFailed && other.task == task && other.id == id;
+      identical(this, other) || other is RetryFailed && other.task == task && other.id == id;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-      );
+  int get hashCode => Object.hash(task, id);
 }
 
 /// The given task can never be executed since it is overweight.
 class PermanentlyOverweight extends Event {
-  const PermanentlyOverweight({
-    required this.task,
-    this.id,
-  });
+  const PermanentlyOverweight({required this.task, this.id});
 
   factory PermanentlyOverweight._decode(_i1.Input input) {
     return PermanentlyOverweight(
@@ -912,56 +654,37 @@ class PermanentlyOverweight extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>?>> toJson() => {
-        'PermanentlyOverweight': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'id': id?.toList(),
-        }
-      };
+    'PermanentlyOverweight': {
+      'task': [task.value0.toJson(), task.value1],
+      'id': id?.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
           _i3.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
         ).sizeHint(task);
-    size = size +
-        const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
+    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      id,
-      output,
-    );
+    ).encodeTo(task, output);
+    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PermanentlyOverweight && other.task == task && other.id == id;
+      identical(this, other) || other is PermanentlyOverweight && other.task == task && other.id == id;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        id,
-      );
+  int get hashCode => Object.hash(task, id);
 }

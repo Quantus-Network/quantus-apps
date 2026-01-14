@@ -9,10 +9,7 @@ enum Origin {
   mediumSpender('MediumSpender', 2),
   bigSpender('BigSpender', 3);
 
-  const Origin(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Origin(this.variantName, this.codecIndex);
 
   factory Origin.decode(_i1.Input input) {
     return codec.decode(input);
@@ -51,13 +48,7 @@ class $OriginCodec with _i1.Codec<Origin> {
   }
 
   @override
-  void encodeTo(
-    Origin value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Origin value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

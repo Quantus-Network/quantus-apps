@@ -37,14 +37,8 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  SetHighSecurity setHighSecurity({
-    required _i3.BlockNumberOrTimestamp delay,
-    required _i4.AccountId32 interceptor,
-  }) {
-    return SetHighSecurity(
-      delay: delay,
-      interceptor: interceptor,
-    );
+  SetHighSecurity setHighSecurity({required _i3.BlockNumberOrTimestamp delay, required _i4.AccountId32 interceptor}) {
+    return SetHighSecurity(delay: delay, interceptor: interceptor);
   }
 
   Cancel cancel({required _i5.H256 txId}) {
@@ -55,14 +49,8 @@ class $Call {
     return ExecuteTransfer(txId: txId);
   }
 
-  ScheduleTransfer scheduleTransfer({
-    required _i6.MultiAddress dest,
-    required BigInt amount,
-  }) {
-    return ScheduleTransfer(
-      dest: dest,
-      amount: amount,
-    );
+  ScheduleTransfer scheduleTransfer({required _i6.MultiAddress dest, required BigInt amount}) {
+    return ScheduleTransfer(dest: dest, amount: amount);
   }
 
   ScheduleTransferWithDelay scheduleTransferWithDelay({
@@ -70,11 +58,7 @@ class $Call {
     required BigInt amount,
     required _i3.BlockNumberOrTimestamp delay,
   }) {
-    return ScheduleTransferWithDelay(
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    );
+    return ScheduleTransferWithDelay(dest: dest, amount: amount, delay: delay);
   }
 
   ScheduleAssetTransfer scheduleAssetTransfer({
@@ -82,11 +66,7 @@ class $Call {
     required _i6.MultiAddress dest,
     required BigInt amount,
   }) {
-    return ScheduleAssetTransfer(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-    );
+    return ScheduleAssetTransfer(assetId: assetId, dest: dest, amount: amount);
   }
 
   ScheduleAssetTransferWithDelay scheduleAssetTransferWithDelay({
@@ -95,12 +75,7 @@ class $Call {
     required BigInt amount,
     required _i3.BlockNumberOrTimestamp delay,
   }) {
-    return ScheduleAssetTransferWithDelay(
-      assetId: assetId,
-      dest: dest,
-      amount: amount,
-      delay: delay,
-    );
+    return ScheduleAssetTransferWithDelay(assetId: assetId, dest: dest, amount: amount, delay: delay);
   }
 }
 
@@ -131,10 +106,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case SetHighSecurity:
         (value as SetHighSecurity).encodeTo(output);
@@ -158,8 +130,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as ScheduleAssetTransferWithDelay).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -181,8 +152,7 @@ class $CallCodec with _i1.Codec<Call> {
       case ScheduleAssetTransferWithDelay:
         return (value as ScheduleAssetTransferWithDelay)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -201,10 +171,7 @@ class $CallCodec with _i1.Codec<Call> {
 /// - interceptor: The account that can intercept transctions from the
 /// high security account.
 class SetHighSecurity extends Call {
-  const SetHighSecurity({
-    required this.delay,
-    required this.interceptor,
-  });
+  const SetHighSecurity({required this.delay, required this.interceptor});
 
   factory SetHighSecurity._decode(_i1.Input input) {
     return SetHighSecurity(
@@ -221,11 +188,8 @@ class SetHighSecurity extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_high_security': {
-          'delay': delay.toJson(),
-          'interceptor': interceptor.toList(),
-        }
-      };
+    'set_high_security': {'delay': delay.toJson(), 'interceptor': interceptor.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -235,38 +199,18 @@ class SetHighSecurity extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      delay,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      interceptor,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
+    const _i1.U8ArrayCodec(32).encodeTo(interceptor, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetHighSecurity &&
-          other.delay == delay &&
-          _i7.listsEqual(
-            other.interceptor,
-            interceptor,
-          );
+      identical(this, other) ||
+      other is SetHighSecurity && other.delay == delay && _i7.listsEqual(other.interceptor, interceptor);
 
   @override
-  int get hashCode => Object.hash(
-        delay,
-        interceptor,
-      );
+  int get hashCode => Object.hash(delay, interceptor);
 }
 
 /// Cancel a pending reversible transaction scheduled by the caller.
@@ -284,8 +228,8 @@ class Cancel extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'cancel': {'txId': txId.toList()}
-      };
+    'cancel': {'txId': txId.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -294,27 +238,12 @@ class Cancel extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Cancel &&
-          _i7.listsEqual(
-            other.txId,
-            txId,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is Cancel && _i7.listsEqual(other.txId, txId);
 
   @override
   int get hashCode => txId.hashCode;
@@ -335,8 +264,8 @@ class ExecuteTransfer extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'execute_transfer': {'txId': txId.toList()}
-      };
+    'execute_transfer': {'txId': txId.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -345,27 +274,13 @@ class ExecuteTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ExecuteTransfer &&
-          _i7.listsEqual(
-            other.txId,
-            txId,
-          );
+      identical(this, other) || other is ExecuteTransfer && _i7.listsEqual(other.txId, txId);
 
   @override
   int get hashCode => txId.hashCode;
@@ -373,16 +288,10 @@ class ExecuteTransfer extends Call {
 
 /// Schedule a transaction for delayed execution.
 class ScheduleTransfer extends Call {
-  const ScheduleTransfer({
-    required this.dest,
-    required this.amount,
-  });
+  const ScheduleTransfer({required this.dest, required this.amount});
 
   factory ScheduleTransfer._decode(_i1.Input input) {
-    return ScheduleTransfer(
-      dest: _i6.MultiAddress.codec.decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return ScheduleTransfer(dest: _i6.MultiAddress.codec.decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// <<T as frame_system::Config>::Lookup as StaticLookup>::Source
@@ -393,11 +302,8 @@ class ScheduleTransfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_transfer': {
-          'dest': dest.toJson(),
-          'amount': amount,
-        }
-      };
+    'schedule_transfer': {'dest': dest.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -407,33 +313,17 @@ class ScheduleTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i6.MultiAddress.codec.encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleTransfer && other.dest == dest && other.amount == amount;
+      identical(this, other) || other is ScheduleTransfer && other.dest == dest && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        dest,
-        amount,
-      );
+  int get hashCode => Object.hash(dest, amount);
 }
 
 /// Schedule a transaction for delayed execution with a custom, one-time delay.
@@ -443,11 +333,7 @@ class ScheduleTransfer extends Call {
 ///
 /// - `delay`: The time (in blocks or milliseconds) before the transaction executes.
 class ScheduleTransferWithDelay extends Call {
-  const ScheduleTransferWithDelay({
-    required this.dest,
-    required this.amount,
-    required this.delay,
-  });
+  const ScheduleTransferWithDelay({required this.dest, required this.amount, required this.delay});
 
   factory ScheduleTransferWithDelay._decode(_i1.Input input) {
     return ScheduleTransferWithDelay(
@@ -468,12 +354,8 @@ class ScheduleTransferWithDelay extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_transfer_with_delay': {
-          'dest': dest.toJson(),
-          'amount': amount,
-          'delay': delay.toJson(),
-        }
-      };
+    'schedule_transfer_with_delay': {'dest': dest.toJson(), 'amount': amount, 'delay': delay.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -484,51 +366,25 @@ class ScheduleTransferWithDelay extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      delay,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i6.MultiAddress.codec.encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleTransferWithDelay &&
-          other.dest == dest &&
-          other.amount == amount &&
-          other.delay == delay;
+      identical(this, other) ||
+      other is ScheduleTransferWithDelay && other.dest == dest && other.amount == amount && other.delay == delay;
 
   @override
-  int get hashCode => Object.hash(
-        dest,
-        amount,
-        delay,
-      );
+  int get hashCode => Object.hash(dest, amount, delay);
 }
 
 /// Schedule an asset transfer (pallet-assets) for delayed execution using the configured
 /// delay.
 class ScheduleAssetTransfer extends Call {
-  const ScheduleAssetTransfer({
-    required this.assetId,
-    required this.dest,
-    required this.amount,
-  });
+  const ScheduleAssetTransfer({required this.assetId, required this.dest, required this.amount});
 
   factory ScheduleAssetTransfer._decode(_i1.Input input) {
     return ScheduleAssetTransfer(
@@ -549,12 +405,8 @@ class ScheduleAssetTransfer extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_asset_transfer': {
-          'assetId': assetId,
-          'dest': dest.toJson(),
-          'amount': amount,
-        }
-      };
+    'schedule_asset_transfer': {'assetId': assetId, 'dest': dest.toJson(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -565,41 +417,19 @@ class ScheduleAssetTransfer extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i6.MultiAddress.codec.encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleAssetTransfer &&
-          other.assetId == assetId &&
-          other.dest == dest &&
-          other.amount == amount;
+      identical(this, other) ||
+      other is ScheduleAssetTransfer && other.assetId == assetId && other.dest == dest && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        assetId,
-        dest,
-        amount,
-      );
+  int get hashCode => Object.hash(assetId, dest, amount);
 }
 
 /// Schedule an asset transfer (pallet-assets) with a custom one-time delay.
@@ -634,13 +464,13 @@ class ScheduleAssetTransferWithDelay extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_asset_transfer_with_delay': {
-          'assetId': assetId,
-          'dest': dest.toJson(),
-          'amount': amount,
-          'delay': delay.toJson(),
-        }
-      };
+    'schedule_asset_transfer_with_delay': {
+      'assetId': assetId,
+      'dest': dest.toJson(),
+      'amount': amount,
+      'delay': delay.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -652,34 +482,16 @@ class ScheduleAssetTransferWithDelay extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    _i6.MultiAddress.codec.encodeTo(
-      dest,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i3.BlockNumberOrTimestamp.codec.encodeTo(
-      delay,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    _i6.MultiAddress.codec.encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i3.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ScheduleAssetTransferWithDelay &&
           other.assetId == assetId &&
           other.dest == dest &&
@@ -687,10 +499,5 @@ class ScheduleAssetTransferWithDelay extends Call {
           other.delay == delay;
 
   @override
-  int get hashCode => Object.hash(
-        assetId,
-        dest,
-        amount,
-        delay,
-      );
+  int get hashCode => Object.hash(assetId, dest, amount, delay);
 }

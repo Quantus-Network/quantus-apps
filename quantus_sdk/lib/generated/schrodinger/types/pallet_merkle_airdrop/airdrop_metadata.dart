@@ -41,70 +41,37 @@ class AirdropMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        'merkleRoot': merkleRoot.toList(),
-        'creator': creator.toList(),
-        'balance': balance,
-        'vestingPeriod': vestingPeriod,
-        'vestingDelay': vestingDelay,
-      };
+    'merkleRoot': merkleRoot.toList(),
+    'creator': creator.toList(),
+    'balance': balance,
+    'vestingPeriod': vestingPeriod,
+    'vestingDelay': vestingDelay,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AirdropMetadata &&
-          _i4.listsEqual(
-            other.merkleRoot,
-            merkleRoot,
-          ) &&
-          _i4.listsEqual(
-            other.creator,
-            creator,
-          ) &&
+          _i4.listsEqual(other.merkleRoot, merkleRoot) &&
+          _i4.listsEqual(other.creator, creator) &&
           other.balance == balance &&
           other.vestingPeriod == vestingPeriod &&
           other.vestingDelay == vestingDelay;
 
   @override
-  int get hashCode => Object.hash(
-        merkleRoot,
-        creator,
-        balance,
-        vestingPeriod,
-        vestingDelay,
-      );
+  int get hashCode => Object.hash(merkleRoot, creator, balance, vestingPeriod, vestingDelay);
 }
 
 class $AirdropMetadataCodec with _i1.Codec<AirdropMetadata> {
   const $AirdropMetadataCodec();
 
   @override
-  void encodeTo(
-    AirdropMetadata obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.merkleRoot,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.creator,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.balance,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      obj.vestingPeriod,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      obj.vestingDelay,
-      output,
-    );
+  void encodeTo(AirdropMetadata obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.merkleRoot, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.creator, output);
+    _i1.U128Codec.codec.encodeTo(obj.balance, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(obj.vestingPeriod, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(obj.vestingDelay, output);
   }
 
   @override
@@ -113,10 +80,8 @@ class $AirdropMetadataCodec with _i1.Codec<AirdropMetadata> {
       merkleRoot: const _i1.U8ArrayCodec(32).decode(input),
       creator: const _i1.U8ArrayCodec(32).decode(input),
       balance: _i1.U128Codec.codec.decode(input),
-      vestingPeriod:
-          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
-      vestingDelay:
-          const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+      vestingPeriod: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
+      vestingDelay: const _i1.OptionCodec<int>(_i1.U32Codec.codec).decode(input),
     );
   }
 
@@ -126,12 +91,8 @@ class $AirdropMetadataCodec with _i1.Codec<AirdropMetadata> {
     size = size + const _i1.U8ArrayCodec(32).sizeHint(obj.merkleRoot);
     size = size + const _i2.AccountId32Codec().sizeHint(obj.creator);
     size = size + _i1.U128Codec.codec.sizeHint(obj.balance);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec)
-            .sizeHint(obj.vestingPeriod);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec)
-            .sizeHint(obj.vestingDelay);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.vestingPeriod);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.vestingDelay);
     return size;
   }
 }

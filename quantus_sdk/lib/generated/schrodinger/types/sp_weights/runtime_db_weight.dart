@@ -4,10 +4,7 @@ import 'dart:typed_data' as _i2;
 import 'package:polkadart/scale_codec.dart' as _i1;
 
 class RuntimeDbWeight {
-  const RuntimeDbWeight({
-    required this.read,
-    required this.write,
-  });
+  const RuntimeDbWeight({required this.read, required this.write});
 
   factory RuntimeDbWeight.decode(_i1.Input input) {
     return codec.decode(input);
@@ -25,50 +22,28 @@ class RuntimeDbWeight {
     return codec.encode(this);
   }
 
-  Map<String, BigInt> toJson() => {
-        'read': read,
-        'write': write,
-      };
+  Map<String, BigInt> toJson() => {'read': read, 'write': write};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RuntimeDbWeight && other.read == read && other.write == write;
+      identical(this, other) || other is RuntimeDbWeight && other.read == read && other.write == write;
 
   @override
-  int get hashCode => Object.hash(
-        read,
-        write,
-      );
+  int get hashCode => Object.hash(read, write);
 }
 
 class $RuntimeDbWeightCodec with _i1.Codec<RuntimeDbWeight> {
   const $RuntimeDbWeightCodec();
 
   @override
-  void encodeTo(
-    RuntimeDbWeight obj,
-    _i1.Output output,
-  ) {
-    _i1.U64Codec.codec.encodeTo(
-      obj.read,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      obj.write,
-      output,
-    );
+  void encodeTo(RuntimeDbWeight obj, _i1.Output output) {
+    _i1.U64Codec.codec.encodeTo(obj.read, output);
+    _i1.U64Codec.codec.encodeTo(obj.write, output);
   }
 
   @override
   RuntimeDbWeight decode(_i1.Input input) {
-    return RuntimeDbWeight(
-      read: _i1.U64Codec.codec.decode(input),
-      write: _i1.U64Codec.codec.decode(input),
-    );
+    return RuntimeDbWeight(read: _i1.U64Codec.codec.decode(input), write: _i1.U64Codec.codec.decode(input));
   }
 
   @override

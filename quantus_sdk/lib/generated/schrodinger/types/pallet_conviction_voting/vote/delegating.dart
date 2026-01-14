@@ -44,67 +44,37 @@ class Delegating {
   }
 
   Map<String, dynamic> toJson() => {
-        'balance': balance,
-        'target': target.toList(),
-        'conviction': conviction.toJson(),
-        'delegations': delegations.toJson(),
-        'prior': prior.toJson(),
-      };
+    'balance': balance,
+    'target': target.toList(),
+    'conviction': conviction.toJson(),
+    'delegations': delegations.toJson(),
+    'prior': prior.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is Delegating &&
           other.balance == balance &&
-          _i7.listsEqual(
-            other.target,
-            target,
-          ) &&
+          _i7.listsEqual(other.target, target) &&
           other.conviction == conviction &&
           other.delegations == delegations &&
           other.prior == prior;
 
   @override
-  int get hashCode => Object.hash(
-        balance,
-        target,
-        conviction,
-        delegations,
-        prior,
-      );
+  int get hashCode => Object.hash(balance, target, conviction, delegations, prior);
 }
 
 class $DelegatingCodec with _i1.Codec<Delegating> {
   const $DelegatingCodec();
 
   @override
-  void encodeTo(
-    Delegating obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.balance,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.target,
-      output,
-    );
-    _i3.Conviction.codec.encodeTo(
-      obj.conviction,
-      output,
-    );
-    _i4.Delegations.codec.encodeTo(
-      obj.delegations,
-      output,
-    );
-    _i5.PriorLock.codec.encodeTo(
-      obj.prior,
-      output,
-    );
+  void encodeTo(Delegating obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.balance, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.target, output);
+    _i3.Conviction.codec.encodeTo(obj.conviction, output);
+    _i4.Delegations.codec.encodeTo(obj.delegations, output);
+    _i5.PriorLock.codec.encodeTo(obj.prior, output);
   }
 
   @override

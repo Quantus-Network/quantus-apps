@@ -16,8 +16,7 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<int, _i2.AirdropMetadata> _airdropInfo =
-      const _i1.StorageMap<int, _i2.AirdropMetadata>(
+  final _i1.StorageMap<int, _i2.AirdropMetadata> _airdropInfo = const _i1.StorageMap<int, _i2.AirdropMetadata>(
     prefix: 'MerkleAirdrop',
     storage: 'AirdropInfo',
     valueCodec: _i2.AirdropMetadata.codec,
@@ -26,12 +25,12 @@ class Queries {
 
   final _i1.StorageDoubleMap<int, _i4.AccountId32, dynamic> _claimed =
       const _i1.StorageDoubleMap<int, _i4.AccountId32, dynamic>(
-    prefix: 'MerkleAirdrop',
-    storage: 'Claimed',
-    valueCodec: _i3.NullCodec.codec,
-    hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
-    hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
-  );
+        prefix: 'MerkleAirdrop',
+        storage: 'Claimed',
+        valueCodec: _i3.NullCodec.codec,
+        hasher1: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
+        hasher2: _i1.StorageHasher.blake2b128Concat(_i4.AccountId32Codec()),
+      );
 
   final _i1.StorageValue<int> _nextAirdropId = const _i1.StorageValue<int>(
     prefix: 'MerkleAirdrop',
@@ -40,15 +39,9 @@ class Queries {
   );
 
   /// Stores general info about an airdrop
-  _i5.Future<_i2.AirdropMetadata?> airdropInfo(
-    int key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<_i2.AirdropMetadata?> airdropInfo(int key1, {_i1.BlockHash? at}) async {
     final hashedKey = _airdropInfo.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _airdropInfo.decodeValue(bytes);
     }
@@ -56,19 +49,9 @@ class Queries {
   }
 
   /// Storage for claimed status
-  _i5.Future<dynamic> claimed(
-    int key1,
-    _i4.AccountId32 key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _claimed.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i5.Future<dynamic> claimed(int key1, _i4.AccountId32 key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _claimed.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _claimed.decodeValue(bytes);
     }
@@ -78,10 +61,7 @@ class Queries {
   /// Counter for airdrop IDs
   _i5.Future<int> nextAirdropId({_i1.BlockHash? at}) async {
     final hashedKey = _nextAirdropId.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _nextAirdropId.decodeValue(bytes);
     }
@@ -89,20 +69,11 @@ class Queries {
   }
 
   /// Stores general info about an airdrop
-  _i5.Future<List<_i2.AirdropMetadata?>> multiAirdropInfo(
-    List<int> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _airdropInfo.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i5.Future<List<_i2.AirdropMetadata?>> multiAirdropInfo(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _airdropInfo.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _airdropInfo.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _airdropInfo.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -114,14 +85,8 @@ class Queries {
   }
 
   /// Returns the storage key for `claimed`.
-  _i6.Uint8List claimedKey(
-    int key1,
-    _i4.AccountId32 key2,
-  ) {
-    final hashedKey = _claimed.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i6.Uint8List claimedKey(int key1, _i4.AccountId32 key2) {
+    final hashedKey = _claimed.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
@@ -159,16 +124,10 @@ class Txs {
   /// * `merkle_root` - The Merkle root hash representing all valid claims
   /// * `vesting_period` - Optional vesting period for the airdrop
   /// * `vesting_delay` - Optional delay before vesting starts
-  _i7.MerkleAirdrop createAirdrop({
-    required List<int> merkleRoot,
-    int? vestingPeriod,
-    int? vestingDelay,
-  }) {
-    return _i7.MerkleAirdrop(_i8.CreateAirdrop(
-      merkleRoot: merkleRoot,
-      vestingPeriod: vestingPeriod,
-      vestingDelay: vestingDelay,
-    ));
+  _i7.MerkleAirdrop createAirdrop({required List<int> merkleRoot, int? vestingPeriod, int? vestingDelay}) {
+    return _i7.MerkleAirdrop(
+      _i8.CreateAirdrop(merkleRoot: merkleRoot, vestingPeriod: vestingPeriod, vestingDelay: vestingDelay),
+    );
   }
 
   /// Fund an existing airdrop with tokens.
@@ -185,14 +144,8 @@ class Txs {
   /// # Errors
   ///
   /// * `AirdropNotFound` - If the specified airdrop does not exist
-  _i7.MerkleAirdrop fundAirdrop({
-    required int airdropId,
-    required BigInt amount,
-  }) {
-    return _i7.MerkleAirdrop(_i8.FundAirdrop(
-      airdropId: airdropId,
-      amount: amount,
-    ));
+  _i7.MerkleAirdrop fundAirdrop({required int airdropId, required BigInt amount}) {
+    return _i7.MerkleAirdrop(_i8.FundAirdrop(airdropId: airdropId, amount: amount));
   }
 
   /// Claim tokens from an airdrop by providing a Merkle proof.
@@ -220,12 +173,9 @@ class Txs {
     required BigInt amount,
     required List<List<int>> merkleProof,
   }) {
-    return _i7.MerkleAirdrop(_i8.Claim(
-      airdropId: airdropId,
-      recipient: recipient,
-      amount: amount,
-      merkleProof: merkleProof,
-    ));
+    return _i7.MerkleAirdrop(
+      _i8.Claim(airdropId: airdropId, recipient: recipient, amount: amount, merkleProof: merkleProof),
+    );
   }
 
   /// Delete an airdrop and reclaim any remaining funds.
@@ -254,16 +204,7 @@ class Constants {
   final int maxProofs = 4096;
 
   /// The pallet id, used for deriving its sovereign account ID.
-  final _i9.PalletId palletId = const <int>[
-    97,
-    105,
-    114,
-    100,
-    114,
-    111,
-    112,
-    33,
-  ];
+  final _i9.PalletId palletId = const <int>[97, 105, 114, 100, 114, 111, 112, 33];
 
   /// Priority for unsigned claim transactions.
   final BigInt unsignedClaimPriority = BigInt.from(100);
