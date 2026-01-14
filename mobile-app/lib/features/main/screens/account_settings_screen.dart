@@ -16,6 +16,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_details_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_get_started_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -35,7 +36,7 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
     required this.account,
     required this.balance,
     required this.checksumName,
-    this.isHighSecurity = true,
+    required this.isHighSecurity,
   });
 
   @override
@@ -303,7 +304,11 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => HighSecurityGetStartedScreen(account: widget.account)),
+            MaterialPageRoute(
+              builder: (context) => isHighSecurity
+                  ? HighSecurityDetailsScreen(account: widget.account)
+                  : HighSecurityGetStartedScreen(account: widget.account),
+            ),
           );
         },
         child: Container(
