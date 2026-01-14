@@ -69,7 +69,6 @@ class _HighSecurityConfirmationSheetState extends ConsumerState<HighSecurityConf
 
   void _cancelSetup() {
     Navigator.pop(context);
-    // showHighSecurityCancelWarningSheet(context);
   }
 
   void _fetchNetworkFee() async {
