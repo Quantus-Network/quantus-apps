@@ -18,22 +18,23 @@ class HighSecurityDetailsScreen extends ConsumerWidget {
   final Account account;
   const HighSecurityDetailsScreen({super.key, required this.account});
 
-  static const _text16 = TextStyle(
+  // Shared style accessors
+  static TextStyle text16(BuildContext context) => TextStyle(
     color: context.themeColors.textPrimary,
     fontSize: 16,
     fontFamily: 'Fira Code',
     fontWeight: FontWeight.w400,
   );
 
-  static const _statusTitle = TextStyle(
-    color: Color(0xFF0B0F14),
+  static TextStyle statusTitle(BuildContext context) => TextStyle(
+    color: context.themeColors.textSecondary,
     fontSize: 16,
     fontFamily: 'Fira Code',
     fontWeight: FontWeight.w400,
   );
 
-  static const _statusSubtitle = TextStyle(
-    color: Color(0xFF0B0F14),
+  static TextStyle statusSubtitle(BuildContext context) => TextStyle(
+    color: context.themeColors.textSecondary,
     fontSize: 12,
     fontFamily: 'Fira Code',
     fontWeight: FontWeight.w600,
@@ -108,15 +109,14 @@ class _GuardianAccountSection extends StatelessWidget {
   final String guardianAccountId;
   const _GuardianAccountSection({required this.guardianAccountId});
 
-  static const _text16 = HighSecurityDetailsScreen._text16;
-
   @override
   Widget build(BuildContext context) {
+    final style = HighSecurityDetailsScreen.text16(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Guardian Account', style: _text16),
+        Text('Guardian Account', style: style),
         const SizedBox(height: 8),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 321),
@@ -127,7 +127,7 @@ class _GuardianAccountSection extends StatelessWidget {
               color: const Color(0xFF3D3C44),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
-            child: Text(HighSecurityDetailsScreen.shortAddress(guardianAccountId), style: _text16),
+            child: Text(HighSecurityDetailsScreen.shortAddress(guardianAccountId), style: style),
           ),
         ),
       ],
@@ -139,16 +139,15 @@ class _SafeguardWindowSection extends StatelessWidget {
   final Duration safeguardWindow;
   const _SafeguardWindowSection({required this.safeguardWindow});
 
-  static const _text16 = HighSecurityDetailsScreen._text16;
-
   @override
   Widget build(BuildContext context) {
     final formatted = _formatDuration(safeguardWindow);
+    final style = HighSecurityDetailsScreen.text16(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Safeguard Window', style: _text16),
+        Text('Safeguard Window', style: style),
         const SizedBox(height: 8),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 321),
@@ -159,7 +158,7 @@ class _SafeguardWindowSection extends StatelessWidget {
               color: const Color(0xFF3D3C44),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
-            child: Text(formatted, style: _text16),
+            child: Text(formatted, style: style),
           ),
         ),
       ],
@@ -179,15 +178,14 @@ class _RemindersSection extends StatelessWidget {
   final List<String> reminders;
   const _RemindersSection({required this.reminders});
 
-  static const _text16 = HighSecurityDetailsScreen._text16;
-
   @override
   Widget build(BuildContext context) {
+    final style = HighSecurityDetailsScreen.text16(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Reminders', style: _text16),
+        Text('Reminders', style: style),
         const SizedBox(height: 8),
         Column(
           mainAxisSize: MainAxisSize.min,
@@ -197,12 +195,12 @@ class _RemindersSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        const Row(
+        Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const XIcon(),
-            SizedBox(width: 17),
-            Text('Add Reminder', style: _text16),
+            const SizedBox(width: 17),
+            Text('Add Reminder', style: style),
           ],
         ),
       ],
@@ -214,11 +212,10 @@ class _ReminderRow extends StatelessWidget {
   final String label;
   const _ReminderRow({required this.label});
 
-  static const _text16 = HighSecurityDetailsScreen._text16;
-
   @override
   Widget build(BuildContext context) {
     final width = context.isTablet ? 420.0 : double.infinity;
+    final style = HighSecurityDetailsScreen.text16(context);
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 321),
       child: Container(
@@ -231,7 +228,7 @@ class _ReminderRow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: _text16),
+            Text(label, style: style),
             const _ChevronIcon(),
           ],
         ),
@@ -272,7 +269,7 @@ class _ChevronIcon extends StatelessWidget {
 }
 
 class XIcon extends StatelessWidget {
-  const XIcon();
+  const XIcon({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -319,9 +316,6 @@ class XIcon extends StatelessWidget {
 class _StatusCard extends StatelessWidget {
   const _StatusCard();
 
-  static const _statusTitle = HighSecurityDetailsScreen._statusTitle;
-  static const _statusSubtitle = HighSecurityDetailsScreen._statusSubtitle;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -331,7 +325,7 @@ class _StatusCard extends StatelessWidget {
         color: const Color(0xFF4CEDE7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -341,7 +335,7 @@ class _StatusCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 20,
                 height: 25,
                 child: Stack(
@@ -352,14 +346,14 @@ class _StatusCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('High Security', style: _statusTitle),
-                  SizedBox(height: 4),
-                  Text('ON', style: _statusSubtitle),
+                  Text('High Security', style: HighSecurityDetailsScreen.statusTitle(context)),
+                  const SizedBox(height: 4),
+                  Text('ON', style: HighSecurityDetailsScreen.statusSubtitle(context)),
                 ],
               ),
             ],
