@@ -165,7 +165,6 @@ class SubstrateService {
 
       // Keep alive for logs
       await Future.delayed(const Duration(seconds: 20));
-      // await provider.disconnect(); // Optional cleanup
     });
 
     return txHash;
