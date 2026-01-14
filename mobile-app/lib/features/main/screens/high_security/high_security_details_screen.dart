@@ -68,8 +68,6 @@ class HighSecurityDetailsScreen extends ConsumerWidget {
             );
           }
 
-          const reminders = ['2 hrs before', '2 days, 8 hrs before'];
-
           return SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.only(left: 27, right: 27, top: 12),
@@ -82,8 +80,8 @@ class HighSecurityDetailsScreen extends ConsumerWidget {
                   _GuardianAccountSection(guardianAccountId: data.guardianAccountId),
                   const SizedBox(height: 20),
                   _SafeguardWindowSection(safeguardWindow: data.safeguardWindow),
-                  const SizedBox(height: 20),
-                  const _RemindersSection(reminders: reminders),
+                  // const SizedBox(height: 20),
+                  // const _RemindersSection(reminders: reminders),
                   SizedBox(height: context.themeSize.bottomButtonSpacing),
                 ],
               ),
@@ -169,6 +167,8 @@ class _SafeguardWindowSection extends StatelessWidget {
   }
 }
 
+// TODO: add a reminder service - implement this
+// ignore: unused_element
 class _RemindersSection extends StatelessWidget {
   final List<String> reminders;
   const _RemindersSection({required this.reminders});
