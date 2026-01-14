@@ -8,8 +8,6 @@ import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
-import 'substrate_service.dart';
-
 /// Service for managing account recovery functionality
 class RecoveryService {
   static final RecoveryService _instance = RecoveryService._internal();

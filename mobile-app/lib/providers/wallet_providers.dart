@@ -117,4 +117,9 @@ BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactio
   return totalOutgoing;
 }
 
+final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
+  final service = ref.watch(highSecurityServiceProvider);
+  return service.getHighSecurityConfig(account.accountId);
+});
+
 // Deprecated legacy history providers removed in favor of unified pagination

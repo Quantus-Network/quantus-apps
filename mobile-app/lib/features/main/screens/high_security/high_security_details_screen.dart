@@ -9,11 +9,6 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-final highSecurityConfigProvider = FutureProvider.family<HighSecurityData?, Account>((ref, account) async {
-  final service = ref.watch(highSecurityServiceProvider);
-  return service.getHighSecurityConfig(account.accountId);
-});
-
 class HighSecurityDetailsScreen extends ConsumerWidget {
   final Account account;
   const HighSecurityDetailsScreen({super.key, required this.account});
