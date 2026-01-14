@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
@@ -51,9 +52,11 @@ class HighSecurityService {
   }
 
   Future<List<Account>> getEntrustedAccounts(Account account) async {
+    final accounts = await AccountsService().getAccounts();
+    Account? mapExistingAccount(String ss58Address) => accounts.firstWhereOrNull((a) => a.accountId == ss58Address);
     return (await _reversibleTransfersService.getInterceptedAccounts(
       account.accountId,
-    )).map((account) => Account.fromSs58Address(account)).toList();
+    )).map((account) => mapExistingAccount(account) ?? Account.fromSs58Address(account)).toList();
   }
 
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
