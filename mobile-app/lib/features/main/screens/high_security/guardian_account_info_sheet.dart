@@ -78,11 +78,6 @@ class _GuardianAccountInfoSheetState extends State<GuardianAccountInfoSheet> {
               'The Guardian account should not be in the same wallet as the Entrusted account as in the case of theft both would be exposed.',
               style: context.themeText.smallParagraph,
             ),
-            // const SizedBox(height: 16),
-            // Text(
-            //   'The harder the Guardian account is to access, the higher the security. An account on a cold storage wallet is the most secure.',
-            //   style: context.themeText.smallParagraph,
-            // ),
             const SizedBox(height: 40),
             Button(
               variant: ButtonVariant.primary,
