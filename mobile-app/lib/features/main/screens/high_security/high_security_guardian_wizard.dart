@@ -31,11 +31,11 @@ class HighSecurityGuardianWizard extends ConsumerStatefulWidget {
 class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardianWizard> {
   late final TextEditingController _guardianController;
 
+  // return null if the address is not valid
   Future<String?> _getHumanCheckphrase(String address) async {
-    try {
-      Address.decode(address);
+    if (SubstrateService().isValidSS58Address(address)) {
       return await _checksumService.getHumanReadableName(address);
-    } catch (e) {
+    } else {
       return null;
     }
   }
@@ -154,7 +154,7 @@ class _HighSecurityGuardianWizardState extends ConsumerState<HighSecurityGuardia
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'invalid address',
+                      'Invalid address',
                       style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.textError),
                     ),
                   );
