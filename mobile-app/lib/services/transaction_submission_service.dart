@@ -93,6 +93,43 @@ class TransactionSubmissionService {
     await submitAndTrackTransaction(submissionBuilder, pending, maxRetries: maxRetries);
   }
 
+  Future<void> scheduleTransfer({
+    required Account account,
+    required String recipientAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+  }) async {
+    // A. Create the initial pending transaction event
+    final pendingTx = PendingTransactionEvent(
+      tempId: 'pending_${DateTime.now().millisecondsSinceEpoch}',
+      from: account.accountId,
+      to: recipientAddress,
+      amount: amount,
+      timestamp: DateTime.now(),
+      transactionState: TransactionState.created,
+      fee: fee,
+      blockNumber: blockHeight,
+      isReversible: true,
+    );
+
+    // B. Immediately add it to the state so the UI can update
+    _ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+
+    // C. Define the builder function that creates fresh submissions on each retry
+    Future<Uint8List> submissionBuilder() async {
+      return ReversibleTransfersService().scheduleReversibleTransfer(
+        account: account,
+        recipientAddress: recipientAddress,
+        amount: amount,
+      );
+    }
+
+    TelemetryService().sendEvent('send_high_security_reversible');
+
+    await submitAndTrackTransaction(submissionBuilder, pendingTx);
+  }
+
   PendingTransactionEvent createPendingTransaction({
     required String from,
     required String to,

@@ -37,6 +37,7 @@ class SendConfirmationOverlay extends ConsumerStatefulWidget {
   final BigInt fee;
   final int reversibleTimeSeconds;
   final int blockHeight;
+  final bool isHighSecurity;
 
   const SendConfirmationOverlay({
     required this.amount,
@@ -46,6 +47,7 @@ class SendConfirmationOverlay extends ConsumerStatefulWidget {
     required this.fee,
     required this.reversibleTimeSeconds,
     required this.blockHeight,
+    this.isHighSecurity = false,
     super.key,
   });
 
@@ -272,14 +274,26 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
         widget.blockHeight,
       );
     } else {
-      await submissionService.scheduleReversibleTransferWithDelaySeconds(
-        account: account,
-        recipientAddress: widget.recipientAddress,
-        amount: widget.amount,
-        delaySeconds: widget.reversibleTimeSeconds,
-        feeEstimate: widget.fee,
-        blockHeight: widget.blockHeight,
-      );
+      if (widget.isHighSecurity) {
+        // For high security accounts, use scheduleTransfer (no custom delay)
+        await submissionService.scheduleTransfer(
+          account: account,
+          recipientAddress: widget.recipientAddress,
+          amount: widget.amount,
+          fee: widget.fee,
+          blockHeight: widget.blockHeight,
+        );
+      } else {
+        // For regular accounts, use scheduleReversibleTransferWithDelaySeconds
+        await submissionService.scheduleReversibleTransferWithDelaySeconds(
+          account: account,
+          recipientAddress: widget.recipientAddress,
+          amount: widget.amount,
+          delaySeconds: widget.reversibleTimeSeconds,
+          feeEstimate: widget.fee,
+          blockHeight: widget.blockHeight,
+        );
+      }
     }
   }
 

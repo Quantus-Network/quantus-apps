@@ -19,6 +19,7 @@ class SegmentedControl<T> extends StatefulWidget {
   final SegmentWidthMode widthMode;
   final double? minSegmentWidth;
   final double? maxSegmentWidth;
+  final Color? selectedColor;
 
   const SegmentedControl({
     super.key,
@@ -32,6 +33,7 @@ class SegmentedControl<T> extends StatefulWidget {
     this.widthMode = SegmentWidthMode.equal,
     this.minSegmentWidth,
     this.maxSegmentWidth,
+    this.selectedColor,
   });
 
   @override
@@ -237,8 +239,8 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = context.themeColors.darkGray;
-    final selectedColor = context.themeColors.buttonNeutral;
+    final borderColor = context.themeColors.darkGray;
+    final selectedColor = widget.selectedColor ?? context.themeColors.buttonNeutral;
     final selectedTextColor = context.themeColors.textSecondary;
     final unselectedTextColor = context.themeColors.textMuted;
 
@@ -248,7 +250,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>> with SingleTi
 
         return Container(
           height: widget.height,
-          decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(widget.borderRadius)),
+          decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(widget.borderRadius)),
           padding: widget.padding,
           child: Stack(
             children: [

@@ -49,6 +49,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
   BigInt _maxBalance = BigInt.zero;
   BigInt _networkFee = BigInt.zero; // Actual network fee fetched from chain
   bool _isFetchingFee = false;
+  bool _isHighSecurity = false;
   BigInt _amount = BigInt.zero;
   bool _hasAddressError = false;
   bool _hasAmountError = false;
@@ -417,6 +418,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
               fee: _networkFee,
               reversibleTimeSeconds: _sendMode.isReversible ? _reversibleTimeSeconds : 0,
               blockHeight: _blockHeight ?? 0,
+              isHighSecurity: _isHighSecurity,
               onClose: () => Navigator.pop(context),
             ),
           ),
@@ -459,12 +461,51 @@ class SendScreenState extends ConsumerState<SendScreen> {
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
           final includeExistentialDeposit = ref.watch(existentialDepositToggleProvider);
+          final highSecurityConfigAsync = activeAccount != null
+              ? ref.watch(highSecurityConfigProvider(activeAccount!))
+              : null;
+          final highSecurityDelaySeconds = highSecurityConfigAsync?.value?.safeguardWindow.inSeconds ?? 0;
+          final isHighSecurity = highSecurityDelaySeconds > 0;
+
+          // Update the class variable
+          _isHighSecurity = isHighSecurity;
+
+          // For high security accounts, ensure send mode is reversible and override the time
+          if (isHighSecurity) {
+            if (_sendMode != SendMode.reversible) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  _sendMode = SendMode.reversible;
+                });
+              });
+            }
+            if (highSecurityDelaySeconds > 0 && _reversibleTimeSeconds != highSecurityDelaySeconds) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _setReversibleTimeSeconds(highSecurityDelaySeconds);
+              });
+            }
+          }
 
           return balanceAsyncValue.when(
             data: (balance) {
               _maxBalance = balance;
 
-              return _buildSendContent(context, ref, includeExistentialDeposit);
+              return _buildSendContent(
+                context,
+                ref,
+                includeExistentialDeposit,
+                isHighSecurity,
+                highSecurityDelaySeconds,
+                (value) {
+                  // Prevent selecting "Now" for high security accounts
+                  if (isHighSecurity && value == SendMode.immediate) {
+                    return;
+                  }
+                  setState(() {
+                    _sendMode = value;
+                  });
+                },
+              );
             },
             loading: () => Center(child: CircularProgressIndicator(color: context.themeColors.circularLoader)),
             error: (error, stack) => Center(
@@ -483,7 +524,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
     );
   }
 
-  Widget _buildSendContent(BuildContext context, WidgetRef ref, bool includeExistentialDeposit) {
+  Widget _buildSendContent(
+    BuildContext context,
+    WidgetRef ref,
+    bool includeExistentialDeposit,
+    bool isHighSecurity,
+    int highSecurityDelaySeconds,
+    Function(SendMode) onSelectionChanged,
+  ) {
     final formattingService = ref.read(numberFormattingServiceProvider);
 
     return Column(
@@ -663,17 +711,14 @@ class SendScreenState extends ConsumerState<SendScreen> {
         const SizedBox(height: 14),
         SegmentedControl<SendMode>(
           widthMode: SegmentWidthMode.custom,
-          selectedValue: _sendMode,
-          onSelectionChanged: (value) {
-            setState(() {
-              _sendMode = value;
-            });
-          },
+          selectedValue: isHighSecurity ? SendMode.reversible : _sendMode,
+          onSelectionChanged: isHighSecurity ? null : onSelectionChanged,
+          selectedColor: isHighSecurity ? context.themeColors.accountTagEntrusted.useOpacity(1) : null,
           items: [
             SegmentedControlItem(
               value: SendMode.reversible,
               child: InkWell(
-                onTap: _sendMode == SendMode.reversible
+                onTap: _sendMode == SendMode.reversible && !isHighSecurity
                     ? () {
                         showTimePickerSheet(
                           context,
@@ -694,22 +739,32 @@ class SendScreenState extends ConsumerState<SendScreen> {
                       Row(
                         spacing: 10,
                         children: [
-                          SvgPicture.asset('assets/set_reversible.svg'),
+                          Opacity(
+                            opacity: isHighSecurity ? 0.7 : 1.0,
+                            child: SvgPicture.asset('assets/set_reversible.svg'),
+                          ),
                           Text(_formatReversibleTime(), style: context.themeText.smallParagraph),
                         ],
                       ),
-                      if (_sendMode.isReversible)
+                      if (_sendMode.isReversible && !isHighSecurity)
                         Icon(Icons.edit, color: const Color(0x75000000), size: context.isTablet ? 22 : 14),
+                      if (isHighSecurity)
+                        Icon(
+                          Icons.lock,
+                          color: context.themeColors.accountTagEntrusted,
+                          size: context.isTablet ? 22 : 14,
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
-            SegmentedControlItem(
-              customWidth: 76.0,
-              value: SendMode.immediate,
-              child: Text('Now', style: context.themeText.smallParagraph),
-            ),
+            if (!isHighSecurity)
+              SegmentedControlItem(
+                customWidth: 76.0,
+                value: SendMode.immediate,
+                child: Text('Now', style: context.themeText.smallParagraph),
+              ),
           ],
         ),
         const SizedBox(height: 37),
