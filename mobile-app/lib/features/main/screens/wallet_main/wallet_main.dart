@@ -42,6 +42,26 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     super.dispose();
   }
 
+  Future<void> _refreshData() async {
+    // Refresh balances with loading indicator
+    final activeDisplayAccount = ref.read(activeDisplayAccountProvider).value;
+    if (activeDisplayAccount != null) {
+      ref.invalidate(balanceProviderFamily);
+      // Trigger a loading refresh on the filtered controller
+      // used by active transactions
+      await ref
+          .read(
+            filteredPaginationControllerProviderFamily(
+              AccountIdListCache.get([activeDisplayAccount.account.accountId]),
+            ).notifier,
+          )
+          .loadingRefresh();
+    }
+    ref.invalidate(displayBalanceProviderRaw);
+    // Invalidate combined active display account provider to recompute
+    ref.invalidate(activeDisplayAccountTransactionsProvider);
+  }
+
   void _processIntentIfAvailable() {
     final sharedAccount = ref.read(sharedAccountIntentProvider);
 
@@ -120,25 +140,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
             ),
           ],
           scrollController: _scrollController,
-          onRefresh: () async {
-            // Refresh balances with loading indicator
-            final activeDisplayAccount = ref.read(activeDisplayAccountProvider).value;
-            if (activeDisplayAccount != null) {
-              ref.invalidate(balanceProviderFamily);
-              // Trigger a loading refresh on the filtered controller
-              // used by active transactions
-              await ref
-                  .read(
-                    filteredPaginationControllerProviderFamily(
-                      AccountIdListCache.get([activeDisplayAccount.account.accountId]),
-                    ).notifier,
-                  )
-                  .loadingRefresh();
-            }
-            ref.invalidate(displayBalanceProviderRaw);
-            // Invalidate combined active display account provider to recompute
-            ref.invalidate(activeDisplayAccountTransactionsProvider);
-          },
+          onRefresh: _refreshData,
           slivers: [
             SliverToBoxAdapter(
               child: Column(
@@ -220,6 +222,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               child: HistorySection(
                 allTransactionsAsync: activeAccountTransactionsAsync,
                 activeAccount: activeDisplayAccount.account,
+                onRetry: _refreshData,
               ),
             ),
           ],

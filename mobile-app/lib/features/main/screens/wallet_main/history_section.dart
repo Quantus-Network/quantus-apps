@@ -9,15 +9,14 @@ import 'package:resonance_network_wallet/features/main/screens/transactions_scre
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
-import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 class HistorySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> allTransactionsAsync;
   final BaseAccount activeAccount;
+  final Future<void> Function()? onRetry;
 
-  const HistorySection({super.key, required this.allTransactionsAsync, required this.activeAccount});
+  const HistorySection({super.key, required this.allTransactionsAsync, required this.activeAccount, this.onRetry});
 
   @override
   ConsumerState<HistorySection> createState() => _HistorySectionState();
@@ -118,9 +117,8 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
               Button(
                 variant: ButtonVariant.neutral,
                 label: 'Retry',
-                onPressed: () {
-                  ref.invalidate(filteredTransactionsProviderFamily);
-                  ref.invalidate(activeAccountTransactionsProvider);
+                onPressed: () async {
+                  widget.onRetry?.call();
                 },
               ),
             ],
