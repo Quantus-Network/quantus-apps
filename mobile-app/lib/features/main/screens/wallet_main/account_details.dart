@@ -21,8 +21,10 @@ class AccountDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final checksumFuture = HumanReadableChecksumService().getHumanReadableName(activeAccount.accountId);
-    final isHighSecurityAsync = ref.watch(isHighSecurityProvider(activeAccount as Account));
-    final isHighSecurity = isHighSecurityAsync.value ?? false;
+    final isHighSecurityAsync = activeAccount is Account
+        ? ref.watch(isHighSecurityProvider(activeAccount as Account))
+        : null;
+    final isHighSecurity = isHighSecurityAsync?.value ?? false;
 
     return GestureDetector(
       onTap: () => _showActionSheet(context, activeAccount),
