@@ -1,39 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_copy_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/account_tag.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
-class AccountDetails extends StatefulWidget {
+class AccountDetails extends ConsumerWidget {
   final BaseAccount activeAccount;
   final bool isEntrustedAccount;
 
   const AccountDetails({super.key, required this.activeAccount, this.isEntrustedAccount = false});
 
-  @override
-  State<AccountDetails> createState() => _AccountDetailsState();
-}
-
-class _AccountDetailsState extends State<AccountDetails> {
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _showActionSheet() {
-    showAccountCopyActionSheet(context, widget.activeAccount);
+  void _showActionSheet(BuildContext context, BaseAccount account) {
+    showAccountCopyActionSheet(context, account);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final checksumFuture = _checksumService.getHumanReadableName(widget.activeAccount.accountId);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final checksumFuture = HumanReadableChecksumService().getHumanReadableName(activeAccount.accountId);
+    final isHighSecurityAsync = ref.watch(isHighSecurityProvider(activeAccount as Account));
+    final isHighSecurity = isHighSecurityAsync.value ?? false;
 
     return GestureDetector(
-      onTap: _showActionSheet,
+      onTap: () => _showActionSheet(context, activeAccount),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(color: context.themeColors.navbarBg),
@@ -43,8 +35,10 @@ class _AccountDetailsState extends State<AccountDetails> {
           crossAxisAlignment: CrossAxisAlignment.end,
           spacing: 2,
           children: [
-            if (widget.isEntrustedAccount)
+            if (isEntrustedAccount)
               AccountTag(text: 'Entrusted Account', color: context.themeColors.accountTagEntrusted),
+            if (isHighSecurity && !isEntrustedAccount)
+              AccountTag(text: 'High Security', color: context.themeColors.accountTagEntrusted),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(right: 10),
@@ -61,7 +55,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                     spacing: 12,
                     children: [
                       Image.asset('assets/active_dot.png', width: context.isTablet ? 28 : 20),
-                      Container(
+                      SizedBox(
                         width: 195,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -71,7 +65,7 @@ class _AccountDetailsState extends State<AccountDetails> {
                           children: [
                             SizedBox(
                               width: 195,
-                              child: Text(widget.activeAccount.name, style: context.themeText.smallParagraph),
+                              child: Text(activeAccount.name, style: context.themeText.smallParagraph),
                             ),
                             FutureBuilder(
                               future: checksumFuture,
