@@ -15,7 +15,7 @@ import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 class HistorySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> allTransactionsAsync;
-  final Account activeAccount;
+  final BaseAccount activeAccount;
 
   const HistorySection({super.key, required this.allTransactionsAsync, required this.activeAccount});
 

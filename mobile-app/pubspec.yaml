@@ -97,6 +97,7 @@ flutter:
     - assets/high_security/security_icon_big.svg
     - assets/high_security/step_indicator_active_icon.svg
     - assets/high_security/step_indicator_icon.svg
+    - assets/high_security/big_red_button_icon.png
 
   fonts:
     - family: Fira Code

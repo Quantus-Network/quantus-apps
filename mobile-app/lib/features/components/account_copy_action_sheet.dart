@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
 class AccountCopyActionSheet extends StatefulWidget {
-  final Account activeAccount;
+  final BaseAccount activeAccount;
 
   const AccountCopyActionSheet({super.key, required this.activeAccount});
 
@@ -92,7 +92,7 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
   }
 }
 
-void showAccountCopyActionSheet(BuildContext context, Account activeAccount) {
+void showAccountCopyActionSheet(BuildContext context, BaseAccount activeAccount) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,

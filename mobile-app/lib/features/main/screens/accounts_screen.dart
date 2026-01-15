@@ -306,7 +306,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
     return InkWell(
       onTap: () async {
-        await ref.read(activeAccountProvider.notifier).setActiveAccount(account);
+        await ref.read(activeDisplayAccountProvider.notifier).setActiveDisplayAccount(RegularAccount(account));
         if (mounted) Navigator.pop(context);
       },
       child: Stack(
@@ -512,6 +512,11 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 borderRadius: BorderRadius.circular(5),
                                 onTap: () async {
                                   print('onTap: ${entrusted.accountId}');
+
+                                  // Set the entrusted account as the active display account
+                                  await ref
+                                      .read(activeDisplayAccountProvider.notifier)
+                                      .setActiveDisplayAccount(EntrustedDisplayAccount(entrusted));
 
                                   // ignore: use_build_context_synchronously
                                   if (mounted) Navigator.pop(context);

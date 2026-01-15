@@ -53,9 +53,9 @@ class _ErrorDisplayState extends ConsumerState<ErrorDisplay> {
               onPressed: () {
                 widget.setIsErrorSheetDisplayed(false);
 
-                ref.invalidate(activeAccountProvider);
-                ref.invalidate(balanceProvider);
-                ref.invalidate(activeAccountTransactionsProvider);
+                ref.invalidate(activeDisplayAccountProvider);
+                ref.invalidate(displayBalanceProvider);
+                ref.invalidate(activeDisplayAccountTransactionsProvider);
 
                 Navigator.pop(context);
               },

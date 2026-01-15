@@ -97,6 +97,53 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   );
 });
 
+// Display account balance providers
+final displayBalanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
+  final activeDisplayAccountAsyncValue = ref.watch(activeDisplayAccountProvider);
+
+  return activeDisplayAccountAsyncValue.when(
+    data: (activeDisplayAccount) {
+      if (activeDisplayAccount == null) {
+        return AsyncValue.data(BigInt.zero);
+      }
+      return ref.watch(balanceProviderFamily(activeDisplayAccount.account.accountId));
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+  );
+});
+
+// Store for cached display balance to return on error
+BigInt _cachedDisplayBalance = BigInt.zero;
+
+// Effective display balance (blockchain balance minus pending outgoing transactions)
+final displayBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
+  final balanceAsync = ref.watch(displayBalanceProviderRaw);
+  final pendingTransactions = ref.watch(pendingTransactionsProvider);
+  final activeDisplayAccountAsync = ref.watch(activeDisplayAccountProvider);
+
+  return balanceAsync.when(
+    data: (blockchainBalance) {
+      final activeDisplayAccount = activeDisplayAccountAsync.value;
+      if (activeDisplayAccount == null) {
+        _cachedDisplayBalance = BigInt.zero;
+        return AsyncValue.data(BigInt.zero);
+      }
+
+      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeDisplayAccount.account.accountId);
+      final effectiveBalance = blockchainBalance - pendingOutgoing;
+      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
+      _cachedDisplayBalance = result;
+      return AsyncValue.data(result);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) {
+      // On error, return last cached balance
+      return AsyncValue.data(_cachedDisplayBalance);
+    },
+  );
+});
+
 /// Calculates the total amount of pending outgoing transactions for a
 /// specific account
 BigInt _calculatePendingOutgoing(List<PendingTransactionEvent> pendingTransactions, String accountId) {

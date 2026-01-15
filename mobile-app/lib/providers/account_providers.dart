@@ -2,6 +2,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
+// Union type for display accounts
+sealed class DisplayAccount {
+  const DisplayAccount();
+
+  BaseAccount get account;
+}
+
+class RegularAccount extends DisplayAccount {
+  @override
+  final Account account;
+  const RegularAccount(this.account);
+}
+
+class EntrustedDisplayAccount extends DisplayAccount {
+  @override
+  final EntrustedAccount account;
+  const EntrustedDisplayAccount(this.account);
+}
+
 class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   final AccountsService _accountsService;
 
@@ -91,4 +110,52 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<Account?>> {
 final activeAccountProvider = StateNotifierProvider<ActiveAccountNotifier, AsyncValue<Account?>>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
   return ActiveAccountNotifier(settingsService);
+});
+
+class ActiveDisplayAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
+  final SettingsService _settingsService;
+
+  ActiveDisplayAccountNotifier(this._settingsService) : super(const AsyncValue.loading()) {
+    _loadActiveDisplayAccount();
+  }
+
+  Future<void> _loadActiveDisplayAccount() async {
+    try {
+      final account = await _settingsService.getActiveAccount();
+      if (account != null) {
+        state = AsyncValue.data(RegularAccount(account));
+      } else {
+        state = const AsyncValue.data(null);
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> setActiveDisplayAccount(DisplayAccount displayAccount) async {
+    try {
+      switch (displayAccount) {
+        case RegularAccount(account: final account):
+          await _settingsService.setActiveAccount(account);
+          state = AsyncValue.data(displayAccount);
+        case EntrustedDisplayAccount():
+          // For entrusted accounts, we don't save them as active account in settings
+          // They are temporary display accounts
+          state = AsyncValue.data(displayAccount);
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  void reset() {
+    state = const AsyncValue.loading();
+  }
+}
+
+final activeDisplayAccountProvider = StateNotifierProvider<ActiveDisplayAccountNotifier, AsyncValue<DisplayAccount?>>((
+  ref,
+) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return ActiveDisplayAccountNotifier(settingsService);
 });
