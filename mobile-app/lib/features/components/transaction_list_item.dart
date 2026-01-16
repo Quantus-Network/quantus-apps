@@ -245,14 +245,18 @@ void showTransactionActionSheet(BuildContext context, {required TransactionEvent
 
   Widget sheet;
 
-  if (transaction is ReversibleTransferEvent reversibleTx &&
-      (reversibleTx.isReversibleScheduled || reversibleTx.isReversibleCancelled) &&
-      (role == TransactionRole.sender || role == TransactionRole.both)) {
-    sheet = ReversibleTransactionActionSheet(
-      transaction: reversibleTx,
-      mode: isEntrustedAccount ? ReversibleTransactionMode.guardianIntercept : ReversibleTransactionMode.reversible,
-      entrustedAccount: entrustedAccount,
-    );
+  if (transaction is ReversibleTransferEvent) {
+    final reversibleTx = transaction;
+    if ((reversibleTx.isReversibleScheduled || reversibleTx.isReversibleCancelled) &&
+        (role == TransactionRole.sender || role == TransactionRole.both)) {
+      sheet = ReversibleTransactionActionSheet(
+        transaction: reversibleTx,
+        mode: isEntrustedAccount ? ReversibleTransactionMode.guardianIntercept : ReversibleTransactionMode.reversible,
+        entrustedAccount: entrustedAccount,
+      );
+    } else {
+      sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
+    }
   } else {
     sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
   }

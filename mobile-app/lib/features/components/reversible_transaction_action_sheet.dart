@@ -40,7 +40,7 @@ class ReversibleTransactionActionSheet extends ConsumerStatefulWidget {
 enum _SheetState { initial, confirmCancel, cancelled }
 
 class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTransactionActionSheet> {
-  _SheetState _sheetState = _SheetState.initial;
+  late _SheetState _sheetState;
   bool _isCancelling = false;
 
   late Timer _timer;
@@ -61,25 +61,32 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   @override
   void initState() {
     super.initState();
-    _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
-    if (_remainingTime.isNegative) {
+    if (widget.transaction.status == ReversibleTransferStatus.CANCELLED) {
+      _sheetState = _SheetState.cancelled;
       _remainingTime = Duration.zero;
-    }
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        if (_remainingTime > Duration.zero) {
-          _remainingTime = _remainingTime - const Duration(seconds: 1);
-        } else {
-          timer.cancel();
-          // Maybe close the sheet or show a different state when timer ends.
-          // For now, just stopping the timer.
-        }
+      _timer = Timer(const Duration(seconds: 1), () {
+        // Timer for cancelled transactions - no action needed
       });
-    });
+    } else {
+      _sheetState = _SheetState.initial;
+      _remainingTime = widget.transaction.scheduledAt.difference(DateTime.now());
+      if (_remainingTime.isNegative) {
+        _remainingTime = Duration.zero;
+      }
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          if (_remainingTime > Duration.zero) {
+            _remainingTime = _remainingTime - const Duration(seconds: 1);
+          } else {
+            timer.cancel();
+          }
+        });
+      });
+    }
   }
 
   @override
