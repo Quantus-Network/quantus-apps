@@ -67,6 +67,11 @@ class HighSecurityService {
         .toList();
   }
 
+  Future<Account?> getGuardianAccount(EntrustedAccount entrustedAccount) async {
+    final accounts = await AccountsService().getAccounts();
+    return accounts.firstWhere((a) => a.accountId == entrustedAccount.parentAccountId);
+  }
+
   Future<HighSecurityData?> getHighSecurityConfig(String address) async {
     final hsData = await _reversibleTransfersService.getHighSecurityConfig(address);
     print('getHighSecurityConfig: $address -> $hsData');

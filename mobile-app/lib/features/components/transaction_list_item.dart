@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
@@ -10,6 +11,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
@@ -233,10 +235,24 @@ class TransactionListItemState extends State<TransactionListItem> {
 }
 
 void showTransactionActionSheet(BuildContext context, {required TransactionEvent transaction, required role}) {
+  final container = ProviderScope.containerOf(context, listen: false);
+  final activeDisplayAccount = container.read(activeDisplayAccountProvider).value;
+  EntrustedAccount? entrustedAccount;
+  if (activeDisplayAccount is EntrustedDisplayAccount) {
+    entrustedAccount = activeDisplayAccount.account;
+  }
+  final isEntrustedAccount = entrustedAccount != null;
+
   Widget sheet;
 
-  if (transaction.isReversibleScheduled && (role == TransactionRole.sender || role == TransactionRole.both)) {
-    sheet = ReversibleTransactionActionSheet(transaction: transaction as ReversibleTransferEvent);
+  if (transaction is ReversibleTransferEvent reversibleTx &&
+      (reversibleTx.isReversibleScheduled || reversibleTx.isReversibleCancelled) &&
+      (role == TransactionRole.sender || role == TransactionRole.both)) {
+    sheet = ReversibleTransactionActionSheet(
+      transaction: reversibleTx,
+      mode: isEntrustedAccount ? ReversibleTransactionMode.guardianIntercept : ReversibleTransactionMode.reversible,
+      entrustedAccount: entrustedAccount,
+    );
   } else {
     sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
   }

@@ -257,6 +257,10 @@ class ReversibleTransfersService {
     }
   }
 
+  Future<Uint8List> interceptTransaction({required Account guardianAccount, required H256 transactionId}) async {
+    return cancelReversibleTransfer(account: guardianAccount, transactionId: transactionId);
+  }
+
   /// Check if account is a guardian (interceptor) for any accounts
   Future<bool> isGuardian(String address) async {
     print('isGuardian: $address');
