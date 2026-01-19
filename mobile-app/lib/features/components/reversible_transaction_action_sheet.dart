@@ -510,7 +510,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
     });
 
     try {
-      final senderAccount = (await _settingsService.getActiveRegularAccount())!;
+      final senderAccount = (await _settingsService.getActiveAccount())!;
 
       var txId = widget.transaction.txId;
       if (txId.startsWith('0x')) {
@@ -533,7 +533,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         );
       } else {
         await _reversibleTransfersService.cancelReversibleTransfer(
-          account: senderAccount,
+          account: senderAccount.account as Account,
           transactionId: transactionId,
         );
       }
@@ -567,7 +567,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         _remainingTime = Duration.zero;
         _sheetState = _SheetState.cancelled;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Failed to cancel transaction: $e');
+      debugPrint('Stack trace: $stackTrace');
       // ignore: use_build_context_synchronously
       if (mounted) context.showErrorSnackbar(title: 'Failed to cancel', message: e.toString());
     } finally {
