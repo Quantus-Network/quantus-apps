@@ -169,9 +169,7 @@ class _NavbarState extends ConsumerState<Navbar> {
         height: context.themeSize.floatingBtnHeight,
         width: context.themeSize.floatingBtnWidth,
         child: GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(context, '/send');
-          },
+          onTap: () {},
           child: Transform.translate(offset: const Offset(1, -2), child: SvgPicture.asset(item.onIcon)),
         ),
       );
