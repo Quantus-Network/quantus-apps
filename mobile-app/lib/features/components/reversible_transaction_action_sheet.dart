@@ -312,7 +312,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         );
         await launchUrl(url);
       },
-      child: Container(
+      child: SizedBox(
         width: 136,
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -325,7 +325,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
               textAlign: TextAlign.center,
               style: context.themeText.detail?.copyWith(color: const Color(0xFF16CECE), fontWeight: FontWeight.w600),
             ),
-            Icon(Icons.open_in_new, size: 12, color: const Color(0xFF16CECE)),
+            const Icon(Icons.open_in_new, size: 12, color: Color(0xFF16CECE)),
           ],
         ),
       ),
@@ -510,7 +510,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
     });
 
     try {
-      final senderAccount = (await _settingsService.getActiveAccount())!;
+      final senderAccount = (await _settingsService.getActiveRegularAccount())!;
 
       var txId = widget.transaction.txId;
       if (txId.startsWith('0x')) {
