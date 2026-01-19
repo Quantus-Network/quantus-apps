@@ -490,6 +490,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                 balance: _formattingService.formatBalance(balance, addSymbol: true),
                                 checksumName: checksumName,
                                 isHighSecurity: isHighSecurity,
+                                isEntrustedAccount: false,
                               ),
                             ),
                           );
@@ -578,7 +579,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                                         account: entrusted,
                                         balance: _formattingService.formatBalance(balance, addSymbol: true),
                                         checksumName: checksumName,
-                                        isHighSecurity: true,
+                                        isHighSecurity: false,
+                                        isEntrustedAccount: true,
                                       ),
                                     ),
                                   );
