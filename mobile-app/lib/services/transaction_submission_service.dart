@@ -338,7 +338,7 @@ class TransactionSubmissionService {
       final targets = <String>{...?(affectedAccountIds)};
       final active = _ref.read(activeAccountProvider).value;
       if (active != null) {
-        targets.add(active.accountId);
+        targets.add(active.account.accountId);
       }
 
       for (final accountId in targets) {

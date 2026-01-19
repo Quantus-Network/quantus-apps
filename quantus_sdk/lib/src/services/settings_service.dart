@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -22,6 +23,7 @@ class SettingsService {
   static const String _oldAccountsKeyV1 = 'accounts';
   static const String _activeAccountIndexKey = 'active_account_index';
   static const String _activeAccountIdKey = 'active_account_id';
+  static const String _activeDisplayAccountKey = 'active_display_account';
 
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
@@ -59,7 +61,7 @@ class SettingsService {
       final oldWalletName = _prefs.getString('wallet_name') ?? 'Account 1';
       final account = Account(walletIndex: 0, index: 0, name: oldWalletName, accountId: oldAccountId);
       await saveAccounts([account]);
-      await setActiveAccount(account);
+      await setActiveAccount(RegularAccount(account));
       // Clean up old keys after migration
       await _prefs.remove('account_id');
       await _prefs.remove('wallet_name');
@@ -105,7 +107,7 @@ class SettingsService {
       await saveAccounts(accounts);
       if (accounts.length == 1) {
         // make sure that active account is always a valid account
-        await setActiveAccount(account);
+        await setActiveAccount(RegularAccount(account));
       }
     } else {
       throw Exception('Account already exists');
@@ -127,19 +129,41 @@ class SettingsService {
       throw Exception('Cant remove last account!');
     }
     if (account.accountId == await _getActiveAccountId()) {
-      await _setActiveAccountId(accounts[0].accountId);
+      await setActiveAccount(RegularAccount(accounts[0]));
     }
     accounts.removeWhere((a) => a.accountId == account.accountId);
     await saveAccounts(accounts);
   }
 
-  Future<void> setActiveAccount(Account account) async {
-    final exists = (await getAccounts()).any((a) => a.accountId == account.accountId);
-    if (exists) {
-      await _setActiveAccountId(account.accountId);
-    } else {
-      throw Exception('Account index does not exist');
+  Future<void> setActiveAccount(DisplayAccount account) async {
+    await _prefs.setString(_activeDisplayAccountKey, jsonEncode(account.toJson()));
+    if (account is RegularAccount) {
+      final exists = (await getAccounts()).any((a) => a.accountId == account.account.accountId);
+      if (exists) {
+        await _setActiveAccountId(account.account.accountId);
+      } else {
+        throw Exception('Account index does not exist');
+      }
     }
+  }
+
+  Future<DisplayAccount?> getActiveAccount() async {
+    final jsonStr = _prefs.getString(_activeDisplayAccountKey);
+    if (jsonStr != null) {
+      return DisplayAccount.fromJson(jsonDecode(jsonStr));
+    }
+    final activeAccountId = await _getActiveAccountId();
+    final accounts = await getAccounts();
+    final ix = accounts.indexWhere((a) => a.accountId == activeAccountId);
+    return ix != -1 ? RegularAccount(accounts[ix]) : (accounts.isNotEmpty ? RegularAccount(accounts.first) : null);
+  }
+
+  Future<Account?> getActiveRegularAccount() async {
+    final activeAccount = await getActiveAccount();
+    if (activeAccount is RegularAccount) {
+      return activeAccount.account;
+    }
+    return null;
   }
 
   Future<String?> _getActiveAccountId() async {
@@ -167,13 +191,6 @@ class SettingsService {
     if (oldId != accountId) {
       await _prefs.setString(_activeAccountIdKey, accountId);
     }
-  }
-
-  Future<Account?> getActiveAccount() async {
-    final activeAccountId = await _getActiveAccountId();
-    final accounts = await getAccounts();
-    final ix = accounts.indexWhere((a) => a.accountId == activeAccountId);
-    return ix != -1 ? accounts[ix] : (accounts.isNotEmpty ? accounts.first : null);
   }
 
   Future<Account?> getAccount({required int walletIndex, required int index}) async {

@@ -53,7 +53,7 @@ class SubstrateService {
   }
 
   Future<crypto.Keypair> _getUserWallet() async {
-    final account = (await SettingsService().getActiveAccount())!;
+    final account = (await SettingsService().getActiveRegularAccount())!;
     final keypair = await account.getKeypair();
     return keypair;
   }

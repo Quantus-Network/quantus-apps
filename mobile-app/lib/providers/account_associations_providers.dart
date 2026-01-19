@@ -38,6 +38,6 @@ class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssoci
 final accountAssociationsProvider = StateNotifierProvider<AccountAssociationsNotifier, AsyncValue<AccountAssociations>>(
   (ref) {
     final activeAccount = ref.watch(activeAccountProvider).value;
-    return AccountAssociationsNotifier(activeAccount);
+    return AccountAssociationsNotifier(activeAccount is RegularAccount ? activeAccount.account : null);
   },
 );

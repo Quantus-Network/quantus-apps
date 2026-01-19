@@ -61,8 +61,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   void _addNotification() {
     final account = ref.read(activeAccountProvider).value;
-    final accountName = account?.name ?? 'Unknown';
-    final accountId = account?.accountId ?? 'unknown';
+    final accountName = account?.account.name ?? 'Unknown';
+    final accountId = account?.account.accountId ?? 'unknown';
 
     final notifier = ref.read(notificationProvider.notifier);
 
@@ -120,7 +120,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   void _addTransactionFailed() {
-    final account = ref.read(activeAccountProvider).value;
+    final displayAccount = ref.read(activeAccountProvider).value;
+    final account = displayAccount is RegularAccount ? displayAccount.account : null;
 
     final notifier = ref.read(notificationProvider.notifier);
 
@@ -147,21 +148,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   void _addBalanceAlert() {
-    final account = ref.read(activeAccountProvider).value;
+    final displayAccount = ref.read(activeAccountProvider).value;
+    final account = displayAccount is RegularAccount ? displayAccount.account : null;
+    if (account == null) return;
 
     final notifier = ref.read(notificationProvider.notifier);
     notifier.addBalanceLow(account: account);
   }
 
   void _addAccountSuccess() {
-    final account = ref.read(activeAccountProvider).value;
+    final displayAccount = ref.read(activeAccountProvider).value;
+    final account = displayAccount is RegularAccount ? displayAccount.account : null;
+    if (account == null) return;
 
     final notifier = ref.read(notificationProvider.notifier);
     notifier.addAccountAdded(account: account);
   }
 
   void _addReversibleReminder() {
-    final account = ref.read(activeAccountProvider).value;
+    final displayAccount = ref.read(activeAccountProvider).value;
+    final account = displayAccount is RegularAccount ? displayAccount.account : null;
+    if (account == null) return;
 
     final notifier = ref.read(notificationProvider.notifier);
     notifier.addReversibleTransactionReminder(

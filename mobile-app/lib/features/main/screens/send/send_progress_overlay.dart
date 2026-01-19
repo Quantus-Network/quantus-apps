@@ -139,7 +139,7 @@ class SendConfirmationOverlayState extends ConsumerState<SendConfirmationOverlay
     });
 
     try {
-      final account = (await _settingsService.getActiveAccount())!;
+      final account = (await _settingsService.getActiveRegularAccount())!;
 
       // ignore: use_build_context_synchronously
       if (!context.mounted) {

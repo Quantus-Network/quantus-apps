@@ -24,38 +24,12 @@ final activeAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactio
           ),
         );
       }
-      return ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get([activeAccount.accountId])));
+      return ref.watch(filteredTransactionsProviderFamily(AccountIdListCache.get([activeAccount.account.accountId])));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
   );
 });
 
-/// Provides a list of transactions for the currently active display account.
-///
-/// This provider handles the logic of watching the active display account and fetching
-/// the appropriate transaction list. It returns an [AsyncValue] that can be
-/// in a loading, data, or error state.
-final activeDisplayAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((ref) {
-  final activeDisplayAccountValue = ref.watch(activeDisplayAccountProvider);
-
-  return activeDisplayAccountValue.when(
-    data: (activeDisplayAccount) {
-      if (activeDisplayAccount == null) {
-        return AsyncValue.data(
-          CombinedTransactionsList(
-            pendingCancellationIds: <String>{},
-            pendingTransactions: [],
-            reversibleTransfers: [],
-            otherTransfers: [],
-          ),
-        );
-      }
-      return ref.watch(
-        filteredTransactionsProviderFamily(AccountIdListCache.get([activeDisplayAccount.account.accountId])),
-      );
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (err, stack) => AsyncValue.error(err, stack),
-  );
-});
+// Alias for backward compatibility or refactoring
+final activeDisplayAccountTransactionsProvider = activeAccountTransactionsProvider;

@@ -43,10 +43,10 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     try {
       final account = (await _settingsService.getActiveAccount())!;
       setState(() {
-        _accountName = account.name;
-        _accountId = account.accountId;
-        _checksumFuture = _checksumService.getHumanReadableName(account.accountId);
-        _splittedAddress = AddressFormattingService.splitIntoChunks(account.accountId);
+        _accountName = account.account.name;
+        _accountId = account.account.accountId;
+        _checksumFuture = _checksumService.getHumanReadableName(account.account.accountId);
+        _splittedAddress = AddressFormattingService.splitIntoChunks(account.account.accountId);
       });
     } catch (e) {
       debugPrint('Error loading account data: $e');

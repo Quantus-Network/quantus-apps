@@ -42,7 +42,7 @@ void main() {
 
     // --- 1. Settings Service Stubs ---
     when(mockSettingsService.getActiveAccount()).thenAnswer((_) async {
-      return const Account(walletIndex: 0, index: 0, name: 'Test User', accountId: 'test_account_id');
+      return const RegularAccount(Account(walletIndex: 0, index: 0, name: 'Test User', accountId: 'test_account_id'));
     });
     when(mockSettingsService.getReversibleTimeSeconds()).thenAnswer((_) async => 600);
 

@@ -59,7 +59,7 @@ final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
       if (activeAccount == null) {
         return AsyncValue.data(BigInt.zero);
       }
-      return ref.watch(balanceProviderFamily(activeAccount.accountId));
+      return ref.watch(balanceProviderFamily(activeAccount.account.accountId));
     },
     loading: () => const AsyncValue.loading(),
     error: (err, stack) => AsyncValue.error(err, stack),
@@ -83,7 +83,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
         return AsyncValue.data(BigInt.zero);
       }
 
-      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.accountId);
+      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeAccount.account.accountId);
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       _cachedBalance = result;
@@ -93,53 +93,6 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
     error: (err, stack) {
       // On error, return last cached balance
       return AsyncValue.data(_cachedBalance);
-    },
-  );
-});
-
-// Display account balance providers
-final displayBalanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
-  final activeDisplayAccountAsyncValue = ref.watch(activeDisplayAccountProvider);
-
-  return activeDisplayAccountAsyncValue.when(
-    data: (activeDisplayAccount) {
-      if (activeDisplayAccount == null) {
-        return AsyncValue.data(BigInt.zero);
-      }
-      return ref.watch(balanceProviderFamily(activeDisplayAccount.account.accountId));
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (err, stack) => AsyncValue.error(err, stack),
-  );
-});
-
-// Store for cached display balance to return on error
-BigInt _cachedDisplayBalance = BigInt.zero;
-
-// Effective display balance (blockchain balance minus pending outgoing transactions)
-final displayBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
-  final balanceAsync = ref.watch(displayBalanceProviderRaw);
-  final pendingTransactions = ref.watch(pendingTransactionsProvider);
-  final activeDisplayAccountAsync = ref.watch(activeDisplayAccountProvider);
-
-  return balanceAsync.when(
-    data: (blockchainBalance) {
-      final activeDisplayAccount = activeDisplayAccountAsync.value;
-      if (activeDisplayAccount == null) {
-        _cachedDisplayBalance = BigInt.zero;
-        return AsyncValue.data(BigInt.zero);
-      }
-
-      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, activeDisplayAccount.account.accountId);
-      final effectiveBalance = blockchainBalance - pendingOutgoing;
-      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
-      _cachedDisplayBalance = result;
-      return AsyncValue.data(result);
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (err, stack) {
-      // On error, return last cached balance
-      return AsyncValue.data(_cachedDisplayBalance);
     },
   );
 });

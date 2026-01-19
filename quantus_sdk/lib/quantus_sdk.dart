@@ -60,6 +60,7 @@ export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';
 export 'src/models/entrusted_account.dart';
+export 'src/models/display_account.dart';
 
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).

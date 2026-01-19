@@ -51,17 +51,19 @@ class RecoveryService {
   /// Initiate recovery process for a lost account
   Future<Uint8List> initiateRecovery({required Account rescuerAccount, required String lostAccountAddress}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
-
-      // Create the call
-      final call = quantusApi.tx.recovery.initiateRecovery(account: lostAccount);
+      final call = getInitiateRecoveryCall(lostAccountAddress);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
     } catch (e) {
       throw Exception('Failed to initiate recovery: $e');
     }
+  }
+
+  RuntimeCall getInitiateRecoveryCall(String lostAccountAddress) {
+    final quantusApi = Schrodinger(_substrateService.provider!);
+    final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+    return quantusApi.tx.recovery.initiateRecovery(account: lostAccount);
   }
 
   /// Vouch for an active recovery process (called by friends)
@@ -71,12 +73,7 @@ class RecoveryService {
     required String rescuerAddress,
   }) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
-      final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
-
-      // Create the call
-      final call = quantusApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
+      final call = getVouchRecoveryCall(lostAccountAddress, rescuerAddress);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(friendAccount, call);
@@ -85,20 +82,29 @@ class RecoveryService {
     }
   }
 
+  RuntimeCall getVouchRecoveryCall(String lostAccountAddress, String rescuerAddress) {
+    final quantusApi = Schrodinger(_substrateService.provider!);
+    final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+    final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
+    return quantusApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
+  }
+
   /// Claim recovery of a lost account (called by rescuer after threshold is met)
   Future<Uint8List> claimRecovery({required Account rescuerAccount, required String lostAccountAddress}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
-      final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
-
-      // Create the call
-      final call = quantusApi.tx.recovery.claimRecovery(account: lostAccount);
+      final call = getClaimRecoveryCall(lostAccountAddress);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, call);
     } catch (e) {
       throw Exception('Failed to claim recovery: $e');
     }
+  }
+
+  RuntimeCall getClaimRecoveryCall(String lostAccountAddress) {
+    final quantusApi = Schrodinger(_substrateService.provider!);
+    final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
+    return quantusApi.tx.recovery.claimRecovery(account: lostAccount);
   }
 
   /// Close an active recovery process (called by the lost account owner)
@@ -139,19 +145,19 @@ class RecoveryService {
     required RuntimeCall call,
   }) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
-      final recoveredAccount = const multi_address.$MultiAddress().id(
-        crypto.ss58ToAccountId(s: recoveredAccountAddress),
-      );
-
-      // Create the call
-      final proxyCall = quantusApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
+      final proxyCall = getAsRecoveredCall(recoveredAccountAddress, call);
 
       // Submit the transaction using substrate service
       return await _substrateService.submitExtrinsic(rescuerAccount, proxyCall);
     } catch (e) {
       throw Exception('Failed to call as recovered: $e');
     }
+  }
+
+  RuntimeCall getAsRecoveredCall(String recoveredAccountAddress, RuntimeCall call) {
+    final quantusApi = Schrodinger(_substrateService.provider!);
+    final recoveredAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recoveredAccountAddress));
+    return quantusApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
   }
 
   /// Cancel the ability to use a recovered account

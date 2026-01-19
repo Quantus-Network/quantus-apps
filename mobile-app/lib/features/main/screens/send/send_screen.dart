@@ -126,7 +126,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
 
   Future<void> _loadActiveAccount() async {
     final settingService = ref.read(settingsServiceProvider);
-    activeAccount = await settingService.getActiveAccount();
+    activeAccount = await settingService.getActiveRegularAccount();
   }
 
   Future<void> _loadReversibleTimeSetting() async {

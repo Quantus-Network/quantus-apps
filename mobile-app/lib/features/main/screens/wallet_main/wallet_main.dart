@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/account_details.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/action_button.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_main/history_section.dart';
@@ -44,7 +45,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
   Future<void> _refreshData() async {
     // Refresh balances with loading indicator
-    final activeDisplayAccount = ref.read(activeDisplayAccountProvider).value;
+    final activeDisplayAccount = ref.read(activeAccountProvider).value;
     if (activeDisplayAccount != null) {
       ref.invalidate(balanceProviderFamily);
       // Trigger a loading refresh on the filtered controller
@@ -57,7 +58,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
           )
           .loadingRefresh();
     }
-    ref.invalidate(displayBalanceProviderRaw);
+    ref.invalidate(balanceProviderRaw);
     // Invalidate combined active display account provider to recompute
     ref.invalidate(activeDisplayAccountTransactionsProvider);
   }
@@ -78,8 +79,8 @@ class _WalletMainState extends ConsumerState<WalletMain> {
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
-    final activeDisplayAccountAsync = ref.watch(activeDisplayAccountProvider);
-    final balanceAsync = ref.watch(displayBalanceProvider);
+    final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
+    final balanceAsync = ref.watch(balanceProvider);
     final activeAccountTransactionsAsync = ref.watch(activeDisplayAccountTransactionsProvider);
     final hasNotifications = ref.watch(notificationProvider).isNotEmpty;
 
@@ -200,7 +201,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
                         ActionButton(
                           type: ActionType.send,
                           onPressed: () {
-                            Navigator.pushNamed(context, '/send');
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const SendScreen()));
                           },
                         ),
                         const SizedBox(width: 33),

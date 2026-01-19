@@ -56,6 +56,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:

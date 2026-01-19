@@ -61,15 +61,15 @@ class NotificationIntegrationService {
 
   void _setupBalanceListeners() {
     // Listen to balance changes for low balance alerts
-    _ref.listen<AsyncValue<BigInt>>(displayBalanceProvider, (previous, next) {
+    _ref.listen<AsyncValue<BigInt>>(balanceProvider, (previous, next) {
       next.whenData((balance) {
         // Check if balance is at or near existential deposit
         final existentialDeposit = balances.Constants().existentialDeposit;
         if (balance <= existentialDeposit) {
           // Example threshold
           final activeAccount = _ref.read(activeAccountProvider).value;
-          if (activeAccount != null) {
-            _notifyLowBalance(activeAccount, activeAccount.accountId);
+          if (activeAccount is RegularAccount) {
+            _notifyLowBalance(activeAccount.account, activeAccount.account.accountId);
           }
         }
       });

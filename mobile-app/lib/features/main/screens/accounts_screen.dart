@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -141,6 +142,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       if (result == true && mounted) {
         ref.invalidate(accountsProvider);
         ref.invalidate(activeAccountProvider);
+        ref.invalidate(activeAccountProvider);
       }
     });
   }
@@ -203,7 +205,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   Widget _buildAccountsList() {
     final accountsAsync = ref.watch(accountsProvider);
-    final activeAccountAsync = ref.watch(activeAccountProvider);
+    final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
     return accountsAsync.when(
       loading: () => Center(child: CircularProgressIndicator(color: context.themeColors.circularLoader)),
@@ -220,14 +222,25 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           );
         }
 
-        return activeAccountAsync.when(
+        return activeDisplayAccountAsync.when(
           loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
           error: (error, _) => Center(
             child: Text('Failed to load active account: $error', style: const TextStyle(color: Colors.white70)),
           ),
-          data: (activeAccount) {
+          data: (activeDisplayAccount) {
             if (_selectedWalletIndex == null) {
-              final initial = activeAccount?.walletIndex ?? accounts.first.walletIndex;
+              // Try to determine wallet index from active display account
+              int? initialWalletIndex;
+              if (activeDisplayAccount is RegularAccount) {
+                initialWalletIndex = activeDisplayAccount.account.walletIndex;
+              } else if (activeDisplayAccount is EntrustedDisplayAccount) {
+                // Find parent account to get wallet index
+                final parentId = activeDisplayAccount.account.parentAccountId;
+                final parent = accounts.firstWhereOrNull((a) => a.accountId == parentId);
+                initialWalletIndex = parent?.walletIndex;
+              }
+
+              final initial = initialWalletIndex ?? accounts.first.walletIndex;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted && _selectedWalletIndex == null) setState(() => _selectedWalletIndex = initial);
               });
@@ -244,7 +257,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   separatorBuilder: (context, index) => const SizedBox(height: 25),
                   itemBuilder: (context, index) {
                     final account = walletAccounts[index];
-                    return _buildAccountListItem(account, activeAccount, index);
+                    return _buildAccountListItem(account, activeDisplayAccount?.account.accountId, index);
                   },
                 ),
               );
@@ -275,7 +288,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               for (var i = 0; i < walletAccounts.length; i++) {
                 if (i > 0) children.add(const SizedBox(height: 25));
                 final account = walletAccounts[i];
-                children.add(_buildAccountListItem(account, activeAccount, i));
+                children.add(_buildAccountListItem(account, activeDisplayAccount?.account.accountId, i));
               }
               sectionIndex++;
             }
@@ -290,8 +303,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     );
   }
 
-  Widget _buildAccountListItem(Account account, Account? activeAccount, int index) {
-    final bool isActive = account.accountId == activeAccount?.accountId;
+  Widget _buildAccountListItem(Account account, String? activeAccountId, int index) {
+    final bool isActive = account.accountId == activeAccountId;
     final entrustedAccountsAsync = ref.watch(entrustedAccountsProvider(account));
     final entrustedAccountsData = entrustedAccountsAsync.value ?? [];
 
@@ -306,7 +319,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
     return InkWell(
       onTap: () async {
-        await ref.read(activeDisplayAccountProvider.notifier).setActiveDisplayAccount(RegularAccount(account));
+        await ref.read(activeAccountProvider.notifier).setActiveAccount(RegularAccount(account));
         if (mounted) Navigator.pop(context);
       },
       child: Stack(
@@ -495,7 +508,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     nodes: entrustedNodes,
                     nodeBuilder: (context, node, depth) {
                       final entrusted = node.data;
-                      final isEntrustedActive = entrusted.accountId == activeAccount?.accountId;
+                      final isEntrustedActive = entrusted.accountId == activeAccountId;
 
                       return Row(
                         children: [
@@ -515,8 +528,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
                                   // Set the entrusted account as the active display account
                                   await ref
-                                      .read(activeDisplayAccountProvider.notifier)
-                                      .setActiveDisplayAccount(EntrustedDisplayAccount(entrusted));
+                                      .read(activeAccountProvider.notifier)
+                                      .setActiveAccount(EntrustedDisplayAccount(entrusted));
 
                                   // ignore: use_build_context_synchronously
                                   if (mounted) Navigator.pop(context);

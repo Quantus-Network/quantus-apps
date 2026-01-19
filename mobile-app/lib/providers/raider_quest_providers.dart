@@ -39,5 +39,5 @@ final raiderSubmissionsProvider = StateNotifierProvider<RaiderSubmissionsNotifie
   ref,
 ) {
   final activeAccount = ref.watch(activeAccountProvider).value;
-  return RaiderSubmissionsNotifier(activeAccount);
+  return RaiderSubmissionsNotifier(activeAccount is RegularAccount ? activeAccount.account : null);
 });

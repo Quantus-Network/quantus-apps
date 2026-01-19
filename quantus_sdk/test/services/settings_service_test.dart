@@ -38,7 +38,7 @@ void main() {
 
       // Act
       final accounts = await migrationService.getAccounts();
-      final activeAccount = await migrationService.getActiveAccount();
+      final activeAccount = await migrationService.getActiveRegularAccount();
 
       // Assert
       expect(accounts.length, 1);
@@ -108,11 +108,11 @@ void main() {
       await settingsService.saveAccounts([account1, account2]);
 
       // Act
-      await settingsService.setActiveAccount(account2);
+      await settingsService.setActiveAccount(const RegularAccount(account2));
       final activeAccount = (await settingsService.getActiveAccount())!;
 
       // Assert
-      expect(activeAccount.accountId, account2.accountId);
+      expect(activeAccount.account.accountId, account2.accountId);
     });
 
     test('setActiveAccount should throw for a non-existent account', () async {
@@ -122,7 +122,7 @@ void main() {
 
       // Act & Assert
       expect(
-        () async => await settingsService.setActiveAccount(account2),
+        () async => await settingsService.setActiveAccount(const RegularAccount(account2)),
         throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('Account index does not exist'))),
       );
     });
@@ -157,7 +157,7 @@ void main() {
       // Arrange
       await settingsService.initialize();
       await settingsService.saveAccounts([account1, account2, account3]);
-      await settingsService.setActiveAccount(account2);
+      await settingsService.setActiveAccount(const RegularAccount(account2));
 
       // Act
       await settingsService.removeAccount(account2);
@@ -165,7 +165,7 @@ void main() {
 
       // Assert
       // It should fall back to the first account in the remaining list
-      expect(activeAccount.accountId, account1.accountId);
+      expect(activeAccount.account.accountId, account1.accountId);
     });
 
     test('getNextFreeAccountIndex should return correct next index', () async {

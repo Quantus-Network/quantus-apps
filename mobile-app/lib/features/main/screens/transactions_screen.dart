@@ -48,8 +48,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           if (widget.fixedAccountId != null) {
             accountIds = [widget.fixedAccountId!];
           } else if (!widget.showAccountFilter) {
-            final activeAccount = ref.read(activeAccountProvider).value;
-            accountIds = activeAccount != null ? [activeAccount.accountId] : [];
+            final activeDisplayAccount = ref.read(activeAccountProvider).value;
+            accountIds = activeDisplayAccount != null ? [activeDisplayAccount.account.accountId] : [];
           } else {
             accountIds = accounts.map((a) => a.accountId).toList();
           }

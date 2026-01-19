@@ -236,7 +236,7 @@ class TransactionListItemState extends State<TransactionListItem> {
 
 void showTransactionActionSheet(BuildContext context, {required TransactionEvent transaction, required role}) {
   final container = ProviderScope.containerOf(context, listen: false);
-  final activeDisplayAccount = container.read(activeDisplayAccountProvider).value;
+  final activeDisplayAccount = container.read(activeAccountProvider).value;
   EntrustedAccount? entrustedAccount;
   if (activeDisplayAccount is EntrustedDisplayAccount) {
     entrustedAccount = activeDisplayAccount.account;

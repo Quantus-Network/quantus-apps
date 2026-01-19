@@ -138,19 +138,19 @@ class MockSettingsService extends _i1.Mock implements _i2.SettingsService {
           )
           as _i3.Future<void>);
 
-  @override
-  _i3.Future<void> setActiveAccount(_i4.Account? account) =>
-      (super.noSuchMethod(
-            Invocation.method(#setActiveAccount, [account]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
+  // @override
+  // _i3.Future<void> setActiveAccount(_i4.Account? account) =>
+  //     (super.noSuchMethod(
+  //           Invocation.method(#setActiveAccount, [account]),
+  //           returnValue: _i3.Future<void>.value(),
+  //           returnValueForMissingStub: _i3.Future<void>.value(),
+  //         )
+  //         as _i3.Future<void>);
 
-  @override
-  _i3.Future<_i4.Account?> getActiveAccount() =>
-      (super.noSuchMethod(Invocation.method(#getActiveAccount, []), returnValue: _i3.Future<_i4.Account?>.value())
-          as _i3.Future<_i4.Account?>);
+  // @override
+  // _i3.Future<_i4.Account?> getActiveAccount() =>
+  //     (super.noSuchMethod(Invocation.method(#getActiveAccount, []), returnValue: _i3.Future<_i4.Account?>.value())
+  //         as _i3.Future<_i4.Account?>);
 
   @override
   _i3.Future<_i4.Account?> getAccount({required int? walletIndex, required int? index}) =>

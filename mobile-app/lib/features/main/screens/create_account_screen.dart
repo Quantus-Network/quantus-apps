@@ -111,7 +111,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ref.invalidate(accountsProvider);
 
         final activeAccount = ref.read(activeAccountProvider).value;
-        if (activeAccount?.accountId == _provisionalAccount.accountId) {
+        if (activeAccount?.account.accountId == _provisionalAccount.accountId) {
           ref.invalidate(activeAccountProvider);
         }
 

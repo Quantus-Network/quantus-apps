@@ -126,7 +126,7 @@ class GlobalHistoryPollingService {
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
       await _ref
-          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.accountId])).notifier)
+          .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([active.account.accountId])).notifier)
           .loadingRefresh();
     }
 
