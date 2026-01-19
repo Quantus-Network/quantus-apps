@@ -137,9 +137,9 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   String get _subtitle =>
       _isGuardianIntercept ? 'Pull this transaction to your account' : 'Reverse or keep your transaction';
 
-  Color get _titleColor => _isGuardianIntercept ? const Color(0xFFFFE91F) : context.themeColors.checksum;
+  Color get _titleColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.checksum;
 
-  Color get _confirmationTextColor => _isGuardianIntercept ? const Color(0xFFFFE91F) : context.themeColors.textMuted;
+  Color get _confirmationTextColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.textMuted;
 
   String get _confirmButtonLabel => _isGuardianIntercept ? 'Intercept' : 'Reverse';
 
@@ -147,7 +147,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
       ? 'Are you sure you want to intercept this transaction and pull it to your account?'
       : 'Are you sure you want to reverse this tx?';
 
-  Color get _confirmButtonColor => _isGuardianIntercept ? const Color(0xFFFFE91F) : context.themeColors.buttonDanger;
+  Color get _confirmButtonColor => _isGuardianIntercept ? context.themeColors.yellow : context.themeColors.buttonDanger;
 
   Color get _confirmButtonTextColor => _isGuardianIntercept ? const Color(0xFF0B0F14) : Colors.white;
 
@@ -265,7 +265,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
                   'Transaction Intercepted',
                   textAlign: TextAlign.center,
                   style: context.themeText.smallTitle?.copyWith(
-                    color: const Color(0xFFFFE91F),
+                    color: context.themeColors.yellow,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
