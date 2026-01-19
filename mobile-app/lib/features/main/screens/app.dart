@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/features/styles/app_theme.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
@@ -52,12 +51,6 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       initialRoute: '/',
       routes: {
         '/': (context) => const WalletInitializer(),
-
-        // The send route is really just an internal thing and not accessible
-        // to the outside. So no fancy auth logic, it just doesn't work from
-        // outside the app when not authenticated.
-        '/send': (context) => const SendScreen(),
-
         // These routes are for deep linking, each will carry an intent
         '/account': (context) => const WalletInitializer(),
         '/transactions': (context) => const WalletInitializer(),
