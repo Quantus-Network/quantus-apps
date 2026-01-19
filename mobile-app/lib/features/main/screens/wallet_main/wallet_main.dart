@@ -60,7 +60,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
     }
     ref.invalidate(balanceProviderRaw);
     // Invalidate combined active display account provider to recompute
-    ref.invalidate(activeDisplayAccountTransactionsProvider);
+    ref.invalidate(activeAccountTransactionsProvider);
   }
 
   void _processIntentIfAvailable() {
@@ -81,7 +81,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
 
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
-    final activeAccountTransactionsAsync = ref.watch(activeDisplayAccountTransactionsProvider);
+    final activeAccountTransactionsAsync = ref.watch(activeAccountTransactionsProvider);
     final hasNotifications = ref.watch(notificationProvider).isNotEmpty;
 
     return activeDisplayAccountAsync.when(
