@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
+import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
 import 'package:quantus_sdk/generated/schrodinger/types/qp_scheduler/block_number_or_timestamp.dart' as qp;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/extensions/address_extension.dart';
@@ -86,5 +87,55 @@ class HighSecurityService {
       // not a high security account
       return null;
     }
+  }
+
+  Future<Uint8List> pullAllFunds(String lostAccountAddress, Account guardianAccount) async {
+    print('pullAllFunds: $lostAccountAddress, $guardianAccount');
+    // 1. Initiate recovery (rescuer = guardian)
+    Utility batchCall = _getPullAllFundsCall(lostAccountAddress, guardianAccount);
+    // Submit batch signed by guardian
+    return await _substrateService.submitExtrinsic(guardianAccount, batchCall);
+  }
+
+  Future<ExtrinsicFeeData> getPullAllFundsFee(String lostAccountAddress, Account guardianAccount) async {
+    // Batch all calls
+    final batchCall = _getPullAllFundsCall(lostAccountAddress, guardianAccount);
+
+    // Get transaction fee
+    final transactionFee = await _substrateService.getFeeForCall(guardianAccount, batchCall);
+
+    // Add recovery deposit
+    final recoveryDeposit = RecoveryService().recoveryDeposit;
+
+    return ExtrinsicFeeData(
+      fee: transactionFee.fee + recoveryDeposit,
+      blockHash: transactionFee.blockHash,
+      blockNumber: transactionFee.blockNumber,
+    );
+  }
+
+  Utility _getPullAllFundsCall(String lostAccountAddress, Account guardianAccount) {
+    final calls = <RuntimeCall>[];
+
+    final recoveryService = RecoveryService();
+    final balancesService = BalancesService();
+    final quantusApi = Schrodinger(_substrateService.provider!);
+
+    // 1. Initiate recovery (rescuer = guardian)
+    calls.add(recoveryService.getInitiateRecoveryCall(lostAccountAddress));
+
+    // 2. Vouch for recovery (friend = guardian)
+    calls.add(recoveryService.getVouchRecoveryCall(lostAccountAddress, guardianAccount.accountId));
+
+    // 3. Claim recovery (rescuer = guardian)
+    calls.add(recoveryService.getClaimRecoveryCall(lostAccountAddress));
+
+    // 4. Transfer all funds to guardian (as recovered)
+    final transferAllCall = balancesService.getTransferAllCall(guardianAccount.accountId, keepAlive: false);
+    calls.add(recoveryService.getAsRecoveredCall(lostAccountAddress, transferAllCall));
+
+    // Batch all calls
+    final batchCall = quantusApi.tx.utility.batch(calls: calls);
+    return batchCall;
   }
 }
