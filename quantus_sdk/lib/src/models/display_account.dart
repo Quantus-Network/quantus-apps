@@ -21,6 +21,9 @@ sealed class DisplayAccount {
         throw Exception('Unknown display account type: $type');
     }
   }
+
+  bool get isEntrustedAccount => this is EntrustedDisplayAccount;
+  bool get isRegularAccount => this is RegularAccount;
 }
 
 class RegularAccount extends DisplayAccount {
