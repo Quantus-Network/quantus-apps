@@ -46,7 +46,7 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
 class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   void _editAccountName() {
     if (widget.account is! Account) return;
-    
+
     Navigator.push<bool?>(
       context,
       MaterialPageRoute(builder: (context) => CreateAccountScreen(accountToEdit: widget.account as Account)),
@@ -133,7 +133,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
 
   Future<void> _disconnectWallet() async {
     if (widget.account is! Account) return;
-    
+
     try {
       final accountsService = AccountsService();
       await accountsService.removeAccount(widget.account as Account);
@@ -179,7 +179,10 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              if (FeatureFlags.enableHighSecurity && widget.account is Account) ...[const SizedBox(height: 20), _buildHighSecuritySection(context)],
+              if (FeatureFlags.enableHighSecurity && widget.account is Account) ...[
+                const SizedBox(height: 20),
+                _buildHighSecuritySection(context),
+              ],
               if (widget.account is Account && (widget.account as Account).accountType == AccountType.keystone) ...[
                 const SizedBox(height: 20),
                 _buildDisconnectWalletButton(),
@@ -223,8 +226,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                 children: [
                   Text(widget.account.name, style: context.themeText.smallTitle),
                   const SizedBox(width: 8),
-                  if (widget.account is Account)
-                    const Icon(Icons.edit, color: Colors.white70, size: 16),
+                  if (widget.account is Account) const Icon(Icons.edit, color: Colors.white70, size: 16),
                 ],
               ),
             ),
