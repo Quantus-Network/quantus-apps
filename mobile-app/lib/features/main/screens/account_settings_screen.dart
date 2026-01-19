@@ -23,6 +23,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/svg_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
@@ -148,7 +149,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     } catch (e) {
       print('Failed to disconnect: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to disconnect: $e')));
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to disconnect wallet: $e');
       }
     }
   }

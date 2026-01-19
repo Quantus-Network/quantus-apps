@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/pull_funds_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 
 class EmergencyButton extends ConsumerWidget {
   const EmergencyButton({super.key});
@@ -21,40 +22,34 @@ class EmergencyButton extends ConsumerWidget {
           );
 
           if (guardianAccount != null) {
-            try {
-              if (context.mounted) {
-                showPullFundsConfirmationSheet(
-                  context,
-                  activeDisplayAccount.account.accountId,
-                  guardianAccount,
-                  () async {
-                    try {
-                      final highSecurityService = ref.read(highSecurityServiceProvider);
-                      await highSecurityService.pullAllFunds(activeDisplayAccount.account.accountId, guardianAccount);
+            if (context.mounted) {
+              showPullFundsConfirmationSheet(
+                context,
+                activeDisplayAccount.account.accountId,
+                guardianAccount,
+                () async {
+                  try {
+                    final highSecurityService = ref.read(highSecurityServiceProvider);
+                    await highSecurityService.pullAllFunds(activeDisplayAccount.account.accountId, guardianAccount);
 
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(const SnackBar(content: Text('Emergency funds pull initiated successfully')));
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pull funds: $e')));
-                      }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('Emergency funds pull initiated successfully')));
                     }
-                  },
-                );
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to show confirmation: $e')));
-              }
+                  } catch (e) {
+                    print('Error: Failed to pull funds: $e');
+                    if (context.mounted) {
+                      context.showErrorSnackbar(title: 'Error', message: 'Failed to pull funds: $e');
+                    }
+                  }
+                },
+              );
             }
           } else {
+            print('Error: Guardian account not found on this device');
             if (context.mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Guardian account not found on this device')));
+              context.showErrorSnackbar(title: 'Error', message: 'Guardian account not found on this device');
             }
           }
         }
