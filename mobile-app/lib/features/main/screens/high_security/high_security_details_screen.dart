@@ -10,7 +10,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class HighSecurityDetailsScreen extends ConsumerWidget {
-  final Account account;
+  final BaseAccount account;
   const HighSecurityDetailsScreen({super.key, required this.account});
 
   // Shared style accessors

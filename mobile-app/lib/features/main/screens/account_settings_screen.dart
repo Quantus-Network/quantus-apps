@@ -23,6 +23,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/svg_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
@@ -31,12 +32,14 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
   final String balance;
   final String checksumName;
   final bool isHighSecurity;
+  final bool isEntrustedAccount;
   const AccountSettingsScreen({
     super.key,
     required this.account,
     required this.balance,
     required this.checksumName,
     required this.isHighSecurity,
+    required this.isEntrustedAccount,
   });
 
   @override
@@ -148,10 +151,13 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     } catch (e) {
       print('Failed to disconnect: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to disconnect: $e')));
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to disconnect wallet: $e');
       }
     }
   }
+
+  bool get isKeystoneAccount =>
+      widget.account is Account && (widget.account as Account).accountType == AccountType.keystone;
 
   @override
   Widget build(BuildContext context) {
@@ -179,14 +185,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               _buildShareSection(),
               const SizedBox(height: 20),
               _buildAddressSection(),
-              if (FeatureFlags.enableHighSecurity && widget.account is Account) ...[
-                const SizedBox(height: 20),
-                _buildHighSecuritySection(context),
-              ],
-              if (widget.account is Account && (widget.account as Account).accountType == AccountType.keystone) ...[
-                const SizedBox(height: 20),
-                _buildDisconnectWalletButton(),
-              ],
+              if (FeatureFlags.enableHighSecurity) ...[const SizedBox(height: 20), _buildHighSecuritySection(context)],
+              if (isKeystoneAccount) ...[const SizedBox(height: 20), _buildDisconnectWalletButton()],
               const SizedBox(height: 30),
             ],
           ),
@@ -212,7 +212,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Widget _buildAccountHeader() {
-    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity && widget.account is Account;
+    final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
+    final isEntrustedAccount = widget.isEntrustedAccount;
     return _buildSettingCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
@@ -220,19 +221,23 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
           children: [
             const SizedBox(height: 10),
             InkWell(
-              onTap: widget.account is Account ? _editAccountName : null,
+              onTap: _editAccountName,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(widget.account.name, style: context.themeText.smallTitle),
                   const SizedBox(width: 8),
-                  if (widget.account is Account) const Icon(Icons.edit, color: Colors.white70, size: 16),
+                  const Icon(Icons.edit, color: Colors.white70, size: 16),
                 ],
               ),
             ),
             if (isHighSecurity) ...[
               const SizedBox(height: 10),
               AccountTag(text: 'High-Security', color: context.themeColors.accountTagHighSecurity, width: 177.0),
+            ],
+            if (isEntrustedAccount) ...[
+              const SizedBox(height: 10),
+              AccountTag(text: 'Entrusted Account', color: context.themeColors.accountTagEntrusted, width: 177.0),
             ],
             const SizedBox(height: 10),
             Text(
@@ -298,9 +303,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Widget _buildHighSecuritySection(BuildContext context) {
-    if (widget.account is! Account) return const SizedBox();
-
     final isHighSecurity = widget.isHighSecurity && FeatureFlags.enableHighSecurity;
+    final isEntrustedAccount = widget.isEntrustedAccount;
     final textColor = isHighSecurity ? context.themeColors.textSecondary : context.themeColors.textPrimary;
     final secondRowTextColor = isHighSecurity ? context.themeColors.darkGray : context.themeColors.textPrimary;
     final iconColor = isHighSecurity ? context.themeColors.textSecondary : context.themeColors.checksum;
@@ -314,8 +318,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => isHighSecurity
-                  ? HighSecurityDetailsScreen(account: widget.account as Account)
+              builder: (context) => isHighSecurity || isEntrustedAccount
+                  ? HighSecurityDetailsScreen(account: widget.account)
                   : HighSecurityGetStartedScreen(account: widget.account as Account),
             ),
           );
@@ -348,7 +352,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                     spacing: 4,
                     children: [
                       Text('High Security', style: context.themeText.largeTag?.copyWith(color: textColor)),
-                      if (isHighSecurity) ...[
+                      if (isHighSecurity || isEntrustedAccount) ...[
                         Text(subtitle, style: context.themeText.tag?.copyWith(color: secondRowTextColor)),
                       ],
                     ],

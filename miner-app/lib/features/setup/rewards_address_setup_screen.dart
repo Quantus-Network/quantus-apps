@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class RewardsAddressSetupScreen extends StatefulWidget {
@@ -65,7 +66,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   Future<void> _saveRewardsAddress() async {
     final address = _addressController.text.trim();
     if (address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid address')));
+      context.showErrorSnackbar(title: 'Error', message: 'Please enter a valid address');
       return;
     }
 
@@ -90,7 +91,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
     } catch (e) {
       print('Error saving rewards address: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving address: $e')));
+        context.showErrorSnackbar(title: 'Error', message: 'Error saving address: $e');
       }
     } finally {
       if (mounted) {

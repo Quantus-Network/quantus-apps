@@ -461,10 +461,8 @@ class SendScreenState extends ConsumerState<SendScreen> {
         builder: (context, ref, child) {
           final balanceAsyncValue = ref.watch(effectiveMaxBalanceProvider);
           final includeExistentialDeposit = ref.watch(existentialDepositToggleProvider);
-          final highSecurityConfigAsync = activeAccount != null
-              ? ref.watch(highSecurityConfigProvider(activeAccount!))
-              : null;
-          final highSecurityDelaySeconds = highSecurityConfigAsync?.value?.safeguardWindow.inSeconds ?? 0;
+          final highSecurityConfigAsync = ref.watch(highSecurityConfigProvider(activeAccount));
+          final highSecurityDelaySeconds = highSecurityConfigAsync.value?.safeguardWindow.inSeconds ?? 0;
           final isHighSecurity = highSecurityDelaySeconds > 0;
 
           // Update the class variable

@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
   final Account? accountToEdit;
@@ -64,11 +65,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      print('Error loading account details: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load account details: $e')));
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to load account details: $e');
       }
     }
   }
@@ -95,7 +97,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to generate account details')));
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to generate account details: $e');
       }
     }
   }
