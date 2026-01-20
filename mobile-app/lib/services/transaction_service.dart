@@ -119,10 +119,12 @@ class TransactionService {
 
     final isScheduled = transaction.status == ReversibleTransferStatus.SCHEDULED;
     final isCancelled = transaction.status == ReversibleTransferStatus.CANCELLED;
-    final canTakeAction = isScheduled || isCancelled;
+    // Reversible transaction UX is shown for scheduled transactions, so user can intercept / revert them.
+    // It is also shown for canceled transactions, showing a "this transaction was canceled/intercepted/reverted" message.
+    final showReversibleTransactionUX = isScheduled || isCancelled;
     final isActorRole = role == TransactionRole.sender || role == TransactionRole.both;
 
-    if (!canTakeAction || !isActorRole) {
+    if (!showReversibleTransactionUX || !isActorRole) {
       return TransactionDetailViewConfig.normal;
     }
 
