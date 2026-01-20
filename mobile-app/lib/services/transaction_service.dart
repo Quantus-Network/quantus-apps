@@ -7,6 +7,17 @@ final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
 });
 
+enum TransactionViewType { normal, reversible, guardianIntercept }
+
+class TransactionDetailViewConfig {
+  final TransactionViewType type;
+  final EntrustedAccount? entrustedAccount;
+
+  const TransactionDetailViewConfig({required this.type, this.entrustedAccount});
+
+  static const normal = TransactionDetailViewConfig(type: TransactionViewType.normal);
+}
+
 class TransactionService {
   final Ref _ref;
 
@@ -93,5 +104,35 @@ class TransactionService {
     }
 
     return event;
+  }
+
+  /// Basically deciding whether or not to show a reversible or intercept user interface,
+  /// or whether to just show a normal transaction detail view.
+  static TransactionDetailViewConfig getTransactionDetailViewConfig({
+    required TransactionEvent transaction,
+    required TransactionRole role,
+    required DisplayAccount? activeAccount,
+  }) {
+    if (transaction is! ReversibleTransferEvent) {
+      return TransactionDetailViewConfig.normal;
+    }
+
+    final isScheduled = transaction.status == ReversibleTransferStatus.SCHEDULED;
+    final isCancelled = transaction.status == ReversibleTransferStatus.CANCELLED;
+    final canTakeAction = isScheduled || isCancelled;
+    final isActorRole = role == TransactionRole.sender || role == TransactionRole.both;
+
+    if (!canTakeAction || !isActorRole) {
+      return TransactionDetailViewConfig.normal;
+    }
+
+    if (activeAccount is EntrustedDisplayAccount) {
+      return TransactionDetailViewConfig(
+        type: TransactionViewType.guardianIntercept,
+        entrustedAccount: activeAccount.account,
+      );
+    }
+
+    return const TransactionDetailViewConfig(type: TransactionViewType.reversible);
   }
 }

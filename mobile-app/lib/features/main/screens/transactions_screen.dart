@@ -65,9 +65,19 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
             final txIntent = ref.read(transactionIntentProvider);
             if (txIntent != null) {
-              // After we consume the intent, we clean it up
               ref.read(transactionIntentProvider.notifier).state = null;
-              showTransactionActionSheet(context, transaction: txIntent, role: txService.getTransactionRole(txIntent));
+              final role = txService.getTransactionRole(txIntent);
+              final activeAccount = ref.read(activeAccountProvider).value;
+              showTransactionActionSheet(
+                context,
+                transaction: txIntent,
+                role: role,
+                config: TransactionService.getTransactionDetailViewConfig(
+                  transaction: txIntent,
+                  role: role,
+                  activeAccount: activeAccount,
+                ),
+              );
             }
           });
         }

@@ -4,11 +4,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 class RecentTransactionsList extends ConsumerWidget {
   final List<TransactionEvent> transactions;
-  final List<String> accountIds; // List of account IDs we're showing transactions for
+  final List<String> accountIds;
   final bool Function(TransactionEvent)? filter;
   final Color backgroundColor;
 
@@ -23,6 +24,7 @@ class RecentTransactionsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final txService = ref.read(transactionServiceProvider);
+    final activeAccount = ref.watch(activeAccountProvider).value;
     final transactionsToShow = filter == null ? transactions : transactions.where(filter!).toList();
 
     final scheduled = transactionsToShow
@@ -36,6 +38,21 @@ class RecentTransactionsList extends ConsumerWidget {
       }
       return true;
     }).toList();
+
+    Widget buildItem(TransactionEvent transaction) {
+      final role = txService.getTransactionRole(transaction, accountIds: accountIds);
+      return TransactionListItem(
+        key: ValueKey(transaction.id),
+        transaction: transaction,
+        role: role,
+        showFromAndTo: accountIds.length > 1,
+        actionSheetConfig: TransactionService.getTransactionDetailViewConfig(
+          transaction: transaction,
+          role: role,
+          activeAccount: activeAccount,
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -62,15 +79,9 @@ class RecentTransactionsList extends ConsumerWidget {
                   padding: EdgeInsets.zero,
                   itemCount: scheduled.length,
                   itemBuilder: (context, index) {
-                    final transaction = scheduled[index];
                     return Padding(
                       padding: EdgeInsets.only(top: index == 0 ? 7.0 : 0),
-                      child: TransactionListItem(
-                        key: ValueKey(transaction.id),
-                        transaction: transaction,
-                        role: txService.getTransactionRole(transaction, accountIds: accountIds),
-                        showFromAndTo: accountIds.length > 1,
-                      ),
+                      child: buildItem(scheduled[index]),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),
@@ -87,15 +98,9 @@ class RecentTransactionsList extends ConsumerWidget {
                   padding: EdgeInsets.zero,
                   itemCount: others.length,
                   itemBuilder: (context, index) {
-                    final transaction = others[index];
                     return Padding(
                       padding: EdgeInsets.only(top: index == 0 ? 7.0 : 0),
-                      child: TransactionListItem(
-                        key: ValueKey(transaction.id),
-                        transaction: transaction,
-                        role: txService.getTransactionRole(transaction, accountIds: accountIds),
-                        showFromAndTo: accountIds.length > 1,
-                      ),
+                      child: buildItem(others[index]),
                     );
                   },
                   separatorBuilder: (context, index) => const _Divider(),

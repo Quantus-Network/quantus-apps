@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
@@ -11,7 +10,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
@@ -19,8 +18,15 @@ class TransactionListItem extends StatefulWidget {
   final TransactionEvent transaction;
   final TransactionRole role;
   final bool showFromAndTo;
+  final TransactionDetailViewConfig actionSheetConfig;
 
-  const TransactionListItem({super.key, required this.transaction, required this.role, this.showFromAndTo = true});
+  const TransactionListItem({
+    super.key,
+    required this.transaction,
+    required this.role,
+    this.showFromAndTo = true,
+    this.actionSheetConfig = TransactionDetailViewConfig.normal,
+  });
 
   @override
   TransactionListItemState createState() => TransactionListItemState();
@@ -144,7 +150,12 @@ class TransactionListItemState extends State<TransactionListItem> {
 
     return InkWell(
       onTap: () {
-        showTransactionActionSheet(context, transaction: widget.transaction, role: widget.role);
+        showTransactionActionSheet(
+          context,
+          transaction: widget.transaction,
+          role: widget.role,
+          config: widget.actionSheetConfig,
+        );
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -234,31 +245,28 @@ class TransactionListItemState extends State<TransactionListItem> {
   }
 }
 
-void showTransactionActionSheet(BuildContext context, {required TransactionEvent transaction, required role}) {
-  final container = ProviderScope.containerOf(context, listen: false);
-  final activeDisplayAccount = container.read(activeAccountProvider).value;
-  EntrustedAccount? entrustedAccount;
-  if (activeDisplayAccount is EntrustedDisplayAccount) {
-    entrustedAccount = activeDisplayAccount.account;
-  }
-  final isEntrustedAccount = entrustedAccount != null;
-
+void showTransactionActionSheet(
+  BuildContext context, {
+  required TransactionEvent transaction,
+  required TransactionRole role,
+  required TransactionDetailViewConfig config,
+}) {
   Widget sheet;
 
-  if (transaction is ReversibleTransferEvent) {
-    final reversibleTx = transaction;
-    if ((reversibleTx.isReversibleScheduled || reversibleTx.isReversibleCancelled) &&
-        (role == TransactionRole.sender || role == TransactionRole.both)) {
-      sheet = ReversibleTransactionActionSheet(
-        transaction: reversibleTx,
-        mode: isEntrustedAccount ? ReversibleTransactionMode.guardianIntercept : ReversibleTransactionMode.reversible,
-        entrustedAccount: entrustedAccount,
-      );
-    } else {
+  switch (config.type) {
+    case TransactionViewType.normal:
       sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
-    }
-  } else {
-    sheet = TransactionDetailsActionSheet(transaction: transaction, role: role);
+    case TransactionViewType.reversible:
+      sheet = ReversibleTransactionActionSheet(
+        transaction: transaction as ReversibleTransferEvent,
+        mode: ReversibleTransactionMode.reversible,
+      );
+    case TransactionViewType.guardianIntercept:
+      sheet = ReversibleTransactionActionSheet(
+        transaction: transaction as ReversibleTransferEvent,
+        mode: ReversibleTransactionMode.guardianIntercept,
+        entrustedAccount: config.entrustedAccount,
+      );
   }
 
   showModalBottomSheet(
