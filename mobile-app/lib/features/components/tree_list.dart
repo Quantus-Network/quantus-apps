@@ -43,12 +43,17 @@ class _TreeListViewState<T> extends State<TreeListView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: widget.padding,
-      physics: widget.physics,
-      shrinkWrap: widget.shrinkWrap,
-      children: _buildTreeNodes(widget.nodes, 0, []),
+    final children = _buildTreeNodes(widget.nodes, 0, []);
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
+
+    if (widget.padding != null) {
+      return Padding(padding: widget.padding!, child: content);
+    }
+    return content;
   }
 
   List<Widget> _buildTreeNodes(List<TreeNode<T>> nodes, int depth, List<bool> parentLines) {
