@@ -64,7 +64,9 @@ class _UpdateXScreenState extends ConsumerState<UpdateXScreen> {
   }
 
   Future<void> _launchPostVerification() async {
-    const text = "I'm joining as a quantus raider.";
+    const text = '''Study @QuantusNetwork.
+
+It's quantum secure bitcoin''';
     final Uri url = Uri.parse('https://x.com/intent/tweet?text=${Uri.encodeComponent(text)}');
 
     if (!await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication)) {
