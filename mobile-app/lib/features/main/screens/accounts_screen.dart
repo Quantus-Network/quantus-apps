@@ -25,7 +25,6 @@ import 'package:resonance_network_wallet/providers/entrusted_account_provider.da
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
-import 'dart:math';
 
 enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
 
@@ -312,8 +311,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         .map((entrusted) => TreeNode<EntrustedAccount>(data: entrusted))
         .toList();
 
-    final double constraintMaxHeight = min(entrustedNodes.length * 52, 104);
-
     final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
     final isHighSecurity = isHighSecurityAsync.value ?? false;
 
@@ -502,96 +499,91 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                 ],
               ),
               if (entrustedNodes.isNotEmpty)
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: constraintMaxHeight),
-                  child: TreeListView<EntrustedAccount>(
-                    showExpandCollapse: false,
-                    nodes: entrustedNodes,
-                    nodeBuilder: (context, node, depth) {
-                      final entrusted = node.data;
-                      final isEntrustedActive = entrusted.accountId == activeAccountId;
+                TreeListView<EntrustedAccount>(
+                  showExpandCollapse: false,
+                  nodes: entrustedNodes,
+                  nodeBuilder: (context, node, depth) {
+                    final entrusted = node.data;
+                    final isEntrustedActive = entrusted.accountId == activeAccountId;
 
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: Material(
-                              color: isEntrustedActive
-                                  ? context.themeColors.surfaceActive
-                                  : context.themeColors.darkGray,
-                              shape: RoundedRectangleBorder(
-                                side: const BorderSide(color: Color(0x26FFFFFF)),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(5),
-                                onTap: () async {
-                                  print('onTap: ${entrusted.accountId}');
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Material(
+                            color: isEntrustedActive ? context.themeColors.surfaceActive : context.themeColors.darkGray,
+                            shape: RoundedRectangleBorder(
+                              side: const BorderSide(color: Color(0x26FFFFFF)),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(5),
+                              onTap: () async {
+                                print('onTap: ${entrusted.accountId}');
 
-                                  // Set the entrusted account as the active display account
-                                  await ref
-                                      .read(activeAccountProvider.notifier)
-                                      .setActiveAccount(EntrustedDisplayAccount(entrusted));
+                                // Set the entrusted account as the active display account
+                                await ref
+                                    .read(activeAccountProvider.notifier)
+                                    .setActiveAccount(EntrustedDisplayAccount(entrusted));
 
-                                  // ignore: use_build_context_synchronously
-                                  if (mounted) Navigator.pop(context);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        entrusted.name,
-                                        style: context.themeText.smallParagraph?.copyWith(
-                                          color: isEntrustedActive ? Colors.black : Colors.white,
-                                        ),
+                                // ignore: use_build_context_synchronously
+                                if (mounted) Navigator.pop(context);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      entrusted.name,
+                                      style: context.themeText.smallParagraph?.copyWith(
+                                        color: isEntrustedActive ? Colors.black : Colors.white,
                                       ),
-                                      AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
-                                    ],
-                                  ),
+                                    ),
+                                    AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            icon: SvgPicture.asset(
-                              'assets/settings_icon_off.svg',
-                              width: context.isTablet ? 28 : 21,
-                              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                            ),
-                            onPressed: () async {
-                              // Get current data from providers
-                              final balanceAsync = ref.read(balanceProviderFamily(entrusted.accountId));
-                              final checksumName = await _checksumService.getHumanReadableName(entrusted.accountId);
-
-                              balanceAsync.when(
-                                loading: () {},
-                                error: (error, _) {},
-                                data: (balance) async {
-                                  if (!mounted) return;
-                                  await Navigator.push<bool?>(
-                                    context,
-                                    MaterialPageRoute(
-                                      settings: const RouteSettings(name: AppConstants.accountSettingsRouteName),
-                                      builder: (context) => AccountSettingsScreen(
-                                        account: entrusted,
-                                        balance: _formattingService.formatBalance(balance, addSymbol: true),
-                                        checksumName: checksumName,
-                                        isHighSecurity: false,
-                                        isEntrustedAccount: true,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: SvgPicture.asset(
+                            'assets/settings_icon_off.svg',
+                            width: context.isTablet ? 28 : 21,
+                            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                           ),
-                        ],
-                      );
-                    },
-                  ),
+                          onPressed: () async {
+                            // Get current data from providers
+                            final balanceAsync = ref.read(balanceProviderFamily(entrusted.accountId));
+                            final checksumName = await _checksumService.getHumanReadableName(entrusted.accountId);
+
+                            balanceAsync.when(
+                              loading: () {},
+                              error: (error, _) {},
+                              data: (balance) async {
+                                if (!mounted) return;
+                                await Navigator.push<bool?>(
+                                  context,
+                                  MaterialPageRoute(
+                                    settings: const RouteSettings(name: AppConstants.accountSettingsRouteName),
+                                    builder: (context) => AccountSettingsScreen(
+                                      account: entrusted,
+                                      balance: _formattingService.formatBalance(balance, addSymbol: true),
+                                      checksumName: checksumName,
+                                      isHighSecurity: false,
+                                      isEntrustedAccount: true,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 ),
             ],
           ),
