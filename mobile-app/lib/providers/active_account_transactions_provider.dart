@@ -30,6 +30,3 @@ final activeAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactio
     error: (err, stack) => AsyncValue.error(err, stack),
   );
 });
-
-// Alias for backward compatibility or refactoring
-final activeDisplayAccountTransactionsProvider = activeAccountTransactionsProvider;
