@@ -1,12 +1,12 @@
-# Quantus Wallet - Functional Requirements
+# Quantus Wallet - Functional Requirements (Abstract)
 
 This document defines **what** the wallet must do, not **how** to implement it. Each capability describes the user's goal, required inputs, and expected outputs. UI designers and developers can implement these capabilities using any screen flow or interaction pattern that best serves the user experience.
 
+Numbers correspond to the Implementation spec for cross-reference.
+
 ---
 
-## Wallet Lifecycle
-
-### Create Wallet
+## 1. Create Wallet
 **Goal:** User establishes a new wallet from scratch
 
 **User Inputs:**
@@ -22,7 +22,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### Import Wallet
+## 2. Import Wallet
 **Goal:** User restores access to existing wallet using recovery phrase
 
 **User Inputs:**
@@ -38,125 +38,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### View Recovery Phrase
-**Goal:** User retrieves their recovery phrase for backup purposes
-
-**User Inputs:**
-- Wallet selection (if multiple wallets exist)
-
-**Wallet Outputs:**
-- Recovery phrase (12 or 24 words)
-
-**Constraints:**
-- Should require explicit user action to reveal (not shown by default)
-- Could require biometrics auth
-- Copy functionality required
-
----
-
-### Reset Wallet
-**Goal:** User removes all wallet data from device
-
-**User Inputs:**
-- Explicit confirmation and warning
-- Possibly prompt to securely store the mnemonic
-
-**Wallet Outputs:**
-- All local data cleared
-- Return to initial/onboarding state
-
-**Constraints:**
-- Must warn user this is irreversible
-- Must require deliberate confirmation (prevent accidental reset)
-
----
-
-## Account Management
-
-### Create Account
-**Goal:** User adds a new account derived from existing wallet
-
-**User Inputs:**
-- Account name
-
-**Wallet Outputs:**
-- New account address (derived from wallet mnemonic)
-- Human-readable checkphrase
-
-**Constraints:**
-- Account derived using standard derivation path
-
----
-
-### Switch Active Account
-**Goal:** User changes which account is currently active for transactions
-
-**User Inputs:**
-- Account selection
-
-**Wallet Outputs:**
-- Active account changed
-- UI reflects new account's balance/history
-
----
-
-### Edit Account
-**Goal:** User modifies account metadata
-
-**User Inputs:**
-- New account name
-
-**Wallet Outputs:**
-- Updated account name stored locally
-
----
-
-### Add Hardware Wallet
-**Goal:** User connects an external signing device (e.g., Keystone)
-
-**User Inputs:**
-- QR code scan from hardware device
-- Account name
-
-**Wallet Outputs:**
-- Hardware account address added
-- Account marked as hardware-signed
-
-**Constraints:**
-- Transactions require QR-based signing workflow
-- Private keys never touch the app
-
----
-
-### Remove Hardware Account
-**Goal:** User disconnects a hardware wallet account
-
-**User Inputs:**
-- Confirmation
-
-**Wallet Outputs:**
-- Account removed from local storage
-
----
-
-### View Account Details
-**Goal:** User sees full information about an account
-
-**User Inputs:**
-- Account selection
-
-**Wallet Outputs:**
-- Account name
-- Full address
-- Human-readable checkphrase
-- Current balance
-- Account type/tags (High Security, Guardian, Entrusted, Hardware)
-
----
-
-## Transfers
-
-### Send (Immediate)
+## 3. Send (Immediate)
 **Goal:** User transfers funds to another address with immediate finality
 
 **User Inputs:**
@@ -164,6 +46,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 - Amount
 
 **Wallet Outputs:**
+- Chain Fee (shown before send, not adjustable)
 - Transaction submitted to chain
 - Transaction hash
 - Updated pending balance
@@ -174,7 +57,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### Send (Reversible)
+## 4. Send (Reversible)
 **Goal:** User transfers funds with a cancellation window
 
 **User Inputs:**
@@ -183,18 +66,20 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 - Reversibility duration
 
 **Wallet Outputs:**
+- Chain Fee (shown before send, not adjustable)
 - Transaction submitted to chain
 - Transaction ID (for cancellation)
 - Scheduled execution time
+- Funds locked during reversibility window, deducted at send
+- Free balance is changed immediately, changed back if transfer is reversed
 
 **Async Resolution:**
-- Status: pending → scheduled → executed/cancelled
+- Status: pending → scheduled → executed/cancelled/failed
 - Countdown timer until execution
-- Funds locked during reversibility window
 
 ---
 
-### Cancel Reversible Transfer
+## 5. Cancel Reversible Transfer
 **Goal:** User cancels an outgoing reversible transfer before execution
 
 **User Inputs:**
@@ -207,11 +92,12 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 **Constraints:**
 - Only possible while countdown is active
+- An account can only cancel their own transfer, not another account's transfer
 - Cannot cancel after execution
 
 ---
 
-### Receive
+## 6. Receive
 **Goal:** User shares their address to receive incoming funds
 
 **User Inputs:** None
@@ -224,21 +110,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### Retry Failed Transaction
-**Goal:** User resubmits a transaction that previously failed
-
-**User Inputs:**
-- Failed transaction selection
-
-**Wallet Outputs:**
-- New transaction submitted with same parameters
-- New transaction hash
-
----
-
-## High Security
-
-### Enable High Security
+## 7. Enable High Security
 **Goal:** User activates theft deterrence on an account (permanent)
 
 **User Inputs:**
@@ -257,11 +129,11 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### Intercept Transaction (Guardian)
+## 8. Intercept Transaction (Guardian)
 **Goal:** Guardian pulls funds from a pending transfer on an entrusted account
 
 **User Inputs:**
-- Transaction selection
+- Transaction selection (select entrusted reversible transaction)
 - Confirmation
 
 **Wallet Outputs:**
@@ -275,22 +147,137 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### View High Security Configuration
-**Goal:** User views their high security settings
+## 9. View Recovery Phrase
+**Goal:** User retrieves their recovery phrase for backup purposes
 
 **User Inputs:**
-- Account selection
+- Wallet selection (if multiple wallets exist)
 
 **Wallet Outputs:**
-- Guardian account address
-- Safeguard window duration
-- List of entrusted accounts (if guardian)
+- Recovery phrase (12 or 24 words)
+
+**Constraints:**
+- Should require explicit user action to reveal (not shown by default)
+- Could require biometrics auth
+- Copy functionality required
 
 ---
 
-## Transaction History
+## 10. Enable Device Authentication 
+**Goal:** User secures app access with biometrics/PIN
 
-### View Transaction List
+**User Inputs:**
+- Enable toggle or could be always on (no user choice)
+- Biometric/PIN verification
+
+**Wallet Outputs:**
+- Authentication requirement saved locally
+
+**Constraints:**
+- Could be done in settings or else just at app start without option to not do it.
+
+---
+
+## 10a. Configure Authentication Timeout (optional)
+**Goal:** User sets how long before re-authentication is required
+
+**User Inputs:**
+- Timeout selection (immediate, 1min, 5min, 15min, 30min, 1hr)
+
+**Wallet Outputs:**
+- Timeout preference saved locally
+
+**Note:** Could also leave this out and just set to a reasonable default value.
+
+---
+
+## 10b. Disable Device Authentication (optional)
+**Goal:** User removes biometric/PIN requirement
+
+**User Inputs:**
+- Disable toggle
+- Current authentication verification
+
+**Wallet Outputs:**
+- Authentication requirement removed
+
+**Note:** This may not be offered - authentication could be mandatory.
+
+---
+
+## 11. Submit Referral Code
+**Goal:** New user links to a referrer for rewards
+
+**User Inputs:**
+- Referral code (5-word phrase or prefilled from deep link)
+
+**Wallet Outputs:**
+- Referral recorded on backend
+- Confirmation of submission
+
+---
+
+## 12. Opt-In to Reward Program
+**Goal:** User joins the rewards/quests program
+
+**User Inputs:**
+- Opt-in confirmation
+
+**Wallet Outputs:**
+- Participation status
+- Queue position number
+
+---
+
+## 13. Manage Accounts
+**Goal:** User adds, switches between, or edits accounts
+
+**User Inputs:**
+- Account selection (to switch)
+- Account name (to edit or create)
+
+**Wallet Outputs:**
+- Active account changed
+- New accounts added to local storage
+- Updated account names stored locally
+
+**Sub-capabilities:**
+- Switch active account
+- Create new derived account
+- Edit account name
+- View account details (name, address, checkphrase, balance, tags)
+
+---
+
+## 14. Add Hardware Wallet
+**Goal:** User connects an external signing device (e.g., Keystone)
+
+**User Inputs:**
+- QR code scan from hardware device
+- Account name
+
+**Wallet Outputs:**
+- Hardware account address added
+- Account marked as hardware-signed
+
+**Constraints:**
+- Transactions require QR-based signing workflow
+- Private keys never touch the app
+
+---
+
+## 14a. Remove Hardware Account
+**Goal:** User disconnects a hardware wallet account
+
+**User Inputs:**
+- Confirmation
+
+**Wallet Outputs:**
+- Account removed from local storage
+
+---
+
+## 15. View Transaction History
 **Goal:** User sees their transaction history
 
 **User Inputs:**
@@ -312,7 +299,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### View Transaction Details
+## 16. View Transaction Details
 **Goal:** User sees complete information about a specific transaction
 
 **User Inputs:**
@@ -329,97 +316,20 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-## Authentication
-
-### Enable Device Authentication
-**Goal:** User secures app access with biometrics/PIN
+## 17. Retry Failed Transaction
+**Goal:** User resubmits a transaction that previously failed
 
 **User Inputs:**
-- Enable toggle or could be always on (no user choice)
-- Biometric/PIN verification
+- Failed transaction selection
 
 **Wallet Outputs:**
-- Authentication requirement saved locally
+- New transaction submitted with same parameters
+- New transaction hash
 
 ---
 
-### Configure Authentication Timeout (optional - we could also leave this out just set to reasonable value)
-**Goal:** User sets how long before re-authentication is required
-
-**User Inputs:**
-- Timeout selection (immediate, 1min, 5min, 15min, 30min, 1hr)
-
-**Wallet Outputs:**
-- Timeout preference saved locally
-
----
-
-### Disable Device Authentication (optional - maybe you can't do that)
-**Goal:** User removes biometric/PIN requirement
-
-**User Inputs:**
-- Disable toggle
-- Current authentication verification
-
-**Wallet Outputs:**
-- Authentication requirement removed
-
----
-
-## Referrals & Rewards
-
-### Submit Referral Code
-**Goal:** New user links to a referrer for rewards
-
-**User Inputs:**
-- Referral code (5-word phrase or prefilled from deep link)
-
-**Wallet Outputs:**
-- Referral recorded on backend
-- Confirmation of submission
-
----
-
-### Opt-In to Reward Program
-**Goal:** User joins the rewards/quests program
-
-**User Inputs:**
-- Opt-in confirmation
-
-**Wallet Outputs:**
-- Participation status
-- Queue position number
-
----
-
-### View Reward Status
-**Goal:** User checks their reward program standing
-
-**User Inputs:** None
-
-**Wallet Outputs:**
-- Opt-in position
-- Associated accounts
-- Available quests
-- Quest completion status
-
----
-
-### Share Referral
-**Goal:** User invites others to earn referral rewards
-
-**User Inputs:** None
-
-**Wallet Outputs:**
-- Shareable text with referral code/link
-- System share sheet
-
----
-
-## Notifications
-
-### Configure Notification Preferences
-**Goal:** User manages which notifications they receive
+## 18. Configure Notification Preferences
+**Goal:** User manages which notifications they receive.
 
 **User Inputs:**
 - Toggle for each notification type:
@@ -433,7 +343,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-### View Notifications
+## 18a. View Notifications
 **Goal:** User sees their notification history
 
 **User Inputs:**
@@ -449,9 +359,65 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-## Fee Estimation
+## 19. Share/Invite Others
+**Goal:** User invites others to earn referral rewards
 
-### Get Transfer Fee
+**User Inputs:** None
+
+**Wallet Outputs:**
+- Shareable text with referral code/link
+- System share sheet
+
+---
+
+## 20. Reset Wallet
+**Goal:** User removes all wallet data from device
+
+**User Inputs:**
+- Explicit confirmation and warning
+- Possibly prompt to securely store the mnemonic
+
+**Wallet Outputs:**
+- All local data cleared
+- Return to initial/onboarding state
+
+**Constraints:**
+- Must warn user this is irreversible
+- Must require deliberate confirmation (prevent accidental reset)
+
+---
+
+## Additional Capabilities
+
+### View Reward Status
+**Goal:** User checks their reward program standing
+
+**User Inputs:** None
+
+**Wallet Outputs:**
+- Opt-in position
+- Associated accounts
+- Available quests
+- Quest completion status
+
+---
+
+### View High Security Configuration
+**Goal:** User views their high security settings
+
+**User Inputs:**
+- Account selection
+
+**Wallet Outputs:**
+- Guardian account address
+- Safeguard window duration
+- List of entrusted accounts (if guardian)
+
+---
+
+## System Capabilities (not direct user flows)
+
+### Fee Estimation (on any chain transaction)
 **Goal:** System calculates network fee before user confirms transaction
 
 **Inputs:**
@@ -470,9 +436,7 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 
 ---
 
-## Address Validation
-
-### Validate Address
+### Address Validation
 **Goal:** Verify a recipient address is valid before sending
 
 **Inputs:**
@@ -483,8 +447,6 @@ This document defines **what** the wallet must do, not **how** to implement it. 
 - Human-readable checkphrase (if valid)
 
 ---
-
-## Balance Management
 
 ### View Balance
 **Goal:** User sees their current funds
