@@ -38,7 +38,7 @@ dependencies:
 
   human_checksum:
     git:
-      url: https://github.com/Quantus-Network/human-checkphrase.git
+      url: https://github.com/Quantus-Network/qp-human-checkphrase.git
       ref: v1.1.0
       path: dart
   provider: ^6.1.5

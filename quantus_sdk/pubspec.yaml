@@ -41,7 +41,7 @@ dependencies:
   # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:
     git:
-      url: https://github.com/Quantus-Network/human-checkphrase.git
+      url: https://github.com/Quantus-Network/qp-human-checkphrase.git
       ref: v1.1.0
       path: dart
 

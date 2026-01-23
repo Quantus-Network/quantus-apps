@@ -392,7 +392,7 @@ packages:
       path: dart
       ref: "v1.1.0"
       resolved-ref: "6eb6ffbddab6f7ebc00cd79a4c36b2da23bb8347"
-      url: "https://github.com/Quantus-Network/human-checkphrase.git"
+      url: "https://github.com/Quantus-Network/qp-human-checkphrase.git"
     source: git
     version: "0.1.0"
   integration_test:
