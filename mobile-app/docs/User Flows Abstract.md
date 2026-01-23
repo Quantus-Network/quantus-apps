@@ -229,23 +229,81 @@ Numbers correspond to the Implementation spec for cross-reference.
 
 ---
 
-## 13. Manage Accounts
-**Goal:** User adds, switches between, or edits accounts
+## 13. Manage Accounts (overview)
+**Goal:** User manages their accounts and wallets
+
+This section covers multiple related capabilities for account/wallet management.
+
+---
+
+## 13a. Add Wallet
+**Goal:** User adds another wallet (when they already have one)
 
 **User Inputs:**
-- Account selection (to switch)
-- Account name (to edit or create)
+- Choice: create new or import existing
+- If create: account name (optional)
+- If import: recovery phrase (12 or 24 words)
+
+**Wallet Outputs:**
+- New wallet added with its own mnemonic
+- First account derived from new wallet
+- Account address and checkphrase
+
+**Note:** This is different from flow #1 (Create Wallet) which is for first-time users. This flow is accessed from account management when user already has a wallet.
+
+---
+
+## 13b. Add Account
+**Goal:** User creates a new account derived from an existing wallet
+
+**User Inputs:**
+- Account name
+
+**Wallet Outputs:**
+- New account address (derived from wallet mnemonic using next index)
+- Human-readable checkphrase
+
+**Constraints:**
+- Account derived using standard derivation path
+- Requires existing wallet with stored mnemonic
+
+---
+
+## 13c. Switch Account
+**Goal:** User changes which account is currently active for transactions
+
+**User Inputs:**
+- Account selection
 
 **Wallet Outputs:**
 - Active account changed
-- New accounts added to local storage
-- Updated account names stored locally
+- UI reflects new account's balance/history
 
-**Sub-capabilities:**
-- Switch active account
-- Create new derived account
-- Edit account name
-- View account details (name, address, checkphrase, balance, tags)
+---
+
+## 13d. Edit Account
+**Goal:** User modifies account metadata
+
+**User Inputs:**
+- New account name
+
+**Wallet Outputs:**
+- Updated account name stored locally
+
+---
+
+## 13e. View Account Details
+**Goal:** User sees full information about an account
+
+**User Inputs:**
+- Account selection
+
+**Wallet Outputs:**
+- Account name
+- Full address
+- Human-readable checkphrase
+- Current balance
+- Account type/tags (High Security, Guardian, Entrusted, Hardware)
 
 ---
 
