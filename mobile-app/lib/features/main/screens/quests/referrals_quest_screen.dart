@@ -23,7 +23,9 @@ class ReferralsQuestScreen extends ConsumerStatefulWidget {
 
 class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
   final ReferralService _referralService = ReferralService();
+  final TaskmasterService _taskmasterService = TaskmasterService();
   String? _referralCode;
+  int? _rank;
 
   Future<void> _loadReferralCode() async {
     try {
@@ -31,11 +33,22 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
       setState(() {
         _referralCode = myReferralCode;
       });
+      _loadRank(myReferralCode);
     } catch (e) {
-      debugPrint('Error loading account data: $e');
+      debugPrint('Error loading referral code: $e');
+    }
+  }
+
+  Future<void> _loadRank(String referralCode) async {
+    try {
+      final rankData = await _taskmasterService.getReferralRank(referralCode);
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _rank = rankData.rank;
+        });
       }
+    } catch (e) {
+      debugPrint('Error loading rank: $e');
     }
   }
 
@@ -250,7 +263,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 children: [
                                   _buildStatRow('Referrals', '$referralsCount', Colors.white),
                                   const SizedBox(height: 16),
-                                  _buildStatRow('Rank', '#-', context.themeColors.pink),
+                                  _buildStatRow('Rank', _rank != null && _rank! > 0 ? '#$_rank' : '#-', context.themeColors.pink),
                                 ],
                               ),
                             ),

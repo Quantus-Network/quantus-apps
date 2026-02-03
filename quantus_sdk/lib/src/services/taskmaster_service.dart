@@ -581,4 +581,23 @@ class TaskmasterService {
   Future<void> logout() async {
     _clearToken();
   }
+
+  Future<ReferralRank> getReferralRank(String referralCode) async {
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/leaderboard?referral_code=$referralCode');
+
+    try {
+      final http.Response response = await _authenticatedHttpClient.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return ReferralRank.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching referral rank: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
 }
