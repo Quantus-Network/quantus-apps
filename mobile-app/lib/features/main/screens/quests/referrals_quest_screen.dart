@@ -261,10 +261,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildStatRow(
-                                    'Referrals',
-                                    _buildLoadingOrValue(referralsCount, Colors.white),
-                                  ),
+                                  _buildStatRow('Referrals', _buildLoadingOrValue(referralsCount, Colors.white)),
                                   const SizedBox(height: 16),
                                   _buildStatRow(
                                     'Rank',
@@ -388,11 +385,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
 
   Widget _buildLoadingOrValue(int? value, Color color, {bool isRank = false}) {
     if (value == null) {
-      return SizedBox(
-        width: 12,
-        height: 12,
-        child: CircularProgressIndicator(strokeWidth: 2, color: color),
-      );
+      return SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: color));
     }
     final text = isRank ? (value > 0 ? '#$value' : '#-') : '$value';
     return Text(

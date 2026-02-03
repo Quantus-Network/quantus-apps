@@ -215,23 +215,23 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                               ),
                             ),
                             const SizedBox(height: 40),
-                          raiderSubmissionsAsync.when(
-                            loading: () => const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            raiderSubmissionsAsync.when(
+                              loading: () => const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
                               ),
+                              error: (_, _) => _buildStatsBox(0, _totalImpressions, _rank),
+                              data: (state) {
+                                if (state is RaiderSubmissionsOk) {
+                                  return _buildStatsBox(state.submissions.length, _totalImpressions, _rank);
+                                }
+                                return _buildStatsBox(0, _totalImpressions, _rank);
+                              },
                             ),
-                            error: (_, _) => _buildStatsBox(0, _totalImpressions, _rank),
-                            data: (state) {
-                              if (state is RaiderSubmissionsOk) {
-                                return _buildStatsBox(state.submissions.length, _totalImpressions, _rank);
-                              }
-                              return _buildStatsBox(0, _totalImpressions, _rank);
-                            },
-                          ),
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             _buildPastSubmissionsSection(raiderSubmissionsAsync),
                             const Spacer(),
                             _buildSubmitSection(),
@@ -298,15 +298,9 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildStatRow(
-            'Total impressions',
-            _buildLoadingOrValue(totalImpressions, Colors.white),
-          ),
+          _buildStatRow('Total impressions', _buildLoadingOrValue(totalImpressions, Colors.white)),
           const SizedBox(height: 16),
-          _buildStatRow(
-            'Rank',
-            _buildLoadingOrValue(rank, context.themeColors.pink, isRank: true),
-          ),
+          _buildStatRow('Rank', _buildLoadingOrValue(rank, context.themeColors.pink, isRank: true)),
         ],
       ),
     );
@@ -314,11 +308,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
 
   Widget _buildLoadingOrValue(int? value, Color color, {bool isRank = false}) {
     if (value == null) {
-      return SizedBox(
-        width: 12,
-        height: 12,
-        child: CircularProgressIndicator(strokeWidth: 2, color: color),
-      );
+      return SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: color));
     }
     final text = isRank ? (value > 0 ? '#$value' : '#-') : '$value';
     return Text(
