@@ -21,6 +21,24 @@ class KingOfTheShillScreen extends ConsumerStatefulWidget {
 }
 
 class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
+  final TaskmasterService _taskmasterService = TaskmasterService();
+  int? _rank;
+  int? _totalImpressions;
+
+  Future<void> _loadRaidStats(int raidId) async {
+    try {
+      final stats = await _taskmasterService.getRaidStats(raidId);
+      if (mounted) {
+        setState(() {
+          _rank = stats.rank;
+          _totalImpressions = stats.totalImpressions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading raid stats: $e');
+    }
+  }
+
   void _showHowItWorksDialog() {
     showDialog(
       context: context,
@@ -114,6 +132,18 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
   Widget build(BuildContext context) {
     final raiderSubmissionsAsync = ref.watch(raiderSubmissionsProvider);
 
+    ref.listen(raiderSubmissionsProvider, (prev, next) {
+      final state = next.value;
+      if (state is RaiderSubmissionsOk && _rank == null) {
+        _loadRaidStats(state.activeRaid.id);
+      }
+    });
+
+    if (raiderSubmissionsAsync.value is RaiderSubmissionsOk && _rank == null) {
+      final state = raiderSubmissionsAsync.value as RaiderSubmissionsOk;
+      _loadRaidStats(state.activeRaid.id);
+    }
+
     return ScaffoldBase(
       appBar: WalletAppBar(
         title: 'King of The Shill',
@@ -189,12 +219,12 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                 ),
                               ),
-                              error: (_, _) => _buildStatsBox(0, 0),
+                              error: (_, _) => _buildStatsBox(0, _totalImpressions ?? 0, _rank),
                               data: (state) {
                                 if (state is RaiderSubmissionsOk) {
-                                  return _buildStatsBox(state.submissions.length, 0);
+                                  return _buildStatsBox(state.submissions.length, _totalImpressions ?? 0, _rank);
                                 }
-                                return _buildStatsBox(0, 0);
+                                return _buildStatsBox(0, _totalImpressions ?? 0, _rank);
                               },
                             ),
                             const SizedBox(height: 24),
@@ -237,7 +267,7 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
     );
   }
 
-  Widget _buildStatsBox(int submissions, int verifiedPosts) {
+  Widget _buildStatsBox(int submissions, int totalImpressions, int? rank) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -253,9 +283,9 @@ class _KingOfTheShillScreenState extends ConsumerState<KingOfTheShillScreen> {
         children: [
           _buildStatRow('Submissions', '$submissions', Colors.white),
           const SizedBox(height: 16),
-          _buildStatRow('Verified posts', verifiedPosts.toString().padLeft(2, '0'), Colors.white),
+          _buildStatRow('Total impressions', '$totalImpressions', Colors.white),
           const SizedBox(height: 16),
-          _buildStatRow('Rank', '#-', context.themeColors.pink),
+          _buildStatRow('Rank', rank != null && rank > 0 ? '#$rank' : '#-', context.themeColors.pink),
         ],
       ),
     );

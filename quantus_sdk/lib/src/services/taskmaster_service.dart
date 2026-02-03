@@ -600,4 +600,25 @@ class TaskmasterService {
       rethrow;
     }
   }
+
+  Future<RaidStats> getRaidStats(int raidId) async {
+    final activeAccount = await getMainAccount();
+    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/raiders/${activeAccount.accountId}/leaderboards/$raidId');
+
+print('getRaidStats $uri');
+    try {
+      final http.Response response = await _authenticatedHttpClient.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return RaidStats.fromJson(json);
+    } catch (e, stackTrace) {
+      print('Error fetching raid stats: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
 }
