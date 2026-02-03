@@ -263,7 +263,11 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                                 children: [
                                   _buildStatRow('Referrals', '$referralsCount', Colors.white),
                                   const SizedBox(height: 16),
-                                  _buildStatRow('Rank', _rank != null && _rank! > 0 ? '#$_rank' : '#-', context.themeColors.pink),
+                                  _buildStatRow(
+                                    'Rank',
+                                    _rank != null && _rank! > 0 ? '#$_rank' : '#-',
+                                    context.themeColors.pink,
+                                  ),
                                 ],
                               ),
                             ),

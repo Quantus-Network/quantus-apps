@@ -603,9 +603,11 @@ class TaskmasterService {
 
   Future<RaidStats> getRaidStats(int raidId) async {
     final activeAccount = await getMainAccount();
-    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/raid-quests/raiders/${activeAccount.accountId}/leaderboards/$raidId');
+    final Uri uri = Uri.parse(
+      '${AppConstants.taskMasterEndpoint}/raid-quests/raiders/${activeAccount.accountId}/leaderboards/$raidId',
+    );
 
-print('getRaidStats $uri');
+    print('getRaidStats $uri');
     try {
       final http.Response response = await _authenticatedHttpClient.get(uri);
 
