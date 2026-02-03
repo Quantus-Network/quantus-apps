@@ -158,7 +158,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(accountsStatsProvider);
-    final referralsCount = statsAsync.value?.referralCount ?? 0;
+    final referralsCount = statsAsync.value?.referralCount;
 
     return ScaffoldBase(
       appBar: WalletAppBar(
@@ -261,12 +261,14 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  _buildStatRow('Referrals', '$referralsCount', Colors.white),
+                                  _buildStatRow(
+                                    'Referrals',
+                                    _buildLoadingOrValue(referralsCount, Colors.white),
+                                  ),
                                   const SizedBox(height: 16),
                                   _buildStatRow(
                                     'Rank',
-                                    _rank != null && _rank! > 0 ? '#$_rank' : '#-',
-                                    context.themeColors.pink,
+                                    _buildLoadingOrValue(_rank, context.themeColors.pink, isRank: true),
                                   ),
                                 ],
                               ),
@@ -366,7 +368,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, Color valueColor) {
+  Widget _buildStatRow(String label, Widget valueWidget) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -379,12 +381,24 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
             fontWeight: FontWeight.w400,
           ),
         ),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: valueColor, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
-        ),
+        valueWidget,
       ],
+    );
+  }
+
+  Widget _buildLoadingOrValue(int? value, Color color, {bool isRank = false}) {
+    if (value == null) {
+      return SizedBox(
+        width: 12,
+        height: 12,
+        child: CircularProgressIndicator(strokeWidth: 2, color: color),
+      );
+    }
+    final text = isRank ? (value > 0 ? '#$value' : '#-') : '$value';
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(color: color, fontSize: 14, fontFamily: 'Fira Code', fontWeight: FontWeight.w400),
     );
   }
 }
