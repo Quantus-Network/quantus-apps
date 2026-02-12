@@ -1,0 +1,30 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "quantus-wallet",
+          "appId": "1:700047185713:android:151f32080a837021d98210",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "quantus-wallet",
+          "appId": "1:700047185713:ios:4689e532e8a4f174d98210",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "quantus-wallet",
+          "configurations": {
+            "android": "1:700047185713:android:151f32080a837021d98210",
+            "ios": "1:700047185713:ios:4689e532e8a4f174d98210"
+          }
+        }
+      }
+    }
+  }
+}

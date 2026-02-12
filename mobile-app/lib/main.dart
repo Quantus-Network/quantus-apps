@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:resonance_network_wallet/features/main/screens/app.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
+import 'package:resonance_network_wallet/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,9 @@ void main() async {
   // Initialize Supabase
   await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
   await QuantusSdk.init();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   Telemetrydecksdk.start(
     const TelemetryManagerConfiguration(
       appID: '098B4397-8426-4054-B379-0E4C53D2CA63',

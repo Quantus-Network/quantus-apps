@@ -180,7 +180,9 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         _localNotificationsService.showOrScheduleNotification(notification);
         break;
       case NotificationSource.remote:
-        // To be handled in the future
+        // Remote notifications arriving via FCM foreground listener are
+        // shown as local push notifications by FirebaseMessagingService.
+        // No additional handling needed here.
         break;
     }
   }

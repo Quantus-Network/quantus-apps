@@ -59,6 +59,7 @@ export 'src/services/settings_service.dart';
 export 'src/services/substrate_service.dart';
 export 'src/services/swap_service.dart';
 export 'src/services/taskmaster_service.dart';
+export 'src/services/senoti_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';

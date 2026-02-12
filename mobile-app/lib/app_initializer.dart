@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 
@@ -26,6 +27,9 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
     try {
       final notificationService = ref.read(localNotificationsServiceProvider);
       await notificationService.init();
+      
+      final fcmService = ref.read(firebaseMessagingServiceProvider);
+      await fcmService.init();
 
       ref.read(historyPollingManagerProvider);
     } catch (e, stackTrace) {
