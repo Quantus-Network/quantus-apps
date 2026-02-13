@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -145,9 +145,9 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                 const Spacer(),
                 Opacity(
                   opacity: _hasInput ? 1.0 : 0.2,
-                  child: GlassButton(
+                  child: GlassContainer(
+                    asset: GlassContainer.wideAsset,
                     onTap: _hasInput && !_isLoading ? _import : null,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
                     child: _isLoading
                         ? Center(
                             child: SizedBox(

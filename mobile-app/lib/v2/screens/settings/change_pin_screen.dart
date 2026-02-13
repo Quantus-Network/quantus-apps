@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -228,13 +229,9 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GestureDetector(
         onTap: () => Navigator.pop(context),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-          ),
+        child: GlassContainer(
+          asset: GlassContainer.wideAsset,
+          filled: true,
           child: Center(
             child: Text(
               'Done',

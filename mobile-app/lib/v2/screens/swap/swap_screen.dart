@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
@@ -18,6 +19,11 @@ class SwapScreen extends StatefulWidget {
 }
 
 class _SwapScreenState extends State<SwapScreen> {
+  static const _smallGlassAsset = 'assets/v2/glass_40.png';
+  static const _qrIconAsset = 'assets/v2/swap_qr_code.svg';
+  static const _historyIconAsset = 'assets/v2/swap_clock_counter_clockwise.svg';
+  static const _swapDirectionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
+
   final _swapService = SwapService();
   final _fromController = TextEditingController();
   final _addressController = TextEditingController();
@@ -187,7 +193,9 @@ class _SwapScreenState extends State<SwapScreen> {
               child: SizedBox(
                 width: 119,
                 child: GlassContainer(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  asset: GlassContainer.mediumAsset,
+                  filled: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
                       Container(
@@ -273,14 +281,7 @@ class _SwapScreenState extends State<SwapScreen> {
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: _scanQr,
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: GlassContainer(
-                    asset: GlassContainer.smallAsset,
-                    child: Center(child: Icon(Icons.qr_code_scanner, color: colors.textPrimary, size: 20)),
-                  ),
-                ),
+                child: _smallGlassIconButton(colors: colors, iconAsset: _qrIconAsset),
               ),
               const SizedBox(width: 8),
               GestureDetector(
@@ -291,14 +292,7 @@ class _SwapScreenState extends State<SwapScreen> {
                     setState(() {});
                   }
                 },
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: GlassContainer(
-                    asset: GlassContainer.smallAsset,
-                    child: Center(child: Icon(Icons.history, color: colors.textPrimary, size: 20)),
-                  ),
-                ),
+                child: _smallGlassIconButton(colors: colors, iconAsset: _historyIconAsset),
               ),
             ],
           ),
@@ -314,13 +308,28 @@ class _SwapScreenState extends State<SwapScreen> {
         SizedBox(
           width: 40,
           height: 40,
-          child: GlassContainer(
-            asset: GlassContainer.smallAsset,
-            child: Center(child: Icon(Icons.swap_vert, color: colors.textPrimary, size: 20)),
-          ),
+          child: _smallGlassIconButton(colors: colors, iconAsset: _swapDirectionIconAsset),
         ),
         Expanded(child: Divider(color: colors.separator)),
       ],
+    );
+  }
+
+  Widget _smallGlassIconButton({required AppColorsV2 colors, required String iconAsset}) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: GlassContainer(
+        asset: _smallGlassAsset,
+        child: Center(
+          child: SvgPicture.asset(
+            iconAsset,
+            width: 20,
+            height: 20,
+            colorFilter: ColorFilter.mode(colors.textPrimary, BlendMode.srcIn),
+          ),
+        ),
+      ),
     );
   }
 
@@ -350,7 +359,10 @@ class _SwapScreenState extends State<SwapScreen> {
             const SizedBox(width: 16),
             SizedBox(
               width: 119,
+              height: 56,
               child: GlassContainer(
+                asset: GlassContainer.mediumAsset,
+                filled: true,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -419,7 +431,6 @@ class _SwapScreenState extends State<SwapScreen> {
         opacity: enabled ? 1.0 : 0.4,
         child: GlassContainer(
           asset: GlassContainer.wideAsset,
-          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
             child: _loading
                 ? SizedBox(

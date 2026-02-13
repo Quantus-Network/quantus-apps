@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -290,18 +291,29 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
       );
     }
-    return TextField(
-      controller: _recipientController,
-      style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: colors.surfaceGlass,
-        contentPadding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-        hintText: 'Qu Address',
-        hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+        child: TextField(
+          controller: _recipientController,
+          textAlignVertical: TextAlignVertical.center,
+          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.transparent,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            hintText: 'Quan Address',
+            hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+          ),
+        ),
       ),
     );
   }
@@ -448,11 +460,13 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   Widget _iconButton(IconData icon, AppColorsV2 colors, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 40,
         height: 40,
-        decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: colors.textPrimary, size: 20),
+        child: GlassContainer(
+          asset: GlassContainer.smallAsset,
+          child: Icon(icon, color: colors.textPrimary, size: 20),
+        ),
       ),
     );
   }
@@ -468,14 +482,8 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       onTap: disabled ? null : onTap,
       child: Opacity(
         opacity: disabled ? 0.2 : 1.0,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: colors.surfaceGlass,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.44), width: 0.889),
-            borderRadius: BorderRadius.circular(14),
-          ),
+        child: GlassContainer(
+          asset: GlassContainer.wideAsset,
           child: Text(
             label,
             textAlign: TextAlign.center,

@@ -105,6 +105,8 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
                         controller: _searchController,
                         style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                         decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.transparent,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                           border: InputBorder.none,

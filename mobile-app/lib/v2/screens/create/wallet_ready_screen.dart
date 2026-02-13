@@ -7,7 +7,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -183,18 +183,14 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (i) => _PaginationDot(active: i == 1)),
-                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                GlassButton(
+                GlassContainer(
+                  asset: GlassContainer.wideAsset,
                   onTap: canContinue ? _continue : null,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: _isSubmitting
                       ? Center(
                           child: SizedBox(
@@ -243,16 +239,18 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            GlassButton(
+            GlassContainer(
+              asset: GlassContainer.wideAsset,
               filled: true,
-              onTap: () {
+              onTap: () async {
                 final v = controller.text.trim();
-                if (v.isEmpty) return;
-                setState(() {
-                  _accountName.text = v;
-                  _accountNameError = null;
-                });
-                Navigator.pop(ctx);
+                if (v.isNotEmpty) {
+                  setState(() {
+                    _accountName.text = v;
+                    _accountNameError = null;
+                  });
+                  Navigator.pop(ctx);
+                }
               },
               child: Center(
                 child: Text(
@@ -310,11 +308,15 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassButton(
+                child: GlassContainer(
+                  asset: GlassContainer.smallAsset,
                   filled: true,
-                  radius: 8,
                   padding: EdgeInsets.zero,
-                  onTap: isLoading ? null : onAction,
+                  onTap: isLoading
+                      ? null
+                      : () async {
+                          onAction();
+                        },
                   child: Icon(actionIcon, size: 20, color: colors.textPrimary),
                 ),
               ),
@@ -322,26 +324,6 @@ class _Field extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PaginationDot extends StatelessWidget {
-  final bool active;
-
-  const _PaginationDot({required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: active ? 24 : 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: active ? colors.textPrimary : colors.textTertiary,
-        borderRadius: BorderRadius.circular(4),
-      ),
     );
   }
 }

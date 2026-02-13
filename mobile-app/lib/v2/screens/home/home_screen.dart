@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
@@ -17,6 +18,7 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/glass_circle_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -29,6 +31,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
+
   final NumberFormattingService _fmt = NumberFormattingService();
   bool _balanceHidden = false;
 
@@ -152,15 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: colors.surfaceGlass),
-        child: Icon(icon, color: colors.textPrimary, size: 20),
-      ),
-    );
+    return GlassCircleIconButton(icon: icon, iconColor: colors.textPrimary, onTap: onTap, size: 40, iconSize: 20);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
@@ -206,21 +202,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildActionButtons(AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
-        _actionCard('assets/v2/receive_button.png', () => showReceiveSheetV2(context)),
-        const SizedBox(width: 15),
-        _actionCard('assets/v2/send_button.png', () => showSendSheetV2(context)),
+        _actionCard(
+          iconAsset: 'assets/v2/action_receive.svg',
+          label: 'Receive',
+          colors: colors,
+          text: text,
+          onTap: () => showReceiveSheetV2(context),
+        ),
         const SizedBox(width: 15),
         _actionCard(
-          'assets/v2/swap_button.png',
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+          iconAsset: 'assets/v2/action_send.svg',
+          label: 'Send',
+          colors: colors,
+          text: text,
+          onTap: () => showSendSheetV2(context),
+        ),
+        const SizedBox(width: 15),
+        _actionCard(
+          iconAsset: 'assets/v2/action_swap.svg',
+          label: 'Swap',
+          colors: colors,
+          text: text,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
         ),
       ],
     );
   }
 
-  Widget _actionCard(String asset, VoidCallback onTap) {
+  Widget _actionCard({
+    required String iconAsset,
+    required String label,
+    required AppColorsV2 colors,
+    required AppTextTheme text,
+    required VoidCallback onTap,
+  }) {
     return Expanded(
-      child: GestureDetector(onTap: onTap, child: Image.asset(asset)),
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          height: 80,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(_actionButtonBgAsset, fit: BoxFit.fill),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(iconAsset, width: 24, height: 24),
+                    const SizedBox(height: 6),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -192,9 +192,10 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: GlassButton(
+              child: GlassContainer(
+                filled: false,
+                asset: GlassContainer.mediumAsset,
                 onTap: _copyAddress,
-                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -210,9 +211,10 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: GlassButton(
+              child: GlassContainer(
+                filled: false,
+                asset: GlassContainer.mediumAsset,
                 onTap: () {},
-                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -290,10 +292,10 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton(
-      filled: true,
+    return GlassContainer(
+      asset: GlassContainer.wideAsset,
+      filled: false,
       onTap: _confirming ? null : _confirmSent,
-      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: _confirming
             ? SizedBox(
@@ -310,10 +312,10 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton(
-      filled: true,
+    return GlassContainer(
+      asset: GlassContainer.wideAsset,
+      filled: false,
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: Text(
           'Done',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/screens/create/wallet_ready_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -37,7 +37,8 @@ class WelcomeScreenV2 extends StatelessWidget {
                   style: text.largeTitle?.copyWith(fontSize: 32, height: 1.35, color: Colors.white),
                 ),
                 const SizedBox(height: 64),
-                GlassButton(
+                GlassContainer(
+                  asset: GlassContainer.wideAsset,
                   filled: true,
                   onTap: () => Navigator.push(
                     context,
@@ -54,7 +55,8 @@ class WelcomeScreenV2 extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                GlassButton(
+                GlassContainer(
+                  asset: GlassContainer.wideAsset,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(

@@ -164,7 +164,6 @@ class _ReviewQuoteContent extends StatelessWidget {
       },
       child: GlassContainer(
         asset: GlassContainer.wideAsset,
-        padding: const EdgeInsets.symmetric(vertical: 20),
         child: Center(
           child: Text(
             'Confirm',

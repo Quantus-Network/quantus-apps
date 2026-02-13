@@ -26,7 +26,7 @@ class AppConstants {
   static const String senotiEndpoint = 'http://localhost:3100/api';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
-  static const String helpAndSupportUrl = 'https://t.me/quantustechsupport';
+  static const String helpAndSupportUrl = 'https://t.me/c/quantusnetwork/2457';
   static const String termsOfServiceUrl = 'https://www.quantus.com/terms-and-privacy';
   static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';

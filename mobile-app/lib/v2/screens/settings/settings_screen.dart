@@ -86,11 +86,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     }
   }
 
-  void _toggleReversible(bool enable) {
-    _settingsService.setReversibleEnabled(enable);
-    setState(() => _reversibleEnabled = enable);
-  }
-
   void _toggleNotifications(bool enable) {
     final current = ref.read(notificationConfigProvider);
     ref.read(notificationConfigProvider.notifier).updateConfig(current.copyWith(enabled: enable));
@@ -209,9 +204,9 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     _section('Reversible Transactions', colors, text, [
                       _toggleItem(
                         'Reversible Transactions',
-                        _reversibleEnabled ? 'Enabled' : 'Disabled',
+                        'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
                         _reversibleEnabled,
-                        _toggleReversible,
+                        null,
                         colors,
                         text,
                       ),
@@ -230,8 +225,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     ]),
                     const SizedBox(height: 40),
                     _section('Preferences', colors, text, [
-                      _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
-                      _divider(colors),
+                      // _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
+                      // _divider(colors),
                       _toggleItem(
                         'Notifications',
                         notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',
@@ -251,18 +246,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                         onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl)),
                       ),
                       _divider(colors),
-                      _chevronItem('About Quantus', 'Version 1.0.1', colors, text, onTap: () {}),
-                      _divider(colors),
                       _externalItem(
-                        'Terms of Service',
-                        null,
-                        colors,
-                        text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
-                      ),
-                      _divider(colors),
-                      _externalItem(
-                        'Privacy Policy',
+                        'Privacy & Terms of Service',
                         null,
                         colors,
                         text,
@@ -304,7 +289,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     String title,
     String subtitle,
     bool value,
-    ValueChanged<bool> onChanged,
+    ValueChanged<bool>? onChanged,
     AppColorsV2 colors,
     AppTextTheme text,
   ) {
