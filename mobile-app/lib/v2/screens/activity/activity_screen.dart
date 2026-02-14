@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -89,14 +90,16 @@ class ActivityScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  ...group.transactions.map((tx) {
+                                  ...group.transactions.mapIndexed((index, tx) {
                                     final itemData = TxItemData.from(tx, active.account.accountId);
+                                    final isLastItem = index == group.transactions.length - 1;
                                     return buildTxItem(
                                       tx,
                                       itemData,
                                       colors,
                                       text,
                                       isBalanceHidden,
+                                      isLastItem,
                                       onTap: () {
                                         showTransactionDetailSheet(context, tx, active.account.accountId);
                                       },

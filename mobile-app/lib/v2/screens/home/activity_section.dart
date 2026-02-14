@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -18,7 +19,6 @@ class ActivitySection extends ConsumerWidget {
   final Future<void> Function()? onRetry;
 
   const ActivitySection({super.key, required this.txAsync, required this.activeAccount, this.onRetry});
-
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,14 +59,16 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 40),
               _header(colors, text, context),
               const SizedBox(height: 24),
-              ...all.take(5).map((tx) {
+              ...all.take(5).mapIndexed((index, tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
+                final isLastItem = index == 4;
                 return buildTxItem(
                   tx,
                   data,
                   colors,
                   text,
                   isBalanceHidden,
+                  isLastItem,
                   onTap: () {
                     showTransactionDetailSheet(context, tx, activeAccount.accountId);
                   },

@@ -57,7 +57,8 @@ Widget buildTxItem(
   TxItemData data,
   AppColorsV2 colors,
   AppTextTheme text,
-  bool isBalanceHidden, {
+  bool isBalanceHidden,
+  bool isLastItem, {
   VoidCallback? onTap,
 }) {
   return GestureDetector(
@@ -108,7 +109,7 @@ Widget buildTxItem(
             ],
           ),
         ),
-        Divider(color: colors.separator, height: 1),
+        if (!isLastItem) Divider(color: colors.separator, height: 1),
       ],
     ),
   );
