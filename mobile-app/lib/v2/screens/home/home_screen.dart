@@ -160,42 +160,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    return Column(
-      children: [
-        balanceAsync.when(
-          data: (balance) {
-            final formatted = _balanceHidden ? '-----' : _fmt.formatBalance(balance);
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                  child: Text(
-                    '$formatted ${AppConstants.tokenSymbol}',
-                    style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+    return SizedBox(
+      height: 96,
+      child: Column(
+        children: [
+          balanceAsync.when(
+            data: (balance) {
+              final formatted = _balanceHidden ? '-----' : _fmt.formatBalance(balance);
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                    child: Text(
+                      '$formatted ${AppConstants.tokenSymbol}',
+                      style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+                    ),
                   ),
-                ),
-                Text(
-                  '$formatted ${AppConstants.tokenSymbol}',
-                  style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
-                ),
+                  Text(
+                    '$formatted ${AppConstants.tokenSymbol}',
+                    style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
+                  ),
+                ],
+              );
+            },
+            loading: () => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Skeleton(width: 200, height: 36),
+                Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
               ],
-            );
-          },
-          loading: () => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Skeleton(width: 200, height: 36),
-              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            ],
+            ),
+            error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
           ),
-          error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
-        ),
-        if (!_balanceHidden) ...[
-          const SizedBox(height: 6),
-          Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          if (!_balanceHidden) ...[
+            const SizedBox(height: 6),
+            Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          ],
         ],
-      ],
+      ),
     );
   }
 
