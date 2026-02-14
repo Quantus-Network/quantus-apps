@@ -273,7 +273,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       children: [
         Text(
           title,
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         Container(
@@ -299,9 +299,9 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+              Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
             ],
           ),
         ),
@@ -326,9 +326,9 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+                Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
               ],
             ),
           ),
@@ -355,12 +355,12 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                      Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                       const SizedBox(height: 4),
-                      Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+                      Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
                     ],
                   )
-                : Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                : Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
           ),
           Icon(Icons.north_east, color: colors.textSecondary, size: 20),
         ],
@@ -375,9 +375,9 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+              Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
             ],
           ),
         ),
