@@ -34,7 +34,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
 
   final NumberFormattingService _fmt = NumberFormattingService();
-  bool _balanceHidden = false;
+  final SettingsService _settingsService = SettingsService();
+
+  bool get _balanceHidden => _settingsService.isBalanceHidden();
 
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
@@ -56,6 +58,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         showSharedAddressActionSheet(context, shared);
       });
     }
+  }
+
+  void toggleBalanceHidden() {
+    _settingsService.setBalanceHidden(!_balanceHidden);
+    setState(() {});
   }
 
   @override
@@ -141,7 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _glassCircleButton(
               icon: _balanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               colors: colors,
-              onTap: () => setState(() => _balanceHidden = !_balanceHidden),
+              onTap: toggleBalanceHidden,
             ),
             const SizedBox(width: 12),
             _glassCircleButton(

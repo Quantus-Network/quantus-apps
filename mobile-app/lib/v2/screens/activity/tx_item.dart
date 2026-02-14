@@ -52,7 +52,14 @@ class TxItemData {
   }
 }
 
-Widget buildTxItem(TransactionEvent tx, TxItemData data, AppColorsV2 colors, AppTextTheme text, {VoidCallback? onTap}) {
+Widget buildTxItem(
+  TransactionEvent tx,
+  TxItemData data,
+  AppColorsV2 colors,
+  AppTextTheme text,
+  bool isBalanceHidden, {
+  VoidCallback? onTap,
+}) {
   return GestureDetector(
     onTap: onTap,
     behavior: HitTestBehavior.opaque,
@@ -82,17 +89,22 @@ Widget buildTxItem(TransactionEvent tx, TxItemData data, AppColorsV2 colors, App
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
-                    style: text.detail?.copyWith(color: colors.textTertiary),
-                  ),
-                ],
-              ),
+              if (!isBalanceHidden)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
+                      style: text.detail?.copyWith(color: colors.textTertiary),
+                    ),
+                  ],
+                )
+              else
+                Center(
+                  child: Text('--------', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                ),
             ],
           ),
         ),

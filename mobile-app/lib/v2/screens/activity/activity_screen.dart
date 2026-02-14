@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -20,6 +21,8 @@ class ActivityScreen extends ConsumerWidget {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final settingsService = ref.watch(settingsServiceProvider);
+    final isBalanceHidden = settingsService.isBalanceHidden();
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -93,6 +96,7 @@ class ActivityScreen extends ConsumerWidget {
                                       itemData,
                                       colors,
                                       text,
+                                      isBalanceHidden,
                                       onTap: () {
                                         showTransactionDetailSheet(context, tx, active.account.accountId);
                                       },

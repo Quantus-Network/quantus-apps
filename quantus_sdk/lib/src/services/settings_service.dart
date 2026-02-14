@@ -24,6 +24,7 @@ class SettingsService {
   static const String _activeAccountIndexKey = 'active_account_index';
   static const String _activeAccountIdKey = 'active_account_id';
   static const String _activeDisplayAccountKey = 'active_display_account';
+  static const String _balanceHiddenKey = 'balance_hidden';
 
   // Local authentication keys
   static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
@@ -298,6 +299,15 @@ class SettingsService {
 
   Future<int?> getReversibleTimeSeconds() async {
     return _prefs.getInt('reversible_time_seconds');
+  }
+
+  // Balance Hidden Settings
+  Future<void> setBalanceHidden(bool hidden) async {
+    await _prefs.setBool(_balanceHiddenKey, hidden);
+  }
+
+  bool isBalanceHidden() {
+    return _prefs.getBool(_balanceHiddenKey) ?? false;
   }
 
   // --- Primitive Accessors for General Use ---

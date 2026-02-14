@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -18,8 +19,11 @@ class ActivitySection extends ConsumerWidget {
 
   const ActivitySection({super.key, required this.txAsync, required this.activeAccount, this.onRetry});
 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settingsService = ref.watch(settingsServiceProvider);
+    final isBalanceHidden = settingsService.isBalanceHidden();
     final colors = context.colors;
     final text = context.themeText;
 
@@ -62,6 +66,7 @@ class ActivitySection extends ConsumerWidget {
                   data,
                   colors,
                   text,
+                  isBalanceHidden,
                   onTap: () {
                     showTransactionDetailSheet(context, tx, activeAccount.accountId);
                   },
