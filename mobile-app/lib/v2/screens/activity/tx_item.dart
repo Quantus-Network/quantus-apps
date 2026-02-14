@@ -109,7 +109,7 @@ Widget buildTxItem(
             ],
           ),
         ),
-        if (!isLastItem) Divider(color: colors.separator, height: 1),
+        if (!isLastItem) Divider(color: colors.txItemSeparator, height: 1),
       ],
     ),
   );

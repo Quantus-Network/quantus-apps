@@ -86,7 +86,7 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 24),
               for (var i = 0; i < 3; i++) ...[
                 const Skeleton(width: double.infinity, height: 32),
-                if (i < 2) Divider(color: colors.separator, height: 24),
+                if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
               ],
             ],
           ),
