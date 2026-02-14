@@ -98,7 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 SliverToBoxAdapter(
                   child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                const SliverToBoxAdapter(child: SizedBox(height: 58)),
               ],
             ),
           ),
