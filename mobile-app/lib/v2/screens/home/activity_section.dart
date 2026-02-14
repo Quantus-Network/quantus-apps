@@ -133,7 +133,14 @@ class ActivitySection extends ConsumerWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(
             'View All',
-            style: text.paragraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.underline),
+            style: text.paragraph?.copyWith(
+              color: Colors.transparent,
+              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
+              decoration: TextDecoration.underline,
+              decorationColor: colors.textSecondary,
+              decorationStyle: TextDecorationStyle.solid,
+              decorationThickness: 1.0,
+            ),
           ),
         ),
       ],
