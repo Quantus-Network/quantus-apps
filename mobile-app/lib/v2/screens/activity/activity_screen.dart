@@ -89,7 +89,7 @@ class ActivityScreen extends ConsumerWidget {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 8),
                                   ...group.transactions.mapIndexed((index, tx) {
                                     final itemData = TxItemData.from(tx, active.account.accountId);
                                     final isLastItem = index == group.transactions.length - 1;
