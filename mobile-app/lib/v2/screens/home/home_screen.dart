@@ -99,14 +99,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: colors.textPrimary,
             backgroundColor: colors.surface,
             onRefresh: _refresh,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
-                SliverToBoxAdapter(
-                  child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 58)),
-              ],
+            child: GradientBackground(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
+                  SliverToBoxAdapter(
+                    child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 58)),
+                ],
+              ),
             ),
           ),
         );
@@ -115,21 +117,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    return GradientBackground(
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              _buildTopBar(active, colors),
-              const SizedBox(height: 64),
-              _buildBalance(balanceAsync, colors, text),
-              const SizedBox(height: 64),
-              if (active is RegularAccount) _buildActionButtons(colors, text),
-            ],
-          ),
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildTopBar(active, colors),
+            const SizedBox(height: 64),
+            _buildBalance(balanceAsync, colors, text),
+            const SizedBox(height: 64),
+            if (active is RegularAccount) _buildActionButtons(colors, text),
+          ],
         ),
       ),
     );
