@@ -5,7 +5,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -147,20 +146,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     );
 
     return SizedBox(
-      height: 36,
-      child: GlassButton(
-        height: 36,
-        radius: 14,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        filled: true,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(width: 8),
-            Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
-            const SizedBox(width: 6),
-            Expanded(
+      child: GlassContainer(asset: GlassContainer.mediumSmallAsset, filled: true, child: Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [const SizedBox(width: 8), Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)), const SizedBox(width: 6), Expanded(
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [

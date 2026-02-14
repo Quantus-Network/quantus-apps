@@ -10,6 +10,7 @@ class GlassContainer extends StatelessWidget {
   final bool filled;
 
   static const mediumAsset = 'assets/v2/glass_medium_clear.png';
+  static const mediumSmallAsset = 'assets/v2/glass_medium_clear_small.png'; // 36px height
   static const smallAsset = 'assets/v2/glass_button_40_bg.png';
   static const wideAsset = 'assets/v2/glass_button_wide_340_bg.png';
 
@@ -17,10 +18,11 @@ class GlassContainer extends StatelessWidget {
   static const _scale = 3.0;
   static const _slices = {
     mediumAsset: Rect.fromLTRB(_inset, _inset, 480 - _inset, 180 - _inset),
+    mediumSmallAsset: Rect.fromLTRB(_inset, _inset, 288 - _inset, 108 - _inset),
     wideAsset: Rect.fromLTRB(_inset, _inset, 1020 - _inset, 168 - _inset),
   };
 
-  double get height => asset == smallAsset ? 40 : 56;
+  double get defaultHeight => asset == smallAsset ? 40 : asset == mediumSmallAsset ? 36 : 56;
 
   const GlassContainer({
     super.key,
@@ -37,8 +39,7 @@ class GlassContainer extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: double.infinity,
-        height: height,
+        height: defaultHeight,
         child: Stack(
           children: [
             Positioned.fill(
@@ -48,7 +49,7 @@ class GlassContainer extends StatelessWidget {
             ),
             if (filled)
               Positioned.fill(
-                child: DecoratedBox(decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1))),
+                child: DecoratedBox(decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14))),
               ),
             Positioned.fill(
               child: Padding(
