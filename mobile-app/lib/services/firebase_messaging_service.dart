@@ -121,9 +121,7 @@ class FirebaseMessagingService {
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    final event = txService.deserializeTxEventFromJsonIfPossible(data);
-
-    txService.navigateToTransactionFromPayloadIfPossible(event, navigatorKey);
+    txService.navigateToTransactionFromPayloadIfPossible(data, navigatorKey);
   }
 
   /// Convert an FCM [RemoteMessage] into the app's [NotificationData] model.
