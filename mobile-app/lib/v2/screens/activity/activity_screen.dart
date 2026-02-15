@@ -22,8 +22,7 @@ class ActivityScreen extends ConsumerWidget {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
-    final settingsService = ref.watch(settingsServiceProvider);
-    final isBalanceHidden = settingsService.isBalanceHidden();
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
 
     return Scaffold(
       backgroundColor: colors.background,

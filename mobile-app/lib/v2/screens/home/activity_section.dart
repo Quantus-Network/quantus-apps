@@ -22,8 +22,7 @@ class ActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settingsService = ref.watch(settingsServiceProvider);
-    final isBalanceHidden = settingsService.isBalanceHidden();
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -64,7 +63,7 @@ class ActivitySection extends ConsumerWidget {
               ...recentTransactions.mapIndexed((index, tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
                 final isLastItem = index == recentTransactions.length - 1;
-                
+
                 return buildTxItem(
                   tx,
                   data,

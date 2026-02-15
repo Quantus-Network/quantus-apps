@@ -136,3 +136,23 @@ final highSecurityEstimatedFeeProvider = FutureProvider.family<BigInt, Account>(
   );
   return feeData.fee;
 });
+
+final isBalanceHiddenProvider = StateNotifierProvider<IsBalanceHiddenNotifier, bool>((ref) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return IsBalanceHiddenNotifier(settingsService);
+});
+
+class IsBalanceHiddenNotifier extends StateNotifier<bool> {
+  final SettingsService _settingsService;
+
+  IsBalanceHiddenNotifier(this._settingsService) : super(false);
+
+  Future<void> setIsBalanceHidden(bool value) async {
+    await _settingsService.setBalanceHidden(value);
+    state = value;
+  }
+
+  bool get isBalanceHidden {
+    return _settingsService.isBalanceHidden();
+  }
+}

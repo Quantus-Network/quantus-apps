@@ -34,9 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
 
   final NumberFormattingService _fmt = NumberFormattingService();
-  final SettingsService _settingsService = SettingsService();
-
-  bool get _balanceHidden => _settingsService.isBalanceHidden();
 
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
@@ -60,9 +57,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void toggleBalanceHidden() {
-    _settingsService.setBalanceHidden(!_balanceHidden);
-    setState(() {});
+  Future<void> toggleBalanceHidden() async {
+    final isBalanceHiddenNotifier = ref.read(isBalanceHiddenProvider.notifier);
+    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHiddenNotifier.isBalanceHidden);
   }
 
   @override
@@ -136,6 +133,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -146,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Row(
           children: [
             _glassCircleButton(
-              icon: _balanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               colors: colors,
               onTap: toggleBalanceHidden,
             ),
@@ -167,13 +166,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
+
     return SizedBox(
       height: 96,
       child: Column(
         children: [
           balanceAsync.when(
             data: (balance) {
-              final formatted = _balanceHidden ? '-----' : _fmt.formatBalance(balance);
+              final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
               return Stack(
                 alignment: Alignment.center,
                 children: [
@@ -200,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
           ),
-          if (!_balanceHidden) ...[
+          if (!isBalanceHidden) ...[
             const SizedBox(height: 6),
             Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
           ],
