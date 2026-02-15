@@ -87,7 +87,7 @@ class FirebaseMessagingService {
 
       // Add to the notification provider (persists + sends to stream).
       final notifier = _ref.read(notificationProvider.notifier);
-      notifier.addRemoteNotification(notification);
+      notifier.addNotification(notification);
 
       // Show as a local push notification so the user sees a banner.
       final localNotificationService = _ref.read(localNotificationsServiceProvider);

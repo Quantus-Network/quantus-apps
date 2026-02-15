@@ -307,12 +307,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     addNotification(notification);
   }
 
-  /// Stub for remote notifications (to be implemented later)
-  void addRemoteNotification(NotificationData notification) {
-    // This is a placeholder for future Firebase/APNs integration
-    addNotification(notification.copyWith(source: NotificationSource.remote));
-  }
-
   @override
   void dispose() {
     _cleanupTimer?.cancel();
