@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
@@ -84,6 +88,16 @@ class TransactionService {
       return TransactionRole.sender;
     } else {
       return TransactionRole.receiver;
+    }
+  }
+
+  void navigateToTransactionFromPayload(Ref ref, dynamic payload, GlobalKey<NavigatorState> navigatorKey) {
+    final json = jsonDecode(payload);
+    final event = deserializeTxEventFromJsonIfPossible(json);
+
+    if (event != null) {
+      _ref.read(transactionIntentProvider.notifier).state = event;
+      navigatorKey.currentState?.pushNamed('/transactions');
     }
   }
 
