@@ -77,7 +77,10 @@ class LocalNotificationsService {
     if (payload == null || payload.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    txService.navigateToTransactionFromPayload(_ref, payload, navigatorKey);
+    final json = jsonDecode(payload);
+    final event = txService.deserializeTxEventFromJsonIfPossible(json);
+
+    txService.navigateToTransactionFromPayloadIfPossible(event, navigatorKey);
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -128,7 +131,10 @@ class LocalNotificationsService {
       if (payload == null || payload.isEmpty) return;
 
       final txService = _ref.read(transactionServiceProvider);
-      txService.navigateToTransactionFromPayload(_ref, payload, navigatorKey);
+      final json = jsonDecode(payload);
+      final event = txService.deserializeTxEventFromJsonIfPossible(json);
+
+      txService.navigateToTransactionFromPayloadIfPossible(event, navigatorKey);
     });
   }
 

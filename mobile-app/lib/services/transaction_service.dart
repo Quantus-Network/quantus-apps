@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -91,10 +89,7 @@ class TransactionService {
     }
   }
 
-  void navigateToTransactionFromPayload(Ref ref, dynamic payload, GlobalKey<NavigatorState> navigatorKey) {
-    final json = jsonDecode(payload);
-    final event = deserializeTxEventFromJsonIfPossible(json);
-
+  void navigateToTransactionFromPayloadIfPossible(TransactionEvent? event, GlobalKey<NavigatorState> navigatorKey) {
     if (event != null) {
       _ref.read(transactionIntentProvider.notifier).state = event;
       navigatorKey.currentState?.pushNamed('/transactions');
