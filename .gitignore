@@ -32,6 +32,7 @@ analysis_benchmark.json
 .packages.generated
 
 # Flutter/Dart/Pub related
+**/lib/firebase_options.dart
 **/doc/api/
 .dart_tool/
 .flutter-plugins
@@ -86,6 +87,7 @@ unlinked_spec.ds
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Runner/GoogleService-Info.plist
 
 # macOS
 **/Flutter/ephemeral/

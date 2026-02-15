@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
 /// Top-level handler for background/terminated FCM messages.
@@ -87,11 +85,7 @@ class FirebaseMessagingService {
 
       // Add to the notification provider (persists + sends to stream).
       final notifier = _ref.read(notificationProvider.notifier);
-      notifier.addRemoteNotification(notification);
-
-      // Show as a local push notification so the user sees a banner.
-      final localNotificationService = _ref.read(localNotificationsServiceProvider);
-      localNotificationService.showOrScheduleNotification(notification);
+      notifier.addNotification(notification);
     });
   }
 
@@ -127,12 +121,7 @@ class FirebaseMessagingService {
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    final event = txService.deserializeTxEventFromJsonIfPossible(data);
-
-    if (event != null) {
-      _ref.read(transactionIntentProvider.notifier).state = event;
-      navigatorKey.currentState?.pushNamed('/transactions');
-    }
+    txService.navigateToTransactionFromPayload(_ref, data, navigatorKey);
   }
 
   /// Convert an FCM [RemoteMessage] into the app's [NotificationData] model.

@@ -177,12 +177,8 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
         // No need to handle, because it already shown by default when we added to the state array.
         break;
       case NotificationSource.push:
-        _localNotificationsService.showOrScheduleNotification(notification);
-        break;
       case NotificationSource.remote:
-        // Remote notifications arriving via FCM foreground listener are
-        // shown as local push notifications by FirebaseMessagingService.
-        // No additional handling needed here.
+        _localNotificationsService.showOrScheduleNotification(notification);
         break;
     }
   }
@@ -305,12 +301,6 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   void addTokenReceived({required Account? account, required TransferEvent transactionData}) {
     final notification = NotificationTemplates.tokenReceived(account: account, transactionData: transactionData);
     addNotification(notification);
-  }
-
-  /// Stub for remote notifications (to be implemented later)
-  void addRemoteNotification(NotificationData notification) {
-    // This is a placeholder for future Firebase/APNs integration
-    addNotification(notification.copyWith(source: NotificationSource.remote));
   }
 
   @override
