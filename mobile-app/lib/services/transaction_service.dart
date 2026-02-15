@@ -89,7 +89,9 @@ class TransactionService {
     }
   }
 
-  void navigateToTransactionFromPayloadIfPossible(TransactionEvent? event, GlobalKey<NavigatorState> navigatorKey) {
+  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic>? json, GlobalKey<NavigatorState> navigatorKey) {
+    final event = deserializeTxEventFromJsonIfPossible(json);
+    
     if (event != null) {
       _ref.read(transactionIntentProvider.notifier).state = event;
       navigatorKey.currentState?.pushNamed('/transactions');

@@ -78,9 +78,8 @@ class LocalNotificationsService {
 
     final txService = _ref.read(transactionServiceProvider);
     final json = jsonDecode(payload);
-    final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
-    txService.navigateToTransactionFromPayloadIfPossible(event, navigatorKey);
+    txService.navigateToTransactionFromPayloadIfPossible(json, navigatorKey);
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -132,9 +131,8 @@ class LocalNotificationsService {
 
       final txService = _ref.read(transactionServiceProvider);
       final json = jsonDecode(payload);
-      final event = txService.deserializeTxEventFromJsonIfPossible(json);
 
-      txService.navigateToTransactionFromPayloadIfPossible(event, navigatorKey);
+      txService.navigateToTransactionFromPayloadIfPossible(json, navigatorKey);
     });
   }
 
