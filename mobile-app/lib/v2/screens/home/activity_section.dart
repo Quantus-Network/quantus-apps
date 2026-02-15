@@ -38,6 +38,7 @@ class ActivitySection extends ConsumerWidget {
             reversibleTransfers: data.reversibleTransfers,
             otherTransfers: data.otherTransfers,
           );
+          final recentTransactions = all.take(5).toList();
 
           if (all.isEmpty) {
             return Column(
@@ -59,9 +60,11 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 40),
               _header(colors, text, context),
               const SizedBox(height: 24),
-              ...all.take(5).mapIndexed((index, tx) {
+              
+              ...recentTransactions.mapIndexed((index, tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
-                final isLastItem = index == 4;
+                final isLastItem = index == recentTransactions.length - 1;
+                
                 return buildTxItem(
                   tx,
                   data,
