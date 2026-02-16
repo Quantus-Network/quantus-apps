@@ -16,10 +16,10 @@ dependencies:
     path: ./rust_builder
   
   # Polkadart ecosystem (managed by melos.yaml)
-  polkadart: # Version managed by melos.yaml
-  polkadart_keyring: # Version managed by melos.yaml
-  polkadart_cli: # Version managed by melos.yaml
-  
+  polkadart: ^0.7.1
+  polkadart_keyring: ^0.7.0
+  polkadart_cli: ^0.7.1
+
   # Crypto and encoding
   bip39_mnemonic: # Version managed by melos.yaml
   crypto: # Version managed by melos.yaml
