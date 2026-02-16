@@ -38,7 +38,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       if (FeatureFlags.enableRemoteNotifications) {
         ref.read(firebaseMessagingServiceProvider).setupNotificationTapHandlers(navigatorKey);
       }
-      
+
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
   }

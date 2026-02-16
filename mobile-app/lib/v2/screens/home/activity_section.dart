@@ -59,7 +59,7 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 40),
               _header(colors, text, context),
               const SizedBox(height: 24),
-              
+
               ...recentTransactions.mapIndexed((index, tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
                 final isLastItem = index == recentTransactions.length - 1;
@@ -137,7 +137,9 @@ class ActivitySection extends ConsumerWidget {
             'View All',
             style: text.paragraph?.copyWith(
               color: Colors.transparent,
-              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))], // Shadow trick to create gap between text and underline
+              shadows: [
+                Shadow(color: colors.textSecondary, offset: const Offset(0, -2)),
+              ], // Shadow trick to create gap between text and underline
               decoration: TextDecoration.underline,
               decorationColor: colors.textSecondary,
               decorationStyle: TextDecorationStyle.solid,

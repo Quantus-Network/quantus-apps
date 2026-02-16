@@ -22,7 +22,11 @@ class GlassContainer extends StatelessWidget {
     wideAsset: Rect.fromLTRB(_inset, _inset, 1020 - _inset, 168 - _inset),
   };
 
-  double get defaultHeight => asset == smallAsset ? 40 : asset == mediumSmallAsset ? 36 : 56;
+  double get defaultHeight => asset == smallAsset
+      ? 40
+      : asset == mediumSmallAsset
+      ? 36
+      : 56;
 
   const GlassContainer({
     super.key,
@@ -49,7 +53,12 @@ class GlassContainer extends StatelessWidget {
             ),
             if (filled)
               Positioned.fill(
-                child: DecoratedBox(decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14))),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
               ),
             Positioned.fill(
               child: Padding(
