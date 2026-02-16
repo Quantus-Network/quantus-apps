@@ -46,12 +46,12 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   }
 
   void _copyAddress() {
-    ClipboardExtensions.copyTextWithSnackbar(context, widget.address);
+    context.copyTextWithToaster(widget.address);
   }
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
+      context.copyTextWithToaster(_checksum!, message: 'Checkphrase copied to clipboard');
     }
   }
 

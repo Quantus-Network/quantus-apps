@@ -7,19 +7,19 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 Future<void> showToaster(
   BuildContext context, {
   required String message,
-  Icon? icon,
+  required Icon icon,
   Duration duration = const Duration(seconds: 3),
-  FlashBehavior style = FlashBehavior.floating,
+  FlashBehavior behavior = FlashBehavior.floating,
 }) async {
   if (!context.mounted) return;
 
   await context.showFlash<void>(
     duration: duration,
-    persistent: true,
+    persistent: false,
     builder: (context, controller) {
       return FlashBar(
         controller: controller,
-        behavior: style,
+        behavior: behavior,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -43,6 +43,10 @@ Future<void> showWarningToaster(BuildContext context, {required String message})
     message: message,
     icon: const Icon(Icons.warning, color: Colors.amber),
   );
+}
+
+Future<void> showInfoToaster(BuildContext context, {required String message}) async {
+  await showToaster(context, message: message, icon: const Icon(Icons.info));
 }
 
 Future<void> showErrorToaster(BuildContext context, {required String message}) async {

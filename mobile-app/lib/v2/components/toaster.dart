@@ -5,20 +5,15 @@ import 'package:resonance_network_wallet/shared/extensions/media_query_data_exte
 
 class Toaster extends StatelessWidget {
   final String message;
-  final Icon? icon;
+  final Icon icon;
 
-  const Toaster({super.key, required this.message, this.icon});
+  const Toaster({super.key, required this.message, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    final Widget displayIcon = Icon(
-      icon?.icon ?? Icons.copy,
-      color: icon?.color ?? Colors.white,
-      size: context.isTablet ? 20 : 16,
-    );
+    final Widget displayIcon = Icon(icon.icon, color: icon.color, size: context.isTablet ? 20 : 16);
 
     return Container(
-      // width: 343, // Width will be handled by the flash package's constraints
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: ShapeDecoration(
         color: context.colors.toasterBackground,
@@ -28,7 +23,6 @@ class Toaster extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           displayIcon,

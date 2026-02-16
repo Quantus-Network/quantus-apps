@@ -13,4 +13,12 @@ extension ToasterExtensions on BuildContext {
   Future<void> showErrorToaster({required String message}) async {
     await th.showErrorToaster(this, message: message);
   }
+
+  Future<void> showCopyToaster({required String message}) async {
+    await th.showCopyToaster(this, message: message);
+  }
+
+  Future<void> showInfoToaster({required String message}) async {
+    await th.showInfoToaster(this, message: message);
+  }
 }

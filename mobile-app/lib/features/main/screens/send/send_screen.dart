@@ -10,7 +10,6 @@ import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/segmented_control.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/recent_addresses.dart';
@@ -24,6 +23,7 @@ import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 enum SendMode { immediate, reversible }
 
@@ -316,7 +316,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
         );
       });
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Error fetching network fee: ${e.toString()}');
+        context.showErrorToaster(message: 'Error fetching network fee: ${e.toString()}');
       }
     }
   }
@@ -341,7 +341,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
   Future<void> _setMaxAmount() async {
     String? recipient = _getValidRecipient();
     if (recipient == null) {
-      showTopSnackBar(context, title: 'Error', message: 'Invalid recipient address');
+      context.showErrorToaster(message: 'Invalid recipient address');
       return;
     }
 
@@ -372,12 +372,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
     } catch (e, s) {
       print('Error setting max amount: $e');
       print('Error setting max amount stack trace: $s');
-      showTopSnackBar(
-        // ignore: use_build_context_synchronously
-        context,
-        title: 'Error',
-        message: 'Error setting max amount: $e',
-      );
+      if (mounted) context.showErrorToaster(message: 'Error setting max amount: $e');
     }
   }
 
@@ -603,12 +598,7 @@ class SendScreenState extends ConsumerState<SendScreen> {
                             padding: const EdgeInsets.only(bottom: 10.0),
                             child: InkWell(
                               onTap: () async {
-                                ClipboardExtensions.copyTextWithSnackbar(
-                                  context,
-                                  _humanReadableCheckphrase,
-                                  title: 'Copied',
-                                  message: 'Check phrase copied to clipboard',
-                                );
+                                context.copyTextWithToaster(_humanReadableCheckphrase, message: 'Check phrase copied to clipboard');
                                 HapticFeedback.lightImpact();
                               },
                               borderRadius: BorderRadius.circular(4),

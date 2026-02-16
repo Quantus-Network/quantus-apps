@@ -5,7 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/pull_funds_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 class EmergencyButton extends ConsumerWidget {
   const EmergencyButton({super.key});
@@ -33,15 +33,14 @@ class EmergencyButton extends ConsumerWidget {
                     await highSecurityService.pullAllFunds(activeDisplayAccount.account.accountId, guardianAccount);
 
                     if (context.mounted) {
-                      context.showSuccessSnackbar(
-                        title: 'Success',
+                      context.showSuccessToaster(
                         message: 'Emergency funds pull initiated successfully',
                       );
                     }
                   } catch (e) {
                     print('Error: Failed to pull funds: $e');
                     if (context.mounted) {
-                      context.showErrorSnackbar(title: 'Error', message: 'Failed to pull funds: $e');
+                      context.showErrorToaster(message: 'Failed to pull funds: $e');
                     }
                   }
                 },
@@ -50,7 +49,7 @@ class EmergencyButton extends ConsumerWidget {
           } else {
             print('Error: Guardian account not found on this device');
             if (context.mounted) {
-              context.showErrorSnackbar(title: 'Error', message: 'Guardian account not found on this device');
+              context.showErrorToaster(message: 'Guardian account not found on this device');
             }
           }
         }

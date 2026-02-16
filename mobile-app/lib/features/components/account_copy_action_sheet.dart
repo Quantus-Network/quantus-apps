@@ -40,13 +40,13 @@ class _AccountCopyActionSheetState extends State<AccountCopyActionSheet> {
   }
 
   void _copyAddress() {
-    ClipboardExtensions.copyTextWithSnackbar(context, widget.activeAccount.accountId);
+    context.copyTextWithToaster(widget.activeAccount.accountId);
     Navigator.pop(context);
   }
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
+      context.copyTextWithToaster(_checksum!, message: 'Checkphrase copied to clipboard');
       Navigator.pop(context);
     }
   }

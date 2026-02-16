@@ -23,8 +23,8 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/svg_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class AccountSettingsScreen extends ConsumerStatefulWidget {
@@ -151,7 +151,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     } catch (e) {
       print('Failed to disconnect: $e');
       if (mounted) {
-        context.showErrorSnackbar(title: 'Error', message: 'Failed to disconnect wallet: $e');
+        context.showErrorToaster(message: 'Failed to disconnect wallet: $e');
       }
     }
   }
@@ -278,7 +278,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       child: Padding(
         padding: const EdgeInsets.only(top: 10.0, left: 10.0, bottom: 10.0, right: 18.0),
         child: InkWell(
-          onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
+          onTap: () => context.copyTextWithToaster(widget.account.accountId),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -293,7 +293,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               ),
               InkWell(
                 child: const CopyIcon(),
-                onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, widget.account.accountId),
+                onTap: () => context.copyTextWithToaster(widget.account.accountId),
               ),
             ],
           ),

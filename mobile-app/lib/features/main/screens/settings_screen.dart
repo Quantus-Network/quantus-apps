@@ -6,7 +6,6 @@ import 'package:resonance_network_wallet/features/components/list_item.dart';
 import 'package:resonance_network_wallet/features/components/referral_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
@@ -23,6 +22,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -78,7 +78,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       debugPrint('Logout error: $e');
       if (mounted) {
-        showTopSnackBar(context, title: 'Error', message: 'Logout failed: $e');
+        context.showErrorToaster(message: 'Logout failed: $e');
       }
     }
   }
@@ -98,7 +98,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final walletIndices = getNonHardwareWalletIndices(accounts);
 
       if (walletIndices.isEmpty) {
-        showTopSnackBar(context, title: 'No Wallets', message: 'No wallets with recovery phrases found.');
+        context.showErrorToaster(message: 'No wallets with recovery phrases found.');
         return;
       }
 
@@ -288,21 +288,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await migrationService.createDebugOldAccounts();
 
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Debug',
+        context.showWarningToaster(
           message: 'Created debug old accounts with indices 0 and 1. Restart app to see migration dialog.',
-          icon: const Icon(Icons.check_circle, color: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
-        showTopSnackBar(
-          context,
-          title: 'Error',
-          message: 'Failed to create debug accounts: ${e.toString()}',
-          icon: const Icon(Icons.error, color: Colors.red),
-        );
+        context.showErrorToaster(message: 'Failed to create debug accounts: ${e.toString()}');
       }
     }
   }
