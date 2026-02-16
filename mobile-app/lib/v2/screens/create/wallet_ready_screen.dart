@@ -152,7 +152,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                                 ),
                           isLoading: _isLoading,
                           actionIcon: Icons.copy,
-                          onAction: () => ClipboardExtensions.copyTextWithSnackbar(context, _address),
+                          onAction: () => context.copyTextWithToaster(_address),
                         ),
                         const SizedBox(height: 24),
                         _Field(
@@ -161,11 +161,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                           isLoading: _isLoading,
                           valueColor: colors.accentPink,
                           actionIcon: Icons.copy,
-                          onAction: () => ClipboardExtensions.copyTextWithSnackbar(
-                            context,
-                            _checksum,
-                            message: 'Checkphrase copied',
-                          ),
+                          onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
                         ),
                         const SizedBox(height: 16),
                         GestureDetector(

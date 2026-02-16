@@ -5,6 +5,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   // Backgrounds
   final Color background;
   final Color backgroundAlt;
+  final Color toasterBackground;
 
   // Surfaces
   final Color surface;
@@ -38,6 +39,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color buttonDisabled;
   final Color skeletonBase;
   final Color skeletonHighlight;
+  final Color toasterBorder;
 
   // Account tags
   final Color tagGuardian;
@@ -47,6 +49,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   const AppColorsV2({
     required this.background,
     required this.backgroundAlt,
+    required this.toasterBackground,
+    required this.toasterBorder,
     required this.surface,
     required this.surfaceGlass,
     required this.surfaceCard,
@@ -77,6 +81,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     : this(
         background: const Color(0xFF141414),
         backgroundAlt: const Color(0xFF1F1F1F),
+        toasterBackground: const Color(0xFF191919),
+        toasterBorder: const Color(0xFF3D3D3D),
         surface: const Color(0xFF292929),
         surfaceGlass: const Color(0x1AFFFFFF),
         surfaceCard: const Color(0x0FFFFFFF),
@@ -125,6 +131,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? separator,
     Color? txItemSeparator,
     Color? border,
+    Color? toasterBackground,
+    Color? toasterBorder,
     Color? buttonDisabled,
     Color? skeletonBase,
     Color? skeletonHighlight,
@@ -135,6 +143,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     return AppColorsV2(
       background: background ?? this.background,
       backgroundAlt: backgroundAlt ?? this.backgroundAlt,
+      toasterBackground: toasterBackground ?? this.toasterBackground,
+      toasterBorder: toasterBorder ?? this.toasterBorder,
       surface: surface ?? this.surface,
       surfaceGlass: surfaceGlass ?? this.surfaceGlass,
       surfaceCard: surfaceCard ?? this.surfaceCard,
@@ -168,6 +178,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     return AppColorsV2(
       background: Color.lerp(background, other.background, t) ?? background,
       backgroundAlt: Color.lerp(backgroundAlt, other.backgroundAlt, t) ?? backgroundAlt,
+      toasterBackground: Color.lerp(toasterBackground, other.toasterBackground, t) ?? toasterBackground,
+      toasterBorder: Color.lerp(toasterBorder, other.toasterBorder, t) ?? toasterBorder,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
       surfaceGlass: Color.lerp(surfaceGlass, other.surfaceGlass, t) ?? surfaceGlass,
       surfaceCard: Color.lerp(surfaceCard, other.surfaceCard, t) ?? surfaceCard,

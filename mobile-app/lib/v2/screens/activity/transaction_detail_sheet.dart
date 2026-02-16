@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -122,7 +122,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
               ),
             ),
             const SizedBox(width: 8),
-            _copyButton(colors, _counterparty),
+            _copyButton(colors, value: _counterparty),
           ],
         ),
         if (_checkphrase != null) ...[
@@ -133,7 +133,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                 child: Text(_checkphrase!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
               ),
               const SizedBox(width: 8),
-              _copyButton(colors, _checkphrase!),
+              _copyButton(colors, value: _checkphrase!, message: 'Checkphrase copied to clipboard'),
             ],
           ),
         ],
@@ -142,9 +142,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     );
   }
 
-  Widget _copyButton(AppColorsV2 colors, String value) {
+  Widget _copyButton(AppColorsV2 colors, {required String value, String message = 'Address copied to clipboard'}) {
     return GestureDetector(
-      onTap: () => Clipboard.setData(ClipboardData(text: value)),
+      onTap: () => context.copyTextWithToaster(value, message: message),
       child: Container(
         width: 20,
         height: 20,

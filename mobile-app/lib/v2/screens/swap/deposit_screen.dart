@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -56,10 +57,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _copyAddress() {
-    Clipboard.setData(ClipboardData(text: _order.depositAddress));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Address copied'), duration: Duration(seconds: 1)));
+    context.copyTextWithToaster(_order.depositAddress);
   }
 
   @override
@@ -118,7 +116,7 @@ class _DepositScreenState extends State<DepositScreen> {
             Text('Deposit Amount', style: text.smallParagraph?.copyWith(color: colors.textPrimary, height: 1.35)),
             const SizedBox(width: 6),
             GestureDetector(
-              onTap: () => Clipboard.setData(ClipboardData(text: quote.totalAmount.toStringAsFixed(2))),
+              onTap: () => context.copyTextWithToaster(quote.totalAmount.toStringAsFixed(2), message: 'Deposit amount copied to clipboard'),
               child: Container(
                 width: 20,
                 height: 20,
@@ -155,8 +153,9 @@ class _DepositScreenState extends State<DepositScreen> {
           child: Container(
             color: Colors.white,
             padding: const EdgeInsets.all(8),
+
             /// for now this QR Code is invalid so people don't transfer by accident
-            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184), 
+            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
             child: QrImageView(data: 'quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),
