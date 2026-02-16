@@ -69,8 +69,8 @@ class ActivitySection extends ConsumerWidget {
                   data,
                   colors,
                   text,
-                  isBalanceHidden,
-                  isLastItem,
+                  isBalanceHidden: isBalanceHidden,
+                  isLastItem: isLastItem,
                   onTap: () {
                     showTransactionDetailSheet(context, tx, activeAccount.accountId);
                   },

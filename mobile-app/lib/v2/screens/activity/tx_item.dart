@@ -56,9 +56,9 @@ Widget buildTxItem(
   TransactionEvent tx,
   TxItemData data,
   AppColorsV2 colors,
-  AppTextTheme text,
-  bool isBalanceHidden,
-  bool isLastItem, {
+  AppTextTheme text, {
+  required bool isBalanceHidden,
+  required bool isLastItem,
   VoidCallback? onTap,
 }) {
   return GestureDetector(
