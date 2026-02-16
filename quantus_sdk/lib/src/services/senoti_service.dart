@@ -32,13 +32,9 @@ class SenotiAuthClient {
     required String platform,
   }) async {
     final ch = await requestChallenge();
-    print('challenge: $ch');
     final msg =
         'device-registrar:device-registration:1|challenge=${ch['challenge']}|address=$ss58Address|platform=$platform|token=$token';
-    print('msg: $msg');
     final sigHex = await signHex(utf8.encode(msg));
-
-    print('verify ${ch['temp_session_id']!} $senotiEndpointUrl');
     final r = await _client.post(
       Uri.parse('$senotiEndpointUrl/devices'),
       headers: {'content-type': 'application/json'},
@@ -52,7 +48,6 @@ class SenotiAuthClient {
     if (r.statusCode != 202) {
       throw Exception('verify failed: ${r.statusCode}');
     }
-    print('verify response: ${r.body}');
   }
 }
 
