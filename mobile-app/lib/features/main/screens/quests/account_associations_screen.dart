@@ -18,7 +18,7 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 class AccountAssociationsScreen extends ConsumerStatefulWidget {
   const AccountAssociationsScreen({super.key});
@@ -52,8 +52,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
       }
 
       if (mounted) {
-        context.showSuccessSnackbar(
-          title: 'Saved successfully',
+        context.showSuccessToaster(
           message: 'Your ETH address is successfully associated',
         );
       }
@@ -202,7 +201,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
         InkWell(
           onTap: () {
             if (hasEthAddress) {
-              ClipboardExtensions.copyTextWithSnackbar(context, associatedEthAddress);
+              context.copyTextWithToaster(associatedEthAddress);
             }
           },
           child: _buildCard(
@@ -297,11 +296,7 @@ class _AccountAssociationsScreenState extends ConsumerState<AccountAssociationsS
         InkWell(
           onTap: () {
             if (hasXUsername) {
-              ClipboardExtensions.copyTextWithSnackbar(
-                context,
-                associatedXUsername,
-                message: 'Username copied to clipboard',
-              );
+              context.copyTextWithToaster(associatedXUsername, message: 'Username copied to clipboard');
             }
           },
           child: _buildCard(

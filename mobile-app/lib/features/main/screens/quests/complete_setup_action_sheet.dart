@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/opt_in_position_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 void showCompleteSetupActionSheet(BuildContext context) {
   showModalBottomSheet(
@@ -87,12 +87,12 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
       ref.invalidate(optInPositionProvider);
 
       if (mounted) {
-        context.showSuccessSnackbar(title: 'Success', message: 'Accounts linked successfully!');
+        context.showSuccessToaster(message: 'Accounts linked successfully!');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(title: 'Error', message: e.toString());
+        context.showErrorToaster(message: e.toString());
       }
     } finally {
       if (mounted) {
@@ -195,7 +195,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     _originalEthAddress = null;
     ref.invalidate(accountAssociationsProvider);
     if (mounted) {
-      context.showSuccessSnackbar(title: 'Success', message: 'ETH address unlinked');
+      context.showSuccessToaster(message: 'ETH address unlinked');
       setState(() {});
     }
   }
@@ -206,7 +206,7 @@ class _CompleteSetupActionSheetState extends ConsumerState<CompleteSetupActionSh
     _originalXUsername = null;
     ref.invalidate(accountAssociationsProvider);
     if (mounted) {
-      context.showSuccessSnackbar(title: 'Success', message: 'X account unlinked');
+      context.showSuccessToaster(message: 'X account unlinked');
       setState(() {});
     }
   }
@@ -441,7 +441,7 @@ class _UnlinkConfirmationSheetState extends State<_UnlinkConfirmationSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUnlinking = false);
-        context.showErrorSnackbar(title: 'Error', message: 'Error: $e');
+        context.showErrorToaster(message: 'Error: $e');
       }
     }
   }

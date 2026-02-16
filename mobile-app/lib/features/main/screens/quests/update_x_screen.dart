@@ -13,7 +13,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/validators.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,7 +58,7 @@ class _UpdateXScreenState extends ConsumerState<UpdateXScreen> {
     final Uri url = Uri.parse('https://x.com/${_handleController.text.trim()}');
     if (!await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication)) {
       if (mounted) {
-        context.showErrorSnackbar(title: 'Error', message: 'Could not launch X app');
+        context.showErrorToaster(message: 'Could not launch X app');
       }
     }
   }
@@ -71,7 +71,7 @@ It's quantum secure bitcoin''';
 
     if (!await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication)) {
       if (mounted) {
-        context.showErrorSnackbar(title: 'Error', message: 'Could not launch X app');
+        context.showErrorToaster(message: 'Could not launch X app');
       }
     }
   }
@@ -110,7 +110,7 @@ It's quantum secure bitcoin''';
       await _taskmasterService.associateXHandle(handle);
 
       if (mounted) {
-        context.showSuccessSnackbar(title: 'Success', message: 'X account associated!');
+        context.showSuccessToaster(message: 'X account associated!');
       }
 
       ref.invalidate(accountAssociationsProvider);

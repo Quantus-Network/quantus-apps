@@ -16,7 +16,7 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum ReversibleTransactionMode { reversible, guardianIntercept }
@@ -571,7 +571,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
       debugPrint('Failed to cancel transaction: $e');
       debugPrint('Stack trace: $stackTrace');
       // ignore: use_build_context_synchronously
-      if (mounted) context.showErrorSnackbar(title: 'Failed to cancel', message: e.toString());
+      if (mounted) context.showErrorToaster(message: 'Failed to cancel: $e');
     } finally {
       setState(() {
         _isCancelling = false;

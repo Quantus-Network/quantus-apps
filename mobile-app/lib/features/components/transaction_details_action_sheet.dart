@@ -18,7 +18,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -145,7 +145,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
     } catch (e) {
       print('Retrying failed: $e');
       // ignore: use_build_context_synchronously
-      context.showErrorSnackbar(title: 'Retrying Failed', message: e.toString());
+      context.showErrorToaster(message: 'Retrying Failed: $e');
     }
   }
 
@@ -250,7 +250,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
                       gapLength: 3,
                       borderRadius: const Radius.circular(4),
                       child: InkWell(
-                        onTap: () => ClipboardExtensions.copyTextWithSnackbar(context, accountId),
+                        onTap: () => context.copyTextWithToaster(accountId),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(

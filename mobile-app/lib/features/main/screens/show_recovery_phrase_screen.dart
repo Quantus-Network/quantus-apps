@@ -126,11 +126,7 @@ class _ShowRecoveryPhraseScreenState extends State<ShowRecoveryPhraseScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: InkWell(
         onTap: () {
-          ClipboardExtensions.copyTextWithSnackbar(
-            context,
-            _recoveryPhrase.join(' '),
-            message: 'Recovery phrase copied to clipboard',
-          );
+          context.copyTextWithToaster(_recoveryPhrase.join(' '), message: 'Recovery phrase copied to clipboard');
           TelemetryService().sendEvent('settings_copy_recovery_phrase');
         },
         child: Opacity(

@@ -58,13 +58,13 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   void _copyAddress() {
     if (_accountId != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _accountId!);
+      context.copyTextWithToaster(_accountId!);
     }
   }
 
   void _copyChecksum() {
     if (_checksum != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _checksum!, message: 'Checkphrase copied to clipboard');
+      context.copyTextWithToaster(_checksum!, message: 'Checkphrase copied to clipboard');
     }
   }
 

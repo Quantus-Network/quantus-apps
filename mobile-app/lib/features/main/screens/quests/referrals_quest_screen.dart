@@ -59,7 +59,7 @@ class _ReferralsQuestScreenState extends ConsumerState<ReferralsQuestScreen> {
 
   void _copyReferralCode() {
     if (_referralCode != null) {
-      ClipboardExtensions.copyTextWithSnackbar(context, _referralCode!, message: 'Referral code copied to clipboard');
+      context.copyTextWithToaster(_referralCode!, message: 'Referral code copied to clipboard');
     }
   }
 

@@ -14,7 +14,7 @@ import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 class CreateAccountScreen extends ConsumerStatefulWidget {
   final Account? accountToEdit;
@@ -70,7 +70,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        context.showErrorSnackbar(title: 'Error', message: 'Failed to load account details: $e');
+        context.showErrorToaster(message: 'Failed to load account details: $e');
       }
     }
   }
@@ -97,7 +97,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         setState(() {
           _isLoading = false;
         });
-        context.showErrorSnackbar(title: 'Error', message: 'Failed to generate account details: $e');
+        context.showErrorToaster(message: 'Failed to generate account details: $e');
       }
     }
   }
@@ -218,7 +218,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               : AddressFormattingService.splitIntoChunks(_provisionalAccount.accountId).join(' '),
                           icon: const CopyIcon(),
                           onPressed: () {
-                            ClipboardExtensions.copyTextWithSnackbar(context, _provisionalAccount.accountId);
+                            context.copyTextWithToaster(_provisionalAccount.accountId);
                           },
                           label: 'ACCOUNT ADDRESS',
                         ),

@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 class RemoveAssociationConfirmationSheet extends StatefulWidget {
   final Future<void> Function() onRemove;
@@ -28,7 +28,7 @@ class _RemoveAssociationConfirmationSheetState extends State<RemoveAssociationCo
       await widget.onRemove();
 
       if (mounted) {
-        context.showSuccessSnackbar(title: 'Association Removed', message: 'Your association is successfully removed');
+        context.showSuccessToaster(message: 'Your association is successfully removed');
       }
 
       _closeSheet();
@@ -36,7 +36,7 @@ class _RemoveAssociationConfirmationSheetState extends State<RemoveAssociationCo
       print('Failed removing association: $e');
       // ignore: use_build_context_synchronously
       if (mounted) {
-        context.showErrorSnackbar(title: 'Failed removing', message: e.toString());
+        context.showErrorToaster(message: 'Failed removing: $e');
       }
     } finally {
       setState(() {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/snackbar_helper.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
@@ -71,7 +71,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     if (enable) {
       final available = await _authService.isBiometricAvailable();
       if (!available) {
-        if (mounted) showTopSnackBar(context, title: 'Error', message: 'Biometric not available on this device');
+        if (mounted) context.showErrorToaster(message: 'Biometric not available on this device');
         return;
       }
     }

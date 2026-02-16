@@ -12,7 +12,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/raider_quest_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/shared/extensions/snackbar_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/validators.dart';
 
 class RaidSubmissionActionSheet extends ConsumerStatefulWidget {
@@ -68,7 +68,7 @@ class _RaidSubmissionActionSheetState extends ConsumerState<RaidSubmissionAction
     try {
       await _taskmasterService.addRaidSubmission(replyLink);
       if (mounted) {
-        context.showSuccessSnackbar(title: 'Success submitted!', message: 'Success adding raid submission!');
+        context.showSuccessToaster(message: 'Success adding raid submission!');
       }
       ref.invalidate(raiderSubmissionsProvider);
       _closeSheet();
