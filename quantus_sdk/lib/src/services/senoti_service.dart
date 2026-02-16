@@ -12,7 +12,6 @@ class SenotiAuthClient {
   SenotiAuthClient(this.senotiEndpointUrl, {http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> requestChallenge() async {
-    print('request challenge');
     final r = await _client.get(
       Uri.parse('$senotiEndpointUrl/auth/request-challenge'),
       headers: {'content-type': 'application/json'},
