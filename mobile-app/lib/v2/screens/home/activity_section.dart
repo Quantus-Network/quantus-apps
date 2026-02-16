@@ -1,9 +1,11 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -20,6 +22,7 @@ class ActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -34,6 +37,7 @@ class ActivitySection extends ConsumerWidget {
             reversibleTransfers: data.reversibleTransfers,
             otherTransfers: data.otherTransfers,
           );
+          final recentTransactions = all.take(5).toList();
 
           if (all.isEmpty) {
             return Column(
@@ -55,13 +59,18 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 40),
               _header(colors, text, context),
               const SizedBox(height: 24),
-              ...all.take(5).map((tx) {
+              
+              ...recentTransactions.mapIndexed((index, tx) {
                 final data = TxItemData.from(tx, activeAccount.accountId);
+                final isLastItem = index == recentTransactions.length - 1;
+
                 return buildTxItem(
                   tx,
                   data,
                   colors,
                   text,
+                  isBalanceHidden: isBalanceHidden,
+                  isLastItem: isLastItem,
                   onTap: () {
                     showTransactionDetailSheet(context, tx, activeAccount.accountId);
                   },
@@ -79,7 +88,7 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 24),
               for (var i = 0; i < 3; i++) ...[
                 const Skeleton(width: double.infinity, height: 32),
-                if (i < 2) Divider(color: colors.separator, height: 24),
+                if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
               ],
             ],
           ),
@@ -126,7 +135,14 @@ class ActivitySection extends ConsumerWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(
             'View All',
-            style: text.paragraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.underline),
+            style: text.paragraph?.copyWith(
+              color: Colors.transparent,
+              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))], // Shadow trick to create gap between text and underline
+              decoration: TextDecoration.underline,
+              decorationColor: colors.textSecondary,
+              decorationStyle: TextDecorationStyle.solid,
+              decorationThickness: 1.0,
+            ),
           ),
         ),
       ],

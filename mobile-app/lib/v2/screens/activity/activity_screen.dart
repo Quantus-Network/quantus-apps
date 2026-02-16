@@ -1,8 +1,10 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -20,6 +22,7 @@ class ActivityScreen extends ConsumerWidget {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -85,14 +88,17 @@ class ActivityScreen extends ConsumerWidget {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
-                                  ...group.transactions.map((tx) {
+                                  const SizedBox(height: 8),
+                                  ...group.transactions.mapIndexed((index, tx) {
                                     final itemData = TxItemData.from(tx, active.account.accountId);
+                                    final isLastItem = index == group.transactions.length - 1;
                                     return buildTxItem(
                                       tx,
                                       itemData,
                                       colors,
                                       text,
+                                      isBalanceHidden: isBalanceHidden,
+                                      isLastItem: isLastItem,
                                       onTap: () {
                                         showTransactionDetailSheet(context, tx, active.account.accountId);
                                       },

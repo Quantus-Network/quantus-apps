@@ -273,7 +273,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       children: [
         Text(
           title,
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         Container(
@@ -281,6 +281,17 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
           child: Column(children: children),
         ),
+      ],
+    );
+  }
+
+  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+        const SizedBox(height: 4),
+        Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       ],
     );
   }
@@ -295,16 +306,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   ) {
     return Row(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-              const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-            ],
-          ),
-        ),
+        Expanded(child: _itemContent(title, text, colors, subtitle)),
         CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
     );
@@ -322,16 +324,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-              ],
-            ),
-          ),
+          Expanded(child: _itemContent(title, text, colors, subtitle)),
           Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
         ],
       ),
@@ -352,15 +345,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
         children: [
           Expanded(
             child: subtitle != null
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                      const SizedBox(height: 4),
-                      Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-                    ],
-                  )
-                : Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                ? _itemContent(title, text, colors, subtitle)
+                : Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
           ),
           Icon(Icons.north_east, color: colors.textSecondary, size: 20),
         ],
@@ -371,16 +357,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   Widget _comingSoonItem(String title, String subtitle, AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-              const SizedBox(height: 4),
-              Text(subtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-            ],
-          ),
-        ),
+        Expanded(child: _itemContent(title, text, colors, subtitle)),
         Text('Coming Soon', style: text.detail?.copyWith(color: colors.textTertiary)),
       ],
     );

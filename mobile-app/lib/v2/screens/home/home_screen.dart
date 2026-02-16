@@ -34,7 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
 
   final NumberFormattingService _fmt = NumberFormattingService();
-  bool _balanceHidden = false;
 
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
@@ -58,10 +57,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> toggleBalanceHidden(bool isBalanceHidden) async {
+    final isBalanceHiddenNotifier = ref.read(isBalanceHiddenProvider.notifier);
+    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHidden);
+  }
+
   @override
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
@@ -92,14 +97,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: colors.textPrimary,
             backgroundColor: colors.surface,
             onRefresh: _refresh,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
-                SliverToBoxAdapter(
-                  child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
+            child: GradientBackground(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _buildContent(active, balanceAsync, isBalanceHidden, colors, text)),
+                  SliverToBoxAdapter(
+                    child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 58)),
+                ],
+              ),
             ),
           ),
         );
@@ -107,28 +114,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    return GradientBackground(
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              _buildTopBar(active, colors),
-              const SizedBox(height: 64),
-              _buildBalance(balanceAsync, colors, text),
-              const SizedBox(height: 64),
-              if (active is RegularAccount) _buildActionButtons(colors, text),
-            ],
-          ),
+  Widget _buildContent(
+    DisplayAccount active,
+    AsyncValue<BigInt> balanceAsync,
+    bool isBalanceHidden,
+    AppColorsV2 colors,
+    AppTextTheme text,
+  ) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildTopBar(active, isBalanceHidden, colors),
+            const SizedBox(height: 64),
+            _buildBalance(balanceAsync, isBalanceHidden, colors, text),
+            const SizedBox(height: 64),
+            if (active is RegularAccount) _buildActionButtons(colors, text),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
+  Widget _buildTopBar(DisplayAccount active, bool isBalanceHidden, AppColorsV2 colors) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -139,9 +150,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Row(
           children: [
             _glassCircleButton(
-              icon: _balanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               colors: colors,
-              onTap: () => setState(() => _balanceHidden = !_balanceHidden),
+              onTap: () => toggleBalanceHidden(isBalanceHidden),
             ),
             const SizedBox(width: 12),
             _glassCircleButton(
@@ -159,43 +170,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GlassCircleIconButton(icon: icon, iconColor: colors.textPrimary, onTap: onTap, size: 40, iconSize: 20);
   }
 
-  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    return Column(
-      children: [
-        balanceAsync.when(
-          data: (balance) {
-            final formatted = _balanceHidden ? '-----' : _fmt.formatBalance(balance);
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                  child: Text(
-                    '$formatted ${AppConstants.tokenSymbol}',
-                    style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
+    const stableHeight = 96.0;
+
+    return SizedBox(
+      height: stableHeight,
+      child: Column(
+        children: [
+          balanceAsync.when(
+            data: (balance) {
+              final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                    child: Text(
+                      '$formatted ${AppConstants.tokenSymbol}',
+                      style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+                    ),
                   ),
-                ),
-                Text(
-                  '$formatted ${AppConstants.tokenSymbol}',
-                  style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
-                ),
+                  Text(
+                    '$formatted ${AppConstants.tokenSymbol}',
+                    style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
+                  ),
+                ],
+              );
+            },
+            loading: () => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Skeleton(width: 200, height: 36),
+                Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
               ],
-            );
-          },
-          loading: () => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Skeleton(width: 200, height: 36),
-              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            ],
+            ),
+            error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
           ),
-          error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
-        ),
-        if (!_balanceHidden) ...[
-          const SizedBox(height: 6),
-          Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          if (!isBalanceHidden) ...[
+            const SizedBox(height: 6),
+            Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          ],
         ],
-      ],
+      ),
     );
   }
 

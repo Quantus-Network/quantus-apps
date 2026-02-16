@@ -52,14 +52,22 @@ class TxItemData {
   }
 }
 
-Widget buildTxItem(TransactionEvent tx, TxItemData data, AppColorsV2 colors, AppTextTheme text, {VoidCallback? onTap}) {
+Widget buildTxItem(
+  TransactionEvent tx,
+  TxItemData data,
+  AppColorsV2 colors,
+  AppTextTheme text, {
+  required bool isBalanceHidden,
+  required bool isLastItem,
+  VoidCallback? onTap,
+}) {
   return GestureDetector(
     onTap: onTap,
     behavior: HitTestBehavior.opaque,
     child: Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
               Container(
@@ -82,21 +90,26 @@ Widget buildTxItem(TransactionEvent tx, TxItemData data, AppColorsV2 colors, App
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
-                    style: text.detail?.copyWith(color: colors.textTertiary),
-                  ),
-                ],
-              ),
+              if (!isBalanceHidden)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(data.amount, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
+                      style: text.detail?.copyWith(color: colors.textTertiary),
+                    ),
+                  ],
+                )
+              else
+                Center(
+                  child: Text('--------', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                ),
             ],
           ),
         ),
-        Divider(color: colors.separator, height: 1),
+        if (!isLastItem) Divider(color: colors.txItemSeparator, height: 1),
       ],
     ),
   );

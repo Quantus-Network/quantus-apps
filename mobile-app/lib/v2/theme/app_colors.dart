@@ -33,6 +33,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
 
   // UI elements
   final Color separator;
+  final Color txItemSeparator;
   final Color border;
   final Color buttonDisabled;
   final Color skeletonBase;
@@ -62,6 +63,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.backgroundGlow,
     required this.buttonPrimaryGradient,
     required this.separator,
+    required this.txItemSeparator,
     required this.border,
     required this.buttonDisabled,
     required this.skeletonBase,
@@ -91,6 +93,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         backgroundGlow: const Color(0xFFFFFFFF),
         buttonPrimaryGradient: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
         separator: const Color(0x1AFFFFFF),
+        txItemSeparator: const Color(0x05FFFFFF),
         border: const Color(0x33FFFFFF),
         buttonDisabled: const Color(0xFF3D3C44),
         skeletonBase: const Color(0xFF3D3C44),
@@ -120,6 +123,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? backgroundGlow,
     List<Color>? buttonPrimaryGradient,
     Color? separator,
+    Color? txItemSeparator,
     Color? border,
     Color? buttonDisabled,
     Color? skeletonBase,
@@ -147,6 +151,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       backgroundGlow: backgroundGlow ?? this.backgroundGlow,
       buttonPrimaryGradient: buttonPrimaryGradient ?? this.buttonPrimaryGradient,
       separator: separator ?? this.separator,
+      txItemSeparator: txItemSeparator ?? this.txItemSeparator,
       border: border ?? this.border,
       buttonDisabled: buttonDisabled ?? this.buttonDisabled,
       skeletonBase: skeletonBase ?? this.skeletonBase,
@@ -179,6 +184,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       backgroundGlow: Color.lerp(backgroundGlow, other.backgroundGlow, t) ?? backgroundGlow,
       buttonPrimaryGradient: other.buttonPrimaryGradient,
       separator: Color.lerp(separator, other.separator, t) ?? separator,
+      txItemSeparator: Color.lerp(txItemSeparator, other.txItemSeparator, t) ?? txItemSeparator,
       border: Color.lerp(border, other.border, t) ?? border,
       buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
       skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
