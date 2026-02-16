@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/features/main/screens/authentication_wrapper.dart';
 import 'package:resonance_network_wallet/features/main/screens/wallet_initializer.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/v2/screens/auth/auth_wrapper.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
@@ -66,7 +66,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       darkTheme: AppTheme.darkTheme(context),
       themeMode: ThemeMode.dark,
       builder: (context, child) {
-        return Stack(children: [child!, const AuthenticationWrapper()]);
+        return Stack(children: [child!, const AuthWrapper()]);
       },
     );
   }
