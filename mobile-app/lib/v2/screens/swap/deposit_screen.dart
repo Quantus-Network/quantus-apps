@@ -155,8 +155,9 @@ class _DepositScreenState extends State<DepositScreen> {
           child: Container(
             color: Colors.white,
             padding: const EdgeInsets.all(8),
+
             /// for now this QR Code is invalid so people don't transfer by accident
-            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184), 
+            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
             child: QrImageView(data: 'quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),

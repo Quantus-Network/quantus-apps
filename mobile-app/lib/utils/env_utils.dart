@@ -22,7 +22,7 @@ class EnvUtils {
   }
 
   static String get iosFirebaseApiKey {
-    final key = dotenv.env['IOS_FIREBASE_API_KEY']; 
+    final key = dotenv.env['IOS_FIREBASE_API_KEY'];
     if (key == null || key.isEmpty) {
       throw Exception('IOS_FIREBASE_API_KEY is not set in .env file');
     }

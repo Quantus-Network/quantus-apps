@@ -146,7 +146,17 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     );
 
     return SizedBox(
-      child: GlassContainer(asset: GlassContainer.mediumSmallAsset, filled: true, child: Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center, children: [const SizedBox(width: 8), Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)), const SizedBox(width: 6), Expanded(
+      child: GlassContainer(
+        asset: GlassContainer.mediumSmallAsset,
+        filled: true,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(width: 8),
+            Text('$index', style: text.detail?.copyWith(color: colors.textSecondary)),
+            const SizedBox(width: 6),
+            Expanded(
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
