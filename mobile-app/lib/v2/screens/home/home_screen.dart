@@ -57,9 +57,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Future<void> toggleBalanceHidden() async {
+  Future<void> toggleBalanceHidden(bool isBalanceHidden) async {
     final isBalanceHiddenNotifier = ref.read(isBalanceHiddenProvider.notifier);
-    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHiddenNotifier.isBalanceHidden);
+    await isBalanceHiddenNotifier.setIsBalanceHidden(!isBalanceHidden);
   }
 
   @override
@@ -114,7 +114,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildContent(
+    DisplayAccount active,
+    AsyncValue<BigInt> balanceAsync,
+    bool isBalanceHidden,
+    AppColorsV2 colors,
+    AppTextTheme text,
+  ) {
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -146,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _glassCircleButton(
               icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               colors: colors,
-              onTap: toggleBalanceHidden,
+              onTap: () => toggleBalanceHidden(isBalanceHidden),
             ),
             const SizedBox(width: 12),
             _glassCircleButton(
@@ -165,8 +171,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
+    const stableHeight = 96.0;
+
     return SizedBox(
-      height: 96,
+      height: stableHeight,
       child: Column(
         children: [
           balanceAsync.when(

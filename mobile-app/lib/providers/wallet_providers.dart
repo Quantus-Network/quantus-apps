@@ -151,8 +151,4 @@ class IsBalanceHiddenNotifier extends StateNotifier<bool> {
     await _settingsService.setBalanceHidden(value);
     state = value;
   }
-
-  bool get isBalanceHidden {
-    return _settingsService.isBalanceHidden();
-  }
 }

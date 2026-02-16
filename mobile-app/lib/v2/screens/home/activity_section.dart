@@ -137,7 +137,7 @@ class ActivitySection extends ConsumerWidget {
             'View All',
             style: text.paragraph?.copyWith(
               color: Colors.transparent,
-              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
+              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))], // Shadow trick to create gap between text and underline
               decoration: TextDecoration.underline,
               decorationColor: colors.textSecondary,
               decorationStyle: TextDecorationStyle.solid,
