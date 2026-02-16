@@ -6,6 +6,6 @@ extension ClipboardWithToasterExtensions on BuildContext {
   Future<void> copyTextWithToaster(String text, {String message = 'Address copied to clipboard'}) async {
     await Clipboard.setData(ClipboardData(text: text));
 
-    showCopyToaster(message: message);
+    await showCopyToaster(message: message);
   }
 }

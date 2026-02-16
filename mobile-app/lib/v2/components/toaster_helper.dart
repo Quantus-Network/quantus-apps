@@ -7,7 +7,8 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 Future<void> showToaster(
   BuildContext context, {
   required String message,
-  required Icon icon,
+  required IconData iconData,
+  Color? iconColor,
   Duration duration = const Duration(seconds: 3),
   FlashBehavior behavior = FlashBehavior.floating,
 }) async {
@@ -27,26 +28,27 @@ Future<void> showToaster(
         position: FlashPosition.top,
         clipBehavior: Clip.none,
         shouldIconPulse: false,
-        content: Toaster(message: message, icon: icon),
+        content: Toaster(message: message, iconData: iconData, iconColor: iconColor),
       );
     },
   );
 }
 
 Future<void> showCopyToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, icon: const Icon(Icons.copy), message: message);
+  await showToaster(context, iconData: Icons.copy, message: message);
 }
 
 Future<void> showWarningToaster(BuildContext context, {required String message}) async {
   await showToaster(
     context,
     message: message,
-    icon: const Icon(Icons.warning, color: Colors.amber),
+    iconData: Icons.warning,
+    iconColor: Colors.amber,
   );
 }
 
 Future<void> showInfoToaster(BuildContext context, {required String message}) async {
-  await showToaster(context, message: message, icon: const Icon(Icons.info));
+  await showToaster(context, message: message, iconData: Icons.info);
 }
 
 Future<void> showErrorToaster(BuildContext context, {required String message}) async {
@@ -54,7 +56,8 @@ Future<void> showErrorToaster(BuildContext context, {required String message}) a
     context,
     message: message,
     duration: const Duration(seconds: 10),
-    icon: Icon(Icons.error_rounded, color: context.colors.error),
+    iconData: Icons.error_rounded,
+    iconColor: context.colors.error,
   );
 }
 
@@ -62,6 +65,7 @@ Future<void> showSuccessToaster(BuildContext context, {required String message})
   await showToaster(
     context,
     message: message,
-    icon: Icon(Icons.check_circle_rounded, color: context.colors.success),
+    iconData: Icons.check_circle_rounded,
+    iconColor: context.colors.success,
   );
 }
