@@ -66,6 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     _processIntentIfAvailable();
 
+    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final balanceAsync = ref.watch(balanceProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider);
@@ -99,7 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: GradientBackground(
               child: CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(child: _buildContent(active, balanceAsync, colors, text)),
+                  SliverToBoxAdapter(child: _buildContent(active, balanceAsync, isBalanceHidden, colors, text)),
                   SliverToBoxAdapter(
                     child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
                   ),
@@ -113,7 +114,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildContent(DisplayAccount active, AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -121,9 +122,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildTopBar(active, colors),
+            _buildTopBar(active, isBalanceHidden, colors),
             const SizedBox(height: 64),
-            _buildBalance(balanceAsync, colors, text),
+            _buildBalance(balanceAsync, isBalanceHidden, colors, text),
             const SizedBox(height: 64),
             if (active is RegularAccount) _buildActionButtons(colors, text),
           ],
@@ -132,9 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildTopBar(DisplayAccount active, AppColorsV2 colors) {
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
-
+  Widget _buildTopBar(DisplayAccount active, bool isBalanceHidden, AppColorsV2 colors) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -165,9 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GlassCircleIconButton(icon: icon, iconColor: colors.textPrimary, onTap: onTap, size: 40, iconSize: 20);
   }
 
-  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, AppColorsV2 colors, AppTextTheme text) {
-    final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
-
+  Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
     return SizedBox(
       height: 96,
       child: Column(
