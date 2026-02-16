@@ -145,7 +145,7 @@ final isBalanceHiddenProvider = StateNotifierProvider<IsBalanceHiddenNotifier, b
 class IsBalanceHiddenNotifier extends StateNotifier<bool> {
   final SettingsService _settingsService;
 
-  IsBalanceHiddenNotifier(this._settingsService) : super(false);
+  IsBalanceHiddenNotifier(this._settingsService) : super(_settingsService.isBalanceHidden());
 
   Future<void> setIsBalanceHidden(bool value) async {
     await _settingsService.setBalanceHidden(value);
