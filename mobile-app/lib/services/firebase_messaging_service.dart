@@ -30,7 +30,12 @@ class FirebaseMessagingService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    await _requestPermission();
+    final authorizationStatus = await _requestPermission();
+    if (authorizationStatus != AuthorizationStatus.authorized) {
+      debugPrint('FCM permission not authorized');
+      return;
+    }
+
     await _getToken();
 
     _setupForegroundMessageListener();
@@ -41,7 +46,7 @@ class FirebaseMessagingService {
   }
 
   /// Request notification permissions (required for iOS, Android 13+).
-  Future<void> _requestPermission() async {
+  Future<AuthorizationStatus> _requestPermission() async {
     final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
 
     debugPrint('FCM permission status: ${settings.authorizationStatus}');
@@ -52,6 +57,16 @@ class FirebaseMessagingService {
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     }
+
+    return settings.authorizationStatus;
+  }
+
+  Future<void> _registerDevice(String token) async {
+    try {
+      await _senotiService.registerDevice(token, Platform.operatingSystem);
+    } catch (e) {
+      debugPrint('Failed to register device: $e');
+    }
   }
 
   /// Get the FCM device token (useful for server-side targeting).
@@ -60,16 +75,16 @@ class FirebaseMessagingService {
     debugPrint('FCM token: $token');
 
     if (token != null && token.isNotEmpty) {
-      await _senotiService.registerDevice(token, Platform.operatingSystem);
+      await _registerDevice(token);
     }
   }
 
   /// Listen for token refresh events.
   void _setupTokenRefreshListener() {
-    _messaging.onTokenRefresh.listen((newToken) {
+    _messaging.onTokenRefresh.listen((newToken) async {
       debugPrint('FCM token refreshed: $newToken');
 
-      _senotiService.registerDevice(newToken, Platform.operatingSystem);
+      await _registerDevice(newToken);
     });
   }
 
