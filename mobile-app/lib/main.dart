@@ -20,7 +20,7 @@ void main() async {
   await Supabase.initialize(url: EnvUtils.supabaseUrl, anonKey: EnvUtils.supabaseKey);
   await QuantusSdk.init();
   if (FeatureFlags.enableRemoteNotifications) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.getOptionsForEnvironment());
   }
 
   Telemetrydecksdk.start(
