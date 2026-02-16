@@ -5,8 +5,8 @@ import 'package:resonance_network_wallet/v2/components/gradient_background.dart'
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class AuthWrapper extends ConsumerWidget {
-  const AuthWrapper({super.key});
+class LockScreen extends ConsumerWidget {
+  const LockScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
