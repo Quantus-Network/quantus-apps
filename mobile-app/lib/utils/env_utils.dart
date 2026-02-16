@@ -21,6 +21,22 @@ class EnvUtils {
     return key;
   }
 
+  static String get iosFirebaseApiKey {
+    final key = dotenv.env['IOS_FIREBASE_API_KEY'];
+    if (key == null || key.isEmpty) {
+      throw Exception('IOS_FIREBASE_API_KEY is not set in .env file');
+    }
+    return key;
+  }
+
+  static String get androidFirebaseApiKey {
+    final key = dotenv.env['ANDROID_FIREBASE_API_KEY'];
+    if (key == null || key.isEmpty) {
+      throw Exception('ANDROID_FIREBASE_API_KEY is not set in .env file');
+    }
+    return key;
+  }
+
   static String? getEnv(String key) {
     return dotenv.env[key];
   }
