@@ -15,9 +15,9 @@ dependency_overrides:
     path: ./quantus_sdk
 
   # Polkadart ecosystem - latest versions
-  polkadart: ^0.7.1
-  polkadart_keyring: ^0.7.0
-  polkadart_cli: ^0.7.1
+  polkadart: ^0.7.2
+  polkadart_keyring: ^0.7.2
+  polkadart_cli: ^0.7.2
 
   # Crypto and encoding - latest versions
   bip39_mnemonic: ^3.0.9
