@@ -11,7 +11,7 @@ class GlassContainer extends StatelessWidget {
 
   static const mediumAsset = 'assets/v2/glass_medium_clear.png';
   static const mediumSmallAsset = 'assets/v2/glass_medium_clear_small.png'; // 36px height
-  static const smallAsset = 'assets/v2/glass_button_40_bg.png';
+  static const smallAsset = 'assets/v2/glass_40.png';
   static const wideAsset = 'assets/v2/glass_button_wide_340_bg.png';
 
   static const _inset = 42.0;
