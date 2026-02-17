@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
@@ -141,47 +142,21 @@ class FirebaseMessagingService {
 
   /// Convert an FCM [RemoteMessage] into the app's [NotificationData] model.
   NotificationData? _remoteMessageToNotificationData(RemoteMessage message) {
-    final notification = message.notification;
     final data = message.data;
 
-    final title = notification?.title ?? data['title'] as String? ?? 'Notification';
-    final body = notification?.body ?? data['body'] as String? ?? '';
+    final txService = _ref.read(transactionServiceProvider);
+    final event = txService.deserializeTxEventFromJsonIfPossible(data);
+    if (event == null) return null;
 
-    // Parse optional fields from the data payload.
-    final accountId = data['accountId'] as String? ?? '';
-    final accountName = data['accountName'] as String? ?? '';
-    final typeStr = data['type'] as String?;
-    final intentStr = data['intent'] as String?;
+    if (event is TransferEvent) {
+      final account = _ref.read(accountsProvider.notifier).getAccountWithId(event.to);
+      return NotificationTemplates.tokenReceived(account: account, transactionData: event);
+    } else if (event is ReversibleTransferEvent) {
+      final account = _ref.read(accountsProvider.notifier).getAccountWithId(event.to);
+      return NotificationTemplates.reversibleTransactionReminder(account: account, transactionData: event);
+    }
 
-    final type = NotificationType.values.firstWhere((e) => e.name == typeStr, orElse: () => NotificationType.info);
-
-    final intent = NotificationIntent.values.firstWhere(
-      (e) => e.name == intentStr,
-      orElse: () => NotificationIntent.others,
-    );
-
-    // Build metadata from the data payload (excluding fields we already extracted).
-    final metadata = Map<String, dynamic>.from(data)
-      ..remove('title')
-      ..remove('body')
-      ..remove('accountId')
-      ..remove('accountName')
-      ..remove('type')
-      ..remove('intent');
-
-    return NotificationData(
-      id: 'remote_${message.messageId ?? DateTime.now().millisecondsSinceEpoch}',
-      accountId: accountId,
-      type: type,
-      intent: intent,
-      source: NotificationSource.remote,
-      title: title,
-      message: body,
-      accountName: accountName,
-      timestamp: DateTime.now(),
-      persistent: true,
-      metadata: metadata.isNotEmpty ? metadata : null,
-    );
+    return null;
   }
 }
 
