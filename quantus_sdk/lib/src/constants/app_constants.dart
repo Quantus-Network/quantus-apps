@@ -23,7 +23,7 @@ class AppConstants {
   // static const String taskMasterEndpoint = 'http://localhost:3000/api';
   static const String taskMasterEndpoint = 'https://quests.quantus.com/api';
 
-  static const String senotiEndpoint = 'http://localhost:3100/api';
+  static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
   static const String helpAndSupportUrl = 'https://t.me/c/quantusnetwork/2457';
