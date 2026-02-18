@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -178,12 +179,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   Widget _explorerButton(AppColorsV2 colors, AppTextTheme text) {
     return GestureDetector(
       onTap: _openExplorer,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.44)),
-        ),
+      child: GlassContainer(
+        asset: GlassContainer.wideAsset,
+        filled: false,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
