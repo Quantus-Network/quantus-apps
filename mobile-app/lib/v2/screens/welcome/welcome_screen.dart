@@ -30,7 +30,7 @@ class WelcomeScreenV2 extends StatelessWidget {
                   Text(
                     'Quantum Secure Your Crypto',
                     textAlign: TextAlign.center,
-                    style: text.paragraph?.copyWith(
+                    style: TextStyle( // custom text style for the welcome screen
                       fontSize: 20,
                       fontWeight: FontWeight.w300,
                       height: 1.35,
