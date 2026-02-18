@@ -12,7 +12,7 @@ class GlassContainer extends StatelessWidget {
   static const mediumAsset = 'assets/v2/glass_medium_clear.png';
   static const mediumSmallAsset = 'assets/v2/glass_medium_clear_small.png'; // 36px height
   static const smallAsset = 'assets/v2/glass_40.png';
-  static const wideAsset = 'assets/v2/glass_button_wide_340_bg.png';
+  static const wideAsset = 'assets/v2/glass_wide_clear.png';
   static const wideClearAsset = 'assets/v2/glass_wide_clear.png';
 
   static const _inset = 42.0;
@@ -20,7 +20,7 @@ class GlassContainer extends StatelessWidget {
   static const _slices = {
     mediumAsset: Rect.fromLTRB(_inset, _inset, 480 - _inset, 180 - _inset),
     mediumSmallAsset: Rect.fromLTRB(_inset, _inset, 288 - _inset, 108 - _inset),
-    wideAsset: Rect.fromLTRB(_inset, _inset, 1020 - _inset, 168 - _inset),
+    wideAsset: Rect.fromLTRB(_inset, _inset, 1026 - _inset, 168 - _inset),
   };
 
   double get defaultHeight => asset == smallAsset
@@ -43,31 +43,26 @@ class GlassContainer extends StatelessWidget {
     final slice = _slices[asset];
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        height: defaultHeight,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: slice != null
-                  ? _NineSliceImage(asset: asset, centerSlice: slice, scale: _scale)
-                  : Image.asset(asset, fit: BoxFit.fill),
-            ),
-            if (filled)
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: defaultHeight,
+          child: Stack(
+            children: [
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                child: slice != null
+                    ? _NineSliceImage(asset: asset, centerSlice: slice, scale: _scale)
+                    : Image.asset(asset, fit: BoxFit.fill),
+              ),
+              if (filled) Positioned.fill(child: ColoredBox(color: Colors.white.withValues(alpha: 0.1))),
+              Positioned.fill(
+                child: Padding(
+                  padding: padding ?? EdgeInsets.zero,
+                  child: Align(alignment: Alignment.center, child: child),
                 ),
               ),
-            Positioned.fill(
-              child: Padding(
-                padding: padding ?? EdgeInsets.zero,
-                child: Align(alignment: Alignment.center, child: child),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
