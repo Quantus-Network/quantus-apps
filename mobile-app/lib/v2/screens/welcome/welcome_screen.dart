@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/create/wallet_ready_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -12,13 +14,18 @@ class WelcomeScreenV2 extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
+    final isTablet = context.isTablet;
+
+    final background = isTablet
+        ? GradientBackground(child: const SizedBox.expand())
+        : Image.asset('assets/v2/welcome_screen_bg_image.jpg', fit: BoxFit.cover) as Widget;
 
     return Scaffold(
       backgroundColor: colors.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/v2/welcome_screen_bg_image.jpg', fit: BoxFit.cover),
+          background,
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),

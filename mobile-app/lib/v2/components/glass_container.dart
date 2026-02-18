@@ -20,6 +20,7 @@ class GlassContainer extends StatelessWidget {
   static const _slices = {
     mediumAsset: Rect.fromLTRB(_inset, _inset, 480 - _inset, 180 - _inset),
     mediumSmallAsset: Rect.fromLTRB(_inset, _inset, 288 - _inset, 108 - _inset),
+    wideAsset: Rect.fromLTRB(_inset, _inset, 1026 - _inset, 168 - _inset),
   };
 
   double get defaultHeight => asset == smallAsset
