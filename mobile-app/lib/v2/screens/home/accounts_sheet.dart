@@ -508,11 +508,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               ),
             ),
             const SizedBox(width: 12),
-            _buildIconActionButton(
-              icon: Icons.edit_outlined,
-              iconSize: 20,
-              onTap: () => _openEdit(account),
-            ),
+            _buildIconActionButton(icon: Icons.edit_outlined, iconSize: 20, onTap: () => _openEdit(account)),
           ],
         ),
       ),
@@ -767,11 +763,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       filled: true,
       onTap: isLoading ? null : onTap,
       child: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-            )
+          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
           : Text(
               label,
               style: const TextStyle(

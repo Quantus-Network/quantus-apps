@@ -30,7 +30,11 @@ class GlassContainer extends StatelessWidget {
       ? 36
       : 56;
 
-  double get defaultRadius => asset == tinyAsset ? 4 : asset == smallAsset ? 8 : 14;
+  double get defaultRadius => asset == tinyAsset
+      ? 4
+      : asset == smallAsset
+      ? 8
+      : 14;
 
   const GlassContainer({
     super.key,
