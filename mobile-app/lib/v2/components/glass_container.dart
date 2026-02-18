@@ -53,10 +53,7 @@ class GlassContainer extends StatelessWidget {
                     ? _NineSliceImage(asset: asset, centerSlice: slice, scale: _scale)
                     : Image.asset(asset, fit: BoxFit.fill),
               ),
-              if (filled)
-                Positioned.fill(
-                  child: ColoredBox(color: Colors.white.withValues(alpha: 0.1)),
-                ),
+              if (filled) Positioned.fill(child: ColoredBox(color: Colors.white.withValues(alpha: 0.1))),
               Positioned.fill(
                 child: Padding(
                   padding: padding ?? EdgeInsets.zero,
