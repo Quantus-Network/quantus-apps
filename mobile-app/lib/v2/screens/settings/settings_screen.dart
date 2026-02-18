@@ -34,7 +34,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   bool _biometricEnabled = false;
   String _biometricDesc = 'Face ID Disabled';
   int _autoLockMinutes = 5;
-  bool _reversibleEnabled = false;
+  // bool _reversibleEnabled = false;
   int _reversibleTimeSeconds = 600;
   bool _hasPinSet = false;
 
@@ -55,7 +55,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final bioDesc = await _authService.getBiometricDescription();
     final timeout = _authService.getAuthTimeoutMinutes();
     final revTime = await _settingsService.getReversibleTimeSeconds() ?? 600;
-    final revEnabled = _settingsService.isReversibleEnabled();
+    // final revEnabled = _settingsService.isReversibleEnabled();
 
     if (!mounted) return;
     setState(() {
@@ -63,7 +63,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       _biometricDesc = bioEnabled ? bioDesc : 'Face ID Disabled';
       _autoLockMinutes = timeout;
       _reversibleTimeSeconds = revTime;
-      _reversibleEnabled = revEnabled;
+      // _reversibleEnabled = revEnabled;
     });
   }
 
