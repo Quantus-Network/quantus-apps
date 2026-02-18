@@ -114,7 +114,6 @@ flutter:
     - assets/v2/glass_medium_button_bg.png
     - assets/v2/glass_medium_clear.png
     - assets/v2/glass_medium_clear_small.png
-    - assets/v2/glass_button_wide_340_bg.png
     - assets/v2/glass_circle_icon_button_bg.png
     - assets/v2/glass_104_x_80.png
     - assets/v2/glass_40.png
@@ -127,8 +126,8 @@ flutter:
     - assets/v2/quantus_white_logo.png
     - assets/v2/auth_wrapper_bracket.png
     - assets/v2/glass_wide_clear.png
+    - assets/v2/welcome_screen_bg_image.jpg
 
-    
 
   fonts:
     - family: Fira Code
@@ -156,14 +155,15 @@ flutter:
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
 
-# Add flutter_native_splash configuration section
 flutter_native_splash:
-  image: assets/splash.png
-  color: "#000000"
-  android_gravity: center
+  background_image: assets/v2/welcome_screen_bg_image.jpg
+  image: assets/v2/quantus_white_logo.png
+  android_gravity: bottom
+  ios_content_mode: bottom
   android: true
   ios: true
 
-  # Optional: Configure Android 12 splash screen specific settings
   android_12:
-    icon_background_color: "#000000"
+    image: assets/v2/quantus_white_logo.png
+    color: "#141414"
+    icon_background_color: "#141414"
