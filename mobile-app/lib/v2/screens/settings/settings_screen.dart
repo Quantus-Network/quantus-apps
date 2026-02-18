@@ -202,14 +202,15 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     ]),
                     const SizedBox(height: 40),
                     _section('Reversible Transactions', colors, text, [
-                      _toggleItem(
-                        'Reversible Transactions',
-                        'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
-                        _reversibleEnabled,
-                        null,
-                        colors,
-                        text,
-                      ),
+                      _comingSoonItem('Reversible Transactions', null, colors, text),
+                      // _toggleItem(
+                      //   'Reversible Transactions',
+                      //   'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
+                      //   _reversibleEnabled,
+                      //   null,
+                      //   colors,
+                      //   text,
+                      // ),
                       _divider(colors),
                       _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
                       _divider(colors),
@@ -285,13 +286,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String subtitle) {
+  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String? subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-        const SizedBox(height: 4),
-        Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        if (subtitle != null) const SizedBox(height: 4),
+        if (subtitle != null) Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       ],
     );
   }
@@ -354,7 +355,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Widget _comingSoonItem(String title, String subtitle, AppColorsV2 colors, AppTextTheme text) {
+  Widget _comingSoonItem(String title, String? subtitle, AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
         Expanded(child: _itemContent(title, text, colors, subtitle)),
