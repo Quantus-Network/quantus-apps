@@ -38,7 +38,8 @@ class ActivityScreen extends ConsumerWidget {
                   children: [
                     const AppBackButton(),
                     Text('Activity', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                    Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
+                    const SizedBox(width: 24), // empty filler
+                    // Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
                   ],
                 ),
                 const SizedBox(height: 48),
