@@ -92,6 +92,12 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
+      - name: Generate Splash Screen
+        working-directory: ./mobile-app
+        run: |
+          flutter pub get
+          dart run flutter_native_splash:create
+
       - name: Build APK
         run: flutter build apk --${{ inputs.build_mode }}
         working-directory: ./mobile-app
