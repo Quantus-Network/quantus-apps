@@ -206,10 +206,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
           ),
-          if (!isBalanceHidden) ...[
-            const SizedBox(height: 6),
-            Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-          ],
+          // if (!isBalanceHidden) ...[
+          //   const SizedBox(height: 6),
+          //   Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          // ],
         ],
       ),
     );
