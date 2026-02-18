@@ -16,17 +16,17 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) {
-  return showAppModalBottomSheet(context: context, builder: (_) => const AccountsScreen());
+  return showAppModalBottomSheet(context: context, builder: (_) => const AccountsSheet());
 }
 
-class AccountsScreen extends ConsumerStatefulWidget {
-  const AccountsScreen({super.key});
+class AccountsSheet extends ConsumerStatefulWidget {
+  const AccountsSheet({super.key});
 
   @override
-  ConsumerState<AccountsScreen> createState() => _AccountsScreenState();
+  ConsumerState<AccountsSheet> createState() => _AccountsScreenState();
 }
 
-class _AccountsScreenState extends ConsumerState<AccountsScreen> {
+class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   final AccountsService _accountsService = AccountsService();
   final NumberFormattingService _formattingService = NumberFormattingService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
@@ -452,7 +452,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         ),
         const SizedBox(height: 24),
         _buildPrimarySheetButton(
-          label: 'Create  Account',
+          label: 'Create Account',
           isLoading: _isSavingCreatedAccount,
           onTap: _submitCreatedAccount,
         ),
