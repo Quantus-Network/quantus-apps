@@ -17,7 +17,7 @@ class WelcomeScreenV2 extends StatelessWidget {
     final isTablet = context.isTablet;
 
     final background = isTablet
-        ? GradientBackground(child: const SizedBox.expand())
+        ? const GradientBackground(child: SizedBox.expand())
         : Image.asset('assets/v2/welcome_screen_bg_image.jpg', fit: BoxFit.cover) as Widget;
 
     return Scaffold(
