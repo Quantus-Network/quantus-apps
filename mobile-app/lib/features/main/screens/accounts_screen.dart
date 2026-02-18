@@ -7,8 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -32,11 +31,18 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   final NumberFormattingService _formattingService = NumberFormattingService();
   final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _createNameController = TextEditingController();
 
   bool _isCreatingAccount = false;
+  bool _isSavingCreatedAccount = false;
   bool _isEditingName = false;
+  bool _isEditingCreatedName = false;
   bool _isSavingName = false;
+  bool _isCreateViewOpen = false;
   String? _editingAccountId;
+  String? _sharingAccountId;
+  Account? _draftAccount;
+  String _draftChecksum = 'Loading...';
 
   bool _isHardwareWallet(List<Account> accounts) {
     return accounts.isNotEmpty && accounts.every((a) => a.accountType == AccountType.keystone);
@@ -75,18 +81,26 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       final walletIndex = _walletIndexForActiveAccount(accounts, activeDisplayAccount);
       final selectedWalletAccounts = accounts.where((a) => a.walletIndex == walletIndex).toList();
 
-      final bool? created = await Navigator.push<bool?>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => _isHardwareWallet(selectedWalletAccounts)
-              ? AddHardwareAccountScreen(walletIndex: walletIndex)
-              : CreateAccountScreen(walletIndex: walletIndex),
-        ),
-      );
-
-      if (created == true) {
-        ref.invalidate(accountsProvider);
-        ref.invalidate(activeAccountProvider);
+      if (_isHardwareWallet(selectedWalletAccounts)) {
+        final created = await Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: walletIndex)),
+        );
+        if (created == true) {
+          ref.invalidate(accountsProvider);
+          ref.invalidate(activeAccountProvider);
+        }
+      } else {
+        final draft = await _accountsService.createNewAccount(walletIndex: walletIndex);
+        final checksum = await _checksumService.getHumanReadableName(draft.accountId);
+        if (!mounted) return;
+        _createNameController.text = draft.name;
+        setState(() {
+          _draftAccount = draft;
+          _draftChecksum = checksum;
+          _isCreateViewOpen = true;
+          _isEditingCreatedName = false;
+        });
       }
     } catch (_) {
       if (mounted) {
@@ -120,6 +134,25 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       _isEditingName = false;
       _isSavingName = false;
     });
+  }
+
+  void _closeCreateView() {
+    setState(() {
+      _isCreateViewOpen = false;
+      _isEditingCreatedName = false;
+      _isSavingCreatedAccount = false;
+      _draftAccount = null;
+      _draftChecksum = 'Loading...';
+      _createNameController.clear();
+    });
+  }
+
+  void _openShare(Account account) {
+    setState(() => _sharingAccountId = account.accountId);
+  }
+
+  void _closeShare() {
+    setState(() => _sharingAccountId = null);
   }
 
   Future<void> _saveEditedName(Account account) async {
@@ -157,6 +190,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _createNameController.dispose();
     super.dispose();
   }
 
@@ -176,6 +210,9 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     final editingAccount = _editingAccountId == null
         ? null
         : displayAccounts.firstWhereOrNull((a) => a.accountId == _editingAccountId);
+    final sharingAccount = _sharingAccountId == null
+        ? null
+        : displayAccounts.firstWhereOrNull((a) => a.accountId == _sharingAccountId);
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -196,6 +233,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
               displayAccounts: displayAccounts,
               activeAccountId: activeAccountId,
               editingAccount: editingAccount,
+              sharingAccount: sharingAccount,
             ),
           ),
         ),
@@ -209,6 +247,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
     required List<Account> displayAccounts,
     required String? activeAccountId,
     required Account? editingAccount,
+    required Account? sharingAccount,
   }) {
     if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
       return const Center(child: CircularProgressIndicator(color: Colors.white));
@@ -230,6 +269,14 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
           style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
         ),
       );
+    }
+
+    if (_isCreateViewOpen && _draftAccount != null) {
+      return _buildCreateAccountView();
+    }
+
+    if (sharingAccount != null) {
+      return _buildShareAccountView(sharingAccount);
     }
 
     if (editingAccount != null) {
@@ -362,7 +409,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
             const SizedBox(height: 24),
             _buildPrimarySheetButton(
               label: 'Share Account Details',
-              onTap: () => showReceiveSheet(context, isReceiving: false),
+              onTap: () => _openShare(account),
             ),
           ],
         );
