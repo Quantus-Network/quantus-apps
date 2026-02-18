@@ -12,6 +12,7 @@ class GlassContainer extends StatelessWidget {
   static const mediumAsset = 'assets/v2/glass_medium_clear.png';
   static const mediumSmallAsset = 'assets/v2/glass_medium_clear_small.png'; // 36px height
   static const smallAsset = 'assets/v2/glass_40.png';
+  static const tinyAsset = 'assets/v2/glass_tiny_button.png';
   static const wideAsset = 'assets/v2/glass_wide_clear.png';
   static const wideClearAsset = 'assets/v2/glass_wide_clear.png';
 
@@ -29,6 +30,8 @@ class GlassContainer extends StatelessWidget {
       ? 36
       : 56;
 
+  double get defaultRadius => asset == tinyAsset ? 4 : asset == smallAsset ? 8 : 14;
+
   const GlassContainer({
     super.key,
     required this.child,
@@ -44,7 +47,7 @@ class GlassContainer extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(defaultRadius),
         child: SizedBox(
           height: defaultHeight,
           child: Stack(

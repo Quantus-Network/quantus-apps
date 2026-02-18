@@ -127,6 +127,7 @@ flutter:
     - assets/v2/auth_wrapper_bracket.png
     - assets/v2/glass_wide_clear.png
     - assets/v2/welcome_screen_bg_image.jpg
+    - assets/v2/glass_tiny_button.png
 
 
   fonts:

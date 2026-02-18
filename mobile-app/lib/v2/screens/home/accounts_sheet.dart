@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/features/components/account_gradient_im
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -508,8 +509,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
             ),
             const SizedBox(width: 12),
             _buildIconActionButton(
-              size: 40,
-              radius: 8,
               icon: Icons.edit_outlined,
               iconSize: 20,
               onTap: () => _openEdit(account),
@@ -573,8 +572,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                   ),
                 )
               : _buildIconActionButton(
-                  size: 40,
-                  radius: 8,
                   icon: _isEditingName ? Icons.check : Icons.edit_outlined,
                   iconSize: 20,
                   onTap: () {
@@ -620,8 +617,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
             ),
           ),
           _buildIconActionButton(
-            size: 40,
-            radius: 8,
             icon: _isEditingCreatedName ? Icons.check : Icons.edit_outlined,
             iconSize: 20,
             onTap: () {
@@ -644,7 +639,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
             child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
           ),
           const SizedBox(width: 8),
-          _buildIconActionButton(size: 40, radius: 8, icon: Icons.copy_outlined, iconSize: 20, onTap: onCopy),
+          _buildIconActionButton(icon: Icons.copy_outlined, iconSize: 20, onTap: onCopy),
         ],
       ),
     );
@@ -742,66 +737,51 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           child: Text(value, maxLines: maxLines, overflow: overflow, style: textStyle),
         ),
         const SizedBox(width: 8),
-        _buildIconActionButton(size: 20, radius: 4, icon: Icons.copy_outlined, iconSize: 12, onTap: onCopy),
+        _buildIconActionButton(icon: Icons.copy_outlined, isTiny: true, iconSize: 12, onTap: onCopy),
       ],
     );
   }
 
   Widget _buildIconActionButton({
-    required double size,
-    required double radius,
     required IconData icon,
     required double iconSize,
     required VoidCallback onTap,
+    bool isTiny = false,
   }) {
-    return Material(
-      color: context.colors.surfaceGlass,
-      borderRadius: BorderRadius.circular(radius),
-      child: InkWell(
+    final double size = isTiny ? 20 : 40;
+    final asset = isTiny ? GlassContainer.tinyAsset : GlassContainer.smallAsset;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: GlassContainer(
+        asset: asset,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(icon, color: Colors.white, size: iconSize),
-        ),
+        child: Icon(icon, color: Colors.white, size: iconSize),
       ),
     );
   }
 
   Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
-    return Material(
-      color: context.colors.surfaceGlass,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          height: 64,
-          width: double.infinity,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.colors.borderSubtle, width: 0.9),
-          ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    height: 1,
-                  ),
-                ),
-        ),
-      ),
+    return GlassContainer(
+      asset: GlassContainer.wideAsset,
+      filled: true,
+      onTap: isLoading ? null : onTap,
+      child: isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            )
+          : Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+                height: 1,
+              ),
+            ),
     );
   }
 
