@@ -127,7 +127,7 @@ class _WalletMainState extends ConsumerState<WalletMain> {
               InkWell(
                 child: SvgPicture.asset('assets/wallet_icon.svg', width: 26, height: 26),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+                  showAccountsSheet(context);
                 },
               ),
             ],

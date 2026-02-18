@@ -164,7 +164,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       AccountGradientImage(
-                        accountId: _accountId,
+                        accountId: _accountId!,
                         width: context.isTablet ? 32.0 : 24.0,
                         height: context.isTablet ? 32.0 : 24.0,
                       ),

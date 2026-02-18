@@ -144,7 +144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsScreen())),
+          onTap: () => showAccountsSheet(context),
           child: AccountGradientImage(accountId: active.account.accountId, width: 40.0, height: 40.0),
         ),
         Row(

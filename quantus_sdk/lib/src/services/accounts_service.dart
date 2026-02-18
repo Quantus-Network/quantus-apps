@@ -23,7 +23,9 @@ class AccountsService {
     if (mnemonic == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
     }
-    final nextIndex = await _settingsService.getNextFreeAccountIndex(walletIndex);
+    final nextIndex = await _settingsService.getNextFreeAccountIndex(
+      walletIndex,
+    );
     final keypair = HdWalletService().keyPairAtIndex(mnemonic, nextIndex);
     final newAccount = Account(
       walletIndex: walletIndex,
@@ -35,7 +37,25 @@ class AccountsService {
   }
 
   Future<void> updateAccountName(Account account, String name) async {
-    final updatedAccount = account.copyWith(name: name);
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      throw Exception("Account name can't be empty");
+    }
+
+    final accounts = await _settingsService.getAccounts();
+    final currentAccountIndex = accounts.indexWhere(
+      (a) => a.accountId == account.accountId,
+    );
+    if (currentAccountIndex == -1) {
+      throw Exception('Account not found');
+    }
+
+    final currentAccount = accounts[currentAccountIndex];
+    if (currentAccount.name == normalizedName) {
+      return;
+    }
+
+    final updatedAccount = currentAccount.copyWith(name: normalizedName);
     await _settingsService.updateAccount(updatedAccount);
     onAccountsChanged?.call();
   }

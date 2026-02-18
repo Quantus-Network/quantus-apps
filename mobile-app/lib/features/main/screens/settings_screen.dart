@@ -159,7 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Manage Accounts',
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+            showAccountsSheet(context);
           },
         ),
         const SizedBox(height: 22),

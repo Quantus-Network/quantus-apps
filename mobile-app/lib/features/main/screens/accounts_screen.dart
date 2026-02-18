@@ -1,32 +1,24 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
-import 'package:resonance_network_wallet/features/components/account_tag.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/select.dart';
-import 'package:resonance_network_wallet/features/components/select_action_sheet.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
-import 'package:resonance_network_wallet/features/components/tree_list.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
+import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
+import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/entrusted_account_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
-enum _WalletMoreAction { createWallet, importWallet, addHardwareWallet }
+Future<T?> showAccountsSheet<T>(BuildContext context) {
+  return showAppModalBottomSheet(context: context, builder: (_) => const AccountsScreen());
+}
 
 class AccountsScreen extends ConsumerStatefulWidget {
   const AccountsScreen({super.key});
@@ -36,568 +28,587 @@ class AccountsScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsScreen> {
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final AccountsService _accountsService = AccountsService();
   final NumberFormattingService _formattingService = NumberFormattingService();
+  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
+  final TextEditingController _nameController = TextEditingController();
 
   bool _isCreatingAccount = false;
-  int? _selectedWalletIndex;
+  bool _isEditingName = false;
+  bool _isSavingName = false;
+  String? _editingAccountId;
 
   bool _isHardwareWallet(List<Account> accounts) {
     return accounts.isNotEmpty && accounts.every((a) => a.accountType == AccountType.keystone);
   }
 
-  int _nextWalletIndex(List<Account> accounts) {
-    if (accounts.isEmpty) return 0;
-    final maxIndex = accounts.map((a) => a.walletIndex).reduce((a, b) => a > b ? a : b);
-    return maxIndex + 1;
+  int _walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDisplayAccount) {
+    if (activeDisplayAccount is RegularAccount) {
+      return activeDisplayAccount.account.walletIndex;
+    }
+
+    if (activeDisplayAccount is EntrustedDisplayAccount) {
+      final parent = accounts.firstWhereOrNull((a) => a.accountId == activeDisplayAccount.account.parentAccountId);
+      if (parent != null) return parent.walletIndex;
+    }
+
+    return accounts.isNotEmpty ? accounts.first.walletIndex : 0;
   }
 
-  Map<int, List<Account>> _groupByWallet(List<Account> accounts) {
-    final grouped = <int, List<Account>>{};
-    for (final a in accounts) {
-      grouped.putIfAbsent(a.walletIndex, () => []).add(a);
-    }
-    for (final entry in grouped.entries) {
-      entry.value.sort((a, b) => a.index.compareTo(b.index));
-    }
-    return Map.fromEntries(grouped.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
-  }
-
-  String _walletLabel(int walletIndex, List<Account> accounts) {
-    if (_isHardwareWallet(accounts)) return 'Hardware Wallet';
-    return 'Wallet ${walletIndex + 1}';
+  List<Account> _displayAccounts(List<Account> accounts) {
+    final sorted = [...accounts];
+    sorted.sort((a, b) {
+      final walletCmp = a.walletIndex.compareTo(b.walletIndex);
+      if (walletCmp != 0) return walletCmp;
+      return a.index.compareTo(b.index);
+    });
+    return sorted;
   }
 
   Future<void> _createNewAccount() async {
-    setState(() {
-      _isCreatingAccount = true;
-    });
+    if (_isCreatingAccount) return;
+
+    setState(() => _isCreatingAccount = true);
     try {
       final accounts = ref.read(accountsProvider).value ?? <Account>[];
-      int selectedWallet = getSelectedWalletIndex(accounts);
-      final grouped = _groupByWallet(accounts);
-      final selectedWalletAccounts = grouped[selectedWallet] ?? const <Account>[];
+      final activeDisplayAccount = ref.read(activeAccountProvider).value;
+      final walletIndex = _walletIndexForActiveAccount(accounts, activeDisplayAccount);
+      final selectedWalletAccounts = accounts.where((a) => a.walletIndex == walletIndex).toList();
 
-      if (_isHardwareWallet(selectedWalletAccounts)) {
-        await Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(builder: (context) => AddHardwareAccountScreen(walletIndex: selectedWallet)),
-        );
-      } else {
-        await Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(builder: (context) => CreateAccountScreen(walletIndex: selectedWallet)),
-        );
-      }
-      // Providers will automatically refresh when a new account is added
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCreatingAccount = false;
-        });
-      }
-    }
-  }
-
-  int getSelectedWalletIndex(List<Account> accounts) {
-    final selectedWallet = _selectedWalletIndex ?? (accounts.isNotEmpty ? accounts.first.walletIndex : 0);
-    return selectedWallet;
-  }
-
-  Future<void> _openWalletMoreActions() async {
-    final accounts = ref.read(accountsProvider).value ?? <Account>[];
-    final nextWalletIndex = _nextWalletIndex(accounts);
-
-    final items = [
-      Item(value: _WalletMoreAction.createWallet, label: 'Create new wallet'),
-      Item(value: _WalletMoreAction.importWallet, label: 'Import wallet'),
-    ];
-
-    if (FeatureFlags.enableKeystoneHardwareWallet) {
-      items.add(Item(value: _WalletMoreAction.addHardwareWallet, label: 'Add hardware wallet'));
-    }
-
-    showSelectActionSheet<_WalletMoreAction>(context, items, (item) async {
-      final result = await (switch (item.value) {
-        _WalletMoreAction.createWallet => Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CreateWalletAndBackupScreen(walletIndex: nextWalletIndex, popOnComplete: true),
-          ),
+      final bool? created = await Navigator.push<bool?>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => _isHardwareWallet(selectedWalletAccounts)
+              ? AddHardwareAccountScreen(walletIndex: walletIndex)
+              : CreateAccountScreen(walletIndex: walletIndex),
         ),
-        _WalletMoreAction.importWallet => Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ImportWalletScreen(walletIndex: nextWalletIndex, popOnComplete: true),
-          ),
-        ),
-        _WalletMoreAction.addHardwareWallet => Navigator.push<bool?>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddHardwareAccountScreen(walletIndex: nextWalletIndex, isNewWallet: true),
-          ),
-        ),
-      });
-      if (result == true && mounted) {
+      );
+
+      if (created == true) {
         ref.invalidate(accountsProvider);
         ref.invalidate(activeAccountProvider);
-        ref.invalidate(activeAccountProvider);
       }
+    } catch (_) {
+      if (mounted) {
+        context.showErrorToaster(message: 'Could not add account.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingAccount = false);
+      }
+    }
+  }
+
+  Future<void> _switchAccount(Account account) async {
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(RegularAccount(account));
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _openEdit(Account account) async {
+    _nameController.text = account.name;
+    setState(() {
+      _editingAccountId = account.accountId;
+      _isEditingName = false;
     });
   }
 
-  Future<void> _refreshAccounts() async {
-    // Invalidate main accounts provider
-    ref.invalidate(accountsProvider);
+  void _closeEdit() {
+    setState(() {
+      _editingAccountId = null;
+      _isEditingName = false;
+      _isSavingName = false;
+    });
+  }
 
-    // Invalidate per-account providers
-    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
-    for (final account in accounts) {
-      ref.invalidate(isHighSecurityProvider(account));
-      ref.invalidate(entrustedAccountsProvider(account));
-      ref.invalidate(balanceProviderFamily(account.accountId));
+  Future<void> _saveEditedName(Account account) async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      context.showErrorToaster(message: "Account name can't be empty");
+      return;
+    }
+    if (name == account.name) {
+      setState(() => _isEditingName = false);
+      return;
     }
 
-    // Wait for accounts to reload
-    await ref.read(accountsProvider.notifier).stream.firstWhere((state) => !state.isLoading);
+    setState(() => _isSavingName = true);
+    try {
+      await _accountsService.updateAccountName(account, name);
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
+      if (mounted) {
+        setState(() {
+          _isEditingName = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        context.showErrorToaster(message: 'Failed to rename account.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingName = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ScaffoldBase(
-      decorations: [
-        Positioned(
-          right: -40,
-          top: MediaQuery.of(context).size.height * 0.3,
-          child: const Sphere(variant: 2, size: 194),
-        ),
-        const Positioned(left: -40, bottom: 0, child: Sphere(variant: 7, size: 240.681)),
-      ],
-      appBar: WalletAppBar(
-        title: 'Your Accounts',
-        actions: [IconButton(onPressed: _openWalletMoreActions, icon: const Icon(Icons.more_horiz))],
-      ),
-      child: Column(
-        children: [
-          // _buildWalletSelector(),
-          Expanded(child: _buildAccountsList()),
+    final media = MediaQuery.of(context);
+    final maxHeight = media.size.height - media.padding.top - 20;
+    final sheetHeight = math.min(610.0, maxHeight);
 
-          Button(
-            variant: ButtonVariant.glassOutline,
-            label: _walletActionLabel(),
-            onPressed: _isCreatingAccount ? null : _createNewAccount,
+    final accountsAsync = ref.watch(accountsProvider);
+    final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
+
+    final accounts = accountsAsync.value ?? <Account>[];
+    final activeDisplayAccount = activeDisplayAccountAsync.value;
+    final displayAccounts = _displayAccounts(accounts);
+    final activeAccountId = activeDisplayAccount?.account.accountId;
+    final editingAccount = _editingAccountId == null
+        ? null
+        : displayAccounts.firstWhereOrNull((a) => a.accountId == _editingAccountId);
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+        child: SizedBox(
+          height: sheetHeight,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              border: Border.all(color: const Color(0xFF3D3D3D)),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: _buildContent(
+              accountsAsync: accountsAsync,
+              activeDisplayAccountAsync: activeDisplayAccountAsync,
+              displayAccounts: displayAccounts,
+              activeAccountId: activeAccountId,
+              editingAccount: editingAccount,
+            ),
           ),
-
-          SizedBox(height: context.themeSize.bottomButtonSpacing),
-        ],
+        ),
       ),
     );
   }
 
-  String _walletActionLabel() {
-    final accounts = ref.watch(accountsProvider).value ?? <Account>[];
-    final grouped = _groupByWallet(accounts);
-    final selectedWallet = getSelectedWalletIndex(accounts);
-    final selectedAccounts = grouped[selectedWallet] ?? const <Account>[];
-    return _isHardwareWallet(selectedAccounts) ? 'Add Hardware Account' : 'Add Account';
-  }
+  Widget _buildContent({
+    required AsyncValue<List<Account>> accountsAsync,
+    required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
+    required List<Account> displayAccounts,
+    required String? activeAccountId,
+    required Account? editingAccount,
+  }) {
+    if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
 
-  Widget _buildAccountsList() {
-    final accountsAsync = ref.watch(accountsProvider);
-    final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
-
-    return accountsAsync.when(
-      loading: () => Center(child: CircularProgressIndicator(color: context.themeColors.circularLoader)),
-      error: (error, _) => Center(
+    if (accountsAsync.hasError) {
+      return Center(
         child: Text(
-          'Failed to load accounts: $error',
+          'Failed to load accounts.',
           style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
         ),
-      ),
-      data: (accounts) {
-        if (accounts.isEmpty) {
-          return Center(
-            child: Text('No accounts found.', style: context.themeText.smallParagraph?.copyWith(color: Colors.white70)),
-          );
-        }
+      );
+    }
 
-        return activeDisplayAccountAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
-          error: (error, _) => Center(
-            child: Text('Failed to load active account: $error', style: const TextStyle(color: Colors.white70)),
-          ),
-          data: (activeDisplayAccount) {
-            if (_selectedWalletIndex == null) {
-              // Try to determine wallet index from active display account
-              int? initialWalletIndex;
-              if (activeDisplayAccount is RegularAccount) {
-                initialWalletIndex = activeDisplayAccount.account.walletIndex;
-              } else if (activeDisplayAccount is EntrustedDisplayAccount) {
-                // Find parent account to get wallet index
-                final parentId = activeDisplayAccount.account.parentAccountId;
-                final parent = accounts.firstWhereOrNull((a) => a.accountId == parentId);
-                initialWalletIndex = parent?.walletIndex;
-              }
+    if (activeDisplayAccountAsync.hasError) {
+      return Center(
+        child: Text(
+          'Failed to load active account.',
+          style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
+        ),
+      );
+    }
 
-              final initial = initialWalletIndex ?? accounts.first.walletIndex;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted && _selectedWalletIndex == null) setState(() => _selectedWalletIndex = initial);
-              });
-            }
+    if (editingAccount != null) {
+      return _buildEditAccountView(editingAccount);
+    }
 
-            final grouped = _groupByWallet(accounts);
-            if (grouped.length <= 1) {
-              final walletAccounts = grouped.values.first;
-              return RefreshIndicator(
-                onRefresh: _refreshAccounts,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  itemCount: walletAccounts.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 25),
-                  itemBuilder: (context, index) {
-                    final account = walletAccounts[index];
-                    return _buildAccountListItem(account, activeDisplayAccount?.account.accountId, index);
-                  },
+    return _buildAccountsListView(displayAccounts, activeAccountId);
+  }
+
+  Widget _buildAccountsListView(List<Account> displayAccounts, String? activeAccountId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 32.0,
+                  height: 32.0,
+                  child: activeAccountId == null
+                      ? const SizedBox()
+                      : AccountGradientImage(accountId: activeAccountId, width: 32.0, height: 32.0),
                 ),
-              );
-            }
-
-            final selectedWallet = _selectedWalletIndex ?? grouped.keys.first;
-            final children = <Widget>[];
-            var sectionIndex = 0;
-            for (final entry in grouped.entries) {
-              final walletIndex = entry.key;
-              final walletAccounts = entry.value;
-
-              if (sectionIndex > 0) children.add(const SizedBox(height: 18));
-              children.add(
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    _walletLabel(walletIndex, walletAccounts),
-                    style: context.themeText.detail?.copyWith(
-                      color: walletIndex == selectedWallet
-                          ? context.themeColors.textPrimary
-                          : context.themeColors.textMuted,
-                    ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Accounts',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1,
                   ),
                 ),
-              );
+              ],
+            ),
+            IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
+              splashRadius: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
+            ),
+          ],
+        ),
+        const SizedBox(height: 40),
+        Expanded(
+          child: displayAccounts.isEmpty
+              ? Center(
+                  child: Text(
+                    'No accounts found.',
+                    style: context.themeText.smallParagraph?.copyWith(color: Colors.white70),
+                  ),
+                )
+              : ListView.separated(
+                  itemCount: displayAccounts.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 20),
+                  itemBuilder: (_, index) {
+                    final account = displayAccounts[index];
+                    return _buildAccountRow(account, account.accountId == activeAccountId);
+                  },
+                ),
+        ),
+        const SizedBox(height: 24),
+        _buildPrimarySheetButton(label: 'Add Account', isLoading: _isCreatingAccount, onTap: _createNewAccount),
+      ],
+    );
+  }
 
-              for (var i = 0; i < walletAccounts.length; i++) {
-                if (i > 0) children.add(const SizedBox(height: 25));
-                final account = walletAccounts[i];
-                children.add(_buildAccountListItem(account, activeDisplayAccount?.account.accountId, i));
-              }
-              sectionIndex++;
-            }
+  Widget _buildEditAccountView(Account account) {
+    if (!_isEditingName && _nameController.text != account.name) {
+      _nameController.text = account.name;
+    }
 
-            return RefreshIndicator(
-              onRefresh: _refreshAccounts,
-              child: ListView(padding: const EdgeInsets.symmetric(vertical: 16.0), children: children),
-            );
-          },
+    return FutureBuilder<String>(
+      future: _checksumService.getHumanReadableName(account.accountId),
+      builder: (context, snapshot) {
+        final checksum = snapshot.connectionState == ConnectionState.done ? (snapshot.data ?? '-') : 'Loading...';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: _closeEdit,
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                  splashRadius: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
+                ),
+                const Text(
+                  'Edit Account',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                  splashRadius: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Account Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                    const SizedBox(height: 12),
+                    _buildAccountNameField(account),
+                    const SizedBox(height: 40),
+                    Text('Address Details', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                    const SizedBox(height: 12),
+                    _buildAddressDetails(account, checksum),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildPrimarySheetButton(
+              label: 'Share Account Details',
+              onTap: () => showReceiveSheet(context, isReceiving: false),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildAccountListItem(Account account, String? activeAccountId, int index) {
-    final bool isActive = account.accountId == activeAccountId;
-    final entrustedAccountsAsync = ref.watch(entrustedAccountsProvider(account));
-    final entrustedAccountsData = entrustedAccountsAsync.value ?? [];
+  Widget _buildAccountRow(Account account, bool isActive) {
+    final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+    final balanceText = balanceAsync.when(
+      loading: () => 'Loading...',
+      error: (_, _) => 'Balance unavailable',
+      data: (balance) => '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+    );
 
-    final entrustedNodes = entrustedAccountsData
-        .map((entrusted) => TreeNode<EntrustedAccount>(data: entrusted))
-        .toList();
-
-    final isHighSecurityAsync = ref.watch(isHighSecurityProvider(account));
-    final isHighSecurity = isHighSecurityAsync.value ?? false;
-
-    return InkWell(
-      onTap: () async {
-        await ref.read(activeAccountProvider.notifier).setActiveAccount(RegularAccount(account));
-        if (mounted) Navigator.pop(context);
-      },
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          Column(
-            children: [
-              Row(
+    return GestureDetector(
+      onTap: () => _switchAccount(account),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0x70FFFFFF), width: 0.9),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: context.isTablet ? 20 : 8, vertical: 8),
-                      height: context.themeSize.accountListItemHeight,
-                      decoration: ShapeDecoration(
-                        color: isActive ? context.themeColors.surfaceActive : context.themeColors.surface,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(width: 1, color: context.themeColors.borderLight),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: Consumer(
-                              builder: (context, ref, child) {
-                                final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
-
-                                return FutureBuilder<String>(
-                                  future: _checksumService.getHumanReadableName(account.accountId),
-                                  builder: (context, checksumSnapshot) {
-                                    final humanChecksum = checksumSnapshot.data ?? '';
-
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              account.name,
-                                              style: context.themeText.smallParagraph?.copyWith(
-                                                color: isActive ? Colors.black : Colors.white,
-                                              ),
-                                            ),
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (isHighSecurity)
-                                                  AccountTag(
-                                                    text: 'High Security',
-                                                    color: context.themeColors.accountTagEntrusted,
-                                                  ),
-                                                if (isHighSecurity && entrustedNodes.isNotEmpty)
-                                                  const SizedBox(width: 6),
-                                                if (entrustedNodes.isNotEmpty)
-                                                  AccountTag(
-                                                    text: 'Guardian',
-                                                    color: context.themeColors.accountTagGuardian,
-                                                  ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          humanChecksum,
-                                          style: context.themeText.detail?.copyWith(
-                                            color: isActive
-                                                ? context.themeColors.checksumDarker
-                                                : context.themeColors.checksum,
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              context.isTablet
-                                                  ? account.accountId
-                                                  // ignore: lines_longer_than_80_chars
-                                                  : AddressFormattingService.formatAddress(account.accountId),
-                                              style: context.themeText.tiny?.copyWith(
-                                                color: isActive
-                                                    ? context.themeColors.darkGray
-                                                    : context.themeColors.textMuted,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        balanceAsync.when(
-                                          loading: () => Text(
-                                            'loading balance...',
-                                            style: context.themeText.detail?.copyWith(
-                                              color: isActive
-                                                  ? context.themeColors.darkGray
-                                                  : context.themeColors.light,
-                                            ),
-                                          ),
-                                          error: (error, _) => Text(
-                                            'error loading',
-                                            style: context.themeText.detail?.copyWith(
-                                              color: isActive
-                                                  ? context.themeColors.darkGray
-                                                  : context.themeColors.textPrimary,
-                                            ),
-                                          ),
-                                          data: (balance) => Text.rich(
-                                            TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                  text: _formattingService.formatBalance(balance),
-                                                  style: context.themeText.detail?.copyWith(
-                                                    color: isActive
-                                                        ? context.themeColors.darkGray
-                                                        : context.themeColors.textPrimary,
-                                                  ),
-                                                ),
-                                                TextSpan(
-                                                  text: ' ${AppConstants.tokenSymbol}',
-                                                  style: context.themeText.tiny?.copyWith(
-                                                    color: isActive
-                                                        ? context.themeColors.darkGray
-                                                        : context.themeColors.textPrimary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                  Text(
+                    account.name,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: isActive ? context.themeColors.pink : Colors.white,
+                      height: 1.35,
                     ),
                   ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: SvgPicture.asset(
-                      'assets/settings_icon_off.svg',
-                      width: context.isTablet ? 28 : 21,
-                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  const SizedBox(height: 4),
+                  Text(
+                    balanceText,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0x80FFFFFF),
+                      height: 1.35,
                     ),
-                    onPressed: () async {
-                      // Get current data from providers
-                      final balanceAsync = ref.read(balanceProviderFamily(account.accountId));
-                      final checksumName = await _checksumService.getHumanReadableName(account.accountId);
-
-                      balanceAsync.when(
-                        loading: () {
-                          // Show loading or handle appropriately
-                        },
-                        error: (error, _) {
-                          // Handle error
-                        },
-                        data: (balance) async {
-                          if (!mounted) return;
-                          await Navigator.push<bool?>(
-                            context,
-                            MaterialPageRoute(
-                              settings: const RouteSettings(name: AppConstants.accountSettingsRouteName),
-                              builder: (context) => AccountSettingsScreen(
-                                account: account,
-                                balance: _formattingService.formatBalance(balance, addSymbol: true),
-                                checksumName: checksumName,
-                                isHighSecurity: isHighSecurity,
-                                isEntrustedAccount: false,
-                              ),
-                            ),
-                          );
-                          // Providers will automatically refresh if needed
-                        },
-                      );
-                    },
                   ),
                 ],
               ),
-              if (entrustedNodes.isNotEmpty)
-                TreeListView<EntrustedAccount>(
-                  showExpandCollapse: false,
-                  nodes: entrustedNodes,
-                  nodeBuilder: (context, node, depth) {
-                    final entrusted = node.data;
-                    final isEntrustedActive = entrusted.accountId == activeAccountId;
+            ),
+            const SizedBox(width: 12),
+            _buildIconActionButton(
+              size: 40,
+              radius: 8,
+              icon: Icons.edit_outlined,
+              iconSize: 20,
+              onTap: () => _openEdit(account),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Material(
-                            color: isEntrustedActive ? context.themeColors.surfaceActive : context.themeColors.darkGray,
-                            shape: RoundedRectangleBorder(
-                              side: const BorderSide(color: Color(0x26FFFFFF)),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(5),
-                              onTap: () async {
-                                print('onTap: ${entrusted.accountId}');
-
-                                // Set the entrusted account as the active display account
-                                await ref
-                                    .read(activeAccountProvider.notifier)
-                                    .setActiveAccount(EntrustedDisplayAccount(entrusted));
-
-                                // ignore: use_build_context_synchronously
-                                if (mounted) Navigator.pop(context);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      entrusted.name,
-                                      style: context.themeText.smallParagraph?.copyWith(
-                                        color: isEntrustedActive ? Colors.black : Colors.white,
-                                      ),
-                                    ),
-                                    AccountTag(text: 'Entrusted', color: context.themeColors.accountTagEntrusted),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: SvgPicture.asset(
-                            'assets/settings_icon_off.svg',
-                            width: context.isTablet ? 28 : 21,
-                            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                          ),
-                          onPressed: () async {
-                            // Get current data from providers
-                            final balanceAsync = ref.read(balanceProviderFamily(entrusted.accountId));
-                            final checksumName = await _checksumService.getHumanReadableName(entrusted.accountId);
-
-                            balanceAsync.when(
-                              loading: () {},
-                              error: (error, _) {},
-                              data: (balance) async {
-                                if (!mounted) return;
-                                await Navigator.push<bool?>(
-                                  context,
-                                  MaterialPageRoute(
-                                    settings: const RouteSettings(name: AppConstants.accountSettingsRouteName),
-                                    builder: (context) => AccountSettingsScreen(
-                                      account: entrusted,
-                                      balance: _formattingService.formatBalance(balance, addSymbol: true),
-                                      checksumName: checksumName,
-                                      isHighSecurity: false,
-                                      isEntrustedAccount: true,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    );
+  Widget _buildAccountNameField(Account account) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _nameController,
+              readOnly: !_isEditingName || _isSavingName,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: context.themeColors.pink,
+                height: 1.35,
+              ),
+              cursorColor: context.themeColors.pink,
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Colors.transparent,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onSubmitted: (_) {
+                if (_isEditingName && !_isSavingName) {
+                  _saveEditedName(account);
+                }
+              },
+              onTap: () {
+                if (!_isEditingName) {
+                  setState(() => _isEditingName = true);
+                }
+              },
+            ),
+          ),
+          _isSavingName
+              ? const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    ),
+                  ),
+                )
+              : _buildIconActionButton(
+                  size: 40,
+                  radius: 8,
+                  icon: _isEditingName ? Icons.check : Icons.edit_outlined,
+                  iconSize: 20,
+                  onTap: () {
+                    if (_isEditingName) {
+                      _saveEditedName(account);
+                    } else {
+                      setState(() => _isEditingName = true);
+                    }
                   },
                 ),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressDetails(Account account, String checksum) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        children: [
+          _buildCopyRow(
+            value: account.accountId,
+            onCopy: () => context.copyTextWithToaster(account.accountId),
+            textStyle: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              height: 1.35,
+            ),
+            maxLines: null,
+            overflow: TextOverflow.visible,
           ),
-          Positioned(
-            // calculating the middle point
-            top: (context.themeSize.accountListItemHeight / 2) - (context.themeSize.accountListItemLogoWidth / 2),
-            left: (context.themeSize.accountListItemLogoWidth / 2) * -1,
-            child: AccountGradientImage(
-              accountId: account.accountId,
-              width: context.themeSize.accountListItemLogoWidth,
-              height: context.themeSize.accountListItemLogoWidth,
+          const SizedBox(height: 8),
+          _buildCopyRow(
+            value: checksum,
+            onCopy: () => context.copyTextWithToaster(checksum),
+            textStyle: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: context.themeColors.pink,
+              height: 1,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCopyRow({
+    required String value,
+    required VoidCallback onCopy,
+    required TextStyle textStyle,
+    int? maxLines = 1,
+    TextOverflow overflow = TextOverflow.ellipsis,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(value, maxLines: maxLines, overflow: overflow, style: textStyle),
+        ),
+        const SizedBox(width: 8),
+        _buildIconActionButton(size: 20, radius: 4, icon: Icons.copy_outlined, iconSize: 12, onTap: onCopy),
+      ],
+    );
+  }
+
+  Widget _buildIconActionButton({
+    required double size,
+    required double radius,
+    required IconData icon,
+    required double iconSize,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(radius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(radius),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Icon(icon, color: Colors.white, size: iconSize),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          height: 64,
+          width: double.infinity,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0x70FFFFFF), width: 0.9),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1,
+                  ),
+                ),
+        ),
       ),
     );
   }
