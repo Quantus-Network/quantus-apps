@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/features/components/account_gradient_im
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -211,8 +211,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              border: Border.all(color: const Color(0xFF3D3D3D)),
+              color: context.colors.sheetBackground,
+              border: Border.all(color: context.colors.toasterBorder),
               borderRadius: BorderRadius.circular(24),
             ),
             child: _buildContent(
@@ -442,7 +442,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    color: context.themeColors.pink,
+                    color: context.colors.accentPink,
                     height: 1.0,
                   ),
                 ),
@@ -474,7 +474,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0x70FFFFFF), width: 0.9),
+          border: Border.all(color: context.colors.borderSubtle, width: 0.9),
         ),
         child: Row(
           children: [
@@ -488,18 +488,18 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                       fontFamily: 'Inter',
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: isActive ? context.themeColors.pink : Colors.white,
+                      color: isActive ? context.colors.accentPink : Colors.white,
                       height: 1.35,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     balanceText,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Color(0x80FFFFFF),
+                      color: context.colors.textSecondary,
                       height: 1.35,
                     ),
                   ),
@@ -523,7 +523,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   Widget _buildAccountNameField(Account account) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           Expanded(
@@ -534,10 +534,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: context.themeColors.pink,
+                color: context.colors.accentPink,
                 height: 1.35,
               ),
-              cursorColor: context.themeColors.pink,
+              cursorColor: context.colors.accentPink,
               decoration: const InputDecoration(
                 filled: true,
                 fillColor: Colors.transparent,
@@ -593,7 +593,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   Widget _buildCreatedNameField() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Expanded(
@@ -637,7 +637,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Expanded(
@@ -695,7 +695,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   Widget _buildAddressDetails(Account account, String checksum) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
       child: Column(
         children: [
           _buildCopyRow(
@@ -719,7 +719,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               fontFamily: 'Inter',
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: context.themeColors.pink,
+              color: context.colors.accentPink,
               height: 1,
             ),
           ),
@@ -755,7 +755,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.1),
+      color: context.colors.surfaceGlass,
       borderRadius: BorderRadius.circular(radius),
       child: InkWell(
         onTap: onTap,
@@ -771,7 +771,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.1),
+      color: context.colors.surfaceGlass,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: isLoading ? null : onTap,
@@ -782,7 +782,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0x70FFFFFF), width: 0.9),
+            border: Border.all(color: context.colors.borderSubtle, width: 0.9),
           ),
           child: isLoading
               ? const SizedBox(
