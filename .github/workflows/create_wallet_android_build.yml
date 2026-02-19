@@ -80,17 +80,23 @@ jobs:
 
       - name: Decode Android keystore
         if: inputs.build_mode == 'release'
-        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > mobile-app/android/app/upload-keystore.jks
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > mobile-app/android/upload-keystore.jks
 
       - name: Create key.properties
         if: inputs.build_mode == 'release'
         run: |
           cat > mobile-app/android/key.properties << EOF
-          storeFile=app/upload-keystore.jks
+          storeFile=../upload-keystore.jks
           storePassword=$ANDROID_STORE_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
+
+      - name: Generate Splash Screen
+        working-directory: ./mobile-app
+        run: |
+          flutter pub get
+          dart run flutter_native_splash:create
 
       - name: Build APK
         run: flutter build apk --${{ inputs.build_mode }}
@@ -151,6 +157,9 @@ jobs:
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}
+
             git tag "$TAG" "$GITHUB_SHA"
             git push origin "$TAG"
           fi

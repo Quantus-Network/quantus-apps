@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:quantus_miner/src/utils/app_logger.dart';
+
+final _log = log.withTag('BinaryManager');
 
 class DownloadProgress {
   final int downloadedBytes;
@@ -89,7 +92,7 @@ class BinaryManager {
       final json = jsonDecode(content) as Map<String, dynamic>;
       return BinaryVersion.fromJson(json);
     } catch (e) {
-      print('Error reading node version file: $e');
+      _log.d('Error reading node version file: $e');
       return null;
     }
   }
@@ -107,7 +110,7 @@ class BinaryManager {
       final json = jsonDecode(content) as Map<String, dynamic>;
       return BinaryVersion.fromJson(json);
     } catch (e) {
-      print('Error reading miner version file: $e');
+      _log.d('Error reading miner version file: $e');
       return null;
     }
   }
@@ -168,7 +171,7 @@ class BinaryManager {
         downloadUrl: updateAvailable ? _buildNodeDownloadUrl(latestVersion) : null,
       );
     } catch (e) {
-      print('Error checking node update: $e');
+      _log.w('Error checking node update', error: e);
       return BinaryUpdateInfo(updateAvailable: false);
     }
   }
@@ -195,7 +198,7 @@ class BinaryManager {
         downloadUrl: updateAvailable ? _buildMinerDownloadUrl(latestVersion) : null,
       );
     } catch (e) {
-      print('Error checking miner update: $e');
+      _log.w('Error checking miner update', error: e);
       return BinaryUpdateInfo(updateAvailable: false);
     }
   }
@@ -275,7 +278,7 @@ class BinaryManager {
   }
 
   static Future<File> updateNodeBinary({void Function(DownloadProgress progress)? onProgress}) async {
-    print('Updating node binary to latest version...');
+    _log.i('Updating node binary to latest version...');
 
     final binPath = await getNodeBinaryFilePath();
     final binFile = File(binPath);
@@ -284,9 +287,9 @@ class BinaryManager {
 
     // Create backup of existing binary if it exists
     if (await binFile.exists()) {
-      print('Creating backup of existing binary...');
+      _log.d('Creating backup of existing binary...');
       await binFile.copy(backupPath);
-      print('Backup created at: $backupPath');
+      _log.d('Backup created at: $backupPath');
     }
 
     try {
@@ -296,19 +299,19 @@ class BinaryManager {
       // If download successful, replace the old binary
       if (await backupFile.exists()) {
         await backupFile.delete();
-        print('Backup removed after successful update');
+        _log.d('Backup removed after successful update');
       }
 
-      print('Node binary updated successfully!');
+      _log.i('Node binary updated successfully!');
       return newBinary;
     } catch (e) {
       // If download failed, restore from backup
-      print('Download failed: $e');
+      _log.e('Download failed', error: e);
       if (await backupFile.exists()) {
-        print('Restoring from backup...');
+        _log.i('Restoring from backup...');
         await backupFile.copy(binPath);
         await backupFile.delete();
-        print('Binary restored from backup');
+        _log.i('Binary restored from backup');
       }
       rethrow;
     }
@@ -322,7 +325,7 @@ class BinaryManager {
     final rel = await http.get(Uri.parse('https://api.github.com/repos/$_repoOwner/$_repoName/releases/latest'));
     final tag = jsonDecode(rel.body)['tag_name'] as String;
 
-    print('found latest tag: $tag');
+    _log.d('Found latest tag: $tag');
 
     // Pick asset name
     final target = _targetTriple();
@@ -409,10 +412,10 @@ class BinaryManager {
     final binPath = await getExternalMinerBinaryFilePath();
     final binFile = File(binPath);
 
-    print('DEBUG: Checking for external miner at path: $binPath');
+    _log.d('Checking for external miner at path: $binPath');
 
     if (await binFile.exists() && !forceDownload) {
-      print('DEBUG: External miner binary already exists at $binPath');
+      _log.d('External miner binary already exists at $binPath');
       onProgress?.call(DownloadProgress(1, 1));
       return binFile;
     }
@@ -421,7 +424,7 @@ class BinaryManager {
   }
 
   static Future<File> updateMinerBinary({void Function(DownloadProgress progress)? onProgress}) async {
-    print('Updating miner binary to latest version...');
+    _log.i('Updating miner binary to latest version...');
 
     final binPath = await getExternalMinerBinaryFilePath();
     final binFile = File(binPath);
@@ -430,9 +433,9 @@ class BinaryManager {
 
     // Create backup of existing binary if it exists
     if (await binFile.exists()) {
-      print('Creating backup of existing miner binary...');
+      _log.d('Creating backup of existing miner binary...');
       await binFile.copy(backupPath);
-      print('Backup created at: $backupPath');
+      _log.d('Backup created at: $backupPath');
     }
 
     try {
@@ -442,19 +445,19 @@ class BinaryManager {
       // If download successful, replace the old binary
       if (await backupFile.exists()) {
         await backupFile.delete();
-        print('Backup removed after successful update');
+        _log.d('Backup removed after successful update');
       }
 
-      print('Miner binary updated successfully!');
+      _log.i('Miner binary updated successfully!');
       return newBinary;
     } catch (e) {
       // If download failed, restore from backup
-      print('Download failed: $e');
+      _log.e('Download failed', error: e);
       if (await backupFile.exists()) {
-        print('Restoring from backup...');
+        _log.i('Restoring from backup...');
         await backupFile.copy(binPath);
         await backupFile.delete();
-        print('Binary restored from backup');
+        _log.i('Binary restored from backup');
       }
       rethrow;
     }
@@ -464,18 +467,18 @@ class BinaryManager {
     void Function(DownloadProgress progress)? onProgress,
     bool isUpdate = false,
   }) async {
-    print('DEBUG: External miner binary download process starting...');
+    _log.d('External miner binary download process starting...');
 
     // Find latest tag on GitHub
     final releaseUrl = 'https://api.github.com/repos/$_repoOwner/$_minerRepoName/releases/latest';
-    print('DEBUG: Fetching latest release from: $releaseUrl');
+    _log.d('Fetching latest release from: $releaseUrl');
 
     final rel = await http.get(Uri.parse(releaseUrl));
 
     final releaseData = jsonDecode(rel.body);
     final tag = releaseData['tag_name'] as String;
 
-    print('DEBUG: Found latest external miner tag: $tag');
+    _log.d('Found latest external miner tag: $tag');
 
     // Pick asset name
     String platform;
@@ -505,16 +508,16 @@ class BinaryManager {
         ? '$_minerReleaseBinary-$platform-$arch.exe'
         : '$_minerReleaseBinary-$platform-$arch';
 
-    print('DEBUG: Looking for asset: $asset');
+    _log.d('Looking for asset: $asset');
 
     final url = 'https://github.com/$_repoOwner/$_minerRepoName/releases/download/$tag/$asset';
 
     // Check if the asset exists in the release
     final assets = releaseData['assets'] as List;
-    print('DEBUG: Available assets in release:');
+    _log.d('Available assets in release:');
     bool assetFound = false;
     for (var assetInfo in assets) {
-      print('  - ${assetInfo['name']} (${assetInfo['browser_download_url']})');
+      _log.d('  - ${assetInfo['name']} (${assetInfo['browser_download_url']})');
       if (assetInfo['name'] == asset) {
         assetFound = true;
       }
@@ -530,20 +533,20 @@ class BinaryManager {
     final cacheDir = await _getCacheDir();
     final tempFileName = isUpdate ? '$asset.tmp' : asset;
     final tempBinaryFile = File(p.join(cacheDir.path, tempFileName));
-    print('DEBUG: Will download to: ${tempBinaryFile.path}');
+    _log.d('Will download to: ${tempBinaryFile.path}');
 
     final client = http.Client();
     try {
       final request = http.Request('GET', Uri.parse(url));
       final response = await client.send(request);
 
-      print('DEBUG: Download response status: ${response.statusCode}');
+      _log.d('Download response status: ${response.statusCode}');
       if (response.statusCode != 200) {
         throw Exception('Failed to download external miner binary: ${response.statusCode} ${response.reasonPhrase}');
       }
 
       final totalBytes = response.contentLength ?? -1;
-      print('DEBUG: Expected download size: $totalBytes bytes');
+      _log.d('Expected download size: $totalBytes bytes');
       int downloadedBytes = 0;
       List<int> allBytes = [];
 
@@ -557,7 +560,7 @@ class BinaryManager {
         }
       }
       await tempBinaryFile.writeAsBytes(allBytes);
-      print('DEBUG: Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}');
+      _log.d('Downloaded ${allBytes.length} bytes to ${tempBinaryFile.path}');
 
       if (totalBytes > 0 && downloadedBytes < totalBytes) {
         onProgress?.call(DownloadProgress(totalBytes, totalBytes));
@@ -570,37 +573,37 @@ class BinaryManager {
 
     // Set executable permissions on temp file
     if (!Platform.isWindows) {
-      print('DEBUG: Setting executable permissions on ${tempBinaryFile.path}');
+      _log.d('Setting executable permissions on ${tempBinaryFile.path}');
       final chmodResult = await Process.run('chmod', ['+x', tempBinaryFile.path]);
-      print('DEBUG: chmod exit code: ${chmodResult.exitCode}');
+      _log.d('chmod exit code: ${chmodResult.exitCode}');
       if (chmodResult.exitCode != 0) {
-        print('DEBUG: chmod stderr: ${chmodResult.stderr}');
+        _log.e('chmod stderr: ${chmodResult.stderr}');
         throw Exception('Failed to set executable permissions');
       }
     }
 
     // Move to final location (atomic operation)
     final binPath = await getExternalMinerBinaryFilePath();
-    print('DEBUG: Moving binary from ${tempBinaryFile.path} to $binPath');
+    _log.d('Moving binary from ${tempBinaryFile.path} to $binPath');
 
     // Copy instead of rename for cross-device compatibility
     await tempBinaryFile.copy(binPath);
     await tempBinaryFile.delete();
 
-    print('DEBUG: Contents of cache directory after download:');
+    _log.d('Contents of cache directory after download:');
     final cacheDirContents = await cacheDir.list().toList();
     for (var item in cacheDirContents) {
-      print('  - ${item.path}');
+      _log.d('  - ${item.path}');
     }
 
     // Final check
     final binFile = File(binPath);
     if (await binFile.exists()) {
-      print('DEBUG: External miner binary successfully created at $binPath');
+      _log.i('External miner binary successfully created at $binPath');
       // Save version info
       await _saveMinerVersion(tag);
     } else {
-      print('DEBUG: ERROR - External miner binary still not found at $binPath after download!');
+      _log.e('External miner binary still not found at $binPath after download!');
       throw Exception('External miner binary not found after download at $binPath');
     }
 
@@ -619,12 +622,12 @@ class BinaryManager {
     if (await nodeKeyFile.exists()) {
       final stat = await nodeKeyFile.stat();
       if (stat.size > 0) {
-        print('Node key file already exists and has content (size: ${stat.size} bytes)');
+        _log.d('Node key file already exists and has content (size: ${stat.size} bytes)');
         return nodeKeyFile;
       }
     }
 
-    print('Node key file not found or empty. Generating new key...');
+    _log.i('Node key file not found or empty. Generating new key...');
     final nodeBinaryPath = await getNodeBinaryFilePath();
     if (!await File(nodeBinaryPath).exists()) {
       throw Exception(
@@ -639,7 +642,7 @@ class BinaryManager {
         if (await nodeKeyFile.exists()) {
           final stat = await nodeKeyFile.stat();
           if (stat.size > 0) {
-            print('Successfully generated node key file: ${nodeKeyFile.path} (size: ${stat.size} bytes)');
+            _log.i('Successfully generated node key file: ${nodeKeyFile.path} (size: ${stat.size} bytes)');
             return nodeKeyFile;
           } else {
             throw Exception('Node key file was created but is empty');
@@ -653,7 +656,7 @@ class BinaryManager {
         );
       }
     } catch (e) {
-      print('Error generating node key: $e');
+      _log.e('Error generating node key', error: e);
       rethrow;
     }
   }

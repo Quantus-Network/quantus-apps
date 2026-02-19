@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
+import 'package:quantus_miner/src/config/miner_config.dart';
 
 class ExternalMinerMetrics {
   final double hashRate;
@@ -28,7 +29,6 @@ class ExternalMinerMetrics {
 }
 
 class ExternalMinerApiClient {
-  final String baseUrl;
   final String metricsUrl;
   final Duration timeout;
   final http.Client _httpClient;
@@ -39,17 +39,14 @@ class ExternalMinerApiClient {
   void Function(ExternalMinerMetrics metrics)? onMetricsUpdate;
   void Function(String error)? onError;
 
-  ExternalMinerApiClient({
-    this.baseUrl = 'http://127.0.0.1:9833',
-    String? metricsUrl,
-    this.timeout = const Duration(seconds: 5),
-  }) : metricsUrl = metricsUrl ?? 'http://127.0.0.1:9900/metrics',
-       _httpClient = http.Client();
+  ExternalMinerApiClient({String? metricsUrl, this.timeout = const Duration(seconds: 5)})
+    : metricsUrl = metricsUrl ?? MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
+      _httpClient = http.Client();
 
-  /// Start polling for metrics every second
+  /// Start polling for metrics
   void startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) => _pollMetrics());
+    _pollTimer = Timer.periodic(MinerConfig.metricsPollingInterval, (_) => _pollMetrics());
   }
 
   /// Stop polling for metrics
@@ -164,18 +161,6 @@ class ExternalMinerApiClient {
       }
     } catch (e) {
       onError?.call('Failed to poll miner metrics: $e');
-    }
-  }
-
-  /// Test if the external miner is reachable
-  Future<bool> isReachable() async {
-    try {
-      final response = await _httpClient.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 3));
-
-      // Any response (even 404) means the server is running
-      return response.statusCode >= 200 && response.statusCode < 500;
-    } catch (e) {
-      return false;
     }
   }
 

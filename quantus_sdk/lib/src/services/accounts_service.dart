@@ -35,23 +35,10 @@ class AccountsService {
   }
 
   Future<void> updateAccountName(Account account, String name) async {
-    final normalizedName = name.trim();
-    if (normalizedName.isEmpty) {
+    if (name.isEmpty) {
       throw Exception("Account name can't be empty");
     }
-
-    final accounts = await _settingsService.getAccounts();
-    final currentAccountIndex = accounts.indexWhere((a) => a.accountId == account.accountId);
-    if (currentAccountIndex == -1) {
-      throw Exception('Account not found');
-    }
-
-    final currentAccount = accounts[currentAccountIndex];
-    if (currentAccount.name == normalizedName) {
-      return;
-    }
-
-    final updatedAccount = currentAccount.copyWith(name: normalizedName);
+    final updatedAccount = account.copyWith(name: name);
     await _settingsService.updateAccount(updatedAccount);
     onAccountsChanged?.call();
   }

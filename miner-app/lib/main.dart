@@ -8,71 +8,83 @@ import 'features/setup/node_identity_setup_screen.dart';
 import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
 import 'src/services/binary_manager.dart';
-import 'src/services/miner_process.dart';
+import 'src/services/mining_orchestrator.dart';
+import 'src/services/process_cleanup_service.dart';
+import 'src/utils/app_logger.dart';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Global class to manage miner process lifecycle
+final _log = log.withTag('App');
+
+/// Global class to manage mining orchestrator lifecycle.
+///
+/// This is used for cleanup during app exit/detach events.
 class GlobalMinerManager {
-  static MinerProcess? _globalMinerProcess;
+  static MiningOrchestrator? _orchestrator;
 
-  static void setMinerProcess(MinerProcess? process) {
-    _globalMinerProcess = process;
-    print('GlobalMinerManager: Set miner process: ${process != null}');
+  /// Register the active orchestrator for lifecycle management.
+  static void setOrchestrator(MiningOrchestrator? orchestrator) {
+    _orchestrator = orchestrator;
+    _log.d('Orchestrator registered: ${orchestrator != null}');
   }
 
-  static MinerProcess? getMinerProcess() {
-    return _globalMinerProcess;
+  /// Get the current orchestrator, if any.
+  static MiningOrchestrator? getOrchestrator() {
+    return _orchestrator;
   }
 
-  static Future<void> cleanup() async {
-    print('GlobalMinerManager: Starting cleanup...');
-    if (_globalMinerProcess != null) {
+  /// Synchronous force stop for app detach scenarios.
+  ///
+  /// This is called from _onAppDetach which cannot be async.
+  /// It fires off process kills without waiting for completion.
+  static void forceStopAll() {
+    _log.i('Force stopping all processes (sync)...');
+    if (_orchestrator != null) {
       try {
-        print('GlobalMinerManager: Force stopping global miner process');
-        _globalMinerProcess!.forceStop();
-        _globalMinerProcess = null;
+        _orchestrator!.forceStop();
+        _orchestrator = null;
       } catch (e) {
-        print('GlobalMinerManager: Error stopping miner process: $e');
+        _log.e('Error force stopping orchestrator', error: e);
       }
     }
 
-    // Kill any remaining quantus processes
-    await _killQuantusProcesses();
+    // Fire and forget - kill any remaining quantus processes
+    ProcessCleanupService.killAllQuantusProcesses();
   }
 
-  static Future<void> _killQuantusProcesses() async {
-    try {
-      print('GlobalMinerManager: Killing quantus processes by name...');
-
-      // Kill all quantus processes
-      await Process.run('pkill', ['-9', '-f', 'quantus-node']);
-      await Process.run('pkill', ['-9', '-f', 'quantus-miner']);
-
-      print('GlobalMinerManager: Cleanup commands executed');
-    } catch (e) {
-      print('GlobalMinerManager: Error killing processes by name: $e');
+  /// Cleanup all mining processes.
+  ///
+  /// Called during app exit (async context).
+  static Future<void> cleanup() async {
+    _log.i('Starting global cleanup...');
+    if (_orchestrator != null) {
+      try {
+        _orchestrator!.forceStop();
+        _orchestrator = null;
+      } catch (e) {
+        _log.e('Error stopping orchestrator', error: e);
+      }
     }
+
+    // Kill any remaining quantus processes using the cleanup service
+    await ProcessCleanupService.killAllQuantusProcesses();
   }
 }
 
 Future<String?> initialRedirect(BuildContext context, GoRouterState state) async {
   final currentRoute = state.uri.toString();
 
-  print('initialRedirect');
-
   // Check 1: Node Installed
   bool isNodeInstalled = false;
   try {
     isNodeInstalled = await BinaryManager.hasBinary();
-    print('isNodeInstalled: $isNodeInstalled');
   } catch (e) {
-    print('Error checking node installation status: $e');
+    _log.e('Error checking node installation', error: e);
     isNodeInstalled = false;
   }
 
   if (!isNodeInstalled) {
-    print('node not installed, going to node setup');
+    _log.d('Node not installed, redirecting to setup');
     return (currentRoute == '/node_setup') ? null : '/node_setup';
   }
 
@@ -82,7 +94,7 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
     final identityPath = '${await BinaryManager.getQuantusHomeDirectoryPath()}/node_key.p2p';
     isIdentitySet = await File(identityPath).exists();
   } catch (e) {
-    print('Error checking node identity status: $e');
+    _log.e('Error checking node identity', error: e);
     isIdentitySet = false;
   }
 
@@ -97,7 +109,7 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
     final rewardsFile = File('$quantusHome/rewards-address.txt');
     isRewardsAddressSet = await rewardsFile.exists();
   } catch (e) {
-    print('Error checking rewards address status: $e');
+    _log.e('Error checking rewards address', error: e);
     isRewardsAddressSet = false;
   }
 
@@ -133,10 +145,9 @@ Future<void> main() async {
 
   try {
     await QuantusSdk.init();
-    print('SubstrateService and QuantusSdk initialized successfully.');
+    _log.i('SDK initialized');
   } catch (e) {
-    print('Error initializing SDK: $e');
-    // Depending on the app, you might want to show an error UI or prevent app startup
+    _log.e('Error initializing SDK', error: e);
   }
   runApp(const MinerApp());
 }
@@ -170,31 +181,28 @@ class _MinerAppState extends State<MinerApp> {
   }
 
   void _onAppDetach() {
-    print('App lifecycle: App detached, forcing cleanup...');
-    GlobalMinerManager.cleanup();
+    _log.i('App detached, cleaning up...');
+    // Use synchronous force stop since _onAppDetach cannot be async
+    GlobalMinerManager.forceStopAll();
   }
 
   Future<AppExitResponse> _onExitRequested() async {
-    print('App lifecycle: Exit requested, cleaning up processes...');
+    _log.i('Exit requested, cleaning up...');
 
     try {
       await GlobalMinerManager.cleanup();
-      print('App lifecycle: Cleanup completed, allowing exit');
       return AppExitResponse.exit;
     } catch (e) {
-      print('App lifecycle: Error during cleanup: $e');
+      _log.e('Error during exit cleanup', error: e);
       // Still allow exit even if cleanup fails
       return AppExitResponse.exit;
     }
   }
 
   void _onStateChanged(AppLifecycleState state) {
-    print('App lifecycle state changed to: $state');
-
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      print('App lifecycle: App backgrounded/detached, cleaning up...');
-      GlobalMinerManager.cleanup();
-    }
+    _log.d('Lifecycle state: $state');
+    // Note: We intentionally do NOT cleanup on pause/background
+    // Mining should continue when the app is backgrounded
   }
 
   @override

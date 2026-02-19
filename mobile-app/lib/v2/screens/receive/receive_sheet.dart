@@ -55,7 +55,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   void _share() {
     if (_accountId != null) {
-      shareAccountDetails(context, _accountId!, checksum: _checksum);
+      shareAccountDetails(context, _accountId!, checksum: _checksum ?? '');
     }
   }
 

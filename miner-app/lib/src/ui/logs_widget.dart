@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-import '../services/miner_process.dart';
+import '../services/log_stream_processor.dart';
+import '../services/mining_orchestrator.dart';
 
 class LogsWidget extends StatefulWidget {
-  final MinerProcess? minerProcess;
+  final MiningOrchestrator? orchestrator;
   final int maxLines;
 
-  const LogsWidget({super.key, this.minerProcess, this.maxLines = 20000});
+  const LogsWidget({super.key, this.orchestrator, this.maxLines = 20000});
 
   @override
   State<LogsWidget> createState() => _LogsWidgetState();
@@ -30,7 +31,7 @@ class _LogsWidgetState extends State<LogsWidget> {
   @override
   void didUpdateWidget(LogsWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.minerProcess != widget.minerProcess) {
+    if (oldWidget.orchestrator != widget.orchestrator) {
       _setupLogsListener();
     }
   }
@@ -39,8 +40,8 @@ class _LogsWidgetState extends State<LogsWidget> {
     _logsSubscription?.cancel();
     _logs.clear();
 
-    if (widget.minerProcess != null) {
-      _logsSubscription = widget.minerProcess!.logsStream.listen((logEntry) {
+    if (widget.orchestrator != null) {
+      _logsSubscription = widget.orchestrator!.logsStream.listen((logEntry) {
         if (mounted) {
           setState(() {
             _logs.add(logEntry);
@@ -89,6 +90,11 @@ class _LogsWidgetState extends State<LogsWidget> {
         return Colors.blue;
       case 'node-error':
         return Colors.red;
+      case 'miner':
+        return Colors.green;
+      case 'miner-error':
+        return Colors.orange;
+      // Legacy source names for compatibility
       case 'quantus-miner':
         return Colors.green;
       case 'quantus-miner-error':
@@ -131,7 +137,7 @@ class _LogsWidgetState extends State<LogsWidget> {
               child: _logs.isEmpty
                   ? const Center(
                       child: Text(
-                        'No logs available\nStart mining to see live logs',
+                        'No logs available\nStart the node to see live logs',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                       ),
@@ -202,7 +208,7 @@ class _LogsWidgetState extends State<LogsWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Total logs: ${_logs.length}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                if (widget.minerProcess != null)
+                if (widget.orchestrator?.isMining ?? false)
                   Text(
                     'Live',
                     style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),

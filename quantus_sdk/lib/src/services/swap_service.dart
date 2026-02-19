@@ -238,7 +238,9 @@ class SwapService {
         final item = payload[i];
         if (item is! Map<String, dynamic>) continue;
         final symbol = (item['symbol'] as String?)?.toUpperCase();
-        if (symbol == null || symbol.isEmpty || rankBySymbol.containsKey(symbol)) continue;
+        if (symbol == null || symbol.isEmpty || rankBySymbol.containsKey(symbol)) {
+          continue;
+        }
         rankBySymbol[symbol] = i;
         final icon = item['image'] as String?;
         if (icon != null && icon.isNotEmpty) iconBySymbol[symbol] = icon;
