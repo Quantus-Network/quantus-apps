@@ -105,7 +105,7 @@ class MinerProcessManager extends BaseProcessManager {
         clearProcess();
         throw Exception(error.message);
       }
-    
+
       log.i('Miner started (PID: $pid)');
     } catch (e, st) {
       if (e.toString().contains('Miner died during startup')) {
