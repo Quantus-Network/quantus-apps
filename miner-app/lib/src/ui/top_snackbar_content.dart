@@ -7,12 +7,7 @@ class TopSnackBarContent extends StatelessWidget {
   final String message;
   final Icon? icon;
 
-  const TopSnackBarContent({
-    super.key,
-    required this.title,
-    required this.message,
-    this.icon,
-  });
+  const TopSnackBarContent({super.key, required this.title, required this.message, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +20,7 @@ class TopSnackBarContent extends StatelessWidget {
         shape: OvalBorder(), // Use OvalBorder for circle
       ),
       alignment: Alignment.center,
-      child: Icon(
-        icon?.icon ?? Icons.check,
-        color: icon?.color ?? Colors.white,
-        size: 24,
-      ), // Default check icon
+      child: Icon(icon?.icon ?? Icons.check, color: icon?.color ?? Colors.white, size: 24), // Default check icon
     );
 
     return Container(
@@ -42,9 +33,7 @@ class TopSnackBarContent extends StatelessWidget {
           side: BorderSide(color: Colors.white.useOpacity(0.1), width: 1),
         ),
         // Optional shadow for better visibility
-        shadows: const [
-          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-        ],
+        shadows: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,

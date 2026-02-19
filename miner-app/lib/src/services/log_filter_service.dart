@@ -5,8 +5,7 @@ class LogFilterService {
   final List<String> criticalKeywordsDuringSync;
 
   LogFilterService({
-    this.initialLinesToPrint =
-        50, // Increased initial lines to show more startup info
+    this.initialLinesToPrint = 50, // Increased initial lines to show more startup info
     this.keywordsToWatch = const [
       // Info level logs that users want to see by default
       'info',
@@ -68,22 +67,16 @@ class LogFilterService {
     final lowerLine = line.toLowerCase();
 
     // Always print critical messages, regardless of sync state (after initial burst)
-    if (criticalKeywordsDuringSync.any(
-      (keyword) => lowerLine.contains(keyword.toLowerCase()),
-    )) {
+    if (criticalKeywordsDuringSync.any((keyword) => lowerLine.contains(keyword.toLowerCase()))) {
       return true;
     }
 
     if (isNodeSyncing) {
       // During sync, show info level logs and keywords (not just critical messages)
-      return keywordsToWatch.any(
-        (keyword) => lowerLine.contains(keyword.toLowerCase()),
-      );
+      return keywordsToWatch.any((keyword) => lowerLine.contains(keyword.toLowerCase()));
     } else {
       // When synced (and after initial burst, and not critical), print if it matches normal keywords.
-      return keywordsToWatch.any(
-        (keyword) => lowerLine.contains(keyword.toLowerCase()),
-      );
+      return keywordsToWatch.any((keyword) => lowerLine.contains(keyword.toLowerCase()));
     }
   }
 }

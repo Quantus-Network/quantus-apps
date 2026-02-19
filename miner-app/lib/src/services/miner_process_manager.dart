@@ -74,9 +74,7 @@ class MinerProcessManager extends BaseProcessManager {
 
     // Validate binary exists
     if (!await config.binary.exists()) {
-      final error = MinerError.minerStartupFailed(
-        'Miner binary not found: ${config.binary.path}',
-      );
+      final error = MinerError.minerStartupFailed('Miner binary not found: ${config.binary.path}');
       errorController.add(error);
       throw Exception(error.message);
     }
@@ -101,13 +99,9 @@ class MinerProcessManager extends BaseProcessManager {
       // We just attached, so pid should be available
       final processPid = pid;
       if (processPid != null) {
-        final stillRunning = await ProcessCleanupService.isProcessRunning(
-          processPid,
-        );
+        final stillRunning = await ProcessCleanupService.isProcessRunning(processPid);
         if (!stillRunning) {
-          final error = MinerError.minerStartupFailed(
-            'Miner died during startup',
-          );
+          final error = MinerError.minerStartupFailed('Miner died during startup');
           errorController.add(error);
           clearProcess();
           throw Exception(error.message);

@@ -22,12 +22,7 @@ class LogEntry {
   /// Whether this is an error-level log.
   final bool isError;
 
-  LogEntry({
-    required this.message,
-    required this.timestamp,
-    required this.source,
-    this.isError = false,
-  });
+  LogEntry({required this.message, required this.timestamp, required this.source, this.isError = false});
 
   @override
   String toString() {
@@ -60,14 +55,11 @@ class LogStreamProcessor {
   Stream<LogEntry> get logs => _logController.stream;
 
   /// Whether the processor is currently active.
-  bool get isActive =>
-      _stdoutSubscription != null || _stderrSubscription != null;
+  bool get isActive => _stdoutSubscription != null || _stderrSubscription != null;
 
-  LogStreamProcessor({
-    required this.sourceName,
-    SyncStateProvider? getSyncState,
-  }) : _filter = LogFilterService(),
-       _getSyncState = getSyncState;
+  LogStreamProcessor({required this.sourceName, SyncStateProvider? getSyncState})
+    : _filter = LogFilterService(),
+      _getSyncState = getSyncState;
 
   /// Start processing logs from a process.
   ///
@@ -106,10 +98,7 @@ class LogStreamProcessor {
   }
 
   void _processStdoutLine(String line) {
-    final shouldPrint = _filter.shouldPrintLine(
-      line,
-      isNodeSyncing: _getSyncState?.call() ?? false,
-    );
+    final shouldPrint = _filter.shouldPrintLine(line, isNodeSyncing: _getSyncState?.call() ?? false);
 
     if (shouldPrint) {
       final isError = _isErrorLine(line);
@@ -156,9 +145,6 @@ class LogStreamProcessor {
     }
     // Fallback generic error detection
     final lower = line.toLowerCase();
-    return lower.contains('error') ||
-        lower.contains('panic') ||
-        lower.contains('fatal') ||
-        lower.contains('failed');
+    return lower.contains('error') || lower.contains('panic') || lower.contains('fatal') || lower.contains('failed');
   }
 }

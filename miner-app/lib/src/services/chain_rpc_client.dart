@@ -96,8 +96,7 @@ class ChainRpcClient {
       bool isSyncing = false;
       int? targetBlock;
       if (syncStateResult != null) {
-        if (syncStateResult['currentBlock'] != null &&
-            syncStateResult['highestBlock'] != null) {
+        if (syncStateResult['currentBlock'] != null && syncStateResult['highestBlock'] != null) {
           final current = syncStateResult['currentBlock'] as int;
           final highest = syncStateResult['highestBlock'] as int;
 
@@ -178,9 +177,7 @@ class ChainRpcClient {
   Future<bool?> isSyncing() async {
     try {
       final syncState = await _rpcCall('system_syncState');
-      if (syncState != null &&
-          syncState['currentBlock'] != null &&
-          syncState['highestBlock'] != null) {
+      if (syncState != null && syncState['currentBlock'] != null && syncState['highestBlock'] != null) {
         final current = syncState['currentBlock'] as int;
         final highest = syncState['highestBlock'] as int;
         return (highest - current) > 5;
@@ -204,22 +201,13 @@ class ChainRpcClient {
 
   /// Execute a JSON-RPC call
   Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
-    final request = {
-      'jsonrpc': '2.0',
-      'id': _requestId++,
-      'method': method,
-      if (params != null) 'params': params,
-    };
+    final request = {'jsonrpc': '2.0', 'id': _requestId++, 'method': method, if (params != null) 'params': params};
 
     // Only print RPC calls when debugging connection issues
     // print('DEBUG: Making RPC call: $method with request: ${json.encode(request)}');
 
     final response = await _httpClient
-        .post(
-          Uri.parse(rpcUrl),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(request),
-        )
+        .post(Uri.parse(rpcUrl), headers: {'Content-Type': 'application/json'}, body: json.encode(request))
         .timeout(timeout);
 
     if (response.statusCode == 200) {
@@ -233,9 +221,7 @@ class ChainRpcClient {
     } else {
       // Don't log connection errors during startup - they're expected
       if (response.statusCode != 0) {
-        _log.w(
-          'RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}',
-        );
+        _log.w('RPC HTTP error for $method: ${response.statusCode} ${response.reasonPhrase}');
       }
       throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
     }

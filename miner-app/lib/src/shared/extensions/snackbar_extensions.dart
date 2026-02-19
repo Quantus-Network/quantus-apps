@@ -13,17 +13,11 @@ extension SnackbarExtensions on BuildContext {
     await sh.showCopySnackbar(this, title: title, message: message);
   }
 
-  Future<void> showWarningSnackbar({
-    required String title,
-    required String message,
-  }) async {
+  Future<void> showWarningSnackbar({required String title, required String message}) async {
     await sh.showWarningSnackbar(this, title: title, message: message);
   }
 
-  Future<void> showErrorSnackbar({
-    required String title,
-    required String message,
-  }) async {
+  Future<void> showErrorSnackbar({required String title, required String message}) async {
     await sh.showErrorSnackbar(this, title: title, message: message);
   }
 }

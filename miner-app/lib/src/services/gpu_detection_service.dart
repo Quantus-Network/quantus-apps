@@ -43,9 +43,7 @@ class GpuDetectionService {
             // Failed. Check if we can extract the actual count from the error message to shortcut.
             // Message format: "❌ ERROR: Requested X GPU devices but only Y device(s) are available."
             final output = result.stdout.toString() + result.stderr.toString();
-            final match = RegExp(
-              r'only (\d+) device\(s\) are available',
-            ).firstMatch(output);
+            final match = RegExp(r'only (\d+) device\(s\) are available').firstMatch(output);
             if (match != null) {
               final available = int.parse(match.group(1)!);
               return available;

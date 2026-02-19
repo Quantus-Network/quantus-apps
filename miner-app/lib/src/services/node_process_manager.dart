@@ -93,18 +93,14 @@ class NodeProcessManager extends BaseProcessManager {
 
     // Validate binary exists
     if (!await config.binary.exists()) {
-      final error = MinerError.nodeStartupFailed(
-        'Node binary not found: ${config.binary.path}',
-      );
+      final error = MinerError.nodeStartupFailed('Node binary not found: ${config.binary.path}');
       errorController.add(error);
       throw Exception(error.message);
     }
 
     // Validate identity file exists
     if (!await config.identityFile.exists()) {
-      final error = MinerError.nodeStartupFailed(
-        'Identity file not found: ${config.identityFile.path}',
-      );
+      final error = MinerError.nodeStartupFailed('Identity file not found: ${config.identityFile.path}');
       errorController.add(error);
       throw Exception(error.message);
     }

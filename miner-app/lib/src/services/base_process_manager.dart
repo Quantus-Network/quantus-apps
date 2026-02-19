@@ -51,10 +51,7 @@ abstract class BaseProcessManager {
 
   /// Initialize the log processor for a source
   void initLogProcessor(String sourceName, {SyncStateProvider? getSyncState}) {
-    _logProcessor = LogStreamProcessor(
-      sourceName: sourceName,
-      getSyncState: getSyncState,
-    );
+    _logProcessor = LogStreamProcessor(sourceName: sourceName, getSyncState: getSyncState);
   }
 
   /// Attach process streams to log processor
@@ -155,10 +152,7 @@ abstract class BaseProcessManager {
 
     try {
       _process!.kill(ProcessSignal.sigkill);
-      await _process!.exitCode.timeout(
-        MinerConfig.processVerificationDelay,
-        onTimeout: () => -1,
-      );
+      await _process!.exitCode.timeout(MinerConfig.processVerificationDelay, onTimeout: () => -1);
     } catch (e) {
       log.e('Error during force kill', error: e);
     }

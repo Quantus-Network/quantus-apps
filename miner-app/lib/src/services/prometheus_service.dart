@@ -9,12 +9,7 @@ class PrometheusMetrics {
   final int? targetBlock;
   final int? peerCount;
 
-  PrometheusMetrics({
-    required this.isMajorSyncing,
-    this.bestBlock,
-    this.targetBlock,
-    this.peerCount,
-  });
+  PrometheusMetrics({required this.isMajorSyncing, this.bestBlock, this.targetBlock, this.peerCount});
 
   @override
   String toString() {
@@ -26,15 +21,11 @@ class PrometheusService {
   final String metricsUrl;
 
   PrometheusService({String? metricsUrl})
-    : metricsUrl =
-          metricsUrl ??
-          MinerConfig.nodePrometheusUrl(MinerConfig.defaultNodePrometheusPort);
+    : metricsUrl = metricsUrl ?? MinerConfig.nodePrometheusUrl(MinerConfig.defaultNodePrometheusPort);
 
   Future<PrometheusMetrics?> fetchMetrics() async {
     try {
-      final response = await http
-          .get(Uri.parse(metricsUrl))
-          .timeout(const Duration(seconds: 3));
+      final response = await http.get(Uri.parse(metricsUrl)).timeout(const Duration(seconds: 3));
 
       if (response.statusCode == 200) {
         final lines = response.body.split('\n');
@@ -55,17 +46,13 @@ class PrometheusService {
             if (parts.length == 2) {
               bestBlock = int.tryParse(parts[1]);
             }
-          } else if (line.startsWith(
-            'substrate_block_height{status="sync_target"',
-          )) {
+          } else if (line.startsWith('substrate_block_height{status="sync_target"')) {
             final parts = line.split(' ');
             if (parts.length == 2) {
               targetBlock = int.tryParse(parts[1]);
             }
           } else if (line.startsWith('substrate_sub_libp2p_peers_count ') ||
-              line.startsWith(
-                'substrate_sub_libp2p_kademlia_query_duration_count ',
-              ) ||
+              line.startsWith('substrate_sub_libp2p_kademlia_query_duration_count ') ||
               line.contains('substrate_sub_libp2p_connections_opened_total') ||
               line.contains('substrate_peerset_num_discovered_peers')) {
             // Try various peer-related metrics
@@ -84,9 +71,7 @@ class PrometheusService {
         if (bestBlock != null &&
             targetBlock != null &&
             (targetBlock - bestBlock) > 5 &&
-            !lines.any(
-              (l) => l.startsWith('substrate_sub_libp2p_is_major_syncing'),
-            )) {
+            !lines.any((l) => l.startsWith('substrate_sub_libp2p_is_major_syncing'))) {
           // If the specific major sync metric isn't there, but there's a clear block difference,
           // infer syncing state.
           isSyncing = true;

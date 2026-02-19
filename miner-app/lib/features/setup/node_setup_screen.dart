@@ -36,8 +36,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       final String nodeBinaryPath = await BinaryManager.getNodeBinaryFilePath();
       final bool nodeInstalled = await File(nodeBinaryPath).exists();
 
-      final String minerBinaryPath =
-          await BinaryManager.getExternalMinerBinaryFilePath();
+      final String minerBinaryPath = await BinaryManager.getExternalMinerBinaryFilePath();
       final bool minerInstalled = await File(minerBinaryPath).exists();
 
       setState(() {
@@ -79,15 +78,12 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
             if (mounted) {
               setState(() {
                 if (progress.totalBytes > 0) {
-                  _downloadProgress =
-                      progress.downloadedBytes / progress.totalBytes;
+                  _downloadProgress = progress.downloadedBytes / progress.totalBytes;
                   _downloadProgressText =
                       "Node: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
                 } else {
                   _downloadProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
-                  _downloadProgressText = progress.downloadedBytes > 0
-                      ? "Node Downloaded"
-                      : "Downloading Node...";
+                  _downloadProgressText = progress.downloadedBytes > 0 ? "Node Downloaded" : "Downloading Node...";
                 }
               });
             }
@@ -114,15 +110,12 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
             if (mounted) {
               setState(() {
                 if (progress.totalBytes > 0) {
-                  _downloadProgress =
-                      progress.downloadedBytes / progress.totalBytes;
+                  _downloadProgress = progress.downloadedBytes / progress.totalBytes;
                   _downloadProgressText =
                       "Miner: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
                 } else {
                   _downloadProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
-                  _downloadProgressText = progress.downloadedBytes > 0
-                      ? "Miner Downloaded"
-                      : "Downloading Miner...";
+                  _downloadProgressText = progress.downloadedBytes > 0 ? "Miner Downloaded" : "Downloading Miner...";
                 }
               });
             }
@@ -154,15 +147,14 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         });
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error installing binaries: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error installing binaries: ${e.toString()}')));
       }
     }
   }
 
-  bool get _allBinariesInstalled =>
-      _isNodeInstalled && _isExternalMinerInstalled;
+  bool get _allBinariesInstalled => _isNodeInstalled && _isExternalMinerInstalled;
 
   @override
   Widget build(BuildContext context) {
@@ -172,22 +164,13 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       bodyContent = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            'Installing Mining Software...',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('Installing Mining Software...', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          Text(
-            _currentDownloadingBinary,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text(_currentDownloadingBinary, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40.0),
-            child: LinearProgressIndicator(
-              value: _downloadProgress,
-              minHeight: 10,
-            ),
+            child: LinearProgressIndicator(value: _downloadProgress, minHeight: 10),
           ),
           const SizedBox(height: 10),
           Text(_downloadProgressText),
@@ -213,10 +196,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       children: [
         const Icon(Icons.check_circle, color: Colors.green, size: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Mining Software Installed!',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Mining Software Installed!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Column(
           children: [
@@ -257,10 +237,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       children: [
         SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
         const SizedBox(height: 16),
-        const Text(
-          'Mining software not found.',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text('Mining software not found.', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         const Text(
           'You need to install the node and external miner to continue.',
@@ -302,9 +279,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         ElevatedButton.icon(
           onPressed: _installBinaries,
           icon: const Icon(Icons.download),
-          label: Text(
-            _allBinariesInstalled ? 'All Installed' : 'Install Mining Software',
-          ),
+          label: Text(_allBinariesInstalled ? 'All Installed' : 'Install Mining Software'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             textStyle: const TextStyle(fontSize: 18),

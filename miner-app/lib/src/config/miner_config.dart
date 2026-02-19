@@ -121,15 +121,11 @@ class MinerConfig {
 
   /// Get chain config by ID, returns dev chain if not found
   static ChainConfig getChainById(String id) {
-    return availableChains.firstWhere(
-      (chain) => chain.id == id,
-      orElse: () => availableChains.first,
-    );
+    return availableChains.firstWhere((chain) => chain.id == id, orElse: () => availableChains.first);
   }
 
   /// The default chain ID
-  static String get defaultChainId =>
-      availableChains.firstWhere((c) => c.isDefault).id;
+  static String get defaultChainId => availableChains.firstWhere((c) => c.isDefault).id;
 
   // ============================================================
   // Process Names (for cleanup)
@@ -184,10 +180,8 @@ class ChainConfig {
   });
 
   /// Whether this chain uses the local node RPC
-  bool get isLocalNode =>
-      rpcUrl.contains('127.0.0.1') || rpcUrl.contains('localhost');
+  bool get isLocalNode => rpcUrl.contains('127.0.0.1') || rpcUrl.contains('localhost');
 
   @override
-  String toString() =>
-      'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
+  String toString() => 'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
 }

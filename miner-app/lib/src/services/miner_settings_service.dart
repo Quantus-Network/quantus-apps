@@ -106,8 +106,7 @@ class MinerSettingsService {
 
     // 4. Delete external miner binary
     try {
-      final minerBinaryPath =
-          await BinaryManager.getExternalMinerBinaryFilePath();
+      final minerBinaryPath = await BinaryManager.getExternalMinerBinaryFilePath();
       final minerFile = File(minerBinaryPath);
       if (await minerFile.exists()) {
         await minerFile.delete();
@@ -139,9 +138,7 @@ class MinerSettingsService {
       final binDir = Directory('$quantusHome/bin');
       if (await binDir.exists()) {
         // Remove any leftover tar.gz files
-        final tarFiles = binDir.listSync().where(
-          (file) => file.path.endsWith('.tar.gz'),
-        );
+        final tarFiles = binDir.listSync().where((file) => file.path.endsWith('.tar.gz'));
         for (var file in tarFiles) {
           await file.delete();
           _log.i('✅ Cleaned up archive: ${file.path}');

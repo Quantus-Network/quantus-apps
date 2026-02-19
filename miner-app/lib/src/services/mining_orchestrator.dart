@@ -164,8 +164,7 @@ class MiningOrchestrator {
       _state == MiningState.stoppingMiner;
 
   /// Whether the orchestrator is in any running state.
-  bool get isRunning =>
-      _state != MiningState.idle && _state != MiningState.error;
+  bool get isRunning => _state != MiningState.idle && _state != MiningState.error;
 
   /// Node process PID, if running.
   int? get nodeProcessPid => _nodeManager.pid;
@@ -251,10 +250,7 @@ class MiningOrchestrator {
 
       // Start Prometheus polling for target block
       _prometheusTimer?.cancel();
-      _prometheusTimer = Timer.periodic(
-        MinerConfig.prometheusPollingInterval,
-        (_) => _fetchPrometheusMetrics(),
-      );
+      _prometheusTimer = Timer.periodic(MinerConfig.prometheusPollingInterval, (_) => _fetchPrometheusMetrics());
 
       _setState(MiningState.nodeRunning);
       _log.i('Node started successfully');
@@ -377,9 +373,7 @@ class MiningOrchestrator {
 
   /// Stop only the node (and miner if running).
   Future<void> stopNode() async {
-    if (!isNodeRunning &&
-        _state != MiningState.startingNode &&
-        _state != MiningState.waitingForRpc) {
+    if (!isNodeRunning && _state != MiningState.startingNode && _state != MiningState.waitingForRpc) {
       _log.w('Cannot stop node: not running (state: $_state)');
       return;
     }
@@ -434,9 +428,7 @@ class MiningOrchestrator {
 
   void _initializeApiClients() {
     _minerApiClient = ExternalMinerApiClient(
-      metricsUrl: MinerConfig.minerMetricsUrl(
-        MinerConfig.defaultMinerMetricsPort,
-      ),
+      metricsUrl: MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
     );
     _minerApiClient.onMetricsUpdate = _handleMinerMetrics;
     _minerApiClient.onError = _handleMinerMetricsError;
@@ -466,8 +458,7 @@ class MiningOrchestrator {
     // Forward node errors
     _nodeErrorSubscription = _nodeManager.errors.listen((error) {
       _errorController.add(error);
-      if (error.type == MinerErrorType.nodeCrashed &&
-          _state == MiningState.mining) {
+      if (error.type == MinerErrorType.nodeCrashed && _state == MiningState.mining) {
         _log.w('Node crashed while mining, stopping...');
         _handleCrash();
       }
@@ -476,8 +467,7 @@ class MiningOrchestrator {
     // Forward miner errors
     _minerErrorSubscription = _minerManager.errors.listen((error) {
       _errorController.add(error);
-      if (error.type == MinerErrorType.minerCrashed &&
-          _state == MiningState.mining) {
+      if (error.type == MinerErrorType.minerCrashed && _state == MiningState.mining) {
         _log.w('Miner crashed while mining');
         // Don't stop everything - just emit the error for UI to show
       }
@@ -486,9 +476,7 @@ class MiningOrchestrator {
 
   void _updateMetricsClient() {
     if (_actualMetricsPort != MinerConfig.defaultMinerMetricsPort) {
-      _minerApiClient = ExternalMinerApiClient(
-        metricsUrl: MinerConfig.minerMetricsUrl(_actualMetricsPort),
-      );
+      _minerApiClient = ExternalMinerApiClient(metricsUrl: MinerConfig.minerMetricsUrl(_actualMetricsPort));
       _minerApiClient.onMetricsUpdate = _handleMinerMetrics;
       _minerApiClient.onError = _handleMinerMetricsError;
     }
@@ -601,8 +589,7 @@ class MiningOrchestrator {
       _emitStats();
     } else {
       _consecutiveMetricsFailures++;
-      if (_consecutiveMetricsFailures >=
-          MinerConfig.maxConsecutiveMetricsFailures) {
+      if (_consecutiveMetricsFailures >= MinerConfig.maxConsecutiveMetricsFailures) {
         _statsService.updateHashrate(0);
         _lastValidHashrate = 0;
         _emitStats();
@@ -615,8 +602,7 @@ class MiningOrchestrator {
 
   void _handleMinerMetricsError(String error) {
     _consecutiveMetricsFailures++;
-    if (_consecutiveMetricsFailures >=
-        MinerConfig.maxConsecutiveMetricsFailures) {
+    if (_consecutiveMetricsFailures >= MinerConfig.maxConsecutiveMetricsFailures) {
       if (_statsService.currentStats.hashrate != 0) {
         _statsService.updateHashrate(0);
         _lastValidHashrate = 0;
@@ -630,11 +616,7 @@ class MiningOrchestrator {
       _statsService.updatePeerCount(info.peerCount);
     }
     _statsService.updateChainName(info.chainName);
-    _statsService.setSyncingState(
-      info.isSyncing,
-      info.currentBlock,
-      info.targetBlock ?? info.currentBlock,
-    );
+    _statsService.setSyncingState(info.isSyncing, info.currentBlock, info.targetBlock ?? info.currentBlock);
     _emitStats();
   }
 

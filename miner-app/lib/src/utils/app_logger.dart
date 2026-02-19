@@ -106,87 +106,27 @@ class TaggedLoggerWrapper {
 
   TaggedLoggerWrapper(this._logger, this._tag);
 
-  void t(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.t(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void t(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.t('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 
-  void d(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.d(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void d(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.d('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 
-  void i(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.i(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void i(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.i('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 
-  void w(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.w(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void w(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.w('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 
-  void e(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.e(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void e(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.e('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 
-  void f(
-    dynamic message, {
-    DateTime? time,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    _logger.f(
-      '[$_tag] $message',
-      time: time,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  void f(dynamic message, {DateTime? time, Object? error, StackTrace? stackTrace}) {
+    _logger.f('[$_tag] $message', time: time, error: error, stackTrace: stackTrace);
   }
 }

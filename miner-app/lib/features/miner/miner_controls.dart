@@ -54,9 +54,7 @@ class _MinerControlsState extends State<MinerControls> {
 
     if (mounted) {
       setState(() {
-        _cpuWorkers =
-            savedCpuWorkers ??
-            (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
+        _cpuWorkers = savedCpuWorkers ?? (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 8);
         _gpuDevices = savedGpuDevices ?? 0;
         _chainId = savedChainId;
       });
@@ -112,10 +110,7 @@ class _MinerControlsState extends State<MinerControls> {
     if (!await nodeBin.exists()) {
       _log.w('Node binary not found');
       if (mounted) {
-        context.showWarningSnackbar(
-          title: 'Node binary not found!',
-          message: 'Please run setup.',
-        );
+        context.showWarningSnackbar(title: 'Node binary not found!', message: 'Please run setup.');
       }
       return;
     }
@@ -140,10 +135,7 @@ class _MinerControlsState extends State<MinerControls> {
     } catch (e) {
       _log.e('Error starting node', error: e);
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error starting node!',
-          message: e.toString(),
-        );
+        context.showErrorSnackbar(title: 'Error starting node!', message: e.toString());
       }
       orchestrator.dispose();
       widget.onOrchestratorChanged(null);
@@ -190,10 +182,7 @@ class _MinerControlsState extends State<MinerControls> {
 
     if (widget.orchestrator == null) {
       if (mounted) {
-        context.showWarningSnackbar(
-          title: 'Node not running!',
-          message: 'Start the node first.',
-        );
+        context.showWarningSnackbar(title: 'Node not running!', message: 'Start the node first.');
       }
       return;
     }
@@ -205,29 +194,20 @@ class _MinerControlsState extends State<MinerControls> {
     if (!await minerBin.exists()) {
       _log.w('Miner binary not found');
       if (mounted) {
-        context.showWarningSnackbar(
-          title: 'Miner binary not found!',
-          message: 'Please run setup.',
-        );
+        context.showWarningSnackbar(title: 'Miner binary not found!', message: 'Please run setup.');
       }
       return;
     }
 
     try {
       // Update settings in case they changed while miner was stopped
-      widget.orchestrator!.updateMinerSettings(
-        cpuWorkers: _cpuWorkers,
-        gpuDevices: _gpuDevices,
-      );
+      widget.orchestrator!.updateMinerSettings(cpuWorkers: _cpuWorkers, gpuDevices: _gpuDevices);
 
       await widget.orchestrator!.startMiner();
     } catch (e) {
       _log.e('Error starting miner', error: e);
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error starting miner!',
-          message: e.toString(),
-        );
+        context.showErrorSnackbar(title: 'Error starting miner!', message: e.toString());
       }
     }
   }
@@ -254,9 +234,7 @@ class _MinerControlsState extends State<MinerControls> {
   /// Whether miner is starting or running (for disabling settings)
   bool get _isMinerActive {
     final state = widget.orchestrator?.state;
-    return state == MiningState.startingMiner ||
-        state == MiningState.mining ||
-        state == MiningState.stoppingMiner;
+    return state == MiningState.startingMiner || state == MiningState.mining || state == MiningState.stoppingMiner;
   }
 
   String get _nodeButtonText {
@@ -303,24 +281,15 @@ class _MinerControlsState extends State<MinerControls> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'CPU Workers',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  const Text('CPU Workers', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text('$_cpuWorkers'),
                 ],
               ),
               Slider(
                 value: _cpuWorkers.toDouble(),
                 min: 0,
-                max:
-                    (Platform.numberOfProcessors > 0
-                            ? Platform.numberOfProcessors
-                            : 16)
-                        .toDouble(),
-                divisions: (Platform.numberOfProcessors > 0
-                    ? Platform.numberOfProcessors
-                    : 16),
+                max: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16).toDouble(),
+                divisions: (Platform.numberOfProcessors > 0 ? Platform.numberOfProcessors : 16),
                 label: _cpuWorkers.toString(),
                 onChanged: canEditSettings
                     ? (value) {
@@ -344,10 +313,7 @@ class _MinerControlsState extends State<MinerControls> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'GPU Devices',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  const Text('GPU Devices', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text('$_gpuDevices / $_detectedGpuCount'),
                 ],
               ),
@@ -378,14 +344,8 @@ class _MinerControlsState extends State<MinerControls> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _nodeButtonColor,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 20,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 minimumSize: const Size(140, 50),
               ),
               onPressed: _isNodeToggling ? null : _toggleNode,
@@ -397,19 +357,11 @@ class _MinerControlsState extends State<MinerControls> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _minerButtonColor,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 20,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 minimumSize: const Size(140, 50),
               ),
-              onPressed: (_isMinerToggling || !_isNodeRunning)
-                  ? null
-                  : _toggleMiner,
+              onPressed: (_isMinerToggling || !_isNodeRunning) ? null : _toggleMiner,
               child: Text(_minerButtonText),
             ),
           ],
@@ -418,10 +370,7 @@ class _MinerControlsState extends State<MinerControls> {
         // Status indicator
         if (_isNodeRunning && !_isMining) ...[
           const SizedBox(height: 12),
-          Text(
-            'Node running - ready to mine',
-            style: TextStyle(color: Colors.green.shade300, fontSize: 12),
-          ),
+          Text('Node running - ready to mine', style: TextStyle(color: Colors.green.shade300, fontSize: 12)),
         ],
       ],
     );

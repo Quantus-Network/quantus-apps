@@ -39,21 +39,14 @@ class ExternalMinerApiClient {
   void Function(ExternalMinerMetrics metrics)? onMetricsUpdate;
   void Function(String error)? onError;
 
-  ExternalMinerApiClient({
-    String? metricsUrl,
-    this.timeout = const Duration(seconds: 5),
-  }) : metricsUrl =
-           metricsUrl ??
-           MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
-       _httpClient = http.Client();
+  ExternalMinerApiClient({String? metricsUrl, this.timeout = const Duration(seconds: 5)})
+    : metricsUrl = metricsUrl ?? MinerConfig.minerMetricsUrl(MinerConfig.defaultMinerMetricsPort),
+      _httpClient = http.Client();
 
   /// Start polling for metrics
   void startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(
-      MinerConfig.metricsPollingInterval,
-      (_) => _pollMetrics(),
-    );
+    _pollTimer = Timer.periodic(MinerConfig.metricsPollingInterval, (_) => _pollMetrics());
   }
 
   /// Stop polling for metrics
@@ -68,9 +61,7 @@ class ExternalMinerApiClient {
   /// Get metrics from external miner Prometheus endpoint
   Future<ExternalMinerMetrics?> getMetrics() async {
     try {
-      final response = await _httpClient
-          .get(Uri.parse(metricsUrl))
-          .timeout(timeout);
+      final response = await _httpClient.get(Uri.parse(metricsUrl)).timeout(timeout);
 
       if (response.statusCode == 200) {
         return _parsePrometheusMetrics(response.body);
@@ -176,9 +167,7 @@ class ExternalMinerApiClient {
   /// Test if the metrics endpoint is available
   Future<bool> isMetricsAvailable() async {
     try {
-      final response = await _httpClient
-          .get(Uri.parse(metricsUrl))
-          .timeout(const Duration(seconds: 3));
+      final response = await _httpClient.get(Uri.parse(metricsUrl)).timeout(const Duration(seconds: 3));
 
       return response.statusCode == 200;
     } catch (e) {

@@ -18,37 +18,21 @@ class _SettingsAppBarState extends State<SettingsAppBar> {
       floating: true,
       pinned: false,
       flexibleSpace: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
         child: BackdropFilter(
-          filter: ColorFilter.mode(
-            Colors.black.useOpacity(0.1),
-            BlendMode.srcOver,
-          ),
+          filter: ColorFilter.mode(Colors.black.useOpacity(0.1), BlendMode.srcOver),
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.useOpacity(0.1),
-                  Colors.white.useOpacity(0.05),
-                ],
+                colors: [Colors.white.useOpacity(0.1), Colors.white.useOpacity(0.05)],
               ),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.white.useOpacity(0.1),
-                  width: 1,
-                ),
-              ),
+              border: Border(bottom: BorderSide(color: Colors.white.useOpacity(0.1), width: 1)),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Center(
-                child: Text('Settings', style: context.textTheme.titleMedium),
-              ),
+              child: Center(child: Text('Settings', style: context.textTheme.titleMedium)),
             ),
           ),
         ),

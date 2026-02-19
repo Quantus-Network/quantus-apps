@@ -61,13 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: const Color(0xFF1C1C1C),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            'Stop Mining?',
-            style: TextStyle(color: Colors.white),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Stop Mining?', style: TextStyle(color: Colors.white)),
           content: const Text(
             'Changing the chain requires stopping mining first. '
             'Do you want to stop mining and switch chains?',
@@ -76,16 +71,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.white.useOpacity(0.7)),
-              ),
+              child: Text('Cancel', style: TextStyle(color: Colors.white.useOpacity(0.7))),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF00E676),
-              ),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF00E676)),
               child: const Text('Stop & Switch'),
             ),
           ],
@@ -109,9 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Show confirmation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Switched to ${MinerConfig.getChainById(newChainId).displayName}',
-          ),
+          content: Text('Switched to ${MinerConfig.getChainById(newChainId).displayName}'),
           backgroundColor: const Color(0xFF00E676),
           behavior: SnackBarBehavior.floating,
         ),
@@ -148,10 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16.0,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -230,23 +215,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: const Color(0xFF1C1C1C), // Slightly lighter than background
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.useOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: accentColor.useOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: accentColor.useOpacity(0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
@@ -255,11 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
 
@@ -268,10 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white.useOpacity(0.3),
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.useOpacity(0.3)),
             )
           else
             Container(
@@ -305,23 +274,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: const Color(0xFF1C1C1C),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.useOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: accentColor.useOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: accentColor.useOpacity(0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(Icons.link_rounded, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
@@ -333,20 +293,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Text(
                   'Chain',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  selectedChain.description,
-                  style: TextStyle(
-                    color: Colors.white.useOpacity(0.5),
-                    fontSize: 12,
-                  ),
-                ),
+                Text(selectedChain.description, style: TextStyle(color: Colors.white.useOpacity(0.5), fontSize: 12)),
               ],
             ),
           ),
@@ -356,10 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white.useOpacity(0.3),
-              ),
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.useOpacity(0.3)),
             )
           else
             Container(
@@ -373,10 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: _selectedChainId,
                 dropdownColor: const Color(0xFF1C1C1C),
                 underline: const SizedBox(),
-                icon: Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white.useOpacity(0.7),
-                ),
+                icon: Icon(Icons.arrow_drop_down, color: Colors.white.useOpacity(0.7)),
                 style: TextStyle(
                   color: Colors.white.useOpacity(0.9),
                   fontFamily: 'Courier',
@@ -384,10 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontSize: 13,
                 ),
                 items: MinerConfig.availableChains.map((chain) {
-                  return DropdownMenuItem<String>(
-                    value: chain.id,
-                    child: Text(chain.displayName),
-                  );
+                  return DropdownMenuItem<String>(value: chain.id, child: Text(chain.displayName));
                 }).toList(),
                 onChanged: _onChainChanged,
               ),

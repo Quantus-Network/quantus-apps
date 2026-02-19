@@ -59,22 +59,13 @@ class ProcessCleanupService {
     }
   }
 
-  static Future<bool> _forceKillWindowsProcess(
-    int pid,
-    String processName,
-  ) async {
-    final killResult = await Process.run('taskkill', [
-      '/F',
-      '/PID',
-      pid.toString(),
-    ]);
+  static Future<bool> _forceKillWindowsProcess(int pid, String processName) async {
+    final killResult = await Process.run('taskkill', ['/F', '/PID', pid.toString()]);
 
     if (killResult.exitCode == 0) {
       _log.d('Killed $processName (PID: $pid)');
     } else {
-      _log.w(
-        'taskkill failed for $processName (PID: $pid), exit: ${killResult.exitCode}',
-      );
+      _log.w('taskkill failed for $processName (PID: $pid), exit: ${killResult.exitCode}');
     }
 
     await Future.delayed(MinerConfig.processVerificationDelay);
@@ -103,9 +94,7 @@ class ProcessCleanupService {
     if (killResult.exitCode == 0) {
       _log.d('Killed $processName (PID: $pid)');
     } else {
-      _log.w(
-        'kill failed for $processName (PID: $pid), exit: ${killResult.exitCode}',
-      );
+      _log.w('kill failed for $processName (PID: $pid), exit: ${killResult.exitCode}');
     }
 
     await Future.delayed(MinerConfig.processVerificationDelay);
@@ -116,9 +105,7 @@ class ProcessCleanupService {
       _log.w('$processName (PID: $pid) may still be running');
 
       // Try pkill as last resort
-      final binaryName = processName.contains('miner')
-          ? MinerConfig.minerBinaryName
-          : MinerConfig.nodeBinaryName;
+      final binaryName = processName.contains('miner') ? MinerConfig.minerBinaryName : MinerConfig.nodeBinaryName;
       await Process.run('pkill', ['-9', '-f', binaryName]);
       return false;
     }
@@ -149,8 +136,7 @@ class ProcessCleanupService {
     try {
       if (Platform.isWindows) {
         final result = await Process.run('netstat', ['-ano']);
-        return result.exitCode == 0 &&
-            result.stdout.toString().contains(':$port');
+        return result.exitCode == 0 && result.stdout.toString().contains(':$port');
       } else {
         final result = await Process.run('lsof', ['-i', ':$port']);
         return result.exitCode == 0 && result.stdout.toString().isNotEmpty;
@@ -216,11 +202,7 @@ class ProcessCleanupService {
   /// Tries ports in range [startPort, startPort + MinerConfig.portSearchRange].
   /// Returns the original port if no alternative is found.
   static Future<int> findAvailablePort(int startPort) async {
-    for (
-      int port = startPort;
-      port <= startPort + MinerConfig.portSearchRange;
-      port++
-    ) {
+    for (int port = startPort; port <= startPort + MinerConfig.portSearchRange; port++) {
       if (!(await isPortInUse(port))) {
         return port;
       }
@@ -232,10 +214,7 @@ class ProcessCleanupService {
   ///
   /// Returns a map of port names to their actual values (may differ from defaults
   /// if an alternative port was needed).
-  static Future<Map<String, int>> ensurePortsAvailable({
-    required int quicPort,
-    required int metricsPort,
-  }) async {
+  static Future<Map<String, int>> ensurePortsAvailable({required int quicPort, required int metricsPort}) async {
     final result = <String, int>{'quic': quicPort, 'metrics': metricsPort};
 
     // Check QUIC port
@@ -272,11 +251,7 @@ class ProcessCleanupService {
   static Future<void> cleanupExistingNodeProcesses() async {
     try {
       if (Platform.isWindows) {
-        await Process.run('taskkill', [
-          '/F',
-          '/IM',
-          MinerConfig.nodeBinaryNameWindows,
-        ]);
+        await Process.run('taskkill', ['/F', '/IM', MinerConfig.nodeBinaryNameWindows]);
         await Future.delayed(MinerConfig.processCleanupDelay);
       } else {
         await _cleanupUnixProcesses(MinerConfig.nodeBinaryName);
@@ -290,11 +265,7 @@ class ProcessCleanupService {
   static Future<void> cleanupExistingMinerProcesses() async {
     try {
       if (Platform.isWindows) {
-        await Process.run('taskkill', [
-          '/F',
-          '/IM',
-          MinerConfig.minerBinaryNameWindows,
-        ]);
+        await Process.run('taskkill', ['/F', '/IM', MinerConfig.minerBinaryNameWindows]);
         await Future.delayed(MinerConfig.processCleanupDelay);
       } else {
         await _cleanupUnixProcesses(MinerConfig.minerBinaryName);
@@ -339,8 +310,7 @@ class ProcessCleanupService {
   static Future<void> cleanupDatabaseLocks(String chainId) async {
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final lockFilePath =
-          '$quantusHome/node_data/chains/$chainId/db/full/LOCK';
+      final lockFilePath = '$quantusHome/node_data/chains/$chainId/db/full/LOCK';
       final lockFile = File(lockFilePath);
 
       if (await lockFile.exists()) {
@@ -425,16 +395,8 @@ class ProcessCleanupService {
       _log.d(' Killing all quantus processes...');
 
       if (Platform.isWindows) {
-        await Process.run('taskkill', [
-          '/F',
-          '/IM',
-          MinerConfig.nodeBinaryNameWindows,
-        ]);
-        await Process.run('taskkill', [
-          '/F',
-          '/IM',
-          MinerConfig.minerBinaryNameWindows,
-        ]);
+        await Process.run('taskkill', ['/F', '/IM', MinerConfig.nodeBinaryNameWindows]);
+        await Process.run('taskkill', ['/F', '/IM', MinerConfig.minerBinaryNameWindows]);
       } else {
         await Process.run('pkill', ['-9', '-f', MinerConfig.nodeBinaryName]);
         await Process.run('pkill', ['-9', '-f', MinerConfig.minerBinaryName]);

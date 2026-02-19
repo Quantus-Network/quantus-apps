@@ -13,8 +13,7 @@ class RewardsAddressSetupScreen extends StatefulWidget {
   const RewardsAddressSetupScreen({super.key});
 
   @override
-  State<RewardsAddressSetupScreen> createState() =>
-      _RewardsAddressSetupScreenState();
+  State<RewardsAddressSetupScreen> createState() => _RewardsAddressSetupScreenState();
 }
 
 class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
@@ -68,10 +67,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   Future<void> _saveRewardsAddress() async {
     final address = _addressController.text.trim();
     if (address.isEmpty) {
-      context.showErrorSnackbar(
-        title: 'Error',
-        message: 'Please enter a valid address',
-      );
+      context.showErrorSnackbar(title: 'Error', message: 'Please enter a valid address');
       return;
     }
 
@@ -87,19 +83,14 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       print('Rewards address saved: $address');
 
       if (mounted) {
-        context.showSuccessBar(
-          content: const Text('Rewards address saved successfully!'),
-        );
+        context.showSuccessBar(content: const Text('Rewards address saved successfully!'));
         // Navigate to the main mining screen
         context.go('/miner_dashboard');
       }
     } catch (e) {
       print('Error saving rewards address: $e');
       if (mounted) {
-        context.showErrorSnackbar(
-          title: 'Error',
-          message: 'Error saving address: $e',
-        );
+        context.showErrorSnackbar(title: 'Error', message: 'Error saving address: $e');
       }
     } finally {
       if (mounted) {
@@ -128,11 +119,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                     color: Colors.black87,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.useOpacity(0.5),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
+                      BoxShadow(color: Colors.black.useOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10)),
                     ],
                   ),
                   child: Column(
@@ -148,11 +135,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                             top: 0,
                             child: GestureDetector(
                               onTap: () => Navigator.of(context).pop(),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 24,
-                              ),
+                              child: const Icon(Icons.close, color: Colors.white, size: 24),
                             ),
                           ),
                         ],
@@ -175,11 +158,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                       const Text(
                         'Scan with your mobile phone\nto set up your wallet',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 24),
                       OutlinedButton(
@@ -187,10 +166,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: const BorderSide(color: Colors.white),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 16,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                         ),
                         child: const Text('Close'),
                       ),
@@ -218,18 +194,11 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SvgPicture.asset(
-                      'assets/logo/logo.svg',
-                      width: 80,
-                      height: 80,
-                    ),
+                    SvgPicture.asset('assets/logo/logo.svg', width: 80, height: 80),
                     const SizedBox(height: 24),
                     const Text(
                       'Add Rewards Account',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -246,9 +215,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                       enableInteractiveSelection: true,
                       onSubmitted: (_) => _saveRewardsAddress(),
                       contextMenuBuilder: (context, editableTextState) {
-                        return AdaptiveTextSelectionToolbar.editableText(
-                          editableTextState: editableTextState,
-                        );
+                        return AdaptiveTextSelectionToolbar.editableText(editableTextState: editableTextState);
                       },
                       decoration: InputDecoration(
                         labelText: 'Rewards Wallet Address',
@@ -269,9 +236,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                             IconButton(
                               icon: const Icon(Icons.paste),
                               onPressed: () async {
-                                final data = await Clipboard.getData(
-                                  Clipboard.kTextPlain,
-                                );
+                                final data = await Clipboard.getData(Clipboard.kTextPlain);
                                 if (data?.text != null) {
                                   _addressController.text = data!.text!;
                                 }
@@ -299,10 +264,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                     const Text(
                       "Don't have an account?",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -315,9 +277,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                       onPressed: _showQrOverlay,
                       icon: const Icon(Icons.qr_code),
                       label: const Text('Scan QR code to set up wallet'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
                     ),
                   ],
                 ),
