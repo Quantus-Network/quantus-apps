@@ -39,9 +39,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
     if (capture != null) {
       _onDetect(capture);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No QR code found in image')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No QR code found in image')));
     }
   }
 
@@ -73,7 +71,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 const SizedBox(width: 8),
                 ValueListenableBuilder<MobileScannerState>(
                   valueListenable: _controller,
-                  builder: (_, state, __) {
+                  builder: (_, state, _) {
                     final isOn = state.torchState == TorchState.on;
                     return _actionButton(
                       icon: isOn ? Icons.flash_on : Icons.flash_off,
@@ -112,10 +110,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, size: 20, color: colors.textPrimary),
       ),
     );

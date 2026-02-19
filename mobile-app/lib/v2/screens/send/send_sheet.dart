@@ -510,4 +510,3 @@ void showSendSheetV2(BuildContext context, {String? address}) {
     ),
   );
 }
-

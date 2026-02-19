@@ -109,10 +109,7 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 
   void _scanQr() async {
-    final address = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const QrScannerPage()),
-    );
+    final address = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const QrScannerPage()));
     if (address != null && mounted) {
       _addressController.text = address;
       setState(() {});
@@ -459,4 +456,3 @@ class _SwapScreenState extends State<SwapScreen> {
     );
   }
 }
-

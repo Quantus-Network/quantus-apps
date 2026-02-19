@@ -17,7 +17,7 @@ Future<SwapToken?> showTokenPickerSheet(
     barrierDismissible: true,
     barrierLabel: 'Select Token',
     barrierColor: Colors.transparent,
-    pageBuilder: (_, __, ___) => _TokenPickerContent(loadTokens: loadTokens, current: current),
+    pageBuilder: (_, _, _) => _TokenPickerContent(loadTokens: loadTokens, current: current),
   );
 }
 

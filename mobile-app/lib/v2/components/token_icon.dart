@@ -30,7 +30,7 @@ class TokenIcon extends StatelessWidget {
                   ? Image.network(
                       iconUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _fallback(context, token, colors, text),
+                      errorBuilder: (_, _, _) => _fallback(context, token, colors, text),
                     )
                   : _fallback(context, token, colors, text),
             ),
@@ -46,7 +46,7 @@ class TokenIcon extends StatelessWidget {
                     ? Image.network(
                         networkIconUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _networkFallback(context, token, colors, text),
+                        errorBuilder: (_, _, _) => _networkFallback(context, token, colors, text),
                       )
                     : _networkFallback(context, token, colors, text),
               ),
