@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
@@ -34,7 +35,22 @@ class _SwapScreenState extends State<SwapScreen> {
   bool _loading = false;
 
   double get _rate => _swapService.getRate(_fromToken);
-  String get _rateLabel => '1 QUAN = ${(1 / _rate).toStringAsFixed(4)} ${_fromToken.symbol}';
+  String get _rateLabel {
+    final val = 1 / _rate;
+    if (val == 0) return '1 QUAN = 0 ${_fromToken.symbol}';
+    final decimals = val >= 100
+        ? 2
+        : val >= 1
+        ? 4
+        : val >= 0.01
+        ? 6
+        : val >= 0.0001
+        ? 8
+        : 10;
+    var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
+    if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
+    return '1 QUAN = $formatted ${_fromToken.symbol}';
+  }
 
   @override
   void initState() {
@@ -80,7 +96,12 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 
   void _pickToken() async {
-    final token = await showTokenPickerSheet(context, _swapService.getFromTokens(), _fromToken);
+    final token = await showTokenPickerSheet(
+      context,
+      current: _fromToken,
+      loadTokens: ({bool forceRefresh = false}) => _swapService.getFromTokens(limit: 10, forceRefresh: forceRefresh),
+    );
+    if (!mounted) return;
     if (token != null && token != _fromToken) {
       setState(() => _fromToken = token);
       _recalculate();
@@ -176,7 +197,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    hintText: '0.00',
+                    hintText: SwapService.formatTokenAmountHint(_fromToken),
                     hintStyle: text.mediumTitle?.copyWith(color: colors.textTertiary, fontWeight: FontWeight.bold),
                     border: InputBorder.none,
                     isDense: true,
@@ -198,14 +219,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
-                      Container(
-                        width: 25,
-                        height: 25,
-                        decoration: BoxDecoration(
-                          color: colors.accentPink.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -348,7 +362,7 @@ class _SwapScreenState extends State<SwapScreen> {
                 decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  _toAmount > 0 ? _toAmount.toStringAsFixed(2) : '0.00',
+                  SwapService.formatTokenAmount(_toAmount, _swapService.getQuToken()),
                   style: text.mediumTitle?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary,
@@ -449,39 +463,155 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 }
 
-class _QrScanPage extends StatelessWidget {
+class _QrScanPage extends StatefulWidget {
   final ValueChanged<String> onScanned;
   const _QrScanPage({required this.onScanned});
 
   @override
+  State<_QrScanPage> createState() => _QrScanPageState();
+}
+
+class _QrScanPageState extends State<_QrScanPage> {
+  final _controller = MobileScannerController();
+  bool _scanned = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final frameSize = (MediaQuery.of(context).size.width - 111.5).clamp(220.0, 280.0);
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
           MobileScanner(
+            controller: _controller,
             onDetect: (capture) {
+              if (_scanned) return;
               final code = capture.barcodes.firstOrNull?.rawValue;
-              if (code != null) onScanned(code);
+              if (code != null && code.isNotEmpty) {
+                _scanned = true;
+                widget.onScanned(code);
+              }
             },
           ),
+          ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
+          Center(child: _ScanFrame(size: frameSize)),
           Positioned(
-            bottom: 60,
+            left: 0,
+            right: 0,
+            bottom: 228,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _scanActionButton(icon: Icons.image_outlined, onTap: () {}, colors: colors),
+                const SizedBox(width: 8),
+                ValueListenableBuilder<MobileScannerState>(
+                  valueListenable: _controller,
+                  builder: (_, state, _) {
+                    final isOn = state.torchState == TorchState.on;
+                    return _scanActionButton(
+                      icon: isOn ? Icons.flash_on : Icons.flash_off,
+                      onTap: _controller.toggleTorch,
+                      colors: colors,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 58,
             left: 24,
             right: 24,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.44), width: 0.9),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Center(
-                  child: Text('Cancel', style: TextStyle(color: colors.textPrimary, fontSize: 16)),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _scanActionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, size: 20, color: colors.textPrimary),
+      ),
+    );
+  }
+}
+
+class _ScanFrame extends StatelessWidget {
+  final double size;
+  const _ScanFrame({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final corner = Colors.white.withValues(alpha: 0.92);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          _corner(top: true, left: true, color: corner),
+          _corner(top: true, left: false, color: corner),
+          _corner(top: false, left: true, color: corner),
+          _corner(top: false, left: false, color: corner),
+        ],
+      ),
+    );
+  }
+
+  Widget _corner({required bool top, required bool left, required Color color}) {
+    return Positioned(
+      top: top ? 0 : null,
+      bottom: top ? null : 0,
+      left: left ? 0 : null,
+      right: left ? null : 0,
+      child: SizedBox(
+        width: 41,
+        height: 41,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: top && left ? const Radius.circular(16) : Radius.zero,
+              topRight: top && !left ? const Radius.circular(16) : Radius.zero,
+              bottomLeft: !top && left ? const Radius.circular(16) : Radius.zero,
+              bottomRight: !top && !left ? const Radius.circular(16) : Radius.zero,
+            ),
+            border: Border(
+              top: top ? BorderSide(color: color, width: 1.6) : BorderSide.none,
+              bottom: !top ? BorderSide(color: color, width: 1.6) : BorderSide.none,
+              left: left ? BorderSide(color: color, width: 1.6) : BorderSide.none,
+              right: !left ? BorderSide(color: color, width: 1.6) : BorderSide.none,
+            ),
+          ),
+        ),
       ),
     );
   }
