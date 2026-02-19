@@ -38,7 +38,15 @@ class _SwapScreenState extends State<SwapScreen> {
   String get _rateLabel {
     final val = 1 / _rate;
     if (val == 0) return '1 QUAN = 0 ${_fromToken.symbol}';
-    final decimals = val >= 100 ? 2 : val >= 1 ? 4 : val >= 0.01 ? 6 : val >= 0.0001 ? 8 : 10;
+    final decimals = val >= 100
+        ? 2
+        : val >= 1
+        ? 4
+        : val >= 0.01
+        ? 6
+        : val >= 0.0001
+        ? 8
+        : 10;
     var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
     if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
     return '1 QUAN = $formatted ${_fromToken.symbol}';
@@ -506,7 +514,7 @@ class _QrScanPageState extends State<_QrScanPage> {
                 const SizedBox(width: 8),
                 ValueListenableBuilder<MobileScannerState>(
                   valueListenable: _controller,
-                  builder: (_, state, __) {
+                  builder: (_, state, _) {
                     final isOn = state.torchState == TorchState.on;
                     return _scanActionButton(
                       icon: isOn ? Icons.flash_on : Icons.flash_off,

@@ -116,7 +116,7 @@ class _DepositScreenState extends State<DepositScreen> {
             Text('Deposit Amount', style: text.smallParagraph?.copyWith(color: colors.textPrimary, height: 1.35)),
             const SizedBox(width: 6),
             GestureDetector(
-              onTap: () =>               context.copyTextWithToaster(
+              onTap: () => context.copyTextWithToaster(
                 SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken),
                 message: 'Deposit amount copied to clipboard',
               ),
