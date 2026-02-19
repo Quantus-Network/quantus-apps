@@ -4,4 +4,5 @@ class FeatureFlags {
   static const bool enableKeystoneHardwareWallet = false; // turn keystone hw wallet on and off
   static const bool enableHighSecurity = true; // turn keystone hw wallet on and off
   static const bool enableRemoteNotifications = false; // turn remote notifications on and off
+  static const bool enableSwap = false;
 }

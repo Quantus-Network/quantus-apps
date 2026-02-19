@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -171,75 +172,92 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
-    const stableHeight = 96.0;
-
-    return SizedBox(
-      height: stableHeight,
-      child: Column(
-        children: [
-          balanceAsync.when(
-            data: (balance) {
-              final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-                    child: Text(
-                      '$formatted ${AppConstants.tokenSymbol}',
-                      style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
-                    ),
-                  ),
-                  Text(
-                    '$formatted ${AppConstants.tokenSymbol}',
-                    style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
-                  ),
-                ],
-              );
-            },
-            loading: () => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      children: [
+        balanceAsync.when(
+          data: (balance) {
+            final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
+            final usdFormatted = isBalanceHidden ? '-----' : '\$${_fmt.formatBalance(balance)}';
+            return Column(
               children: [
-                const Skeleton(width: 200, height: 36),
-                Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                      child: Text(
+                        '$formatted ${AppConstants.tokenSymbol}',
+                        style: text.extraLargeTitle?.copyWith(color: colors.textSecondary),
+                      ),
+                    ),
+                    Text(
+                      '$formatted ${AppConstants.tokenSymbol}',
+                      style: text.extraLargeTitle?.copyWith(color: colors.textPrimary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '≈ $usdFormatted',
+                  style: text.paragraph?.copyWith(color: colors.textSecondary),
+                ),
               ],
-            ),
-            error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
+            );
+          },
+          loading: () => Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Skeleton(width: 200, height: 36),
+              Text(' ${AppConstants.tokenSymbol}', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+            ],
           ),
-          // if (!isBalanceHidden) ...[
-          //   const SizedBox(height: 6),
-          //   Text('≈ \$0.00', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-          // ],
-        ],
-      ),
+          error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
+        ),
+      ],
     );
   }
 
   Widget _buildActionButtons(AppColorsV2 colors, AppTextTheme text) {
+    final receiveCard = _actionCard(
+      iconAsset: 'assets/v2/action_receive.svg',
+      label: 'Receive',
+      colors: colors,
+      text: text,
+      onTap: () => showReceiveSheetV2(context),
+    );
+    final sendCard = _actionCard(
+      iconAsset: 'assets/v2/action_send.svg',
+      label: 'Send',
+      colors: colors,
+      text: text,
+      onTap: () => showSendSheetV2(context),
+    );
+
+    if (!FeatureFlags.enableSwap) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(width: 104, child: receiveCard),
+          const SizedBox(width: 32),
+          SizedBox(width: 104, child: sendCard),
+        ],
+      );
+    }
+
     return Row(
       children: [
-        _actionCard(
-          iconAsset: 'assets/v2/action_receive.svg',
-          label: 'Receive',
-          colors: colors,
-          text: text,
-          onTap: () => showReceiveSheetV2(context),
-        ),
+        Expanded(child: receiveCard),
         const SizedBox(width: 15),
-        _actionCard(
-          iconAsset: 'assets/v2/action_send.svg',
-          label: 'Send',
-          colors: colors,
-          text: text,
-          onTap: () => showSendSheetV2(context),
-        ),
+        Expanded(child: sendCard),
         const SizedBox(width: 15),
-        _actionCard(
-          iconAsset: 'assets/v2/action_swap.svg',
-          label: 'Swap',
-          colors: colors,
-          text: text,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+        Expanded(
+          child: _actionCard(
+            iconAsset: 'assets/v2/action_swap.svg',
+            label: 'Swap',
+            colors: colors,
+            text: text,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
+          ),
         ),
       ],
     );
@@ -252,34 +270,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required AppTextTheme text,
     required VoidCallback onTap,
   }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: SizedBox(
-          height: 80,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(_actionButtonBgAsset, fit: BoxFit.fill),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SvgPicture.asset(iconAsset, width: 24, height: 24),
-                    const SizedBox(height: 6),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0),
-                    ),
-                  ],
-                ),
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: 80,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(_actionButtonBgAsset, fit: BoxFit.fill),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(iconAsset, width: 24, height: 24),
+                  const SizedBox(height: 6),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
