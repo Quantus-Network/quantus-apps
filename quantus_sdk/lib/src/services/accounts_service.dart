@@ -39,20 +39,7 @@ class AccountsService {
     if (normalizedName.isEmpty) {
       throw Exception("Account name can't be empty");
     }
-
-    final accounts = await _settingsService.getAccounts();
-    final currentAccountIndex = accounts.indexWhere((a) => a.accountId == account.accountId);
-    if (currentAccountIndex == -1) {
-      throw Exception('Account not found');
-    }
-
-    final currentAccount = accounts[currentAccountIndex];
-    if (currentAccount.name == normalizedName) {
-      return;
-    }
-
-    final updatedAccount = currentAccount.copyWith(name: normalizedName);
-    await _settingsService.updateAccount(updatedAccount);
+    await _settingsService.updateAccount(account);
     onAccountsChanged?.call();
   }
 
