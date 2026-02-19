@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
@@ -108,18 +108,15 @@ class _SwapScreenState extends State<SwapScreen> {
     }
   }
 
-  void _scanQr() {
-    Navigator.push(
+  void _scanQr() async {
+    final address = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (_) => _QrScanPage(
-          onScanned: (v) {
-            _addressController.text = v;
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => const QrScannerPage()),
     );
+    if (address != null && mounted) {
+      _addressController.text = address;
+      setState(() {});
+    }
   }
 
   @override
@@ -463,156 +460,3 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 }
 
-class _QrScanPage extends StatefulWidget {
-  final ValueChanged<String> onScanned;
-  const _QrScanPage({required this.onScanned});
-
-  @override
-  State<_QrScanPage> createState() => _QrScanPageState();
-}
-
-class _QrScanPageState extends State<_QrScanPage> {
-  final _controller = MobileScannerController();
-  bool _scanned = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final frameSize = (MediaQuery.of(context).size.width - 111.5).clamp(220.0, 280.0);
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              if (_scanned) return;
-              final code = capture.barcodes.firstOrNull?.rawValue;
-              if (code != null && code.isNotEmpty) {
-                _scanned = true;
-                widget.onScanned(code);
-              }
-            },
-          ),
-          ColoredBox(color: Colors.black.withValues(alpha: 0.24)),
-          Center(child: _ScanFrame(size: frameSize)),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 228,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _scanActionButton(icon: Icons.image_outlined, onTap: () {}, colors: colors),
-                const SizedBox(width: 8),
-                ValueListenableBuilder<MobileScannerState>(
-                  valueListenable: _controller,
-                  builder: (_, state, __) {
-                    final isOn = state.torchState == TorchState.on;
-                    return _scanActionButton(
-                      icon: isOn ? Icons.flash_on : Icons.flash_off,
-                      onTap: _controller.toggleTorch,
-                      colors: colors,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 58,
-            left: 24,
-            right: 24,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.44), width: 0.9),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _scanActionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 20, color: colors.textPrimary),
-      ),
-    );
-  }
-}
-
-class _ScanFrame extends StatelessWidget {
-  final double size;
-  const _ScanFrame({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final corner = Colors.white.withValues(alpha: 0.92);
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        children: [
-          _corner(top: true, left: true, color: corner),
-          _corner(top: true, left: false, color: corner),
-          _corner(top: false, left: true, color: corner),
-          _corner(top: false, left: false, color: corner),
-        ],
-      ),
-    );
-  }
-
-  Widget _corner({required bool top, required bool left, required Color color}) {
-    return Positioned(
-      top: top ? 0 : null,
-      bottom: top ? null : 0,
-      left: left ? 0 : null,
-      right: left ? null : 0,
-      child: SizedBox(
-        width: 41,
-        height: 41,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
-              topLeft: top && left ? const Radius.circular(16) : Radius.zero,
-              topRight: top && !left ? const Radius.circular(16) : Radius.zero,
-              bottomLeft: !top && left ? const Radius.circular(16) : Radius.zero,
-              bottomRight: !top && !left ? const Radius.circular(16) : Radius.zero,
-            ),
-            border: Border(
-              top: top ? BorderSide(color: color, width: 1.6) : BorderSide.none,
-              bottom: !top ? BorderSide(color: color, width: 1.6) : BorderSide.none,
-              left: left ? BorderSide(color: color, width: 1.6) : BorderSide.none,
-              right: !left ? BorderSide(color: color, width: 1.6) : BorderSide.none,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
