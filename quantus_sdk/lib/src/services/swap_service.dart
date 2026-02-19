@@ -24,8 +24,7 @@ class SwapToken {
   });
 
   @override
-  bool operator ==(Object other) =>
-      other is SwapToken && symbol == other.symbol && network == other.network;
+  bool operator ==(Object other) => other is SwapToken && symbol == other.symbol && network == other.network;
 
   @override
   int get hashCode => Object.hash(symbol, network);
@@ -106,16 +105,9 @@ class SwapService {
     SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus'),
   ];
 
-  static const _quToken = SwapToken(
-    symbol: 'QUAN',
-    name: 'Quantus',
-    network: 'Quantus',
-  );
+  static const _quToken = SwapToken(symbol: 'QUAN', name: 'Quantus', network: 'Quantus');
 
-  Future<List<SwapToken>> getFromTokens({
-    int limit = 10,
-    bool forceRefresh = false,
-  }) async {
+  Future<List<SwapToken>> getFromTokens({int limit = 10, bool forceRefresh = false}) async {
     final now = DateTime.now();
     if (!forceRefresh &&
         _cachedFromTokens != null &&
@@ -130,17 +122,12 @@ class SwapService {
         final ranked = await _rankByCoinGecko(intentTokens);
         _cachedFromTokens = ranked;
         _cachedFromTokensAt = now;
-        _liveUsdPriceBySymbol = {
-          for (final token in ranked) token.symbol.toUpperCase(): token.price,
-        };
+        _liveUsdPriceBySymbol = {for (final token in ranked) token.symbol.toUpperCase(): token.price};
         return ranked.take(limit).toList();
       }
     } catch (_) {}
 
-    final fallback = availableTokens
-        .where((t) => t.symbol != 'QUAN')
-        .take(limit)
-        .toList();
+    final fallback = availableTokens.where((t) => t.symbol != 'QUAN').take(limit).toList();
     _cachedFromTokens = fallback;
     _cachedFromTokensAt = now;
     return fallback;
@@ -162,17 +149,13 @@ class SwapService {
   }
 
   String? getTokenIconUrl(SwapToken token) {
-    final cached = _cachedFromTokens
-        ?.where((t) => t.symbol == token.symbol && t.network == token.network)
-        .firstOrNull;
+    final cached = _cachedFromTokens?.where((t) => t.symbol == token.symbol && t.network == token.network).firstOrNull;
     if (cached?.iconUrl != null && cached!.iconUrl!.isNotEmpty) return cached.iconUrl;
     return _fallbackTokenIconUrl(token.symbol);
   }
 
   String? getNetworkIconUrl(SwapToken token) {
-    final cached = _cachedFromTokens
-        ?.where((t) => t.symbol == token.symbol && t.network == token.network)
-        .firstOrNull;
+    final cached = _cachedFromTokens?.where((t) => t.symbol == token.symbol && t.network == token.network).firstOrNull;
     if (cached?.networkIconUrl != null && cached!.networkIconUrl!.isNotEmpty) return cached.networkIconUrl;
     return _networkIconUrl(token.network);
   }
@@ -234,9 +217,7 @@ class SwapService {
         networkIconUrl: _networkIconUrl(blockchainRaw.toUpperCase()),
       );
       final existing = bySymbol[symbol];
-      if (existing == null ||
-          _networkPriority(token.network) <
-              _networkPriority(existing.network)) {
+      if (existing == null || _networkPriority(token.network) < _networkPriority(existing.network)) {
         bySymbol[symbol] = token;
       }
     }
@@ -257,22 +238,14 @@ class SwapService {
         final item = payload[i];
         if (item is! Map<String, dynamic>) continue;
         final symbol = (item['symbol'] as String?)?.toUpperCase();
-        if (symbol == null ||
-            symbol.isEmpty ||
-            rankBySymbol.containsKey(symbol))
-          continue;
+        if (symbol == null || symbol.isEmpty || rankBySymbol.containsKey(symbol)) continue;
         rankBySymbol[symbol] = i;
         final icon = item['image'] as String?;
         if (icon != null && icon.isNotEmpty) iconBySymbol[symbol] = icon;
       }
       final ranked = [
         for (final token in tokens)
-          token.copyWith(
-            iconUrl:
-                iconBySymbol[token.symbol] ??
-                token.iconUrl ??
-                _fallbackTokenIconUrl(token.symbol),
-          ),
+          token.copyWith(iconUrl: iconBySymbol[token.symbol] ?? token.iconUrl ?? _fallbackTokenIconUrl(token.symbol)),
       ];
       ranked.sort((a, b) {
         final ar = rankBySymbol[a.symbol] ?? 99999;
@@ -357,11 +330,7 @@ class SwapService {
     }
   }
 
-  Future<SwapQuote> getQuote({
-    required SwapToken fromToken,
-    required double fromAmount,
-    double slippage = 0.01,
-  }) async {
+  Future<SwapQuote> getQuote({required SwapToken fromToken, required double fromAmount, double slippage = 0.01}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final rate = getRate(fromToken);
     final toAmount = fromAmount * rate;
@@ -385,10 +354,7 @@ class SwapService {
   Future<SwapOrder> createSwap(SwapQuote quote) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final rng = Random();
-    final hex = List.generate(
-      40,
-      (_) => rng.nextInt(16).toRadixString(16),
-    ).join();
+    final hex = List.generate(40, (_) => rng.nextInt(16).toRadixString(16)).join();
     final order = SwapOrder(
       orderId: 'swap_${DateTime.now().millisecondsSinceEpoch}',
       quote: quote,
@@ -416,9 +382,7 @@ class SwapService {
 
     Future.delayed(const Duration(seconds: 5), () {
       if (_orders.containsKey(orderId)) {
-        _orders[orderId] = _orders[orderId]!.copyWith(
-          status: SwapStatus.complete,
-        );
+        _orders[orderId] = _orders[orderId]!.copyWith(status: SwapStatus.complete);
       }
     });
 

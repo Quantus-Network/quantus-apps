@@ -197,10 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  '≈ $usdFormatted',
-                  style: text.paragraph?.copyWith(color: colors.textSecondary),
-                ),
+                Text('≈ $usdFormatted', style: text.paragraph?.copyWith(color: colors.textSecondary)),
               ],
             );
           },

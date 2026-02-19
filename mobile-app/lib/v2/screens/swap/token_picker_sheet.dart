@@ -87,43 +87,43 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-              width: (size.width - 28).clamp(300.0, 362.0),
-              height: cardHeight,
-              margin: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                border: Border.all(color: const Color(0xFF3D3D3D)),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Select Token',
-                          style: text.smallTitle?.copyWith(
-                            color: colors.textPrimary,
-                            fontSize: 20,
-                            decoration: TextDecoration.none,
+                width: (size.width - 28).clamp(300.0, 362.0),
+                height: cardHeight,
+                margin: const EdgeInsets.fromLTRB(14, 0, 14, 20),
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  border: Border.all(color: const Color(0xFF3D3D3D)),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Select Token',
+                            style: text.smallTitle?.copyWith(
+                              color: colors.textPrimary,
+                              fontSize: 20,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Expanded(child: _content(colors, text)),
-                ],
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Icon(Icons.close, color: colors.textPrimary, size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(child: _content(colors, text)),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -139,10 +139,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
           children: [
             Text(
               _error!,
-              style: text.smallParagraph?.copyWith(
-                color: colors.textSecondary,
-                decoration: TextDecoration.none,
-              ),
+              style: text.smallParagraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
             ),
             const SizedBox(height: 12),
             GestureDetector(
@@ -168,10 +165,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
               Expanded(
                 child: Text(
                   _error!,
-                  style: text.detail?.copyWith(
-                    color: colors.textSecondary,
-                    decoration: TextDecoration.none,
-                  ),
+                  style: text.detail?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
                 ),
               ),
               GestureDetector(
@@ -242,10 +236,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
                   const SizedBox(height: 4),
                   Text(
                     token.network,
-                    style: text.paragraph?.copyWith(
-                      color: colors.textSecondary,
-                      decoration: TextDecoration.none,
-                    ),
+                    style: text.paragraph?.copyWith(color: colors.textSecondary, decoration: TextDecoration.none),
                   ),
                 ],
               ),
@@ -255,5 +246,4 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
       ),
     );
   }
-
 }

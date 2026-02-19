@@ -8,12 +8,7 @@ class TokenIcon extends StatelessWidget {
   final double size;
   final double networkBadgeSize;
 
-  const TokenIcon({
-    super.key,
-    required this.token,
-    this.size = 31,
-    this.networkBadgeSize = 12,
-  });
+  const TokenIcon({super.key, required this.token, this.size = 31, this.networkBadgeSize = 12});
 
   @override
   Widget build(BuildContext context) {
