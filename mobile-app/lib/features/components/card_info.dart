@@ -36,7 +36,7 @@ class CardInfo extends StatelessWidget {
                   width: context.isTablet ? 660 : 251,
                   child: Text(text, style: context.themeText.tag?.copyWith(color: textColor)),
                 ),
-                if (icon != null) icon!,
+                ?icon,
               ],
             ),
           ),

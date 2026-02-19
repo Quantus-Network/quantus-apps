@@ -98,16 +98,14 @@ class MinerProcessManager extends BaseProcessManager {
       // Check if process is still running
       // We just attached, so pid should be available
       final processPid = pid;
-      if (processPid != null) {
-        final stillRunning = await ProcessCleanupService.isProcessRunning(processPid);
-        if (!stillRunning) {
-          final error = MinerError.minerStartupFailed('Miner died during startup');
-          errorController.add(error);
-          clearProcess();
-          throw Exception(error.message);
-        }
+      final stillRunning = await ProcessCleanupService.isProcessRunning(processPid);
+      if (!stillRunning) {
+        final error = MinerError.minerStartupFailed('Miner died during startup');
+        errorController.add(error);
+        clearProcess();
+        throw Exception(error.message);
       }
-
+    
       log.i('Miner started (PID: $pid)');
     } catch (e, st) {
       if (e.toString().contains('Miner died during startup')) {
