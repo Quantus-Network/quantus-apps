@@ -35,11 +35,11 @@ class AccountsService {
   }
 
   Future<void> updateAccountName(Account account, String name) async {
-    final normalizedName = name.trim();
-    if (normalizedName.isEmpty) {
+    if (name.isEmpty) {
       throw Exception("Account name can't be empty");
     }
-    await _settingsService.updateAccount(account);
+    final updatedAccount = account.copyWith(name: name);
+    await _settingsService.updateAccount(updatedAccount);
     onAccountsChanged?.call();
   }
 
