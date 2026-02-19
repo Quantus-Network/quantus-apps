@@ -392,11 +392,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
             const SizedBox(height: 24),
             _buildPrimarySheetButton(
               label: 'Share Account Details',
-              onTap: () => shareAccountDetails(
-                context,
-                account.accountId,
-                checksum: checksum,
-              ),
+              onTap: () => shareAccountDetails(context, account.accountId, checksum: checksum),
             ),
           ],
         );

@@ -256,11 +256,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   Widget _buildShareSection() {
     return _buildSettingCard(
       child: InkWell(
-        onTap: () => shareAccountDetails(
-          context,
-          widget.account.accountId,
-          checksum: widget.checksumName,
-        ),
+        onTap: () => shareAccountDetails(context, widget.account.accountId, checksum: widget.checksumName),
         child: Padding(
           padding: const EdgeInsets.only(left: 10.0, top: 8.5, bottom: 8.5, right: 18.0),
           child: Row(
