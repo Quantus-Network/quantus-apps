@@ -395,7 +395,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               onTap: () => shareAccountDetails(
                 context,
                 account.accountId,
-                checksum: checksum != 'Loading...' && checksum != '-' ? checksum : null,
+                checksum: checksum,
               ),
             ),
           ],

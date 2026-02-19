@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:share_plus/share_plus.dart';
 
-String buildAccountShareText(String accountId, {String? checksum}) {
-  final checkphrasePart = checksum != null && checksum.isNotEmpty && checksum != 'Loading...' && checksum != '-'
-      ? '\n\nCheckphrase:$checksum'
-      : '';
+String buildAccountShareText(String accountId, {required String checksum}) {
+  final checkphrasePart = '\n\nCheckphrase:$checksum';
+
   return 'Hey! These are my Quantus account details:\n\nAddress:\n$accountId$checkphrasePart\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account?id=$accountId';
 }
 
-void shareAccountDetails(BuildContext context, String accountId, {String? checksum}) {
+void shareAccountDetails(BuildContext context, String accountId, {required String checksum}) {
   SharePlus.instance.share(
     ShareParams(
       text: buildAccountShareText(accountId, checksum: checksum),

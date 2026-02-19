@@ -259,7 +259,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
         onTap: () => shareAccountDetails(
           context,
           widget.account.accountId,
-          checksum: widget.checksumName.isNotEmpty ? widget.checksumName : null,
+          checksum: widget.checksumName,
         ),
         child: Padding(
           padding: const EdgeInsets.only(left: 10.0, top: 8.5, bottom: 8.5, right: 18.0),
