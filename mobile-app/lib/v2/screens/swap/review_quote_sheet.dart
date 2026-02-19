@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/deposit_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -54,11 +55,16 @@ class _ReviewQuoteContent extends StatelessWidget {
             const SizedBox(height: 32),
             _swapVisual(context, colors, text, fromUsd, toUsd),
             const SizedBox(height: 48),
-            _feeRow('Total fees', '${quote.networkFee.toStringAsFixed(3)} ${quote.fromToken.symbol}', colors, text),
+            _feeRow(
+              'Total fees',
+              '${SwapService.formatTokenAmount(quote.networkFee, quote.fromToken)} ${quote.fromToken.symbol}',
+              colors,
+              text,
+            ),
             Divider(color: colors.separator, height: 32),
             _feeRow(
               'Total Amount',
-              '${quote.totalAmount.toStringAsFixed(2)} ${quote.fromToken.symbol}',
+              '${SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken)} ${quote.fromToken.symbol}',
               colors,
               text,
               highlight: true,
@@ -89,7 +95,6 @@ class _ReviewQuoteContent extends StatelessWidget {
   }
 
   Widget _tokenCard(SwapToken token, double amount, double usd, double width, AppColorsV2 colors, AppTextTheme text) {
-    final isQu = token.symbol == 'QUAN';
     return Container(
       width: width,
       height: 111,
@@ -101,14 +106,7 @@ class _ReviewQuoteContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: isQu ? colors.accentGreen.withValues(alpha: 0.3) : colors.accentPink.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
-                ),
-              ),
+              TokenIcon(token: token, size: 22, networkBadgeSize: 9),
               const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +122,7 @@ class _ReviewQuoteContent extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            amount.toStringAsFixed(2),
+            SwapService.formatTokenAmount(amount, token),
             style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 0),
