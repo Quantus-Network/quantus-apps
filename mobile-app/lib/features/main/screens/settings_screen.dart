@@ -8,7 +8,7 @@ import 'package:resonance_network_wallet/features/components/reset_confirmation_
 import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/accounts_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/select_wallet_for_recovery_phrase_screen.dart';
@@ -159,7 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Manage Accounts',
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountsScreen()));
+            showAccountsSheet(context);
           },
         ),
         const SizedBox(height: 22),
@@ -203,7 +203,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ListItem(
           title: 'Help & Support',
           onTap: () {
-            final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
+            final Uri url = Uri.parse(AppConstants.techSupportUrl);
             launchUrl(url);
           },
           trailing: const Icon(Icons.arrow_outward_sharp),

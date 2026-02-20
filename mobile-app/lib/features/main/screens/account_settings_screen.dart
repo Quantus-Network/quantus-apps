@@ -18,7 +18,7 @@ import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_details_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_get_started_screen.dart';
-import 'package:resonance_network_wallet/features/main/screens/receive_screen.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
@@ -256,9 +256,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   Widget _buildShareSection() {
     return _buildSettingCard(
       child: InkWell(
-        onTap: () {
-          showReceiveSheet(context, isReceiving: false);
-        },
+        onTap: () => shareAccountDetails(context, widget.account.accountId, checksum: widget.checksumName),
         child: Padding(
           padding: const EdgeInsets.only(left: 10.0, top: 8.5, bottom: 8.5, right: 18.0),
           child: Row(

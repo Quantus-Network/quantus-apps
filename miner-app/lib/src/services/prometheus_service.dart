@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:quantus_miner/src/config/miner_config.dart';
 
 // Data class to hold the parsed metrics
 class PrometheusMetrics {
@@ -19,7 +20,8 @@ class PrometheusMetrics {
 class PrometheusService {
   final String metricsUrl;
 
-  PrometheusService({this.metricsUrl = 'http://127.0.0.1:9616/metrics'});
+  PrometheusService({String? metricsUrl})
+    : metricsUrl = metricsUrl ?? MinerConfig.nodePrometheusUrl(MinerConfig.defaultNodePrometheusPort);
 
   Future<PrometheusMetrics?> fetchMetrics() async {
     try {

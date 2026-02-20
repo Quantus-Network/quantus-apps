@@ -83,7 +83,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       print('Rewards address saved: $address');
 
       if (mounted) {
-        context.showSuccessBar(content: Text('Rewards address saved successfully!'));
+        context.showSuccessBar(content: const Text('Rewards address saved successfully!'));
         // Navigate to the main mining screen
         context.go('/miner_dashboard');
       }

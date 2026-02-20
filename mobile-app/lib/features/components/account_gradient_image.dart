@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/utils/color_generator_engine.dart';
 
 class AccountGradientImage extends StatelessWidget {
-  final dynamic accountId;
-  final dynamic width;
-  final dynamic height;
+  final String accountId;
+  final double width;
+  final double height;
 
   const AccountGradientImage({super.key, required this.accountId, required this.width, required this.height});
 

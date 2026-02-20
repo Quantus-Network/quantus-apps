@@ -34,7 +34,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   bool _biometricEnabled = false;
   String _biometricDesc = 'Face ID Disabled';
   int _autoLockMinutes = 5;
-  bool _reversibleEnabled = false;
+  // bool _reversibleEnabled = false;
   int _reversibleTimeSeconds = 600;
   bool _hasPinSet = false;
 
@@ -55,7 +55,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final bioDesc = await _authService.getBiometricDescription();
     final timeout = _authService.getAuthTimeoutMinutes();
     final revTime = await _settingsService.getReversibleTimeSeconds() ?? 600;
-    final revEnabled = _settingsService.isReversibleEnabled();
+    // final revEnabled = _settingsService.isReversibleEnabled();
 
     if (!mounted) return;
     setState(() {
@@ -63,7 +63,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       _biometricDesc = bioEnabled ? bioDesc : 'Face ID Disabled';
       _autoLockMinutes = timeout;
       _reversibleTimeSeconds = revTime;
-      _reversibleEnabled = revEnabled;
+      // _reversibleEnabled = revEnabled;
     });
   }
 
@@ -202,14 +202,15 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                     ]),
                     const SizedBox(height: 40),
                     _section('Reversible Transactions', colors, text, [
-                      _toggleItem(
-                        'Reversible Transactions',
-                        'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
-                        _reversibleEnabled,
-                        null,
-                        colors,
-                        text,
-                      ),
+                      _comingSoonItem('Reversible Transactions', null, colors, text),
+                      // _toggleItem(
+                      //   'Reversible Transactions',
+                      //   'Coming Soon', //_reversibleEnabled ? 'Enabled' : 'Disabled',
+                      //   _reversibleEnabled,
+                      //   null,
+                      //   colors,
+                      //   text,
+                      // ),
                       _divider(colors),
                       _chevronItem('Time Limit', _timeLimitLabel(), colors, text, onTap: () {}),
                       _divider(colors),
@@ -243,7 +244,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                         null,
                         colors,
                         text,
-                        onTap: () => launchUrl(Uri.parse(AppConstants.helpAndSupportUrl)),
+                        onTap: () => launchUrl(Uri.parse(AppConstants.techSupportUrl)),
                       ),
                       _divider(colors),
                       _externalItem(
@@ -285,13 +286,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String subtitle) {
+  Column _itemContent(String title, AppTextTheme text, AppColorsV2 colors, String? subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: text.paragraph?.copyWith(color: colors.textPrimary)),
-        const SizedBox(height: 4),
-        Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        if (subtitle != null) const SizedBox(height: 4),
+        if (subtitle != null) Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       ],
     );
   }
@@ -354,7 +355,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Widget _comingSoonItem(String title, String subtitle, AppColorsV2 colors, AppTextTheme text) {
+  Widget _comingSoonItem(String title, String? subtitle, AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
         Expanded(child: _itemContent(title, text, colors, subtitle)),

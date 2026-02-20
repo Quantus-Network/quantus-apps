@@ -35,6 +35,9 @@ class AccountsService {
   }
 
   Future<void> updateAccountName(Account account, String name) async {
+    if (name.isEmpty) {
+      throw Exception("Account name can't be empty");
+    }
     final updatedAccount = account.copyWith(name: name);
     await _settingsService.updateAccount(updatedAccount);
     onAccountsChanged?.call();

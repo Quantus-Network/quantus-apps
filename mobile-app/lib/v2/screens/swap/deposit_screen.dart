@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -116,7 +117,7 @@ class _DepositScreenState extends State<DepositScreen> {
             const SizedBox(width: 6),
             GestureDetector(
               onTap: () => context.copyTextWithToaster(
-                quote.totalAmount.toStringAsFixed(2),
+                SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken),
                 message: 'Deposit amount copied to clipboard',
               ),
               child: Container(
@@ -132,14 +133,10 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(color: colors.accentPink.withValues(alpha: 0.3), shape: BoxShape.circle),
-            ),
+            TokenIcon(token: quote.fromToken, size: 28, networkBadgeSize: 11),
             const SizedBox(width: 8),
             Text(
-              quote.totalAmount.toStringAsFixed(2),
+              SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken),
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
             ),
           ],
@@ -281,7 +278,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          'Your swap for ${_order.quote.toAmount.toStringAsFixed(2)} QUAN is processing.',
+          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is processing.',
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),

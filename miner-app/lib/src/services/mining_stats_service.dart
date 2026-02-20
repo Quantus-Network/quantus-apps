@@ -10,6 +10,7 @@ class MiningStats {
   final int gpuDevices;
   final int gpuCapacity;
   final bool isSyncing;
+  final bool isMinerRunning;
   final MiningStatus status;
   final String chainName;
 
@@ -23,6 +24,7 @@ class MiningStats {
     this.gpuDevices = 0,
     this.gpuCapacity = 0,
     required this.isSyncing,
+    this.isMinerRunning = false,
     required this.status,
     required this.chainName,
   });
@@ -37,6 +39,7 @@ class MiningStats {
       gpuDevices = 0,
       gpuCapacity = 0,
       isSyncing = false,
+      isMinerRunning = false,
       status = MiningStatus.idle,
       chainName = '';
 
@@ -50,6 +53,7 @@ class MiningStats {
     int? gpuDevices,
     int? gpuCapacity,
     bool? isSyncing,
+    bool? isMinerRunning,
     MiningStatus? status,
     String? chainName,
   }) {
@@ -63,6 +67,7 @@ class MiningStats {
       gpuDevices: gpuDevices ?? this.gpuDevices,
       gpuCapacity: gpuCapacity ?? this.gpuCapacity,
       isSyncing: isSyncing ?? this.isSyncing,
+      isMinerRunning: isMinerRunning ?? this.isMinerRunning,
       status: status ?? this.status,
       chainName: chainName ?? this.chainName,
     );
@@ -134,14 +139,34 @@ class MiningStatsService {
 
   /// Manually set syncing state (used by RPC client)
   void setSyncingState(bool isSyncing, int? currentBlock, int? targetBlock) {
-    final status = isSyncing ? MiningStatus.syncing : MiningStatus.mining;
-
     _currentStats = _currentStats.copyWith(
       isSyncing: isSyncing,
-      status: status,
       currentBlock: currentBlock ?? _currentStats.currentBlock,
       targetBlock: targetBlock ?? _currentStats.targetBlock,
     );
+    _updateStatus();
+  }
+
+  /// Set whether the miner process is running
+  void setMinerRunning(bool isRunning) {
+    _currentStats = _currentStats.copyWith(isMinerRunning: isRunning);
+    _updateStatus();
+  }
+
+  /// Update the status based on current state
+  void _updateStatus() {
+    MiningStatus status;
+    if (_currentStats.isSyncing) {
+      status = MiningStatus.syncing;
+    } else if (_currentStats.isMinerRunning) {
+      status = MiningStatus.mining;
+    } else {
+      status = MiningStatus.idle;
+    }
+
+    if (_currentStats.status != status) {
+      _currentStats = _currentStats.copyWith(status: status);
+    }
   }
 
   /// Update chain name from RPC data

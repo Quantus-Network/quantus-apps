@@ -18,15 +18,12 @@ dependencies:
   # Networking and storage
   http: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml
+  polkadart: # For local node RPC queries
   
-  # State management and architecture
-  provider: # Version managed by melos.yaml
-  hooks_riverpod: # Version managed by melos.yaml
-  flutter_hooks: # Version managed by melos.yaml
+  # Routing
   go_router: # Version managed by melos.yaml
   
   # UI and utilities
-  another_flushbar: # Version managed by melos.yaml
   flutter_svg: # Version managed by melos.yaml
   
   # System and file operations

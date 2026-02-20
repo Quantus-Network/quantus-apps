@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
@@ -34,7 +35,22 @@ class _SwapScreenState extends State<SwapScreen> {
   bool _loading = false;
 
   double get _rate => _swapService.getRate(_fromToken);
-  String get _rateLabel => '1 QUAN = ${(1 / _rate).toStringAsFixed(4)} ${_fromToken.symbol}';
+  String get _rateLabel {
+    final val = 1 / _rate;
+    if (val == 0) return '1 QUAN = 0 ${_fromToken.symbol}';
+    final decimals = val >= 100
+        ? 2
+        : val >= 1
+        ? 4
+        : val >= 0.01
+        ? 6
+        : val >= 0.0001
+        ? 8
+        : 10;
+    var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
+    if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
+    return '1 QUAN = $formatted ${_fromToken.symbol}';
+  }
 
   @override
   void initState() {
@@ -80,25 +96,24 @@ class _SwapScreenState extends State<SwapScreen> {
   }
 
   void _pickToken() async {
-    final token = await showTokenPickerSheet(context, _swapService.getFromTokens(), _fromToken);
+    final token = await showTokenPickerSheet(
+      context,
+      current: _fromToken,
+      loadTokens: ({bool forceRefresh = false}) => _swapService.getFromTokens(limit: 10, forceRefresh: forceRefresh),
+    );
+    if (!mounted) return;
     if (token != null && token != _fromToken) {
       setState(() => _fromToken = token);
       _recalculate();
     }
   }
 
-  void _scanQr() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _QrScanPage(
-          onScanned: (v) {
-            _addressController.text = v;
-            Navigator.pop(context);
-          },
-        ),
-      ),
-    );
+  void _scanQr() async {
+    final address = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const QrScannerPage()));
+    if (address != null && mounted) {
+      _addressController.text = address;
+      setState(() {});
+    }
   }
 
   @override
@@ -176,7 +191,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    hintText: '0.00',
+                    hintText: SwapService.formatTokenAmountHint(_fromToken),
                     hintStyle: text.mediumTitle?.copyWith(color: colors.textTertiary, fontWeight: FontWeight.bold),
                     border: InputBorder.none,
                     isDense: true,
@@ -198,14 +213,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
-                      Container(
-                        width: 25,
-                        height: 25,
-                        decoration: BoxDecoration(
-                          color: colors.accentPink.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -348,7 +356,7 @@ class _SwapScreenState extends State<SwapScreen> {
                 decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  _toAmount > 0 ? _toAmount.toStringAsFixed(2) : '0.00',
+                  SwapService.formatTokenAmount(_toAmount, _swapService.getQuToken()),
                   style: text.mediumTitle?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _toAmount > 0 ? colors.textPrimary : colors.textTertiary,
@@ -444,44 +452,6 @@ class _SwapScreenState extends State<SwapScreen> {
                   ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _QrScanPage extends StatelessWidget {
-  final ValueChanged<String> onScanned;
-  const _QrScanPage({required this.onScanned});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          MobileScanner(
-            onDetect: (capture) {
-              final code = capture.barcodes.firstOrNull?.rawValue;
-              if (code != null) onScanned(code);
-            },
-          ),
-          Positioned(
-            bottom: 60,
-            left: 24,
-            right: 24,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-                child: Center(
-                  child: Text('Cancel', style: TextStyle(color: colors.textPrimary, fontSize: 16)),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

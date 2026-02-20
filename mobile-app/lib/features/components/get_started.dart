@@ -52,7 +52,7 @@ class GetStarted extends StatelessWidget {
             const SizedBox(height: 25),
             GestureDetector(
               onTap: () {
-                final Uri url = Uri.parse(AppConstants.helpAndSupportUrl);
+                final Uri url = Uri.parse(AppConstants.techSupportUrl);
                 launchUrl(url);
               },
               child: Text('Tech Support →', style: context.themeText.smallParagraph),

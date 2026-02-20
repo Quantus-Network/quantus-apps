@@ -2,13 +2,23 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:polkadart/polkadart.dart';
+import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/shared/miner_app_constants.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+
+final _log = log.withTag('BalanceCard');
 
 class MinerBalanceCard extends StatefulWidget {
-  const MinerBalanceCard({super.key});
+  /// Current block number - when this changes, balance is refreshed
+  final int currentBlock;
+
+  const MinerBalanceCard({super.key, this.currentBlock = 0});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
@@ -17,17 +27,30 @@ class MinerBalanceCard extends StatefulWidget {
 class _MinerBalanceCardState extends State<MinerBalanceCard> {
   String _walletBalance = 'Loading...';
   String? _walletAddress;
+  String _chainId = MinerConfig.defaultChainId;
   Timer? _balanceTimer;
+  final _settingsService = MinerSettingsService();
+  int _lastRefreshedBlock = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _fetchWalletBalance();
-    // Start automatic polling every 30 seconds
-    _balanceTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _fetchWalletBalance();
+    _loadChainAndFetchBalance();
+    // Start automatic polling as backup
+    _balanceTimer = Timer.periodic(MinerConfig.balancePollingInterval, (_) {
+      _loadChainAndFetchBalance();
     });
+  }
+
+  @override
+  void didUpdateWidget(MinerBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh balance when block number increases (new block found)
+    if (widget.currentBlock > _lastRefreshedBlock && widget.currentBlock > 0) {
+      _lastRefreshedBlock = widget.currentBlock;
+      _loadChainAndFetchBalance();
+    }
   }
 
   @override
@@ -36,9 +59,16 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
     super.dispose();
   }
 
+  Future<void> _loadChainAndFetchBalance() async {
+    final chainId = await _settingsService.getChainId();
+    if (mounted) {
+      setState(() => _chainId = chainId);
+    }
+    await _fetchWalletBalance();
+  }
+
   Future<void> _fetchWalletBalance() async {
-    // Implement actual wallet balance fetching using quantus_sdk
-    print('fetching wallet balance');
+    _log.d('Fetching wallet balance for chain: $_chainId');
     try {
       final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
       final rewardsFile = File('$quantusHome/rewards-address.txt');
@@ -47,42 +77,75 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
         final address = (await rewardsFile.readAsString()).trim();
 
         if (address.isNotEmpty) {
-          print('address: $address');
+          final chainConfig = MinerConfig.getChainById(_chainId);
+          _log.d('Chain: ${chainConfig.id}, rpcUrl: ${chainConfig.rpcUrl}, isLocal: ${chainConfig.isLocalNode}');
+          BigInt balance;
 
-          // Fetch balance using SubstrateService (exported by quantus_sdk)
-          final balance = await SubstrateService().queryBalance(address);
+          if (chainConfig.isLocalNode) {
+            // Use local node RPC for dev chain
+            _log.d('Querying balance from local node: ${chainConfig.rpcUrl}');
+            balance = await _queryBalanceFromLocalNode(address, chainConfig.rpcUrl);
+          } else {
+            // Use SDK's SubstrateService for remote chains (dirac)
+            _log.d('Querying balance from remote (SDK SubstrateService)');
+            balance = await SubstrateService().queryBalance(address);
+          }
 
-          print('balance: $balance');
+          _log.d('Balance: $balance');
 
-          setState(() {
-            // Assuming NumberFormattingService and AppConstants are available via quantus_sdk export
-            _walletBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
-            _walletAddress = address;
-          });
+          if (mounted) {
+            setState(() {
+              _walletBalance = NumberFormattingService().formatBalance(balance, addSymbol: true);
+              _walletAddress = address;
+            });
+          }
         } else {
-          // Address file exists but is empty
           _handleAddressNotSet();
         }
       } else {
-        // Address file does not exist
         _handleAddressNotSet();
       }
     } catch (e) {
-      setState(() {
-        _walletBalance = 'Error fetching balance';
-      });
-      print('Error fetching wallet balance: $e');
+      if (mounted) {
+        setState(() {
+          // Show helpful message for dev chain when node not running
+          if (_chainId == 'dev') {
+            _walletBalance = 'Start node to view';
+          } else {
+            _walletBalance = 'Error';
+          }
+        });
+      }
+      _log.w('Error fetching wallet balance', error: e);
+    }
+  }
+
+  /// Query balance directly from local node using Polkadart
+  Future<BigInt> _queryBalanceFromLocalNode(String address, String rpcUrl) async {
+    try {
+      final provider = Provider.fromUri(Uri.parse(rpcUrl));
+      final quantusApi = Schrodinger(provider);
+
+      // Convert SS58 address to account ID using the SDK's crypto
+      final accountId = ss58ToAccountId(s: address);
+
+      final accountInfo = await quantusApi.query.system.account(accountId);
+      return accountInfo.data.free;
+    } catch (e) {
+      _log.d('Error querying local node balance: $e');
+      // Return zero if node is not running or address has no balance
+      return BigInt.zero;
     }
   }
 
   void _handleAddressNotSet() {
-    setState(() {
-      _walletBalance = 'Address not set';
-      _walletAddress = null;
-    });
-    print('Rewards address file not found or empty.');
-    // Example Navigation (requires go_router setup)
-    // context.go('/rewards_address_setup');
+    if (mounted) {
+      setState(() {
+        _walletBalance = 'Address not set';
+        _walletAddress = null;
+      });
+    }
+    _log.w('Rewards address file not found or empty');
   }
 
   @override

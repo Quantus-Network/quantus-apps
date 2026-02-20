@@ -12,7 +12,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 
 class ReceiveSheet extends StatefulWidget {
   final bool isReceiving;
@@ -69,17 +69,8 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   void _share() {
-    if (_accountId != null && _checksum != null) {
-      final textToShare =
-          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId\n\nCheckphrase:$_checksum\n\nTo open in the app or to download click the link below:\n${AppConstants.websiteBaseUrl}/account?id=$_accountId';
-      SharePlus.instance.share(
-        ShareParams(
-          text: textToShare,
-          subject: 'Shared Address',
-          title: 'Shared Address',
-          sharePositionOrigin: context.sharePositionRect(),
-        ),
-      );
+    if (_accountId != null) {
+      shareAccountDetails(context, _accountId!, checksum: _checksum ?? '');
     }
   }
 
@@ -164,7 +155,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       AccountGradientImage(
-                        accountId: _accountId,
+                        accountId: _accountId!,
                         width: context.isTablet ? 32.0 : 24.0,
                         height: context.isTablet ? 32.0 : 24.0,
                       ),

@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ActivitySection extends ConsumerWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
@@ -44,12 +45,8 @@ class ActivitySection extends ConsumerWidget {
               children: [
                 const SizedBox(height: 40),
                 _header(colors, text, context),
-                const SizedBox(height: 48),
-                Icon(Icons.receipt_long_outlined, size: 48, color: colors.textTertiary),
-                const SizedBox(height: 16),
-                Text('No transactions yet', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-                const SizedBox(height: 8),
-                Text('Your activity will appear here', style: text.detail?.copyWith(color: colors.textTertiary)),
+                const SizedBox(height: 24),
+                _getStartedLinks(text, colors),
               ],
             );
           }
@@ -119,6 +116,33 @@ class ActivitySection extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _getStartedLinks(AppTextTheme text, AppColorsV2 colors) {
+    final linkStyle = text.smallParagraph?.copyWith(color: colors.textPrimary);
+    final links = [
+      ('Get Testnet Tokens →', AppConstants.faucetBotUrl),
+      ('Community →', AppConstants.communityUrl),
+      ('Tech Support →', AppConstants.techSupportUrl),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: const Color(0x3F000000), borderRadius: BorderRadius.circular(5)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < links.length; i++) ...[
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse(links[i].$2)),
+              child: Text(links[i].$1, style: linkStyle),
+            ),
+            if (i < links.length - 1) const SizedBox(height: 25),
+          ],
+        ],
       ),
     );
   }

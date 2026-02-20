@@ -4,9 +4,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:share_plus/share_plus.dart';
 
 class ReceiveSheet extends StatefulWidget {
   const ReceiveSheet({super.key});
@@ -55,18 +55,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
 
   void _share() {
     if (_accountId != null) {
-      final text =
-          'Hey! These are my Quantus account details:\n\nAddress:\n$_accountId'
-          '${_checksum != null ? '\n\nCheckphrase: $_checksum' : ''}'
-          '\n\nTo open in the app or download:\n${AppConstants.websiteBaseUrl}/account?id=$_accountId';
-      SharePlus.instance.share(
-        ShareParams(
-          text: text,
-          subject: 'Shared Address',
-          title: 'Shared Address',
-          sharePositionOrigin: context.sharePositionRect(),
-        ),
-      );
+      shareAccountDetails(context, _accountId!, checksum: _checksum ?? '');
     }
   }
 
@@ -186,11 +175,15 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors) {
-    return Container(
+    return SizedBox(
       width: 20,
       height: 20,
-      decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(4)),
-      child: Icon(Icons.copy, size: 12, color: colors.textPrimary),
+      child: GlassContainer(
+        asset: GlassContainer.tinyAsset,
+        filled: false,
+        onTap: _copyAddress,
+        child: Icon(Icons.copy, size: 12, color: colors.textPrimary),
+      ),
     );
   }
 

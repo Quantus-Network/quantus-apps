@@ -1,0 +1,186 @@
+name: Create Wallet Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: "Build mode"
+        required: true
+        default: "release"
+        type: choice
+        options:
+          - release
+          - debug
+      create_release:
+        description: "Create a GitHub release"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      tag: ${{ steps.get_version.outputs.tag }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      MOBILE_APP_ENV: ${{ secrets.MOBILE_APP_ENV }}
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            quantus_sdk/native/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap Melos
+        run: melos bootstrap
+
+      - name: Create .env file
+        run: echo "$MOBILE_APP_ENV" > mobile-app/.env
+
+      - name: Create google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON" > mobile-app/android/app/google-services.json
+
+      - name: Decode Android keystore
+        if: inputs.build_mode == 'release'
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > mobile-app/android/upload-keystore.jks
+
+      - name: Create key.properties
+        if: inputs.build_mode == 'release'
+        run: |
+          cat > mobile-app/android/key.properties << EOF
+          storeFile=../upload-keystore.jks
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Generate Splash Screen
+        working-directory: ./mobile-app
+        run: |
+          flutter pub get
+          dart run flutter_native_splash:create
+
+      - name: Build APK
+        run: flutter build apk --${{ inputs.build_mode }}
+        working-directory: ./mobile-app
+
+      - name: Read version from pubspec.yaml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version:' mobile-app/pubspec.yaml | head -1 | sed 's/version:[[:space:]]*//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=wallet-v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK
+        id: rename_apk
+        run: |
+          MODE="${{ inputs.build_mode }}"
+          VERSION="${{ steps.get_version.outputs.version }}"
+          SRC="mobile-app/build/app/outputs/flutter-apk/app-${MODE}.apk"
+          DEST="mobile-app/build/app/outputs/flutter-apk/quantus_wallet_${VERSION}_${MODE}.apk"
+          mv "$SRC" "$DEST"
+          echo "apk_path=$DEST" >> "$GITHUB_OUTPUT"
+          echo "apk_name=quantus_wallet_${VERSION}_${MODE}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantus_wallet-android-${{ inputs.build_mode }}
+          path: ${{ steps.rename_apk.outputs.apk_path }}
+
+  create-release:
+    name: Create Release
+    if: ${{ inputs.create_release && inputs.build_mode == 'release' }}
+    needs: [build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: quantus_wallet-android-release
+          path: ./artifacts
+
+      - name: Create and push git tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.build-android.outputs.tag }}"
+          echo "Tag to create: $TAG"
+
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "Error: Tag $TAG already exists on remote."
+            echo "Please update the version in mobile-app/pubspec.yaml before creating a new release."
+            exit 1
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}
+
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.build-android.outputs.tag }}
+          name: Quantus Wallet ${{ needs.build-android.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Quantus Wallet - Android Release
+            
+            **Version:** ${{ needs.build-android.outputs.version }}
+            
+            ### Installation
+            1. Download the `.apk` file below
+            2. Enable "Install from unknown sources"
+            3. Install
+          files: ./artifacts/quantus_wallet_*.apk
+          draft: false
+          prerelease: false

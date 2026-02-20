@@ -26,7 +26,11 @@ class AppConstants {
   static const String senotiEndpoint = 'https://snt.quantus.com/api';
 
   static const String explorerEndpoint = 'https://explorer.quantus.com';
-  static const String helpAndSupportUrl = 'https://t.me/c/quantusnetwork/2457';
+
+  // internal group URL is this (note the /c)
+  // https://t.me/c/quantusnetwork/2457
+  // removing the c, we get a better preview page though so we use it without c...
+  static const String techSupportUrl = 'https://t.me/quantusnetwork/2457';
   static const String termsOfServiceUrl = 'https://www.quantus.com/terms-and-privacy';
   static const String tutorialsAndGuidesUrl = 'https://github.com/Quantus-Network/chain';
   static const String shillQuestsPageUrl = 'https://www.quantus.com/quests/shill';

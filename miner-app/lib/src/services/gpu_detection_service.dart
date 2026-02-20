@@ -1,6 +1,11 @@
 import 'dart:io';
 
+import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/utils/app_logger.dart';
+
 import 'binary_manager.dart';
+
+final _log = log.withTag('GpuDetection');
 
 class GpuDetectionService {
   /// Detects the number of GPU devices on the system by probing the miner process
@@ -10,12 +15,12 @@ class GpuDetectionService {
       final bin = File(binPath);
 
       if (!await bin.exists()) {
-        print('External miner binary not found at $binPath');
+        _log.w('External miner binary not found at $binPath');
         return 0;
       }
 
-      // Start probing from 8 down to 1
-      for (int i = 8; i >= 1; i--) {
+      // Start probing from maxGpuProbeCount down to 1
+      for (int i = MinerConfig.maxGpuProbeCount; i >= 1; i--) {
         try {
           // Use a very short duration to fail fast or succeed quickly
           // If it succeeds, it will take 1 second.
@@ -45,11 +50,11 @@ class GpuDetectionService {
             }
           }
         } catch (e) {
-          print('Error probing for $i GPUs: $e');
+          _log.d('Error probing for $i GPUs', error: e);
         }
       }
     } catch (e) {
-      print('Error in GPU detection service: $e');
+      _log.e('Error in GPU detection service', error: e);
     }
     return 0;
   }

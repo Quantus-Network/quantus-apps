@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_screen_logic.dart';
@@ -117,7 +117,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   Future<void> _scanQr() async {
     final address = await Navigator.push<String>(
       context,
-      MaterialPageRoute(fullscreenDialog: true, builder: (_) => const _QrScanPage()),
+      MaterialPageRoute(fullscreenDialog: true, builder: (_) => const QrScannerPage()),
     );
     if (address != null && mounted) {
       _recipientController.text = address;
@@ -509,65 +509,4 @@ void showSendSheetV2(BuildContext context, {String? address}) {
       ),
     ),
   );
-}
-
-class _QrScanPage extends StatefulWidget {
-  const _QrScanPage();
-
-  @override
-  State<_QrScanPage> createState() => _QrScanPageState();
-}
-
-class _QrScanPageState extends State<_QrScanPage> {
-  final _controller = MobileScannerController();
-  bool _scanned = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              if (_scanned) return;
-              for (final barcode in capture.barcodes) {
-                final v = barcode.rawValue;
-                if (v != null && v.isNotEmpty) {
-                  _scanned = true;
-                  Navigator.pop(context, v);
-                  return;
-                }
-              }
-            },
-          ),
-          Positioned(
-            bottom: 60,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14)),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

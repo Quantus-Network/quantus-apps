@@ -9,14 +9,14 @@ Future<void> showToaster(
   required String message,
   required IconData iconData,
   Color? iconColor,
-  Duration duration = const Duration(seconds: 3),
+  Duration duration = const Duration(seconds: 2),
   FlashBehavior behavior = FlashBehavior.floating,
 }) async {
   if (!context.mounted) return;
 
   await context.showFlash<void>(
     duration: duration,
-    persistent: false,
+    persistent: true,
     builder: (context, controller) {
       return FlashBar(
         controller: controller,
