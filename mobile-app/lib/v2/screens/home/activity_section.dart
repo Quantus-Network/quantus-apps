@@ -134,15 +134,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text(
-            'No Transactions Yet',
-            style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-          ),
+          Text('No Transactions Yet', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
-          Text(
-            'Your activity will appear here',
-            style: text.detail?.copyWith(color: colors.textSecondary),
-          ),
+          Text('Your activity will appear here', style: text.detail?.copyWith(color: colors.textSecondary)),
         ],
       ),
     );
@@ -231,9 +225,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             'View All',
             style: text.paragraph?.copyWith(
               color: Colors.transparent,
-              shadows: [
-                Shadow(color: colors.textSecondary, offset: const Offset(0, -2)),
-              ],
+              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
               decoration: TextDecoration.underline,
               decorationColor: colors.textSecondary,
               decorationStyle: TextDecorationStyle.solid,
