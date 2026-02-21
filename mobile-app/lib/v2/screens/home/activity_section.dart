@@ -195,7 +195,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(links[i].$1, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
-                          Icon(Icons.north_east, color: colors.textSecondary, size: 16),
+                          Icon(Icons.arrow_outward, color: colors.textPrimary, size: 20),
                         ],
                       ),
                     ),
