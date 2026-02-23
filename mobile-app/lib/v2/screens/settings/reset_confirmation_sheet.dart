@@ -48,14 +48,17 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
           const SizedBox(height: 64),
           GlassContainer(
             asset: GlassContainer.wideAsset,
-            onTap: widget.onReset,
+            onTap: _isCheckboxChecked ? widget.onReset : null,
             child: Center(child: Text('Confirm', style: buttonTextStyle)),
           ),
           const SizedBox(height: 16),
           InkWell(
             onTap: () => Navigator.pop(context),
             child: Center(
-              child: Text('Cancel', style: buttonTextStyle?.copyWith(color: context.colors.textPrimary.useOpacity(0.5))),
+              child: Text(
+                'Cancel',
+                style: buttonTextStyle?.copyWith(color: context.colors.textPrimary.useOpacity(0.5)),
+              ),
             ),
           ),
         ],
