@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -788,6 +789,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       await _accountsService.addAccount(accountToSave);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
+      await ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
+
       if (mounted) {
         _closeCreateView();
       }

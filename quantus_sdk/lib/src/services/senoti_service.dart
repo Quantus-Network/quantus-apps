@@ -84,10 +84,7 @@ class SenotiAuthClient {
       deviceToken: deviceToken,
       platform: platform,
     );
-    final r = await _client.delete(
-      Uri.parse('$senotiEndpointUrl/devices'),
-      headers: headers,
-    );
+    final r = await _client.delete(Uri.parse('$senotiEndpointUrl/devices'), headers: headers);
     if (r.statusCode != 202) {
       throw Exception('unregister device failed: ${r.statusCode} ${r.body}');
     }
@@ -130,7 +127,7 @@ class SenotiService {
   SenotiAuthClient get _client => SenotiAuthClient(AppConstants.senotiEndpoint);
 
   Future<({String ss58Address, String publicKeyHex, Future<String> Function(List<int>) signHex})>
-      _getAccount1Credentials() async {
+  _getAccount1Credentials() async {
     final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
@@ -150,8 +147,10 @@ class SenotiService {
   }
 
   Future<void> registerDevice(String token, String platform) async {
-    final creds = await _getAccount1Credentials();
     final allAddresses = (await _settingsService.getAccounts()).map((a) => a.accountId).toList();
+    if (allAddresses.isEmpty) return;
+
+    final creds = await _getAccount1Credentials();
 
     await _client.registerDevice(
       addresses: allAddresses,

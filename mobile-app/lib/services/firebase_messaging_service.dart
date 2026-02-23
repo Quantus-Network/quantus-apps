@@ -30,8 +30,9 @@ class FirebaseMessagingService {
 
   /// Returns the cached FCM device token, fetching from Firebase if not yet available.
   Future<String?> getDeviceToken() async {
-    if (_cachedToken != null) return _cachedToken;
-    _cachedToken = await _messaging.getToken();
+    _cachedToken ??= await _messaging.getToken();
+    debugPrint('FCM token: $_cachedToken');
+
     return _cachedToken;
   }
 
@@ -45,7 +46,8 @@ class FirebaseMessagingService {
       return;
     }
 
-    await _fetchAndRegisterToken();
+    await getDeviceToken();
+    await registerDeviceIfPossible();
 
     _setupForegroundMessageListener();
     _setupTokenRefreshListener();
@@ -67,30 +69,30 @@ class FirebaseMessagingService {
     return settings.authorizationStatus;
   }
 
-  Future<void> _fetchAndRegisterToken() async {
-    final token = await _messaging.getToken();
-    debugPrint('FCM token: $token');
-
-    if (token != null && token.isNotEmpty) {
-      _cachedToken = token;
-      await _registerDevice(token);
-    }
-  }
-
-  Future<void> _registerDevice(String token) async {
+  Future<void> _tryRegisterDevice(String token) async {
     try {
       await _senotiService.registerDevice(token, _platform);
     } catch (e) {
       debugPrint('Failed to register device: $e');
-      rethrow;
     }
+  }
+
+  /// Register the device with the push notification backend.
+  /// Call this after the user creates or imports a wallet for the first time.
+  Future<void> registerDeviceIfPossible() async {
+    final token = await getDeviceToken();
+    if (token == null) {
+      debugPrint('No FCM token available — skipping device registration');
+      return;
+    }
+    await _tryRegisterDevice(token);
   }
 
   void _setupTokenRefreshListener() {
     _messaging.onTokenRefresh.listen((newToken) async {
       debugPrint('FCM token refreshed: $newToken');
       _cachedToken = newToken;
-      await _registerDevice(newToken);
+      await _tryRegisterDevice(newToken);
     });
   }
 
@@ -116,11 +118,11 @@ class FirebaseMessagingService {
       debugPrint('No FCM token available — skipping insertNewAddress');
       return;
     }
+    
     try {
       await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token, platform: _platform);
     } catch (e) {
       debugPrint('Failed to insert new address: $e');
-      rethrow;
     }
   }
 
