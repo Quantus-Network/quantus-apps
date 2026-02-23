@@ -118,7 +118,7 @@ class FirebaseMessagingService {
       debugPrint('No FCM token available — skipping insertNewAddress');
       return;
     }
-    
+
     try {
       await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token, platform: _platform);
     } catch (e) {

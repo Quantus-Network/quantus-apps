@@ -80,7 +80,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     ref.read(accountsProvider.notifier).reset();
     ref.read(activeAccountProvider.notifier).reset();
     ref.read(accountAssociationsProvider.notifier).reset();
-    
+
     if (mounted) {
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
     }
