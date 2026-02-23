@@ -13,8 +13,6 @@ import 'package:resonance_network_wallet/services/transaction_service.dart';
 /// Must be a top-level function (not a class method) for Firebase.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Background messages are automatically shown by the OS as notifications.
-  // No additional handling is needed here unless you want to persist data.
   debugPrint('FCM background message: ${message.messageId}');
 }
 
@@ -24,8 +22,18 @@ class FirebaseMessagingService {
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
+  String? _cachedToken;
 
   FirebaseMessagingService(this._ref);
+
+  String get _platform => Platform.operatingSystem;
+
+  /// Returns the cached FCM device token, fetching from Firebase if not yet available.
+  Future<String?> getDeviceToken() async {
+    if (_cachedToken != null) return _cachedToken;
+    _cachedToken = await _messaging.getToken();
+    return _cachedToken;
+  }
 
   /// Initialize FCM: request permissions, get token, and set up listeners.
   Future<void> init() async {
@@ -37,7 +45,7 @@ class FirebaseMessagingService {
       return;
     }
 
-    await _getToken();
+    await _fetchAndRegisterToken();
 
     _setupForegroundMessageListener();
     _setupTokenRefreshListener();
@@ -52,9 +60,6 @@ class FirebaseMessagingService {
 
     debugPrint('FCM permission status: ${settings.authorizationStatus}');
 
-    // On iOS, set foreground notification presentation options.
-    // This tells iOS to NOT show the system banner when the app is in the
-    // foreground, because we handle it ourselves via local notifications.
     if (Platform.isIOS) {
       await _messaging.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     }
@@ -62,31 +67,61 @@ class FirebaseMessagingService {
     return settings.authorizationStatus;
   }
 
-  Future<void> _registerDevice(String token) async {
-    try {
-      await _senotiService.registerDevice(token, Platform.operatingSystem);
-    } catch (e) {
-      debugPrint('Failed to register device: $e');
-    }
-  }
-
-  /// Get the FCM device token (useful for server-side targeting).
-  Future<void> _getToken() async {
+  Future<void> _fetchAndRegisterToken() async {
     final token = await _messaging.getToken();
     debugPrint('FCM token: $token');
 
     if (token != null && token.isNotEmpty) {
+      _cachedToken = token;
       await _registerDevice(token);
     }
   }
 
-  /// Listen for token refresh events.
+  Future<void> _registerDevice(String token) async {
+    try {
+      await _senotiService.registerDevice(token, _platform);
+    } catch (e) {
+      debugPrint('Failed to register device: $e');
+      rethrow;
+    }
+  }
+
   void _setupTokenRefreshListener() {
     _messaging.onTokenRefresh.listen((newToken) async {
       debugPrint('FCM token refreshed: $newToken');
-
+      _cachedToken = newToken;
       await _registerDevice(newToken);
     });
+  }
+
+  /// Unregister this device from push notifications (e.g. on wallet reset/logout).
+  Future<void> unregisterDevice() async {
+    final token = await getDeviceToken();
+    if (token == null) {
+      debugPrint('No FCM token available — skipping unregister');
+      return;
+    }
+    try {
+      await _senotiService.unregisterDevice(token, _platform);
+    } catch (e) {
+      debugPrint('Failed to unregister device: $e');
+      rethrow;
+    }
+  }
+
+  /// Register a newly created address for push notifications on this device.
+  Future<void> insertNewAddress(String newAddress) async {
+    final token = await getDeviceToken();
+    if (token == null) {
+      debugPrint('No FCM token available — skipping insertNewAddress');
+      return;
+    }
+    try {
+      await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token, platform: _platform);
+    } catch (e) {
+      debugPrint('Failed to insert new address: $e');
+      rethrow;
+    }
   }
 
   /// Listen for messages when the app is in the foreground.
@@ -99,7 +134,6 @@ class FirebaseMessagingService {
       final notification = _remoteMessageToNotificationData(message);
       if (notification == null) return;
 
-      // Add to the notification provider (persists + sends to stream).
       final notifier = _ref.read(notificationProvider.notifier);
       notifier.addNotification(notification);
     });
@@ -112,17 +146,14 @@ class FirebaseMessagingService {
   /// Handle the user tapping on an FCM notification that launched/resumed the app.
   /// Call this after the navigator key is available.
   void setupNotificationTapHandlers(GlobalKey<NavigatorState> navigatorKey) {
-    // Handle tap when app was in background (not terminated).
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('FCM notification tapped (background): ${message.messageId}');
       _handleNotificationTap(message, navigatorKey);
     });
 
-    // Handle tap when app was terminated.
     _handleInitialMessage(navigatorKey);
   }
 
-  /// Check if the app was launched from a terminated state by tapping an FCM notification.
   Future<void> _handleInitialMessage(GlobalKey<NavigatorState> navigatorKey) async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
@@ -131,7 +162,6 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Navigate based on the FCM message data payload.
   void _handleNotificationTap(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) {
     final data = message.data;
     if (data.isEmpty) return;
@@ -140,7 +170,6 @@ class FirebaseMessagingService {
     txService.navigateToTransactionFromPayloadIfPossible(data, navigatorKey);
   }
 
-  /// Convert an FCM [RemoteMessage] into the app's [NotificationData] model.
   NotificationData? _remoteMessageToNotificationData(RemoteMessage message) {
     final data = message.data;
 
