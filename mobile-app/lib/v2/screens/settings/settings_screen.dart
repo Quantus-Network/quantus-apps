@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
@@ -11,12 +10,9 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
-import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/auto_lock_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/change_pin_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,61 +25,19 @@ class SettingsScreenV2 extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
-  final _authService = LocalAuthService();
   final _settingsService = SettingsService();
-  bool _biometricEnabled = false;
-  String _biometricDesc = 'Face ID Disabled';
-  int _autoLockMinutes = 5;
-  // bool _reversibleEnabled = false;
   int _reversibleTimeSeconds = 600;
-  bool _hasPinSet = false;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
-    _loadPinState();
-  }
-
-  Future<void> _loadPinState() async {
-    final has = await _settingsService.hasPin();
-    if (mounted) setState(() => _hasPinSet = has);
   }
 
   Future<void> _loadSettings() async {
-    final bioEnabled = _authService.isLocalAuthEnabled();
-    final bioDesc = await _authService.getBiometricDescription();
-    final timeout = _authService.getAuthTimeoutMinutes();
     final revTime = await _settingsService.getReversibleTimeSeconds() ?? 600;
-    // final revEnabled = _settingsService.isReversibleEnabled();
-
     if (!mounted) return;
-    setState(() {
-      _biometricEnabled = bioEnabled;
-      _biometricDesc = bioEnabled ? bioDesc : 'Face ID Disabled';
-      _autoLockMinutes = timeout;
-      _reversibleTimeSeconds = revTime;
-      // _reversibleEnabled = revEnabled;
-    });
-  }
-
-  Future<void> _toggleBiometric(bool enable) async {
-    if (enable) {
-      final available = await _authService.isBiometricAvailable();
-      if (!available) {
-        if (mounted) context.showErrorToaster(message: 'Biometric not available on this device');
-        return;
-      }
-    }
-    final ok = await _authService.authenticate(
-      localizedReason: 'Authenticate to ${enable ? 'enable' : 'disable'} biometric',
-      biometricOnly: false,
-      forSetup: true,
-    );
-    if (ok) {
-      _authService.setLocalAuthEnabled(enable);
-      _loadSettings();
-    }
+    setState(() => _reversibleTimeSeconds = revTime);
   }
 
   void _toggleNotifications(bool enable) {
@@ -127,12 +81,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  String _autoLockLabel() {
-    if (_autoLockMinutes == 0) return 'Immediately';
-    if (_autoLockMinutes == 60) return '1 hour';
-    return '$_autoLockMinutes mins';
-  }
-
   String _timeLimitLabel() {
     if (_reversibleTimeSeconds <= 0) return 'Disabled';
     final mins = _reversibleTimeSeconds ~/ 60;
@@ -171,32 +119,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   children: [
-                    _section('Security', colors, text, [
-                      _toggleItem('Biometric Lock', _biometricDesc, _biometricEnabled, _toggleBiometric, colors, text),
-                      _divider(colors),
-                      _chevronItem(
-                        'PIN Code',
-                        _hasPinSet ? '6-digit code' : 'Not set',
-                        colors,
-                        text,
-                        onTap: () async {
-                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePinScreen()));
-                          _loadPinState();
-                        },
-                      ),
-                      _divider(colors),
-                      _chevronItem(
-                        'Auto-Lock',
-                        _autoLockLabel(),
-                        colors,
-                        text,
-                        onTap: () async {
-                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AutoLockScreen()));
-                          _loadSettings();
-                        },
-                      ),
-                    ]),
-                    const SizedBox(height: 40),
                     _section('Wallet', colors, text, [
                       _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
                     ]),

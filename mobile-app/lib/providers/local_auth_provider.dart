@@ -38,20 +38,16 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
     state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false);
   }
 
-  /// Checks if auth is required by user settings and triggers it.
-  /// If auth is not required, it sets the state to authenticated.
   void checkAuthentication() {
     if (_localAuthService.shouldRequireAuthentication()) {
       state = state.copyWith(isAuthenticated: false);
       authenticate();
     } else {
-      // If user has biometrics disabled, just let them in.
       state = state.copyWith(isAuthenticated: true);
     }
   }
 
   void lockApp() {
-    print('lockApp CALLED HERE');
     _localAuthService.updateLastPausedTime();
     state = state.copyWith(isAuthenticated: false);
   }

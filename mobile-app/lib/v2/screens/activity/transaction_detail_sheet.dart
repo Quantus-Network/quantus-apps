@@ -32,7 +32,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   bool get _isSend => widget.tx.from == widget.activeAccountId;
   String get _counterparty => _isSend ? widget.tx.to : widget.tx.from;
 
+  bool get _isPending => widget.tx is PendingTransactionEvent;
+
   String get _title {
+    if (_isPending) return 'Sending';
     if (widget.tx.isReversibleScheduled) return _isSend ? 'Pending' : 'Receiving';
     return _isSend ? 'Sent' : 'Received';
   }
@@ -177,8 +180,11 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Widget _explorerButton(AppColorsV2 colors, AppTextTheme text) {
+    final isPending = widget.tx is PendingTransactionEvent;
+    final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
+
     return GestureDetector(
-      onTap: _openExplorer,
+      onTap: isPending ? null : _openExplorer,
       child: GlassContainer(
         asset: GlassContainer.wideAsset,
         filled: false,
@@ -187,10 +193,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
           children: [
             Text(
               'View in Explorer',
-              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              style: text.paragraph?.copyWith(color: color, fontWeight: FontWeight.w500),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.open_in_new, size: 16, color: colors.textPrimary),
+            Icon(Icons.open_in_new, size: 16, color: color),
           ],
         ),
       ),

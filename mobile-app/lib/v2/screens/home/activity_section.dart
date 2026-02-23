@@ -14,7 +14,7 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ActivitySection extends ConsumerWidget {
+class ActivitySection extends ConsumerStatefulWidget {
   final AsyncValue<CombinedTransactionsList> txAsync;
   final BaseAccount activeAccount;
   final Future<void> Function()? onRetry;
@@ -22,14 +22,21 @@ class ActivitySection extends ConsumerWidget {
   const ActivitySection({super.key, required this.txAsync, required this.activeAccount, this.onRetry});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ActivitySection> createState() => _ActivitySectionState();
+}
+
+class _ActivitySectionState extends ConsumerState<ActivitySection> {
+  bool _getStartedExpanded = true;
+
+  @override
+  Widget build(BuildContext context) {
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: txAsync.when(
+      child: widget.txAsync.when(
         data: (data) {
           final txService = ref.read(transactionServiceProvider);
           final all = txService.combineAndDeduplicateTransactions(
@@ -45,8 +52,9 @@ class ActivitySection extends ConsumerWidget {
               children: [
                 const SizedBox(height: 40),
                 _header(colors, text, context),
-                const SizedBox(height: 24),
-                _getStartedLinks(text, colors),
+                _emptyState(text, colors),
+                const SizedBox(height: 40),
+                _getStartedSection(text, colors),
               ],
             );
           }
@@ -58,7 +66,7 @@ class ActivitySection extends ConsumerWidget {
               const SizedBox(height: 24),
 
               ...recentTransactions.mapIndexed((index, tx) {
-                final data = TxItemData.from(tx, activeAccount.accountId);
+                final data = TxItemData.from(tx, widget.activeAccount.accountId);
                 final isLastItem = index == recentTransactions.length - 1;
 
                 return buildTxItem(
@@ -69,7 +77,7 @@ class ActivitySection extends ConsumerWidget {
                   isBalanceHidden: isBalanceHidden,
                   isLastItem: isLastItem,
                   onTap: () {
-                    showTransactionDetailSheet(context, tx, activeAccount.accountId);
+                    showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
                   },
                 );
               }),
@@ -100,7 +108,7 @@ class ActivitySection extends ConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   ref.invalidate(activeAccountTransactionsProvider);
-                  onRetry?.call();
+                  widget.onRetry?.call();
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -120,30 +128,86 @@ class ActivitySection extends ConsumerWidget {
     );
   }
 
-  Widget _getStartedLinks(AppTextTheme text, AppColorsV2 colors) {
-    final linkStyle = text.smallParagraph?.copyWith(color: colors.textPrimary);
-    final links = [
-      ('Get Testnet Tokens →', AppConstants.faucetBotUrl),
-      ('Community →', AppConstants.communityUrl),
-      ('Tech Support →', AppConstants.techSupportUrl),
-    ];
-
+  Widget _emptyState(AppTextTheme text, AppColorsV2 colors) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0x3F000000), borderRadius: BorderRadius.circular(5)),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < links.length; i++) ...[
-            GestureDetector(
-              onTap: () => launchUrl(Uri.parse(links[i].$2)),
-              child: Text(links[i].$1, style: linkStyle),
-            ),
-            if (i < links.length - 1) const SizedBox(height: 25),
-          ],
+          Text('No Transactions Yet', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+          const SizedBox(height: 8),
+          Text('Your activity will appear here', style: text.detail?.copyWith(color: colors.textSecondary)),
         ],
       ),
+    );
+  }
+
+  Widget _getStartedSection(AppTextTheme text, AppColorsV2 colors) {
+    const links = [
+      ('Get Testnet Tokens', AppConstants.faucetBotUrl),
+      ('Community', AppConstants.communityUrl),
+      ('Tech Support', AppConstants.techSupportUrl),
+    ];
+
+    return Column(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _getStartedExpanded = !_getStartedExpanded),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Get Started',
+                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              ),
+              Icon(
+                _getStartedExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                color: colors.textSecondary,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: Padding(
+            padding: const EdgeInsets.only(top: 24),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < links.length; i++) ...[
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => launchUrl(Uri.parse(links[i].$2)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(links[i].$1, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                          Icon(Icons.arrow_outward, color: colors.textPrimary, size: 20),
+                        ],
+                      ),
+                    ),
+                    if (i < links.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(color: colors.separator, height: 0),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          secondChild: const SizedBox.shrink(),
+          crossFadeState: _getStartedExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+          duration: const Duration(milliseconds: 200),
+        ),
+      ],
     );
   }
 
@@ -161,9 +225,7 @@ class ActivitySection extends ConsumerWidget {
             'View All',
             style: text.paragraph?.copyWith(
               color: Colors.transparent,
-              shadows: [
-                Shadow(color: colors.textSecondary, offset: const Offset(0, -2)),
-              ], // Shadow trick to create gap between text and underline
+              shadows: [Shadow(color: colors.textSecondary, offset: const Offset(0, -2))],
               decoration: TextDecoration.underline,
               decorationColor: colors.textSecondary,
               decorationStyle: TextDecorationStyle.solid,

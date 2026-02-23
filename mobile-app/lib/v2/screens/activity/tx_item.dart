@@ -25,24 +25,32 @@ class TxItemData {
 
   factory TxItemData.from(TransactionEvent tx, String accountId) {
     final isSend = tx.from == accountId;
+    final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
+    final isHighlighted = isPending || isScheduled;
     final fmt = NumberFormattingService();
 
     return TxItemData(
-      label: isScheduled
+      label: isPending
+          ? 'Sending'
+          : isScheduled
           ? (isSend ? 'Pending' : 'Receiving')
           : isSend
           ? 'Sent'
           : 'Received',
-      timeLabel: isScheduled ? _formatDuration(tx.timeRemaining) : _timeAgo(tx.timestamp),
-      iconBg: isScheduled && !isSend
+      timeLabel: isPending
+          ? 'now'
+          : isScheduled
+          ? _formatDuration(tx.timeRemaining)
+          : _timeAgo(tx.timestamp),
+      iconBg: isHighlighted && !isSend
           ? const Color(0x2927F027)
-          : isScheduled && isSend
+          : isHighlighted && isSend
           ? const Color(0x29FFBC42)
           : const Color(0xFF292929),
-      iconColor: isScheduled && !isSend
+      iconColor: isHighlighted && !isSend
           ? const Color(0xFF27F027)
-          : isScheduled && isSend
+          : isHighlighted && isSend
           ? const Color(0xFFFFBC42)
           : const Color(0x80FFFFFF),
       isSend: isSend,

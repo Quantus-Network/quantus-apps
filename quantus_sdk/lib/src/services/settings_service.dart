@@ -26,11 +26,7 @@ class SettingsService {
   static const String _activeDisplayAccountKey = 'active_display_account';
   static const String _balanceHiddenKey = 'balance_hidden';
 
-  // Local authentication keys
-  static const String _isLocalAuthEnabledKey = 'is_local_auth_enabled';
-  static const String _lastSuccessfulAuthKey = 'last_successful_auth';
   static const String _lastPausedTimeKey = 'last_paused_time';
-  static const String _authTimeoutKey = 'auth_timeout';
 
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
@@ -265,25 +261,6 @@ class SettingsService {
     return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
-  // PIN Code Settings
-  Future<void> setPin(String pin) async {
-    await _secureStorage.write(key: 'wallet_pin', value: pin);
-  }
-
-  Future<String?> getPin() async {
-    return await _secureStorage.read(key: 'wallet_pin');
-  }
-
-  Future<bool> hasPin() async {
-    final pin = await _secureStorage.read(key: 'wallet_pin');
-    return pin != null && pin.isNotEmpty;
-  }
-
-  Future<bool> verifyPin(String pin) async {
-    final stored = await _secureStorage.read(key: 'wallet_pin');
-    return stored == pin;
-  }
-
   // Reversible Transaction Settings
   Future<void> setReversibleEnabled(bool enabled) async {
     await _prefs.setBool('reversible_enabled', enabled);
@@ -327,18 +304,6 @@ class SettingsService {
     return _prefs.getString(key);
   }
 
-  DateTime? getLastSuccessfulAuthTime() {
-    final String? lastAuthString = _prefs.getString(_lastSuccessfulAuthKey);
-    if (lastAuthString == null) return null;
-
-    final DateTime lastAuth = DateTime.parse(lastAuthString);
-    return lastAuth;
-  }
-
-  void setLastSuccessfulAuthTime(DateTime time) {
-    _prefs.setString(_lastSuccessfulAuthKey, time.toIso8601String());
-  }
-
   DateTime? getLastPausedTime() {
     final String? lastPausedString = _prefs.getString(_lastPausedTimeKey);
     if (lastPausedString == null) return null;
@@ -353,27 +318,6 @@ class SettingsService {
 
   void cleanLastPausedTime() {
     _prefs.remove(_lastPausedTimeKey);
-  }
-
-  /// Do not call this directly - call local auth service getAuthTimeoutMinutes() instead.
-  int? getAuthTimeout() {
-    final int? authTimeout = _prefs.getInt(_authTimeoutKey);
-    if (authTimeout == null) return null;
-
-    return authTimeout;
-  }
-
-  /// Do not call this directly - call local auth service setAuthTimeoutMinutes() instead.
-  void setAuthTimeout(int timeoutDurationInMinutes) {
-    _prefs.setInt(_authTimeoutKey, timeoutDurationInMinutes);
-  }
-
-  void setAuthEnabled(bool enabled) {
-    _prefs.setBool(_isLocalAuthEnabledKey, enabled);
-  }
-
-  bool isAuthEnabled() {
-    return _prefs.getBool(_isLocalAuthEnabledKey) ?? false;
   }
 
   // --- Migration Methods ---

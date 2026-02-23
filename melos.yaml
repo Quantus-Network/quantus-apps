@@ -49,7 +49,7 @@ dependency_overrides:
   # Mobile/Flutter specific
   video_player: ^2.10.0
   mobile_scanner: ^7.0.1
-  flutter_native_splash: ^2.4.6
+  flutter_native_splash: ^2.4.7
   flutter_launcher_icons: ^0.14.4
   image_picker: ^1.1.2
   permission_handler: ^12.0.1

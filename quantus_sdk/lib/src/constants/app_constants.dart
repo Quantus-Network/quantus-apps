@@ -61,6 +61,9 @@ class AppConstants {
   // hardware wallet flow without using a hardware wallet.
   static const debugHardwareWallet = false;
 
+  // Debug the timing of subsquid queries
+  static const bool debugQueryTiming = false;
+
   static const String accountSettingsRouteName = 'account-settings';
   static const int highSecurityStepsCount = 3;
 }

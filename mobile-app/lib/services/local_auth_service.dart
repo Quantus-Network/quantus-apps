@@ -11,31 +11,24 @@ class LocalAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SettingsService _settingsService = SettingsService();
 
-  /// Check if biometric authentication is available on the device
+  static const _authTimeout = Duration(seconds: 30);
+
   Future<bool> isBiometricAvailable() async {
     try {
-      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
-      debugPrint('Device supported: $isDeviceSupported');
-
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
       if (!isDeviceSupported) return false;
 
-      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      debugPrint('Can check biometrics: $canCheckBiometrics');
+      final canCheck = await _localAuth.canCheckBiometrics;
+      if (!canCheck) return false;
 
-      if (!canCheckBiometrics) return false;
-
-      // Additional check for enrolled biometrics
-      final List<BiometricType> availableBiometrics = await getAvailableBiometrics();
-      debugPrint('Available biometric types: $availableBiometrics');
-
-      return availableBiometrics.isNotEmpty;
+      final available = await getAvailableBiometrics();
+      return available.isNotEmpty;
     } catch (e) {
       debugPrint('Error checking biometric availability: $e');
       return false;
     }
   }
 
-  /// Get list of available biometric types
   Future<List<BiometricType>> getAvailableBiometrics() async {
     try {
       return await _localAuth.getAvailableBiometrics();
@@ -45,151 +38,35 @@ class LocalAuthService {
     }
   }
 
-  /// Check if local authentication is enabled in app settings
-  bool isLocalAuthEnabled() {
-    return _settingsService.isAuthEnabled();
-  }
-
-  /// Enable or disable local authentication in app settings
-  void setLocalAuthEnabled(bool enabled) {
-    _settingsService.setAuthEnabled(enabled);
-  }
-
-  int getAuthTimeoutMinutes() {
-    return _settingsService.getAuthTimeout() ?? 1;
-  }
-
-  void setAuthTimeoutMinutes(int timeoutDurationInMinutes) {
-    return _settingsService.setAuthTimeout(timeoutDurationInMinutes);
-  }
-
-  /// Authenticate using biometrics
-  Future<bool> authenticate({
-    String localizedReason = 'Please authenticate to access your wallet',
-    bool biometricOnly = false,
-    bool forSetup = false, // Add this parameter for setup flows
-  }) async {
+  Future<bool> authenticate({String localizedReason = 'Please authenticate to access your wallet'}) async {
     try {
-      // Check if biometrics are available
-      final bool isAvailable = await isBiometricAvailable();
-      if (!isAvailable) {
-        debugPrint('Biometric authentication is not available');
-        // don't authenticate if auth is enabled but someone ripped out the
-        //FaceID cam or whatever?
-        // On a device that doesn't have biometrics, you also can't turn it on.
-        // Both auth cases should return false in this case.
-        return false;
-      }
+      final isAvailable = await isBiometricAvailable();
+      if (!isAvailable) return true;
 
-      if (!forSetup) {
-        final bool isEnabled = isLocalAuthEnabled();
-        if (!isEnabled) {
-          debugPrint('Local authentication is disabled in settings');
-          return true; // Allow access if not enabled
-        }
-      }
-
-      final bool didAuthenticate = await _localAuth.authenticate(
+      final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
-        options: AuthenticationOptions(biometricOnly: biometricOnly, stickyAuth: true, sensitiveTransaction: true),
+        options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
       );
 
-      if (didAuthenticate) {
-        _cleanLastPausedTime();
-      }
-
+      if (didAuthenticate) _cleanLastPausedTime();
       return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('Platform exception during authentication: $e');
-
-      // Handle specific error cases
-      switch (e.code) {
-        case 'NotAvailable':
-        case 'NotEnrolled':
-          return false;
-        case 'LockedOut':
-        case 'PermanentlyLockedOut':
-          return false;
-        case 'UserCancel':
-        case 'SystemCancel':
-          return false;
-        default:
-          return false;
-      }
+      return false;
     } catch (e) {
       debugPrint('Error during authentication: $e');
       return false;
     }
   }
 
-  /// Get a user-friendly description of available biometric types
-  Future<String> getBiometricDescription() async {
-    try {
-      final List<BiometricType> availableBiometrics = await getAvailableBiometrics();
-
-      if (availableBiometrics.isEmpty) {
-        return 'No biometric authentication available';
-      }
-
-      final List<String> descriptions = [];
-
-      for (final biometric in availableBiometrics) {
-        switch (biometric) {
-          case BiometricType.face:
-            descriptions.add('Face ID');
-            break;
-          case BiometricType.fingerprint:
-            descriptions.add('Fingerprint');
-            break;
-          case BiometricType.iris:
-            descriptions.add('Iris');
-            break;
-          case BiometricType.weak:
-            descriptions.add('Device PIN/Pattern');
-            break;
-          case BiometricType.strong:
-            descriptions.add('Strong Biometrics');
-            break;
-        }
-      }
-
-      if (descriptions.length == 1) {
-        return descriptions.first;
-      } else if (descriptions.length == 2) {
-        return '${descriptions[0]} or ${descriptions[1]}';
-      } else {
-        // ignore: lines_longer_than_80_chars
-        return '${descriptions.take(descriptions.length - 1).join(', ')}, or ${descriptions.last}';
-      }
-    } catch (e) {
-      debugPrint('Error getting biometric description: $e');
-      return 'Biometric Authentication';
-    }
-  }
-
-  /// Check if authentication is required (based on app lifecycle and settings)
   bool shouldRequireAuthentication() {
     try {
-      final bool isEnabled = isLocalAuthEnabled();
-      if (!isEnabled) return false;
-
-      final DateTime? lastPausedTime = _settingsService.getLastPausedTime();
-
+      final lastPausedTime = _settingsService.getLastPausedTime();
       if (lastPausedTime == null) return false;
-
-      final int timeoutDurationInMinutes = getAuthTimeoutMinutes();
-
-      final Duration authTimeout = Duration(minutes: timeoutDurationInMinutes);
-
-      print('lastPausedTime: $lastPausedTime');
-      print('now: ${DateTime.now()}');
-      print('auth time difference: ${DateTime.now().difference(lastPausedTime).inSeconds}');
-
-      final isTimeout = DateTime.now().difference(lastPausedTime) > authTimeout;
-      return isTimeout;
+      return DateTime.now().difference(lastPausedTime) > _authTimeout;
     } catch (e) {
       debugPrint('Error checking if authentication is required: $e');
-      return true; // Err on the side of caution
+      return true;
     }
   }
 
@@ -201,7 +78,6 @@ class LocalAuthService {
     _settingsService.cleanLastPausedTime();
   }
 
-  /// Stop local authentication (useful for cleanup)
   Future<void> stopAuthentication() async {
     try {
       await _localAuth.stopAuthentication();

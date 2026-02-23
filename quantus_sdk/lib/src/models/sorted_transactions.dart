@@ -4,8 +4,21 @@ import 'package:quantus_sdk/src/models/transaction_event.dart';
 class SortedTransactionsList {
   final List<ReversibleTransferEvent> reversibleTransfers;
   final List<TransactionEvent> otherTransfers;
+  final int nextTransfersOffset;
+  final int nextReversibleOffset;
+  final int nextRewardsOffset;
+  final int nextScheduledOffset;
+  final bool hasMore;
 
-  const SortedTransactionsList({required this.reversibleTransfers, required this.otherTransfers});
+  const SortedTransactionsList({
+    required this.reversibleTransfers,
+    required this.otherTransfers,
+    this.nextTransfersOffset = 0,
+    this.nextReversibleOffset = 0,
+    this.nextRewardsOffset = 0,
+    this.nextScheduledOffset = 0,
+    this.hasMore = false,
+  });
 
   static const SortedTransactionsList empty = SortedTransactionsList(reversibleTransfers: [], otherTransfers: []);
 

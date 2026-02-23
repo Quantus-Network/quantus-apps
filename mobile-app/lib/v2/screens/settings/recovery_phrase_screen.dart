@@ -32,13 +32,8 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
       });
       return;
     }
-    if (_authService.isLocalAuthEnabled()) {
-      final ok = await _authService.authenticate(
-        localizedReason: 'Authenticate to reveal recovery phrase',
-        biometricOnly: false,
-      );
-      if (!ok || !mounted) return;
-    }
+    final ok = await _authService.authenticate(localizedReason: 'Authenticate to reveal recovery phrase');
+    if (!ok || !mounted) return;
     final mnemonic = await _settingsService.getMnemonic(widget.walletIndex);
     if (mnemonic != null && mounted) {
       setState(() {

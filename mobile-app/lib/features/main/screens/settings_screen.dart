@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/features/components/scaffold_base.dart'
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
-import 'package:resonance_network_wallet/features/main/screens/authentication_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/notifications_settings_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/select_wallet_for_recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/show_recovery_phrase_screen.dart';
@@ -167,13 +166,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           title: 'Notifications',
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()));
-          },
-        ),
-        const SizedBox(height: 22),
-        ListItem(
-          title: 'Authentication',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthenticationSettingsScreen()));
           },
         ),
         const SizedBox(height: 22),
