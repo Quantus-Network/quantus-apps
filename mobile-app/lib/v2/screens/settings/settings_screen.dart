@@ -5,6 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
@@ -306,22 +307,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Widget _resetButton(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
-      onTap: _showResetConfirmation,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.danger),
-        ),
-        child: Center(
-          child: Text(
-            'Reset Quantus',
-            style: text.paragraph?.copyWith(color: colors.danger, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
-    );
+    return Button(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
   }
 }

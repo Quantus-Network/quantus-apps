@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
@@ -190,23 +191,12 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                GlassContainer(
-                  asset: GlassContainer.wideAsset,
-                  onTap: canContinue ? _continue : null,
-                  child: _isSubmitting
-                      ? Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary),
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            'Continue',
-                            style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                          ),
-                        ),
+                Button(
+                  label: 'Continue',
+                  onTap: _continue,
+                  isLoading: _isSubmitting,
+                  variant: ButtonVariant.secondary,
+                  isDisabled: !canContinue,
                 ),
                 const SizedBox(height: 24),
               ],
@@ -241,9 +231,8 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            GlassContainer(
-              asset: GlassContainer.wideAsset,
-              filled: true,
+            Button(
+              label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();
                 if (v.isNotEmpty) {
@@ -254,12 +243,6 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   Navigator.pop(ctx);
                 }
               },
-              child: Center(
-                child: Text(
-                  'Save',
-                  style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                ),
-              ),
             ),
           ],
         ),

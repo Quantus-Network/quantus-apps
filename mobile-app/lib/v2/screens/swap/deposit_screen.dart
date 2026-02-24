@@ -3,6 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
@@ -294,36 +295,19 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
-      filled: false,
-      onTap: _confirming ? null : _confirmSent,
-      child: Center(
-        child: _confirming
-            ? SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2),
-              )
-            : Text(
-                "I've sent the funds",
-                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-              ),
-      ),
+    return Button(
+      label: "I've sent the funds",
+      onTap: _confirmSent,
+      variant: ButtonVariant.secondary,
+      isLoading: _confirming,
     );
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
-      filled: false,
+    return Button(
+      label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-      child: Center(
-        child: Text(
-          'Done',
-          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-        ),
-      ),
+      variant: ButtonVariant.secondary,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/main/screens/send/send_providers.dart';
@@ -478,20 +479,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: disabled ? null : onTap,
-      child: Opacity(
-        opacity: disabled ? 0.2 : 1.0,
-        child: GlassContainer(
-          asset: GlassContainer.wideAsset,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
-    );
+    return Button(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -190,26 +191,15 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   }
 
   Widget _revealButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
+    final label = _revealed ? 'Hide Recovery Phrase' : 'Reveal Recovery Phrase';
+    final icon = _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined;
+
+    return Button(
+      label: label,
       onTap: _toggleReveal,
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: colors.textPrimary,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _revealed ? 'Hide Recovery Phrase' : 'Reveal Recovery Phrase',
-              style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
+      variant: ButtonVariant.secondary,
+      icon: Icon(icon, color: colors.textPrimary, size: 16),
+      iconPlacement: IconPlacement.leading,
     );
   }
 }

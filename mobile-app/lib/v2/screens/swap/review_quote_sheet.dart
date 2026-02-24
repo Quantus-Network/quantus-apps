@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/deposit_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -152,7 +152,9 @@ class _ReviewQuoteContent extends StatelessWidget {
   }
 
   Widget _confirmButton(BuildContext context, AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
+    return Button(
+      label: 'Confirm',
+
       onTap: () async {
         final swapService = SwapService();
         final order = await swapService.createSwap(quote);
@@ -160,15 +162,6 @@ class _ReviewQuoteContent extends StatelessWidget {
         Navigator.pop(context);
         Navigator.push(context, MaterialPageRoute(builder: (_) => DepositScreen(order: order)));
       },
-      child: GlassContainer(
-        asset: GlassContainer.wideAsset,
-        child: Center(
-          child: Text(
-            'Confirm',
-            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/create/wallet_ready_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class WelcomeScreenV2 extends StatelessWidget {
   const WelcomeScreenV2({super.key});
@@ -13,7 +12,6 @@ class WelcomeScreenV2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final text = context.themeText;
     final isTablet = context.isTablet;
 
     final background = isTablet
@@ -46,9 +44,8 @@ class WelcomeScreenV2 extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  GlassContainer(
-                    asset: GlassContainer.wideAsset,
-                    filled: true,
+                  Button(
+                    label: 'Create New Wallet',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -56,16 +53,10 @@ class WelcomeScreenV2 extends StatelessWidget {
                         builder: (_) => const WalletReadyScreenV2(),
                       ),
                     ),
-                    child: Center(
-                      child: Text(
-                        'Create New Wallet',
-                        style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 32),
-                  GlassContainer(
-                    asset: GlassContainer.wideClearAsset,
+                  Button(
+                    label: 'Import Existing Wallet',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -73,13 +64,9 @@ class WelcomeScreenV2 extends StatelessWidget {
                         builder: (_) => const ImportWalletScreenV2(),
                       ),
                     ),
-                    child: Center(
-                      child: Text(
-                        'Import Existing Wallet',
-                        style: text.paragraph?.copyWith(fontWeight: FontWeight.w500, color: colors.textPrimary),
-                      ),
-                    ),
+                    variant: ButtonVariant.secondary,
                   ),
+
                   const SizedBox(height: 60),
                 ],
               ),

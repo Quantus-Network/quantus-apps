@@ -61,6 +61,7 @@ dependencies:
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
   image_picker: ^1.2.1
+  flutter_inset_shadow: ^2.0.3
 
 dev_dependencies:
   flutter_test:

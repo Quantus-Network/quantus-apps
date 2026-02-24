@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/features/components/app_modal_bottom_sh
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -755,23 +756,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
-    return GlassContainer(
-      asset: GlassContainer.wideAsset,
-      filled: true,
-      onTap: isLoading ? null : onTap,
-      child: isLoading
-          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-          : Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-                height: 1,
-              ),
-            ),
-    );
+    return Button(label: label, onTap: onTap, isLoading: isLoading);
   }
 
   Future<void> _submitCreatedAccount() async {

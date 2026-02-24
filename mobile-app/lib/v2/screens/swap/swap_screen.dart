@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
@@ -433,26 +434,6 @@ class _SwapScreenState extends State<SwapScreen> {
 
   Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
-    return GestureDetector(
-      onTap: enabled ? _getQuote : null,
-      child: Opacity(
-        opacity: enabled ? 1.0 : 0.4,
-        child: GlassContainer(
-          asset: GlassContainer.wideAsset,
-          child: Center(
-            child: _loading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(color: colors.textPrimary, strokeWidth: 2),
-                  )
-                : Text(
-                    'Get a Quote',
-                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                  ),
-          ),
-        ),
-      ),
-    );
+    return Button(label: 'Get a Quote', onTap: _getQuote, isDisabled: !enabled, variant: ButtonVariant.secondary);
   }
 }

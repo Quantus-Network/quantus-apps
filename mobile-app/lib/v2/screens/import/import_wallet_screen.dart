@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -149,30 +149,12 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   ),
                 ],
                 const Spacer(),
-                Opacity(
-                  opacity: _hasInput ? 1.0 : 0.2,
-                  child: GlassContainer(
-                    asset: GlassContainer.wideAsset,
-                    onTap: _hasInput && !_isLoading ? _import : null,
-                    child: _isLoading
-                        ? Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: colors.textPrimary),
-                            ),
-                          )
-                        : Center(
-                            child: Text(
-                              'Import Wallet',
-                              style: text.paragraph?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                          ),
-                  ),
+                Button(
+                  label: 'Import Wallet',
+                  onTap: _import,
+                  isLoading: _isLoading,
+                  variant: ButtonVariant.secondary,
+                  isDisabled: !_hasInput,
                 ),
                 const SizedBox(height: 24),
               ],

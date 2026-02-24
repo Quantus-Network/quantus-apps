@@ -37,11 +37,13 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
   final Color txItemSeparator;
   final Color border;
   final Color buttonDisabled;
+  final Color buttonDanger;
   final Color skeletonBase;
   final Color skeletonHighlight;
   final Color toasterBorder;
   final Color sheetBackground;
   final Color borderSubtle;
+  final Color borderDanger;
 
   // Account tags
   final Color tagGuardian;
@@ -55,6 +57,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.toasterBorder,
     required this.sheetBackground,
     required this.borderSubtle,
+    required this.borderDanger,
     required this.surface,
     required this.surfaceGlass,
     required this.surfaceCard,
@@ -74,6 +77,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     required this.txItemSeparator,
     required this.border,
     required this.buttonDisabled,
+    required this.buttonDanger,
     required this.skeletonBase,
     required this.skeletonHighlight,
     required this.tagGuardian,
@@ -89,6 +93,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         toasterBorder: const Color(0xFF3D3D3D),
         sheetBackground: const Color(0xFF1A1A1A),
         borderSubtle: const Color(0x70FFFFFF),
+        borderDanger: const Color(0x70FF0000),
         surface: const Color(0xFF292929),
         surfaceGlass: const Color(0x1AFFFFFF),
         surfaceCard: const Color(0x0FFFFFFF),
@@ -108,6 +113,7 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
         txItemSeparator: const Color(0x05FFFFFF),
         border: const Color(0x33FFFFFF),
         buttonDisabled: const Color(0xFF3D3C44),
+        buttonDanger: const Color(0x1AFF0000),
         skeletonBase: const Color(0xFF3D3C44),
         skeletonHighlight: const Color(0xFF5A5A5A),
         tagGuardian: const Color(0xFF9747FF),
@@ -142,6 +148,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
     Color? sheetBackground,
     Color? borderSubtle,
     Color? buttonDisabled,
+    Color? buttonDanger,
+    Color? borderDanger,
     Color? skeletonBase,
     Color? skeletonHighlight,
     Color? tagGuardian,
@@ -174,6 +182,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       txItemSeparator: txItemSeparator ?? this.txItemSeparator,
       border: border ?? this.border,
       buttonDisabled: buttonDisabled ?? this.buttonDisabled,
+      buttonDanger: buttonDanger ?? this.buttonDanger,
+      borderDanger: borderDanger ?? this.borderDanger,
       skeletonBase: skeletonBase ?? this.skeletonBase,
       skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
       tagGuardian: tagGuardian ?? this.tagGuardian,
@@ -211,6 +221,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       txItemSeparator: Color.lerp(txItemSeparator, other.txItemSeparator, t) ?? txItemSeparator,
       border: Color.lerp(border, other.border, t) ?? border,
       buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t) ?? buttonDisabled,
+      buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
+      borderDanger: Color.lerp(borderDanger, other.borderDanger, t) ?? borderDanger,
       skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
       skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,
       tagGuardian: Color.lerp(tagGuardian, other.tagGuardian, t) ?? tagGuardian,
