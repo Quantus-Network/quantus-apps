@@ -120,7 +120,7 @@ class FirebaseMessagingService {
     }
 
     try {
-      await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token, platform: _platform);
+      await _senotiService.insertNewAddress(newAddress: newAddress, deviceToken: token);
     } catch (e) {
       debugPrint('Failed to insert new address: $e');
     }
