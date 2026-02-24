@@ -15,6 +15,7 @@ class ResetConfirmationSheet extends StatefulWidget {
 
 class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
   bool _isCheckboxChecked = false;
+  bool _isResetting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +47,13 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
           const SizedBox(height: 64),
           Button(
             label: 'Confirm',
-            onTap: widget.onReset,
+            onTap: () {
+              setState(() => _isResetting = true);
+              widget.onReset();
+            },
             isDisabled: !_isCheckboxChecked,
             variant: ButtonVariant.secondary,
+            isLoading: _isResetting,
           ),
           const SizedBox(height: 16),
           Button(
