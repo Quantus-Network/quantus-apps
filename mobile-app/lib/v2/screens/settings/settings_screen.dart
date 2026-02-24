@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
@@ -69,11 +68,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       try {
         await ref.read(firebaseMessagingServiceProvider).unregisterDevice();
       } catch (e) {
-        if (mounted) {
-          context.showErrorToaster(message: 'Failed to unregister device: $e');
-        }
-
-        return;
+        debugPrint('Failed to unregister device (non-fatal): $e');
       }
     }
 
