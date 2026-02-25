@@ -68,7 +68,7 @@ class Button extends StatelessWidget {
     switch (variant) {
       case ButtonVariant.primary:
         buttonWidget = SizedBox(
-          width: width, 
+          width: width,
           child: Stack(
             alignment: Alignment.center,
             children: [
