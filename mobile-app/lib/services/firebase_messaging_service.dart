@@ -107,7 +107,6 @@ class FirebaseMessagingService {
       await _senotiService.unregisterDevice(token, _platform);
     } catch (e) {
       debugPrint('Failed to unregister device: $e');
-      rethrow;
     }
   }
 
