@@ -66,7 +66,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   Future<void> _resetAndClearData() async {
     if (FeatureFlags.enableRemoteNotifications) {
       try {
-        await ref.read(firebaseMessagingServiceProvider).unregisterDevice();
+        ref.read(firebaseMessagingServiceProvider).unregisterDevice();
       } catch (e) {
         debugPrint('Failed to unregister device (non-fatal): $e');
       }
