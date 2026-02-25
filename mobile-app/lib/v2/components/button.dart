@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/fading_border_paint.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:flutter_inset_shadow/flutter_inset_shadow.dart' as inset;
@@ -67,11 +68,10 @@ class Button extends StatelessWidget {
     switch (variant) {
       case ButtonVariant.primary:
         buttonWidget = SizedBox(
-          width: width, // You keep your dynamic width here
+          width: width, 
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // The Glass Body (The ONLY non-positioned child)
               ClipRRect(
                 borderRadius: BorderRadius.circular(buttonRadius),
                 child: BackdropFilter(
@@ -103,11 +103,10 @@ class Button extends StatelessWidget {
                 ),
               ),
 
-              // The Border Overlay (Wrapped in Positioned.fill)
               Positioned.fill(
                 child: IgnorePointer(
                   child: CustomPaint(
-                    painter: _FadingEdgePainter(
+                    painter: FadingEdgePainter(
                       borderRadius: buttonRadius,
                       strokeWidth: 1.5,
                       borderColor: context.colors.borderSubtle,
@@ -198,38 +197,4 @@ class Button extends StatelessWidget {
       child: Opacity(opacity: disabled ? 0.2 : 1, child: buttonWidget),
     );
   }
-}
-
-// ----------------------------------------------------------------------
-// The precise drawing of the fading Figma stroke
-// ----------------------------------------------------------------------
-
-class _FadingEdgePainter extends CustomPainter {
-  final double borderRadius;
-  final double strokeWidth;
-  final Color borderColor;
-
-  _FadingEdgePainter({required this.borderRadius, required this.strokeWidth, required this.borderColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth);
-
-    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
-
-    final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [borderColor.useOpacity(0.5), Colors.transparent, borderColor.useOpacity(0.5), Colors.transparent],
-        stops: const [0.2, 0.5, 1, 0.5],
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawRRect(rrect, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
