@@ -774,7 +774,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       await _accountsService.addAccount(accountToSave);
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-      await ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
+      ref.read(firebaseMessagingServiceProvider).insertNewAddress(accountToSave.accountId);
 
       if (mounted) {
         _closeCreateView();
