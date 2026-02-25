@@ -89,7 +89,7 @@ class Button extends StatelessWidget {
 
       case ButtonVariant.secondary:
         buttonWidget = LiquidGlassLayer(
-          settings:  LiquidGlassSettings(
+          settings: LiquidGlassSettings(
             visibility: visibility,
             thickness: 20,
             blur: 4,
@@ -186,9 +186,6 @@ class Button extends StatelessWidget {
         break;
     }
 
-    return InkWell(
-      onTap: disabled ? null : onTap,
-      child: buttonWidget,
-    );
+    return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
   }
 }
