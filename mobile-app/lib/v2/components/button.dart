@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/fading_border_paint.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:flutter_inset_shadow/flutter_inset_shadow.dart' as inset;
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 enum ButtonVariant { transparent, primary, secondary, danger }
 
@@ -42,8 +42,8 @@ class Button extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-
     final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
+    final visibility = disabled ? 0.25 : 1.0;
 
     final buttonContent = Center(
       child: isLoading
@@ -67,116 +67,111 @@ class Button extends StatelessWidget {
 
     switch (variant) {
       case ButtonVariant.primary:
-        buttonWidget = SizedBox(
-          width: width,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(buttonRadius),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Container(
-                    decoration: inset.BoxDecoration(
-                      boxShadow: [
-                        const inset.BoxShadow(
-                          color: Colors.black,
-                          blurRadius: 36,
-                          spreadRadius: -20,
-                          offset: Offset(8, 8),
-                          inset: true,
-                        ),
-                        inset.BoxShadow(
-                          color: Colors.white.useOpacity(0.2),
-                          blurRadius: 36,
-                          spreadRadius: -20,
-                          offset: const Offset(-8, -8),
-                          inset: true,
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: context.colors.surfaceGlass,
-                      child: Padding(padding: padding, child: buttonContent),
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: FadingEdgePainter(
-                      borderRadius: buttonRadius,
-                      strokeWidth: 1.5,
-                      borderColor: context.colors.borderSubtle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        buttonWidget = LiquidGlassLayer(
+          settings: LiquidGlassSettings(
+            glassColor: context.colors.surfaceGlass,
+            visibility: visibility,
+            thickness: 20,
+            blur: 4,
+            refractiveIndex: 1.33,
+            lightAngle: 45 * (3.1416 / 180),
+            lightIntensity: 1.0,
+            ambientStrength: 0.5,
+            saturation: 1.5,
+          ),
+          child: Center(
+            child: LiquidGlass(
+              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
+              child: Padding(padding: padding, child: buttonContent),
+            ),
           ),
         );
         break;
 
       case ButtonVariant.secondary:
-        buttonWidget = Container(
-          width: width,
-          padding: padding,
-          decoration: inset.BoxDecoration(
-            borderRadius: BorderRadius.circular(buttonRadius),
-            boxShadow: [
-              inset.BoxShadow(
-                color: Colors.black.useOpacity(0.3),
-                blurRadius: 56,
-                spreadRadius: -38,
-                offset: const Offset(12, 12),
-                inset: true,
-              ),
-              inset.BoxShadow(
-                color: Colors.white.useOpacity(0.3),
-                blurRadius: 56,
-                spreadRadius: -38,
-                offset: const Offset(-12, -12),
-                inset: true,
-              ),
-            ],
-            border: BoxBorder.all(color: context.colors.borderSubtle.useOpacity(0.5), width: 1.5),
+        buttonWidget = LiquidGlassLayer(
+          settings:  LiquidGlassSettings(
+            visibility: visibility,
+            thickness: 20,
+            blur: 4,
+            refractiveIndex: 1.33,
+            lightAngle: 45 * (3.1416 / 180),
+            lightIntensity: 1.0,
+            ambientStrength: 1.5,
+            saturation: 1.5,
           ),
-          child: buttonContent,
+          child: Center(
+            child: LiquidGlass(
+              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
+              child: Container(
+                width: width,
+                padding: padding,
+                decoration: inset.BoxDecoration(
+                  borderRadius: BorderRadius.circular(buttonRadius),
+                  boxShadow: [
+                    inset.BoxShadow(
+                      color: Colors.black.useOpacity(0.3),
+                      blurRadius: 56,
+                      spreadRadius: -38,
+                      offset: const Offset(12, 12),
+                      inset: true,
+                    ),
+                    inset.BoxShadow(
+                      color: Colors.white.useOpacity(0.3),
+                      blurRadius: 56,
+                      spreadRadius: -38,
+                      offset: const Offset(-12, -12),
+                      inset: true,
+                    ),
+                  ],
+                ),
+                child: buttonContent,
+              ),
+            ),
+          ),
         );
         break;
 
       case ButtonVariant.danger:
-        buttonWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(buttonRadius),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: width,
-              padding: padding,
-              decoration: inset.BoxDecoration(
-                borderRadius: BorderRadius.circular(buttonRadius),
-                color: context.colors.buttonDanger,
-                boxShadow: [
-                  inset.BoxShadow(
-                    color: Colors.black.useOpacity(0.3),
-                    blurRadius: 56,
-                    spreadRadius: -38,
-                    offset: const Offset(12, 12),
-                    inset: true,
-                  ),
-                  inset.BoxShadow(
-                    color: Colors.white.useOpacity(0.3),
-                    blurRadius: 56,
-                    spreadRadius: -38,
-                    offset: const Offset(-12, -12),
-                    inset: true,
-                  ),
-                ],
-                border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
+        buttonWidget = LiquidGlassLayer(
+          settings: LiquidGlassSettings(
+            visibility: visibility,
+            thickness: 20,
+            blur: 4,
+            refractiveIndex: 1.33,
+            lightAngle: 45 * (3.1416 / 180),
+            lightIntensity: 0.5,
+            saturation: 1.5,
+          ),
+          child: Center(
+            child: LiquidGlass(
+              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
+              child: Container(
+                width: width,
+                padding: padding,
+                decoration: inset.BoxDecoration(
+                  borderRadius: BorderRadius.circular(buttonRadius),
+                  color: context.colors.buttonDanger,
+                  boxShadow: [
+                    inset.BoxShadow(
+                      color: Colors.black.useOpacity(0.3),
+                      blurRadius: 56,
+                      spreadRadius: -38,
+                      offset: const Offset(12, 12),
+                      inset: true,
+                    ),
+                    inset.BoxShadow(
+                      color: Colors.white.useOpacity(0.3),
+                      blurRadius: 56,
+                      spreadRadius: -38,
+                      offset: const Offset(-12, -12),
+                      inset: true,
+                    ),
+                  ],
+                  border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
+                ),
+                child: buttonContent,
               ),
-              child: buttonContent,
             ),
           ),
         );
@@ -187,14 +182,14 @@ class Button extends StatelessWidget {
           width: width,
           padding: padding,
           decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius))),
-          child: buttonContent,
+          child: Opacity(opacity: visibility, child: buttonContent),
         );
         break;
     }
 
-    return GestureDetector(
+    return InkWell(
       onTap: disabled ? null : onTap,
-      child: Opacity(opacity: disabled ? 0.2 : 1, child: buttonWidget),
+      child: buttonWidget,
     );
   }
 }
