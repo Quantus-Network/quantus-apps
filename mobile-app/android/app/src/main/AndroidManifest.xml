@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Camera permission -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Notifications permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Biometric permission -->
