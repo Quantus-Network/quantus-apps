@@ -7,6 +7,7 @@ class LiquidGlassBase extends StatelessWidget {
   final double visibility;
   final Color glassColor;
   final Shape shape;
+  final double radius;
 
   final Widget child;
 
@@ -14,20 +15,21 @@ class LiquidGlassBase extends StatelessWidget {
     super.key,
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
+    this.radius = 14.0,
     required this.child,
-  }): shape = Shape.rounded;
+  }) : shape = Shape.rounded;
 
   const LiquidGlassBase.circular({
     super.key,
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
+
     required this.child,
-  }): shape = Shape.circular;
+  }) : shape = Shape.circular,
+       radius = 100.0;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveRadius = shape == Shape.rounded ? 14.0 : 100.0;
-
     return LiquidGlassLayer(
       settings: LiquidGlassSettings(
         glassColor: glassColor,
@@ -36,13 +38,13 @@ class LiquidGlassBase extends StatelessWidget {
         blur: 4,
         refractiveIndex: 1.33,
         lightAngle: 45 * (3.1416 / 180),
-        lightIntensity: 0.8,
+        lightIntensity: 0.5,
         ambientStrength: 0.5,
         saturation: 1.5,
       ),
       child: Center(
         child: LiquidGlass(
-          shape: LiquidRoundedSuperellipse(borderRadius: effectiveRadius),
+          shape: LiquidRoundedSuperellipse(borderRadius: radius),
           child: child,
         ),
       ),

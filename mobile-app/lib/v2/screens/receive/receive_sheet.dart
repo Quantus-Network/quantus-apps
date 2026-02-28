@@ -3,6 +3,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/button_icon.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -117,7 +118,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _buildAddress(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
+    return InkWell(
       onTap: _copyAddress,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -153,7 +154,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
           if (_checksum != snapshot.data && mounted) setState(() => _checksum = snapshot.data!);
         });
 
-        return GestureDetector(
+        return InkWell(
           onTap: _copyChecksum,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -175,16 +176,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors) {
-    return SizedBox(
-      width: 20,
-      height: 20,
-      child: GlassContainer(
-        asset: GlassContainer.tinyAsset,
-        filled: false,
-        onTap: _copyAddress,
-        child: Icon(Icons.copy, size: 12, color: colors.textPrimary),
-      ),
-    );
+    return const ButtonIcon.rounded(icon: Icons.copy,  size: ButtonIconSize.small);
   }
 
   Widget _buildButtons(AppColorsV2 colors, AppTextTheme text) {

@@ -38,8 +38,9 @@ class ButtonIcon extends StatelessWidget {
     final visibility = disabled ? 0.92 : 1.0;
     final glassColor = context.colors.surfaceGlass;
 
-    final double buttonSize = size == ButtonIconSize.small ? 28 : 48;
+    final double buttonSize = size == ButtonIconSize.small ? 24 : 40;
     final double iconSize = size == ButtonIconSize.small ? 12 : 20;
+    final double radius = size == ButtonIconSize.small ? 6 : 14;
 
     final buttonContent = Center(
       child: isLoading
@@ -62,6 +63,7 @@ class ButtonIcon extends StatelessWidget {
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
           glassColor: glassColor,
+          radius: radius,
           child: SizedBox(width: buttonSize, height: buttonSize, child: buttonContent),
         );
         break;
