@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/v2/components/button_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
@@ -19,7 +20,6 @@ import 'package:resonance_network_wallet/providers/filtered_all_transactions_pro
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
-import 'package:resonance_network_wallet/v2/components/glass_circle_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -168,7 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return GlassCircleIconButton(icon: icon, iconColor: colors.textPrimary, onTap: onTap, size: 40, iconSize: 20);
+    return ButtonIcon.circular(icon: icon, onTap: onTap);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {

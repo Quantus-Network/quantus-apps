@@ -14,17 +14,15 @@ class LiquidGlassBase extends StatelessWidget {
     super.key,
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
-    this.shape = Shape.rounded,
     required this.child,
-  });
+  }): shape = Shape.rounded;
 
   const LiquidGlassBase.circular({
     super.key,
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
-    this.shape = Shape.circular,
     required this.child,
-  });
+  }): shape = Shape.circular;
 
   @override
   Widget build(BuildContext context) {
