@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/inset_button_container.dart';
+import 'package:resonance_network_wallet/v2/components/liquid_glass_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:flutter_inset_shadow/flutter_inset_shadow.dart' as inset;
-import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 enum ButtonVariant { transparent, primary, secondary, danger }
 
@@ -66,112 +65,29 @@ class Button extends StatelessWidget {
 
     switch (variant) {
       case ButtonVariant.primary:
-        buttonWidget = LiquidGlassLayer(
-          settings: LiquidGlassSettings(
-            glassColor: context.colors.surfaceGlass,
-            visibility: visibility,
-            thickness: 20,
-            blur: 4,
-            refractiveIndex: 1.33,
-            lightAngle: 45 * (3.1416 / 180),
-            lightIntensity: 1.0,
-            ambientStrength: 0.5,
-            saturation: 1.5,
-          ),
-          child: Center(
-            child: LiquidGlass(
-              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
-              child: Padding(padding: padding, child: buttonContent),
-            ),
-          ),
+        buttonWidget = LiquidGlassBase.rounded(
+          glassColor: context.colors.surfaceGlass,
+          visibility: visibility,
+          child: Padding(padding: padding, child: buttonContent),
         );
         break;
 
       case ButtonVariant.secondary:
-        buttonWidget = LiquidGlassLayer(
-          settings: LiquidGlassSettings(
-            visibility: visibility,
-            thickness: 20,
-            blur: 4,
-            refractiveIndex: 1.33,
-            lightAngle: 45 * (3.1416 / 180),
-            lightIntensity: 1.0,
-            ambientStrength: 1.5,
-            saturation: 1.5,
-          ),
-          child: Center(
-            child: LiquidGlass(
-              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
-              child: Container(
-                width: width,
-                padding: padding,
-                decoration: inset.BoxDecoration(
-                  borderRadius: BorderRadius.circular(buttonRadius),
-                  boxShadow: [
-                    inset.BoxShadow(
-                      color: Colors.black.useOpacity(0.3),
-                      blurRadius: 56,
-                      spreadRadius: -38,
-                      offset: const Offset(12, 12),
-                      inset: true,
-                    ),
-                    inset.BoxShadow(
-                      color: Colors.white.useOpacity(0.3),
-                      blurRadius: 56,
-                      spreadRadius: -38,
-                      offset: const Offset(-12, -12),
-                      inset: true,
-                    ),
-                  ],
-                ),
-                child: buttonContent,
-              ),
-            ),
-          ),
+        buttonWidget = LiquidGlassBase.rounded(
+          visibility: visibility,
+          child: InsetButtonContainer(width: width, padding: padding, child: buttonContent),
         );
         break;
 
       case ButtonVariant.danger:
-        buttonWidget = LiquidGlassLayer(
-          settings: LiquidGlassSettings(
-            visibility: visibility,
-            thickness: 20,
-            blur: 4,
-            refractiveIndex: 1.33,
-            lightAngle: 45 * (3.1416 / 180),
-            lightIntensity: 0.5,
-            saturation: 1.5,
-          ),
-          child: Center(
-            child: LiquidGlass(
-              shape: const LiquidRoundedSuperellipse(borderRadius: buttonRadius),
-              child: Container(
-                width: width,
-                padding: padding,
-                decoration: inset.BoxDecoration(
-                  borderRadius: BorderRadius.circular(buttonRadius),
-                  color: context.colors.buttonDanger,
-                  boxShadow: [
-                    inset.BoxShadow(
-                      color: Colors.black.useOpacity(0.3),
-                      blurRadius: 56,
-                      spreadRadius: -38,
-                      offset: const Offset(12, 12),
-                      inset: true,
-                    ),
-                    inset.BoxShadow(
-                      color: Colors.white.useOpacity(0.3),
-                      blurRadius: 56,
-                      spreadRadius: -38,
-                      offset: const Offset(-12, -12),
-                      inset: true,
-                    ),
-                  ],
-                  border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
-                ),
-                child: buttonContent,
-              ),
-            ),
+        buttonWidget = LiquidGlassBase.rounded(
+          visibility: visibility,
+          child: InsetButtonContainer(
+            width: width,
+            padding: padding,
+            backgroundColor: context.colors.buttonDanger,
+            border: BoxBorder.all(color: context.colors.borderDanger, width: 1.5),
+            child: buttonContent,
           ),
         );
         break;
