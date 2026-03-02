@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:convert/convert.dart';
 import 'package:http/http.dart' as http;
+import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/wormhole_service.dart';
 
@@ -72,12 +74,9 @@ class WormholeTransfer {
     );
   }
 
-  /// Convert SS58 address to hex (account ID bytes).
   static String _addressToHex(String ss58Address) {
-    // For now, we assume the address is already in the correct format
-    // In a real implementation, you'd decode the SS58 to get raw bytes
-    // This is a placeholder - the actual conversion should use ss58 decoding
-    return ss58Address;
+    final bytes = crypto.ss58ToAccountId(s: ss58Address);
+    return '0x${hex.encode(bytes)}';
   }
 
   @override
