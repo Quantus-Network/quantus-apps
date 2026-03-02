@@ -1074,11 +1074,11 @@ fn compute_block_hash_internal(
     block_number: u32,
     digest: &[u8],
 ) -> Result<[u8; 32], WormholeError> {
-    // Block hash is computed by hashing the SCALE-encoded header with Poseidon
     use qp_wormhole_circuit::block_header::header::{HeaderInputs, DIGEST_LOGS_SIZE};
     use qp_wormhole_inputs::BytesDigest;
 
     let digest_fixed: [u8; DIGEST_LOGS_SIZE] = digest.try_into().map_err(|_| WormholeError {
+        message: format!(
             "Digest must be {} bytes, got {}",
             DIGEST_LOGS_SIZE,
             digest.len()
