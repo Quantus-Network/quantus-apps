@@ -1,25 +1,23 @@
-import 'dart:math' as math;
-
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
-import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_components.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
-Future<T?> showAccountsSheet<T>(BuildContext context) {
-  return showAppModalBottomSheet(context: context, builder: (_) => const AccountsSheet());
+Future<T?> showAccountsSheet<T>(BuildContext context) async {
+  BottomSheetContainer.show(context, builder: (_) => const AccountsSheet());
+  return null;
 }
 
 class AccountsSheet extends ConsumerStatefulWidget {
@@ -190,10 +188,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final maxHeight = media.size.height - media.padding.top - 20;
-    final sheetHeight = math.min(610.0, maxHeight);
-
     final accountsAsync = ref.watch(accountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
@@ -205,28 +199,31 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         ? null
         : displayAccounts.firstWhereOrNull((a) => a.accountId == _editingAccountId);
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-        child: SizedBox(
-          height: sheetHeight,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
-            decoration: BoxDecoration(
-              color: context.colors.sheetBackground,
-              border: Border.all(color: context.colors.toasterBorder),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: _buildContent(
-              accountsAsync: accountsAsync,
-              activeDisplayAccountAsync: activeDisplayAccountAsync,
-              displayAccounts: displayAccounts,
-              activeAccountId: activeAccountId,
-              editingAccount: editingAccount,
-            ),
-          ),
-        ),
+    String title = 'Accounts';
+    VoidCallback? onBack;
+    bool showCloseIcon = true;
+
+    if (_isCreateViewOpen && _draftAccount != null) {
+      title = 'New Account';
+      onBack = _closeCreateView;
+      showCloseIcon = false;
+    } else if (editingAccount != null) {
+      title = 'Edit Account';
+      onBack = _closeEdit;
+      showCloseIcon = false;
+    }
+
+    return BottomSheetContainer(
+      title: title,
+      onBack: onBack,
+      showCloseIcon: showCloseIcon,
+      height: 610,
+      child: _buildContent(
+        accountsAsync: accountsAsync,
+        activeDisplayAccountAsync: activeDisplayAccountAsync,
+        displayAccounts: displayAccounts,
+        activeAccountId: activeAccountId,
+        editingAccount: editingAccount,
       ),
     );
   }
@@ -267,7 +264,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         isSaving: _isSavingCreatedAccount,
         isEditingName: _isEditingCreatedName,
         nameController: _createNameController,
-        onBack: _closeCreateView,
         onToggleEditingName: () => setState(() => _isEditingCreatedName = !_isEditingCreatedName),
         onSubmit: _submitCreatedAccount,
       );
@@ -288,7 +284,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
             isEditingName: _isEditingName,
             isSavingName: _isSavingName,
             nameController: _nameController,
-            onBack: _closeEdit,
             onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
             onSaveName: () => _saveEditedName(editingAccount),
           );
@@ -303,41 +298,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 32.0,
-                  height: 32.0,
-                  child: activeAccountId == null
-                      ? const SizedBox()
-                      : AccountGradientImage(accountId: activeAccountId, width: 32.0, height: 32.0),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Accounts',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ),
-            IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: Colors.white, size: 20),
-              splashRadius: 20,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
-            ),
-          ],
-        ),
-        const SizedBox(height: 40),
         Expanded(
           child: displayAccounts.isEmpty
               ? Center(
@@ -408,28 +368,9 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               ),
             ),
             const SizedBox(width: 12),
-            _buildIconActionButton(icon: Icons.edit_outlined, iconSize: 20, onTap: () => _openEdit(account)),
+            AccountIconActionButton(icon: Icons.edit_outlined, iconSize: 20, onTap: () => _openEdit(account)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildIconActionButton({
-    required IconData icon,
-    required double iconSize,
-    required VoidCallback onTap,
-    bool isTiny = false,
-  }) {
-    final double size = isTiny ? 20 : 40;
-    final asset = isTiny ? GlassContainer.tinyAsset : GlassContainer.smallAsset;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: GlassContainer(
-        asset: asset,
-        onTap: onTap,
-        child: Icon(icon, color: Colors.white, size: iconSize),
       ),
     );
   }
