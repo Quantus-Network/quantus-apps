@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/button_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/home/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
@@ -32,8 +33,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static const _actionButtonBgAsset = 'assets/v2/glass_104_x_80.png';
-
   final NumberFormattingService _fmt = NumberFormattingService();
 
   Future<void> _refresh() async {
@@ -133,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 64),
             _buildBalance(balanceAsync, isBalanceHidden, colors, text),
             const SizedBox(height: 64),
-            if (active is RegularAccount) _buildActionButtons(colors, text),
+            if (active is RegularAccount) _buildActionButtons(),
           ],
         ),
       ),
@@ -214,19 +213,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActionButtons(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildActionButtons() {
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
       label: 'Receive',
-      colors: colors,
-      text: text,
       onTap: () => showReceiveSheetV2(context),
     );
+
     final sendCard = _actionCard(
       iconAsset: 'assets/v2/action_send.svg',
       label: 'Send',
-      colors: colors,
-      text: text,
       onTap: () => showSendSheetV2(context),
     );
 
@@ -251,8 +247,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: _actionCard(
             iconAsset: 'assets/v2/action_swap.svg',
             label: 'Swap',
-            colors: colors,
-            text: text,
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
           ),
         ),
@@ -260,41 +254,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _actionCard({
-    required String iconAsset,
-    required String label,
-    required AppColorsV2 colors,
-    required AppTextTheme text,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
+  Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
+    return Button(
+      label: label,
       onTap: onTap,
-      child: SizedBox(
-        height: 80,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(_actionButtonBgAsset, fit: BoxFit.fill),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(iconAsset, width: 24, height: 24),
-                  const SizedBox(height: 6),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                    style: text.paragraph?.copyWith(color: colors.textPrimary, height: 1.0),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      icon: SvgPicture.asset(iconAsset, width: 24, height: 24),
+      iconPlacement: IconPlacement.top,
+      padding: const EdgeInsets.all(14),
     );
   }
 }
