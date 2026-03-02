@@ -21,7 +21,7 @@ class ButtonIcon extends StatelessWidget {
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
-  }): shape = ButtonIconShape.rounded;
+  }) : shape = ButtonIconShape.rounded;
 
   const ButtonIcon.circular({
     super.key,
@@ -30,7 +30,7 @@ class ButtonIcon extends StatelessWidget {
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
-  }): shape = ButtonIconShape.circular;
+  }) : shape = ButtonIconShape.circular;
 
   @override
   Widget build(BuildContext context) {
