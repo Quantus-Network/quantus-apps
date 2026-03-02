@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 enum ButtonVariant { transparent, primary, secondary, danger }
 
-enum IconPlacement { leading, trailing, top, below }
+enum IconPlacement { leading, trailing, top }
 
 class Button extends StatelessWidget {
   final String label;
@@ -103,14 +103,13 @@ class Button extends StatelessWidget {
         height: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
         child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
       );
-    } else if (iconPlacement == IconPlacement.top || iconPlacement == IconPlacement.below) {
+    } else if (iconPlacement == IconPlacement.top) {
       content = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
           if (iconPlacement == IconPlacement.top && icon != null) icon!,
           Text(label, style: effectiveTextStyle),
-          if (iconPlacement == IconPlacement.below && icon != null) icon!,
         ],
       );
     } else {
