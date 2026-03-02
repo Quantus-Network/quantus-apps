@@ -138,7 +138,7 @@ class EditAccountView extends StatelessWidget {
           const SizedBox(height: 8),
           AccountCopyRow(
             value: checksum,
-            onCopy: () => context.copyTextWithToaster(checksum),
+            onCopy: () => context.copyTextWithToaster(checksum, message: 'Checkphrase copied to clipboard'),
             textStyle: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
