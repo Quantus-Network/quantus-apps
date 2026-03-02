@@ -3,8 +3,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/button_icon.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -176,51 +176,30 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors) {
-    return const ButtonIcon.rounded(icon: Icons.copy,  size: ButtonIconSize.small);
+    return const ButtonIcon.rounded(icon: Icons.copy, size: ButtonIconSize.small);
   }
 
   Widget _buildButtons(AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
         Expanded(
-          child: GestureDetector(
+          child: Button(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            label: 'Copy',
             onTap: _copyAddress,
-            child: GlassContainer(
-              filled: false,
-              asset: GlassContainer.mediumAsset,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.copy, size: 20, color: colors.textPrimary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Copy',
-                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
+            icon: Icon(Icons.copy, size: 20, color: colors.textPrimary),
+            iconPlacement: IconPlacement.leading,
+            variant: ButtonVariant.secondary,
           ),
         ),
         const SizedBox(width: 32),
         Expanded(
-          child: GestureDetector(
+          child: Button(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            label: 'Share',
             onTap: _share,
-            child: GlassContainer(
-              filled: true,
-              asset: GlassContainer.mediumAsset,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.share, size: 20, color: colors.textPrimary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Share',
-                    style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
+            icon: Icon(Icons.share, size: 20, color: colors.textPrimary),
+            iconPlacement: IconPlacement.leading,
           ),
         ),
       ],
