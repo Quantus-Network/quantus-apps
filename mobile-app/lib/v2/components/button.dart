@@ -108,7 +108,7 @@ class Button extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          if (iconPlacement == IconPlacement.top && icon != null) icon!,
+          ?icon,
           Text(label, style: effectiveTextStyle),
         ],
       );
