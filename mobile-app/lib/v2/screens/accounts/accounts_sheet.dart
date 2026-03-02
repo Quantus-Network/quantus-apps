@@ -8,14 +8,14 @@ import 'package:resonance_network_wallet/features/components/account_gradient_im
 import 'package:resonance_network_wallet/features/components/app_modal_bottom_sheet.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) {
@@ -261,11 +261,39 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     }
 
     if (_isCreateViewOpen && _draftAccount != null) {
-      return _buildCreateAccountView();
+      return CreateAccountView(
+        draftAccount: _draftAccount!,
+        draftChecksum: _draftChecksum,
+        isSaving: _isSavingCreatedAccount,
+        isEditingName: _isEditingCreatedName,
+        nameController: _createNameController,
+        onBack: _closeCreateView,
+        onToggleEditingName: () => setState(() => _isEditingCreatedName = !_isEditingCreatedName),
+        onSubmit: _submitCreatedAccount,
+      );
     }
 
     if (editingAccount != null) {
-      return _buildEditAccountView(editingAccount);
+      if (!_isEditingName && _nameController.text != editingAccount.name) {
+        _nameController.text = editingAccount.name;
+      }
+
+      return FutureBuilder<String>(
+        future: _checksumService.getHumanReadableName(editingAccount.accountId),
+        builder: (context, snapshot) {
+          final checksum = snapshot.connectionState == ConnectionState.done ? (snapshot.data ?? '-') : 'Loading...';
+          return EditAccountView(
+            account: editingAccount,
+            checksum: checksum,
+            isEditingName: _isEditingName,
+            isSavingName: _isSavingName,
+            nameController: _nameController,
+            onBack: _closeEdit,
+            onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
+            onSaveName: () => _saveEditedName(editingAccount),
+          );
+        },
+      );
     }
 
     return _buildAccountsListView(displayAccounts, activeAccountId);
@@ -333,132 +361,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildEditAccountView(Account account) {
-    if (!_isEditingName && _nameController.text != account.name) {
-      _nameController.text = account.name;
-    }
-
-    return FutureBuilder<String>(
-      future: _checksumService.getHumanReadableName(account.accountId),
-      builder: (context, snapshot) {
-        final checksum = snapshot.connectionState == ConnectionState.done ? (snapshot.data ?? '-') : 'Loading...';
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: _closeEdit,
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                  splashRadius: 20,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
-                ),
-                const Text(
-                  'Edit Account',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    height: 1,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                  splashRadius: 20,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minHeight: 20, minWidth: 20),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Account Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                    const SizedBox(height: 12),
-                    _buildAccountNameField(account),
-                    const SizedBox(height: 40),
-                    Text('Address Details', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                    const SizedBox(height: 12),
-                    _buildAddressDetails(account, checksum),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildPrimarySheetButton(
-              label: 'Share Account Details',
-              onTap: () => shareAccountDetails(context, account.accountId, checksum: checksum),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildCreateAccountView() {
-    final draft = _draftAccount!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSheetHeader(title: 'New Account', onBack: _closeCreateView),
-        const SizedBox(height: 40),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Wallet Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                const SizedBox(height: 12),
-                _buildCreatedNameField(),
-                const SizedBox(height: 40),
-                Text('Wallet Address', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                const SizedBox(height: 12),
-                _buildCreateField(
-                  value: AddressFormattingService.formatAddress(draft.accountId),
-                  onCopy: () => context.copyTextWithToaster(draft.accountId),
-                  textStyle: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Text('Wallet Checkphrase', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                const SizedBox(height: 12),
-                _buildCreateField(
-                  value: _draftChecksum,
-                  onCopy: () => context.copyTextWithToaster(_draftChecksum),
-                  textStyle: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: context.colors.accentPink,
-                    height: 1.0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        _buildPrimarySheetButton(
-          label: 'Create Account',
-          isLoading: _isSavingCreatedAccount,
-          onTap: _submitCreatedAccount,
-        ),
-      ],
-    );
-  }
-
   Widget _buildAccountRow(Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final balanceText = balanceAsync.when(
@@ -510,229 +412,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAccountNameField(Account account) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _nameController,
-              readOnly: !_isEditingName || _isSavingName,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: context.colors.accentPink,
-                height: 1.35,
-              ),
-              cursorColor: context.colors.accentPink,
-              decoration: const InputDecoration(
-                filled: true,
-                fillColor: Colors.transparent,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onSubmitted: (_) {
-                if (_isEditingName && !_isSavingName) {
-                  _saveEditedName(account);
-                }
-              },
-              onTap: () {
-                if (!_isEditingName) {
-                  setState(() => _isEditingName = true);
-                }
-              },
-            ),
-          ),
-          _isSavingName
-              ? const SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    ),
-                  ),
-                )
-              : _buildIconActionButton(
-                  icon: _isEditingName ? Icons.check : Icons.edit_outlined,
-                  iconSize: 20,
-                  onTap: () {
-                    if (_isEditingName) {
-                      _saveEditedName(account);
-                    } else {
-                      setState(() => _isEditingName = true);
-                    }
-                  },
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCreatedNameField() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _createNameController,
-              readOnly: !_isEditingCreatedName || _isSavingCreatedAccount,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Colors.white,
-              ),
-              cursorColor: Colors.white,
-              decoration: const InputDecoration(
-                filled: true,
-                fillColor: Colors.transparent,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-          _buildIconActionButton(
-            icon: _isEditingCreatedName ? Icons.check : Icons.edit_outlined,
-            iconSize: 20,
-            onTap: () {
-              setState(() => _isEditingCreatedName = !_isEditingCreatedName);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCreateField({required String value, required VoidCallback onCopy, required TextStyle textStyle}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
-          ),
-          const SizedBox(width: 8),
-          _buildIconActionButton(icon: Icons.copy_outlined, iconSize: 20, onTap: onCopy),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSheetHeader({required String title, VoidCallback? onBack}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: onBack == null
-              ? const SizedBox()
-              : IconButton(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                  splashRadius: 20,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minHeight: 24, minWidth: 24),
-                ),
-        ),
-        Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-            height: 1,
-          ),
-        ),
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-            splashRadius: 20,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minHeight: 24, minWidth: 24),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddressDetails(Account account, String checksum) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: context.colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        children: [
-          _buildCopyRow(
-            value: account.accountId,
-            onCopy: () => context.copyTextWithToaster(account.accountId),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              height: 1.35,
-            ),
-            maxLines: null,
-            overflow: TextOverflow.visible,
-          ),
-          const SizedBox(height: 8),
-          _buildCopyRow(
-            value: checksum,
-            onCopy: () => context.copyTextWithToaster(checksum),
-            textStyle: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: context.colors.accentPink,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCopyRow({
-    required String value,
-    required VoidCallback onCopy,
-    required TextStyle textStyle,
-    int? maxLines = 1,
-    TextOverflow overflow = TextOverflow.ellipsis,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(value, maxLines: maxLines, overflow: overflow, style: textStyle),
-        ),
-        const SizedBox(width: 8),
-        _buildIconActionButton(icon: Icons.copy_outlined, isTiny: true, iconSize: 12, onTap: onCopy),
-      ],
     );
   }
 
