@@ -1066,6 +1066,7 @@ pub fn compute_block_hash(
 }
 
 /// Internal function to compute block hash from raw bytes.
+/// Delegates to the circuit's HeaderInputs to guarantee hash consistency with ZK proofs.
 fn compute_block_hash_internal(
     parent_hash: &[u8; 32],
     state_root: &[u8; 32],
@@ -1074,19 +1075,42 @@ fn compute_block_hash_internal(
     digest: &[u8],
 ) -> Result<[u8; 32], WormholeError> {
     // Block hash is computed by hashing the SCALE-encoded header with Poseidon
-    use codec::Encode;
+    use qp_wormhole_circuit::block_header::header::{HeaderInputs, DIGEST_LOGS_SIZE};
+    use qp_wormhole_inputs::BytesDigest;
 
-    let mut encoded = Vec::new();
-    encoded.extend(parent_hash.encode());
-    // Block number is compact encoded in Substrate headers
-    encoded.extend(codec::Compact(block_number).encode());
-    encoded.extend(state_root.encode());
-    encoded.extend(extrinsics_root.encode());
-    encoded.extend(digest.to_vec().encode());
+    let digest_fixed: [u8; DIGEST_LOGS_SIZE] = digest.try_into().map_err(|_| WormholeError {
+            "Digest must be {} bytes, got {}",
+            DIGEST_LOGS_SIZE,
+            digest.len()
+        ),
+    })?;
 
-    let hash = qp_poseidon::PoseidonHasher::hash_variable_length_bytes(&encoded);
+    let header = HeaderInputs::new(
+        BytesDigest::try_from(*parent_hash).map_err(|e| WormholeError {
+            message: format!("Invalid parent hash: {:?}", e),
+        })?,
+        block_number,
+        BytesDigest::try_from(*state_root).map_err(|e| WormholeError {
+            message: format!("Invalid state root: {:?}", e),
+        })?,
+        BytesDigest::try_from(*extrinsics_root).map_err(|e| WormholeError {
+            message: format!("Invalid extrinsics root: {:?}", e),
+        })?,
+        &digest_fixed,
+    )
+    .map_err(|e| WormholeError {
+        message: format!("Failed to create header inputs: {}", e),
+    })?;
 
+    let block_hash = header.block_hash();
+    let hash: [u8; 32] = block_hash
+        .as_ref()
+        .try_into()
+        .map_err(|_| WormholeError {
+            message: "Block hash conversion failed".to_string(),
+        })?;
     Ok(hash)
+
 }
 
 // ============================================================================
@@ -1276,5 +1300,117 @@ mod tests {
         let pair = derive_wormhole_pair(TEST_MNEMONIC.to_string(), 1, 0).unwrap();
         let derived_addr = derive_address_from_secret(pair.secret_hex.clone()).unwrap();
         assert_eq!(derived_addr, pair.address);
+    }
+
+    #[test]
+    fn test_block_hash_sdk_matches_circuit() {
+        use qp_wormhole_circuit::block_header::header::HeaderInputs;
+        use qp_wormhole_inputs::BytesDigest;
+
+        let parent_hash = [0u8; 32];
+        let block_number: u32 = 1;
+        let state_root: [u8; 32] = hex::decode(
+            "713c0468ddc5b657ce758a3fb75ec5ae906d95b334f24a4f5661cc775e1cdb43",
+        )
+        .unwrap()
+        .try_into()
+        .unwrap();
+        let extrinsics_root = [0u8; 32];
+        #[rustfmt::skip]
+        let digest: [u8; 110] = [
+            8, 6, 112, 111, 119, 95, 128, 233, 182, 183, 107, 158, 1, 115, 19, 219,
+            126, 253, 86, 30, 208, 176, 70, 21, 45, 180, 229, 9, 62, 91, 4, 6, 53,
+            245, 52, 48, 38, 123, 225, 5, 112, 111, 119, 95, 1, 1, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 18, 79, 226,
+        ];
+        #[rustfmt::skip]
+        let expected: [u8; 32] = [
+            160, 247, 232, 22, 150, 117, 245, 140, 3, 70, 175, 175, 22, 247, 90, 37,
+            231, 80, 170, 11, 27, 183, 40, 51, 5, 19, 164, 19, 188, 192, 229, 212,
+        ];
+
+        let sdk_hash =
+            compute_block_hash_internal(&parent_hash, &state_root, &extrinsics_root, block_number, &digest)
+                .expect("SDK block hash computation failed");
+
+        let circuit_hash = HeaderInputs::new(
+            BytesDigest::try_from(parent_hash).unwrap(),
+            block_number,
+            BytesDigest::try_from(state_root).unwrap(),
+            BytesDigest::try_from(extrinsics_root).unwrap(),
+            &digest,
+        )
+        .unwrap()
+        .block_hash();
+
+        assert_eq!(
+            circuit_hash.as_ref(),
+            &expected,
+            "Circuit hash sanity check against known fixture"
+        );
+        assert_eq!(
+            sdk_hash, expected,
+            "SDK hash must match the circuit's known block hash"
+        );
+    }
+
+    #[test]
+    fn test_block_hash_sdk_matches_circuit_nonzero_inputs() {
+        use qp_wormhole_circuit::block_header::header::HeaderInputs;
+        use qp_wormhole_inputs::BytesDigest;
+
+        #[rustfmt::skip]
+        let parent_hash: [u8; 32] = [
+            160, 247, 232, 22, 150, 117, 245, 140, 3, 70, 175, 175, 22, 247, 90, 37,
+            231, 80, 170, 11, 27, 183, 40, 51, 5, 19, 164, 19, 188, 192, 229, 212,
+        ];
+        let block_number: u32 = 2;
+        let state_root: [u8; 32] = hex::decode(
+            "2f10a7c86fdd3758d1174e955a5f6efbbef29b41850720853ee4843a2a0d48a7",
+        )
+        .unwrap()
+        .try_into()
+        .unwrap();
+        let extrinsics_root = [0u8; 32];
+        #[rustfmt::skip]
+        let digest: [u8; 110] = [
+            8, 6, 112, 111, 119, 95, 128, 233, 182, 183, 107, 158, 1, 115, 19, 219,
+            126, 253, 86, 30, 208, 176, 70, 21, 45, 180, 229, 9, 62, 91, 4, 6, 53,
+            245, 52, 48, 38, 123, 225, 5, 112, 111, 119, 95, 1, 1, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 18, 79, 226,
+        ];
+        #[rustfmt::skip]
+        let expected: [u8; 32] = [
+            123, 3, 1, 4, 129, 152, 164, 69, 52, 213, 96, 85, 78, 201, 4, 176, 26,
+            84, 254, 144, 212, 78, 187, 6, 221, 141, 198, 216, 24, 52, 122, 31,
+        ];
+
+        let sdk_hash =
+            compute_block_hash_internal(&parent_hash, &state_root, &extrinsics_root, block_number, &digest)
+                .expect("SDK block hash computation failed");
+
+        let circuit_hash = HeaderInputs::new(
+            BytesDigest::try_from(parent_hash).unwrap(),
+            block_number,
+            BytesDigest::try_from(state_root).unwrap(),
+            BytesDigest::try_from(extrinsics_root).unwrap(),
+            &digest,
+        )
+        .unwrap()
+        .block_hash();
+
+        assert_eq!(
+            circuit_hash.as_ref(),
+            &expected,
+            "Circuit hash sanity check against known fixture"
+        );
+        assert_eq!(
+            sdk_hash, expected,
+            "SDK hash must match the circuit's known block hash"
+        );
     }
 }
