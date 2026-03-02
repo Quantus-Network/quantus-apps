@@ -368,7 +368,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               ),
             ),
             const SizedBox(width: 12),
-            AccountIconActionButton(icon: Icons.edit_outlined, iconSize: 20, onTap: () => _openEdit(account)),
+            AccountIconActionButton(icon: Icons.edit_outlined, onTap: () => _openEdit(account)),
           ],
         ),
       ),

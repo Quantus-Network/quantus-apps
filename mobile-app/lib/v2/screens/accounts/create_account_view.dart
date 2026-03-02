@@ -37,48 +37,44 @@ class CreateAccountView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Wallet Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                  const SizedBox(height: 12),
-                  _buildCreatedNameField(context),
-                  const SizedBox(height: 40),
-                  Text('Wallet Address', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                  const SizedBox(height: 12),
-                  _buildCreateField(
-                    context,
-                    value: AddressFormattingService.formatAddress(draftAccount.accountId),
-                    onCopy: () => context.copyTextWithToaster(draftAccount.accountId),
-                    textStyle: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                      height: 1.35,
-                    ),
+                const SizedBox(height: 12),
+                _buildCreatedNameField(context),
+                const SizedBox(height: 40),
+                Text('Wallet Address', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                const SizedBox(height: 12),
+                _buildCreateField(
+                  context,
+                  value: AddressFormattingService.formatAddress(draftAccount.accountId),
+                  onCopy: () => context.copyTextWithToaster(draftAccount.accountId),
+                  textStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    height: 1.35,
                   ),
-                  const SizedBox(height: 40),
-                  Text('Wallet Checkphrase', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
-                  const SizedBox(height: 12),
-                  _buildCreateField(
-                    context,
-                    value: draftChecksum,
-                    onCopy: () => context.copyTextWithToaster(draftChecksum),
-                    textStyle: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: context.colors.accentPink,
-                      height: 1.0,
-                    ),
+                ),
+                const SizedBox(height: 40),
+                Text('Wallet Checkphrase', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                const SizedBox(height: 12),
+                _buildCreateField(
+                  context,
+                  value: draftChecksum,
+                  onCopy: () => context.copyTextWithToaster(draftChecksum),
+                  textStyle: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: context.colors.accentPink,
+                    height: 1.0,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        const SizedBox(height: 24),
-        Button(
-          label: 'Create Account',
-          isLoading: isSaving,
-          onTap: onSubmit,
         ),
+        const SizedBox(height: 24),
+        Button(label: 'Create Account', isLoading: isSaving, onTap: onSubmit),
       ],
     );
   }
@@ -88,18 +84,12 @@ class CreateAccountView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       trailing: AccountIconActionButton(
         icon: isEditingName ? Icons.check : Icons.edit_outlined,
-        iconSize: 20,
         onTap: onToggleEditingName,
       ),
       child: TextField(
         controller: nameController,
         readOnly: !isEditingName || isSaving,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: Colors.white,
-        ),
+        style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white),
         cursorColor: Colors.white,
         decoration: const InputDecoration(
           filled: true,
@@ -123,17 +113,8 @@ class CreateAccountView extends StatelessWidget {
   }) {
     return AccountField(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-      trailing: AccountIconActionButton(
-        icon: Icons.copy_outlined,
-        iconSize: 20,
-        onTap: onCopy,
-      ),
-      child: Text(
-        value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: textStyle,
-      ),
+      trailing: AccountIconActionButton(icon: Icons.copy_outlined, onTap: onCopy),
+      child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
     );
   }
 }

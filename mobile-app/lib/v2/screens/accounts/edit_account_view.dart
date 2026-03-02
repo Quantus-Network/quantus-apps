@@ -73,7 +73,6 @@ class EditAccountView extends StatelessWidget {
             )
           : AccountIconActionButton(
               icon: isEditingName ? Icons.check : Icons.edit_outlined,
-              iconSize: 20,
               onTap: () {
                 if (isEditingName) {
                   onSaveName();
