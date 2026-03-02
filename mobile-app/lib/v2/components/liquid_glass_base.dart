@@ -39,7 +39,7 @@ class LiquidGlassBase extends StatelessWidget {
         refractiveIndex: 1.33,
         lightAngle: 45 * (3.1416 / 180),
         lightIntensity: 0.5,
-        ambientStrength: 0.5,
+        ambientStrength: -0.2,
         saturation: 1.5,
       ),
       child: Center(

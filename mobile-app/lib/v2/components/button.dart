@@ -6,11 +6,11 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 enum ButtonVariant { transparent, primary, secondary, danger }
 
-enum IconPlacement { leading, trailing }
+enum IconPlacement { leading, trailing, top, below }
 
 class Button extends StatelessWidget {
   final String label;
-  final Icon? icon;
+  final Widget? icon;
   final IconPlacement iconPlacement;
   final VoidCallback? onTap;
   final bool isLoading;
@@ -43,23 +43,7 @@ class Button extends StatelessWidget {
     final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
     final visibility = disabled ? 0.25 : 1.0;
 
-    final buttonContent = Center(
-      child: isLoading
-          ? SizedBox(
-              width: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-              height: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-              child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 8,
-              children: [
-                if (iconPlacement == IconPlacement.leading && icon != null) icon!,
-                Text(label, style: effectiveTextStyle),
-                if (iconPlacement == IconPlacement.trailing && icon != null) icon!,
-              ],
-            ),
-    );
+    final buttonContent = _buildContent(context, effectiveTextStyle: effectiveTextStyle);
 
     Widget buttonWidget;
 
@@ -75,7 +59,12 @@ class Button extends StatelessWidget {
       case ButtonVariant.secondary:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
-          child: InsetButtonContainer(width: width, padding: padding, child: buttonContent),
+          child: InsetButtonContainer(
+            width: width,
+            padding: padding,
+            border: BoxBorder.all(color: context.colors.borderSubtle, width: 0.8),
+            child: buttonContent,
+          ),
         );
         break;
 
@@ -103,5 +92,39 @@ class Button extends StatelessWidget {
     }
 
     return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
+  }
+
+  Widget _buildContent(BuildContext context, {required TextStyle effectiveTextStyle}) {
+    Widget content;
+
+    if (isLoading) {
+      content = SizedBox(
+        width: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
+        height: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
+        child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+      );
+    } else if (iconPlacement == IconPlacement.top || iconPlacement == IconPlacement.below) {
+      content = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 8,
+        children: [
+          if (iconPlacement == IconPlacement.top && icon != null) icon!,
+          Text(label, style: effectiveTextStyle),
+          if (iconPlacement == IconPlacement.below && icon != null) icon!,
+        ],
+      );
+    } else {
+      content = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 8,
+        children: [
+          if (iconPlacement == IconPlacement.leading && icon != null) icon!,
+          Text(label, style: effectiveTextStyle),
+          if (iconPlacement == IconPlacement.trailing && icon != null) icon!,
+        ],
+      );
+    }
+
+    return Center(child: content);
   }
 }
