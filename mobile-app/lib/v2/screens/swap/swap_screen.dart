@@ -123,11 +123,11 @@ class _SwapScreenState extends State<SwapScreen> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: 'Swap',
-        padding: const EdgeInsets.only(top: 16.0, bottom: 64.0),
         trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
       child: Column(
         children: [
+          const SizedBox(height: 24),
           Expanded(
             child: SingleChildScrollView(
               child: Column(

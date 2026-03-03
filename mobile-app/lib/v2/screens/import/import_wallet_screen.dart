@@ -96,7 +96,6 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
     return ScaffoldBase(
       appBar: V2AppBar(
         title: 'Import Wallet',
-        padding: const EdgeInsets.only(top: 16.0, bottom: 80.0),
         trailing: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Icon(Icons.close, color: colors.textPrimary, size: 24),
@@ -104,6 +103,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ),
       child: Column(
         children: [
+          const SizedBox(height: 40),
           Text(
             'Restore an existing wallet with your 24 word recovery phrase',
             textAlign: TextAlign.center,
