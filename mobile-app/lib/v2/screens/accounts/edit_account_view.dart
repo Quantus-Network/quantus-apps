@@ -84,13 +84,7 @@ class EditAccountView extends StatelessWidget {
       child: TextField(
         controller: nameController,
         readOnly: !isEditingName || isSavingName,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: context.colors.accentPink,
-          height: 1.35,
-        ),
+        style: context.themeText.smallParagraph!.copyWith(fontWeight: FontWeight.w500, color: context.colors.accentPink),
         cursorColor: context.colors.accentPink,
         decoration: accountFieldDecoration,
         onSubmitted: (_) {
@@ -116,13 +110,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: account.accountId,
             onCopy: () => context.copyTextWithToaster(account.accountId),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              height: 1.35,
-            ),
+            textStyle: context.themeText.smallParagraph!.copyWith(fontWeight: FontWeight.w500),
             maxLines: null,
             overflow: TextOverflow.visible,
           ),
@@ -130,13 +118,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: checksum,
             onCopy: () => context.copyTextWithToaster(checksum, message: 'Checkphrase copied to clipboard'),
-            textStyle: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: context.colors.accentPink,
-              height: 1,
-            ),
+            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.accentPink),
           ),
         ],
       ),
