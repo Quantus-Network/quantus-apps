@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -202,6 +203,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     VoidCallback? onBack;
     bool showCloseIcon = true;
 
+    final media = MediaQuery.of(context);
+    final maxHeight = media.size.height - media.padding.top - 20;
+    final sheetHeight = math.min(610.0, maxHeight);
+
     if (_isCreateViewOpen && _draftAccount != null) {
       title = 'New Account';
       onBack = _closeCreateView;
@@ -216,7 +221,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       title: title,
       onBack: onBack,
       showCloseIcon: showCloseIcon,
-      height: 610,
+      height: sheetHeight,
       child: _buildContent(
         accountsAsync: accountsAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
