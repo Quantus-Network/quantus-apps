@@ -322,7 +322,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        _buildPrimarySheetButton(label: 'Add Account', isLoading: _isCreatingAccount, onTap: _createNewAccount),
+        Button(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
       ],
     );
   }
@@ -367,10 +367,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         ),
       ),
     );
-  }
-
-  Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
-    return Button(label: label, onTap: onTap, isLoading: isLoading);
   }
 
   Future<void> _submitCreatedAccount() async {
