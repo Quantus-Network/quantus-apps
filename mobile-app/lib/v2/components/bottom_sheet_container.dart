@@ -70,8 +70,8 @@ class BottomSheetContainer extends StatelessWidget {
     );
   }
 
-  static void show(BuildContext context, {required WidgetBuilder builder}) {
-    showModalBottomSheet(
+  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder}) {
+    return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

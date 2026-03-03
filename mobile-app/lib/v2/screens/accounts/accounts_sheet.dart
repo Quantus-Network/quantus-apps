@@ -16,8 +16,7 @@ import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.d
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) async {
-  BottomSheetContainer.show(context, builder: (_) => const AccountsSheet());
-  return null;
+  return BottomSheetContainer.show<T>(context, builder: (_) => const AccountsSheet());
 }
 
 class AccountsSheet extends ConsumerStatefulWidget {
