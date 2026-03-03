@@ -131,6 +131,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     });
 
     final checksum = await _checksumService.getHumanReadableName(account.accountId);
+    if (!mounted) return;
     setState(() {
       _editingAccountChecksum = checksum;
     });
