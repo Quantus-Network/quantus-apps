@@ -37,11 +37,11 @@ class EditAccountView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Account Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                Text('Account Name', style: context.themeText.smallParagraph),
                 const SizedBox(height: 12),
                 _buildAccountNameField(context),
                 const SizedBox(height: 40),
-                Text('Address Details', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                Text('Address Details', style: context.themeText.smallParagraph),
                 const SizedBox(height: 12),
                 _buildAddressDetails(context),
               ],

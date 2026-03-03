@@ -36,7 +36,7 @@ class CreateAccountView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Wallet Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                Text('Wallet Name', style: context.themeText.smallParagraph),
                 const SizedBox(height: 12),
                 _buildCreatedNameField(context),
                 const SizedBox(height: 40),
@@ -77,7 +77,7 @@ class CreateAccountView extends StatelessWidget {
       child: TextField(
         controller: nameController,
         readOnly: !isEditingName || isSaving,
-        style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white),
+        style: context.themeText.smallParagraph,
         cursorColor: Colors.white,
         decoration: accountFieldDecoration,
       ),
