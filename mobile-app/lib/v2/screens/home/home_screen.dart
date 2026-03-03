@@ -255,7 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
-    return Button(
+    return Button.label(
       label: label,
       onTap: onTap,
       icon: SvgPicture.asset(iconAsset, width: 24, height: 24),

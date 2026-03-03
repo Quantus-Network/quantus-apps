@@ -149,7 +149,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   ),
                 ],
                 const Spacer(),
-                Button(
+                Button.label(
                   label: 'Import Wallet',
                   onTap: _import,
                   isLoading: _isLoading,

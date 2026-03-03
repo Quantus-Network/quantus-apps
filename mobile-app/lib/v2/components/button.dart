@@ -9,14 +9,15 @@ enum ButtonVariant { transparent, primary, secondary, danger }
 enum IconPlacement { leading, trailing, top }
 
 class Button extends StatelessWidget {
-  final String label;
-  final Widget? icon;
-  final IconPlacement iconPlacement;
+  final Widget? child;
+  final String? _label;
+  final Widget? _icon;
+  final IconPlacement _iconPlacement;
+  final TextStyle? _textStyle;
   final VoidCallback? onTap;
   final bool isLoading;
   final double? width;
   final EdgeInsets padding;
-  final TextStyle? textStyle;
   final ButtonVariant variant;
   final bool isDisabled;
 
@@ -25,25 +26,34 @@ class Button extends StatelessWidget {
 
   const Button({
     super.key,
-    required this.label,
-    this.icon,
-    this.iconPlacement = IconPlacement.trailing,
+    required Widget this.child,
     this.onTap,
     this.isLoading = false,
     this.width = double.infinity,
     this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-    this.textStyle,
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
-  });
+  }) : _label = null, _icon = null, _iconPlacement = IconPlacement.trailing, _textStyle = null;
+
+  const Button.label({
+    super.key,
+    required String label,
+    Widget? icon,
+    IconPlacement iconPlacement = IconPlacement.trailing,
+    this.onTap,
+    this.isLoading = false,
+    this.width = double.infinity,
+    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+    TextStyle? textStyle,
+    this.variant = ButtonVariant.primary,
+    this.isDisabled = false,
+  }) : _label = label, _icon = icon, _iconPlacement = iconPlacement, _textStyle = textStyle, child = null;
 
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-    final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
     final visibility = disabled ? 0.25 : 1.0;
-
-    final buttonContent = _buildContent(context, effectiveTextStyle: effectiveTextStyle);
+    final buttonContent = _buildContent(context);
 
     Widget buttonWidget;
 
@@ -94,22 +104,30 @@ class Button extends StatelessWidget {
     return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
   }
 
-  Widget _buildContent(BuildContext context, {required TextStyle effectiveTextStyle}) {
-    Widget content;
-
+  Widget _buildContent(BuildContext context) {
     if (isLoading) {
-      content = SizedBox(
-        width: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-        height: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-        child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+      final size = (_textStyle?.fontSize ?? buttonFontSize) + 6;
+      return Center(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+        ),
       );
-    } else if (iconPlacement == IconPlacement.top) {
+    }
+
+    if (child != null) return Center(child: child);
+
+    final effectiveTextStyle = _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
+
+    Widget content;
+    if (_iconPlacement == IconPlacement.top) {
       content = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          ?icon,
-          Text(label, style: effectiveTextStyle),
+          ?_icon,
+          Text(_label!, style: effectiveTextStyle),
         ],
       );
     } else {
@@ -117,9 +135,9 @@ class Button extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          if (iconPlacement == IconPlacement.leading && icon != null) icon!,
-          Text(label, style: effectiveTextStyle),
-          if (iconPlacement == IconPlacement.trailing && icon != null) icon!,
+          if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
+          Text(_label!, style: effectiveTextStyle),
+          if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
         ],
       );
     }

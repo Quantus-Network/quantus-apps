@@ -434,6 +434,6 @@ class _SwapScreenState extends State<SwapScreen> {
 
   Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
-    return Button(label: 'Get a Quote', onTap: _getQuote, isDisabled: !enabled, variant: ButtonVariant.secondary);
+    return Button.label(label: 'Get a Quote', onTap: _getQuote, isDisabled: !enabled, variant: ButtonVariant.secondary);
   }
 }

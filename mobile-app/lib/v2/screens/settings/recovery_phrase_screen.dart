@@ -131,7 +131,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
   }
 
   Widget _copyRow(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return Button.label(
       padding: const EdgeInsets.all(0),
       label: 'Copy to clipboard',
       onTap: _copyToClipboard,
@@ -145,7 +145,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
     final label = _revealed ? 'Hide Recovery Phrase' : 'Reveal Recovery Phrase';
     final icon = _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined;
 
-    return Button(
+    return Button.label(
       label: label,
       onTap: _toggleReveal,
       variant: ButtonVariant.secondary,

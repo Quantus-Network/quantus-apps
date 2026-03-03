@@ -295,7 +295,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return Button.label(
       label: "I've sent the funds",
       onTap: _confirmSent,
       variant: ButtonVariant.secondary,
@@ -304,7 +304,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return Button.label(
       label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       variant: ButtonVariant.secondary,

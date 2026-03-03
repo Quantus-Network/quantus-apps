@@ -183,7 +183,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
     return Row(
       children: [
         Expanded(
-          child: Button(
+          child: Button.label(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Copy',
             onTap: _copyAddress,
@@ -194,7 +194,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
         ),
         const SizedBox(width: 32),
         Expanded(
-          child: Button(
+          child: Button.label(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Share',
             onTap: _share,

@@ -183,7 +183,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final isPending = widget.tx is PendingTransactionEvent;
     final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
 
-    return Button(
+    return Button.label(
       label: 'View in Explorer',
       onTap: _openExplorer,
       isDisabled: isPending,

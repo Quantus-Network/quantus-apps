@@ -191,7 +191,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Button(
+                Button.label(
                   label: 'Continue',
                   onTap: _continue,
                   isLoading: _isSubmitting,
@@ -231,7 +231,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            Button(
+            Button.label(
               label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();
