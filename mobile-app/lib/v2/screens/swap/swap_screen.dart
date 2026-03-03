@@ -20,7 +20,6 @@ class SwapScreen extends StatefulWidget {
 }
 
 class _SwapScreenState extends State<SwapScreen> {
-
   static const _qrIconAsset = 'assets/v2/swap_qr_code.svg';
   static const _historyIconAsset = 'assets/v2/swap_clock_counter_clockwise.svg';
   static const _swapDirectionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
