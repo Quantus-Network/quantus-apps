@@ -34,29 +34,29 @@ class _ReviewQuoteContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _swapVisual(context, colors, text, fromUsd, toUsd),
-            const SizedBox(height: 48),
-            _feeRow(
-              'Total fees',
-              '${SwapService.formatTokenAmount(quote.networkFee, quote.fromToken)} ${quote.fromToken.symbol}',
-              colors,
-              text,
-            ),
-            Divider(color: colors.separator, height: 32),
-            _feeRow(
-              'Total Amount',
-              '${SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken)} ${quote.fromToken.symbol}',
-              colors,
-              text,
-              highlight: true,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
-              style: text.tiny?.copyWith(color: colors.textSecondary, height: 1.35),
-            ),
-            const SizedBox(height: 24),
-            _confirmButton(context, colors, text),
-          ],
+          const SizedBox(height: 48),
+          _feeRow(
+            'Total fees',
+            '${SwapService.formatTokenAmount(quote.networkFee, quote.fromToken)} ${quote.fromToken.symbol}',
+            colors,
+            text,
+          ),
+          Divider(color: colors.separator, height: 32),
+          _feeRow(
+            'Total Amount',
+            '${SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken)} ${quote.fromToken.symbol}',
+            colors,
+            text,
+            highlight: true,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
+            style: text.tiny?.copyWith(color: colors.textSecondary, height: 1.35),
+          ),
+          const SizedBox(height: 24),
+          _confirmButton(context, colors, text),
+        ],
       ),
     );
   }

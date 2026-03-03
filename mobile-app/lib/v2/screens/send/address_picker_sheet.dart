@@ -74,55 +74,55 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
         child: Column(
           children: [
             Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: colors.textTertiary, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                          hintText: 'Search',
-                          hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: colors.textTertiary, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        hintText: 'Search',
+                        hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 40),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Recents',
-                  style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                ),
+            ),
+            const SizedBox(height: 40),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Recents',
+                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: _filtered.isEmpty
-                    ? Center(
-                        child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
-                      )
-                    : ListView.separated(
-                        padding: EdgeInsets.zero,
-                        itemCount: _filtered.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 24),
-                        itemBuilder: (context, i) => _addressItem(_filtered[i], colors, text),
-                      ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? Center(
+                      child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 24),
+                      itemBuilder: (context, i) => _addressItem(_filtered[i], colors, text),
+                    ),
+            ),
+          ],
         ),
+      ),
     );
   }
 

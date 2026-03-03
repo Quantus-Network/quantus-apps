@@ -5,10 +5,7 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 Future<String?> showRefundAddressPickerSheet(BuildContext context, String network) {
-  return BottomSheetContainer.show<String>(
-    context,
-    builder: (_) => _RefundAddressPickerContent(network: network),
-  );
+  return BottomSheetContainer.show<String>(context, builder: (_) => _RefundAddressPickerContent(network: network));
 }
 
 class _RefundAddressPickerContent extends StatefulWidget {
@@ -44,28 +41,28 @@ class _RefundAddressPickerContentState extends State<_RefundAddressPickerContent
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(widget.network, style: text.detail?.copyWith(color: colors.textSecondary)),
-            ),
-            const SizedBox(height: 24),
-            if (_addresses.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Text('No recent refund addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
-              )
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  itemCount: _addresses.length,
-                  separatorBuilder: (_, _) => Divider(color: colors.separator, height: 1),
-                  itemBuilder: (_, i) => _addressItem(_addresses[i], colors, text),
-                ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(widget.network, style: text.detail?.copyWith(color: colors.textSecondary)),
+          ),
+          const SizedBox(height: 24),
+          if (_addresses.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text('No recent refund addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _addresses.length,
+                separatorBuilder: (_, _) => Divider(color: colors.separator, height: 1),
+                itemBuilder: (_, i) => _addressItem(_addresses[i], colors, text),
               ),
-          ],
+            ),
+        ],
       ),
     );
   }
