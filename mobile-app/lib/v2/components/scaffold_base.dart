@@ -1,37 +1,26 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/network_status_banner.dart';
-import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
+import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+
+const defaultPadding = EdgeInsets.symmetric(horizontal: 24.0);
 
 class ScaffoldBase extends StatelessWidget {
   final Widget? child;
   final List<Widget>? slivers;
-  final WalletAppBar? appBar;
-  final List<Widget>? decorations;
+  final Widget? appBar;
   final ScrollController? scrollController;
   final ScrollPhysics? scrollPhysics;
   final RefreshCallback? onRefresh;
   final EdgeInsetsGeometry padding;
-  final double backdropBlur;
-  final double dim;
-  final bool extendBodyBehindAppBar;
-  final bool extendBodyBehindNavBar;
-  final Color? backgroundColor;
+  final Widget? backgroundWidget;
 
   // Default constructor - static content
   const ScaffoldBase({
     super.key,
     this.appBar,
-    this.extendBodyBehindAppBar = true,
-    this.extendBodyBehindNavBar = false,
-    this.backdropBlur = 12.0,
-    this.decorations,
-    this.dim = 0.25,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
-    this.backgroundColor,
+    this.padding = defaultPadding,
+    this.backgroundWidget,
     required Widget this.child,
   }) : slivers = null,
        scrollController = null,
@@ -42,14 +31,9 @@ class ScaffoldBase extends StatelessWidget {
   const ScaffoldBase.scrollable({
     super.key,
     this.appBar,
-    this.extendBodyBehindAppBar = true,
-    this.extendBodyBehindNavBar = false,
-    this.backdropBlur = 12.0,
-    this.decorations,
-    this.dim = 0.25,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
-    this.backgroundColor,
-    required ScrollController this.scrollController,
+    this.padding = defaultPadding,
+    this.backgroundWidget,
+    this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
     required Widget this.child,
   }) : slivers = null,
@@ -59,14 +43,9 @@ class ScaffoldBase extends StatelessWidget {
   const ScaffoldBase.refreshable({
     super.key,
     this.appBar,
-    this.extendBodyBehindAppBar = true,
-    this.extendBodyBehindNavBar = false,
-    this.backdropBlur = 12.0,
-    this.decorations,
-    this.dim = 0.25,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24.0),
-    this.backgroundColor,
-    required ScrollController this.scrollController,
+    this.padding = defaultPadding,
+    this.backgroundWidget,
+    this.scrollController,
     this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
     required RefreshCallback this.onRefresh,
     required List<Widget> this.slivers,
@@ -74,56 +53,34 @@ class ScaffoldBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: extendBodyBehindAppBar,
-      appBar: appBar,
-      backgroundColor: backgroundColor ?? context.themeColors.background,
-      body: Stack(
-        children: [
-          if (decorations != null) ...decorations!,
-          Positioned.fill(
-            child: Container(decoration: BoxDecoration(color: Colors.black.useOpacity(dim))),
-          ),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: backdropBlur, sigmaY: backdropBlur),
-            child: SafeArea(
-              bottom: !extendBodyBehindNavBar,
-              child: Column(
-                children: [
-                  const NetworkStatusBanner(),
-                  Expanded(
-                    child: Padding(padding: padding, child: _buildChild()),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    final colors = context.colors;
+
+    Widget bodyContent = Column(
+      children: [
+        const NetworkStatusBanner(),
+        if (appBar != null) Padding(padding: padding, child: appBar!),
+        Expanded(child: _buildChild(colors)),
+      ],
     );
+
+    Widget scaffoldBody = SafeArea(bottom: false, child: bodyContent);
+
+    if (backgroundWidget != null) {
+      scaffoldBody = Stack(fit: StackFit.expand, children: [backgroundWidget!, scaffoldBody]);
+    } else {
+      scaffoldBody = GradientBackground(child: scaffoldBody);
+    }
+
+    return Scaffold(body: scaffoldBody);
   }
 
-  Widget _buildChild() {
-    // Static content
-    if (child != null && scrollController == null) {
-      return child!;
-    }
-
-    // Scrollable with SingleChildScrollView (no refresh)
-    if (child != null && scrollController != null && onRefresh == null) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
-        child: child!,
-      );
-    }
-
+  Widget _buildChild(AppColorsV2 colors) {
     // Scrollable with refresh (CustomScrollView with slivers)
     if (onRefresh != null && slivers != null) {
       return RefreshIndicator(
         onRefresh: onRefresh!,
-        color: const Color(0xFF0CE6ED),
-        backgroundColor: Colors.black,
+        color: colors.textPrimary,
+        backgroundColor: colors.surface,
         child: CustomScrollView(
           controller: scrollController,
           physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
@@ -132,7 +89,21 @@ class ScaffoldBase extends StatelessWidget {
       );
     }
 
-    // Fallback to child if something unexpected happens
-    return child ?? const SizedBox.shrink();
+    // Scrollable with SingleChildScrollView (no refresh)
+    if (child != null && scrollController != null && onRefresh == null) {
+      return SingleChildScrollView(
+        controller: scrollController,
+        physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        child: child!,
+      );
+    }
+
+    // Static content
+    if (child != null) {
+      return Padding(padding: padding, child: child!);
+    }
+
+    return const SizedBox.shrink();
   }
 }

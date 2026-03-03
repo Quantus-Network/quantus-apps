@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/navbar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
@@ -132,7 +131,6 @@ class ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
   Widget build(BuildContext context) {
     return ScaffoldBase(
       appBar: WalletAppBar(title: 'Import Wallet'),
-      decorations: [const Positioned(bottom: 140, right: 0, child: Sphere(variant: 2, size: 200))],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
@@ -21,10 +20,6 @@ class _NotificationsSettingsScreenState extends ConsumerState<NotificationsSetti
     final configNotifier = ref.read(notificationConfigProvider.notifier);
 
     return ScaffoldBase(
-      decorations: [
-        const Positioned(bottom: 40, left: -80, child: Sphere(variant: 4, size: 251.62)),
-        const Positioned(top: -10, right: -30, child: Sphere(variant: 3, size: 194)),
-      ],
       appBar: WalletAppBar(title: 'Notifications Settings'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

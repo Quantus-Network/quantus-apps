@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_wallet_and_backup_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/import_wallet_screen.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -14,15 +13,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final halfScreen = MediaQuery.of(context).size.height * 0.5;
-
     return ScaffoldBase(
-      decorations: [
-        const Positioned(top: 60, left: -30, child: Sphere(variant: 1, size: 144.23)),
-        Positioned(top: halfScreen, left: 60, child: const Sphere(variant: 2, size: 89.57)),
-        Positioned(top: halfScreen, right: -50, child: const Sphere(variant: 2, size: 194)),
-        const Positioned(bottom: -32, right: 20, child: Sphere(variant: 6, size: 194)),
-      ],
       child: Column(
         children: [
           SizedBox(height: context.isSmallHeight ? 47.5 : 77.5),

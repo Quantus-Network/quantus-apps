@@ -4,13 +4,11 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/notification_group.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -193,13 +191,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     return ScaffoldBase(
       appBar: WalletAppBar(title: 'Notifications'),
-      decorations: [
-        Positioned(
-          left: context.getHorizontalCenterPosition(252),
-          bottom: -30,
-          child: const Sphere(variant: 9, size: 252),
-        ),
-      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -13,7 +13,6 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/create_account_screen.dart';
 import 'package:resonance_network_wallet/features/main/screens/high_security/high_security_details_screen.dart';
@@ -162,9 +161,6 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      decorations: [
-        Positioned(right: -50, top: context.containerHalfHeight, child: const Sphere(variant: 2, size: 194)),
-      ],
       appBar: WalletAppBar(title: 'Account Settings'),
       child: Stack(
         children: [

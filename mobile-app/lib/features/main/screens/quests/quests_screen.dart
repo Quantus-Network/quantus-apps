@@ -52,7 +52,6 @@ class _QuestsScreenState extends ConsumerState<QuestsScreen> {
     final showTooltip = !hasEthAddress && _showSetupTooltip;
 
     return ScaffoldBase.refreshable(
-      backgroundColor: context.themeColors.background2,
       onRefresh: () async {
         refreshStatsData();
         refreshAssociationsData();

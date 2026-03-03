@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -17,52 +17,26 @@ class SelectWalletScreen extends ConsumerWidget {
     final text = context.themeText;
     final accountsAsync = ref.watch(accountsProvider);
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppBackButton(),
-                    Text('Select Wallet', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                    const SizedBox(width: 24),
-                  ],
-                ),
-                const SizedBox(height: 48),
-                Expanded(
-                  child: accountsAsync.when(
-                    loading: () => const Center(child: CircularProgressIndicator(color: Colors.white24)),
-                    error: (e, _) => Center(
-                      child: Text(
-                        'Failed to load wallets',
-                        style: text.paragraph?.copyWith(color: colors.textSecondary),
-                      ),
-                    ),
-                    data: (accounts) {
-                      final indices = getNonHardwareWalletIndices(accounts);
-                      if (indices.isEmpty) {
-                        return Center(
-                          child: Text('No wallets found', style: text.paragraph?.copyWith(color: colors.textSecondary)),
-                        );
-                      }
-                      return ListView.separated(
-                        itemCount: indices.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (_, i) => _walletItem(context, indices[i], colors, text),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ScaffoldBase(
+      appBar: const V2AppBar(title: 'Select Wallet'),
+      child: accountsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: Colors.white24)),
+        error: (e, _) => Center(
+          child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary)),
         ),
+        data: (accounts) {
+          final indices = getNonHardwareWalletIndices(accounts);
+          if (indices.isEmpty) {
+            return Center(
+              child: Text('No wallets found', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+            );
+          }
+          return ListView.separated(
+            itemCount: indices.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (_, i) => _walletItem(context, indices[i], colors, text),
+          );
+        },
       ),
     );
   }

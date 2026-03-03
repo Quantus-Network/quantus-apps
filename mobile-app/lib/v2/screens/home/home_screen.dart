@@ -20,7 +20,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -74,41 +74,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     return accountAsync.when(
-      loading: () => Scaffold(
-        backgroundColor: colors.background,
-        body: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
+      loading: () => ScaffoldBase(
+        child: Center(child: CircularProgressIndicator(color: colors.textPrimary)),
       ),
-      error: (e, _) => Scaffold(
-        backgroundColor: colors.background,
-        body: Center(
+      error: (e, _) => ScaffoldBase(
+        child: Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
         ),
       ),
       data: (active) {
         if (active == null) {
-          return Scaffold(
-            backgroundColor: colors.background,
-            body: const Center(child: Text('No active account')),
-          );
+          return const ScaffoldBase(child: Center(child: Text('No active account')));
         }
-        return Scaffold(
-          backgroundColor: colors.background,
-          body: RefreshIndicator(
-            color: colors.textPrimary,
-            backgroundColor: colors.surface,
-            onRefresh: _refresh,
-            child: GradientBackground(
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(child: _buildContent(active, balanceAsync, isBalanceHidden, colors, text)),
-                  SliverToBoxAdapter(
-                    child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 58)),
-                ],
-              ),
+        return ScaffoldBase.refreshable(
+          onRefresh: _refresh,
+          slivers: [
+            SliverToBoxAdapter(child: _buildContent(active, balanceAsync, isBalanceHidden, colors, text)),
+            SliverToBoxAdapter(
+              child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             ),
-          ),
+            const SliverToBoxAdapter(child: SizedBox(height: 58)),
+          ],
         );
       },
     );
@@ -121,20 +107,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColorsV2 colors,
     AppTextTheme text,
   ) {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            _buildTopBar(active, isBalanceHidden, colors),
-            const SizedBox(height: 64),
-            _buildBalance(balanceAsync, isBalanceHidden, colors, text),
-            const SizedBox(height: 64),
-            if (active is RegularAccount) _buildActionButtons(),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          _buildTopBar(active, isBalanceHidden, colors),
+          const SizedBox(height: 64),
+          _buildBalance(balanceAsync, isBalanceHidden, colors, text),
+          const SizedBox(height: 64),
+          if (active is RegularAccount) _buildActionButtons(),
+        ],
       ),
     );
   }

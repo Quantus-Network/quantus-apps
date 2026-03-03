@@ -9,7 +9,6 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/select_action_sheet.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/tree_list.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/account_settings_screen.dart';
@@ -165,14 +164,6 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldBase(
-      decorations: [
-        Positioned(
-          right: -40,
-          top: MediaQuery.of(context).size.height * 0.3,
-          child: const Sphere(variant: 2, size: 194),
-        ),
-        const Positioned(left: -40, bottom: 0, child: Sphere(variant: 7, size: 240.681)),
-      ],
       appBar: WalletAppBar(
         title: 'Your Accounts',
         actions: [IconButton(onPressed: _openWalletMoreActions, icon: const Icon(Icons.more_horiz))],

@@ -6,7 +6,6 @@ import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
 import 'package:resonance_network_wallet/features/components/paste_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
@@ -160,9 +159,6 @@ It's quantum secure bitcoin''';
     final isVerifyDisabled = isHandleEmpty || !isPostUrlValid || !isPostHandleMatching || _isSubmitting;
 
     return ScaffoldBase(
-      decorations: [
-        Positioned(right: -50, top: context.containerHalfHeight, child: const Sphere(variant: 2, size: 194)),
-      ],
       appBar: WalletAppBar(title: 'Update X Account'),
       child: Column(
         children: [

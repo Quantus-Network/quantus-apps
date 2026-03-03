@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/transaction_list_item.dart';
 import 'package:resonance_network_wallet/features/components/transactions_list.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
@@ -13,7 +12,6 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   final bool showAccountFilter;
@@ -117,16 +115,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     _initialize(context, ref);
 
     if (!_isInitialized) {
-      return ScaffoldBase(
-        decorations: [
-          Positioned(
-            bottom: -20,
-            left: context.getHorizontalCenterPosition(251.62),
-            child: const Sphere(variant: 8, size: 251.62),
-          ),
-        ],
-        child: const Center(child: CircularProgressIndicator()),
-      );
+      return const ScaffoldBase(child: Center(child: CircularProgressIndicator()));
     }
 
     if (_selectedAccountIds == null) {
@@ -144,13 +133,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   Widget _buildSimpleScaffold() {
     return ScaffoldBase(
-      decorations: [
-        Positioned(
-          bottom: -20,
-          left: context.getHorizontalCenterPosition(251.62),
-          child: const Sphere(variant: 8, size: 251.62),
-        ),
-      ],
       appBar: WalletAppBar(title: 'Transaction History'),
       child: _buildBody(),
     );
@@ -160,14 +142,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
-      extendBodyBehindNavBar: true,
-      decorations: [
-        Positioned(
-          bottom: -20,
-          left: context.getHorizontalCenterPosition(251.62),
-          child: const Sphere(variant: 8, size: 251.62),
-        ),
-      ],
       appBar: WalletAppBar.simple(title: 'Transaction History'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

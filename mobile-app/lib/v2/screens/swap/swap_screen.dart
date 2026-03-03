@@ -3,10 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/refund_address_picker_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_quote_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
@@ -122,54 +122,37 @@ class _SwapScreenState extends State<SwapScreen> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                _header(colors, text),
-                const SizedBox(height: 64),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _fromSection(colors, text),
-                        const SizedBox(height: 32),
-                        _refundAddressSection(colors, text),
-                        const SizedBox(height: 32),
-                        _swapDivider(colors),
-                        const SizedBox(height: 32),
-                        _toSection(colors, text),
-                        const SizedBox(height: 32),
-                        _infoSection(colors, text),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _quoteButton(colors, text),
-                const SizedBox(height: 24),
-              ],
+    return ScaffoldBase(
+      appBar: V2AppBar(
+        title: 'Swap',
+        padding: const EdgeInsets.only(top: 16.0, bottom: 64.0),
+        trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _fromSection(colors, text),
+                  const SizedBox(height: 32),
+                  _refundAddressSection(colors, text),
+                  const SizedBox(height: 32),
+                  _swapDivider(colors),
+                  const SizedBox(height: 32),
+                  _toSection(colors, text),
+                  const SizedBox(height: 32),
+                  _infoSection(colors, text),
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          _quoteButton(colors, text),
+          const SizedBox(height: 24),
+        ],
       ),
-    );
-  }
-
-  Widget _header(AppColorsV2 colors, AppTextTheme text) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const AppBackButton(),
-        Text('Swap', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-        Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
-      ],
     );
   }
 
