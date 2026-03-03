@@ -33,7 +33,10 @@ class Button extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
-  }) : _label = null, _icon = null, _iconPlacement = IconPlacement.trailing, _textStyle = null;
+  }) : _label = null,
+       _icon = null,
+       _iconPlacement = IconPlacement.trailing,
+       _textStyle = null;
 
   const Button.label({
     super.key,
@@ -47,7 +50,11 @@ class Button extends StatelessWidget {
     TextStyle? textStyle,
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
-  }) : _label = label, _icon = icon, _iconPlacement = iconPlacement, _textStyle = textStyle, child = null;
+  }) : _label = label,
+       _icon = icon,
+       _iconPlacement = iconPlacement,
+       _textStyle = textStyle,
+       child = null;
 
   @override
   Widget build(BuildContext context) {

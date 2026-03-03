@@ -224,7 +224,12 @@ class _DepositScreenState extends State<DepositScreen> {
                 filled: false,
                 asset: GlassContainer.mediumAsset,
                 onTap: () {
-                  SharePlus.instance.share(ShareParams(text: 'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}'));
+                  SharePlus.instance.share(
+                    ShareParams(
+                      text:
+                          'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}',
+                    ),
+                  );
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
