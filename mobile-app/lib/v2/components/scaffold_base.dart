@@ -27,18 +27,6 @@ class ScaffoldBase extends StatelessWidget {
        scrollPhysics = null,
        onRefresh = null;
 
-  // Scrollable constructor - SingleChildScrollView without refresh
-  const ScaffoldBase.scrollable({
-    super.key,
-    this.appBar,
-    this.padding = defaultPadding,
-    this.backgroundWidget,
-    this.scrollController,
-    this.scrollPhysics = const AlwaysScrollableScrollPhysics(),
-    required Widget this.child,
-  }) : slivers = null,
-       onRefresh = null;
-
   // Refreshable constructor - CustomScrollView with pull-to-refresh
   const ScaffoldBase.refreshable({
     super.key,
@@ -86,16 +74,6 @@ class ScaffoldBase extends StatelessWidget {
           physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
           slivers: slivers!,
         ),
-      );
-    }
-
-    // Scrollable with SingleChildScrollView (no refresh)
-    if (child != null && scrollController != null && onRefresh == null) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
-        padding: padding,
-        child: child!,
       );
     }
 
