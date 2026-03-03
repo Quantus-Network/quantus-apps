@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class BottomSheetContainer extends StatelessWidget {
   final String title;
+  final Widget Function(String title)? titleBuilder;
   final Widget child;
   final VoidCallback? onBack;
   final double? height;
@@ -13,6 +14,7 @@ class BottomSheetContainer extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.titleBuilder,
     this.onBack,
     this.height,
   });
@@ -44,11 +46,16 @@ class BottomSheetContainer extends StatelessWidget {
                     onTap: onBack,
                     child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
                   ),
-                Text(
-                  title,
-                  style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
-                  textAlign: TextAlign.center,
-                ),
+
+                if (titleBuilder != null)
+                  titleBuilder!(title)
+                else
+                  Text(
+                    title,
+                    style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: colors.textPrimary, size: 20),

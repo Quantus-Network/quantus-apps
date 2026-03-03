@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
@@ -209,6 +210,21 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
     String title = 'Accounts';
     VoidCallback? onBack;
+    Widget titleBuilder(String title) => Row(
+      spacing: 12,
+      children: [
+        SizedBox(
+          width: 32.0,
+          height: 32.0,
+          child: AccountGradientImage(accountId: activeAccountId ?? 'loading..', width: 32.0, height: 32.0),
+        ),
+        Text(
+          title,
+          style: context.themeText.smallTitle?.copyWith(color: context.colors.textPrimary, fontSize: 20),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
 
     final media = MediaQuery.of(context);
     final maxHeight = media.size.height - media.padding.top - 20;
@@ -224,6 +240,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
     return BottomSheetContainer(
       title: title,
+      titleBuilder: editingAccount == null && !_isCreateViewOpen ? titleBuilder : null,
       onBack: onBack,
       height: sheetHeight,
       child: _buildContent(
