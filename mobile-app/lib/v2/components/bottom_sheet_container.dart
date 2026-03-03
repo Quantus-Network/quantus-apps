@@ -41,17 +41,15 @@ class BottomSheetContainer extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    if (onBack != null) ...[
-                      GestureDetector(
-                        onTap: onBack,
-                        child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Text(title, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                  ],
+                if (onBack != null)
+                  GestureDetector(
+                    onTap: onBack,
+                    child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
+                  ),
+                Text(
+                  title,
+                  style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
+                  textAlign: TextAlign.center,
                 ),
                 if (showCloseIcon)
                   GestureDetector(
@@ -59,7 +57,7 @@ class BottomSheetContainer extends StatelessWidget {
                     child: Icon(Icons.close, color: colors.textPrimary, size: 20),
                   )
                 else
-                  const SizedBox(width: 20), // Spacer to maintain alignment if needed
+                  const SizedBox(width: 20),
               ],
             ),
             const SizedBox(height: 32),
@@ -70,8 +68,8 @@ class BottomSheetContainer extends StatelessWidget {
     );
   }
 
-  static void show(BuildContext context, {required WidgetBuilder builder}) {
-    showModalBottomSheet(
+  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder}) {
+    return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

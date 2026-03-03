@@ -1,6 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -12,12 +12,9 @@ Future<SwapToken?> showTokenPickerSheet(
   required SwapTokenLoader loadTokens,
   required SwapToken current,
 }) {
-  return showGeneralDialog<SwapToken>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Select Token',
-    barrierColor: Colors.transparent,
-    pageBuilder: (_, _, _) => _TokenPickerContent(loadTokens: loadTokens, current: current),
+  return BottomSheetContainer.show<SwapToken>(
+    context,
+    builder: (_) => _TokenPickerContent(loadTokens: loadTokens, current: current),
   );
 }
 
@@ -77,53 +74,12 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
     final height = size.height;
     final cardHeight = (height - 120).clamp(360.0, 506.0);
 
-    return DefaultTextStyle(
-      style: const TextStyle(decoration: TextDecoration.none),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-        child: ColoredBox(
-          color: Colors.black.withValues(alpha: 0.5),
-          child: SafeArea(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                width: (size.width - 28).clamp(300.0, 362.0),
-                height: cardHeight,
-                margin: const EdgeInsets.fromLTRB(14, 0, 14, 20),
-                padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  border: Border.all(color: const Color(0xFF3D3D3D)),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Select Token',
-                            style: text.smallTitle?.copyWith(
-                              color: colors.textPrimary,
-                              fontSize: 20,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Expanded(child: _content(colors, text)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+    return BottomSheetContainer(
+      title: 'Select Token',
+      height: cardHeight,
+      child: DefaultTextStyle(
+        style: const TextStyle(decoration: TextDecoration.none),
+        child: _content(colors, text),
       ),
     );
   }
