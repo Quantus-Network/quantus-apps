@@ -1,12 +1,13 @@
 import 'package:collection/collection.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/main/screens/add_hardware_account_screen.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -14,10 +15,10 @@ import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_comp
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) async {
-  BottomSheetContainer.show(context, builder: (_) => const AccountsSheet());
-  return null;
+  return BottomSheetContainer.show<T>(context, builder: (_) => const AccountsSheet());
 }
 
 class AccountsSheet extends ConsumerStatefulWidget {
@@ -41,6 +42,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   bool _isSavingName = false;
   bool _isCreateViewOpen = false;
   String? _editingAccountId;
+  String _editingAccountChecksum = 'Loading...';
   Account? _draftAccount;
   String _draftChecksum = 'Loading...';
 
@@ -122,9 +124,15 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Future<void> _openEdit(Account account) async {
     _nameController.text = account.name;
+
     setState(() {
       _editingAccountId = account.accountId;
       _isEditingName = false;
+    });
+
+    final checksum = await _checksumService.getHumanReadableName(account.accountId);
+    setState(() {
+      _editingAccountChecksum = checksum;
     });
   }
 
@@ -133,6 +141,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       _editingAccountId = null;
       _isEditingName = false;
       _isSavingName = false;
+      _editingAccountChecksum = 'Loading...';
     });
   }
 
@@ -201,23 +210,39 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
     String title = 'Accounts';
     VoidCallback? onBack;
-    bool showCloseIcon = true;
+    Widget titleBuilder(String title) => Row(
+      spacing: 12,
+      children: [
+        SizedBox(
+          width: 32.0,
+          height: 32.0,
+          child: AccountGradientImage(accountId: activeAccountId ?? 'loading..', width: 32.0, height: 32.0),
+        ),
+        Text(
+          title,
+          style: context.themeText.smallTitle?.copyWith(color: context.colors.textPrimary, fontSize: 20),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+
+    final media = MediaQuery.of(context);
+    final maxHeight = media.size.height - media.padding.top - 20;
+    final sheetHeight = math.min(610.0, maxHeight);
 
     if (_isCreateViewOpen && _draftAccount != null) {
       title = 'New Account';
       onBack = _closeCreateView;
-      showCloseIcon = false;
     } else if (editingAccount != null) {
       title = 'Edit Account';
       onBack = _closeEdit;
-      showCloseIcon = false;
     }
 
     return BottomSheetContainer(
       title: title,
+      titleBuilder: editingAccount == null && !_isCreateViewOpen ? titleBuilder : null,
       onBack: onBack,
-      showCloseIcon: showCloseIcon,
-      height: 610,
+      height: sheetHeight,
       child: _buildContent(
         accountsAsync: accountsAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
@@ -274,20 +299,14 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         _nameController.text = editingAccount.name;
       }
 
-      return FutureBuilder<String>(
-        future: _checksumService.getHumanReadableName(editingAccount.accountId),
-        builder: (context, snapshot) {
-          final checksum = snapshot.connectionState == ConnectionState.done ? (snapshot.data ?? '-') : 'Loading...';
-          return EditAccountView(
-            account: editingAccount,
-            checksum: checksum,
-            isEditingName: _isEditingName,
-            isSavingName: _isSavingName,
-            nameController: _nameController,
-            onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
-            onSaveName: () => _saveEditedName(editingAccount),
-          );
-        },
+      return EditAccountView(
+        account: editingAccount,
+        checksum: _editingAccountChecksum,
+        isEditingName: _isEditingName,
+        isSavingName: _isSavingName,
+        nameController: _nameController,
+        onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
+        onSaveName: () => _saveEditedName(editingAccount),
       );
     }
 
@@ -316,7 +335,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        _buildPrimarySheetButton(label: 'Add Account', isLoading: _isCreatingAccount, onTap: _createNewAccount),
+        Button(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
       ],
     );
   }
@@ -345,25 +364,13 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 children: [
                   Text(
                     account.name,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
+                    style: context.themeText.paragraph!.copyWith(
                       fontWeight: FontWeight.w500,
                       color: isActive ? context.colors.accentPink : Colors.white,
-                      height: 1.35,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    balanceText,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: context.colors.textSecondary,
-                      height: 1.35,
-                    ),
-                  ),
+                  Text(balanceText, style: context.themeText.detail!.copyWith(color: context.colors.textSecondary)),
                 ],
               ),
             ),
@@ -373,10 +380,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         ),
       ),
     );
-  }
-
-  Widget _buildPrimarySheetButton({required String label, required VoidCallback onTap, bool isLoading = false}) {
-    return Button(label: label, onTap: onTap, isLoading: isLoading);
   }
 
   Future<void> _submitCreatedAccount() async {

@@ -37,11 +37,11 @@ class EditAccountView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Account Name', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                Text('Account Name', style: context.themeText.smallParagraph),
                 const SizedBox(height: 12),
                 _buildAccountNameField(context),
                 const SizedBox(height: 40),
-                Text('Address Details', style: context.themeText.smallParagraph?.copyWith(color: Colors.white)),
+                Text('Address Details', style: context.themeText.smallParagraph),
                 const SizedBox(height: 12),
                 _buildAddressDetails(context),
               ],
@@ -84,24 +84,12 @@ class EditAccountView extends StatelessWidget {
       child: TextField(
         controller: nameController,
         readOnly: !isEditingName || isSavingName,
-        style: TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 14,
+        style: context.themeText.smallParagraph!.copyWith(
           fontWeight: FontWeight.w500,
           color: context.colors.accentPink,
-          height: 1.35,
         ),
         cursorColor: context.colors.accentPink,
-        decoration: const InputDecoration(
-          filled: true,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
+        decoration: accountFieldDecoration,
         onSubmitted: (_) {
           if (isEditingName && !isSavingName) {
             onSaveName();
@@ -125,13 +113,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: account.accountId,
             onCopy: () => context.copyTextWithToaster(account.accountId),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-              height: 1.35,
-            ),
+            textStyle: context.themeText.smallParagraph!.copyWith(fontWeight: FontWeight.w500),
             maxLines: null,
             overflow: TextOverflow.visible,
           ),
@@ -139,13 +121,7 @@ class EditAccountView extends StatelessWidget {
           AccountCopyRow(
             value: checksum,
             onCopy: () => context.copyTextWithToaster(checksum, message: 'Checkphrase copied to clipboard'),
-            textStyle: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: context.colors.accentPink,
-              height: 1,
-            ),
+            textStyle: context.themeText.smallParagraph!.copyWith(color: context.colors.accentPink),
           ),
         ],
       ),
