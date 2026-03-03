@@ -51,7 +51,7 @@ class ScaffoldBase extends StatelessWidget {
       ],
     );
 
-    Widget scaffoldBody = SafeArea(bottom: false, child: bodyContent);
+    Widget scaffoldBody = SafeArea(child: bodyContent);
 
     if (backgroundWidget != null) {
       scaffoldBody = Stack(fit: StackFit.expand, children: [backgroundWidget!, scaffoldBody]);
