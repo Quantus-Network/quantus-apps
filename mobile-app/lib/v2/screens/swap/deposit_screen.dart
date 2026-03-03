@@ -11,7 +11,6 @@ import 'package:resonance_network_wallet/v2/components/gradient_background.dart'
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:share_plus/share_plus.dart';
 
 class DepositScreen extends StatefulWidget {
   final SwapOrder order;
@@ -202,45 +201,25 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
+              child: Button.label(
+                label: 'Copy',
+                variant: ButtonVariant.transparent,
                 onTap: _copyAddress,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.copy, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Copy',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+                icon: Icon(Icons.copy, color: colors.textPrimary, size: 20),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
+              child: Button.label(
+                label: 'Share QR',
+                icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
+                variant: ButtonVariant.transparent,
                 onTap: () {
                   shareText(
                     context,
                     'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}',
                   );
                 },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Share QR',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
