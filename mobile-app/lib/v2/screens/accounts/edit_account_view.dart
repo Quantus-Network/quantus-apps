@@ -92,16 +92,7 @@ class EditAccountView extends StatelessWidget {
           height: 1.35,
         ),
         cursorColor: context.colors.accentPink,
-        decoration: const InputDecoration(
-          filled: true,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
+        decoration: accountFieldDecoration,
         onSubmitted: (_) {
           if (isEditingName && !isSavingName) {
             onSaveName();

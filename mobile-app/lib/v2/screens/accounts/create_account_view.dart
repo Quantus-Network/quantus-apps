@@ -91,16 +91,7 @@ class CreateAccountView extends StatelessWidget {
         readOnly: !isEditingName || isSaving,
         style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white),
         cursorColor: Colors.white,
-        decoration: const InputDecoration(
-          filled: true,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-        ),
+        decoration: accountFieldDecoration,
       ),
     );
   }

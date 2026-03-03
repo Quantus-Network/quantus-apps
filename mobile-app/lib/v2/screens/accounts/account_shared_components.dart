@@ -72,3 +72,14 @@ class AccountIconActionButton extends StatelessWidget {
     return ButtonIcon.rounded(icon: icon, onTap: onTap, size: isTiny ? ButtonIconSize.small : ButtonIconSize.medium);
   }
 }
+
+const accountFieldDecoration = InputDecoration(
+  filled: true,
+  fillColor: Colors.transparent,
+  border: InputBorder.none,
+  enabledBorder: InputBorder.none,
+  focusedBorder: InputBorder.none,
+  disabledBorder: InputBorder.none,
+  isDense: true,
+  contentPadding: EdgeInsets.zero,
+);
