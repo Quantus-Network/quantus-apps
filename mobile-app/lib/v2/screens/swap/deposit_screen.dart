@@ -57,8 +57,13 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  String _getDepositAddress() {
+    // return _order.depositAddress
+    return 'For demo purposes only - do not send funds!';
+  }
+
   void _copyAddress() {
-    context.copyTextWithToaster(_order.depositAddress);
+    context.copyTextWithToaster(_getDepositAddress());
   }
 
   @override
@@ -156,7 +161,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
             /// for now this QR Code is invalid so people don't transfer by accident
             // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
-            child: QrImageView(data: 'quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
+            child: QrImageView(data: 'Quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),
         const SizedBox(height: 16),
@@ -167,7 +172,7 @@ class _DepositScreenState extends State<DepositScreen> {
               // for now put invalid address so people don't transfer by accident
               Text(
                 // _order.depositAddress.toLowerCase(),
-                '-------------------',
+                'For demo purposes only - do not send funds!',
                 style: text.smallParagraph?.copyWith(
                   color: colors.textPrimary,
                   fontWeight: FontWeight.w500,
