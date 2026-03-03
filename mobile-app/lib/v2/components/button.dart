@@ -42,7 +42,8 @@ class Button extends StatelessWidget {
        _iconPlacement = IconPlacement.trailing,
        _textStyle = null;
 
-  const Button.label({
+  // this is a simple button with a label and an icon
+  const Button.simple({
     super.key,
     required String label,
     Widget? icon,
