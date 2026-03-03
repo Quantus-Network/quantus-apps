@@ -89,11 +89,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,
           slivers: [
-            SliverToBoxAdapter(child: _buildContent(active, balanceAsync, isBalanceHidden, colors, text)),
-            SliverToBoxAdapter(
-              child: ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 58)),
+            _buildContent(active, balanceAsync, isBalanceHidden, colors, text),
+            ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+            const SizedBox(height: 58),
           ],
         );
       },
@@ -107,18 +105,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AppColorsV2 colors,
     AppTextTheme text,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          _buildTopBar(active, isBalanceHidden, colors),
-          const SizedBox(height: 64),
-          _buildBalance(balanceAsync, isBalanceHidden, colors, text),
-          const SizedBox(height: 64),
-          if (active is RegularAccount) _buildActionButtons(),
-        ],
-      ),
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        _buildTopBar(active, isBalanceHidden, colors),
+        const SizedBox(height: 64),
+        _buildBalance(balanceAsync, isBalanceHidden, colors, text),
+        const SizedBox(height: 64),
+        if (active is RegularAccount) _buildActionButtons(),
+      ],
     );
   }
 

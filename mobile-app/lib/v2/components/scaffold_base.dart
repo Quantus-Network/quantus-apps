@@ -3,8 +3,6 @@ import 'package:resonance_network_wallet/features/components/network_status_bann
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-const defaultPadding = EdgeInsets.symmetric(horizontal: 24.0);
-
 class ScaffoldBase extends StatelessWidget {
   final Widget? child;
   final List<Widget>? slivers;
@@ -14,6 +12,8 @@ class ScaffoldBase extends StatelessWidget {
   final RefreshCallback? onRefresh;
   final EdgeInsetsGeometry padding;
   final Widget? backgroundWidget;
+
+  static const defaultPadding = EdgeInsets.symmetric(horizontal: 24.0);
 
   // Default constructor - static content
   const ScaffoldBase({
@@ -72,7 +72,12 @@ class ScaffoldBase extends StatelessWidget {
         child: CustomScrollView(
           controller: scrollController,
           physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
-          slivers: slivers!,
+          slivers: [
+            SliverPadding(
+              padding: padding,
+              sliver: SliverList(delegate: SliverChildListDelegate(slivers!)),
+            ),
+          ],
         ),
       );
     }
