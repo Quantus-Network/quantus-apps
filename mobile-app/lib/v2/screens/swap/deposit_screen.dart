@@ -289,10 +289,10 @@ class _DepositScreenState extends State<DepositScreen> {
         const SizedBox(height: 80),
         const SuccessCheck(),
         const SizedBox(height: 32),
-        Text('Swap Processing', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+        Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is processing.',
+          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is complete.',
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),
