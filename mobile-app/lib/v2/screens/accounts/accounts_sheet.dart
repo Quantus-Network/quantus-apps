@@ -41,6 +41,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   bool _isSavingName = false;
   bool _isCreateViewOpen = false;
   String? _editingAccountId;
+  String _editingAccountChecksum = 'Loading...';
   Account? _draftAccount;
   String _draftChecksum = 'Loading...';
 
@@ -122,9 +123,15 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Future<void> _openEdit(Account account) async {
     _nameController.text = account.name;
+
     setState(() {
       _editingAccountId = account.accountId;
       _isEditingName = false;
+    });
+
+    final checksum = await _checksumService.getHumanReadableName(account.accountId);
+    setState(() {
+      _editingAccountChecksum = checksum;
     });
   }
 
@@ -133,6 +140,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       _editingAccountId = null;
       _isEditingName = false;
       _isSavingName = false;
+      _editingAccountChecksum = 'Loading...';
     });
   }
 
@@ -278,20 +286,14 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
         _nameController.text = editingAccount.name;
       }
 
-      return FutureBuilder<String>(
-        future: _checksumService.getHumanReadableName(editingAccount.accountId),
-        builder: (context, snapshot) {
-          final checksum = snapshot.connectionState == ConnectionState.done ? (snapshot.data ?? '-') : 'Loading...';
-          return EditAccountView(
-            account: editingAccount,
-            checksum: checksum,
-            isEditingName: _isEditingName,
-            isSavingName: _isSavingName,
-            nameController: _nameController,
-            onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
-            onSaveName: () => _saveEditedName(editingAccount),
-          );
-        },
+      return EditAccountView(
+        account: editingAccount,
+        checksum: _editingAccountChecksum,
+        isEditingName: _isEditingName,
+        isSavingName: _isSavingName,
+        nameController: _nameController,
+        onToggleEditingName: () => setState(() => _isEditingName = !_isEditingName),
+        onSaveName: () => _saveEditedName(editingAccount),
       );
     }
 
@@ -349,13 +351,13 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 children: [
                   Text(
                     account.name,
-                    style: context.themeText.paragraph!.copyWith(fontWeight: FontWeight.w500, color: isActive ? context.colors.accentPink : Colors.white),
+                    style: context.themeText.paragraph!.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: isActive ? context.colors.accentPink : Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    balanceText,
-                    style: context.themeText.detail!.copyWith(color: context.colors.textSecondary),
-                  ),
+                  Text(balanceText, style: context.themeText.detail!.copyWith(color: context.colors.textSecondary)),
                 ],
               ),
             ),

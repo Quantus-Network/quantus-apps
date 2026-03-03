@@ -59,7 +59,7 @@ class BottomSheetContainer extends StatelessWidget {
                     child: Icon(Icons.close, color: colors.textPrimary, size: 20),
                   )
                 else
-                  const SizedBox(width: 20), // Spacer to maintain alignment if needed
+                  const SizedBox(width: 20),
               ],
             ),
             const SizedBox(height: 32),
