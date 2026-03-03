@@ -5,6 +5,7 @@ import 'package:bip39_mnemonic/bip39_mnemonic.dart';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:polkadart/polkadart.dart';
+import 'package:polkadart/scale_codec.dart';
 import 'package:quantus_sdk/generated/planck/planck.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/resonance_extrinsic_payload.dart';
@@ -415,6 +416,25 @@ class SubstrateService {
 
     return await _submitExtrinsic(extrinsic);
   }
+
+  Future<Uint8List> submitUnsignedExtrinsic(RuntimeCall call) async {
+    final registry = await _rpcEndpointService.rpcTask((uri) async {
+      final provider = Provider.fromUri(uri);
+      return Planck(provider).registry;
+    });
+    final int versionByte = registry.extrinsicVersion & 127;
+
+    final callData = call.encode(); // Uint8List
+    // 4. Encode as unsigned/bare extrinsic
+  // final encoder = ExtrinsicEncoder(chainInfo);
+  // final unsignedExtrinsic = encoder.encodeUnsigned(callData); // adds version byte (0x04 for V4, 0x05 for V5)
+    final output = ByteOutput()
+      ..pushByte(versionByte)
+      ..write(call.encode());
+    final extrinsic = U8SequenceCodec.codec.encode(output.toBytes());
+    return await _submitExtrinsic(extrinsic);
+  }
+
 
   Future<int> _getNextAccountNonceFromAddress(String address) async {
     final nonceResult = await _rpcEndpointService.rpcTask((uri) async {

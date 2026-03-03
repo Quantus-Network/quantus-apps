@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:polkadart/polkadart.dart' show Hasher;
-import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -249,7 +248,6 @@ class WithdrawalService {
       // 6. Submit to chain and wait for inclusion
       final txHash = await _submitProof(
         proofHex: aggregatedProof.proofHex,
-        rpcUrl: rpcUrl,
       );
 
       onProgress?.call(0.90, 'Waiting for confirmation...');
@@ -828,77 +826,21 @@ class WithdrawalService {
   /// unsigned - the proof itself provides cryptographic verification.
   Future<String> _submitProof({
     required String proofHex,
-    required String rpcUrl,
   }) async {
-    _log.i('Submitting proof to $rpcUrl');
     _log.i('Proof length: ${proofHex.length} chars');
 
-    // Convert proof hex to bytes
     final proofBytes = _hexToBytes(
       proofHex.startsWith('0x') ? proofHex.substring(2) : proofHex,
     );
 
-    // Create the Wormhole::verify_aggregated_proof call
-    final call = wormhole_call.VerifyAggregatedProof(proofBytes: proofBytes);
-
-    // Encode the call using SCALE codec
-    // Format: [pallet_index: u8][call_variant: u8][call_data...]
-    // Wormhole pallet index is 20, verify_aggregated_proof variant is 2
-    final callOutput = scale.ByteOutput(call.sizeHint() + 1);
-    scale.U8Codec.codec.encodeTo(20, callOutput); // Wormhole pallet index
-    call.encodeTo(callOutput);
-    final callData = callOutput.toBytes();
-
-    // Create unsigned extrinsic
-    // Format: [length_prefix (compact)][version: 0x04 (unsigned v4)][call_data]
-    final extrinsicVersion = 0x04; // Unsigned extrinsic, version 4
-
-    final extrinsicBody = Uint8List(1 + callData.length);
-    extrinsicBody[0] = extrinsicVersion;
-    extrinsicBody.setRange(1, extrinsicBody.length, callData);
-
-    // SCALE encode with length prefix
-    final output = scale.ByteOutput(
-      scale.CompactCodec.codec.sizeHint(extrinsicBody.length) +
-          extrinsicBody.length,
-    );
-    scale.CompactCodec.codec.encodeTo(extrinsicBody.length, output);
-    output.write(extrinsicBody);
-    final extrinsic = output.toBytes();
-
-    final extrinsicHex = '0x${_bytesToHex(extrinsic)}';
-    _log.d(
-      'Extrinsic hex (${extrinsicHex.length} chars): ${extrinsicHex.substring(0, 100)}...',
+    final call = RuntimeCall.values.wormhole(
+      wormhole_call.VerifyAggregatedProof(proofBytes: proofBytes),
     );
 
-    // Submit via RPC
-    final response = await http.post(
-      Uri.parse(rpcUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': 'author_submitExtrinsic',
-        'params': [extrinsicHex],
-      }),
-    );
-
-    final result = jsonDecode(response.body);
-
-    if (result['error'] != null) {
-      final error = result['error'];
-      _log.e('Transaction submission failed: $error');
-      throw Exception('Transaction failed: ${error['message'] ?? error}');
-    }
-
-    final txHash = result['result'] as String;
-    print('=== TRANSACTION SUBMITTED ===');
-    print('TX Hash: $txHash');
-    print('Extrinsic length: ${extrinsicHex.length} chars');
-    print('RPC endpoint: $rpcUrl');
-    print('==============================');
-    _log.i('Transaction submitted: $txHash');
-    return txHash;
+    final txHash = await SubstrateService().submitUnsignedExtrinsic(call);
+    final txHashHex = '0x${_bytesToHex(txHash)}';
+    _log.i('Transaction submitted: $txHashHex');
+    return txHashHex;
   }
 
   /// Check events in a specific block for wormhole activity.
