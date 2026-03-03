@@ -84,7 +84,10 @@ class EditAccountView extends StatelessWidget {
       child: TextField(
         controller: nameController,
         readOnly: !isEditingName || isSavingName,
-        style: context.themeText.smallParagraph!.copyWith(fontWeight: FontWeight.w500, color: context.colors.accentPink),
+        style: context.themeText.smallParagraph!.copyWith(
+          fontWeight: FontWeight.w500,
+          color: context.colors.accentPink,
+        ),
         cursorColor: context.colors.accentPink,
         decoration: accountFieldDecoration,
         onSubmitted: (_) {
