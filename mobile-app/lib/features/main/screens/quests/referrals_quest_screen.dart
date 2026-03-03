@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/copy_icon.dart';
 import 'package:resonance_network_wallet/features/components/inner_shadow_container.dart';
-import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/features/main/screens/quests/quest_constants.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';

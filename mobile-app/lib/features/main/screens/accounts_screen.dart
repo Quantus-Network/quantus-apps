@@ -6,7 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/account_tag.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/select.dart';
 import 'package:resonance_network_wallet/features/components/select_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';

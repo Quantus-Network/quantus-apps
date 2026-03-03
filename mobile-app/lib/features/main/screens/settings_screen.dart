@@ -5,7 +5,7 @@ import 'package:resonance_network_wallet/features/components/app_modal_bottom_sh
 import 'package:resonance_network_wallet/features/components/list_item.dart';
 import 'package:resonance_network_wallet/features/components/referral_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/reset_confirmation_bottom_sheet.dart';
-import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/sphere.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
