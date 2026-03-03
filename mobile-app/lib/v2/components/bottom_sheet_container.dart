@@ -7,7 +7,6 @@ class BottomSheetContainer extends StatelessWidget {
   final String title;
   final Widget child;
   final VoidCallback? onBack;
-  final bool showCloseIcon;
   final double? height;
 
   const BottomSheetContainer({
@@ -15,7 +14,6 @@ class BottomSheetContainer extends StatelessWidget {
     required this.title,
     required this.child,
     this.onBack,
-    this.showCloseIcon = true,
     this.height,
   });
 
@@ -41,25 +39,20 @@ class BottomSheetContainer extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    if (onBack != null) ...[
-                      GestureDetector(
-                        onTap: onBack,
-                        child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Text(title, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                  ],
-                ),
-                if (showCloseIcon)
+                if (onBack != null)
                   GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, color: colors.textPrimary, size: 20),
-                  )
-                else
-                  const SizedBox(width: 20),
+                    onTap: onBack,
+                    child: Icon(Icons.arrow_back_ios_new, color: colors.textPrimary, size: 20),
+                  ),
+                Text(
+                  title,
+                  style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
+                  textAlign: TextAlign.center,
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(Icons.close, color: colors.textPrimary, size: 20),
+                ),
               ],
             ),
             const SizedBox(height: 32),

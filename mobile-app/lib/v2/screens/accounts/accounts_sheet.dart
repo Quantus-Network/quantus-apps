@@ -209,7 +209,6 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
     String title = 'Accounts';
     VoidCallback? onBack;
-    bool showCloseIcon = true;
 
     final media = MediaQuery.of(context);
     final maxHeight = media.size.height - media.padding.top - 20;
@@ -218,17 +217,14 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (_isCreateViewOpen && _draftAccount != null) {
       title = 'New Account';
       onBack = _closeCreateView;
-      showCloseIcon = false;
     } else if (editingAccount != null) {
       title = 'Edit Account';
       onBack = _closeEdit;
-      showCloseIcon = false;
     }
 
     return BottomSheetContainer(
       title: title,
       onBack: onBack,
-      showCloseIcon: showCloseIcon,
       height: sheetHeight,
       child: _buildContent(
         accountsAsync: accountsAsync,
