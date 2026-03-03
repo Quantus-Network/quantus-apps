@@ -161,7 +161,7 @@ class _DepositScreenState extends State<DepositScreen> {
             padding: const EdgeInsets.all(8),
 
             /// for now this QR Code is invalid so people don't transfer by accident
-            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
+            // child: QrImageView(data: _getDepositAddress(), version: QrVersions.auto, size: 184),
             child: QrImageView(data: 'Quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),
@@ -172,7 +172,7 @@ class _DepositScreenState extends State<DepositScreen> {
             children: [
               // for now put invalid address so people don't transfer by accident
               Text(
-                // _order.depositAddress.toLowerCase(),
+                // _getDepositAddress().toLowerCase(),
                 'For demo purposes only - do not send funds!',
                 style: text.smallParagraph?.copyWith(
                   color: colors.textPrimary,
