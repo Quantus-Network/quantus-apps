@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -57,8 +57,13 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  String _getDepositAddress() {
+    // return _order.depositAddress
+    return 'For demo purposes only - do not send funds!';
+  }
+
   void _copyAddress() {
-    context.copyTextWithToaster(_order.depositAddress);
+    context.copyTextWithToaster(_getDepositAddress());
   }
 
   @override
@@ -137,8 +142,8 @@ class _DepositScreenState extends State<DepositScreen> {
             padding: const EdgeInsets.all(8),
 
             /// for now this QR Code is invalid so people don't transfer by accident
-            // child: QrImageView(data: _order.depositAddress, version: QrVersions.auto, size: 184),
-            child: QrImageView(data: 'quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
+            // child: QrImageView(data: _getDepositAddress(), version: QrVersions.auto, size: 184),
+            child: QrImageView(data: 'Quantum secure bitcoin - quantus!', version: QrVersions.auto, size: 184),
           ),
         ),
         const SizedBox(height: 16),
@@ -148,8 +153,8 @@ class _DepositScreenState extends State<DepositScreen> {
             children: [
               // for now put invalid address so people don't transfer by accident
               Text(
-                // _order.depositAddress.toLowerCase(),
-                '-------------------',
+                // _getDepositAddress().toLowerCase(),
+                'For demo purposes only - do not send funds!',
                 style: text.smallParagraph?.copyWith(
                   color: colors.textPrimary,
                   fontWeight: FontWeight.w500,
@@ -177,40 +182,25 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
+              child: Button.simple(
+                label: 'Copy',
+                variant: ButtonVariant.transparent,
                 onTap: _copyAddress,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.copy, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Copy',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+                icon: Icon(Icons.copy, color: colors.textPrimary, size: 20),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: GlassContainer(
-                filled: false,
-                asset: GlassContainer.mediumAsset,
-                onTap: () {},
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Share QR',
-                      style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+              child: Button.simple(
+                label: 'Share QR',
+                icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
+                variant: ButtonVariant.transparent,
+                onTap: () {
+                  shareText(
+                    context,
+                    'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}',
+                  );
+                },
               ),
             ),
           ],
@@ -261,7 +251,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
-          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is processing.',
+          'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is complete.',
           style: text.paragraph?.copyWith(color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -277,7 +267,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return Button.simple(
       label: "I've sent the funds",
       onTap: _confirmSent,
       variant: ButtonVariant.secondary,
@@ -286,7 +276,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button(
+    return Button.simple(
       label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       variant: ButtonVariant.secondary,

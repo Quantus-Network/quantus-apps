@@ -35,7 +35,7 @@ class RecoveryPhraseSheet extends StatelessWidget {
           const SizedBox(height: 16),
           MnemonicGrid(words: words, isRevealed: true),
           const SizedBox(height: 16),
-          Button(
+          Button.simple(
             padding: const EdgeInsets.all(0),
             label: 'Copy to clipboard',
             icon: Icon(Icons.copy, color: context.colors.textPrimary, size: 14),

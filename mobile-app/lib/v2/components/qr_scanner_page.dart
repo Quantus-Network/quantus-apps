@@ -87,7 +87,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             bottom: 58,
             left: 24,
             right: 24,
-            child: Button(label: 'Cancel', onTap: () => Navigator.pop(context)),
+            child: Button.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
           ),
         ],
       ),

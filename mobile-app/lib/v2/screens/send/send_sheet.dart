@@ -440,7 +440,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return Button(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
+    return Button.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
   }
 }
 

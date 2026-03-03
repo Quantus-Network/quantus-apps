@@ -9,6 +9,7 @@ class LiquidGlassBase extends StatelessWidget {
   final Shape shape;
   final double radius;
 
+  final bool centered;
   final Widget child;
 
   const LiquidGlassBase.rounded({
@@ -16,6 +17,7 @@ class LiquidGlassBase extends StatelessWidget {
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
     this.radius = 14.0,
+    this.centered = true,
     required this.child,
   }) : shape = Shape.rounded;
 
@@ -23,7 +25,7 @@ class LiquidGlassBase extends StatelessWidget {
     super.key,
     this.visibility = 1.0,
     this.glassColor = Colors.transparent,
-
+    this.centered = true,
     required this.child,
   }) : shape = Shape.circular,
        radius = 100.0;
@@ -42,12 +44,17 @@ class LiquidGlassBase extends StatelessWidget {
         ambientStrength: -0.2,
         saturation: 1.5,
       ),
-      child: Center(
-        child: LiquidGlass(
-          shape: LiquidRoundedSuperellipse(borderRadius: radius),
-          child: child,
-        ),
-      ),
+      child: centered
+          ? Center(
+              child: LiquidGlass(
+                shape: LiquidRoundedSuperellipse(borderRadius: radius),
+                child: child,
+              ),
+            )
+          : LiquidGlass(
+              shape: LiquidRoundedSuperellipse(borderRadius: radius),
+              child: child,
+            ),
     );
   }
 }

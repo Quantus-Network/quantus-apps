@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -21,7 +20,6 @@ class SwapScreen extends StatefulWidget {
 }
 
 class _SwapScreenState extends State<SwapScreen> {
-  static const _smallGlassAsset = 'assets/v2/glass_40.png';
   static const _qrIconAsset = 'assets/v2/swap_qr_code.svg';
   static const _historyIconAsset = 'assets/v2/swap_clock_counter_clockwise.svg';
   static const _swapDirectionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
@@ -187,39 +185,38 @@ class _SwapScreenState extends State<SwapScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            GestureDetector(
-              onTap: _pickToken,
-              child: SizedBox(
-                width: 119,
-                child: GlassContainer(
-                  asset: GlassContainer.mediumAsset,
-                  filled: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Row(
-                    children: [
-                      TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _fromToken.symbol,
-                              style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              _fromToken.network,
-                              style: text.tiny?.copyWith(color: colors.textSecondary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
+            SizedBox(
+              width: 119,
+              height: 56,
+              child: Button(
+                centered: false,
+                onTap: _pickToken,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                borderRadius: 8,
+                child: Row(
+                  children: [
+                    TokenIcon(token: _fromToken, size: 25, networkBadgeSize: 10),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _fromToken.symbol,
+                            style: text.detail?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            _fromToken.network,
+                            style: text.tiny?.copyWith(color: colors.textSecondary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down, color: colors.textSecondary, size: 16),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down, color: colors.textSecondary, size: 16),
+                  ],
                 ),
               ),
             ),
@@ -271,12 +268,11 @@ class _SwapScreenState extends State<SwapScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _scanQr,
-                child: _smallGlassIconButton(colors: colors, iconAsset: _qrIconAsset),
-              ),
+              _smallGlassIconButton(colors: colors, iconAsset: _qrIconAsset, onTap: _scanQr),
               const SizedBox(width: 8),
-              GestureDetector(
+              _smallGlassIconButton(
+                colors: colors,
+                iconAsset: _historyIconAsset,
                 onTap: () async {
                   final address = await showRefundAddressPickerSheet(context, _fromToken.network);
                   if (address != null) {
@@ -284,7 +280,6 @@ class _SwapScreenState extends State<SwapScreen> {
                     setState(() {});
                   }
                 },
-                child: _smallGlassIconButton(colors: colors, iconAsset: _historyIconAsset),
               ),
             ],
           ),
@@ -300,19 +295,21 @@ class _SwapScreenState extends State<SwapScreen> {
         SizedBox(
           width: 40,
           height: 40,
-          child: _smallGlassIconButton(colors: colors, iconAsset: _swapDirectionIconAsset),
+          child: _smallGlassIconButton(colors: colors, iconAsset: _swapDirectionIconAsset, onTap: () {}),
         ),
         Expanded(child: Divider(color: colors.separator)),
       ],
     );
   }
 
-  Widget _smallGlassIconButton({required AppColorsV2 colors, required String iconAsset}) {
+  Widget _smallGlassIconButton({required AppColorsV2 colors, required String iconAsset, VoidCallback? onTap}) {
     return SizedBox(
       width: 40,
       height: 40,
-      child: GlassContainer(
-        asset: _smallGlassAsset,
+      child: Button(
+        onTap: onTap,
+        padding: EdgeInsets.zero,
+        borderRadius: 8,
         child: Center(
           child: SvgPicture.asset(
             iconAsset,
@@ -352,10 +349,11 @@ class _SwapScreenState extends State<SwapScreen> {
             SizedBox(
               width: 119,
               height: 56,
-              child: GlassContainer(
-                asset: GlassContainer.mediumAsset,
-                filled: true,
+              child: Button(
+                centered: false,
+                onTap: () {},
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                borderRadius: 8,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -417,6 +415,11 @@ class _SwapScreenState extends State<SwapScreen> {
 
   Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
-    return Button(label: 'Get a Quote', onTap: _getQuote, isDisabled: !enabled, variant: ButtonVariant.secondary);
+    return Button.simple(
+      label: 'Get a Quote',
+      onTap: _getQuote,
+      isDisabled: !enabled,
+      variant: ButtonVariant.secondary,
+    );
   }
 }

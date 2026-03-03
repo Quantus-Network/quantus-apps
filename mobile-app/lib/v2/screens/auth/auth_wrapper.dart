@@ -40,7 +40,7 @@ class AuthWrapper extends ConsumerWidget {
             const SizedBox(height: 120),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
-              child: Button(
+              child: Button.simple(
                 label: 'Unlock Wallet',
                 onTap: () {
                   ref.read(localAuthProvider.notifier).authenticate();

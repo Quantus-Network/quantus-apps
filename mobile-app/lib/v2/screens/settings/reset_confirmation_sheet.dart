@@ -45,7 +45,7 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
             title: Text('I have backed up my recovery phrase', style: context.themeText.smallParagraph),
           ),
           const SizedBox(height: 64),
-          Button(
+          Button.simple(
             label: 'Confirm',
             onTap: () {
               setState(() => _isResetting = true);
@@ -56,7 +56,7 @@ class _ResetConfirmationSheetState extends State<ResetConfirmationSheet> {
             isLoading: _isResetting,
           ),
           const SizedBox(height: 16),
-          Button(
+          Button.simple(
             padding: const EdgeInsets.all(0),
             label: 'Cancel',
             onTap: () => Navigator.pop(context),

@@ -336,7 +336,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        Button(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
+        Button.simple(label: 'Add Account', onTap: _createNewAccount, isLoading: _isCreatingAccount),
       ],
     );
   }

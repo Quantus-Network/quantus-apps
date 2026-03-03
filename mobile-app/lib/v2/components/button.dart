@@ -9,41 +9,65 @@ enum ButtonVariant { transparent, primary, secondary, danger }
 enum IconPlacement { leading, trailing, top }
 
 class Button extends StatelessWidget {
-  final String label;
-  final Widget? icon;
-  final IconPlacement iconPlacement;
+  final Widget? child;
+  final String? _label;
+  final Widget? _icon;
+  final IconPlacement _iconPlacement;
+  final TextStyle? _textStyle;
   final VoidCallback? onTap;
   final bool isLoading;
   final double? width;
   final EdgeInsets padding;
-  final TextStyle? textStyle;
   final ButtonVariant variant;
   final bool isDisabled;
+  final double borderRadius;
+  final bool centered;
 
-  static const double buttonRadius = 14.0;
+  static const double defaultBorderRadius = 14.0;
   static const double buttonFontSize = 16.0;
 
   const Button({
     super.key,
-    required this.label,
-    this.icon,
-    this.iconPlacement = IconPlacement.trailing,
+    required Widget this.child,
+    this.onTap,
+    this.isLoading = false,
+    this.width = double.infinity,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    this.variant = ButtonVariant.primary,
+    this.isDisabled = false,
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
+  }) : _label = null,
+       _icon = null,
+       _iconPlacement = IconPlacement.trailing,
+       _textStyle = null;
+
+  // this is a simple button with a label and an icon
+  const Button.simple({
+    super.key,
+    required String label,
+    Widget? icon,
+    IconPlacement iconPlacement = IconPlacement.trailing,
     this.onTap,
     this.isLoading = false,
     this.width = double.infinity,
     this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-    this.textStyle,
+    TextStyle? textStyle,
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
-  });
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
+  }) : _label = label,
+       _icon = icon,
+       _iconPlacement = iconPlacement,
+       _textStyle = textStyle,
+       child = null;
 
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;
-    final effectiveTextStyle = textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
     final visibility = disabled ? 0.25 : 1.0;
-
-    final buttonContent = _buildContent(context, effectiveTextStyle: effectiveTextStyle);
+    final buttonContent = _buildContent(context);
 
     Widget buttonWidget;
 
@@ -52,6 +76,8 @@ class Button extends StatelessWidget {
         buttonWidget = LiquidGlassBase.rounded(
           glassColor: context.colors.surfaceGlass,
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: Padding(padding: padding, child: buttonContent),
         );
         break;
@@ -59,6 +85,8 @@ class Button extends StatelessWidget {
       case ButtonVariant.secondary:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: InsetButtonContainer(
             width: width,
             padding: padding,
@@ -71,6 +99,8 @@ class Button extends StatelessWidget {
       case ButtonVariant.danger:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: InsetButtonContainer(
             width: width,
             padding: padding,
@@ -85,7 +115,7 @@ class Button extends StatelessWidget {
         buttonWidget = Container(
           width: width,
           padding: padding,
-          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius))),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius))),
           child: Opacity(opacity: visibility, child: buttonContent),
         );
         break;
@@ -94,22 +124,30 @@ class Button extends StatelessWidget {
     return InkWell(onTap: disabled ? null : onTap, child: buttonWidget);
   }
 
-  Widget _buildContent(BuildContext context, {required TextStyle effectiveTextStyle}) {
-    Widget content;
-
+  Widget _buildContent(BuildContext context) {
     if (isLoading) {
-      content = SizedBox(
-        width: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-        height: (effectiveTextStyle.fontSize ?? buttonFontSize) + 6,
-        child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+      final size = (_textStyle?.fontSize ?? buttonFontSize) + 6;
+      return Center(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2.0),
+        ),
       );
-    } else if (iconPlacement == IconPlacement.top) {
+    }
+
+    if (child != null) return child!;
+
+    final effectiveTextStyle = _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
+
+    Widget content;
+    if (_iconPlacement == IconPlacement.top) {
       content = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          ?icon,
-          Text(label, style: effectiveTextStyle),
+          ?_icon,
+          Text(_label!, style: effectiveTextStyle),
         ],
       );
     } else {
@@ -117,9 +155,9 @@ class Button extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          if (iconPlacement == IconPlacement.leading && icon != null) icon!,
-          Text(label, style: effectiveTextStyle),
-          if (iconPlacement == IconPlacement.trailing && icon != null) icon!,
+          if (_iconPlacement == IconPlacement.leading && _icon != null) _icon,
+          Text(_label!, style: effectiveTextStyle),
+          if (_iconPlacement == IconPlacement.trailing && _icon != null) _icon,
         ],
       );
     }

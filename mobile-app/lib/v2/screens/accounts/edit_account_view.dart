@@ -49,7 +49,7 @@ class EditAccountView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Button(
+        Button.simple(
           label: 'Share Account Details',
           onTap: () => shareAccountDetails(context, account.accountId, checksum: checksum),
         ),

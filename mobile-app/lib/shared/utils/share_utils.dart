@@ -18,3 +18,7 @@ void shareAccountDetails(BuildContext context, String accountId, {required Strin
     ),
   );
 }
+
+void shareText(BuildContext context, String text) {
+  SharePlus.instance.share(ShareParams(text: text));
+}

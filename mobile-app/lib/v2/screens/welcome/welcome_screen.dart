@@ -36,7 +36,7 @@ class WelcomeScreenV2 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          Button(
+          Button.simple(
             label: 'Create New Wallet',
             onTap: () => Navigator.push(
               context,
@@ -47,7 +47,7 @@ class WelcomeScreenV2 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          Button(
+          Button.simple(
             label: 'Import Existing Wallet',
             onTap: () => Navigator.push(
               context,

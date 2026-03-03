@@ -167,9 +167,6 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       return const Scaffold(body: SizedBox.shrink());
     }
 
-    // for testing buttons
-    // return const ButtonTestScreen();
-
     if (_walletExists) {
       return const HomeScreen();
     } else {
