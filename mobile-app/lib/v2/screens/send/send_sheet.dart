@@ -171,7 +171,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     return BottomSheetContainer(
       title: 'Send',
       onBack: _step == _Step.confirm ? _backToForm : null,
-      showCloseIcon: _step != _Step.sending && _step != _Step.complete,
       child: AnimatedSize(
         duration: const Duration(milliseconds: 200),
         child: switch (_step) {
