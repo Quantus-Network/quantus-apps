@@ -7,7 +7,6 @@ import 'package:resonance_network_wallet/features/main/screens/add_hardware_acco
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/v2/components/button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
-import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -15,6 +14,7 @@ import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_comp
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_view.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_view.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 Future<T?> showAccountsSheet<T>(BuildContext context) async {
   return BottomSheetContainer.show<T>(context, builder: (_) => const AccountsSheet());
@@ -349,24 +349,12 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 children: [
                   Text(
                     account.name,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: isActive ? context.colors.accentPink : Colors.white,
-                      height: 1.35,
-                    ),
+                    style: context.themeText.paragraph!.copyWith(fontWeight: FontWeight.w500, color: isActive ? context.colors.accentPink : Colors.white),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     balanceText,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: context.colors.textSecondary,
-                      height: 1.35,
-                    ),
+                    style: context.themeText.detail!.copyWith(color: context.colors.textSecondary),
                   ),
                 ],
               ),
