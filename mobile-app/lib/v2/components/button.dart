@@ -20,8 +20,10 @@ class Button extends StatelessWidget {
   final EdgeInsets padding;
   final ButtonVariant variant;
   final bool isDisabled;
+  final double borderRadius;
+  final bool centered;
 
-  static const double buttonRadius = 14.0;
+  static const double defaultBorderRadius = 14.0;
   static const double buttonFontSize = 16.0;
 
   const Button({
@@ -30,9 +32,11 @@ class Button extends StatelessWidget {
     this.onTap,
     this.isLoading = false,
     this.width = double.infinity,
-    this.padding = const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
   }) : _label = null,
        _icon = null,
        _iconPlacement = IconPlacement.trailing,
@@ -50,6 +54,8 @@ class Button extends StatelessWidget {
     TextStyle? textStyle,
     this.variant = ButtonVariant.primary,
     this.isDisabled = false,
+    this.borderRadius = defaultBorderRadius,
+    this.centered = true,
   }) : _label = label,
        _icon = icon,
        _iconPlacement = iconPlacement,
@@ -69,6 +75,8 @@ class Button extends StatelessWidget {
         buttonWidget = LiquidGlassBase.rounded(
           glassColor: context.colors.surfaceGlass,
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: Padding(padding: padding, child: buttonContent),
         );
         break;
@@ -76,6 +84,8 @@ class Button extends StatelessWidget {
       case ButtonVariant.secondary:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: InsetButtonContainer(
             width: width,
             padding: padding,
@@ -88,6 +98,8 @@ class Button extends StatelessWidget {
       case ButtonVariant.danger:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
+          radius: borderRadius,
+          centered: centered,
           child: InsetButtonContainer(
             width: width,
             padding: padding,
@@ -102,7 +114,7 @@ class Button extends StatelessWidget {
         buttonWidget = Container(
           width: width,
           padding: padding,
-          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius))),
+          decoration: ShapeDecoration(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius))),
           child: Opacity(opacity: visibility, child: buttonContent),
         );
         break;
@@ -123,7 +135,7 @@ class Button extends StatelessWidget {
       );
     }
 
-    if (child != null) return Center(child: child);
+    if (child != null) return child!;
 
     final effectiveTextStyle = _textStyle ?? context.themeText.smallTitle!.copyWith(fontSize: buttonFontSize);
 
