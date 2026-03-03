@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/v2/components/gradient_background.dart'
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DepositScreen extends StatefulWidget {
   final SwapOrder order;
@@ -222,7 +223,9 @@ class _DepositScreenState extends State<DepositScreen> {
               child: GlassContainer(
                 filled: false,
                 asset: GlassContainer.mediumAsset,
-                onTap: () {},
+                onTap: () {
+                  SharePlus.instance.share(ShareParams(text: 'Network: ${_order.quote.fromToken.network}\nToken: ${_order.quote.fromToken.symbol}\nAddress: ${_getDepositAddress()}'));
+                },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -281,7 +284,7 @@ class _DepositScreenState extends State<DepositScreen> {
         const SizedBox(height: 80),
         const SuccessCheck(),
         const SizedBox(height: 32),
-        Text('Swap Complete', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+        Text('Swap Processing', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
           'Your swap for ${SwapService.formatTokenAmount(_order.quote.toAmount, _order.quote.toToken)} QUAN is processing.',
