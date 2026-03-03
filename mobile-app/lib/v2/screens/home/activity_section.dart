@@ -44,7 +44,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           otherTransfers: data.otherTransfers,
         );
         final recentTransactions = all.take(5).toList();
-    
+
         if (all.isEmpty) {
           return Column(
             children: [
@@ -56,17 +56,17 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             ],
           );
         }
-    
+
         return Column(
           children: [
             const SizedBox(height: 40),
             _header(colors, text, context),
             const SizedBox(height: 24),
-    
+
             ...recentTransactions.mapIndexed((index, tx) {
               final data = TxItemData.from(tx, widget.activeAccount.accountId);
               final isLastItem = index == recentTransactions.length - 1;
-    
+
               return buildTxItem(
                 tx,
                 data,
@@ -112,10 +112,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
                   'Retry',
-                  style: text.smallParagraph?.copyWith(
-                    color: colors.textPrimary,
-                    decoration: TextDecoration.underline,
-                  ),
+                  style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline),
                 ),
               ),
             ),
