@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/button_icon.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class QrScannerPage extends StatefulWidget {
@@ -95,7 +95,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return IconButton.rounded(icon: icon, onTap: onTap);
+    return GlassIconButton.rounded(icon: icon, onTap: onTap);
   }
 }
 

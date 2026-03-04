@@ -6,8 +6,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/button_icon.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
@@ -145,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return IconButton.circular(icon: icon, onTap: onTap);
+    return GlassIconButton.circular(icon: icon, onTap: onTap);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {

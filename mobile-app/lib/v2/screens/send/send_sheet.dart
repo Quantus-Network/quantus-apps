@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/button_icon.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
@@ -430,7 +430,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Widget _iconButton(IconData icon, AppColorsV2 colors, VoidCallback onTap) {
-    return IconButton.rounded(icon: icon, onTap: onTap);
+    return GlassIconButton.rounded(icon: icon, onTap: onTap);
   }
 
   Widget _actionButton({
