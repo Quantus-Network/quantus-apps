@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -160,11 +161,11 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const ScaffoldBase(child: Center(child: CircularProgressIndicator()));
     }
 
     if (_needsMigration) {
-      return const Scaffold(body: SizedBox.shrink());
+      return const ScaffoldBase(child: SizedBox.shrink());
     }
 
     if (_walletExists) {
