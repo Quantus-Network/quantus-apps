@@ -105,7 +105,7 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Your recovery phrase is the only way to restore your wallet. Never share it with anyone. Anyone with your recovery phrase has full access to your funds.',
+          'Your recovery phrase is the only way to restore your wallet. Never share it with anyone.',
           style: text.paragraph,
           textAlign: TextAlign.center,
         ),

@@ -112,10 +112,7 @@ Widget buildTxItem(
                 )
               else
                 Center(
-                  child: Text(
-                    'For demo purposes only - do not send funds!',
-                    style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                  ),
+                  child: Text('--------', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
                 ),
             ],
           ),
