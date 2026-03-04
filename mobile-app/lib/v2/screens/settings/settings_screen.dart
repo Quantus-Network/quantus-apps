@@ -275,6 +275,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Widget _resetButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
+    return GlassButton.simple(label: 'Reset Quantus', onTap: _showResetConfirmation, variant: ButtonVariant.danger);
   }
 }

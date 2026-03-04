@@ -188,7 +188,7 @@ class _SwapScreenState extends State<SwapScreen> {
             SizedBox(
               width: 119,
               height: 56,
-              child: Button(
+              child: GlassButton(
                 centered: false,
                 onTap: _pickToken,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -306,7 +306,7 @@ class _SwapScreenState extends State<SwapScreen> {
     return SizedBox(
       width: 40,
       height: 40,
-      child: Button(
+      child: GlassButton(
         onTap: onTap,
         padding: EdgeInsets.zero,
         borderRadius: 8,
@@ -349,7 +349,7 @@ class _SwapScreenState extends State<SwapScreen> {
             SizedBox(
               width: 119,
               height: 56,
-              child: Button(
+              child: GlassButton(
                 centered: false,
                 onTap: () {},
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -415,7 +415,7 @@ class _SwapScreenState extends State<SwapScreen> {
 
   Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
-    return Button.simple(
+    return GlassButton.simple(
       label: 'Get a Quote',
       onTap: _getQuote,
       isDisabled: !enabled,

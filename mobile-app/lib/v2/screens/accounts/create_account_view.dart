@@ -62,7 +62,7 @@ class CreateAccountView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Button.simple(label: 'Create Account', isLoading: isSaving, onTap: onSubmit),
+        GlassButton.simple(label: 'Create Account', isLoading: isSaving, onTap: onSubmit),
       ],
     );
   }

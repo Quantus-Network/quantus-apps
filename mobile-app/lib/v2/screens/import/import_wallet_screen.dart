@@ -139,7 +139,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
             ),
           ],
           const Spacer(),
-          Button.simple(
+          GlassButton.simple(
             label: 'Import Wallet',
             onTap: _import,
             isLoading: _isLoading,

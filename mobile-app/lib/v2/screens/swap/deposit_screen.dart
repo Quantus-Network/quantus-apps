@@ -182,7 +182,7 @@ class _DepositScreenState extends State<DepositScreen> {
         Row(
           children: [
             Expanded(
-              child: Button.simple(
+              child: GlassButton.simple(
                 label: 'Copy',
                 variant: ButtonVariant.transparent,
                 onTap: _copyAddress,
@@ -191,7 +191,7 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Button.simple(
+              child: GlassButton.simple(
                 label: 'Share QR',
                 icon: Icon(Icons.qr_code, color: colors.textPrimary, size: 20),
                 variant: ButtonVariant.transparent,
@@ -267,7 +267,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _sentButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button.simple(
+    return GlassButton.simple(
       label: "I've sent the funds",
       onTap: _confirmSent,
       variant: ButtonVariant.secondary,
@@ -276,7 +276,7 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Widget _doneButton(AppColorsV2 colors, AppTextTheme text) {
-    return Button.simple(
+    return GlassButton.simple(
       label: 'Done',
       onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
       variant: ButtonVariant.secondary,

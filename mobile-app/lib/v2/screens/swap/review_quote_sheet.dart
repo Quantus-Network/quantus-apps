@@ -131,7 +131,7 @@ class _ReviewQuoteContent extends StatelessWidget {
   }
 
   Widget _confirmButton(BuildContext context, AppColorsV2 colors, AppTextTheme text) {
-    return Button.simple(
+    return GlassButton.simple(
       label: 'Confirm',
 
       onTap: () async {

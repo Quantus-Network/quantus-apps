@@ -2,35 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/v2/components/liquid_glass_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-enum ButtonIconShape { rounded, circular }
+enum IconButtonShape { rounded, circular }
 
-enum ButtonIconSize { small, medium }
+enum IconButtonSize { small, medium }
 
-class ButtonIcon extends StatelessWidget {
+class GlassIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
   final bool isLoading;
-  final ButtonIconSize size;
-  final ButtonIconShape shape;
+  final IconButtonSize size;
+  final IconButtonShape shape;
   final bool isDisabled;
 
-  const ButtonIcon.rounded({
+  const GlassIconButton.rounded({
     super.key,
     required this.icon,
-    this.size = ButtonIconSize.medium,
+    this.size = IconButtonSize.medium,
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
-  }) : shape = ButtonIconShape.rounded;
+  }) : shape = IconButtonShape.rounded;
 
-  const ButtonIcon.circular({
+  const GlassIconButton.circular({
     super.key,
     required this.icon,
-    this.size = ButtonIconSize.medium,
+    this.size = IconButtonSize.medium,
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
-  }) : shape = ButtonIconShape.circular;
+  }) : shape = IconButtonShape.circular;
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +38,9 @@ class ButtonIcon extends StatelessWidget {
     final visibility = disabled ? 0.92 : 1.0;
     final glassColor = context.colors.surfaceGlass;
 
-    final double buttonSize = size == ButtonIconSize.small ? 24 : 40;
-    final double iconSize = size == ButtonIconSize.small ? 12 : 20;
-    final double radius = size == ButtonIconSize.small ? 6 : 14;
+    final double buttonSize = size == IconButtonSize.small ? 24 : 40;
+    final double iconSize = size == IconButtonSize.small ? 12 : 20;
+    final double radius = size == IconButtonSize.small ? 6 : 14;
 
     final buttonContent = Center(
       child: isLoading
@@ -59,7 +59,7 @@ class ButtonIcon extends StatelessWidget {
     Widget buttonWidget;
 
     switch (shape) {
-      case ButtonIconShape.rounded:
+      case IconButtonShape.rounded:
         buttonWidget = LiquidGlassBase.rounded(
           visibility: visibility,
           glassColor: glassColor,
@@ -68,7 +68,7 @@ class ButtonIcon extends StatelessWidget {
         );
         break;
 
-      case ButtonIconShape.circular:
+      case IconButtonShape.circular:
         buttonWidget = LiquidGlassBase.circular(
           visibility: visibility,
           glassColor: glassColor,

@@ -148,10 +148,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors, {required String value, String message = 'Address copied to clipboard'}) {
-    return ButtonIcon.rounded(
+    return IconButton.rounded(
       icon: Icons.copy,
       onTap: () => context.copyTextWithToaster(value, message: message),
-      size: ButtonIconSize.small,
+      size: IconButtonSize.small,
     );
   }
 
@@ -180,7 +180,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final isPending = widget.tx is PendingTransactionEvent;
     final color = isPending ? colors.textPrimary.withValues(alpha: 0.3) : colors.textPrimary;
 
-    return Button.simple(
+    return GlassButton.simple(
       label: 'View in Explorer',
       onTap: _openExplorer,
       isDisabled: isPending,

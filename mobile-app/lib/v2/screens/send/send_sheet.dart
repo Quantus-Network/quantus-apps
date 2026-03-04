@@ -430,7 +430,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Widget _iconButton(IconData icon, AppColorsV2 colors, VoidCallback onTap) {
-    return ButtonIcon.rounded(icon: icon, onTap: onTap);
+    return IconButton.rounded(icon: icon, onTap: onTap);
   }
 
   Widget _actionButton({
@@ -440,7 +440,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    return Button.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
+    return GlassButton.simple(label: label, onTap: onTap, isDisabled: disabled, variant: ButtonVariant.secondary);
   }
 }
 

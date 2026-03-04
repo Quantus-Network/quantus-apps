@@ -69,7 +69,7 @@ class AccountIconActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ButtonIcon.rounded(icon: icon, onTap: onTap, size: isTiny ? ButtonIconSize.small : ButtonIconSize.medium);
+    return IconButton.rounded(icon: icon, onTap: onTap, size: isTiny ? IconButtonSize.small : IconButtonSize.medium);
   }
 }
 

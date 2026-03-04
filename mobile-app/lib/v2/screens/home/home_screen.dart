@@ -145,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _glassCircleButton({required IconData icon, required AppColorsV2 colors, required VoidCallback onTap}) {
-    return ButtonIcon.circular(icon: icon, onTap: onTap);
+    return IconButton.circular(icon: icon, onTap: onTap);
   }
 
   Widget _buildBalance(AsyncValue<BigInt> balanceAsync, bool isBalanceHidden, AppColorsV2 colors, AppTextTheme text) {
@@ -233,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
-    return Button.simple(
+    return GlassButton.simple(
       label: label,
       onTap: onTap,
       icon: SvgPicture.asset(iconAsset, width: 24, height: 24),

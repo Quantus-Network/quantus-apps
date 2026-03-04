@@ -177,7 +177,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
             ),
           ),
           const SizedBox(height: 24),
-          Button.simple(
+          GlassButton.simple(
             label: 'Continue',
             onTap: _continue,
             isLoading: _isSubmitting,
@@ -214,7 +214,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
               ),
             ),
             const SizedBox(height: 24),
-            Button.simple(
+            GlassButton.simple(
               label: 'Save',
               onTap: () async {
                 final v = controller.text.trim();

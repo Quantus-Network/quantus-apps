@@ -176,14 +176,14 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
   }
 
   Widget _copyButton(AppColorsV2 colors) {
-    return const ButtonIcon.rounded(icon: Icons.copy, size: ButtonIconSize.small);
+    return const ButtonIcon.rounded(icon: Icons.copy, size: IconButtonSize.small);
   }
 
   Widget _buildButtons(AppColorsV2 colors, AppTextTheme text) {
     return Row(
       children: [
         Expanded(
-          child: Button.simple(
+          child: GlassButton.simple(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Copy',
             onTap: _copyAddress,
@@ -194,7 +194,7 @@ class _ReceiveSheetState extends State<ReceiveSheet> {
         ),
         const SizedBox(width: 32),
         Expanded(
-          child: Button.simple(
+          child: GlassButton.simple(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             label: 'Share',
             onTap: _share,

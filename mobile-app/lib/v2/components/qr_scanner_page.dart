@@ -87,7 +87,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             bottom: 58,
             left: 24,
             right: 24,
-            child: Button.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
+            child: GlassButton.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
           ),
         ],
       ),
@@ -95,7 +95,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return ButtonIcon.rounded(icon: icon, onTap: onTap);
+    return IconButton.rounded(icon: icon, onTap: onTap);
   }
 }
 
