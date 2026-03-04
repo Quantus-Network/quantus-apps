@@ -4,9 +4,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/utils/feature_flags.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
-import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -93,74 +93,61 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       fontWeight: FontWeight.w400,
       height: 1.35,
     );
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: GradientBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppBackButton(),
-                    Text('Import Wallet', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close, color: colors.textPrimary, size: 24),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 80),
-                Text(
-                  'Restore an existing wallet with your 24 word recovery phrase',
-                  textAlign: TextAlign.center,
-                  style: textSTyleSmallTitle,
-                ),
-                const SizedBox(height: 64),
-                Container(
-                  height: 202,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: TextField(
-                    controller: _controller,
-                    onChanged: (_) => setState(() {}),
-                    style: textSTyleSmallTitle,
-                    decoration: InputDecoration.collapsed(
-                      hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
-                      hintStyle: textSTyleSmallTitle?.copyWith(color: colors.textSecondary),
-                    ),
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.done,
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: text.detail?.copyWith(color: colors.error),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const Spacer(),
-                Button.simple(
-                  label: 'Import Wallet',
-                  onTap: _import,
-                  isLoading: _isLoading,
-                  variant: ButtonVariant.secondary,
-                  isDisabled: !_hasInput,
-                ),
-                const SizedBox(height: 24),
-              ],
+    return ScaffoldBase(
+      appBar: V2AppBar(
+        title: 'Import Wallet',
+        trailing: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Icon(Icons.close, color: colors.textPrimary, size: 24),
+        ),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          Text(
+            'Restore an existing wallet with your 24 word recovery phrase',
+            textAlign: TextAlign.center,
+            style: textSTyleSmallTitle,
+          ),
+          const SizedBox(height: 64),
+          Container(
+            height: 202,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: TextField(
+              controller: _controller,
+              onChanged: (_) => setState(() {}),
+              style: textSTyleSmallTitle,
+              decoration: InputDecoration.collapsed(
+                hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
+                hintStyle: textSTyleSmallTitle?.copyWith(color: colors.textSecondary),
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.done,
             ),
           ),
-        ),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: text.detail?.copyWith(color: colors.error),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          const Spacer(),
+          GlassButton.simple(
+            label: 'Import Wallet',
+            onTap: _import,
+            isLoading: _isLoading,
+            variant: ButtonVariant.secondary,
+            isDisabled: !_hasInput,
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }

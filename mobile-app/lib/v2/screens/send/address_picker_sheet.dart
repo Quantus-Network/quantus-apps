@@ -1,8 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
-import 'package:resonance_network_wallet/v2/components/back_button.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -67,80 +66,61 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: const Color(0xFF3D3D3D)),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 530,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BottomSheetContainer(
+      title: 'Send To',
+      onBack: () => Navigator.pop(context),
+      child: SizedBox(
+        height: 384,
+        child: Column(
+          children: [
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
+              child: Row(
                 children: [
-                  const AppBackButton(),
-                  Text('Send To', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.close, color: colors.textPrimary, size: 20),
+                  Icon(Icons.search, color: colors.textTertiary, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        hintText: 'Search',
+                        hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
-              Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(14)),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: colors.textTertiary, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                          hintText: 'Search',
-                          hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
-                      ),
+            ),
+            const SizedBox(height: 40),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Recents',
+                style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? Center(
+                      child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 24),
+                      itemBuilder: (context, i) => _addressItem(_filtered[i], colors, text),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Recents',
-                  style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: _filtered.isEmpty
-                    ? Center(
-                        child: Text('No recent addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
-                      )
-                    : ListView.separated(
-                        padding: EdgeInsets.zero,
-                        itemCount: _filtered.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 24),
-                        itemBuilder: (context, i) => _addressItem(_filtered[i], colors, text),
-                      ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -175,11 +155,5 @@ class _AddressPickerSheetState extends State<AddressPickerSheet> {
 }
 
 Future<String?> showAddressPickerSheet(BuildContext context) {
-  return showModalBottomSheet<String>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-    builder: (_) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), child: const AddressPickerSheet()),
-  );
+  return BottomSheetContainer.show<String>(context, builder: (_) => const AddressPickerSheet());
 }

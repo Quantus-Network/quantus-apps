@@ -34,95 +34,89 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     final colors = context.colors;
     final text = context.themeText;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: widget.txAsync.when(
-        data: (data) {
-          final txService = ref.read(transactionServiceProvider);
-          final all = txService.combineAndDeduplicateTransactions(
-            pendingCancellationIds: data.pendingCancellationIds,
-            pendingTransactions: data.pendingTransactions,
-            reversibleTransfers: data.reversibleTransfers,
-            otherTransfers: data.otherTransfers,
-          );
-          final recentTransactions = all.take(5).toList();
+    return widget.txAsync.when(
+      data: (data) {
+        final txService = ref.read(transactionServiceProvider);
+        final all = txService.combineAndDeduplicateTransactions(
+          pendingCancellationIds: data.pendingCancellationIds,
+          pendingTransactions: data.pendingTransactions,
+          reversibleTransfers: data.reversibleTransfers,
+          otherTransfers: data.otherTransfers,
+        );
+        final recentTransactions = all.take(5).toList();
 
-          if (all.isEmpty) {
-            return Column(
-              children: [
-                const SizedBox(height: 40),
-                _header(colors, text, context),
-                _emptyState(text, colors),
-                const SizedBox(height: 40),
-                _getStartedSection(text, colors),
-              ],
-            );
-          }
-
+        if (all.isEmpty) {
           return Column(
             children: [
               const SizedBox(height: 40),
               _header(colors, text, context),
-              const SizedBox(height: 24),
-
-              ...recentTransactions.mapIndexed((index, tx) {
-                final data = TxItemData.from(tx, widget.activeAccount.accountId);
-                final isLastItem = index == recentTransactions.length - 1;
-
-                return buildTxItem(
-                  tx,
-                  data,
-                  colors,
-                  text,
-                  isBalanceHidden: isBalanceHidden,
-                  isLastItem: isLastItem,
-                  onTap: () {
-                    showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
-                  },
-                );
-              }),
+              _emptyState(text, colors),
+              const SizedBox(height: 40),
+              _getStartedSection(text, colors),
             ],
           );
-        },
-        loading: () => Padding(
-          padding: const EdgeInsets.only(top: 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _header(colors, text, context),
-              const SizedBox(height: 24),
-              for (var i = 0; i < 3; i++) ...[
-                const Skeleton(width: double.infinity, height: 32),
-                if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
-              ],
-            ],
-          ),
-        ),
-        error: (e, _) => Padding(
-          padding: const EdgeInsets.only(top: 40),
-          child: Column(
-            children: [
-              Text('Error loading transactions', style: text.detail?.copyWith(color: colors.textError)),
-              const SizedBox(height: 12),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
+        }
+
+        return Column(
+          children: [
+            const SizedBox(height: 40),
+            _header(colors, text, context),
+            const SizedBox(height: 24),
+
+            ...recentTransactions.mapIndexed((index, tx) {
+              final data = TxItemData.from(tx, widget.activeAccount.accountId);
+              final isLastItem = index == recentTransactions.length - 1;
+
+              return buildTxItem(
+                tx,
+                data,
+                colors,
+                text,
+                isBalanceHidden: isBalanceHidden,
+                isLastItem: isLastItem,
                 onTap: () {
-                  ref.invalidate(activeAccountTransactionsProvider);
-                  widget.onRetry?.call();
+                  showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text(
-                    'Retry',
-                    style: text.smallParagraph?.copyWith(
-                      color: colors.textPrimary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
+              );
+            }),
+          ],
+        );
+      },
+      loading: () => Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _header(colors, text, context),
+            const SizedBox(height: 24),
+            for (var i = 0; i < 3; i++) ...[
+              const Skeleton(width: double.infinity, height: 32),
+              if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
+            ],
+          ],
+        ),
+      ),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: Column(
+          children: [
+            Text('Error loading transactions', style: text.detail?.copyWith(color: colors.textError)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                ref.invalidate(activeAccountTransactionsProvider);
+                widget.onRetry?.call();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Text(
+                  'Retry',
+                  style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class QrScannerPage extends StatefulWidget {
@@ -86,7 +87,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             bottom: 58,
             left: 24,
             right: 24,
-            child: Button.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
+            child: GlassButton.simple(label: 'Cancel', onTap: () => Navigator.pop(context)),
           ),
         ],
       ),
@@ -94,15 +95,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Widget _actionButton({required IconData icon, required VoidCallback onTap, required AppColorsV2 colors}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 20, color: colors.textPrimary),
-      ),
-    );
+    return GlassIconButton.rounded(icon: icon, onTap: onTap);
   }
 }
 

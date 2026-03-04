@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_shared_components.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
@@ -62,7 +62,7 @@ class CreateAccountView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Button.simple(label: 'Create Account', isLoading: isSaving, onTap: onSubmit),
+        GlassButton.simple(label: 'Create Account', isLoading: isSaving, onTap: onSubmit),
       ],
     );
   }

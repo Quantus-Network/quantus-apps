@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/custom_text_field.dart';
-import 'package:resonance_network_wallet/features/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/features/components/wallet_app_bar.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/qr_scanner_screen.dart';
+import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -35,7 +35,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
   Future<void> _scanQRCode() async {
     final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => const QRScannerScreen(), fullscreenDialog: true),
+      MaterialPageRoute(builder: (context) => const QrScannerPage(), fullscreenDialog: true),
     );
     if (result != null && mounted) {
       _address.text = result.trim();

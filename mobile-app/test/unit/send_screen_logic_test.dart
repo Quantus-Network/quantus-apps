@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/main/screens/send/send_screen_logic.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
 
 void main() {

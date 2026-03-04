@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resonance_network_wallet/v2/components/button_icon.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class AccountField extends StatelessWidget {
@@ -69,7 +69,11 @@ class AccountIconActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ButtonIcon.rounded(icon: icon, onTap: onTap, size: isTiny ? ButtonIconSize.small : ButtonIconSize.medium);
+    return GlassIconButton.rounded(
+      icon: icon,
+      onTap: onTap,
+      size: isTiny ? IconButtonSize.small : IconButtonSize.medium,
+    );
   }
 }
 

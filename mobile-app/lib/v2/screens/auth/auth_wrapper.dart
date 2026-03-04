@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/v2/components/button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/gradient_background.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_spacing.dart';
@@ -40,7 +40,7 @@ class AuthWrapper extends ConsumerWidget {
             const SizedBox(height: 120),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
-              child: Button.simple(
+              child: GlassButton.simple(
                 label: 'Unlock Wallet',
                 onTap: () {
                   ref.read(localAuthProvider.notifier).authenticate();
