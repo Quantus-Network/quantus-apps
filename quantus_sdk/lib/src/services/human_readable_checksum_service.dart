@@ -29,7 +29,7 @@ class HumanReadableChecksumService {
 
     try {
       if (_cachedWordList == null) {
-        final wordList = await rootBundle.loadString('assets/text/crypto_checksum_bip39.txt');
+        final wordList = await rootBundle.loadString('assets/text/human_checkphrase_final_wordlist.txt');
         _cachedWordList = wordList.split('\n').where((word) => word.isNotEmpty).toList();
 
         if (_cachedWordList!.length != 2048) {

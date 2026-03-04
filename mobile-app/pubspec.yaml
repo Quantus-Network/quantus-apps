@@ -39,7 +39,7 @@ dependencies:
   human_checksum:
     git:
       url: https://github.com/Quantus-Network/qp-human-checkphrase.git
-      ref: v1.1.0
+      ref: v2.0.1
       path: dart
   provider: ^6.1.5
   polkadart: ^0.7.1
@@ -79,7 +79,7 @@ flutter:
   assets:
     - .env
     - assets/
-    - assets/text/crypto_checksum_bip39.txt
+    - assets/text/human_checkphrase_final_wordlist.txt
     - assets/send_icon.png
     - assets/receive_icon.png
     - assets/swap_icon_1.svg
