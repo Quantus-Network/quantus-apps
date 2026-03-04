@@ -4,8 +4,7 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class V2AppBar extends StatelessWidget {
-  final String? title;
-  final Widget? titleWidget;
+  final String title;
   final Widget? leading;
   final Widget? trailing;
   final bool showBackButton;
@@ -13,8 +12,7 @@ class V2AppBar extends StatelessWidget {
 
   const V2AppBar({
     super.key,
-    this.title,
-    this.titleWidget,
+    required this.title,
     this.leading,
     this.trailing,
     this.showBackButton = true,
@@ -35,10 +33,7 @@ class V2AppBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           leftWidget,
-          if (titleWidget != null)
-            titleWidget!
-          else if (title != null)
-            Text(title!, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+          Text(title, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
           rightWidget,
         ],
       ),
