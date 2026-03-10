@@ -34,26 +34,19 @@ class ChainHistoryService {
 
   final String _scheduledTransfersQuery = r'''
 query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  events(
+  accountEvents(
     limit: $limit
     offset: $offset
     where: {
-      reversibleTransfer: {
-        AND: [
-          { status_eq: SCHEDULED },
-          {
-            OR: [
-              { from: { id_in: $accounts } },
-              { to: { id_in: $accounts } }
-            ]
-          }
-        ]
-      }
+      account: {
+        id_in: $accounts
+      }, 
+      scheduledReversibleTransfer_isNull: false
     }
-    orderBy: reversibleTransfer_scheduledAt_DESC
+    orderBy: timestamp_DESC
   ) {
     id
-    reversibleTransfer {
+    scheduledReversibleTransfer {
       id
       amount
       timestamp
@@ -65,7 +58,6 @@ query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset:
       }
       txId
       scheduledAt
-      status
       block {
         height
         hash
@@ -402,12 +394,12 @@ query SearchPendingTransaction(
         throw Exception('GraphQL errors: ${responseBody['errors']}');
       }
 
-      final List<dynamic>? events = responseBody['data']?['events'];
+      final List<dynamic>? events = responseBody['data']?['accountEvents'];
       if (events == null) {
         return [];
       }
 
-      final result = events.map((event) => ReversibleTransferEvent.fromJson(event['reversibleTransfer'])).toList();
+      final result = events.map((event) => ReversibleTransferEvent.fromJson(event['scheduledReversibleTransfer'])).toList();
 
       return result;
     } catch (e, stackTrace) {
