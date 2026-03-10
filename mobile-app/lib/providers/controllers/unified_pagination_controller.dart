@@ -76,10 +76,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           .fetchAllTransactionTypes(
             accountIds: targetAccountIds,
             limit: _limit,
-            transfersOffset: state.transfersOffset,
-            reversibleOffset: state.reversibleOffset,
-            rewardsOffset: state.rewardsOffset,
-            scheduledOffset: state.scheduledOffset,
+            offset: state.offset,
           );
 
       final newItems = newTransactions.otherTransfers;
@@ -87,10 +84,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(
         items: [...state.items, ...newItems],
         reversibleTransfers: [...state.reversibleTransfers, ...newTransactions.reversibleTransfers],
-        transfersOffset: newTransactions.nextTransfersOffset,
-        reversibleOffset: newTransactions.nextReversibleOffset,
-        rewardsOffset: newTransactions.nextRewardsOffset,
-        scheduledOffset: newTransactions.nextScheduledOffset,
+        offset: newTransactions.nextOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
         error: null,
@@ -159,10 +153,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(
         items: newItems,
         reversibleTransfers: newTransactions.reversibleTransfers,
-        transfersOffset: newTransactions.nextTransfersOffset,
-        reversibleOffset: newTransactions.nextReversibleOffset,
-        rewardsOffset: newTransactions.nextRewardsOffset,
-        scheduledOffset: newTransactions.nextScheduledOffset,
+        offset: newTransactions.nextOffset,
         hasMore: newTransactions.hasMore,
         error: null,
         stackTrace: null,
@@ -175,16 +166,16 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   /// Update a reversible transfer status to executed inline without full
   /// refresh.
   /// Moves the transfer from reversibleTransfers to the top of items list.
-  void updateReversibleTransferToExecuted(String extrinsicHash, ReversibleTransferStatus newStatus) {
-    print('Updating reversible transfer to executed: $extrinsicHash');
+  void updateReversibleTransferToExecuted(String txId, ReversibleTransferStatus newStatus) {
+    print('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
     final reversibleTransfer = state.reversibleTransfers
-        .where((transfer) => transfer.extrinsicHash == extrinsicHash)
+        .where((transfer) => transfer.txId == txId)
         .firstOrNull;
 
     if (reversibleTransfer == null) {
-      print('Reversible transfer not found for hash: $extrinsicHash');
+      print('Reversible transfer not found for txId: $txId');
       return;
     }
 
@@ -205,7 +196,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     // Remove from reversible transfers
     final updatedReversibleTransfers = state.reversibleTransfers
-        .where((transfer) => transfer.extrinsicHash != extrinsicHash)
+        .where((transfer) => transfer.txId != txId)
         .toList();
 
     // Add executed transfer to the top of items list

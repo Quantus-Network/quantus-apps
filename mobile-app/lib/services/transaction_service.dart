@@ -106,7 +106,7 @@ class TransactionService {
       if (txType == EventType.TRANSFER.name) {
         event = TransferEvent.fromJson(json);
       } else if (txType == EventType.REVERSIBLE_TRANSFER.name) {
-        event = ReversibleTransferEvent.fromJson(json);
+        event = ReversibleTransferEvent.fromNotificationJson(json);
       } else if (txType == EventType.PENDING_TRANSACTION.name) {
         event = PendingTransactionEvent.fromJson(json);
       }

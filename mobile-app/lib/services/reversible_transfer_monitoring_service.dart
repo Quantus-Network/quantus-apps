@@ -142,16 +142,10 @@ class ReversibleTransferMonitoringService {
 
       // Check if this specific transaction was executed using its hash
       // ignore: lines_longer_than_80_chars
-      final transactions = await historyService.fetchTransactionsByTransactionHash(
-        transactionHashes: [transfer.extrinsicHash!],
-        limit: 5,
-      );
+      final transaction = await historyService.fetchExecutedTransactionByTxId(txId: transfer.txId);
 
-      // Look for the executed version of this transfer
-      final status = _checkIfTransferWasExecuted(transfer, transactions);
-
-      if (status != null) {
-        print('Reversible transfer finished: ${transfer.id} $status');
+      if (transaction != null) {
+        print('Reversible transfer finished: ${transfer.id} ${transaction.status}');
 
         // Stop polling for this transfer
         _stopExecutionPolling(transfer.id);
@@ -160,7 +154,7 @@ class ReversibleTransferMonitoringService {
         // to executed list for both global and filtered controllers
         _ref
             .read(paginationControllerProvider.notifier)
-            .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+            .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         _ref.read(pendingCancellationsProvider.notifier).removePendingCancellation(transfer.id);
 
         // Also update filtered controllers for affected accounts so
@@ -169,7 +163,7 @@ class ReversibleTransferMonitoringService {
         for (final accountId in affectedAccounts) {
           _ref
               .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier)
-              .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+              .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         }
 
         // Also update filtered controllers for all accounts so
@@ -177,7 +171,7 @@ class ReversibleTransferMonitoringService {
         final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
         _ref
             .read(filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier)
-            .updateReversibleTransferToExecuted(transfer.extrinsicHash!, status);
+            .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
 
         // Refresh balance since transfer execution changes balance
         _ref.invalidate(balanceProviderFamily);
@@ -188,28 +182,6 @@ class ReversibleTransferMonitoringService {
       print('Error checking for transfer execution: $e');
       // Continue polling despite errors
     }
-  }
-
-  ReversibleTransferStatus? _checkIfTransferWasExecuted(
-    ReversibleTransferEvent originalTransfer,
-    List<TransactionEvent> transactions,
-  ) {
-    // Look for a reversible transfer with same txId/extrinsicHash but EXECUTED status
-    for (final historyTx in transactions) {
-      if (historyTx is ReversibleTransferEvent) {
-        final matchesHash = historyTx.extrinsicHash == originalTransfer.extrinsicHash;
-
-        if (matchesHash && historyTx.status != ReversibleTransferStatus.SCHEDULED) {
-          print(
-            'Found executed reversible transfer:'
-            ' ${historyTx.id} (status: ${historyTx.status})',
-          );
-          return historyTx.status;
-        }
-      }
-    }
-
-    return null;
   }
 
   void _stopExecutionPolling(String transferId) {
