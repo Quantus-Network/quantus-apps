@@ -3,70 +3,11 @@ import 'dart:convert'; // Required for jsonEncode and jsonDecode
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-class TransferList {
-  final List<TransactionEvent> transfers;
-  final bool hasMore;
-  final int nextTransfersOffset;
-  final int nextReversibleOffset;
-  final int nextRewardsOffset;
-
-  TransferList({
-    required this.transfers,
-    required this.hasMore,
-    required this.nextTransfersOffset,
-    required this.nextReversibleOffset,
-    required this.nextRewardsOffset,
-  });
-}
-
-class BlockQueryResponse {
-  final bool blockExists;
-  final List<TransactionEvent> transactions;
-
-  BlockQueryResponse({required this.blockExists, required this.transactions});
-}
-
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
   // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
-
-  final String _scheduledTransfersQuery = r'''
-query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  accountEvents(
-    limit: $limit
-    offset: $offset
-    where: {
-      account: {
-        id_in: $accounts
-      }, 
-      scheduledReversibleTransfer_isNull: false
-    }
-    orderBy: timestamp_DESC
-  ) {
-    id
-    scheduledReversibleTransfer {
-      id
-      amount
-      timestamp
-      from {
-        id
-      }
-      to {
-        id
-      }
-      txId
-      scheduledAt
-      block {
-        height
-        hash
-      }
-      extrinsicHash
-      timestamp
-    }
-  }
-}''';
 
   final String _accountEventsQuery = r'''
 query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
@@ -328,57 +269,6 @@ query SearchPendingTransaction(
       return transaction;
     } catch (e, stackTrace) {
       print('Error fetching transactions by tx id: $e');
-      print(stackTrace);
-      rethrow;
-    }
-  }
-
-  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
-    required List<String> accountIds,
-    int limit = 10,
-    int offset = 0,
-  }) async {
-    final Map<String, dynamic> requestBody = {
-      'query': _scheduledTransfersQuery,
-      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
-    };
-
-    final jsonBody = jsonEncode(requestBody);
-
-    final sw = Stopwatch()..start();
-    try {
-      final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
-      sw.stop();
-      printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
-
-      if (response.statusCode != 200) {
-        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-      }
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      if (responseBody['errors'] != null) {
-        throw Exception('GraphQL errors: ${responseBody['errors']}');
-      }
-
-      final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      if (events == null) {
-        return [];
-      }
-
-      final result = events
-          .map(
-            (event) => ReversibleTransferEvent.fromJson(
-              event['scheduledReversibleTransfer'],
-              source: ReversibleTransferSource.SCHEDULED_TRANSFER,
-            ),
-          )
-          .toList();
-
-      return result;
-    } catch (e, stackTrace) {
-      sw.stop();
-      printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
-      print('Error fetching scheduled transfers: $e');
       print(stackTrace);
       rethrow;
     }
