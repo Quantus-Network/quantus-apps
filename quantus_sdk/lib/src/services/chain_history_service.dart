@@ -282,12 +282,9 @@ query SearchPendingTransaction(
     }
   }
 
-
   // Make a graphQL query for specific transaction hashes, get the results back
   // Mostly to check if reversibles have been executed or failed.
-  Future<ReversibleTransferEvent?> fetchExecutedTransactionByTxId({
-    required String txId,
-  }) async {
+  Future<ReversibleTransferEvent?> fetchExecutedTransactionByTxId({required String txId}) async {
     if (txId.isEmpty) {
       return null;
     }
@@ -323,11 +320,14 @@ query SearchPendingTransaction(
         return null;
       }
 
-      final transaction = ReversibleTransferEvent.fromExecutedJson(events.first);
-      
+      final transaction = ReversibleTransferEvent.fromJson(
+        events.first,
+        source: ReversibleTransferSource.EXECUTED_TRANSFER,
+      );
+
       return transaction;
     } catch (e, stackTrace) {
-      print('Error fetching transactions by hash: $e');
+      print('Error fetching transactions by tx id: $e');
       print(stackTrace);
       rethrow;
     }
@@ -366,7 +366,12 @@ query SearchPendingTransaction(
       }
 
       final result = events
-          .map((event) => ReversibleTransferEvent.fromScheduledJson(event['scheduledReversibleTransfer']))
+          .map(
+            (event) => ReversibleTransferEvent.fromJson(
+              event['scheduledReversibleTransfer'],
+              source: ReversibleTransferSource.SCHEDULED_TRANSFER,
+            ),
+          )
           .toList();
 
       return result;
@@ -418,24 +423,27 @@ query SearchPendingTransaction(
 
       for (var event in events) {
         if (event['cancelledReversibleTransfer'] != null) {
-          final cancelledReversibleTransfer = ReversibleTransferEvent.fromCancelledJson(
+          final cancelledReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['cancelledReversibleTransfer'],
+            source: ReversibleTransferSource.CANCELLED_TRANSFER,
           );
 
           if (!reversibleTransfers.containsKey(cancelledReversibleTransfer.txId)) {
             reversibleTransfers[cancelledReversibleTransfer.txId] = cancelledReversibleTransfer;
           }
         } else if (event['executedReversibleTransfer'] != null) {
-          final executedReversibleTransfer = ReversibleTransferEvent.fromExecutedJson(
+          final executedReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['executedReversibleTransfer'],
+            source: ReversibleTransferSource.EXECUTED_TRANSFER,
           );
 
           if (!reversibleTransfers.containsKey(executedReversibleTransfer.txId)) {
             reversibleTransfers[executedReversibleTransfer.txId] = executedReversibleTransfer;
           }
         } else if (event['scheduledReversibleTransfer'] != null) {
-          final scheduledReversibleTransfer = ReversibleTransferEvent.fromScheduledJson(
+          final scheduledReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['scheduledReversibleTransfer'],
+            source: ReversibleTransferSource.SCHEDULED_TRANSFER,
           );
 
           if (!reversibleTransfers.containsKey(scheduledReversibleTransfer.txId)) {
@@ -523,7 +531,10 @@ query SearchPendingTransaction(
 
       if (isReversible) {
         final reversibleTransferData = eventJson['scheduledReversibleTransfer'] as Map<String, dynamic>;
-        transaction = ReversibleTransferEvent.fromScheduledJson(reversibleTransferData);
+        transaction = ReversibleTransferEvent.fromJson(
+          reversibleTransferData,
+          source: ReversibleTransferSource.SCHEDULED_TRANSFER,
+        );
       } else {
         final transferData = eventJson['transfer'] as Map<String, dynamic>;
         transaction = TransferEvent.fromJson(transferData);
