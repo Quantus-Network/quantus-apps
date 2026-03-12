@@ -132,15 +132,10 @@ class ReversibleTransferMonitoringService {
     }
 
     try {
-      // Use the new targeted query by transaction hash
-      if (transfer.extrinsicHash == null) {
-        print('unexpected null for extrinsic hash $transfer');
-        return;
-      }
-      print('polling execution on ${transfer.extrinsicHash}');
+      print('polling execution on ${transfer.txId}');
       final historyService = _ref.read(chainHistoryServiceProvider);
 
-      // Check if this specific transaction was executed using its hash
+      // Check if this specific transaction was executed using its txId
       // ignore: lines_longer_than_80_chars
       final transaction = await historyService.fetchExecutedTransactionByTxId(txId: transfer.txId);
 
