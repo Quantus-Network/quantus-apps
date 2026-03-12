@@ -47,7 +47,7 @@ class ReversibleTransferMonitoringService {
     _ref.listen(allTransactionsProvider, (previous, current) {
       current.when(
         data: (combinedData) {
-          _handleTransactionsUpdate(combinedData.reversibleTransfers);
+          _handleTransactionsUpdate(combinedData.scheduledTransfers);
         },
         loading: () {},
         error: (_, _) {},

@@ -26,7 +26,7 @@ final filteredTransactionsProviderFamily = Provider.family<AsyncValue<CombinedTr
     print('FilteredTransactionsProvider: Error: ${pagination.error}');
     return AsyncValue.error(pagination.error!, pagination.stackTrace!);
   }
-  if (pagination.isFetching && pagination.items.isEmpty) {
+  if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
     return const AsyncValue.loading();
   }
 
@@ -37,8 +37,8 @@ final filteredTransactionsProviderFamily = Provider.family<AsyncValue<CombinedTr
     CombinedTransactionsList(
       pendingCancellationIds: pendingCancellationIds,
       pendingTransactions: filteredPending,
-      reversibleTransfers: pagination.reversibleTransfers,
-      otherTransfers: pagination.items,
+      scheduledTransfers: pagination.scheduledTransfers,
+      otherTransfers: pagination.otherTransfers,
     ),
   );
 });

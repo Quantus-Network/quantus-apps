@@ -43,7 +43,7 @@ class ActivityScreen extends ConsumerWidget {
               final all = txService.combineAndDeduplicateTransactions(
                 pendingCancellationIds: data.pendingCancellationIds,
                 pendingTransactions: data.pendingTransactions,
-                reversibleTransfers: data.reversibleTransfers,
+                scheduledTransfers: data.scheduledTransfers,
                 otherTransfers: data.otherTransfers,
               );
               if (all.isEmpty) {

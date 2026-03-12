@@ -2,18 +2,20 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class PaginationState {
-  final List<TransactionEvent> items;
-  final List<ReversibleTransferEvent> reversibleTransfers;
-  final int offset;
+  final List<TransactionEvent> otherTransfers;
+  final List<ReversibleTransferEvent> scheduledTransfers;
+  final int scheduledOffset;
+  final int otherOffset;
   final bool hasMore;
   final bool isFetching;
   final Object? error;
   final StackTrace? stackTrace;
 
   PaginationState({
-    required this.items,
-    required this.reversibleTransfers,
-    this.offset = 0,
+    required this.otherTransfers,
+    required this.scheduledTransfers,
+    this.scheduledOffset = 0,
+    this.otherOffset = 0,
     required this.hasMore,
     required this.isFetching,
     this.error,
@@ -21,21 +23,23 @@ class PaginationState {
   });
 
   factory PaginationState.initial() =>
-      PaginationState(items: [], reversibleTransfers: [], hasMore: true, isFetching: false);
+      PaginationState(otherTransfers: [], scheduledTransfers: [], hasMore: true, isFetching: false);
 
   PaginationState copyWith({
-    List<TransactionEvent>? items,
-    List<ReversibleTransferEvent>? reversibleTransfers,
-    int? offset,
+    List<TransactionEvent>? otherTransfers,
+    List<ReversibleTransferEvent>? scheduledTransfers,
+    int? scheduledOffset,
+    int? otherOffset,
     bool? hasMore,
     bool? isFetching,
     Object? error,
     StackTrace? stackTrace,
   }) {
     return PaginationState(
-      items: items ?? this.items,
-      reversibleTransfers: reversibleTransfers ?? this.reversibleTransfers,
-      offset: offset ?? this.offset,
+      otherTransfers: otherTransfers ?? this.otherTransfers,
+      scheduledTransfers: scheduledTransfers ?? this.scheduledTransfers,
+      scheduledOffset: scheduledOffset ?? this.scheduledOffset,
+      otherOffset: otherOffset ?? this.otherOffset,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
       error: error ?? this.error,

@@ -18,7 +18,7 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
   if (pagination.error != null) {
     return AsyncValue.error(pagination.error!, pagination.stackTrace!);
   }
-  if (pagination.isFetching && pagination.items.isEmpty) {
+  if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
     return const AsyncValue.loading();
   }
 
@@ -26,8 +26,8 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
     CombinedTransactionsList(
       pendingCancellationIds: pendingCancellationIds,
       pendingTransactions: pending,
-      reversibleTransfers: pagination.reversibleTransfers,
-      otherTransfers: pagination.items,
+      scheduledTransfers: pagination.scheduledTransfers,
+      otherTransfers: pagination.otherTransfers,
     ),
   );
 });

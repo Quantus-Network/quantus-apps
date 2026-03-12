@@ -31,7 +31,7 @@ class TransactionService {
   List<TransactionEvent> combineAndDeduplicateTransactions({
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
-    required List<ReversibleTransferEvent> reversibleTransfers,
+    required List<ReversibleTransferEvent> scheduledTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
@@ -51,7 +51,7 @@ class TransactionService {
     }
 
     // Add reversible transfers (medium priority)
-    for (final transaction in reversibleTransfers) {
+    for (final transaction in scheduledTransfers) {
       if (transaction.status == ReversibleTransferStatus.SCHEDULED) {
         if (seenIds.add(transaction.id)) {
           if (pendingCancellationIds.contains(transaction.id)) {

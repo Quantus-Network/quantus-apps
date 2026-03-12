@@ -36,14 +36,14 @@ class NotificationIntegrationService {
     });
 
     _ref.listen(paginationControllerProvider, (previous, next) {
-      if (previous != null && previous.items.isNotEmpty) {
+      if (previous != null && previous.otherTransfers.isNotEmpty) {
         final accounts = _ref.watch(accountsProvider).value;
         if (accounts == null || accounts.isEmpty) return;
 
         final accountIds = accounts.map((acc) => acc.accountId).toSet();
 
-        final previousIds = previous.items.map((tx) => tx.id).toSet();
-        final newTxs = next.items.where((tx) => !previousIds.contains(tx.id));
+        final previousIds = previous.otherTransfers.map((tx) => tx.id).toSet();
+        final newTxs = next.otherTransfers.where((tx) => !previousIds.contains(tx.id));
 
         final newReceiveTxs = newTxs.where((tx) {
           if (tx is! TransferEvent) return false;

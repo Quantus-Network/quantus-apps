@@ -73,14 +73,16 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: state.offset);
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, otherOffset: state.otherOffset, scheduledOffset: state.scheduledOffset);
 
-      final newItems = newTransactions.otherTransfers;
+      final newOtherTransfers = newTransactions.otherTransfers;
+      final newScheduledTransfers = newTransactions.scheduledTransfers;
 
       state = state.copyWith(
-        items: [...state.items, ...newItems],
-        reversibleTransfers: [...state.reversibleTransfers, ...newTransactions.reversibleTransfers],
-        offset: newTransactions.nextOffset,
+        otherTransfers: [...state.otherTransfers, ...newOtherTransfers],
+        scheduledTransfers: [...state.scheduledTransfers, ...newScheduledTransfers],
+        otherOffset: newTransactions.nextOtherOffset,
+        scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
         error: null,
@@ -144,12 +146,14 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit);
 
-      final newItems = newTransactions.otherTransfers;
+      final newOtherTransfers = newTransactions.otherTransfers;
+      final newScheduledTransfers = newTransactions.scheduledTransfers;
 
       state = state.copyWith(
-        items: newItems,
-        reversibleTransfers: newTransactions.reversibleTransfers,
-        offset: newTransactions.nextOffset,
+        otherTransfers: newOtherTransfers,
+        scheduledTransfers: newScheduledTransfers,
+        otherOffset: newTransactions.nextOtherOffset,
+        scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         error: null,
         stackTrace: null,
@@ -166,7 +170,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     print('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
-    final reversibleTransfer = state.reversibleTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
+    final reversibleTransfer = state.scheduledTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
 
     if (reversibleTransfer == null) {
       print('Reversible transfer not found for txId: $txId');
@@ -189,13 +193,13 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     );
 
     // Remove from reversible transfers
-    final updatedReversibleTransfers = state.reversibleTransfers.where((transfer) => transfer.txId != txId).toList();
+    final updatedScheduledTransfers = state.scheduledTransfers.where((transfer) => transfer.txId != txId).toList();
 
     // Add executed transfer to the top of items list
-    final updatedItems = [executedTransfer, ...state.items];
+    final updatedOtherTransfers = [executedTransfer, ...state.otherTransfers];
 
     // Update state
-    state = state.copyWith(items: updatedItems, reversibleTransfers: updatedReversibleTransfers);
+    state = state.copyWith(otherTransfers: updatedOtherTransfers, scheduledTransfers: updatedScheduledTransfers);
 
     print('Successfully moved transfer from reversible to executed');
   }
@@ -206,22 +210,22 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     print('Adding transaction to history: ${transaction.id}');
 
     // Check if transaction already exists to avoid duplicates
-    final existsInItems = state.items.any((item) => item.id == transaction.id);
-    final existsInReversible = state.reversibleTransfers.any((item) => item.id == transaction.id);
+    final existsInOtherTransfers = state.otherTransfers.any((item) => item.id == transaction.id);
+    final existsInScheduledTransfers = state.scheduledTransfers.any((item) => item.id == transaction.id);
 
-    if (existsInItems || existsInReversible) {
+    if (existsInOtherTransfers || existsInScheduledTransfers) {
       print('Transaction ${transaction.id} already exists in history');
       return;
     }
 
     if (transaction is ReversibleTransferEvent) {
       // Add to reversible transfers list
-      final updatedReversibleTransfers = [transaction, ...state.reversibleTransfers];
-      state = state.copyWith(reversibleTransfers: updatedReversibleTransfers);
+      final updatedScheduledTransfers = [transaction, ...state.scheduledTransfers];
+      state = state.copyWith(scheduledTransfers: updatedScheduledTransfers);
     } else {
       // Add to regular transactions list at the top
-      final updatedItems = [transaction, ...state.items];
-      state = state.copyWith(items: updatedItems);
+      final updatedOtherTransfers = [transaction, ...state.otherTransfers];
+      state = state.copyWith(otherTransfers: updatedOtherTransfers);
     }
 
     print('Successfully added transaction ${transaction.id} to history');

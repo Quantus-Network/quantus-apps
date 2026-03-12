@@ -3,15 +3,56 @@ import 'dart:convert'; // Required for jsonEncode and jsonDecode
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+class OtherTransfersResult {
+  final List<TransactionEvent> transfers;
+  final int totalCount;
+
+  OtherTransfersResult({required this.transfers, required this.totalCount});
+}
+
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
   // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
 
+  final String _scheduledTransfersQuery = r'''
+query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!, $after: DateTime!) {
+  accountEvents(limit: $limit, 
+    offset: $offset, 
+    where: {
+      account: {id_in: $accounts},
+      scheduledReversibleTransfer_isNull: false,
+      scheduledReversibleTransfer: {scheduledAt_gt: $after}
+    }, orderBy: timestamp_DESC
+  ) {
+    id
+    scheduledReversibleTransfer {
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      txId
+      scheduledAt
+      block {
+        height
+        hash
+      }
+      extrinsicHash
+      timestamp
+    }
+  }
+}
+''';
+
   final String _accountEventsQuery = r'''
 query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  accountEvents(limit: $limit, offset: $offset, where: {account: {id_in: $accounts}, balanceEvent_isNull: true}, orderBy: timestamp_DESC) {
+  accountEvents(limit: $limit, offset: $offset, where: {account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, orderBy: timestamp_DESC) {
     id
     transfer {
       id
@@ -33,24 +74,6 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       executedBy {
         txId
       }
-    }
-    scheduledReversibleTransfer {
-      id
-      amount
-      timestamp
-      from {
-        id
-      }
-      to {
-        id
-      }
-      txId
-      scheduledAt
-      block {
-        height
-        hash
-      }
-      extrinsicHash
     }
     executedReversibleTransfer {
       block {
@@ -104,7 +127,7 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       }
     }
   }
-  accountEventsConnection(orderBy: id_ASC, where: {account: {id_in: $accounts}, balanceEvent_isNull: true}) {
+  accountEventsConnection(orderBy: id_ASC, where: {account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}) {
     totalCount
   }
 }
@@ -274,9 +297,63 @@ query SearchPendingTransaction(
     }
   }
 
-  Future<SortedTransactionsList> fetchAllTransactionTypes({
+  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
     required List<String> accountIds,
-    int limit = 20,
+    int limit = 10,
+    int offset = 0,
+  }) async {
+    // We add 1 minute to the current time to ensure if the scheduled is being executed, we don't miss it.
+    final after = DateTime.now().toUtc().add(const Duration(minutes: 1)).toIso8601String();
+
+    final Map<String, dynamic> requestBody = {
+      'query': _scheduledTransfersQuery,
+      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset, 'after': after},
+    };
+
+    final jsonBody = jsonEncode(requestBody);
+
+    final sw = Stopwatch()..start();
+    try {
+      final http.Response response = await _graphQlEndpointService.post(body: jsonBody);
+      sw.stop();
+      printTiming('fetchScheduledTransfers HTTP', sw.elapsedMilliseconds);
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      if (responseBody['errors'] != null) {
+        throw Exception('GraphQL errors: ${responseBody['errors']}');
+      }
+
+      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      if (events == null) {
+        return [];
+      }
+
+      final result = events
+          .map(
+            (event) => ReversibleTransferEvent.fromJson(
+              event['scheduledReversibleTransfer'],
+              source: ReversibleTransferSource.SCHEDULED_TRANSFER,
+            ),
+          )
+          .toList();
+
+      return result;
+    } catch (e, stackTrace) {
+      sw.stop();
+      printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
+      print('Error fetching scheduled transfers: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<OtherTransfersResult> fetchOtherTransfers({
+    required List<String> accountIds,
+    int limit = 10,
     int offset = 0,
   }) async {
     final Map<String, dynamic> requestBody = {
@@ -305,10 +382,9 @@ query SearchPendingTransaction(
       final int totalCount = responseBody['data']?['accountEventsConnection']?['totalCount'] ?? 0;
 
       if (events == null || totalCount == 0) {
-        return SortedTransactionsList.empty;
+        return OtherTransfersResult(transfers: [], totalCount: 0);
       }
 
-      final Map<String, ReversibleTransferEvent> reversibleTransfers = {};
       final List<TransactionEvent> otherTransfers = [];
 
       for (var event in events) {
@@ -318,27 +394,14 @@ query SearchPendingTransaction(
             source: ReversibleTransferSource.CANCELLED_TRANSFER,
           );
 
-          if (!reversibleTransfers.containsKey(cancelledReversibleTransfer.txId)) {
-            reversibleTransfers[cancelledReversibleTransfer.txId] = cancelledReversibleTransfer;
-          }
+          otherTransfers.add(cancelledReversibleTransfer);
         } else if (event['executedReversibleTransfer'] != null) {
           final executedReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['executedReversibleTransfer'],
             source: ReversibleTransferSource.EXECUTED_TRANSFER,
           );
 
-          if (!reversibleTransfers.containsKey(executedReversibleTransfer.txId)) {
-            reversibleTransfers[executedReversibleTransfer.txId] = executedReversibleTransfer;
-          }
-        } else if (event['scheduledReversibleTransfer'] != null) {
-          final scheduledReversibleTransfer = ReversibleTransferEvent.fromJson(
-            event['scheduledReversibleTransfer'],
-            source: ReversibleTransferSource.SCHEDULED_TRANSFER,
-          );
-
-          if (!reversibleTransfers.containsKey(scheduledReversibleTransfer.txId)) {
-            reversibleTransfers[scheduledReversibleTransfer.txId] = scheduledReversibleTransfer;
-          }
+          otherTransfers.add(executedReversibleTransfer);
         } else if (event['transfer'] != null && event['transfer']['executedBy'] == null) {
           otherTransfers.add(TransferEvent.fromJson(event['transfer']));
         } else if (event['minerReward'] != null) {
@@ -346,18 +409,43 @@ query SearchPendingTransaction(
         }
       }
 
-      final nextOffset = offset + limit;
-
-      return SortedTransactionsList(
-        reversibleTransfers: reversibleTransfers.values.toList(),
-        otherTransfers: otherTransfers,
-        nextOffset: nextOffset,
-        hasMore: nextOffset < totalCount,
-      );
+      return OtherTransfersResult(transfers: otherTransfers, totalCount: totalCount);
     } catch (e, stackTrace) {
       sw.stop();
-      printTiming('fetchAccountEvents FAILED', sw.elapsedMilliseconds);
-      print('Error fetching account events: $e');
+      printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
+      print('Error fetching other transfers: $e');
+      print(stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required List<String> accountIds,
+    int limit = 20,
+    int otherOffset = 0,
+    int scheduledOffset = 0,
+  }) async {
+    try {
+      final results = await Future.wait([
+        fetchScheduledTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
+        fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset),
+      ]);
+
+      final scheduledTransfers = results[0] as List<ReversibleTransferEvent>;
+      final otherTransfers = results[1] as OtherTransfersResult;
+
+      final nextOtherOffset = otherOffset + limit;
+      final nextScheduledOffset = scheduledOffset + limit;
+
+      return SortedTransactionsList(
+        scheduledTransfers: scheduledTransfers,
+        otherTransfers: otherTransfers.transfers,
+        nextOtherOffset: nextOtherOffset,
+        nextScheduledOffset: nextScheduledOffset,
+        hasMore: nextOtherOffset < otherTransfers.totalCount,
+      );
+    } catch (e, stackTrace) {
+      print('Error fetching all transaction types: $e');
       print(stackTrace);
       rethrow;
     }
