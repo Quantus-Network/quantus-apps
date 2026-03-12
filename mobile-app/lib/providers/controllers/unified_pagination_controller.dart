@@ -73,11 +73,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(
-            accountIds: targetAccountIds,
-            limit: _limit,
-            offset: state.offset,
-          );
+          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, offset: state.offset);
 
       final newItems = newTransactions.otherTransfers;
 
@@ -170,9 +166,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     print('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
-    final reversibleTransfer = state.reversibleTransfers
-        .where((transfer) => transfer.txId == txId)
-        .firstOrNull;
+    final reversibleTransfer = state.reversibleTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
 
     if (reversibleTransfer == null) {
       print('Reversible transfer not found for txId: $txId');
@@ -195,9 +189,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     );
 
     // Remove from reversible transfers
-    final updatedReversibleTransfers = state.reversibleTransfers
-        .where((transfer) => transfer.txId != txId)
-        .toList();
+    final updatedReversibleTransfers = state.reversibleTransfers.where((transfer) => transfer.txId != txId).toList();
 
     // Add executed transfer to the top of items list
     final updatedItems = [executedTransfer, ...state.items];
