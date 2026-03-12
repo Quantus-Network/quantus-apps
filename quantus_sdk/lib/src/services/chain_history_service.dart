@@ -77,9 +77,6 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       timestamp
       id
       extrinsicHash
-      cancelledBy {
-        id
-      }
       scheduledTransfer {
         amount
         from {
