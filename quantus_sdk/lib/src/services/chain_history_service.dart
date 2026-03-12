@@ -30,6 +30,9 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       extrinsicHash
       timestamp
       fee
+      executedBy {
+        txId
+      }
     }
     scheduledReversibleTransfer {
       id
@@ -336,7 +339,7 @@ query SearchPendingTransaction(
           if (!reversibleTransfers.containsKey(scheduledReversibleTransfer.txId)) {
             reversibleTransfers[scheduledReversibleTransfer.txId] = scheduledReversibleTransfer;
           }
-        } else if (event['transfer'] != null) {
+        } else if (event['transfer'] != null && event['transfer']['executedBy'] == null) {
           otherTransfers.add(TransferEvent.fromJson(event['transfer']));
         } else if (event['minerReward'] != null) {
           otherTransfers.add(MinerRewardEvent.fromJson(event['minerReward']));
