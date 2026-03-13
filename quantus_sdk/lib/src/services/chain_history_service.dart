@@ -302,8 +302,7 @@ query SearchPendingTransaction(
     int limit = 10,
     int offset = 0,
   }) async {
-    // We add 1 minute to the current time to ensure if the scheduled is being executed, we don't miss it.
-    final after = DateTime.now().toUtc().add(const Duration(minutes: 1)).toIso8601String();
+    final after = DateTime.now().toUtc().toIso8601String();
 
     final Map<String, dynamic> requestBody = {
       'query': _scheduledReversibleTransfersQuery,
