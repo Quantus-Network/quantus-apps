@@ -284,10 +284,7 @@ query SearchPendingTransaction(
         return null;
       }
 
-      final transaction = ReversibleTransferEvent.fromJson(
-        events.first,
-        status: ReversibleTransferStatus.EXECUTED,
-      );
+      final transaction = ReversibleTransferEvent.fromJson(events.first, status: ReversibleTransferStatus.EXECUTED);
 
       return transaction;
     } catch (e, stackTrace) {
