@@ -286,7 +286,7 @@ query SearchPendingTransaction(
 
       final transaction = ReversibleTransferEvent.fromJson(
         events.first,
-        source: ReversibleTransferSource.EXECUTED_TRANSFER,
+        status: ReversibleTransferStatus.EXECUTED,
       );
 
       return transaction;
@@ -335,7 +335,7 @@ query SearchPendingTransaction(
           .map(
             (event) => ReversibleTransferEvent.fromJson(
               event['scheduledReversibleTransfer'],
-              source: ReversibleTransferSource.SCHEDULED_TRANSFER,
+              status: ReversibleTransferStatus.SCHEDULED,
             ),
           )
           .toList();
@@ -390,14 +390,14 @@ query SearchPendingTransaction(
         if (event['cancelledReversibleTransfer'] != null) {
           final cancelledReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['cancelledReversibleTransfer'],
-            source: ReversibleTransferSource.CANCELLED_TRANSFER,
+            status: ReversibleTransferStatus.CANCELLED,
           );
 
           otherTransfers.add(cancelledReversibleTransfer);
         } else if (event['executedReversibleTransfer'] != null) {
           final executedReversibleTransfer = ReversibleTransferEvent.fromJson(
             event['executedReversibleTransfer'],
-            source: ReversibleTransferSource.EXECUTED_TRANSFER,
+            status: ReversibleTransferStatus.EXECUTED,
           );
 
           otherTransfers.add(executedReversibleTransfer);
@@ -510,7 +510,7 @@ query SearchPendingTransaction(
         final reversibleTransferData = eventJson['scheduledReversibleTransfer'] as Map<String, dynamic>;
         transaction = ReversibleTransferEvent.fromJson(
           reversibleTransferData,
-          source: ReversibleTransferSource.SCHEDULED_TRANSFER,
+          status: ReversibleTransferStatus.SCHEDULED,
         );
       } else {
         final transferData = eventJson['transfer'] as Map<String, dynamic>;

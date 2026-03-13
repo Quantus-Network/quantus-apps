@@ -81,9 +81,6 @@ class TransferEvent extends TransactionEvent {
   }
 }
 
-// ignore: constant_identifier_names
-enum ReversibleTransferSource { NOTIFICATION, SCHEDULED_TRANSFER, CANCELLED_TRANSFER, EXECUTED_TRANSFER }
-
 class ReversibleTransferEvent extends TransactionEvent {
   final String txId;
   final ReversibleTransferStatus status;
@@ -105,25 +102,10 @@ class ReversibleTransferEvent extends TransactionEvent {
     required super.blockHash,
   });
 
-  static ReversibleTransferStatus _getStatusFromSource(ReversibleTransferSource source, Map<String, dynamic> json) {
-    return switch (source) {
-      ReversibleTransferSource.NOTIFICATION => ReversibleTransferStatus.values.byName(json['status'] as String),
-      ReversibleTransferSource.SCHEDULED_TRANSFER => ReversibleTransferStatus.SCHEDULED,
-      ReversibleTransferSource.CANCELLED_TRANSFER => ReversibleTransferStatus.CANCELLED,
-      ReversibleTransferSource.EXECUTED_TRANSFER => ReversibleTransferStatus.EXECUTED,
-    };
-  }
-
-  factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json, {required ReversibleTransferSource source}) {
-    final isTransferNested =
-        source == ReversibleTransferSource.CANCELLED_TRANSFER || source == ReversibleTransferSource.EXECUTED_TRANSFER;
-
+  // Create a ReversibleTransferEvent with a known status
+  factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json, {required ReversibleTransferStatus status}) {
     final block = json['block'] as Map<String, dynamic>;
-    final blockHeight = block['height'] as int;
-    final blockHash = block['hash'] as String? ?? '';
-
-    final transfer = isTransferNested ? json['scheduledTransfer'] as Map<String, dynamic> : json;
-
+    final transfer = json['scheduledTransfer'] as Map<String, dynamic>? ?? json;
     return ReversibleTransferEvent(
       id: json['id'] as String,
       from: transfer['from']?['id'] as String? ?? '',
@@ -131,11 +113,19 @@ class ReversibleTransferEvent extends TransactionEvent {
       amount: BigInt.parse(transfer['amount'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
       txId: json['txId'] as String,
-      status: _getStatusFromSource(source, json),
+      status: status,
       scheduledAt: DateTime.parse(transfer['scheduledAt'] as String),
       extrinsicHash: json['extrinsicHash'] as String?,
-      blockNumber: blockHeight,
-      blockHash: blockHash,
+      blockNumber: block['height'] as int,
+      blockHash: block['hash'] as String? ?? '',
+    );
+  }
+
+  // Create a ReversibleTransferEvent we previously stored as JSON using toJson()
+  factory ReversibleTransferEvent.deserializeFromJson(Map<String, dynamic> json) {
+    return ReversibleTransferEvent.fromJson(
+      json,
+      status: ReversibleTransferStatus.values.byName(json['status'] as String),
     );
   }
 
