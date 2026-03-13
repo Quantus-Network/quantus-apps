@@ -52,7 +52,7 @@ query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!
 
   final String _accountEventsQuery = r'''
 query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  accountEvents(limit: $limit, offset: $offset, where: {account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, orderBy: timestamp_DESC) {
+  accountEvents(limit: $limit, offset: $offset, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsicHash_isNull: false}}]}]}, orderBy: timestamp_DESC) {
     id
     transfer {
       id
@@ -127,7 +127,7 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       }
     }
   }
-  accountEventsConnection(orderBy: id_ASC, where: {account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}) {
+  accountEventsConnection(orderBy: id_ASC, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsicHash_isNull: false}}]}]}) {
     totalCount
   }
 }
@@ -398,7 +398,7 @@ query SearchPendingTransaction(
           );
 
           otherTransfers.add(executedReversibleTransfer);
-        } else if (event['transfer'] != null && event['transfer']['executedBy'] == null) {
+        } else if (event['transfer'] != null) {
           otherTransfers.add(TransferEvent.fromJson(event['transfer']));
         } else if (event['minerReward'] != null) {
           otherTransfers.add(MinerRewardEvent.fromJson(event['minerReward']));
