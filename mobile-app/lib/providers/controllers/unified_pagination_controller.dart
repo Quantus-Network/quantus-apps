@@ -175,7 +175,9 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     print('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
-    final reversibleTransfer = state.scheduledReversibleTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
+    final reversibleTransfer = state.scheduledReversibleTransfers
+        .where((transfer) => transfer.txId == txId)
+        .firstOrNull;
 
     if (reversibleTransfer == null) {
       print('Reversible transfer not found for txId: $txId');
@@ -198,13 +200,18 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     );
 
     // Remove from reversible transfers
-    final updatedScheduledReversibleTransfers = state.scheduledReversibleTransfers.where((transfer) => transfer.txId != txId).toList();
+    final updatedScheduledReversibleTransfers = state.scheduledReversibleTransfers
+        .where((transfer) => transfer.txId != txId)
+        .toList();
 
     // Add executed transfer to the top of items list
     final updatedOtherTransfers = [executedTransfer, ...state.otherTransfers];
 
     // Update state
-    state = state.copyWith(otherTransfers: updatedOtherTransfers, scheduledReversibleTransfers: updatedScheduledReversibleTransfers);
+    state = state.copyWith(
+      otherTransfers: updatedOtherTransfers,
+      scheduledReversibleTransfers: updatedScheduledReversibleTransfers,
+    );
 
     print('Successfully moved transfer from reversible to executed');
   }
@@ -216,7 +223,9 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     // Check if transaction already exists to avoid duplicates
     final existsInOtherTransfers = state.otherTransfers.any((item) => item.id == transaction.id);
-    final existsInScheduledReversibleTransfers = state.scheduledReversibleTransfers.any((item) => item.id == transaction.id);
+    final existsInScheduledReversibleTransfers = state.scheduledReversibleTransfers.any(
+      (item) => item.id == transaction.id,
+    );
 
     if (existsInOtherTransfers || existsInScheduledReversibleTransfers) {
       print('Transaction ${transaction.id} already exists in history');

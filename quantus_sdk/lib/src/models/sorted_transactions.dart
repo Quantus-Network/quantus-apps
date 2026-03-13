@@ -15,5 +15,8 @@ class SortedTransactionsList {
     this.hasMore = false,
   });
 
-  static const SortedTransactionsList empty = SortedTransactionsList(scheduledReversibleTransfers: [], otherTransfers: []);
+  static const SortedTransactionsList empty = SortedTransactionsList(
+    scheduledReversibleTransfers: [],
+    otherTransfers: [],
+  );
 }
