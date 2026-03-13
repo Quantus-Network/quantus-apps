@@ -73,7 +73,12 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(isFetching: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
-          .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit, otherOffset: state.otherOffset, scheduledOffset: state.scheduledOffset);
+          .fetchAllTransactionTypes(
+            accountIds: targetAccountIds,
+            limit: _limit,
+            otherOffset: state.otherOffset,
+            scheduledOffset: state.scheduledOffset,
+          );
 
       final newOtherTransfers = newTransactions.otherTransfers;
       final newScheduledTransfers = newTransactions.scheduledTransfers;
