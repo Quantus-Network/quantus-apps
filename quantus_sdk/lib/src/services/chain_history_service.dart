@@ -299,7 +299,7 @@ query SearchPendingTransaction(
     int limit = 10,
     int offset = 0,
   }) async {
-    final after = DateTime.now().toUtc().toIso8601String();
+    final after = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
 
     final Map<String, dynamic> requestBody = {
       'query': _scheduledReversibleTransfersQuery,
