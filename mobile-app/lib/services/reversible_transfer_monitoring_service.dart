@@ -47,7 +47,7 @@ class ReversibleTransferMonitoringService {
     _ref.listen(allTransactionsProvider, (previous, current) {
       current.when(
         data: (combinedData) {
-          _handleTransactionsUpdate(combinedData.scheduledTransfers);
+          _handleTransactionsUpdate(combinedData.scheduledReversibleTransfers);
         },
         loading: () {},
         error: (_, _) {},
@@ -57,19 +57,19 @@ class ReversibleTransferMonitoringService {
 
   void _handleTransactionsUpdate(List<ReversibleTransferEvent> reversibleTransfers) {
     // Find scheduled transfers that need monitoring
-    final scheduledTransfers = reversibleTransfers
+    final scheduledReversibleTransfers = reversibleTransfers
         .where((tx) => tx.status == ReversibleTransferStatus.SCHEDULED)
         .toList();
 
-    if (scheduledTransfers.isNotEmpty) {
+    if (scheduledReversibleTransfers.isNotEmpty) {
       print(
         // ignore: lines_longer_than_80_chars
-        'monitoring setvice: watching ${scheduledTransfers.length} reversible transfers!',
+        'monitoring setvice: watching ${scheduledReversibleTransfers.length} reversible transfers!',
       );
     }
 
     // Start monitoring transfers approaching execution
-    for (final transfer in scheduledTransfers) {
+    for (final transfer in scheduledReversibleTransfers) {
       // If we're not already monitoring this transfer
       if (!_timers.containsKey(transfer.id)) {
         _scheduleExecutionPolling(transfer);
@@ -77,7 +77,7 @@ class ReversibleTransferMonitoringService {
     }
 
     // Stop monitoring transfers that are no longer scheduled
-    final currentIds = scheduledTransfers.map((tx) => tx.id).toSet();
+    final currentIds = scheduledReversibleTransfers.map((tx) => tx.id).toSet();
     final timersToRemove = _timers.keys.where((id) => !currentIds.contains(id)).toList();
 
     for (final id in timersToRemove) {

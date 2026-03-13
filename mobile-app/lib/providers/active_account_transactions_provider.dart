@@ -19,7 +19,7 @@ final activeAccountTransactionsProvider = Provider<AsyncValue<CombinedTransactio
           CombinedTransactionsList(
             pendingCancellationIds: <String>{},
             pendingTransactions: [],
-            scheduledTransfers: [],
+            scheduledReversibleTransfers: [],
             otherTransfers: [],
           ),
         );

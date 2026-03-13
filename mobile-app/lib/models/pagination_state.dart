@@ -3,7 +3,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 class PaginationState {
   final List<TransactionEvent> otherTransfers;
-  final List<ReversibleTransferEvent> scheduledTransfers;
+  final List<ReversibleTransferEvent> scheduledReversibleTransfers;
   final int scheduledOffset;
   final int otherOffset;
   final bool hasMore;
@@ -13,7 +13,7 @@ class PaginationState {
 
   PaginationState({
     required this.otherTransfers,
-    required this.scheduledTransfers,
+    required this.scheduledReversibleTransfers,
     this.scheduledOffset = 0,
     this.otherOffset = 0,
     required this.hasMore,
@@ -23,11 +23,11 @@ class PaginationState {
   });
 
   factory PaginationState.initial() =>
-      PaginationState(otherTransfers: [], scheduledTransfers: [], hasMore: true, isFetching: false);
+      PaginationState(otherTransfers: [], scheduledReversibleTransfers: [], hasMore: true, isFetching: false);
 
   PaginationState copyWith({
     List<TransactionEvent>? otherTransfers,
-    List<ReversibleTransferEvent>? scheduledTransfers,
+    List<ReversibleTransferEvent>? scheduledReversibleTransfers,
     int? scheduledOffset,
     int? otherOffset,
     bool? hasMore,
@@ -37,7 +37,7 @@ class PaginationState {
   }) {
     return PaginationState(
       otherTransfers: otherTransfers ?? this.otherTransfers,
-      scheduledTransfers: scheduledTransfers ?? this.scheduledTransfers,
+      scheduledReversibleTransfers: scheduledReversibleTransfers ?? this.scheduledReversibleTransfers,
       scheduledOffset: scheduledOffset ?? this.scheduledOffset,
       otherOffset: otherOffset ?? this.otherOffset,
       hasMore: hasMore ?? this.hasMore,

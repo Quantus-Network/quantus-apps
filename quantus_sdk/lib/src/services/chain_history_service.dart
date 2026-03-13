@@ -16,8 +16,8 @@ class ChainHistoryService {
   // We don't need a client instance anymore, just the endpoint
   ChainHistoryService();
 
-  final String _scheduledTransfersQuery = r'''
-query ScheduledTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!, $after: DateTime!) {
+  final String _scheduledReversibleTransfersQuery = r'''
+query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!, $offset: Int!, $after: DateTime!) {
   accountEvents(limit: $limit, 
     offset: $offset, 
     where: {
@@ -297,7 +297,7 @@ query SearchPendingTransaction(
     }
   }
 
-  Future<List<ReversibleTransferEvent>> fetchScheduledTransfers({
+  Future<List<ReversibleTransferEvent>> fetchScheduledReversibleTransfers({
     required List<String> accountIds,
     int limit = 10,
     int offset = 0,
@@ -306,7 +306,7 @@ query SearchPendingTransaction(
     final after = DateTime.now().toUtc().add(const Duration(minutes: 1)).toIso8601String();
 
     final Map<String, dynamic> requestBody = {
-      'query': _scheduledTransfersQuery,
+      'query': _scheduledReversibleTransfersQuery,
       'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset, 'after': after},
     };
 
@@ -427,18 +427,18 @@ query SearchPendingTransaction(
   }) async {
     try {
       final results = await Future.wait([
-        fetchScheduledTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
+        fetchScheduledReversibleTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
         fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset),
       ]);
 
-      final scheduledTransfers = results[0] as List<ReversibleTransferEvent>;
+      final scheduledReversibleTransfers = results[0] as List<ReversibleTransferEvent>;
       final otherTransfers = results[1] as OtherTransfersResult;
 
       final nextOtherOffset = otherOffset + limit;
       final nextScheduledOffset = scheduledOffset + limit;
 
       return SortedTransactionsList(
-        scheduledTransfers: scheduledTransfers,
+        scheduledReversibleTransfers: scheduledReversibleTransfers,
         otherTransfers: otherTransfers.transfers,
         nextOtherOffset: nextOtherOffset,
         nextScheduledOffset: nextScheduledOffset,

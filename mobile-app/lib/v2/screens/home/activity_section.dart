@@ -40,7 +40,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         final all = txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: data.pendingCancellationIds,
           pendingTransactions: data.pendingTransactions,
-          scheduledTransfers: data.scheduledTransfers,
+          scheduledReversibleTransfers: data.scheduledReversibleTransfers,
           otherTransfers: data.otherTransfers,
         );
         final recentTransactions = all.take(5).toList();

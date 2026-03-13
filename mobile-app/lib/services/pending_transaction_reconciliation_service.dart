@@ -50,7 +50,7 @@ class PendingTransactionReconciliationService {
         data: (transactions) => txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: transactions.pendingCancellationIds,
           pendingTransactions: [], // Don't include pending here as we're comparing against them
-          scheduledTransfers: transactions.scheduledTransfers,
+          scheduledReversibleTransfers: transactions.scheduledReversibleTransfers,
           otherTransfers: transactions.otherTransfers,
         ),
         loading: () => <TransactionEvent>[],

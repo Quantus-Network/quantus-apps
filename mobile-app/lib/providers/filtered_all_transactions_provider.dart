@@ -37,7 +37,7 @@ final filteredTransactionsProviderFamily = Provider.family<AsyncValue<CombinedTr
     CombinedTransactionsList(
       pendingCancellationIds: pendingCancellationIds,
       pendingTransactions: filteredPending,
-      scheduledTransfers: pagination.scheduledTransfers,
+      scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
       otherTransfers: pagination.otherTransfers,
     ),
   );

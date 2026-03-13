@@ -81,11 +81,11 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           );
 
       final newOtherTransfers = newTransactions.otherTransfers;
-      final newScheduledTransfers = newTransactions.scheduledTransfers;
+      final newScheduledReversibleTransfers = newTransactions.scheduledReversibleTransfers;
 
       state = state.copyWith(
         otherTransfers: [...state.otherTransfers, ...newOtherTransfers],
-        scheduledTransfers: [...state.scheduledTransfers, ...newScheduledTransfers],
+        scheduledReversibleTransfers: [...state.scheduledReversibleTransfers, ...newScheduledReversibleTransfers],
         otherOffset: newTransactions.nextOtherOffset,
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
@@ -152,11 +152,11 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
           .fetchAllTransactionTypes(accountIds: targetAccountIds, limit: _limit);
 
       final newOtherTransfers = newTransactions.otherTransfers;
-      final newScheduledTransfers = newTransactions.scheduledTransfers;
+      final newScheduledReversibleTransfers = newTransactions.scheduledReversibleTransfers;
 
       state = state.copyWith(
         otherTransfers: newOtherTransfers,
-        scheduledTransfers: newScheduledTransfers,
+        scheduledReversibleTransfers: newScheduledReversibleTransfers,
         otherOffset: newTransactions.nextOtherOffset,
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
@@ -175,7 +175,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     print('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
-    final reversibleTransfer = state.scheduledTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
+    final reversibleTransfer = state.scheduledReversibleTransfers.where((transfer) => transfer.txId == txId).firstOrNull;
 
     if (reversibleTransfer == null) {
       print('Reversible transfer not found for txId: $txId');
@@ -198,13 +198,13 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     );
 
     // Remove from reversible transfers
-    final updatedScheduledTransfers = state.scheduledTransfers.where((transfer) => transfer.txId != txId).toList();
+    final updatedScheduledReversibleTransfers = state.scheduledReversibleTransfers.where((transfer) => transfer.txId != txId).toList();
 
     // Add executed transfer to the top of items list
     final updatedOtherTransfers = [executedTransfer, ...state.otherTransfers];
 
     // Update state
-    state = state.copyWith(otherTransfers: updatedOtherTransfers, scheduledTransfers: updatedScheduledTransfers);
+    state = state.copyWith(otherTransfers: updatedOtherTransfers, scheduledReversibleTransfers: updatedScheduledReversibleTransfers);
 
     print('Successfully moved transfer from reversible to executed');
   }
@@ -216,17 +216,17 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     // Check if transaction already exists to avoid duplicates
     final existsInOtherTransfers = state.otherTransfers.any((item) => item.id == transaction.id);
-    final existsInScheduledTransfers = state.scheduledTransfers.any((item) => item.id == transaction.id);
+    final existsInScheduledReversibleTransfers = state.scheduledReversibleTransfers.any((item) => item.id == transaction.id);
 
-    if (existsInOtherTransfers || existsInScheduledTransfers) {
+    if (existsInOtherTransfers || existsInScheduledReversibleTransfers) {
       print('Transaction ${transaction.id} already exists in history');
       return;
     }
 
     if (transaction is ReversibleTransferEvent) {
       // Add to reversible transfers list
-      final updatedScheduledTransfers = [transaction, ...state.scheduledTransfers];
-      state = state.copyWith(scheduledTransfers: updatedScheduledTransfers);
+      final updatedScheduledReversibleTransfers = [transaction, ...state.scheduledReversibleTransfers];
+      state = state.copyWith(scheduledReversibleTransfers: updatedScheduledReversibleTransfers);
     } else {
       // Add to regular transactions list at the top
       final updatedOtherTransfers = [transaction, ...state.otherTransfers];

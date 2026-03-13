@@ -26,7 +26,7 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
     CombinedTransactionsList(
       pendingCancellationIds: pendingCancellationIds,
       pendingTransactions: pending,
-      scheduledTransfers: pagination.scheduledTransfers,
+      scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
       otherTransfers: pagination.otherTransfers,
     ),
   );
