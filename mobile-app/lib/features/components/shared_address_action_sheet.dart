@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
   final String address;
@@ -56,7 +57,8 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   }
 
   void _sendToAddress() {
-    Navigator.of(context).pushNamed('/send', arguments: widget.address);
+    Navigator.of(context).pop();
+    showSendSheetV2(context, address: widget.address);
   }
 
   void _closeSheet() {

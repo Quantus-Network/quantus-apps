@@ -152,3 +152,19 @@ class IsBalanceHiddenNotifier extends StateNotifier<bool> {
     state = value;
   }
 }
+
+final posModeProvider = StateNotifierProvider<PosModeNotifier, bool>((ref) {
+  final settingsService = ref.watch(settingsServiceProvider);
+  return PosModeNotifier(settingsService);
+});
+
+class PosModeNotifier extends StateNotifier<bool> {
+  final SettingsService _settingsService;
+
+  PosModeNotifier(this._settingsService) : super(_settingsService.isPosModeEnabled());
+
+  Future<void> setPosMode(bool value) async {
+    await _settingsService.setPosModeEnabled(value);
+    state = value;
+  }
+}

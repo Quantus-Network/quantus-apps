@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -99,6 +100,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final colors = context.colors;
     final text = context.themeText;
     final notifConfig = ref.watch(notificationConfigProvider);
+    final posMode = ref.watch(posModeProvider);
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
@@ -134,8 +136,15 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           ]),
           const SizedBox(height: 40),
           _section('Preferences', colors, text, [
-            // _chevronItem('Currency', 'USD (\$)', colors, text, onTap: () {}),
-            // _divider(colors),
+            _toggleItem(
+              'POS Mode',
+              posMode ? 'Point of Sale Enabled' : 'Disabled',
+              posMode,
+              (v) => ref.read(posModeProvider.notifier).setPosMode(v),
+              colors,
+              text,
+            ),
+            _divider(colors),
             _toggleItem(
               'Notifications',
               notifConfig.enabled ? 'Transaction Alerts Enabled' : 'Alerts Disabled',

@@ -287,6 +287,17 @@ class SettingsService {
     return _prefs.getBool(_balanceHiddenKey) ?? false;
   }
 
+  // POS Mode Settings
+  static const String _posModeEnabledKey = 'pos_mode_enabled';
+
+  Future<void> setPosModeEnabled(bool enabled) async {
+    await _prefs.setBool(_posModeEnabledKey, enabled);
+  }
+
+  bool isPosModeEnabled() {
+    return _prefs.getBool(_posModeEnabledKey) ?? false;
+  }
+
   // --- Primitive Accessors for General Use ---
 
   /// Get a boolean value from SharedPreferences

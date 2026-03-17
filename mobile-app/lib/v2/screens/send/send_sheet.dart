@@ -19,7 +19,8 @@ enum _Step { form, confirm, sending, complete }
 
 class SendSheet extends ConsumerStatefulWidget {
   final String? initialAddress;
-  const SendSheet({super.key, this.initialAddress});
+  final String? initialAmount;
+  const SendSheet({super.key, this.initialAddress, this.initialAmount});
 
   @override
   ConsumerState<SendSheet> createState() => _SendSheetState();
@@ -47,6 +48,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _amountController.addListener(_onAmountChanged);
     if (widget.initialAddress != null) {
       _recipientController.text = widget.initialAddress!;
+    }
+    if (widget.initialAmount != null) {
+      _amountController.text = widget.initialAmount!;
     }
   }
 
@@ -444,12 +448,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 }
 
-void showSendSheetV2(BuildContext context, {String? address}) {
+void showSendSheetV2(BuildContext context, {String? address, String? amount}) {
   BottomSheetContainer.show(
     context,
     builder: (_) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SendSheet(initialAddress: address),
+      child: SendSheet(initialAddress: address, initialAmount: amount),
     ),
   );
 }

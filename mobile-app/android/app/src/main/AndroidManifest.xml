@@ -47,6 +47,7 @@
 
                 <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/account" />
                 <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/oauth" />
+                <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/pay" />
             </intent-filter>
         </activity>
 
