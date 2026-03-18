@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Center(
           child: Text(
             'New Charge',
-            style: text.smallTitle?.copyWith(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 20),
+            style: text.smallTitle?.copyWith(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
           ),
         ),
       ),
