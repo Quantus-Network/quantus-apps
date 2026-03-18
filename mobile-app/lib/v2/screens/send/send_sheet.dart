@@ -20,7 +20,8 @@ enum _Step { form, confirm, sending, complete }
 class SendSheet extends ConsumerStatefulWidget {
   final String? initialAddress;
   final String? initialAmount;
-  const SendSheet({super.key, this.initialAddress, this.initialAmount});
+  final bool isPayMode;
+  const SendSheet({super.key, this.initialAddress, this.initialAmount, this.isPayMode = false});
 
   @override
   ConsumerState<SendSheet> createState() => _SendSheetState();
@@ -173,7 +174,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final balance = ref.watch(effectiveMaxBalanceProvider);
 
     return BottomSheetContainer(
-      title: 'Send',
+      title: widget.isPayMode ? 'Pay' : 'Send',
       onBack: _step == _Step.confirm ? _backToForm : null,
       child: AnimatedSize(
         duration: const Duration(milliseconds: 200),
@@ -408,7 +409,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         const SizedBox(height: 48),
         CircularProgressIndicator(color: colors.textPrimary),
         const SizedBox(height: 24),
-        Text('Sending...', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(widget.isPayMode ? 'Paying...' : 'Sending...', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 80),
       ],
     );
@@ -421,7 +422,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         const SizedBox(height: 48),
         const SuccessCheck(size: 64),
         const SizedBox(height: 24),
-        Text('Sent!', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(widget.isPayMode ? 'Paid!' : 'Sent!', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 8),
         Text(
           '${_fmt.formatBalance(_amount)} ${AppConstants.tokenSymbol}',
@@ -448,12 +449,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 }
 
-void showSendSheetV2(BuildContext context, {String? address, String? amount}) {
+void showSendSheetV2(BuildContext context, {String? address, String? amount, bool isPayMode = false}) {
   BottomSheetContainer.show(
     context,
     builder: (_) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SendSheet(initialAddress: address, initialAmount: amount),
+      child: SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
     ),
   );
 }

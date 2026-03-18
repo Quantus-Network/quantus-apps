@@ -53,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (payment != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(paymentIntentProvider.notifier).state = null;
-        showSendSheetV2(context, address: payment.to, amount: payment.amount);
+        showSendSheetV2(context, address: payment.to, amount: payment.amount, isPayMode: true);
       });
       return;
     }
