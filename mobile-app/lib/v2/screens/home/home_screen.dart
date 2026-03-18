@@ -131,7 +131,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           color: colors.accentGreen,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: colors.accentGreen.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(color: colors.accentGreen.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 4)),
+          ],
         ),
         child: Center(
           child: Text(

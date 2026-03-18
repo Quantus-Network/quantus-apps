@@ -32,13 +32,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       appBar: const V2AppBar(title: 'Scan to Pay'),
       child: accountAsync.when(
         loading: () => Center(child: CircularProgressIndicator(color: colors.textPrimary)),
-        error: (e, _) => Center(child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError))),
+        error: (e, _) => Center(
+          child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+        ),
         data: (active) {
           if (active == null) return const Center(child: Text('No active account'));
-          _request ??= _posService.createPaymentRequest(
-            accountId: active.account.accountId,
-            amount: widget.amount,
-          );
+          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
           debugPrint('POS Payment URL: ${_request!.paymentUrl}');
           return _buildContent(_request!, colors, text);
         },
@@ -59,11 +58,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 16),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        GlassButton.simple(
-          label: 'New Charge',
-          onTap: () => Navigator.pop(context),
-          variant: ButtonVariant.secondary,
-        ),
+        GlassButton.simple(label: 'New Charge', onTap: () => Navigator.pop(context), variant: ButtonVariant.secondary),
         const SizedBox(height: 16),
         GlassButton.simple(
           label: 'Done',

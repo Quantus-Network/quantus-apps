@@ -47,10 +47,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   void _onCharge() {
     final amount = _fmt.parseAmount(_input);
     if (amount == null || amount <= BigInt.zero) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => PosQrScreen(amount: _input)),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amount: _input)));
   }
 
   bool get _isValid {
@@ -123,10 +120,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
           alignment: Alignment.center,
           child: key == 'backspace'
               ? Icon(Icons.backspace_outlined, color: colors.textPrimary, size: 28)
-              : Text(
-                  key,
-                  style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 28),
-                ),
+              : Text(key, style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 28)),
         ),
       ),
     );
