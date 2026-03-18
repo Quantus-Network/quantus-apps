@@ -409,7 +409,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         const SizedBox(height: 48),
         CircularProgressIndicator(color: colors.textPrimary),
         const SizedBox(height: 24),
-        Text(widget.isPayMode ? 'Paying...' : 'Sending...', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(
+          widget.isPayMode ? 'Paying...' : 'Sending...',
+          style: text.smallTitle?.copyWith(color: colors.textPrimary),
+        ),
         const SizedBox(height: 80),
       ],
     );
