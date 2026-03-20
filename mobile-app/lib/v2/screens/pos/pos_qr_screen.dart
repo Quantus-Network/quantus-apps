@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
+import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -30,6 +31,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   Timer? _startTimer;
   Timer? _timeoutTimer;
   TxWatchTransfer? _paidTransfer;
+  bool _watching = false;
   bool get _isPaid => _paidTransfer != null;
 
   @override
@@ -43,6 +45,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     if (active == null) return;
 
     final expectedPlanck = _fmt.parseAmount(widget.amount);
+    setState(() => _watching = true);
 
     _txWatch.watch(
       address: active.account.accountId,
@@ -50,14 +53,19 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (expectedPlanck != null && received == expectedPlanck) {
+          print('[TxWatch] Payment matched! ${tx.amount} planck from ${tx.from}');
           _timeoutTimer?.cancel();
           if (mounted) setState(() => _paidTransfer = tx);
         }
       },
-      onError: (e) => debugPrint('TxWatch error: $e'),
+      onError: (e) => print('[TxWatch] Error: $e'),
     );
 
-    _timeoutTimer = Timer(const Duration(seconds: 30), () => _txWatch.dispose());
+    _timeoutTimer = Timer(const Duration(seconds: 30), () {
+      print('[TxWatch] Timeout — gave up waiting for payment');
+      _txWatch.dispose();
+      if (mounted) setState(() => _watching = false);
+    });
   }
 
   @override
@@ -127,15 +135,45 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 16),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        GlassButton.simple(label: 'New Charge', onTap: () => Navigator.pop(context), variant: ButtonVariant.secondary),
-        const SizedBox(height: 16),
         GlassButton.simple(
-          label: 'Done',
-          onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-          variant: ButtonVariant.primary,
+          label: 'New Charge',
+          onTap: () {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen()));
+          },
+          variant: ButtonVariant.secondary,
         ),
+        const SizedBox(height: 16),
+        _buildWaitingButton(colors, text),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  Widget _buildWaitingButton(AppColorsV2 colors, AppTextTheme text) {
+    if (_watching) {
+      return GlassButton(
+        variant: ButtonVariant.primary,
+        onTap: () {},
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(color: colors.textSecondary, strokeWidth: 2),
+            ),
+            const SizedBox(width: 10),
+            Text('Waiting for payment', style: text.smallTitle?.copyWith(color: colors.textSecondary, fontSize: 16)),
+          ],
+        ),
+      );
+    }
+
+    return GlassButton.simple(
+      label: 'Done',
+      onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      variant: ButtonVariant.primary,
     );
   }
 

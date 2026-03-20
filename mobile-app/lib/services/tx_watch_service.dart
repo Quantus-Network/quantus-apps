@@ -35,9 +35,11 @@ class TxWatchService {
     void Function(Object)? onError,
   }) async {
     final wsUrl = _toWsUrl(RpcEndpointService().bestEndpointUrl);
+    print('[TxWatch] Starting to stream transactions from $wsUrl');
     try {
       _ws = await WebSocket.connect(wsUrl);
     } catch (e) {
+      print('[TxWatch] WebSocket connect failed: $e');
       onError?.call(e);
       return;
     }
@@ -53,22 +55,29 @@ class TxWatchService {
       (event) {
         final data = jsonDecode(event as String) as Map<String, dynamic>;
         if (data.containsKey('result') && _subscriptionId == null) {
-          _subscriptionId = data['result'] as String;
+          _subscriptionId = data['result'].toString();
           return;
         }
-        if (data['method'] == 'txWatch_transfer' && data['params']?['subscription'] == _subscriptionId) {
+        if (data['method'] == 'txWatch_transfer' && data['params']?['subscription'].toString() == _subscriptionId) {
           onTransfer(TxWatchTransfer.fromJson(data['params']['result'] as Map<String, dynamic>));
         }
         if (data.containsKey('error')) {
-          onError?.call(Exception((data['error'] as Map<String, dynamic>)['message']));
+          final msg = (data['error'] as Map<String, dynamic>)['message'];
+          print('[TxWatch] RPC error: $msg');
+          onError?.call(Exception(msg));
         }
       },
-      onError: (e) => onError?.call(e as Object),
+      onError: (e) {
+        print('[TxWatch] Stream error: $e');
+        onError?.call(e as Object);
+      },
     );
   }
 
   void dispose() {
-    if (_subscriptionId != null && _ws != null) {
+    if (_ws == null) return;
+    print('[TxWatch] Stopping streaming transactions');
+    if (_subscriptionId != null) {
       try {
         _ws!.add(jsonEncode({
           'jsonrpc': '2.0',
