@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
 import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
@@ -124,29 +125,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPosButton(AppColorsV2 colors, AppTextTheme text) {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
-      child: Container(
-        height: 64,
-        decoration: BoxDecoration(
-          color: colors.accentGreen,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: colors.accentGreen.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 4)),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            'New Charge',
-            style: text.smallTitle?.copyWith(
-              color: Colors.black,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-              decoration: TextDecoration.none,
-            ),
-          ),
-        ),
-      ),
+    return Button(
+      label: 'New Charge',
+      variant: ButtonVariant.accent,
+      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+      textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, decoration: TextDecoration.none),
     );
   }
 

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-enum ButtonVariant { transparent, neutral, primary, success, danger, glass, glassOutline, dangerOutline }
+enum ButtonVariant { transparent, neutral, primary, success, danger, glass, glassOutline, dangerOutline, accent }
 
 class Button extends StatelessWidget {
   final String label;
@@ -34,6 +35,8 @@ class Button extends StatelessWidget {
     switch (variant) {
       case ButtonVariant.neutral:
         return context.themeColors.textSecondary;
+      case ButtonVariant.accent:
+        return Colors.black;
       default:
         return null;
     }
@@ -163,6 +166,18 @@ class Button extends StatelessWidget {
           padding: padding,
           decoration: ShapeDecoration(
             color: disabled ? disabledBtnColor : context.themeColors.buttonSuccess,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
+          ),
+          child: buttonContent,
+        );
+        break;
+
+      case ButtonVariant.accent:
+        buttonWidget = Container(
+          width: width,
+          padding: padding,
+          decoration: ShapeDecoration(
+            color: disabled ? disabledBtnColor : context.colors.accentGreen,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           ),
           child: buttonContent,
