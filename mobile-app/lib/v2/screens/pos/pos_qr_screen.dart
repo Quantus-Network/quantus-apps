@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -132,7 +133,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         ),
         const SizedBox(height: 32),
         _buildQrCode(request.paymentUrl, colors),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => Clipboard.setData(ClipboardData(text: request.paymentUrl)),
+          child: Text('Copy Link', style: text.detail?.copyWith(color: colors.textTertiary, decoration: TextDecoration.underline)),
+        ),
+        const SizedBox(height: 8),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
         GlassButton.simple(
