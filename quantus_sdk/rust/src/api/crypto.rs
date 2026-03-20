@@ -1,13 +1,14 @@
 use nam_tiny_hderive::bip32::ExtendedPrivKey;
 use qp_poseidon::PoseidonHasher;
 use qp_rusty_crystals_dilithium::ml_dsa_87;
-use qp_rusty_crystals_hdwallet::HDLattice;
+use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, SensitiveBytes32};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_core::Hasher;
 use std::convert::AsRef;
 
 type MlDsaKeypair = ml_dsa_87::Keypair;
+const DEFAULT_DERIVATION_PATH: &str = "m/44'/189189'/0'/0'/0'";
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn set_default_ss58_prefix(prefix: u16) {
@@ -55,49 +56,29 @@ pub fn ss58_to_account_id(s: &str) -> Vec<u8> {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair(mnemonic_str: String) -> Keypair {
-    let hd_lattice = HDLattice::from_mnemonic(&mnemonic_str, None)
-        .expect("Failed to process provided mnemonic words");
-
-    let ml_dsa_keypair = hd_lattice.generate_keys();
+    let ml_dsa_keypair = derive_key_from_mnemonic(&mnemonic_str, None, DEFAULT_DERIVATION_PATH)
+        .expect("Failed to derive keypair from mnemonic");
     Keypair::from_ml_dsa(ml_dsa_keypair)
 }
 
-// pub fn generate_derived_keys(&self, path: &str) -> Result<Keypair, HDLatticeError> {
-//     let derived_entropy = self.derive_entropy(path)?;
-//     Ok(Keypair::generate(&derived_entropy))
-// }
-
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_derived_keypair(mnemonic_str: String, path: &str) -> Result<Keypair, HDLatticeError> {
-    let hd_lattice = HDLattice::from_mnemonic(&mnemonic_str, None)
-        .expect("Failed to process provided mnemonic words");
-    hd_lattice.generate_derived_keys(path).map(Keypair::from_ml_dsa)
+    derive_key_from_mnemonic(&mnemonic_str, None, path).map(Keypair::from_ml_dsa)
 }
-
-
-// #[flutter_rust_bridge::frb(sync)]
-// pub fn seed_from_mnemonic(mnemonic_str: String) -> Vec<u8> {
-//     // Note this mirrors our implementation in rusty crystals hdwallet
-//     let mnemonic = Mnemonic::parse_in_normalized(Language::English, &mnemonic_str)
-//         .expect("Failed to parse mnemonic");
-
-//     // Generate seed from mnemonic
-//     let seed: [u8; 64] = mnemonic.to_seed_normalized(None.unwrap_or(""));
-
-//     return seed.to_vec();
-// }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn generate_keypair_from_seed(seed: Vec<u8>) -> Keypair {
-    let ml_dsa_keypair = MlDsaKeypair::generate(&seed);
+    let mut seed_array: [u8; 32] = seed.try_into().expect("Seed must be 32 bytes");
+    let ml_dsa_keypair = MlDsaKeypair::generate(SensitiveBytes32::new(&mut seed_array));
     Keypair::from_ml_dsa(ml_dsa_keypair)
 }
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn sign_message(keypair: &Keypair, message: &[u8], entropy: Option<[u8; 32]>) -> Vec<u8> {
     let ml_dsa_keypair = keypair.to_ml_dsa();
-    let signature = ml_dsa_keypair.sign(&message, None, entropy);
-    signature.as_slice().to_vec()
+    let signature = ml_dsa_keypair.sign(message, None, entropy)
+        .expect("Signing failed");
+    signature.to_vec()
 }
 
 #[flutter_rust_bridge::frb(sync)]

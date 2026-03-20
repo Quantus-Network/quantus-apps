@@ -13,28 +13,56 @@ void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
 
 /// Convert public key to accountId32 in ss58check format
-String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
+String toAccountId({required Keypair obj}) =>
+    RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
 /// Convert key in ss58check format to accountId32
-Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
+Uint8List ss58ToAccountId({required String s}) =>
+    RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
-Keypair generateKeypair({required String mnemonicStr}) =>
-    RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
+Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
+    .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Keypair generateDerivedKeypair({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path);
+Keypair generateDerivedKeypair({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
-Uint8List signMessage({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessage(keypair: keypair, message: message, entropy: entropy);
+Uint8List signMessage({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+}) => RustLib.instance.api.crateApiCryptoSignMessage(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+);
 
-Uint8List signMessageWithPubkey({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(keypair: keypair, message: message, entropy: entropy);
+Uint8List signMessageWithPubkey({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+}) => RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+);
 
-bool verifyMessage({required Keypair keypair, required List<int> message, required List<int> signature}) =>
-    RustLib.instance.api.crateApiCryptoVerifyMessage(keypair: keypair, message: message, signature: signature);
+bool verifyMessage({
+  required Keypair keypair,
+  required List<int> message,
+  required List<int> signature,
+}) => RustLib.instance.api.crateApiCryptoVerifyMessage(
+  keypair: keypair,
+  message: message,
+  signature: signature,
+);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 
@@ -45,14 +73,11 @@ Keypair crystalCharlie() => RustLib.instance.api.crateApiCryptoCrystalCharlie();
 Uint8List deriveHdPath({required List<int> seed, required String path}) =>
     RustLib.instance.api.crateApiCryptoDeriveHdPath(seed: seed, path: path);
 
-int get publicKeySize =>
-    RustLib.instance.api.crateApiCryptoPublicKeyBytes().toInt(); // these are ussize and anyway small
+BigInt publicKeyBytes() => RustLib.instance.api.crateApiCryptoPublicKeyBytes();
 
-int get secretKeySize =>
-    RustLib.instance.api.crateApiCryptoSecretKeyBytes().toInt(); // these are ussize and anyway small
+BigInt secretKeyBytes() => RustLib.instance.api.crateApiCryptoSecretKeyBytes();
 
-int get signatureSize =>
-    RustLib.instance.api.crateApiCryptoSignatureBytes().toInt(); // these are ussize and anyway small
+BigInt signatureBytes() => RustLib.instance.api.crateApiCryptoSignatureBytes();
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<HDLatticeError>>
 abstract class HdLatticeError implements RustOpaqueInterface {}
