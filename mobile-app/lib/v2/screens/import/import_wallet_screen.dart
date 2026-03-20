@@ -51,7 +51,11 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         Account(walletIndex: widget.walletIndex, index: 0, name: 'Account 1', accountId: key.ss58Address),
       );
 
-      await _discoverAccounts(mnemonic);
+      if (!HdWalletService.isDevAccount(mnemonic)) {
+        await _discoverAccounts(mnemonic);
+      }
+      ref.invalidate(accountsProvider);
+      ref.invalidate(activeAccountProvider);
       _settingsService.setReferralCheckCompleted();
       _settingsService.setExistingUserSeenPromoVideo();
 
