@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_qr_screen.dart';
@@ -17,18 +19,19 @@ class PosAmountScreen extends ConsumerStatefulWidget {
 class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   String _input = '0';
   final _fmt = NumberFormattingService();
+  final _decimalFilter = DecimalInputFilter();
 
   void _onDigit(String digit) {
+    final oldText = _input == '0' && digit != '.' && digit != ',' ? '' : _input;
+    final newText = oldText + digit;
+
+    final oldValue = TextEditingValue(text: oldText);
+    final newValue = TextEditingValue(text: newText);
+
+    final formatted = _decimalFilter.formatEditUpdate(oldValue, newValue);
+
     setState(() {
-      if (_input == '0' && digit != '.') {
-        _input = digit;
-      } else if (digit == '.' && _input.contains('.')) {
-        return;
-      } else if (_input.contains('.') && _input.split('.').last.length >= 12) {
-        return;
-      } else {
-        _input += digit;
-      }
+      _input = formatted.text.isEmpty ? '0' : formatted.text;
     });
   }
 
@@ -89,11 +92,12 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   }
 
   Widget _buildKeypad(AppColorsV2 colors, AppTextTheme text) {
-    const keys = [
+    final decimalSeparator = NumberFormat().symbols.DECIMAL_SEP;
+    final keys = [
       ['1', '2', '3'],
       ['4', '5', '6'],
       ['7', '8', '9'],
-      ['.', '0', 'backspace'],
+      [decimalSeparator, '0', 'backspace'],
     ];
 
     return Column(
@@ -128,25 +132,12 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   Widget _buildChargeButton(AppColorsV2 colors, AppTextTheme text) {
     final disabled = !_isValid;
-    return GestureDetector(
-      onTap: disabled ? null : _onCharge,
-      child: Container(
-        width: double.infinity,
-        height: 58,
-        decoration: BoxDecoration(
-          color: disabled ? colors.buttonDisabled : colors.accentGreen,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Center(
-          child: Text(
-            _isValid ? 'Charge $_input ${AppConstants.tokenSymbol}' : 'Enter Amount',
-            style: text.smallTitle?.copyWith(
-              color: disabled ? colors.textTertiary : Colors.black,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
+    return Button(
+      label: _isValid ? 'Charge $_input ${AppConstants.tokenSymbol}' : 'Enter Amount',
+      variant: ButtonVariant.accent,
+      isDisabled: disabled,
+      onPressed: _onCharge,
+      textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700),
     );
   }
 }
