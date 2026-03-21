@@ -136,7 +136,10 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 12),
         GestureDetector(
           onTap: () => Clipboard.setData(ClipboardData(text: request.paymentUrl)),
-          child: Text('Copy Link', style: text.detail?.copyWith(color: colors.textTertiary, decoration: TextDecoration.underline)),
+          child: Text(
+            'Copy Link',
+            style: text.detail?.copyWith(color: colors.textTertiary, decoration: TextDecoration.underline),
+          ),
         ),
         const SizedBox(height: 8),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),

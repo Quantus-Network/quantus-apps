@@ -44,12 +44,14 @@ class TxWatchService {
       return;
     }
 
-    _ws!.add(jsonEncode({
-      'jsonrpc': '2.0',
-      'id': _idCounter++,
-      'method': 'txWatch_watchAddress',
-      'params': [address],
-    }));
+    _ws!.add(
+      jsonEncode({
+        'jsonrpc': '2.0',
+        'id': _idCounter++,
+        'method': 'txWatch_watchAddress',
+        'params': [address],
+      }),
+    );
 
     _ws!.listen(
       (event) {
@@ -79,12 +81,14 @@ class TxWatchService {
     print('[TxWatch] Stopping streaming transactions');
     if (_subscriptionId != null) {
       try {
-        _ws!.add(jsonEncode({
-          'jsonrpc': '2.0',
-          'id': _idCounter++,
-          'method': 'txWatch_unwatchAddress',
-          'params': [_subscriptionId],
-        }));
+        _ws!.add(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'id': _idCounter++,
+            'method': 'txWatch_unwatchAddress',
+            'params': [_subscriptionId],
+          }),
+        );
       } catch (_) {}
     }
     _ws?.close();
