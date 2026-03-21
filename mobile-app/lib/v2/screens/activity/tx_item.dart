@@ -32,7 +32,7 @@ class TxItemData {
 
     return TxItemData(
       label: isPending
-          ? 'Sending'
+          ? (isSend ? 'Sending' : 'Receiving')
           : isScheduled
           ? (isSend ? 'Pending' : 'Receiving')
           : isSend

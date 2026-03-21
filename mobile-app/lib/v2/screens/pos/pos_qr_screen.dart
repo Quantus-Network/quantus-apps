@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/pending_receive_tracker.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
@@ -56,6 +57,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         if (expectedPlanck != null && received == expectedPlanck) {
           print('[TxWatch] Payment matched! ${tx.amount} planck from ${tx.from}');
           _timeoutTimer?.cancel();
+          ref.read(pendingReceiveTrackerProvider).trackIncomingTransfer(
+            from: tx.from,
+            to: active.account.accountId,
+            amount: expectedPlanck,
+            extrinsicHash: tx.txHash,
+          );
           if (mounted) setState(() => _paidTransfer = tx);
         }
       },
