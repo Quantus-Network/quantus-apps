@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
@@ -158,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         GestureDetector(
           onTap: () => showAccountsSheet(context),
-          child: AccountGradientImage(accountId: active.account.accountId, width: 40.0, height: 40.0),
+          child: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 32, height: 32),
         ),
         Row(
           children: [
