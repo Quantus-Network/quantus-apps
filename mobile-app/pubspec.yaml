@@ -123,6 +123,7 @@ flutter:
     - assets/v2/action_receive.svg
     - assets/v2/action_send.svg
     - assets/v2/action_swap.svg
+    - assets/v2/uppercase_q.svg
     - assets/v2/swap_arrows_down_up.svg
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
