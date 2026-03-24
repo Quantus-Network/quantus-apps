@@ -22,6 +22,7 @@ class TxWatchTransfer {
 
 class TxWatchService {
   WebSocket? _ws;
+  StreamSubscription? _subscription;
   String? _subscriptionId;
   int _idCounter = 1;
 
@@ -32,15 +33,14 @@ class TxWatchService {
   Future<void> watch({
     required String address,
     required void Function(TxWatchTransfer) onTransfer,
-    void Function(Object)? onError,
+    required void Function(Object) onError,
   }) async {
     final wsUrl = _toWsUrl(RpcEndpointService().bestEndpointUrl);
-    print('[TxWatch] Starting to stream transactions from $wsUrl');
     try {
       _ws = await WebSocket.connect(wsUrl);
     } catch (e) {
       print('[TxWatch] WebSocket connect failed: $e');
-      onError?.call(e);
+      onError(e);
       return;
     }
 
@@ -53,7 +53,7 @@ class TxWatchService {
       }),
     );
 
-    _ws!.listen(
+    _subscription = _ws!.listen(
       (event) {
         final data = jsonDecode(event as String) as Map<String, dynamic>;
         if (data.containsKey('result') && _subscriptionId == null) {
@@ -66,19 +66,17 @@ class TxWatchService {
         if (data.containsKey('error')) {
           final msg = (data['error'] as Map<String, dynamic>)['message'];
           print('[TxWatch] RPC error: $msg');
-          onError?.call(Exception(msg));
+          onError(Exception(msg));
         }
       },
-      onError: (e) {
-        print('[TxWatch] Stream error: $e');
-        onError?.call(e as Object);
-      },
+      onError: (e) => onError(e as Object),
     );
   }
 
   void dispose() {
+    _subscription?.cancel();
+    _subscription = null;
     if (_ws == null) return;
-    print('[TxWatch] Stopping streaming transactions');
     if (_subscriptionId != null) {
       try {
         _ws!.add(
