@@ -5,19 +5,21 @@ import 'package:http/http.dart' as http;
 
 void main() {
   group('API Contract Tests', () {
-    test('Remote Feature Flags API exactly matches RemoteConfigModel properties', () async {
-      final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/feature-flags/wallet');
-      final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
+    test('Remote Configs API exactly matches RemoteConfigModel properties', () async {
+      final http.Response response = await http.get(
+        TaskmasterService().remoteConfigsEndpoint,
+        headers: {'Content-Type': 'application/json'},
+      );
 
       if (response.statusCode != 200) {
-        fail('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+        fail('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
       }
 
       final Map<String, dynamic>? responseBody = jsonDecode(response.body);
       final Map<String, dynamic>? data = responseBody?['data'];
 
       if (data == null) {
-        fail('Feature flags request failed: Data is null');
+        fail('Configs request failed: Data is null');
       }
 
       final expectedKeys = {
@@ -41,7 +43,7 @@ void main() {
       try {
         RemoteConfigModel.fromJson(data);
       } catch (e) {
-        fail('Failed to parse feature flags model: $e');
+        fail('Failed to parse configs model: $e');
       }
     });
   });

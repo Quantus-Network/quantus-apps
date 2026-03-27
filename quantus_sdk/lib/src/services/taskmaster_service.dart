@@ -130,6 +130,7 @@ class TaskmasterService {
   final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
   final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
   final _xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
+  final remoteConfigsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/configs/wallet');
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
@@ -493,18 +494,16 @@ class TaskmasterService {
   }
 
   Future<RemoteConfigModel> getRemoteConfig() async {
-    final Uri uri = Uri.parse('${AppConstants.taskMasterEndpoint}/feature-flags/wallet');
-
-    final http.Response response = await http.get(uri, headers: {'Content-Type': 'application/json'});
+    final http.Response response = await http.get(remoteConfigsEndpoint, headers: {'Content-Type': 'application/json'});
     if (response.statusCode != 200) {
-      throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
     final Map<String, dynamic>? responseBody = jsonDecode(response.body);
     final Map<String, dynamic>? data = responseBody?['data'];
 
     if (data == null) {
-      throw Exception('Feature flags request failed with status: ${response.statusCode}. Body: ${response.body}');
+      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
     return RemoteConfigModel.fromJson(data);
