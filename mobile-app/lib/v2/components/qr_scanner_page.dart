@@ -6,7 +6,8 @@ import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class QrScannerPage extends StatefulWidget {
-  const QrScannerPage({super.key});
+  final bool Function(String)? validator;
+  const QrScannerPage({super.key, this.validator});
 
   @override
   State<QrScannerPage> createState() => _QrScannerPageState();
@@ -25,10 +26,10 @@ class _QrScannerPageState extends State<QrScannerPage> {
   void _onDetect(BarcodeCapture capture) {
     if (_scanned) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code != null && code.isNotEmpty) {
-      _scanned = true;
-      Navigator.pop(context, code);
-    }
+    if (code == null || code.isEmpty) return;
+    if (widget.validator != null && !widget.validator!(code)) return;
+    _scanned = true;
+    Navigator.pop(context, code);
   }
 
   Future<void> _pickImage() async {

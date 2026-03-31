@@ -8,6 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
@@ -120,12 +121,23 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   }
 
   Future<void> _scanQr() async {
-    final address = await Navigator.push<String>(
+    final substrate = ref.read(substrateServiceProvider);
+    final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(fullscreenDialog: true, builder: (_) => const QrScannerPage()),
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => QrScannerPage(
+          validator: (code) => substrate.isValidSS58Address(code) || PaymentIntent.tryParseUrl(code) != null,
+        ),
+      ),
     );
-    if (address != null && mounted) {
-      _recipientController.text = address;
+    if (result == null || !mounted) return;
+    final payment = PaymentIntent.tryParseUrl(result);
+    if (payment != null) {
+      _recipientController.text = payment.to;
+      _amountController.text = payment.amount;
+    } else {
+      _recipientController.text = result;
     }
   }
 

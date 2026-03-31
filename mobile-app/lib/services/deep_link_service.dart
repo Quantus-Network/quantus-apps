@@ -54,12 +54,9 @@ class DeepLinkService {
     }
 
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'pay') {
-      final to = uri.queryParameters['to'];
-      final amount = uri.queryParameters['amount'];
-      final ref = uri.queryParameters['ref'];
-
-      if (to != null && to.isNotEmpty && amount != null && amount.isNotEmpty) {
-        _ref.read(paymentIntentProvider.notifier).state = PaymentIntent(to: to, amount: amount, ref: ref);
+      final payment = PaymentIntent.tryParseUrl(uri.toString());
+      if (payment != null) {
+        _ref.read(paymentIntentProvider.notifier).state = payment;
         navigatorKey.currentState?.pushNamed('/account');
       } else {
         print('Missing payment parameters');
