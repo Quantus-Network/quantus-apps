@@ -122,7 +122,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   Future<void> _scanQr() async {
     final substrate = ref.read(substrateServiceProvider);
-    final result = await Navigator.push<String>(
+    final scanResult = await Navigator.push<String>(
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
@@ -131,13 +131,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ),
       ),
     );
-    if (result == null || !mounted) return;
-    final payment = PaymentIntent.tryParseUrl(result);
+    // scanResult is either a valid address or a valid payment intent or null
+    if (scanResult == null || !mounted) return;
+    final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
       _recipientController.text = payment.to;
       _amountController.text = payment.amount;
     } else {
-      _recipientController.text = result;
+      _recipientController.text = scanResult;
     }
   }
 
