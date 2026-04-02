@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
@@ -33,6 +36,16 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
 
   Future<void> _checkWalletAndMigration() async {
     final hasWallet = await _settingsService.getHasWallet();
+
+    if (hasWallet) {
+      final mnemonic = await _settingsService.getMnemonic(0);
+      if (mnemonic == null) {
+        TelemetryService().sendEvent('user_lost_mnemonic');
+        if (mounted) await _showMnemonicLostDialog();
+        return;
+      }
+    }
+
     final needsMigration = _migrationService.needsMigration();
 
     if (needsMigration) {
@@ -71,6 +84,38 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         _walletExists = hasWallet;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _showMnemonicLostDialog() async {
+    await BottomSheetContainer.show(
+      context,
+      builder: (ctx) => BottomSheetContainer(
+        title: 'Wallet Error',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Unable to find secret phrase. Please restore your wallet.',
+              style: ctx.themeText.smallParagraph,
+            ),
+            const SizedBox(height: 32),
+            GlassButton.simple(
+              label: 'OK',
+              onTap: () => Navigator.pop(ctx),
+              variant: ButtonVariant.secondary,
+            ),
+          ],
+        ),
+      ),
+    );
+    await _settingsService.clearAll();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const WelcomeScreenV2()),
+        (r) => false,
+      );
     }
   }
 
