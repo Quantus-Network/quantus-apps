@@ -96,16 +96,9 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Unable to find secret phrase. Please restore your wallet.',
-              style: ctx.themeText.smallParagraph,
-            ),
+            Text('Unable to find secret phrase. Please restore your wallet.', style: ctx.themeText.smallParagraph),
             const SizedBox(height: 32),
-            GlassButton.simple(
-              label: 'OK',
-              onTap: () => Navigator.pop(ctx),
-              variant: ButtonVariant.secondary,
-            ),
+            GlassButton.simple(label: 'OK', onTap: () => Navigator.pop(ctx), variant: ButtonVariant.secondary),
           ],
         ),
       ),
