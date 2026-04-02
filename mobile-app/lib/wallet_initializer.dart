@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
@@ -109,14 +110,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         ),
       ),
     );
-    await _settingsService.clearAll();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const WelcomeScreenV2()),
-        (r) => false,
-      );
-    }
+    if (mounted) ref.read(logoutServiceProvider).logout(context);
   }
 
   void _reloadAccounts() {
