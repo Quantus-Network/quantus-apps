@@ -35,7 +35,7 @@ class WelcomeScreenV2 extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height:220),
+          const SizedBox(height: 220),
           GlassButton.simple(
             label: 'Create New Wallet',
             onTap: () => Navigator.push(

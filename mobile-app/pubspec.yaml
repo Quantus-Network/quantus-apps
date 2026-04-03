@@ -149,10 +149,7 @@ flutter:
 
 flutter_native_splash:
   background_image: assets/v2/welcome_screen_bg_image.jpg
-  branding: assets/v2/quantus_orange_logo.png
-  branding_mode: bottom
-  branding_bottom_padding_android: 88
-  branding_bottom_padding_ios: 88
+  image: assets/v2/quantus_orange_logo.png
   android: true
   ios: true
 
