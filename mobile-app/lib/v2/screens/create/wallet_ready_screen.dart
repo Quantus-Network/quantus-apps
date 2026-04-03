@@ -8,7 +8,6 @@ import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
@@ -276,15 +275,10 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassContainer(
-                  asset: GlassContainer.smallAsset,
-                  filled: true,
+                child: GlassButton(
+                  width: 40,
                   padding: EdgeInsets.zero,
-                  onTap: isLoading
-                      ? null
-                      : () async {
-                          onAction();
-                        },
+                  onTap: isLoading ? null : onAction,
                   child: Icon(actionIcon, size: 20, color: colors.textPrimary),
                 ),
               ),
