@@ -22,7 +22,7 @@ class WelcomeScreenV2 extends StatelessWidget {
       child: Column(
         children: [
           const Spacer(),
-          Image.asset('assets/v2/quantus_white_logo.png', height: 40),
+          Image.asset('assets/v2/quantus_orange_logo.png', height: 40),
           const SizedBox(height: 24),
           Text(
             'Quantum Secure Your Crypto',
