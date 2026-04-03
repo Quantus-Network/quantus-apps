@@ -189,6 +189,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     FocusScope.of(context).unfocus();
     setState(() => _step = _Step.confirm);
   }
+
   void _backToForm() => setState(() => _step = _Step.form);
 
   Future<void> _confirmSend() async {
@@ -235,7 +236,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       } else if (_kbOpen) {
         _kbTimer?.cancel();
         _kbTimer = Timer(const Duration(milliseconds: 200), () {
-          if (mounted) setState(() { _kbOpen = false; _formKbHeight = 0; });
+          if (mounted)
+            setState(() {
+              _kbOpen = false;
+              _formKbHeight = 0;
+            });
         });
       }
       bottomPadding = _formKbHeight;
