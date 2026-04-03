@@ -431,7 +431,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       children: [
         Text('Network Fee:', style: text.detail?.copyWith(color: colors.textSecondary)),
         if (_isFetchingFee)
-          SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary))
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary),
+          )
         else
           Text(
             '${_fmt.formatBalance(_networkFee, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
