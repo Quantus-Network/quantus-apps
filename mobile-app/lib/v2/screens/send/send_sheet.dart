@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -44,6 +45,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   int _blockHeight = 0;
   bool _isFetchingFee = false;
   String? _errorMessage;
+  double _formKbHeight = 0;
+  bool _kbOpen = false;
+  Timer? _kbTimer;
 
   @override
   void initState() {
@@ -58,12 +62,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchEstimatedFee();
-      // if (widget.initialAddress == null) _recipientFocus.requestFocus();
     });
   }
 
   @override
   void dispose() {
+    _kbTimer?.cancel();
     _recipientController.dispose();
     _amountController.dispose();
     _recipientFocus.dispose();
@@ -181,7 +185,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     }
   }
 
-  void _review() => setState(() => _step = _Step.confirm);
+  void _review() {
+    FocusScope.of(context).unfocus();
+    setState(() => _step = _Step.confirm);
+  }
   void _backToForm() => setState(() => _step = _Step.form);
 
   Future<void> _confirmSend() async {
@@ -217,25 +224,39 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final kb = MediaQuery.of(context).viewInsets.bottom;
 
-    // return AnimatedPadding(
+    double bottomPadding;
+    if (_step == _Step.form) {
+      if (kb > 0) {
+        _kbTimer?.cancel();
+        _kbOpen = true;
+        if (kb > _formKbHeight) _formKbHeight = kb;
+      } else if (_kbOpen) {
+        _kbTimer?.cancel();
+        _kbTimer = Timer(const Duration(milliseconds: 200), () {
+          if (mounted) setState(() { _kbOpen = false; _formKbHeight = 0; });
+        });
+      }
+      bottomPadding = _formKbHeight;
+    } else {
+      _kbTimer?.cancel();
+      _kbOpen = false;
+      _formKbHeight = 0;
+      bottomPadding = kb;
+    }
+
     return Padding(
-      padding: EdgeInsets.only(bottom: keyboardHeight),
-      // duration: const Duration(milliseconds: 220),
-      // curve: Curves.easeOutQuad,
-      child: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: BottomSheetContainer(
-          title: widget.isPayMode ? 'Pay' : 'Send',
-          onBack: _step == _Step.confirm ? _backToForm : null,
-          child: switch (_step) {
-            _Step.form => _buildForm(colors, text, balance),
-            _Step.confirm => _buildConfirm(colors, text),
-            _Step.sending => _buildSending(colors, text),
-            _Step.complete => _buildComplete(colors, text),
-          },
-        ),
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: BottomSheetContainer(
+        title: widget.isPayMode ? 'Pay' : 'Send',
+        onBack: _step == _Step.confirm ? _backToForm : null,
+        child: switch (_step) {
+          _Step.form => _buildForm(colors, text, balance),
+          _Step.confirm => _buildConfirm(colors, text),
+          _Step.sending => _buildSending(colors, text),
+          _Step.complete => _buildComplete(colors, text),
+        },
       ),
     );
   }
@@ -311,10 +332,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                     focusNode: _recipientFocus,
                     keyboardType: TextInputType.text,
                     textInputAction: TextInputAction.next,
-                    // onSubmitted: (_) => _amountFocus.requestFocus(),
                     autocorrect: false,
                     enableSuggestions: false,
                     textCapitalization: TextCapitalization.none,
+                    scrollPadding: EdgeInsets.zero,
                     textAlignVertical: TextAlignVertical.center,
                     style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                     decoration: InputDecoration(
@@ -388,6 +409,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               controller: _amountController,
               focusNode: _amountFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              scrollPadding: EdgeInsets.zero,
               inputFormatters: [DecimalInputFilter()],
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
               decoration: InputDecoration(
