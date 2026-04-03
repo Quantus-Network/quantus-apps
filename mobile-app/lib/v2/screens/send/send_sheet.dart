@@ -236,11 +236,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       } else if (_kbOpen) {
         _kbTimer?.cancel();
         _kbTimer = Timer(const Duration(milliseconds: 200), () {
-          if (mounted)
+          if (mounted) {
             setState(() {
               _kbOpen = false;
               _formKbHeight = 0;
             });
+          }
         });
       }
       bottomPadding = _formKbHeight;
