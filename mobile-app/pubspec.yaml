@@ -92,7 +92,6 @@ flutter:
     - assets/settings_icon_off.svg
     - assets/notification/
     - assets/transaction/
-    - assets/logo/
     - assets/send_btn_decoration.png
     - assets/receive_btn_decoration.png
     - assets/notification/notification_top_icon.png
