@@ -159,7 +159,12 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           const SizedBox(height: 40),
           _resetButton(colors, text),
           const SizedBox(height: 24),
-          Center(child: Text('v$appVersion ($appBuildNumber)', style: text.detail?.copyWith(color: colors.textTertiary))),
+          Center(
+            child: Text(
+              'Version: $appVersion ($appBuildNumber)',
+              style: text.detail?.copyWith(color: colors.textTertiary),
+            ),
+          ),
           const SizedBox(height: 48),
         ],
       ),
