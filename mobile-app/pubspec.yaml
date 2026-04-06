@@ -2,7 +2,7 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.3.0+85
+version: 1.3.1+86
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -88,18 +88,12 @@ flutter:
     - assets/active_dot.png
     - assets/receive_line.svg
     - assets/bridge_icon.svg
-    - assets/quantus_logo.svg
     - assets/hourglass.svg
     - assets/settings_icon_off.svg
-    - assets/navbar/
     - assets/notification/
-    - assets/videos/
     - assets/transaction/
-    - assets/logo/
     - assets/send_btn_decoration.png
     - assets/receive_btn_decoration.png
-    - assets/qq-logo.png
-    - assets/navbar/qcat_navbar_icon.png
     - assets/notification/notification_top_icon.png
     - assets/high_security/security_icon_big.svg
     - assets/high_security/step_indicator_active_icon.svg
@@ -113,13 +107,7 @@ flutter:
     - assets/v2/send_button.png
     - assets/v2/receive_button.png
     - assets/v2/swap_button.png
-    - assets/v2/glass_border_bg.png
-    - assets/v2/glass_medium_button_bg.png
-    - assets/v2/glass_medium_clear.png
-    - assets/v2/glass_medium_clear_small.png
     - assets/v2/glass_circle_icon_button_bg.png
-    - assets/v2/glass_104_x_80.png
-    - assets/v2/glass_40.png
     - assets/v2/action_receive.svg
     - assets/v2/action_send.svg
     - assets/v2/action_swap.svg
@@ -127,11 +115,9 @@ flutter:
     - assets/v2/swap_arrows_down_up.svg
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
-    - assets/v2/quantus_white_logo.png
     - assets/v2/auth_wrapper_bracket.png
-    - assets/v2/glass_wide_clear.png
     - assets/v2/welcome_screen_bg_image.jpg
-    - assets/v2/glass_tiny_button.png
+    - assets/v2/quantus_orange_logo.png
 
 
   fonts:
@@ -162,10 +148,7 @@ flutter:
 
 flutter_native_splash:
   background_image: assets/v2/welcome_screen_bg_image.jpg
-  branding: assets/v2/quantus_white_logo.png
-  branding_mode: bottom
-  branding_bottom_padding_android: 88
-  branding_bottom_padding_ios: 88
+  image: assets/v2/quantus_orange_logo.png
   android: true
   ios: true
 
