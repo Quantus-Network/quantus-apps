@@ -126,55 +126,55 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
           child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Text(
-              'Restore an existing wallet with your 24 word recovery phrase',
-              textAlign: TextAlign.center,
-              style: textSTyleSmallTitle,
-            ),
-            const SizedBox(height: 24),
-            Container(
-              height: 202,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                onChanged: (_) => setState(() {}),
-                style: textSTyleSmallTitle,
-                decoration: InputDecoration.collapsed(
-                  hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
-                  hintStyle: textSTyleSmallTitle?.copyWith(color: colors.textSecondary),
-                ),
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.done,
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
+            children: [
+              const SizedBox(height: 20),
               Text(
-                _error!,
-                style: text.detail?.copyWith(color: colors.error),
+                'Restore an existing wallet with your 24 word recovery phrase',
                 textAlign: TextAlign.center,
+                style: textSTyleSmallTitle,
               ),
+              const SizedBox(height: 24),
+              Container(
+                height: 202,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (_) => setState(() {}),
+                  style: textSTyleSmallTitle,
+                  decoration: InputDecoration.collapsed(
+                    hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
+                    hintStyle: textSTyleSmallTitle?.copyWith(color: colors.textSecondary),
+                  ),
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.done,
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  style: text.detail?.copyWith(color: colors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 24),
+              GlassButton.simple(
+                key: _buttonKey,
+                label: 'Import Wallet',
+                onTap: _import,
+                isLoading: _isLoading,
+                variant: ButtonVariant.secondary,
+                isDisabled: !_hasInput,
+              ),
+              const SizedBox(height: 24),
             ],
-            const SizedBox(height: 24),
-            GlassButton.simple(
-              key: _buttonKey,
-              label: 'Import Wallet',
-              onTap: _import,
-              isLoading: _isLoading,
-              variant: ButtonVariant.secondary,
-              isDisabled: !_hasInput,
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
         ),
       ),
     );
