@@ -68,6 +68,16 @@ android {
     }
 }
 
+tasks.register('generateVersion', Exec) {
+    commandLine '/bin/sh', "${rootProject.projectDir}/../tool/generate_version.sh"
+}
+
+afterEvaluate {
+    tasks.matching { it.name.startsWith("compileFlutterBuild") }.each {
+        it.dependsOn generateVersion
+    }
+}
+
 flutter {
     source = "../.."
 }
