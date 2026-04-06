@@ -153,7 +153,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   void _setMax() {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
-    _amountController.text = _fmt.formatBalance(max, addThousandsSeparators: false);
+    _amountController.text = _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
   }
 
   Future<void> _scanQr() async {
