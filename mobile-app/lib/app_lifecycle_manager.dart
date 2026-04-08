@@ -121,7 +121,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         // Update last paused time for timeout calculation, but DO NOT lock
         // the UI immediately. This avoids flicker on short system pauses.
         // The checkAuthentication() on resume will decide if auth is needed.
-        localAuthNotifier.lockApp();
+        localAuthNotifier.recordBackgroundTime();
       } else {
         print('AppLifecycleState.$state - already backgrounded, skipping actions');
       }
