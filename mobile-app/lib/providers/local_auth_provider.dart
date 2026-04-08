@@ -5,7 +5,7 @@ class LocalAuthState {
   final bool isAuthenticated;
   final bool isAuthenticating;
 
-  LocalAuthState({this.isAuthenticated = false, this.isAuthenticating = false});
+  LocalAuthState({this.isAuthenticated = true, this.isAuthenticating = false});
 
   LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating}) {
     return LocalAuthState(
@@ -41,14 +41,19 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
   void checkAuthentication() {
     if (_localAuthService.shouldRequireAuthentication()) {
       state = state.copyWith(isAuthenticated: false);
-      authenticate();
+      // Trigger auth only if not already authenticating
+      if (!state.isAuthenticating) {
+        authenticate();
+      }
     } else {
-      state = state.copyWith(isAuthenticated: true);
+      state = state.copyWith(isAuthenticated: true, isAuthenticating: false);
     }
   }
 
   void lockApp() {
+    // Only update pause time on true background; don't set authenticated=false immediately
+    // to avoid UI flicker on transient pauses (FaceID, overlays)
     _localAuthService.updateLastPausedTime();
-    state = state.copyWith(isAuthenticated: false);
+    // Do NOT set isAuthenticated=false here - let checkAuthentication on resume decide
   }
 }

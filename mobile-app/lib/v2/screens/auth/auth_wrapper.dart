@@ -37,16 +37,25 @@ class AuthWrapper extends ConsumerWidget {
                 Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
               ],
             ),
-            const SizedBox(height: 120),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
-              child: GlassButton.simple(
-                label: 'Unlock Wallet',
-                onTap: () {
-                  ref.read(localAuthProvider.notifier).authenticate();
-                },
-                variant: ButtonVariant.secondary,
+            const SizedBox(height: 60),
+            if (isAuthenticating)
+              const CircularProgressIndicator()
+            else
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
+                child: GlassButton.simple(
+                  label: 'Unlock Wallet',
+                  onTap: () {
+                    ref.read(localAuthProvider.notifier).authenticate();
+                  },
+                  variant: ButtonVariant.secondary,
+                ),
               ),
+            const SizedBox(height: 40),
+            Text(
+              isAuthenticating ? 'Authenticating...' : 'Use device biometrics to unlock',
+              style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

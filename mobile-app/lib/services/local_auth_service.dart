@@ -11,7 +11,7 @@ class LocalAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SettingsService _settingsService = SettingsService();
 
-  static const _authTimeout = Duration(seconds: 30);
+  static const _authTimeout = Duration(minutes: 5);
 
   Future<bool> isBiometricAvailable() async {
     try {
@@ -45,7 +45,12 @@ class LocalAuthService {
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
-        options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+          sensitiveTransaction: true,
+          // Use default useErrorDialogs: true for better native UX on Android/iOS
+        ),
       );
 
       if (didAuthenticate) _cleanLastPausedTime();
