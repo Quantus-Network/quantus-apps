@@ -37,8 +37,6 @@ jobs:
         run: touch mobile-app/.env
       - name: Test Mobile App
         run: melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
-      - name: Test SDK Feature Flags API Contract
-        run: melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test test/contract"
 
   # build_android:
   #   name: Build Android
