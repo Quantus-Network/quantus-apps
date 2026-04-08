@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
@@ -157,6 +158,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           ]),
           const SizedBox(height: 40),
           _resetButton(colors, text),
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'Version: $appVersion ($appBuildNumber)',
+              style: text.detail?.copyWith(color: colors.textTertiary),
+            ),
+          ),
           const SizedBox(height: 48),
         ],
       ),
