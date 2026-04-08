@@ -11,7 +11,7 @@ class LocalAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SettingsService _settingsService = SettingsService();
 
-  static const _authTimeout = Duration(minutes: 5);
+  static const _authTimeout = Duration(seconds: 30);
 
   Future<bool> isBiometricAvailable() async {
     try {
