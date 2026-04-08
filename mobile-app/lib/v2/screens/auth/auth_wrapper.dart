@@ -29,11 +29,7 @@ class AuthWrapper extends ConsumerWidget {
   Widget _buildPrivacyOverlay(BuildContext context) {
     return Scaffold(
       backgroundColor: context.colors.background,
-      body: GradientBackground(
-        child: Center(
-          child: Image.asset('assets/v2/auth_wrapper_bracket.png'),
-        ),
-      ),
+      body: GradientBackground(child: Center(child: Image.asset('assets/v2/auth_wrapper_bracket.png'))),
     );
   }
 

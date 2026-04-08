@@ -194,9 +194,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   void _backToForm() => setState(() => _step = _Step.form);
 
   Future<void> _confirmSend() async {
-    final authed = await LocalAuthService().authenticate(
-      localizedReason: 'Authenticate to confirm transaction',
-    );
+    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to confirm transaction');
     if (!authed || !mounted) {
       if (mounted) setState(() => _errorMessage = 'Authentication required to send');
       return;
