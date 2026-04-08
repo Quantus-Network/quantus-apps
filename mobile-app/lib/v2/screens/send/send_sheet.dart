@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart'
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -193,6 +194,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   void _backToForm() => setState(() => _step = _Step.form);
 
   Future<void> _confirmSend() async {
+    final authed = await LocalAuthService().authenticate(
+      localizedReason: 'Authenticate to confirm transaction',
+    );
+    if (!authed || !mounted) {
+      if (mounted) setState(() => _errorMessage = 'Authentication required to send');
+      return;
+    }
+
     setState(() {
       _step = _Step.sending;
       _errorMessage = null;

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -14,12 +15,26 @@ class AuthWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(localAuthProvider);
 
-    if (authState.isAuthenticated) {
-      // If authenticated, be invisible.
-      return const SizedBox.shrink();
+    if (!authState.isAuthenticated) {
+      return _buildLockScreen(context, ref, authState.isAuthenticating);
     }
 
-    return _buildLockScreen(context, ref, authState.isAuthenticating);
+    if (authState.isVisuallyLocked) {
+      return _buildPrivacyOverlay(context);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildPrivacyOverlay(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.colors.background,
+      body: GradientBackground(
+        child: Center(
+          child: Image.asset('assets/v2/auth_wrapper_bracket.png'),
+        ),
+      ),
+    );
   }
 
   Widget _buildLockScreen(BuildContext context, WidgetRef ref, bool isAuthenticating) {
@@ -57,6 +72,16 @@ class AuthWrapper extends ConsumerWidget {
               style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
               textAlign: TextAlign.center,
             ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 40),
+              TextButton(
+                onPressed: () => ref.read(localAuthProvider.notifier).debugUnlock(),
+                child: Text(
+                  '[DEBUG] Simulate Unlock',
+                  style: context.themeText.detail?.copyWith(color: context.colors.accentGreen),
+                ),
+              ),
+            ],
           ],
         ),
       ),
