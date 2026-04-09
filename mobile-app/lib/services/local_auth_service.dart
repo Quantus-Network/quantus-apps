@@ -49,7 +49,6 @@ class LocalAuthService {
           biometricOnly: false,
           stickyAuth: true,
           sensitiveTransaction: true,
-          // Use default useErrorDialogs: true for better native UX on Android/iOS
         ),
       );
 
