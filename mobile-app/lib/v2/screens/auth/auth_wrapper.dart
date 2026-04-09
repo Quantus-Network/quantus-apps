@@ -36,10 +36,10 @@ class AuthWrapper extends ConsumerWidget {
     return Scaffold(
       backgroundColor: context.colors.background,
       body: GradientBackground(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Stack(
               alignment: Alignment.center,
               children: [
@@ -67,7 +67,8 @@ class AuthWrapper extends ConsumerWidget {
               style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
               textAlign: TextAlign.center,
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
