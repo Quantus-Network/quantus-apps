@@ -6,17 +6,9 @@ class LocalAuthState {
   final bool isAuthenticating;
   final bool isVisuallyLocked;
 
-  LocalAuthState({
-    this.isAuthenticated = true,
-    this.isAuthenticating = false,
-    this.isVisuallyLocked = false,
-  });
+  LocalAuthState({this.isAuthenticated = true, this.isAuthenticating = false, this.isVisuallyLocked = false});
 
-  LocalAuthState copyWith({
-    bool? isAuthenticated,
-    bool? isAuthenticating,
-    bool? isVisuallyLocked,
-  }) {
+  LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating, bool? isVisuallyLocked}) {
     return LocalAuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
@@ -56,11 +48,7 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
         authenticate();
       }
     } else {
-      state = state.copyWith(
-        isAuthenticated: true,
-        isAuthenticating: false,
-        isVisuallyLocked: false,
-      );
+      state = state.copyWith(isAuthenticated: true, isAuthenticating: false, isVisuallyLocked: false);
     }
   }
 

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -68,16 +67,6 @@ class AuthWrapper extends ConsumerWidget {
               style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
               textAlign: TextAlign.center,
             ),
-            if (kDebugMode) ...[
-              const SizedBox(height: 40),
-              TextButton(
-                onPressed: () => ref.read(localAuthProvider.notifier).debugUnlock(),
-                child: Text(
-                  '[DEBUG] Simulate Unlock',
-                  style: context.themeText.detail?.copyWith(color: context.colors.accentGreen),
-                ),
-              ),
-            ],
           ],
         ),
       ),
