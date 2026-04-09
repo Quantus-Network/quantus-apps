@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
+import 'package:resonance_network_wallet/v2/components/android_glass.dart';
 
 enum Shape { rounded, circular }
 
@@ -45,14 +46,24 @@ class LiquidGlassBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glassShape = LiquidRoundedSuperellipse(borderRadius: radius);
-    final Widget glass = Platform.isAndroid
-        ? FakeGlass(settings: _settings, shape: glassShape, child: child)
-        : LiquidGlassLayer(
-            settings: _settings,
-            child: LiquidGlass(shape: glassShape, child: child),
-          );
-
-    return centered ? Center(child: glass) : glass;
+    final settings = _settings;
+    if (Platform.isAndroid) {
+      return AndroidGlass(
+        visibility: settings.visibility,
+        glassColor: settings.glassColor == Colors.transparent ? const Color(0x1AFFFFFF) : glassColor,
+        radius: radius,
+        centered: centered,
+        child: child,
+      );
+    } else {
+      Widget glass = LiquidGlassLayer(
+        settings: settings,
+        child: LiquidGlass(
+          shape: LiquidRoundedSuperellipse(borderRadius: radius),
+          child: child,
+        ),
+      );
+      return centered ? Center(child: glass) : glass;
+    }
   }
 }
