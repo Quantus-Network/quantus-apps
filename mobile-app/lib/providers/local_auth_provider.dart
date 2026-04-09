@@ -37,7 +37,7 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
       localizedReason: 'Please authenticate to access your wallet',
     );
 
-    state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false);
+    state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false, isVisuallyLocked: false);
   }
 
   void checkAuthentication() {
