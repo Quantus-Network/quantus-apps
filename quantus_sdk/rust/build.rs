@@ -18,8 +18,6 @@ fn main() {
         .parse()
         .expect("QP_NUM_LEAF_PROOFS must be a valid usize");
 
-    // Always rerun to ensure circuits are up to date
-    println!("cargo:rerun-if-changed=build.rs");
 
     println!(
         "cargo:warning=[quantus_sdk] Generating ZK circuit binaries (num_leaf_proofs={})...",
