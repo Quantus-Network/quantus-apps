@@ -56,19 +56,13 @@ class LiquidGlassBase extends StatelessWidget {
         child: child,
       );
     } else {
+      var liquidGlass = LiquidGlass(
+        shape: LiquidRoundedSuperellipse(borderRadius: radius),
+        child: child,
+      );
       return LiquidGlassLayer(
         settings: settings,
-        child: centered
-            ? Center(
-                child: LiquidGlass(
-                  shape: LiquidRoundedSuperellipse(borderRadius: radius),
-                  child: child,
-                ),
-              )
-            : LiquidGlass(
-                shape: LiquidRoundedSuperellipse(borderRadius: radius),
-                child: child,
-              ),
+        child: centered ? Center(child: liquidGlass) : liquidGlass,
       );
     }
   }
