@@ -40,33 +40,33 @@ class AuthWrapper extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset('assets/v2/auth_wrapper_bracket.png'),
-                Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
-              ],
-            ),
-            const SizedBox(height: 60),
-            if (isAuthenticating)
-              const CircularProgressIndicator()
-            else
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
-                child: GlassButton.simple(
-                  label: 'Unlock Wallet',
-                  onTap: () {
-                    ref.read(localAuthProvider.notifier).authenticate();
-                  },
-                  variant: ButtonVariant.secondary,
-                ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset('assets/v2/auth_wrapper_bracket.png'),
+                  Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
+                ],
               ),
-            const SizedBox(height: 40),
-            Text(
-              isAuthenticating ? 'Authenticating...' : 'Use device biometrics to unlock',
-              style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
+              const SizedBox(height: 60),
+              if (isAuthenticating)
+                const CircularProgressIndicator()
+              else
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
+                  child: GlassButton.simple(
+                    label: 'Unlock Wallet',
+                    onTap: () {
+                      ref.read(localAuthProvider.notifier).authenticate();
+                    },
+                    variant: ButtonVariant.secondary,
+                  ),
+                ),
+              const SizedBox(height: 40),
+              Text(
+                isAuthenticating ? 'Authenticating...' : 'Use device biometrics to unlock',
+                style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
