@@ -11,9 +11,7 @@ class SettingsService {
   SettingsService._internal();
 
   late SharedPreferences _prefs;
-  final _secureStorage = const FlutterSecureStorage(
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-  );
+  final _secureStorage = const FlutterSecureStorage();
 
   // New keys for multi-account support
   static const String _accountsKey = 'accounts_v4';
