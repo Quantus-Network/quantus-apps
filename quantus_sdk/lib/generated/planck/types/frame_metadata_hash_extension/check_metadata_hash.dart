@@ -24,12 +24,7 @@ class CheckMetadataHash {
   Map<String, String> toJson() => {'mode': mode.toJson()};
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CheckMetadataHash && other.mode == mode;
+  bool operator ==(Object other) => identical(this, other) || other is CheckMetadataHash && other.mode == mode;
 
   @override
   int get hashCode => mode.hashCode;
@@ -39,14 +34,8 @@ class $CheckMetadataHashCodec with _i1.Codec<CheckMetadataHash> {
   const $CheckMetadataHashCodec();
 
   @override
-  void encodeTo(
-    CheckMetadataHash obj,
-    _i1.Output output,
-  ) {
-    _i2.Mode.codec.encodeTo(
-      obj.mode,
-      output,
-    );
+  void encodeTo(CheckMetadataHash obj, _i1.Output output) {
+    _i2.Mode.codec.encodeTo(obj.mode, output);
   }
 
   @override

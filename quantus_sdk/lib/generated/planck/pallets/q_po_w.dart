@@ -13,22 +13,19 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageValue<BigInt> _lastBlockTime =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _lastBlockTime = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockTime',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<BigInt> _lastBlockDuration =
-      const _i1.StorageValue<BigInt>(
+  final _i1.StorageValue<BigInt> _lastBlockDuration = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'LastBlockDuration',
     valueCodec: _i2.U64Codec.codec,
   );
 
-  final _i1.StorageValue<_i3.U512> _currentDifficulty =
-      const _i1.StorageValue<_i3.U512>(
+  final _i1.StorageValue<_i3.U512> _currentDifficulty = const _i1.StorageValue<_i3.U512>(
     prefix: 'QPoW',
     storage: 'CurrentDifficulty',
     valueCodec: _i3.U512Codec(),
@@ -42,10 +39,7 @@ class Queries {
 
   _i4.Future<BigInt> lastBlockTime({_i1.BlockHash? at}) async {
     final hashedKey = _lastBlockTime.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastBlockTime.decodeValue(bytes);
     }
@@ -54,10 +48,7 @@ class Queries {
 
   _i4.Future<BigInt> lastBlockDuration({_i1.BlockHash? at}) async {
     final hashedKey = _lastBlockDuration.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _lastBlockDuration.decodeValue(bytes);
     }
@@ -66,26 +57,16 @@ class Queries {
 
   _i4.Future<_i3.U512> currentDifficulty({_i1.BlockHash? at}) async {
     final hashedKey = _currentDifficulty.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _currentDifficulty.decodeValue(bytes);
     }
-    return List<BigInt>.filled(
-      8,
-      BigInt.zero,
-      growable: false,
-    ); /* Default */
+    return List<BigInt>.filled(8, BigInt.zero, growable: false); /* Default */
   }
 
   _i4.Future<BigInt> blockTimeEma({_i1.BlockHash? at}) async {
     final hashedKey = _blockTimeEma.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _blockTimeEma.decodeValue(bytes);
     }
@@ -132,10 +113,7 @@ class Constants {
     BigInt.from(0),
   ];
 
-  final _i6.FixedU128 difficultyAdjustPercentClamp = BigInt.parse(
-    '100000000000000000',
-    radix: 10,
-  );
+  final _i6.FixedU128 difficultyAdjustPercentClamp = BigInt.parse('100000000000000000', radix: 10);
 
   final BigInt targetBlockTime = BigInt.from(12000);
 

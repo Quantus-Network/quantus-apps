@@ -36,26 +36,12 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  Schedule schedule({
-    required int when,
-    required int priority,
-    required _i3.RuntimeCall call,
-  }) {
-    return Schedule(
-      when: when,
-      priority: priority,
-      call: call,
-    );
+  Schedule schedule({required int when, required int priority, required _i3.RuntimeCall call}) {
+    return Schedule(when: when, priority: priority, call: call);
   }
 
-  Cancel cancel({
-    required _i4.BlockNumberOrTimestamp when,
-    required int index,
-  }) {
-    return Cancel(
-      when: when,
-      index: index,
-    );
+  Cancel cancel({required _i4.BlockNumberOrTimestamp when, required int index}) {
+    return Cancel(when: when, index: index);
   }
 
   ScheduleNamed scheduleNamed({
@@ -64,12 +50,7 @@ class $Call {
     required int priority,
     required _i3.RuntimeCall call,
   }) {
-    return ScheduleNamed(
-      id: id,
-      when: when,
-      priority: priority,
-      call: call,
-    );
+    return ScheduleNamed(id: id, when: when, priority: priority, call: call);
   }
 
   CancelNamed cancelNamed({required List<int> id}) {
@@ -81,11 +62,7 @@ class $Call {
     required int priority,
     required _i3.RuntimeCall call,
   }) {
-    return ScheduleAfter(
-      after: after,
-      priority: priority,
-      call: call,
-    );
+    return ScheduleAfter(after: after, priority: priority, call: call);
   }
 
   ScheduleNamedAfter scheduleNamedAfter({
@@ -94,12 +71,7 @@ class $Call {
     required int priority,
     required _i3.RuntimeCall call,
   }) {
-    return ScheduleNamedAfter(
-      id: id,
-      after: after,
-      priority: priority,
-      call: call,
-    );
+    return ScheduleNamedAfter(id: id, after: after, priority: priority, call: call);
   }
 
   SetRetry setRetry({
@@ -107,11 +79,7 @@ class $Call {
     required int retries,
     required _i4.BlockNumberOrTimestamp period,
   }) {
-    return SetRetry(
-      task: task,
-      retries: retries,
-      period: period,
-    );
+    return SetRetry(task: task, retries: retries, period: period);
   }
 
   SetRetryNamed setRetryNamed({
@@ -119,15 +87,10 @@ class $Call {
     required int retries,
     required _i4.BlockNumberOrTimestamp period,
   }) {
-    return SetRetryNamed(
-      id: id,
-      retries: retries,
-      period: period,
-    );
+    return SetRetryNamed(id: id, retries: retries, period: period);
   }
 
-  CancelRetry cancelRetry(
-      {required _i5.Tuple2<_i4.BlockNumberOrTimestamp, int> task}) {
+  CancelRetry cancelRetry({required _i5.Tuple2<_i4.BlockNumberOrTimestamp, int> task}) {
     return CancelRetry(task: task);
   }
 
@@ -169,10 +132,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case Schedule:
         (value as Schedule).encodeTo(output);
@@ -205,8 +165,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as CancelRetryNamed).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -234,18 +193,13 @@ class $CallCodec with _i1.Codec<Call> {
       case CancelRetryNamed:
         return (value as CancelRetryNamed)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class Schedule extends Call {
-  const Schedule({
-    required this.when,
-    required this.priority,
-    required this.call,
-  });
+  const Schedule({required this.when, required this.priority, required this.call});
 
   factory Schedule._decode(_i1.Input input) {
     return Schedule(
@@ -266,12 +220,8 @@ class Schedule extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule': {
-          'when': when,
-          'priority': priority,
-          'call': call.toJson(),
-        }
-      };
+    'schedule': {'when': when, 'priority': priority, 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -282,55 +232,27 @@ class Schedule extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      when,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      priority,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(when, output);
+    _i1.U8Codec.codec.encodeTo(priority, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Schedule &&
-          other.when == when &&
-          other.priority == priority &&
-          other.call == call;
+      identical(this, other) ||
+      other is Schedule && other.when == when && other.priority == priority && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        when,
-        priority,
-        call,
-      );
+  int get hashCode => Object.hash(when, priority, call);
 }
 
 /// Cancel an anonymously scheduled task.
 class Cancel extends Call {
-  const Cancel({
-    required this.when,
-    required this.index,
-  });
+  const Cancel({required this.when, required this.index});
 
   factory Cancel._decode(_i1.Input input) {
-    return Cancel(
-      when: _i4.BlockNumberOrTimestamp.codec.decode(input),
-      index: _i1.U32Codec.codec.decode(input),
-    );
+    return Cancel(when: _i4.BlockNumberOrTimestamp.codec.decode(input), index: _i1.U32Codec.codec.decode(input));
   }
 
   /// BlockNumberOrTimestampOf<T>
@@ -341,11 +263,8 @@ class Cancel extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'cancel': {
-          'when': when.toJson(),
-          'index': index,
-        }
-      };
+    'cancel': {'when': when.toJson(), 'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -355,42 +274,21 @@ class Cancel extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      when,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(when, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Cancel && other.when == when && other.index == index;
+      identical(this, other) || other is Cancel && other.when == when && other.index == index;
 
   @override
-  int get hashCode => Object.hash(
-        when,
-        index,
-      );
+  int get hashCode => Object.hash(when, index);
 }
 
 class ScheduleNamed extends Call {
-  const ScheduleNamed({
-    required this.id,
-    required this.when,
-    required this.priority,
-    required this.call,
-  });
+  const ScheduleNamed({required this.id, required this.when, required this.priority, required this.call});
 
   factory ScheduleNamed._decode(_i1.Input input) {
     return ScheduleNamed(
@@ -415,13 +313,8 @@ class ScheduleNamed extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_named': {
-          'id': id.toList(),
-          'when': when,
-          'priority': priority,
-          'call': call.toJson(),
-        }
-      };
+    'schedule_named': {'id': id.toList(), 'when': when, 'priority': priority, 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -433,50 +326,24 @@ class ScheduleNamed extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      id,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      when,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      priority,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(id, output);
+    _i1.U32Codec.codec.encodeTo(when, output);
+    _i1.U8Codec.codec.encodeTo(priority, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ScheduleNamed &&
-          _i6.listsEqual(
-            other.id,
-            id,
-          ) &&
+          _i6.listsEqual(other.id, id) &&
           other.when == when &&
           other.priority == priority &&
           other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        when,
-        priority,
-        call,
-      );
+  int get hashCode => Object.hash(id, when, priority, call);
 }
 
 /// Cancel a named scheduled task.
@@ -492,8 +359,8 @@ class CancelNamed extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'cancel_named': {'id': id.toList()}
-      };
+    'cancel_named': {'id': id.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -502,38 +369,19 @@ class CancelNamed extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CancelNamed &&
-          _i6.listsEqual(
-            other.id,
-            id,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is CancelNamed && _i6.listsEqual(other.id, id);
 
   @override
   int get hashCode => id.hashCode;
 }
 
 class ScheduleAfter extends Call {
-  const ScheduleAfter({
-    required this.after,
-    required this.priority,
-    required this.call,
-  });
+  const ScheduleAfter({required this.after, required this.priority, required this.call});
 
   factory ScheduleAfter._decode(_i1.Input input) {
     return ScheduleAfter(
@@ -554,12 +402,8 @@ class ScheduleAfter extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_after': {
-          'after': after.toJson(),
-          'priority': priority,
-          'call': call.toJson(),
-        }
-      };
+    'schedule_after': {'after': after.toJson(), 'priority': priority, 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -570,50 +414,23 @@ class ScheduleAfter extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      after,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      priority,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(after, output);
+    _i1.U8Codec.codec.encodeTo(priority, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ScheduleAfter &&
-          other.after == after &&
-          other.priority == priority &&
-          other.call == call;
+      identical(this, other) ||
+      other is ScheduleAfter && other.after == after && other.priority == priority && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        after,
-        priority,
-        call,
-      );
+  int get hashCode => Object.hash(after, priority, call);
 }
 
 class ScheduleNamedAfter extends Call {
-  const ScheduleNamedAfter({
-    required this.id,
-    required this.after,
-    required this.priority,
-    required this.call,
-  });
+  const ScheduleNamedAfter({required this.id, required this.after, required this.priority, required this.call});
 
   factory ScheduleNamedAfter._decode(_i1.Input input) {
     return ScheduleNamedAfter(
@@ -638,13 +455,8 @@ class ScheduleNamedAfter extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'schedule_named_after': {
-          'id': id.toList(),
-          'after': after.toJson(),
-          'priority': priority,
-          'call': call.toJson(),
-        }
-      };
+    'schedule_named_after': {'id': id.toList(), 'after': after.toJson(), 'priority': priority, 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -656,50 +468,24 @@ class ScheduleNamedAfter extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      id,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      after,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      priority,
-      output,
-    );
-    _i3.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(id, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(after, output);
+    _i1.U8Codec.codec.encodeTo(priority, output);
+    _i3.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ScheduleNamedAfter &&
-          _i6.listsEqual(
-            other.id,
-            id,
-          ) &&
+          _i6.listsEqual(other.id, id) &&
           other.after == after &&
           other.priority == priority &&
           other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        after,
-        priority,
-        call,
-      );
+  int get hashCode => Object.hash(id, after, priority, call);
 }
 
 /// Set a retry configuration for a task so that, in case its scheduled run fails, it will
@@ -714,11 +500,7 @@ class ScheduleNamedAfter extends Call {
 /// original task's configuration, but will have a lower value for `remaining` than the
 /// original `total_retries`.
 class SetRetry extends Call {
-  const SetRetry({
-    required this.task,
-    required this.retries,
-    required this.period,
-  });
+  const SetRetry({required this.task, required this.retries, required this.period});
 
   factory SetRetry._decode(_i1.Input input) {
     return SetRetry(
@@ -742,19 +524,17 @@ class SetRetry extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_retry': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ],
-          'retries': retries,
-          'period': period.toJson(),
-        }
-      };
+    'set_retry': {
+      'task': [task.value0.toJson(), task.value1],
+      'retries': retries,
+      'period': period.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
           _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
@@ -765,44 +545,22 @@ class SetRetry extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
     const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
       _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      retries,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      period,
-      output,
-    );
+    ).encodeTo(task, output);
+    _i1.U8Codec.codec.encodeTo(retries, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(period, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetRetry &&
-          other.task == task &&
-          other.retries == retries &&
-          other.period == period;
+      identical(this, other) ||
+      other is SetRetry && other.task == task && other.retries == retries && other.period == period;
 
   @override
-  int get hashCode => Object.hash(
-        task,
-        retries,
-        period,
-      );
+  int get hashCode => Object.hash(task, retries, period);
 }
 
 /// Set a retry configuration for a named task so that, in case its scheduled run fails, it
@@ -817,11 +575,7 @@ class SetRetry extends Call {
 /// original task's configuration, but will have a lower value for `remaining` than the
 /// original `total_retries`.
 class SetRetryNamed extends Call {
-  const SetRetryNamed({
-    required this.id,
-    required this.retries,
-    required this.period,
-  });
+  const SetRetryNamed({required this.id, required this.retries, required this.period});
 
   factory SetRetryNamed._decode(_i1.Input input) {
     return SetRetryNamed(
@@ -842,12 +596,8 @@ class SetRetryNamed extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'set_retry_named': {
-          'id': id.toList(),
-          'retries': retries,
-          'period': period.toJson(),
-        }
-      };
+    'set_retry_named': {'id': id.toList(), 'retries': retries, 'period': period.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -858,44 +608,19 @@ class SetRetryNamed extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      id,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      retries,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      period,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    const _i1.U8ArrayCodec(32).encodeTo(id, output);
+    _i1.U8Codec.codec.encodeTo(retries, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(period, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetRetryNamed &&
-          _i6.listsEqual(
-            other.id,
-            id,
-          ) &&
-          other.retries == retries &&
-          other.period == period;
+      identical(this, other) ||
+      other is SetRetryNamed && _i6.listsEqual(other.id, id) && other.retries == retries && other.period == period;
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        retries,
-        period,
-      );
+  int get hashCode => Object.hash(id, retries, period);
 }
 
 /// Removes the retry configuration of a task.
@@ -904,10 +629,11 @@ class CancelRetry extends Call {
 
   factory CancelRetry._decode(_i1.Input input) {
     return CancelRetry(
-        task: const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
-      _i4.BlockNumberOrTimestamp.codec,
-      _i1.U32Codec.codec,
-    ).decode(input));
+      task: const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
+        _i4.BlockNumberOrTimestamp.codec,
+        _i1.U32Codec.codec,
+      ).decode(input),
+    );
   }
 
   /// TaskAddressOf<T>
@@ -915,17 +641,15 @@ class CancelRetry extends Call {
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-        'cancel_retry': {
-          'task': [
-            task.value0.toJson(),
-            task.value1,
-          ]
-        }
-      };
+    'cancel_retry': {
+      'task': [task.value0.toJson(), task.value1],
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
           _i4.BlockNumberOrTimestamp.codec,
           _i1.U32Codec.codec,
@@ -934,26 +658,15 @@ class CancelRetry extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
     const _i5.Tuple2Codec<_i4.BlockNumberOrTimestamp, int>(
       _i4.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
-    ).encodeTo(
-      task,
-      output,
-    );
+    ).encodeTo(task, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CancelRetry && other.task == task;
+  bool operator ==(Object other) => identical(this, other) || other is CancelRetry && other.task == task;
 
   @override
   int get hashCode => task.hashCode;
@@ -972,8 +685,8 @@ class CancelRetryNamed extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'cancel_retry_named': {'id': id.toList()}
-      };
+    'cancel_retry_named': {'id': id.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -982,27 +695,12 @@ class CancelRetryNamed extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      id,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    const _i1.U8ArrayCodec(32).encodeTo(id, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CancelRetryNamed &&
-          _i6.listsEqual(
-            other.id,
-            id,
-          );
+  bool operator ==(Object other) => identical(this, other) || other is CancelRetryNamed && _i6.listsEqual(other.id, id);
 
   @override
   int get hashCode => id.hashCode;

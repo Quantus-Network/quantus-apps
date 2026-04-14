@@ -41,13 +41,7 @@ class $Event {
     required BigInt transferCount,
     required BigInt leafIndex,
   }) {
-    return NativeTransferred(
-      from: from,
-      to: to,
-      amount: amount,
-      transferCount: transferCount,
-      leafIndex: leafIndex,
-    );
+    return NativeTransferred(from: from, to: to, amount: amount, transferCount: transferCount, leafIndex: leafIndex);
   }
 
   AssetTransferred assetTransferred({
@@ -68,14 +62,8 @@ class $Event {
     );
   }
 
-  ProofVerified proofVerified({
-    required BigInt exitAmount,
-    required List<List<int>> nullifiers,
-  }) {
-    return ProofVerified(
-      exitAmount: exitAmount,
-      nullifiers: nullifiers,
-    );
+  ProofVerified proofVerified({required BigInt exitAmount, required List<List<int>> nullifiers}) {
+    return ProofVerified(exitAmount: exitAmount, nullifiers: nullifiers);
   }
 }
 
@@ -98,10 +86,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case NativeTransferred:
         (value as NativeTransferred).encodeTo(output);
@@ -113,8 +98,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as ProofVerified).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -128,8 +112,7 @@ class $EventCodec with _i1.Codec<Event> {
       case ProofVerified:
         return (value as ProofVerified)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -175,14 +158,14 @@ class NativeTransferred extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'NativeTransferred': {
-          'from': from.toList(),
-          'to': to.toList(),
-          'amount': amount,
-          'transferCount': transferCount,
-          'leafIndex': leafIndex,
-        }
-      };
+    'NativeTransferred': {
+      'from': from.toList(),
+      'to': to.toList(),
+      'amount': amount,
+      'transferCount': transferCount,
+      'leafIndex': leafIndex,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -195,59 +178,26 @@ class NativeTransferred extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      from,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      to,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      transferCount,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      leafIndex,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(from, output);
+    const _i1.U8ArrayCodec(32).encodeTo(to, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U64Codec.codec.encodeTo(transferCount, output);
+    _i1.U64Codec.codec.encodeTo(leafIndex, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is NativeTransferred &&
-          _i4.listsEqual(
-            other.from,
-            from,
-          ) &&
-          _i4.listsEqual(
-            other.to,
-            to,
-          ) &&
+          _i4.listsEqual(other.from, from) &&
+          _i4.listsEqual(other.to, to) &&
           other.amount == amount &&
           other.transferCount == transferCount &&
           other.leafIndex == leafIndex;
 
   @override
-  int get hashCode => Object.hash(
-        from,
-        to,
-        amount,
-        transferCount,
-        leafIndex,
-      );
+  int get hashCode => Object.hash(from, to, amount, transferCount, leafIndex);
 }
 
 /// A non-native asset transfer was recorded.
@@ -296,15 +246,15 @@ class AssetTransferred extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'AssetTransferred': {
-          'assetId': assetId,
-          'from': from.toList(),
-          'to': to.toList(),
-          'amount': amount,
-          'transferCount': transferCount,
-          'leafIndex': leafIndex,
-        }
-      };
+    'AssetTransferred': {
+      'assetId': assetId,
+      'from': from.toList(),
+      'to': to.toList(),
+      'amount': amount,
+      'transferCount': transferCount,
+      'leafIndex': leafIndex,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -318,78 +268,37 @@ class AssetTransferred extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      assetId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      from,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      to,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      transferCount,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      leafIndex,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    const _i1.U8ArrayCodec(32).encodeTo(from, output);
+    const _i1.U8ArrayCodec(32).encodeTo(to, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    _i1.U64Codec.codec.encodeTo(transferCount, output);
+    _i1.U64Codec.codec.encodeTo(leafIndex, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AssetTransferred &&
           other.assetId == assetId &&
-          _i4.listsEqual(
-            other.from,
-            from,
-          ) &&
-          _i4.listsEqual(
-            other.to,
-            to,
-          ) &&
+          _i4.listsEqual(other.from, from) &&
+          _i4.listsEqual(other.to, to) &&
           other.amount == amount &&
           other.transferCount == transferCount &&
           other.leafIndex == leafIndex;
 
   @override
-  int get hashCode => Object.hash(
-        assetId,
-        from,
-        to,
-        amount,
-        transferCount,
-        leafIndex,
-      );
+  int get hashCode => Object.hash(assetId, from, to, amount, transferCount, leafIndex);
 }
 
 class ProofVerified extends Event {
-  const ProofVerified({
-    required this.exitAmount,
-    required this.nullifiers,
-  });
+  const ProofVerified({required this.exitAmount, required this.nullifiers});
 
   factory ProofVerified._decode(_i1.Input input) {
     return ProofVerified(
       exitAmount: _i1.U128Codec.codec.decode(input),
-      nullifiers: const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32))
-          .decode(input),
+      nullifiers: const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
     );
   }
 
@@ -401,52 +310,27 @@ class ProofVerified extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProofVerified': {
-          'exitAmount': exitAmount,
-          'nullifiers': nullifiers.map((value) => value.toList()).toList(),
-        }
-      };
+    'ProofVerified': {'exitAmount': exitAmount, 'nullifiers': nullifiers.map((value) => value.toList()).toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + _i1.U128Codec.codec.sizeHint(exitAmount);
-    size = size +
-        const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32))
-            .sizeHint(nullifiers);
+    size = size + const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(nullifiers);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      exitAmount,
-      output,
-    );
-    const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(
-      nullifiers,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U128Codec.codec.encodeTo(exitAmount, output);
+    const _i1.SequenceCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(nullifiers, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ProofVerified &&
-          other.exitAmount == exitAmount &&
-          _i4.listsEqual(
-            other.nullifiers,
-            nullifiers,
-          );
+      identical(this, other) ||
+      other is ProofVerified && other.exitAmount == exitAmount && _i4.listsEqual(other.nullifiers, nullifiers);
 
   @override
-  int get hashCode => Object.hash(
-        exitAmount,
-        nullifiers,
-      );
+  int get hashCode => Object.hash(exitAmount, nullifiers);
 }

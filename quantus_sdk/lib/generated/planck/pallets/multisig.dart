@@ -20,41 +20,33 @@ class Queries {
 
   final _i1.StorageMap<_i2.AccountId32, _i3.MultisigData> _multisigs =
       const _i1.StorageMap<_i2.AccountId32, _i3.MultisigData>(
-    prefix: 'Multisig',
-    storage: 'Multisigs',
-    valueCodec: _i3.MultisigData.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'Multisig',
+        storage: 'Multisigs',
+        valueCodec: _i3.MultisigData.codec,
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
-  final _i1.StorageDoubleMap<_i2.AccountId32, int, _i4.ProposalData>
-      _proposals =
+  final _i1.StorageDoubleMap<_i2.AccountId32, int, _i4.ProposalData> _proposals =
       const _i1.StorageDoubleMap<_i2.AccountId32, int, _i4.ProposalData>(
-    prefix: 'Multisig',
-    storage: 'Proposals',
-    valueCodec: _i4.ProposalData.codec,
-    hasher1: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-    hasher2: _i1.StorageHasher.twoxx64Concat(_i5.U32Codec.codec),
-  );
+        prefix: 'Multisig',
+        storage: 'Proposals',
+        valueCodec: _i4.ProposalData.codec,
+        hasher1: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+        hasher2: _i1.StorageHasher.twoxx64Concat(_i5.U32Codec.codec),
+      );
 
-  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>
-      _dissolveApprovals =
+  final _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>> _dissolveApprovals =
       const _i1.StorageMap<_i2.AccountId32, List<_i2.AccountId32>>(
-    prefix: 'Multisig',
-    storage: 'DissolveApprovals',
-    valueCodec: _i5.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
+        prefix: 'Multisig',
+        storage: 'DissolveApprovals',
+        valueCodec: _i5.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()),
+        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
+      );
 
   /// Multisigs stored by their deterministic address
-  _i6.Future<_i3.MultisigData?> multisigs(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<_i3.MultisigData?> multisigs(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _multisigs.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _multisigs.decodeValue(bytes);
     }
@@ -62,19 +54,9 @@ class Queries {
   }
 
   /// Proposals indexed by (multisig_address, proposal_nonce)
-  _i6.Future<_i4.ProposalData?> proposals(
-    _i2.AccountId32 key1,
-    int key2, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKey = _proposals.hashedKeyFor(
-      key1,
-      key2,
-    );
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+  _i6.Future<_i4.ProposalData?> proposals(_i2.AccountId32 key1, int key2, {_i1.BlockHash? at}) async {
+    final hashedKey = _proposals.hashedKeyFor(key1, key2);
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _proposals.decodeValue(bytes);
     }
@@ -83,15 +65,9 @@ class Queries {
 
   /// Dissolve approvals: tracks which signers approved dissolving the multisig
   /// Maps multisig_address -> Vec<approver_accounts>
-  _i6.Future<List<_i2.AccountId32>?> dissolveApprovals(
-    _i2.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<_i2.AccountId32>?> dissolveApprovals(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _dissolveApprovals.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _dissolveApprovals.decodeValue(bytes);
     }
@@ -99,19 +75,11 @@ class Queries {
   }
 
   /// Multisigs stored by their deterministic address
-  _i6.Future<List<_i3.MultisigData?>> multiMultisigs(
-    List<_i2.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
+  _i6.Future<List<_i3.MultisigData?>> multiMultisigs(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
     final hashedKeys = keys.map((key) => _multisigs.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _multisigs.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _multisigs.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -122,16 +90,10 @@ class Queries {
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
   }) async {
-    final hashedKeys =
-        keys.map((key) => _dissolveApprovals.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+    final hashedKeys = keys.map((key) => _dissolveApprovals.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _dissolveApprovals.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _dissolveApprovals.decodeValue(v.key)).toList();
     }
     return []; /* Nullable */
   }
@@ -143,14 +105,8 @@ class Queries {
   }
 
   /// Returns the storage key for `proposals`.
-  _i7.Uint8List proposalsKey(
-    _i2.AccountId32 key1,
-    int key2,
-  ) {
-    final hashedKey = _proposals.hashedKeyFor(
-      key1,
-      key2,
-    );
+  _i7.Uint8List proposalsKey(_i2.AccountId32 key1, int key2) {
+    final hashedKey = _proposals.hashedKeyFor(key1, key2);
     return hashedKey;
   }
 
@@ -197,16 +153,8 @@ class Txs {
   /// Economic costs:
   /// - MultisigFee: burned immediately (spam prevention)
   /// - MultisigDeposit: reserved until dissolution, then returned to creator (storage bond)
-  _i8.Multisig createMultisig({
-    required List<_i2.AccountId32> signers,
-    required int threshold,
-    required BigInt nonce,
-  }) {
-    return _i8.Multisig(_i9.CreateMultisig(
-      signers: signers,
-      threshold: threshold,
-      nonce: nonce,
-    ));
+  _i8.Multisig createMultisig({required List<_i2.AccountId32> signers, required int threshold, required BigInt nonce}) {
+    return _i8.Multisig(_i9.CreateMultisig(signers: signers, threshold: threshold, nonce: nonce));
   }
 
   /// Propose a transaction to be executed by the multisig
@@ -225,16 +173,8 @@ class Txs {
   ///
   /// **Weight:** Charged upfront for worst-case (high-security path with decode).
   /// Refunded to actual cost on success based on whether HS path was taken.
-  _i8.Multisig propose({
-    required _i2.AccountId32 multisigAddress,
-    required List<int> call,
-    required int expiry,
-  }) {
-    return _i8.Multisig(_i9.Propose(
-      multisigAddress: multisigAddress,
-      call: call,
-      expiry: expiry,
-    ));
+  _i8.Multisig propose({required _i2.AccountId32 multisigAddress, required List<int> call, required int expiry}) {
+    return _i8.Multisig(_i9.Propose(multisigAddress: multisigAddress, call: call, expiry: expiry));
   }
 
   /// Approve a proposed transaction
@@ -247,14 +187,8 @@ class Txs {
   /// - `proposal_id`: ID (nonce) of the proposal to approve
   ///
   /// Weight: Charges for MAX call size, refunds based on actual
-  _i8.Multisig approve({
-    required _i2.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return _i8.Multisig(_i9.Approve(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    ));
+  _i8.Multisig approve({required _i2.AccountId32 multisigAddress, required int proposalId}) {
+    return _i8.Multisig(_i9.Approve(multisigAddress: multisigAddress, proposalId: proposalId));
   }
 
   /// Cancel a proposed transaction (only by proposer)
@@ -262,14 +196,8 @@ class Txs {
   /// Parameters:
   /// - `multisig_address`: The multisig account
   /// - `proposal_id`: ID (nonce) of the proposal to cancel
-  _i8.Multisig cancel({
-    required _i2.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return _i8.Multisig(_i9.Cancel(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    ));
+  _i8.Multisig cancel({required _i2.AccountId32 multisigAddress, required int proposalId}) {
+    return _i8.Multisig(_i9.Cancel(multisigAddress: multisigAddress, proposalId: proposalId));
   }
 
   /// Remove expired proposals and return deposits to proposers
@@ -283,14 +211,8 @@ class Txs {
   /// lockup and enables multisig dissolution.
   ///
   /// The deposit is always returned to the original proposer, not the caller.
-  _i8.Multisig removeExpired({
-    required _i2.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return _i8.Multisig(_i9.RemoveExpired(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    ));
+  _i8.Multisig removeExpired({required _i2.AccountId32 multisigAddress, required int proposalId}) {
+    return _i8.Multisig(_i9.RemoveExpired(multisigAddress: multisigAddress, proposalId: proposalId));
   }
 
   /// Claim all deposits from expired proposals
@@ -320,14 +242,8 @@ class Txs {
   /// Parameters:
   /// - `multisig_address`: The multisig account
   /// - `proposal_id`: ID (nonce) of the proposal to execute
-  _i8.Multisig execute({
-    required _i2.AccountId32 multisigAddress,
-    required int proposalId,
-  }) {
-    return _i8.Multisig(_i9.Execute(
-      multisigAddress: multisigAddress,
-      proposalId: proposalId,
-    ));
+  _i8.Multisig execute({required _i2.AccountId32 multisigAddress, required int proposalId}) {
+    return _i8.Multisig(_i9.Execute(multisigAddress: multisigAddress, proposalId: proposalId));
   }
 
   /// Approve dissolving a multisig account
@@ -381,16 +297,7 @@ class Constants {
   final _i10.Permill signerStepFactor = 10000;
 
   /// Pallet ID for generating multisig addresses
-  final _i11.PalletId palletId = const <int>[
-    112,
-    121,
-    47,
-    109,
-    108,
-    116,
-    115,
-    103,
-  ];
+  final _i11.PalletId palletId = const <int>[112, 121, 47, 109, 108, 116, 115, 103];
 
   /// Maximum duration (in blocks) that a proposal can be set to expire in the future.
   /// This prevents proposals from being created with extremely far expiry dates

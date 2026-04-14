@@ -7,10 +7,7 @@ enum TransactionalError {
   limitReached('LimitReached', 0),
   noLayer('NoLayer', 1);
 
-  const TransactionalError(
-    this.variantName,
-    this.codecIndex,
-  );
+  const TransactionalError(this.variantName, this.codecIndex);
 
   factory TransactionalError.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $TransactionalErrorCodec with _i1.Codec<TransactionalError> {
   }
 
   @override
-  void encodeTo(
-    TransactionalError value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(TransactionalError value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

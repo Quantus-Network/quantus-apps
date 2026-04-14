@@ -37,16 +37,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  Submitted submitted({
-    required int index,
-    required int track,
-    required _i3.Bounded proposal,
-  }) {
-    return Submitted(
-      index: index,
-      track: track,
-      proposal: proposal,
-    );
+  Submitted submitted({required int index, required int track, required _i3.Bounded proposal}) {
+    return Submitted(index: index, track: track, proposal: proposal);
   }
 
   DecisionDepositPlaced decisionDepositPlaced({
@@ -54,11 +46,7 @@ class $Event {
     required _i4.AccountId32 who,
     required BigInt amount,
   }) {
-    return DecisionDepositPlaced(
-      index: index,
-      who: who,
-      amount: amount,
-    );
+    return DecisionDepositPlaced(index: index, who: who, amount: amount);
   }
 
   DecisionDepositRefunded decisionDepositRefunded({
@@ -66,21 +54,11 @@ class $Event {
     required _i4.AccountId32 who,
     required BigInt amount,
   }) {
-    return DecisionDepositRefunded(
-      index: index,
-      who: who,
-      amount: amount,
-    );
+    return DecisionDepositRefunded(index: index, who: who, amount: amount);
   }
 
-  DepositSlashed depositSlashed({
-    required _i4.AccountId32 who,
-    required BigInt amount,
-  }) {
-    return DepositSlashed(
-      who: who,
-      amount: amount,
-    );
+  DepositSlashed depositSlashed({required _i4.AccountId32 who, required BigInt amount}) {
+    return DepositSlashed(who: who, amount: amount);
   }
 
   DecisionStarted decisionStarted({
@@ -89,12 +67,7 @@ class $Event {
     required _i3.Bounded proposal,
     required _i5.Tally tally,
   }) {
-    return DecisionStarted(
-      index: index,
-      track: track,
-      proposal: proposal,
-      tally: tally,
-    );
+    return DecisionStarted(index: index, track: track, proposal: proposal, tally: tally);
   }
 
   ConfirmStarted confirmStarted({required int index}) {
@@ -105,58 +78,28 @@ class $Event {
     return ConfirmAborted(index: index);
   }
 
-  Confirmed confirmed({
-    required int index,
-    required _i5.Tally tally,
-  }) {
-    return Confirmed(
-      index: index,
-      tally: tally,
-    );
+  Confirmed confirmed({required int index, required _i5.Tally tally}) {
+    return Confirmed(index: index, tally: tally);
   }
 
   Approved approved({required int index}) {
     return Approved(index: index);
   }
 
-  Rejected rejected({
-    required int index,
-    required _i5.Tally tally,
-  }) {
-    return Rejected(
-      index: index,
-      tally: tally,
-    );
+  Rejected rejected({required int index, required _i5.Tally tally}) {
+    return Rejected(index: index, tally: tally);
   }
 
-  TimedOut timedOut({
-    required int index,
-    required _i5.Tally tally,
-  }) {
-    return TimedOut(
-      index: index,
-      tally: tally,
-    );
+  TimedOut timedOut({required int index, required _i5.Tally tally}) {
+    return TimedOut(index: index, tally: tally);
   }
 
-  Cancelled cancelled({
-    required int index,
-    required _i5.Tally tally,
-  }) {
-    return Cancelled(
-      index: index,
-      tally: tally,
-    );
+  Cancelled cancelled({required int index, required _i5.Tally tally}) {
+    return Cancelled(index: index, tally: tally);
   }
 
-  Killed killed({
-    required int index,
-    required _i5.Tally tally,
-  }) {
-    return Killed(
-      index: index,
-      tally: tally,
-    );
+  Killed killed({required int index, required _i5.Tally tally}) {
+    return Killed(index: index, tally: tally);
   }
 
   SubmissionDepositRefunded submissionDepositRefunded({
@@ -164,31 +107,15 @@ class $Event {
     required _i4.AccountId32 who,
     required BigInt amount,
   }) {
-    return SubmissionDepositRefunded(
-      index: index,
-      who: who,
-      amount: amount,
-    );
+    return SubmissionDepositRefunded(index: index, who: who, amount: amount);
   }
 
-  MetadataSet metadataSet({
-    required int index,
-    required _i6.H256 hash,
-  }) {
-    return MetadataSet(
-      index: index,
-      hash: hash,
-    );
+  MetadataSet metadataSet({required int index, required _i6.H256 hash}) {
+    return MetadataSet(index: index, hash: hash);
   }
 
-  MetadataCleared metadataCleared({
-    required int index,
-    required _i6.H256 hash,
-  }) {
-    return MetadataCleared(
-      index: index,
-      hash: hash,
-    );
+  MetadataCleared metadataCleared({required int index, required _i6.H256 hash}) {
+    return MetadataCleared(index: index, hash: hash);
   }
 }
 
@@ -237,10 +164,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case Submitted:
         (value as Submitted).encodeTo(output);
@@ -291,8 +215,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as MetadataCleared).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -332,19 +255,14 @@ class $EventCodec with _i1.Codec<Event> {
       case MetadataCleared:
         return (value as MetadataCleared)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// A referendum has been submitted.
 class Submitted extends Event {
-  const Submitted({
-    required this.index,
-    required this.track,
-    required this.proposal,
-  });
+  const Submitted({required this.index, required this.track, required this.proposal});
 
   factory Submitted._decode(_i1.Input input) {
     return Submitted(
@@ -368,12 +286,8 @@ class Submitted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Submitted': {
-          'index': index,
-          'track': track,
-          'proposal': proposal.toJson(),
-        }
-      };
+    'Submitted': {'index': index, 'track': track, 'proposal': proposal.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -384,50 +298,24 @@ class Submitted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      track,
-      output,
-    );
-    _i3.Bounded.codec.encodeTo(
-      proposal,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i1.U16Codec.codec.encodeTo(track, output);
+    _i3.Bounded.codec.encodeTo(proposal, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Submitted &&
-          other.index == index &&
-          other.track == track &&
-          other.proposal == proposal;
+      identical(this, other) ||
+      other is Submitted && other.index == index && other.track == track && other.proposal == proposal;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        track,
-        proposal,
-      );
+  int get hashCode => Object.hash(index, track, proposal);
 }
 
 /// The decision deposit has been placed.
 class DecisionDepositPlaced extends Event {
-  const DecisionDepositPlaced({
-    required this.index,
-    required this.who,
-    required this.amount,
-  });
+  const DecisionDepositPlaced({required this.index, required this.who, required this.amount});
 
   factory DecisionDepositPlaced._decode(_i1.Input input) {
     return DecisionDepositPlaced(
@@ -451,12 +339,8 @@ class DecisionDepositPlaced extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DecisionDepositPlaced': {
-          'index': index,
-          'who': who.toList(),
-          'amount': amount,
-        }
-      };
+    'DecisionDepositPlaced': {'index': index, 'who': who.toList(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -467,53 +351,27 @@ class DecisionDepositPlaced extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DecisionDepositPlaced &&
           other.index == index &&
-          _i7.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i7.listsEqual(other.who, who) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(index, who, amount);
 }
 
 /// The decision deposit has been refunded.
 class DecisionDepositRefunded extends Event {
-  const DecisionDepositRefunded({
-    required this.index,
-    required this.who,
-    required this.amount,
-  });
+  const DecisionDepositRefunded({required this.index, required this.who, required this.amount});
 
   factory DecisionDepositRefunded._decode(_i1.Input input) {
     return DecisionDepositRefunded(
@@ -537,12 +395,8 @@ class DecisionDepositRefunded extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DecisionDepositRefunded': {
-          'index': index,
-          'who': who.toList(),
-          'amount': amount,
-        }
-      };
+    'DecisionDepositRefunded': {'index': index, 'who': who.toList(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -553,58 +407,30 @@ class DecisionDepositRefunded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DecisionDepositRefunded &&
           other.index == index &&
-          _i7.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i7.listsEqual(other.who, who) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(index, who, amount);
 }
 
 /// A deposit has been slashed.
 class DepositSlashed extends Event {
-  const DepositSlashed({
-    required this.who,
-    required this.amount,
-  });
+  const DepositSlashed({required this.who, required this.amount});
 
   factory DepositSlashed._decode(_i1.Input input) {
-    return DepositSlashed(
-      who: const _i1.U8ArrayCodec(32).decode(input),
-      amount: _i1.U128Codec.codec.decode(input),
-    );
+    return DepositSlashed(who: const _i1.U8ArrayCodec(32).decode(input), amount: _i1.U128Codec.codec.decode(input));
   }
 
   /// T::AccountId
@@ -617,11 +443,8 @@ class DepositSlashed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DepositSlashed': {
-          'who': who.toList(),
-          'amount': amount,
-        }
-      };
+    'DepositSlashed': {'who': who.toList(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -631,48 +454,22 @@ class DepositSlashed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DepositSlashed &&
-          _i7.listsEqual(
-            other.who,
-            who,
-          ) &&
-          other.amount == amount;
+      identical(this, other) || other is DepositSlashed && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(who, amount);
 }
 
 /// A referendum has moved into the deciding phase.
 class DecisionStarted extends Event {
-  const DecisionStarted({
-    required this.index,
-    required this.track,
-    required this.proposal,
-    required this.tally,
-  });
+  const DecisionStarted({required this.index, required this.track, required this.proposal, required this.tally});
 
   factory DecisionStarted._decode(_i1.Input input) {
     return DecisionStarted(
@@ -701,13 +498,8 @@ class DecisionStarted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DecisionStarted': {
-          'index': index,
-          'track': track,
-          'proposal': proposal.toJson(),
-          'tally': tally.toJson(),
-        }
-      };
+    'DecisionStarted': {'index': index, 'track': track, 'proposal': proposal.toJson(), 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -719,34 +511,16 @@ class DecisionStarted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      track,
-      output,
-    );
-    _i3.Bounded.codec.encodeTo(
-      proposal,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i1.U16Codec.codec.encodeTo(track, output);
+    _i3.Bounded.codec.encodeTo(proposal, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DecisionStarted &&
           other.index == index &&
           other.track == track &&
@@ -754,12 +528,7 @@ class DecisionStarted extends Event {
           other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        track,
-        proposal,
-        tally,
-      );
+  int get hashCode => Object.hash(index, track, proposal, tally);
 }
 
 class ConfirmStarted extends Event {
@@ -775,8 +544,8 @@ class ConfirmStarted extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'ConfirmStarted': {'index': index}
-      };
+    'ConfirmStarted': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -785,23 +554,12 @@ class ConfirmStarted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ConfirmStarted && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is ConfirmStarted && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -820,8 +578,8 @@ class ConfirmAborted extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'ConfirmAborted': {'index': index}
-      };
+    'ConfirmAborted': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -830,23 +588,12 @@ class ConfirmAborted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ConfirmAborted && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is ConfirmAborted && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -854,16 +601,10 @@ class ConfirmAborted extends Event {
 
 /// A referendum has ended its confirmation phase and is ready for approval.
 class Confirmed extends Event {
-  const Confirmed({
-    required this.index,
-    required this.tally,
-  });
+  const Confirmed({required this.index, required this.tally});
 
   factory Confirmed._decode(_i1.Input input) {
-    return Confirmed(
-      index: _i1.U32Codec.codec.decode(input),
-      tally: _i5.Tally.codec.decode(input),
-    );
+    return Confirmed(index: _i1.U32Codec.codec.decode(input), tally: _i5.Tally.codec.decode(input));
   }
 
   /// ReferendumIndex
@@ -876,11 +617,8 @@ class Confirmed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Confirmed': {
-          'index': index,
-          'tally': tally.toJson(),
-        }
-      };
+    'Confirmed': {'index': index, 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -890,33 +628,17 @@ class Confirmed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Confirmed && other.index == index && other.tally == tally;
+      identical(this, other) || other is Confirmed && other.index == index && other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        tally,
-      );
+  int get hashCode => Object.hash(index, tally);
 }
 
 /// A referendum has been approved and its proposal has been scheduled.
@@ -933,8 +655,8 @@ class Approved extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'Approved': {'index': index}
-      };
+    'Approved': {'index': index},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -943,23 +665,12 @@ class Approved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Approved && other.index == index;
+  bool operator ==(Object other) => identical(this, other) || other is Approved && other.index == index;
 
   @override
   int get hashCode => index.hashCode;
@@ -967,16 +678,10 @@ class Approved extends Event {
 
 /// A proposal has been rejected by referendum.
 class Rejected extends Event {
-  const Rejected({
-    required this.index,
-    required this.tally,
-  });
+  const Rejected({required this.index, required this.tally});
 
   factory Rejected._decode(_i1.Input input) {
-    return Rejected(
-      index: _i1.U32Codec.codec.decode(input),
-      tally: _i5.Tally.codec.decode(input),
-    );
+    return Rejected(index: _i1.U32Codec.codec.decode(input), tally: _i5.Tally.codec.decode(input));
   }
 
   /// ReferendumIndex
@@ -989,11 +694,8 @@ class Rejected extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Rejected': {
-          'index': index,
-          'tally': tally.toJson(),
-        }
-      };
+    'Rejected': {'index': index, 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1003,47 +705,25 @@ class Rejected extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Rejected && other.index == index && other.tally == tally;
+      identical(this, other) || other is Rejected && other.index == index && other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        tally,
-      );
+  int get hashCode => Object.hash(index, tally);
 }
 
 /// A referendum has been timed out without being decided.
 class TimedOut extends Event {
-  const TimedOut({
-    required this.index,
-    required this.tally,
-  });
+  const TimedOut({required this.index, required this.tally});
 
   factory TimedOut._decode(_i1.Input input) {
-    return TimedOut(
-      index: _i1.U32Codec.codec.decode(input),
-      tally: _i5.Tally.codec.decode(input),
-    );
+    return TimedOut(index: _i1.U32Codec.codec.decode(input), tally: _i5.Tally.codec.decode(input));
   }
 
   /// ReferendumIndex
@@ -1056,11 +736,8 @@ class TimedOut extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'TimedOut': {
-          'index': index,
-          'tally': tally.toJson(),
-        }
-      };
+    'TimedOut': {'index': index, 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1070,47 +747,25 @@ class TimedOut extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      10,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(10, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TimedOut && other.index == index && other.tally == tally;
+      identical(this, other) || other is TimedOut && other.index == index && other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        tally,
-      );
+  int get hashCode => Object.hash(index, tally);
 }
 
 /// A referendum has been cancelled.
 class Cancelled extends Event {
-  const Cancelled({
-    required this.index,
-    required this.tally,
-  });
+  const Cancelled({required this.index, required this.tally});
 
   factory Cancelled._decode(_i1.Input input) {
-    return Cancelled(
-      index: _i1.U32Codec.codec.decode(input),
-      tally: _i5.Tally.codec.decode(input),
-    );
+    return Cancelled(index: _i1.U32Codec.codec.decode(input), tally: _i5.Tally.codec.decode(input));
   }
 
   /// ReferendumIndex
@@ -1123,11 +778,8 @@ class Cancelled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Cancelled': {
-          'index': index,
-          'tally': tally.toJson(),
-        }
-      };
+    'Cancelled': {'index': index, 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1137,47 +789,25 @@ class Cancelled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      11,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Cancelled && other.index == index && other.tally == tally;
+      identical(this, other) || other is Cancelled && other.index == index && other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        tally,
-      );
+  int get hashCode => Object.hash(index, tally);
 }
 
 /// A referendum has been killed.
 class Killed extends Event {
-  const Killed({
-    required this.index,
-    required this.tally,
-  });
+  const Killed({required this.index, required this.tally});
 
   factory Killed._decode(_i1.Input input) {
-    return Killed(
-      index: _i1.U32Codec.codec.decode(input),
-      tally: _i5.Tally.codec.decode(input),
-    );
+    return Killed(index: _i1.U32Codec.codec.decode(input), tally: _i5.Tally.codec.decode(input));
   }
 
   /// ReferendumIndex
@@ -1190,11 +820,8 @@ class Killed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'Killed': {
-          'index': index,
-          'tally': tally.toJson(),
-        }
-      };
+    'Killed': {'index': index, 'tally': tally.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1204,42 +831,22 @@ class Killed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      12,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i5.Tally.codec.encodeTo(
-      tally,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(12, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i5.Tally.codec.encodeTo(tally, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Killed && other.index == index && other.tally == tally;
+      identical(this, other) || other is Killed && other.index == index && other.tally == tally;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        tally,
-      );
+  int get hashCode => Object.hash(index, tally);
 }
 
 /// The submission deposit has been refunded.
 class SubmissionDepositRefunded extends Event {
-  const SubmissionDepositRefunded({
-    required this.index,
-    required this.who,
-    required this.amount,
-  });
+  const SubmissionDepositRefunded({required this.index, required this.who, required this.amount});
 
   factory SubmissionDepositRefunded._decode(_i1.Input input) {
     return SubmissionDepositRefunded(
@@ -1263,12 +870,8 @@ class SubmissionDepositRefunded extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'SubmissionDepositRefunded': {
-          'index': index,
-          'who': who.toList(),
-          'amount': amount,
-        }
-      };
+    'SubmissionDepositRefunded': {'index': index, 'who': who.toList(), 'amount': amount},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1279,58 +882,30 @@ class SubmissionDepositRefunded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      13,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is SubmissionDepositRefunded &&
           other.index == index &&
-          _i7.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i7.listsEqual(other.who, who) &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        who,
-        amount,
-      );
+  int get hashCode => Object.hash(index, who, amount);
 }
 
 /// Metadata for a referendum has been set.
 class MetadataSet extends Event {
-  const MetadataSet({
-    required this.index,
-    required this.hash,
-  });
+  const MetadataSet({required this.index, required this.hash});
 
   factory MetadataSet._decode(_i1.Input input) {
-    return MetadataSet(
-      index: _i1.U32Codec.codec.decode(input),
-      hash: const _i1.U8ArrayCodec(32).decode(input),
-    );
+    return MetadataSet(index: _i1.U32Codec.codec.decode(input), hash: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// ReferendumIndex
@@ -1343,11 +918,8 @@ class MetadataSet extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'MetadataSet': {
-          'index': index,
-          'hash': hash.toList(),
-        }
-      };
+    'MetadataSet': {'index': index, 'hash': hash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1357,52 +929,25 @@ class MetadataSet extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      14,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      hash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(14, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MetadataSet &&
-          other.index == index &&
-          _i7.listsEqual(
-            other.hash,
-            hash,
-          );
+      identical(this, other) || other is MetadataSet && other.index == index && _i7.listsEqual(other.hash, hash);
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        hash,
-      );
+  int get hashCode => Object.hash(index, hash);
 }
 
 /// Metadata for a referendum has been cleared.
 class MetadataCleared extends Event {
-  const MetadataCleared({
-    required this.index,
-    required this.hash,
-  });
+  const MetadataCleared({required this.index, required this.hash});
 
   factory MetadataCleared._decode(_i1.Input input) {
-    return MetadataCleared(
-      index: _i1.U32Codec.codec.decode(input),
-      hash: const _i1.U8ArrayCodec(32).decode(input),
-    );
+    return MetadataCleared(index: _i1.U32Codec.codec.decode(input), hash: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// ReferendumIndex
@@ -1415,11 +960,8 @@ class MetadataCleared extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'MetadataCleared': {
-          'index': index,
-          'hash': hash.toList(),
-        }
-      };
+    'MetadataCleared': {'index': index, 'hash': hash.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1429,36 +971,15 @@ class MetadataCleared extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      15,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      hash,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(15, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    const _i1.U8ArrayCodec(32).encodeTo(hash, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is MetadataCleared &&
-          other.index == index &&
-          _i7.listsEqual(
-            other.hash,
-            hash,
-          );
+      identical(this, other) || other is MetadataCleared && other.index == index && _i7.listsEqual(other.hash, hash);
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        hash,
-      );
+  int get hashCode => Object.hash(index, hash);
 }

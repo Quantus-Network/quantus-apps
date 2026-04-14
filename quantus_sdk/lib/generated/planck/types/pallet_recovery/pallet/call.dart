@@ -36,24 +36,12 @@ abstract class Call {
 class $Call {
   const $Call();
 
-  AsRecovered asRecovered({
-    required _i3.MultiAddress account,
-    required _i4.RuntimeCall call,
-  }) {
-    return AsRecovered(
-      account: account,
-      call: call,
-    );
+  AsRecovered asRecovered({required _i3.MultiAddress account, required _i4.RuntimeCall call}) {
+    return AsRecovered(account: account, call: call);
   }
 
-  SetRecovered setRecovered({
-    required _i3.MultiAddress lost,
-    required _i3.MultiAddress rescuer,
-  }) {
-    return SetRecovered(
-      lost: lost,
-      rescuer: rescuer,
-    );
+  SetRecovered setRecovered({required _i3.MultiAddress lost, required _i3.MultiAddress rescuer}) {
+    return SetRecovered(lost: lost, rescuer: rescuer);
   }
 
   CreateRecovery createRecovery({
@@ -61,25 +49,15 @@ class $Call {
     required int threshold,
     required int delayPeriod,
   }) {
-    return CreateRecovery(
-      friends: friends,
-      threshold: threshold,
-      delayPeriod: delayPeriod,
-    );
+    return CreateRecovery(friends: friends, threshold: threshold, delayPeriod: delayPeriod);
   }
 
   InitiateRecovery initiateRecovery({required _i3.MultiAddress account}) {
     return InitiateRecovery(account: account);
   }
 
-  VouchRecovery vouchRecovery({
-    required _i3.MultiAddress lost,
-    required _i3.MultiAddress rescuer,
-  }) {
-    return VouchRecovery(
-      lost: lost,
-      rescuer: rescuer,
-    );
+  VouchRecovery vouchRecovery({required _i3.MultiAddress lost, required _i3.MultiAddress rescuer}) {
+    return VouchRecovery(lost: lost, rescuer: rescuer);
   }
 
   ClaimRecovery claimRecovery({required _i3.MultiAddress account}) {
@@ -136,10 +114,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case AsRecovered:
         (value as AsRecovered).encodeTo(output);
@@ -172,8 +147,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as PokeDeposit).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -201,8 +175,7 @@ class $CallCodec with _i1.Codec<Call> {
       case PokeDeposit:
         return (value as PokeDeposit)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -216,16 +189,10 @@ class $CallCodec with _i1.Codec<Call> {
 /// - `account`: The recovered account you want to make a call on-behalf-of.
 /// - `call`: The call you want to make with the recovered account.
 class AsRecovered extends Call {
-  const AsRecovered({
-    required this.account,
-    required this.call,
-  });
+  const AsRecovered({required this.account, required this.call});
 
   factory AsRecovered._decode(_i1.Input input) {
-    return AsRecovered(
-      account: _i3.MultiAddress.codec.decode(input),
-      call: _i4.RuntimeCall.codec.decode(input),
-    );
+    return AsRecovered(account: _i3.MultiAddress.codec.decode(input), call: _i4.RuntimeCall.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -236,11 +203,8 @@ class AsRecovered extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'as_recovered': {
-          'account': account.toJson(),
-          'call': call.toJson(),
-        }
-      };
+    'as_recovered': {'account': account.toJson(), 'call': call.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -250,33 +214,17 @@ class AsRecovered extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      account,
-      output,
-    );
-    _i4.RuntimeCall.codec.encodeTo(
-      call,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.MultiAddress.codec.encodeTo(account, output);
+    _i4.RuntimeCall.codec.encodeTo(call, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AsRecovered && other.account == account && other.call == call;
+      identical(this, other) || other is AsRecovered && other.account == account && other.call == call;
 
   @override
-  int get hashCode => Object.hash(
-        account,
-        call,
-      );
+  int get hashCode => Object.hash(account, call);
 }
 
 /// Allow ROOT to bypass the recovery process and set a rescuer account
@@ -288,16 +236,10 @@ class AsRecovered extends Call {
 /// - `lost`: The "lost account" to be recovered.
 /// - `rescuer`: The "rescuer account" which can call as the lost account.
 class SetRecovered extends Call {
-  const SetRecovered({
-    required this.lost,
-    required this.rescuer,
-  });
+  const SetRecovered({required this.lost, required this.rescuer});
 
   factory SetRecovered._decode(_i1.Input input) {
-    return SetRecovered(
-      lost: _i3.MultiAddress.codec.decode(input),
-      rescuer: _i3.MultiAddress.codec.decode(input),
-    );
+    return SetRecovered(lost: _i3.MultiAddress.codec.decode(input), rescuer: _i3.MultiAddress.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -308,11 +250,8 @@ class SetRecovered extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'set_recovered': {
-          'lost': lost.toJson(),
-          'rescuer': rescuer.toJson(),
-        }
-      };
+    'set_recovered': {'lost': lost.toJson(), 'rescuer': rescuer.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -322,33 +261,17 @@ class SetRecovered extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      lost,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      rescuer,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i3.MultiAddress.codec.encodeTo(lost, output);
+    _i3.MultiAddress.codec.encodeTo(rescuer, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetRecovered && other.lost == lost && other.rescuer == rescuer;
+      identical(this, other) || other is SetRecovered && other.lost == lost && other.rescuer == rescuer;
 
   @override
-  int get hashCode => Object.hash(
-        lost,
-        rescuer,
-      );
+  int get hashCode => Object.hash(lost, rescuer);
 }
 
 /// Create a recovery configuration for your account. This makes your account recoverable.
@@ -368,16 +291,11 @@ class SetRecovered extends Call {
 /// - `delay_period`: The number of blocks after a recovery attempt is initialized that
 ///  needs to pass before the account can be recovered.
 class CreateRecovery extends Call {
-  const CreateRecovery({
-    required this.friends,
-    required this.threshold,
-    required this.delayPeriod,
-  });
+  const CreateRecovery({required this.friends, required this.threshold, required this.delayPeriod});
 
   factory CreateRecovery._decode(_i1.Input input) {
     return CreateRecovery(
-      friends: const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec())
-          .decode(input),
+      friends: const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec()).decode(input),
       threshold: _i1.U16Codec.codec.decode(input),
       delayPeriod: _i1.U32Codec.codec.decode(input),
     );
@@ -394,62 +312,38 @@ class CreateRecovery extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'create_recovery': {
-          'friends': friends.map((value) => value.toList()).toList(),
-          'threshold': threshold,
-          'delayPeriod': delayPeriod,
-        }
-      };
+    'create_recovery': {
+      'friends': friends.map((value) => value.toList()).toList(),
+      'threshold': threshold,
+      'delayPeriod': delayPeriod,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec())
-            .sizeHint(friends);
+    size = size + const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec()).sizeHint(friends);
     size = size + _i1.U16Codec.codec.sizeHint(threshold);
     size = size + _i1.U32Codec.codec.sizeHint(delayPeriod);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec()).encodeTo(
-      friends,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      threshold,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      delayPeriod,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.SequenceCodec<_i5.AccountId32>(_i5.AccountId32Codec()).encodeTo(friends, output);
+    _i1.U16Codec.codec.encodeTo(threshold, output);
+    _i1.U32Codec.codec.encodeTo(delayPeriod, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is CreateRecovery &&
-          _i6.listsEqual(
-            other.friends,
-            friends,
-          ) &&
+          _i6.listsEqual(other.friends, friends) &&
           other.threshold == threshold &&
           other.delayPeriod == delayPeriod;
 
   @override
-  int get hashCode => Object.hash(
-        friends,
-        threshold,
-        delayPeriod,
-      );
+  int get hashCode => Object.hash(friends, threshold, delayPeriod);
 }
 
 /// Initiate the process for recovering a recoverable account.
@@ -475,8 +369,8 @@ class InitiateRecovery extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'initiate_recovery': {'account': account.toJson()}
-      };
+    'initiate_recovery': {'account': account.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -485,23 +379,12 @@ class InitiateRecovery extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i3.MultiAddress.codec.encodeTo(account, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is InitiateRecovery && other.account == account;
+  bool operator ==(Object other) => identical(this, other) || other is InitiateRecovery && other.account == account;
 
   @override
   int get hashCode => account.hashCode;
@@ -520,16 +403,10 @@ class InitiateRecovery extends Call {
 /// The combination of these two parameters must point to an active recovery
 /// process.
 class VouchRecovery extends Call {
-  const VouchRecovery({
-    required this.lost,
-    required this.rescuer,
-  });
+  const VouchRecovery({required this.lost, required this.rescuer});
 
   factory VouchRecovery._decode(_i1.Input input) {
-    return VouchRecovery(
-      lost: _i3.MultiAddress.codec.decode(input),
-      rescuer: _i3.MultiAddress.codec.decode(input),
-    );
+    return VouchRecovery(lost: _i3.MultiAddress.codec.decode(input), rescuer: _i3.MultiAddress.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -540,11 +417,8 @@ class VouchRecovery extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'vouch_recovery': {
-          'lost': lost.toJson(),
-          'rescuer': rescuer.toJson(),
-        }
-      };
+    'vouch_recovery': {'lost': lost.toJson(), 'rescuer': rescuer.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -554,33 +428,17 @@ class VouchRecovery extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      lost,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      rescuer,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i3.MultiAddress.codec.encodeTo(lost, output);
+    _i3.MultiAddress.codec.encodeTo(rescuer, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VouchRecovery && other.lost == lost && other.rescuer == rescuer;
+      identical(this, other) || other is VouchRecovery && other.lost == lost && other.rescuer == rescuer;
 
   @override
-  int get hashCode => Object.hash(
-        lost,
-        rescuer,
-      );
+  int get hashCode => Object.hash(lost, rescuer);
 }
 
 /// Allow a successful rescuer to claim their recovered account.
@@ -604,8 +462,8 @@ class ClaimRecovery extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'claim_recovery': {'account': account.toJson()}
-      };
+    'claim_recovery': {'account': account.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -614,23 +472,12 @@ class ClaimRecovery extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i3.MultiAddress.codec.encodeTo(account, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ClaimRecovery && other.account == account;
+  bool operator ==(Object other) => identical(this, other) || other is ClaimRecovery && other.account == account;
 
   @override
   int get hashCode => account.hashCode;
@@ -659,8 +506,8 @@ class CloseRecovery extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'close_recovery': {'rescuer': rescuer.toJson()}
-      };
+    'close_recovery': {'rescuer': rescuer.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -669,23 +516,12 @@ class CloseRecovery extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      rescuer,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i3.MultiAddress.codec.encodeTo(rescuer, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CloseRecovery && other.rescuer == rescuer;
+  bool operator ==(Object other) => identical(this, other) || other is CloseRecovery && other.rescuer == rescuer;
 
   @override
   int get hashCode => rescuer.hashCode;
@@ -709,10 +545,7 @@ class RemoveRecovery extends Call {
   Map<String, dynamic> toJson() => {'remove_recovery': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
   }
 
   @override
@@ -741,8 +574,8 @@ class CancelRecovered extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'cancel_recovered': {'account': account.toJson()}
-      };
+    'cancel_recovered': {'account': account.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -751,23 +584,12 @@ class CancelRecovered extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      8,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(8, output);
+    _i3.MultiAddress.codec.encodeTo(account, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CancelRecovered && other.account == account;
+  bool operator ==(Object other) => identical(this, other) || other is CancelRecovered && other.account == account;
 
   @override
   int get hashCode => account.hashCode;
@@ -800,10 +622,7 @@ class PokeDeposit extends Call {
   const PokeDeposit({this.maybeAccount});
 
   factory PokeDeposit._decode(_i1.Input input) {
-    return PokeDeposit(
-        maybeAccount:
-            const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec)
-                .decode(input));
+    return PokeDeposit(maybeAccount: const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec).decode(input));
   }
 
   /// Option<AccountIdLookupOf<T>>
@@ -811,35 +630,23 @@ class PokeDeposit extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>?>> toJson() => {
-        'poke_deposit': {'maybeAccount': maybeAccount?.toJson()}
-      };
+    'poke_deposit': {'maybeAccount': maybeAccount?.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
-        const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec)
-            .sizeHint(maybeAccount);
+    size = size + const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec).sizeHint(maybeAccount);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      9,
-      output,
-    );
-    const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec).encodeTo(
-      maybeAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(9, output);
+    const _i1.OptionCodec<_i3.MultiAddress>(_i3.MultiAddress.codec).encodeTo(maybeAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PokeDeposit && other.maybeAccount == maybeAccount;
+      identical(this, other) || other is PokeDeposit && other.maybeAccount == maybeAccount;
 
   @override
   int get hashCode => maybeAccount.hashCode;

@@ -7,12 +7,7 @@ import 'package:quiver/collection.dart' as _i4;
 import '../sp_core/crypto/account_id32.dart' as _i2;
 
 class ZkLeaf {
-  const ZkLeaf({
-    required this.to,
-    required this.transferCount,
-    required this.assetId,
-    required this.amount,
-  });
+  const ZkLeaf({required this.to, required this.transferCount, required this.assetId, required this.amount});
 
   factory ZkLeaf.decode(_i1.Input input) {
     return codec.decode(input);
@@ -37,60 +32,34 @@ class ZkLeaf {
   }
 
   Map<String, dynamic> toJson() => {
-        'to': to.toList(),
-        'transferCount': transferCount,
-        'assetId': assetId,
-        'amount': amount,
-      };
+    'to': to.toList(),
+    'transferCount': transferCount,
+    'assetId': assetId,
+    'amount': amount,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ZkLeaf &&
-          _i4.listsEqual(
-            other.to,
-            to,
-          ) &&
+          _i4.listsEqual(other.to, to) &&
           other.transferCount == transferCount &&
           other.assetId == assetId &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        to,
-        transferCount,
-        assetId,
-        amount,
-      );
+  int get hashCode => Object.hash(to, transferCount, assetId, amount);
 }
 
 class $ZkLeafCodec with _i1.Codec<ZkLeaf> {
   const $ZkLeafCodec();
 
   @override
-  void encodeTo(
-    ZkLeaf obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.to,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      obj.transferCount,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.assetId,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
+  void encodeTo(ZkLeaf obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.to, output);
+    _i1.U64Codec.codec.encodeTo(obj.transferCount, output);
+    _i1.U32Codec.codec.encodeTo(obj.assetId, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
   }
 
   @override

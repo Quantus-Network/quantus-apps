@@ -16,43 +16,32 @@ class Queries {
 
   final _i1.StateApi __api;
 
-  final _i1.StorageMap<List<int>, bool> _usedNullifiers =
-      const _i1.StorageMap<List<int>, bool>(
+  final _i1.StorageMap<List<int>, bool> _usedNullifiers = const _i1.StorageMap<List<int>, bool>(
     prefix: 'Wormhole',
     storage: 'UsedNullifiers',
     valueCodec: _i2.BoolCodec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i2.U8ArrayCodec(32)),
   );
 
-  final _i1.StorageMap<_i3.AccountId32, BigInt> _transferCount =
-      const _i1.StorageMap<_i3.AccountId32, BigInt>(
+  final _i1.StorageMap<_i3.AccountId32, BigInt> _transferCount = const _i1.StorageMap<_i3.AccountId32, BigInt>(
     prefix: 'Wormhole',
     storage: 'TransferCount',
     valueCodec: _i2.U64Codec.codec,
     hasher: _i1.StorageHasher.blake2b128Concat(_i3.AccountId32Codec()),
   );
 
-  final _i1.StorageValue<List<_i4.Tuple2<_i3.AccountId32, BigInt>>>
-      _genesisEndowmentsPending =
+  final _i1.StorageValue<List<_i4.Tuple2<_i3.AccountId32, BigInt>>> _genesisEndowmentsPending =
       const _i1.StorageValue<List<_i4.Tuple2<_i3.AccountId32, BigInt>>>(
-    prefix: 'Wormhole',
-    storage: 'GenesisEndowmentsPending',
-    valueCodec: _i2.SequenceCodec<_i4.Tuple2<_i3.AccountId32, BigInt>>(
-        _i4.Tuple2Codec<_i3.AccountId32, BigInt>(
-      _i3.AccountId32Codec(),
-      _i2.U128Codec.codec,
-    )),
-  );
+        prefix: 'Wormhole',
+        storage: 'GenesisEndowmentsPending',
+        valueCodec: _i2.SequenceCodec<_i4.Tuple2<_i3.AccountId32, BigInt>>(
+          _i4.Tuple2Codec<_i3.AccountId32, BigInt>(_i3.AccountId32Codec(), _i2.U128Codec.codec),
+        ),
+      );
 
-  _i5.Future<bool> usedNullifiers(
-    List<int> key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<bool> usedNullifiers(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _usedNullifiers.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _usedNullifiers.decodeValue(bytes);
     }
@@ -60,15 +49,9 @@ class Queries {
   }
 
   /// Transfer count per recipient - used to generate unique leaf indices in the ZK trie.
-  _i5.Future<BigInt> transferCount(
-    _i3.AccountId32 key1, {
-    _i1.BlockHash? at,
-  }) async {
+  _i5.Future<BigInt> transferCount(_i3.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _transferCount.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _transferCount.decodeValue(bytes);
     }
@@ -81,55 +64,32 @@ class Queries {
   /// then cleared. This ensures indexers like Subsquid can track genesis transfers.
   ///
   /// Unbounded because it's only populated at genesis and cleared on block 1.
-  _i5.Future<List<_i4.Tuple2<_i3.AccountId32, BigInt>>>
-      genesisEndowmentsPending({_i1.BlockHash? at}) async {
+  _i5.Future<List<_i4.Tuple2<_i3.AccountId32, BigInt>>> genesisEndowmentsPending({_i1.BlockHash? at}) async {
     final hashedKey = _genesisEndowmentsPending.hashedKey();
-    final bytes = await __api.getStorage(
-      hashedKey,
-      at: at,
-    );
+    final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _genesisEndowmentsPending.decodeValue(bytes);
     }
     return []; /* Default */
   }
 
-  _i5.Future<List<bool>> multiUsedNullifiers(
-    List<List<int>> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i5.Future<List<bool>> multiUsedNullifiers(List<List<int>> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _usedNullifiers.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _usedNullifiers.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _usedNullifiers.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => false).toList() as List<bool>); /* Default */
   }
 
   /// Transfer count per recipient - used to generate unique leaf indices in the ZK trie.
-  _i5.Future<List<BigInt>> multiTransferCount(
-    List<_i3.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys =
-        keys.map((key) => _transferCount.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(
-      hashedKeys,
-      at: at,
-    );
+  _i5.Future<List<BigInt>> multiTransferCount(List<_i3.AccountId32> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _transferCount.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
-      return bytes.first.changes
-          .map((v) => _transferCount.decodeValue(v.key))
-          .toList();
+      return bytes.first.changes.map((v) => _transferCount.decodeValue(v.key)).toList();
     }
-    return (keys.map((key) => BigInt.zero).toList()
-        as List<BigInt>); /* Default */
+    return (keys.map((key) => BigInt.zero).toList() as List<BigInt>); /* Default */
   }
 
   /// Returns the storage key for `usedNullifiers`.

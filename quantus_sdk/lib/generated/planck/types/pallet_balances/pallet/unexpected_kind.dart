@@ -7,10 +7,7 @@ enum UnexpectedKind {
   balanceUpdated('BalanceUpdated', 0),
   failedToMutateAccount('FailedToMutateAccount', 1);
 
-  const UnexpectedKind(
-    this.variantName,
-    this.codecIndex,
-  );
+  const UnexpectedKind(this.variantName, this.codecIndex);
 
   factory UnexpectedKind.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $UnexpectedKindCodec with _i1.Codec<UnexpectedKind> {
   }
 
   @override
-  void encodeTo(
-    UnexpectedKind value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(UnexpectedKind value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

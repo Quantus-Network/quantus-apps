@@ -45,44 +45,20 @@ class $Call {
     return DemoteMember(who: who);
   }
 
-  RemoveMember removeMember({
-    required _i3.MultiAddress who,
-    required int minRank,
-  }) {
-    return RemoveMember(
-      who: who,
-      minRank: minRank,
-    );
+  RemoveMember removeMember({required _i3.MultiAddress who, required int minRank}) {
+    return RemoveMember(who: who, minRank: minRank);
   }
 
-  Vote vote({
-    required int poll,
-    required bool aye,
-  }) {
-    return Vote(
-      poll: poll,
-      aye: aye,
-    );
+  Vote vote({required int poll, required bool aye}) {
+    return Vote(poll: poll, aye: aye);
   }
 
-  CleanupPoll cleanupPoll({
-    required int pollIndex,
-    required int max,
-  }) {
-    return CleanupPoll(
-      pollIndex: pollIndex,
-      max: max,
-    );
+  CleanupPoll cleanupPoll({required int pollIndex, required int max}) {
+    return CleanupPoll(pollIndex: pollIndex, max: max);
   }
 
-  ExchangeMember exchangeMember({
-    required _i3.MultiAddress who,
-    required _i3.MultiAddress newWho,
-  }) {
-    return ExchangeMember(
-      who: who,
-      newWho: newWho,
-    );
+  ExchangeMember exchangeMember({required _i3.MultiAddress who, required _i3.MultiAddress newWho}) {
+    return ExchangeMember(who: who, newWho: newWho);
   }
 }
 
@@ -113,10 +89,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case AddMember:
         (value as AddMember).encodeTo(output);
@@ -140,8 +113,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as ExchangeMember).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -163,8 +135,7 @@ class $CallCodec with _i1.Codec<Call> {
       case ExchangeMember:
         return (value as ExchangeMember)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -187,8 +158,8 @@ class AddMember extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'add_member': {'who': who.toJson()}
-      };
+    'add_member': {'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -197,23 +168,12 @@ class AddMember extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is AddMember && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is AddMember && other.who == who;
 
   @override
   int get hashCode => who.hashCode;
@@ -237,8 +197,8 @@ class PromoteMember extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'promote_member': {'who': who.toJson()}
-      };
+    'promote_member': {'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -247,23 +207,12 @@ class PromoteMember extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is PromoteMember && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is PromoteMember && other.who == who;
 
   @override
   int get hashCode => who.hashCode;
@@ -288,8 +237,8 @@ class DemoteMember extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'demote_member': {'who': who.toJson()}
-      };
+    'demote_member': {'who': who.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -298,23 +247,12 @@ class DemoteMember extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DemoteMember && other.who == who;
+  bool operator ==(Object other) => identical(this, other) || other is DemoteMember && other.who == who;
 
   @override
   int get hashCode => who.hashCode;
@@ -328,16 +266,10 @@ class DemoteMember extends Call {
 ///
 /// Weight: `O(min_rank)`.
 class RemoveMember extends Call {
-  const RemoveMember({
-    required this.who,
-    required this.minRank,
-  });
+  const RemoveMember({required this.who, required this.minRank});
 
   factory RemoveMember._decode(_i1.Input input) {
-    return RemoveMember(
-      who: _i3.MultiAddress.codec.decode(input),
-      minRank: _i1.U16Codec.codec.decode(input),
-    );
+    return RemoveMember(who: _i3.MultiAddress.codec.decode(input), minRank: _i1.U16Codec.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -348,11 +280,8 @@ class RemoveMember extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'remove_member': {
-          'who': who.toJson(),
-          'minRank': minRank,
-        }
-      };
+    'remove_member': {'who': who.toJson(), 'minRank': minRank},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -362,33 +291,17 @@ class RemoveMember extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i1.U16Codec.codec.encodeTo(
-      minRank,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
+    _i1.U16Codec.codec.encodeTo(minRank, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RemoveMember && other.who == who && other.minRank == minRank;
+      identical(this, other) || other is RemoveMember && other.who == who && other.minRank == minRank;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        minRank,
-      );
+  int get hashCode => Object.hash(who, minRank);
 }
 
 /// Add an aye or nay vote for the sender to the given proposal.
@@ -403,16 +316,10 @@ class RemoveMember extends Call {
 ///
 /// Weight: `O(1)`, less if there was no previous vote on the poll by the member.
 class Vote extends Call {
-  const Vote({
-    required this.poll,
-    required this.aye,
-  });
+  const Vote({required this.poll, required this.aye});
 
   factory Vote._decode(_i1.Input input) {
-    return Vote(
-      poll: _i1.U32Codec.codec.decode(input),
-      aye: _i1.BoolCodec.codec.decode(input),
-    );
+    return Vote(poll: _i1.U32Codec.codec.decode(input), aye: _i1.BoolCodec.codec.decode(input));
   }
 
   /// PollIndexOf<T, I>
@@ -423,11 +330,8 @@ class Vote extends Call {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'vote': {
-          'poll': poll,
-          'aye': aye,
-        }
-      };
+    'vote': {'poll': poll, 'aye': aye},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -437,33 +341,16 @@ class Vote extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      poll,
-      output,
-    );
-    _i1.BoolCodec.codec.encodeTo(
-      aye,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i1.U32Codec.codec.encodeTo(poll, output);
+    _i1.BoolCodec.codec.encodeTo(aye, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Vote && other.poll == poll && other.aye == aye;
+  bool operator ==(Object other) => identical(this, other) || other is Vote && other.poll == poll && other.aye == aye;
 
   @override
-  int get hashCode => Object.hash(
-        poll,
-        aye,
-      );
+  int get hashCode => Object.hash(poll, aye);
 }
 
 /// Remove votes from the given poll. It must have ended.
@@ -477,16 +364,10 @@ class Vote extends Call {
 ///
 /// Weight `O(max)` (less if there are fewer items to remove than `max`).
 class CleanupPoll extends Call {
-  const CleanupPoll({
-    required this.pollIndex,
-    required this.max,
-  });
+  const CleanupPoll({required this.pollIndex, required this.max});
 
   factory CleanupPoll._decode(_i1.Input input) {
-    return CleanupPoll(
-      pollIndex: _i1.U32Codec.codec.decode(input),
-      max: _i1.U32Codec.codec.decode(input),
-    );
+    return CleanupPoll(pollIndex: _i1.U32Codec.codec.decode(input), max: _i1.U32Codec.codec.decode(input));
   }
 
   /// PollIndexOf<T, I>
@@ -497,11 +378,8 @@ class CleanupPoll extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'cleanup_poll': {
-          'pollIndex': pollIndex,
-          'max': max,
-        }
-      };
+    'cleanup_poll': {'pollIndex': pollIndex, 'max': max},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -511,33 +389,17 @@ class CleanupPoll extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      pollIndex,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      max,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    _i1.U32Codec.codec.encodeTo(pollIndex, output);
+    _i1.U32Codec.codec.encodeTo(max, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is CleanupPoll && other.pollIndex == pollIndex && other.max == max;
+      identical(this, other) || other is CleanupPoll && other.pollIndex == pollIndex && other.max == max;
 
   @override
-  int get hashCode => Object.hash(
-        pollIndex,
-        max,
-      );
+  int get hashCode => Object.hash(pollIndex, max);
 }
 
 /// Exchanges a member with a new account and the same existing rank.
@@ -546,16 +408,10 @@ class CleanupPoll extends Call {
 /// - `who`: Account of existing member of rank greater than zero to be exchanged.
 /// - `new_who`: New Account of existing member of rank greater than zero to exchanged to.
 class ExchangeMember extends Call {
-  const ExchangeMember({
-    required this.who,
-    required this.newWho,
-  });
+  const ExchangeMember({required this.who, required this.newWho});
 
   factory ExchangeMember._decode(_i1.Input input) {
-    return ExchangeMember(
-      who: _i3.MultiAddress.codec.decode(input),
-      newWho: _i3.MultiAddress.codec.decode(input),
-    );
+    return ExchangeMember(who: _i3.MultiAddress.codec.decode(input), newWho: _i3.MultiAddress.codec.decode(input));
   }
 
   /// AccountIdLookupOf<T>
@@ -566,11 +422,8 @@ class ExchangeMember extends Call {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'exchange_member': {
-          'who': who.toJson(),
-          'newWho': newWho.toJson(),
-        }
-      };
+    'exchange_member': {'who': who.toJson(), 'newWho': newWho.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -580,31 +433,15 @@ class ExchangeMember extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      who,
-      output,
-    );
-    _i3.MultiAddress.codec.encodeTo(
-      newWho,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    _i3.MultiAddress.codec.encodeTo(who, output);
+    _i3.MultiAddress.codec.encodeTo(newWho, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ExchangeMember && other.who == who && other.newWho == newWho;
+      identical(this, other) || other is ExchangeMember && other.who == who && other.newWho == newWho;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        newWho,
-      );
+  int get hashCode => Object.hash(who, newWho);
 }

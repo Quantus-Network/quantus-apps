@@ -7,10 +7,7 @@ enum BalanceStatus {
   free('Free', 0),
   reserved('Reserved', 1);
 
-  const BalanceStatus(
-    this.variantName,
-    this.codecIndex,
-  );
+  const BalanceStatus(this.variantName, this.codecIndex);
 
   factory BalanceStatus.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $BalanceStatusCodec with _i1.Codec<BalanceStatus> {
   }
 
   @override
-  void encodeTo(
-    BalanceStatus value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(BalanceStatus value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

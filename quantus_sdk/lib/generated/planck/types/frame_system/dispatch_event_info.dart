@@ -8,11 +8,7 @@ import '../frame_support/dispatch/pays.dart' as _i4;
 import '../sp_weights/weight_v2/weight.dart' as _i2;
 
 class DispatchEventInfo {
-  const DispatchEventInfo({
-    required this.weight,
-    required this.class_,
-    required this.paysFee,
-  });
+  const DispatchEventInfo({required this.weight, required this.class_, required this.paysFee});
 
   factory DispatchEventInfo.decode(_i1.Input input) {
     return codec.decode(input);
@@ -33,51 +29,25 @@ class DispatchEventInfo {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'weight': weight.toJson(),
-        'class': class_.toJson(),
-        'paysFee': paysFee.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'weight': weight.toJson(), 'class': class_.toJson(), 'paysFee': paysFee.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DispatchEventInfo &&
-          other.weight == weight &&
-          other.class_ == class_ &&
-          other.paysFee == paysFee;
+      identical(this, other) ||
+      other is DispatchEventInfo && other.weight == weight && other.class_ == class_ && other.paysFee == paysFee;
 
   @override
-  int get hashCode => Object.hash(
-        weight,
-        class_,
-        paysFee,
-      );
+  int get hashCode => Object.hash(weight, class_, paysFee);
 }
 
 class $DispatchEventInfoCodec with _i1.Codec<DispatchEventInfo> {
   const $DispatchEventInfoCodec();
 
   @override
-  void encodeTo(
-    DispatchEventInfo obj,
-    _i1.Output output,
-  ) {
-    _i2.Weight.codec.encodeTo(
-      obj.weight,
-      output,
-    );
-    _i3.DispatchClass.codec.encodeTo(
-      obj.class_,
-      output,
-    );
-    _i4.Pays.codec.encodeTo(
-      obj.paysFee,
-      output,
-    );
+  void encodeTo(DispatchEventInfo obj, _i1.Output output) {
+    _i2.Weight.codec.encodeTo(obj.weight, output);
+    _i3.DispatchClass.codec.encodeTo(obj.class_, output);
+    _i4.Pays.codec.encodeTo(obj.paysFee, output);
   }
 
   @override

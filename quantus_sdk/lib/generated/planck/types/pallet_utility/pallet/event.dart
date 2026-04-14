@@ -33,14 +33,8 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  BatchInterrupted batchInterrupted({
-    required int index,
-    required _i3.DispatchError error,
-  }) {
-    return BatchInterrupted(
-      index: index,
-      error: error,
-    );
+  BatchInterrupted batchInterrupted({required int index, required _i3.DispatchError error}) {
+    return BatchInterrupted(index: index, error: error);
   }
 
   BatchCompleted batchCompleted() {
@@ -59,8 +53,7 @@ class $Event {
     return ItemFailed(error: error);
   }
 
-  DispatchedAs dispatchedAs(
-      {required _i1.Result<dynamic, _i3.DispatchError> result}) {
+  DispatchedAs dispatchedAs({required _i1.Result<dynamic, _i3.DispatchError> result}) {
     return DispatchedAs(result: result);
   }
 
@@ -68,8 +61,7 @@ class $Event {
     return IfElseMainSuccess();
   }
 
-  IfElseFallbackCalled ifElseFallbackCalled(
-      {required _i3.DispatchError mainError}) {
+  IfElseFallbackCalled ifElseFallbackCalled({required _i3.DispatchError mainError}) {
     return IfElseFallbackCalled(mainError: mainError);
   }
 }
@@ -103,10 +95,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case BatchInterrupted:
         (value as BatchInterrupted).encodeTo(output);
@@ -133,8 +122,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as IfElseFallbackCalled).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -158,8 +146,7 @@ class $EventCodec with _i1.Codec<Event> {
       case IfElseFallbackCalled:
         return (value as IfElseFallbackCalled)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -167,16 +154,10 @@ class $EventCodec with _i1.Codec<Event> {
 /// Batch of dispatches did not complete fully. Index of first failing dispatch given, as
 /// well as the error.
 class BatchInterrupted extends Event {
-  const BatchInterrupted({
-    required this.index,
-    required this.error,
-  });
+  const BatchInterrupted({required this.index, required this.error});
 
   factory BatchInterrupted._decode(_i1.Input input) {
-    return BatchInterrupted(
-      index: _i1.U32Codec.codec.decode(input),
-      error: _i3.DispatchError.codec.decode(input),
-    );
+    return BatchInterrupted(index: _i1.U32Codec.codec.decode(input), error: _i3.DispatchError.codec.decode(input));
   }
 
   /// u32
@@ -187,11 +168,8 @@ class BatchInterrupted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'BatchInterrupted': {
-          'index': index,
-          'error': error.toJson(),
-        }
-      };
+    'BatchInterrupted': {'index': index, 'error': error.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -201,33 +179,17 @@ class BatchInterrupted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      index,
-      output,
-    );
-    _i3.DispatchError.codec.encodeTo(
-      error,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    _i1.U32Codec.codec.encodeTo(index, output);
+    _i3.DispatchError.codec.encodeTo(error, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is BatchInterrupted && other.index == index && other.error == error;
+      identical(this, other) || other is BatchInterrupted && other.index == index && other.error == error;
 
   @override
-  int get hashCode => Object.hash(
-        index,
-        error,
-      );
+  int get hashCode => Object.hash(index, error);
 }
 
 /// Batch of dispatches completed fully with no error.
@@ -238,10 +200,7 @@ class BatchCompleted extends Event {
   Map<String, dynamic> toJson() => {'BatchCompleted': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
   }
 
   @override
@@ -259,10 +218,7 @@ class BatchCompletedWithErrors extends Event {
   Map<String, dynamic> toJson() => {'BatchCompletedWithErrors': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
   }
 
   @override
@@ -280,10 +236,7 @@ class ItemCompleted extends Event {
   Map<String, dynamic> toJson() => {'ItemCompleted': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
   }
 
   @override
@@ -306,8 +259,8 @@ class ItemFailed extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'ItemFailed': {'error': error.toJson()}
-      };
+    'ItemFailed': {'error': error.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -316,23 +269,12 @@ class ItemFailed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    _i3.DispatchError.codec.encodeTo(
-      error,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    _i3.DispatchError.codec.encodeTo(error, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is ItemFailed && other.error == error;
+  bool operator ==(Object other) => identical(this, other) || other is ItemFailed && other.error == error;
 
   @override
   int get hashCode => error.hashCode;
@@ -344,10 +286,11 @@ class DispatchedAs extends Event {
 
   factory DispatchedAs._decode(_i1.Input input) {
     return DispatchedAs(
-        result: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
-      _i1.NullCodec.codec,
-      _i3.DispatchError.codec,
-    ).decode(input));
+      result: const _i1.ResultCodec<dynamic, _i3.DispatchError>(
+        _i1.NullCodec.codec,
+        _i3.DispatchError.codec,
+      ).decode(input),
+    );
   }
 
   /// DispatchResult
@@ -355,12 +298,13 @@ class DispatchedAs extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'DispatchedAs': {'result': result.toJson()}
-      };
+    'DispatchedAs': {'result': result.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
-    size = size +
+    size =
+        size +
         const _i1.ResultCodec<dynamic, _i3.DispatchError>(
           _i1.NullCodec.codec,
           _i3.DispatchError.codec,
@@ -369,26 +313,15 @@ class DispatchedAs extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
     const _i1.ResultCodec<dynamic, _i3.DispatchError>(
       _i1.NullCodec.codec,
       _i3.DispatchError.codec,
-    ).encodeTo(
-      result,
-      output,
-    );
+    ).encodeTo(result, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DispatchedAs && other.result == result;
+  bool operator ==(Object other) => identical(this, other) || other is DispatchedAs && other.result == result;
 
   @override
   int get hashCode => result.hashCode;
@@ -402,10 +335,7 @@ class IfElseMainSuccess extends Event {
   Map<String, dynamic> toJson() => {'IfElseMainSuccess': null};
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
   }
 
   @override
@@ -420,8 +350,7 @@ class IfElseFallbackCalled extends Event {
   const IfElseFallbackCalled({required this.mainError});
 
   factory IfElseFallbackCalled._decode(_i1.Input input) {
-    return IfElseFallbackCalled(
-        mainError: _i3.DispatchError.codec.decode(input));
+    return IfElseFallbackCalled(mainError: _i3.DispatchError.codec.decode(input));
   }
 
   /// DispatchError
@@ -429,8 +358,8 @@ class IfElseFallbackCalled extends Event {
 
   @override
   Map<String, Map<String, Map<String, dynamic>>> toJson() => {
-        'IfElseFallbackCalled': {'mainError': mainError.toJson()}
-      };
+    'IfElseFallbackCalled': {'mainError': mainError.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -439,23 +368,13 @@ class IfElseFallbackCalled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    _i3.DispatchError.codec.encodeTo(
-      mainError,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    _i3.DispatchError.codec.encodeTo(mainError, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is IfElseFallbackCalled && other.mainError == mainError;
+      identical(this, other) || other is IfElseFallbackCalled && other.mainError == mainError;
 
   @override
   int get hashCode => mainError.hashCode;

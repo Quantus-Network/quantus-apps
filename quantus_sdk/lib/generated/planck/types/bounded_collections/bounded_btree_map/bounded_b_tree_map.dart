@@ -13,25 +13,15 @@ class BoundedBTreeMapCodec with _i2.Codec<BoundedBTreeMap> {
   @override
   BoundedBTreeMap decode(_i2.Input input) {
     return const _i2.SequenceCodec<_i3.Tuple2<_i4.AccountId32, int>>(
-        _i3.Tuple2Codec<_i4.AccountId32, int>(
-      _i4.AccountId32Codec(),
-      _i2.U32Codec.codec,
-    )).decode(input);
+      _i3.Tuple2Codec<_i4.AccountId32, int>(_i4.AccountId32Codec(), _i2.U32Codec.codec),
+    ).decode(input);
   }
 
   @override
-  void encodeTo(
-    BoundedBTreeMap value,
-    _i2.Output output,
-  ) {
+  void encodeTo(BoundedBTreeMap value, _i2.Output output) {
     const _i2.SequenceCodec<_i3.Tuple2<_i4.AccountId32, int>>(
-        _i3.Tuple2Codec<_i4.AccountId32, int>(
-      _i4.AccountId32Codec(),
-      _i2.U32Codec.codec,
-    )).encodeTo(
-      value,
-      output,
-    );
+      _i3.Tuple2Codec<_i4.AccountId32, int>(_i4.AccountId32Codec(), _i2.U32Codec.codec),
+    ).encodeTo(value, output);
   }
 
   @override

@@ -12,14 +12,8 @@ class VoteCodec with _i1.Codec<Vote> {
   }
 
   @override
-  void encodeTo(
-    Vote value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(Vote value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value, output);
   }
 
   @override

@@ -12,33 +12,21 @@ class BTreeMapCodec with _i3.Codec<BTreeMap> {
   @override
   BTreeMap decode(_i3.Input input) {
     return const _i3.SequenceCodec<_i1.Tuple2<_i2.AccountId32, int>>(
-        _i1.Tuple2Codec<_i2.AccountId32, int>(
-      _i2.AccountId32Codec(),
-      _i3.U32Codec.codec,
-    )).decode(input);
+      _i1.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i3.U32Codec.codec),
+    ).decode(input);
   }
 
   @override
-  void encodeTo(
-    BTreeMap value,
-    _i3.Output output,
-  ) {
+  void encodeTo(BTreeMap value, _i3.Output output) {
     const _i3.SequenceCodec<_i1.Tuple2<_i2.AccountId32, int>>(
-        _i1.Tuple2Codec<_i2.AccountId32, int>(
-      _i2.AccountId32Codec(),
-      _i3.U32Codec.codec,
-    )).encodeTo(
-      value,
-      output,
-    );
+      _i1.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i3.U32Codec.codec),
+    ).encodeTo(value, output);
   }
 
   @override
   int sizeHint(BTreeMap value) {
     return const _i3.SequenceCodec<_i1.Tuple2<_i2.AccountId32, int>>(
-        _i1.Tuple2Codec<_i2.AccountId32, int>(
-      _i2.AccountId32Codec(),
-      _i3.U32Codec.codec,
-    )).sizeHint(value);
+      _i1.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i3.U32Codec.codec),
+    ).sizeHint(value);
   }
 }

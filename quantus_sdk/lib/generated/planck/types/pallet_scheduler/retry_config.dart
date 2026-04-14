@@ -6,11 +6,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 import '../qp_scheduler/block_number_or_timestamp.dart' as _i2;
 
 class RetryConfig {
-  const RetryConfig({
-    required this.totalRetries,
-    required this.remaining,
-    required this.period,
-  });
+  const RetryConfig({required this.totalRetries, required this.remaining, required this.period});
 
   factory RetryConfig.decode(_i1.Input input) {
     return codec.decode(input);
@@ -31,51 +27,28 @@ class RetryConfig {
     return codec.encode(this);
   }
 
-  Map<String, dynamic> toJson() => {
-        'totalRetries': totalRetries,
-        'remaining': remaining,
-        'period': period.toJson(),
-      };
+  Map<String, dynamic> toJson() => {'totalRetries': totalRetries, 'remaining': remaining, 'period': period.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is RetryConfig &&
           other.totalRetries == totalRetries &&
           other.remaining == remaining &&
           other.period == period;
 
   @override
-  int get hashCode => Object.hash(
-        totalRetries,
-        remaining,
-        period,
-      );
+  int get hashCode => Object.hash(totalRetries, remaining, period);
 }
 
 class $RetryConfigCodec with _i1.Codec<RetryConfig> {
   const $RetryConfigCodec();
 
   @override
-  void encodeTo(
-    RetryConfig obj,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      obj.totalRetries,
-      output,
-    );
-    _i1.U8Codec.codec.encodeTo(
-      obj.remaining,
-      output,
-    );
-    _i2.BlockNumberOrTimestamp.codec.encodeTo(
-      obj.period,
-      output,
-    );
+  void encodeTo(RetryConfig obj, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(obj.totalRetries, output);
+    _i1.U8Codec.codec.encodeTo(obj.remaining, output);
+    _i2.BlockNumberOrTimestamp.codec.encodeTo(obj.period, output);
   }
 
   @override

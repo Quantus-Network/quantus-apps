@@ -35,13 +35,11 @@ abstract class Event {
 class $Event {
   const $Event();
 
-  TreasuryAccountUpdated treasuryAccountUpdated(
-      {required _i3.AccountId32 newAccount}) {
+  TreasuryAccountUpdated treasuryAccountUpdated({required _i3.AccountId32 newAccount}) {
     return TreasuryAccountUpdated(newAccount: newAccount);
   }
 
-  TreasuryPortionUpdated treasuryPortionUpdated(
-      {required _i4.Permill newPortion}) {
+  TreasuryPortionUpdated treasuryPortionUpdated({required _i4.Permill newPortion}) {
     return TreasuryPortionUpdated(newPortion: newPortion);
   }
 }
@@ -63,10 +61,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case TreasuryAccountUpdated:
         (value as TreasuryAccountUpdated).encodeTo(output);
@@ -75,8 +70,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as TreasuryPortionUpdated).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -88,8 +82,7 @@ class $EventCodec with _i1.Codec<Event> {
       case TreasuryPortionUpdated:
         return (value as TreasuryPortionUpdated)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -98,8 +91,7 @@ class TreasuryAccountUpdated extends Event {
   const TreasuryAccountUpdated({required this.newAccount});
 
   factory TreasuryAccountUpdated._decode(_i1.Input input) {
-    return TreasuryAccountUpdated(
-        newAccount: const _i1.U8ArrayCodec(32).decode(input));
+    return TreasuryAccountUpdated(newAccount: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -107,8 +99,8 @@ class TreasuryAccountUpdated extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'TreasuryAccountUpdated': {'newAccount': newAccount.toList()}
-      };
+    'TreasuryAccountUpdated': {'newAccount': newAccount.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -117,27 +109,13 @@ class TreasuryAccountUpdated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      newAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(newAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TreasuryAccountUpdated &&
-          _i5.listsEqual(
-            other.newAccount,
-            newAccount,
-          );
+      identical(this, other) || other is TreasuryAccountUpdated && _i5.listsEqual(other.newAccount, newAccount);
 
   @override
   int get hashCode => newAccount.hashCode;
@@ -155,8 +133,8 @@ class TreasuryPortionUpdated extends Event {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'TreasuryPortionUpdated': {'newPortion': newPortion}
-      };
+    'TreasuryPortionUpdated': {'newPortion': newPortion},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -165,23 +143,13 @@ class TreasuryPortionUpdated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      newPortion,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(newPortion, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TreasuryPortionUpdated && other.newPortion == newPortion;
+      identical(this, other) || other is TreasuryPortionUpdated && other.newPortion == newPortion;
 
   @override
   int get hashCode => newPortion.hashCode;
