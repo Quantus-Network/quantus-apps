@@ -66,11 +66,7 @@ class WormholeTransfer {
   /// TODO: This needs to be updated to use ZK Merkle proofs for Planck.
   /// The WormholeUtxo now requires inputAmount (quantized) and leafIndex
   /// instead of raw amount and fundingAccount.
-  WormholeUtxo toUtxo(
-    String secretHex, {
-    required int inputAmount,
-    required BigInt leafIndex,
-  }) {
+  WormholeUtxo toUtxo(String secretHex, {required int inputAmount, required BigInt leafIndex}) {
     return WormholeUtxo(
       secretHex: secretHex,
       inputAmount: inputAmount,
@@ -165,18 +161,10 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
   /// including those that may have already been spent.
   ///
   /// Use [getUnspentUtxos] to filter out spent transfers.
-  Future<List<WormholeTransfer>> getTransfersTo(
-    String wormholeAddress, {
-    int limit = 100,
-    int offset = 0,
-  }) async {
+  Future<List<WormholeTransfer>> getTransfersTo(String wormholeAddress, {int limit = 100, int offset = 0}) async {
     final body = jsonEncode({
       'query': _transfersToWormholeQuery,
-      'variables': {
-        'wormholeAddress': wormholeAddress,
-        'limit': limit,
-        'offset': offset,
-      },
+      'variables': {'wormholeAddress': wormholeAddress, 'limit': limit, 'offset': offset},
     });
 
     final http.Response response = await _graphQlEndpoint.post(body: body);
@@ -198,9 +186,7 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
       return [];
     }
 
-    return transfers
-        .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
-        .toList();
+    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
   }
 
   /// Fetch transfers to multiple wormhole addresses.
@@ -213,11 +199,7 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
 
     final body = jsonEncode({
       'query': _transfersToMultipleQuery,
-      'variables': {
-        'wormholeAddresses': wormholeAddresses,
-        'limit': limit,
-        'offset': offset,
-      },
+      'variables': {'wormholeAddresses': wormholeAddresses, 'limit': limit, 'offset': offset},
     });
 
     final http.Response response = await _graphQlEndpoint.post(body: body);
@@ -239,9 +221,7 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
       return [];
     }
 
-    return transfers
-        .map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>))
-        .toList();
+    return transfers.map((t) => WormholeTransfer.fromJson(t as Map<String, dynamic>)).toList();
   }
 
   /// Check which nullifiers have been consumed on-chain.
@@ -269,15 +249,12 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
       throw Exception('GraphQL errors: ${responseBody['errors']}');
     }
 
-    final consumed =
-        responseBody['data']?['wormholeNullifiers'] as List<dynamic>?;
+    final consumed = responseBody['data']?['wormholeNullifiers'] as List<dynamic>?;
     if (consumed == null || consumed.isEmpty) {
       return {};
     }
 
-    return consumed
-        .map((n) => (n as Map<String, dynamic>)['nullifier'] as String)
-        .toSet();
+    return consumed.map((n) => (n as Map<String, dynamic>)['nullifier'] as String).toSet();
   }
 
   /// Get unspent UTXOs for a wormhole address.
@@ -300,17 +277,12 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
     final nullifierToTransfer = <String, WormholeTransfer>{};
 
     for (final transfer in transfers) {
-      final nullifier = wormholeService.computeNullifier(
-        secretHex: secretHex,
-        transferCount: transfer.transferCount,
-      );
+      final nullifier = wormholeService.computeNullifier(secretHex: secretHex, transferCount: transfer.transferCount);
       nullifierToTransfer[nullifier] = transfer;
     }
 
     // Check which nullifiers have been consumed
-    final consumedNullifiers = await getConsumedNullifiers(
-      nullifierToTransfer.keys.toList(),
-    );
+    final consumedNullifiers = await getConsumedNullifiers(nullifierToTransfer.keys.toList());
 
     // Return transfers whose nullifiers have NOT been consumed
     return nullifierToTransfer.entries
@@ -320,14 +292,8 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
   }
 
   /// Get total unspent balance for a wormhole address.
-  Future<BigInt> getUnspentBalance({
-    required String wormholeAddress,
-    required String secretHex,
-  }) async {
-    final unspent = await getUnspentTransfers(
-      wormholeAddress: wormholeAddress,
-      secretHex: secretHex,
-    );
+  Future<BigInt> getUnspentBalance({required String wormholeAddress, required String secretHex}) async {
+    final unspent = await getUnspentTransfers(wormholeAddress: wormholeAddress, secretHex: secretHex);
 
     return unspent.fold<BigInt>(BigInt.zero, (sum, t) => sum + t.amount);
   }
