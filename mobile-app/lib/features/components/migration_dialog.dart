@@ -58,7 +58,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
           Text(
             'We\'ll record your old\u2011chain mining rewards and actions to determine '
             'rewards on the new Quantus Testnet.\n\n'
-            'Balances do not migrate.\n\n' 
+            'Balances do not migrate.\n\n'
             'Use the new testnet faucet for funds.',
             style: text.smallParagraph?.copyWith(color: colors.textSecondary),
           ),
@@ -73,10 +73,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: colors.error.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
+              decoration: BoxDecoration(color: colors.error.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
               child: Text(_errorMessage!, style: text.smallParagraph?.copyWith(color: colors.textError)),
             ),
           GlassButton.simple(
