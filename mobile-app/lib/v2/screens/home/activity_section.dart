@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ActivitySection extends ConsumerStatefulWidget {
@@ -138,7 +139,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
   Widget _getStartedSection(AppTextTheme text, AppColorsV2 colors) {
     const links = [
-      ('Get Testnet Tokens', AppConstants.faucetBotUrl),
+      ('Get Testnet Tokens', AppConstants.faucetUrl),
       ('Community', AppConstants.communityUrl),
       ('Tech Support', AppConstants.techSupportUrl),
     ];
@@ -178,7 +179,9 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                   for (var i = 0; i < links.length; i++) ...[
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => launchUrl(Uri.parse(links[i].$2)),
+                      onTap: () => links[i].$2 == AppConstants.faucetUrl
+                          ? launchXPost(links[i].$2)
+                          : launchUrl(Uri.parse(links[i].$2)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
