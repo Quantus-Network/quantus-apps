@@ -2,8 +2,9 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i4;
+import 'package:quiver/collection.dart' as _i5;
 
+import '../../sp_arithmetic/per_things/permill.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// The `Event` enum of this pallet
@@ -38,7 +39,7 @@ class $Event {
     return TreasuryAccountUpdated(newAccount: newAccount);
   }
 
-  TreasuryPortionUpdated treasuryPortionUpdated({required int newPortion}) {
+  TreasuryPortionUpdated treasuryPortionUpdated({required _i4.Permill newPortion}) {
     return TreasuryPortionUpdated(newPortion: newPortion);
   }
 }
@@ -114,7 +115,7 @@ class TreasuryAccountUpdated extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is TreasuryAccountUpdated && _i4.listsEqual(other.newAccount, newAccount);
+      identical(this, other) || other is TreasuryAccountUpdated && _i5.listsEqual(other.newAccount, newAccount);
 
   @override
   int get hashCode => newAccount.hashCode;
@@ -124,11 +125,11 @@ class TreasuryPortionUpdated extends Event {
   const TreasuryPortionUpdated({required this.newPortion});
 
   factory TreasuryPortionUpdated._decode(_i1.Input input) {
-    return TreasuryPortionUpdated(newPortion: _i1.U8Codec.codec.decode(input));
+    return TreasuryPortionUpdated(newPortion: _i1.U32Codec.codec.decode(input));
   }
 
-  /// u8
-  final int newPortion;
+  /// Permill
+  final _i4.Permill newPortion;
 
   @override
   Map<String, Map<String, int>> toJson() => {
@@ -137,13 +138,13 @@ class TreasuryPortionUpdated extends Event {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U8Codec.codec.sizeHint(newPortion);
+    size = size + const _i4.PermillCodec().sizeHint(newPortion);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U8Codec.codec.encodeTo(newPortion, output);
+    _i1.U32Codec.codec.encodeTo(newPortion, output);
   }
 
   @override

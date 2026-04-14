@@ -5,7 +5,10 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 /// The `Error` enum of this pallet.
 enum Error {
-  invalidPortion('InvalidPortion', 0);
+  invalidPortion('InvalidPortion', 0),
+
+  /// Treasury account cannot be zero address (funds would be permanently locked).
+  invalidTreasuryAccount('InvalidTreasuryAccount', 1);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -35,6 +38,8 @@ class $ErrorCodec with _i1.Codec<Error> {
     switch (index) {
       case 0:
         return Error.invalidPortion;
+      case 1:
+        return Error.invalidTreasuryAccount;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

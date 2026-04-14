@@ -147,35 +147,19 @@ class ReversibleTransfersService {
     }
   }
 
-  /// Get account's pending transaction index
-  Future<int> getAccountPendingIndex(String address) async {
+  /// Get all pending transfers for an account
+  Future<List<PendingTransfer>> getAccountPendingTransfers(String address) async {
     try {
       final quantusApi = Planck(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
+      final txIds = await quantusApi.query.reversibleTransfers.pendingTransfersBySender(accountId);
 
-      return await quantusApi.query.reversibleTransfers.accountPendingIndex(accountId);
-    } catch (e) {
-      throw Exception('Failed to get account pending index: $e');
-    }
-  }
-
-  /// Get all pending transfers for an account by querying storage
-  Future<List<PendingTransfer>> getAccountPendingTransfers(String address) async {
-    try {
-      // Get the pending index to know how many transfers to check
-      final pendingIndex = await getAccountPendingIndex(address);
-
-      final pendingTransfers = <PendingTransfer>[];
-
-      // Query each potential pending transfer
-      // Note: This is a simplified approach - in practice you might want to
-      // use storage iteration or events to get all pending transfers
-      for (int i = 0; i < pendingIndex; i++) {
-        // This would need the actual transaction ID generation logic
-        // For now, this is a placeholder showing the pattern
+      final results = <PendingTransfer>[];
+      for (final txId in txIds) {
+        final transfer = await quantusApi.query.reversibleTransfers.pendingTransfers(txId);
+        if (transfer != null) results.add(transfer);
       }
-
-      return pendingTransfers;
+      return results;
     } catch (e) {
       throw Exception('Failed to get account pending transfers: $e');
     }

@@ -2,8 +2,9 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i4;
+import 'package:quiver/collection.dart' as _i5;
 
+import '../../sp_arithmetic/per_things/permill.dart' as _i4;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
 
 /// Contains a variant per dispatchable extrinsic that this pallet has.
@@ -38,7 +39,7 @@ class $Call {
     return SetTreasuryAccount(account: account);
   }
 
-  SetTreasuryPortion setTreasuryPortion({required int portion}) {
+  SetTreasuryPortion setTreasuryPortion({required _i4.Permill portion}) {
     return SetTreasuryPortion(portion: portion);
   }
 }
@@ -86,7 +87,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Set the treasury account. Root only.
+/// Set the treasury account. Root only. Zero address is rejected (funds would be locked).
 class SetTreasuryAccount extends Call {
   const SetTreasuryAccount({required this.account});
 
@@ -115,22 +116,22 @@ class SetTreasuryAccount extends Call {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is SetTreasuryAccount && _i4.listsEqual(other.account, account);
+      identical(this, other) || other is SetTreasuryAccount && _i5.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
 }
 
-/// Set the treasury portion (0-100). Root only.
+/// Set the treasury portion (Permill, 0–100%). Root only.
 class SetTreasuryPortion extends Call {
   const SetTreasuryPortion({required this.portion});
 
   factory SetTreasuryPortion._decode(_i1.Input input) {
-    return SetTreasuryPortion(portion: _i1.U8Codec.codec.decode(input));
+    return SetTreasuryPortion(portion: _i1.U32Codec.codec.decode(input));
   }
 
-  /// u8
-  final int portion;
+  /// Permill
+  final _i4.Permill portion;
 
   @override
   Map<String, Map<String, int>> toJson() => {
@@ -139,13 +140,13 @@ class SetTreasuryPortion extends Call {
 
   int _sizeHint() {
     int size = 1;
-    size = size + _i1.U8Codec.codec.sizeHint(portion);
+    size = size + const _i4.PermillCodec().sizeHint(portion);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
     _i1.U8Codec.codec.encodeTo(1, output);
-    _i1.U8Codec.codec.encodeTo(portion, output);
+    _i1.U32Codec.codec.encodeTo(portion, output);
   }
 
   @override

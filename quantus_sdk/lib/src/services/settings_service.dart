@@ -14,10 +14,11 @@ class SettingsService {
   final _secureStorage = const FlutterSecureStorage();
 
   // New keys for multi-account support
-  static const String _accountsKey = 'accounts_v4';
+  static const String _accountsKey = 'accounts_v5';
   static const String _accountsToMigrateKey = 'accounts_to_migrate';
   static const String _addressBookKey = 'address_book';
 
+  static const String _oldAccountsKeyV4 = 'accounts_v4';
   static const String _oldAccountsKeyV3 = 'accounts_v3';
   static const String _oldAccountsKeyV2 = 'accounts_v2';
   static const String _oldAccountsKeyV1 = 'accounts';
@@ -349,7 +350,8 @@ class SettingsService {
     final oldAccountsJson =
         _prefs.getString(_oldAccountsKeyV1) ??
         _prefs.getString(_oldAccountsKeyV2) ??
-        _prefs.getString(_oldAccountsKeyV3);
+        _prefs.getString(_oldAccountsKeyV3) ??
+        _prefs.getString(_oldAccountsKeyV4);
     if (oldAccountsJson != null) {
       try {
         final decoded = jsonDecode(oldAccountsJson) as List<dynamic>;
@@ -366,6 +368,7 @@ class SettingsService {
     await _prefs.remove(_oldAccountsKeyV1);
     await _prefs.remove(_oldAccountsKeyV2);
     await _prefs.remove(_oldAccountsKeyV3);
+    await _prefs.remove(_oldAccountsKeyV4);
   }
 
   /// Set old accounts data (for debugging/testing)
@@ -373,9 +376,7 @@ class SettingsService {
     print('removing accounts data');
     await _prefs.remove(_accountsKey);
     print('setting old accounts data - reload app after this');
-    await _prefs.setString(_oldAccountsKeyV3, jsonData);
-    // await _prefs.setString(_oldAccountsKeyV2, jsonData); // test mid new accts - also works
-    // await _prefs.setString(_oldAccountsKeyV1, jsonData);
+    await _prefs.setString(_oldAccountsKeyV4, jsonData);
   }
 
   // Test-only helper to reset initialization between tests

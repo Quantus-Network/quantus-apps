@@ -75,7 +75,10 @@ enum Error {
   containsFreezes('ContainsFreezes', 21),
 
   /// The asset cannot be destroyed because some accounts for this asset contain holds.
-  containsHolds('ContainsHolds', 22);
+  containsHolds('ContainsHolds', 22),
+
+  /// Tried setting too many reserves.
+  tooManyReserves('TooManyReserves', 23);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -149,6 +152,8 @@ class $ErrorCodec with _i1.Codec<Error> {
         return Error.containsFreezes;
       case 22:
         return Error.containsHolds;
+      case 23:
+        return Error.tooManyReserves;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

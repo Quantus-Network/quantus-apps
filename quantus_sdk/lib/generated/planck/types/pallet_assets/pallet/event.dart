@@ -190,6 +190,14 @@ class $Event {
   Withdrawn withdrawn({required int assetId, required _i3.AccountId32 who, required BigInt amount}) {
     return Withdrawn(assetId: assetId, who: who, amount: amount);
   }
+
+  ReservesUpdated reservesUpdated({required int assetId, required List<dynamic> reserves}) {
+    return ReservesUpdated(assetId: assetId, reserves: reserves);
+  }
+
+  ReservesRemoved reservesRemoved({required int assetId}) {
+    return ReservesRemoved(assetId: assetId);
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -251,6 +259,10 @@ class $EventCodec with _i1.Codec<Event> {
         return Deposited._decode(input);
       case 25:
         return Withdrawn._decode(input);
+      case 26:
+        return ReservesUpdated._decode(input);
+      case 27:
+        return ReservesRemoved._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -337,6 +349,12 @@ class $EventCodec with _i1.Codec<Event> {
       case Withdrawn:
         (value as Withdrawn).encodeTo(output);
         break;
+      case ReservesUpdated:
+        (value as ReservesUpdated).encodeTo(output);
+        break;
+      case ReservesRemoved:
+        (value as ReservesRemoved).encodeTo(output);
+        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -397,6 +415,10 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Deposited)._sizeHint();
       case Withdrawn:
         return (value as Withdrawn)._sizeHint();
+      case ReservesUpdated:
+        return (value as ReservesUpdated)._sizeHint();
+      case ReservesRemoved:
+        return (value as ReservesRemoved)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -1665,4 +1687,82 @@ class Withdrawn extends Event {
 
   @override
   int get hashCode => Object.hash(assetId, who, amount);
+}
+
+/// Reserve information was set or updated for `asset_id`.
+class ReservesUpdated extends Event {
+  const ReservesUpdated({required this.assetId, required this.reserves});
+
+  factory ReservesUpdated._decode(_i1.Input input) {
+    return ReservesUpdated(
+      assetId: _i1.U32Codec.codec.decode(input),
+      reserves: const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).decode(input),
+    );
+  }
+
+  /// T::AssetId
+  final int assetId;
+
+  /// Vec<T::ReserveData>
+  final List<dynamic> reserves;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'ReservesUpdated': {'assetId': assetId, 'reserves': reserves.map((value) => null).toList()},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U32Codec.codec.sizeHint(assetId);
+    size = size + const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).sizeHint(reserves);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(26, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+    const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).encodeTo(reserves, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReservesUpdated && other.assetId == assetId && _i4.listsEqual(other.reserves, reserves);
+
+  @override
+  int get hashCode => Object.hash(assetId, reserves);
+}
+
+/// Reserve information was removed for `asset_id`.
+class ReservesRemoved extends Event {
+  const ReservesRemoved({required this.assetId});
+
+  factory ReservesRemoved._decode(_i1.Input input) {
+    return ReservesRemoved(assetId: _i1.U32Codec.codec.decode(input));
+  }
+
+  /// T::AssetId
+  final int assetId;
+
+  @override
+  Map<String, Map<String, int>> toJson() => {
+    'ReservesRemoved': {'assetId': assetId},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U32Codec.codec.sizeHint(assetId);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(27, output);
+    _i1.U32Codec.codec.encodeTo(assetId, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is ReservesRemoved && other.assetId == assetId;
+
+  @override
+  int get hashCode => assetId.hashCode;
 }

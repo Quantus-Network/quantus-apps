@@ -39,8 +39,9 @@ class $Event {
     required _i3.AccountId32 to,
     required BigInt amount,
     required BigInt transferCount,
+    required BigInt leafIndex,
   }) {
-    return NativeTransferred(from: from, to: to, amount: amount, transferCount: transferCount);
+    return NativeTransferred(from: from, to: to, amount: amount, transferCount: transferCount, leafIndex: leafIndex);
   }
 
   AssetTransferred assetTransferred({
@@ -49,8 +50,16 @@ class $Event {
     required _i3.AccountId32 to,
     required BigInt amount,
     required BigInt transferCount,
+    required BigInt leafIndex,
   }) {
-    return AssetTransferred(assetId: assetId, from: from, to: to, amount: amount, transferCount: transferCount);
+    return AssetTransferred(
+      assetId: assetId,
+      from: from,
+      to: to,
+      amount: amount,
+      transferCount: transferCount,
+      leafIndex: leafIndex,
+    );
   }
 
   ProofVerified proofVerified({required BigInt exitAmount, required List<List<int>> nullifiers}) {
@@ -108,8 +117,18 @@ class $EventCodec with _i1.Codec<Event> {
   }
 }
 
+/// A native token transfer was recorded.
+///
+/// The `leaf_index` can be used to fetch Merkle proofs via the
+/// `zkTrie_getMerkleProof` RPC for ZK circuit verification.
 class NativeTransferred extends Event {
-  const NativeTransferred({required this.from, required this.to, required this.amount, required this.transferCount});
+  const NativeTransferred({
+    required this.from,
+    required this.to,
+    required this.amount,
+    required this.transferCount,
+    required this.leafIndex,
+  });
 
   factory NativeTransferred._decode(_i1.Input input) {
     return NativeTransferred(
@@ -117,6 +136,7 @@ class NativeTransferred extends Event {
       to: const _i1.U8ArrayCodec(32).decode(input),
       amount: _i1.U128Codec.codec.decode(input),
       transferCount: _i1.U64Codec.codec.decode(input),
+      leafIndex: _i1.U64Codec.codec.decode(input),
     );
   }
 
@@ -132,9 +152,19 @@ class NativeTransferred extends Event {
   /// T::TransferCount
   final BigInt transferCount;
 
+  /// u64
+  /// Index of this transfer in the ZK trie (for Merkle proof lookup)
+  final BigInt leafIndex;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-    'NativeTransferred': {'from': from.toList(), 'to': to.toList(), 'amount': amount, 'transferCount': transferCount},
+    'NativeTransferred': {
+      'from': from.toList(),
+      'to': to.toList(),
+      'amount': amount,
+      'transferCount': transferCount,
+      'leafIndex': leafIndex,
+    },
   };
 
   int _sizeHint() {
@@ -143,6 +173,7 @@ class NativeTransferred extends Event {
     size = size + const _i3.AccountId32Codec().sizeHint(to);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + _i1.U64Codec.codec.sizeHint(transferCount);
+    size = size + _i1.U64Codec.codec.sizeHint(leafIndex);
     return size;
   }
 
@@ -152,6 +183,7 @@ class NativeTransferred extends Event {
     const _i1.U8ArrayCodec(32).encodeTo(to, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
     _i1.U64Codec.codec.encodeTo(transferCount, output);
+    _i1.U64Codec.codec.encodeTo(leafIndex, output);
   }
 
   @override
@@ -161,12 +193,17 @@ class NativeTransferred extends Event {
           _i4.listsEqual(other.from, from) &&
           _i4.listsEqual(other.to, to) &&
           other.amount == amount &&
-          other.transferCount == transferCount;
+          other.transferCount == transferCount &&
+          other.leafIndex == leafIndex;
 
   @override
-  int get hashCode => Object.hash(from, to, amount, transferCount);
+  int get hashCode => Object.hash(from, to, amount, transferCount, leafIndex);
 }
 
+/// A non-native asset transfer was recorded.
+///
+/// The `leaf_index` can be used to fetch Merkle proofs via the
+/// `zkTrie_getMerkleProof` RPC for ZK circuit verification.
 class AssetTransferred extends Event {
   const AssetTransferred({
     required this.assetId,
@@ -174,6 +211,7 @@ class AssetTransferred extends Event {
     required this.to,
     required this.amount,
     required this.transferCount,
+    required this.leafIndex,
   });
 
   factory AssetTransferred._decode(_i1.Input input) {
@@ -183,10 +221,11 @@ class AssetTransferred extends Event {
       to: const _i1.U8ArrayCodec(32).decode(input),
       amount: _i1.U128Codec.codec.decode(input),
       transferCount: _i1.U64Codec.codec.decode(input),
+      leafIndex: _i1.U64Codec.codec.decode(input),
     );
   }
 
-  /// AssetIdOf<T>
+  /// T::AssetId
   final int assetId;
 
   /// <T as frame_system::Config>::AccountId
@@ -201,6 +240,10 @@ class AssetTransferred extends Event {
   /// T::TransferCount
   final BigInt transferCount;
 
+  /// u64
+  /// Index of this transfer in the ZK trie (for Merkle proof lookup)
+  final BigInt leafIndex;
+
   @override
   Map<String, Map<String, dynamic>> toJson() => {
     'AssetTransferred': {
@@ -209,6 +252,7 @@ class AssetTransferred extends Event {
       'to': to.toList(),
       'amount': amount,
       'transferCount': transferCount,
+      'leafIndex': leafIndex,
     },
   };
 
@@ -219,6 +263,7 @@ class AssetTransferred extends Event {
     size = size + const _i3.AccountId32Codec().sizeHint(to);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + _i1.U64Codec.codec.sizeHint(transferCount);
+    size = size + _i1.U64Codec.codec.sizeHint(leafIndex);
     return size;
   }
 
@@ -229,6 +274,7 @@ class AssetTransferred extends Event {
     const _i1.U8ArrayCodec(32).encodeTo(to, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
     _i1.U64Codec.codec.encodeTo(transferCount, output);
+    _i1.U64Codec.codec.encodeTo(leafIndex, output);
   }
 
   @override
@@ -239,10 +285,11 @@ class AssetTransferred extends Event {
           _i4.listsEqual(other.from, from) &&
           _i4.listsEqual(other.to, to) &&
           other.amount == amount &&
-          other.transferCount == transferCount;
+          other.transferCount == transferCount &&
+          other.leafIndex == leafIndex;
 
   @override
-  int get hashCode => Object.hash(assetId, from, to, amount, transferCount);
+  int get hashCode => Object.hash(assetId, from, to, amount, transferCount, leafIndex);
 }
 
 class ProofVerified extends Event {

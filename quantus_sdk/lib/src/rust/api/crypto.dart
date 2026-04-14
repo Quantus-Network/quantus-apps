@@ -31,6 +31,9 @@ Keypair generateDerivedKeypair({
   path: path,
 );
 
+WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
+    RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
@@ -110,4 +113,22 @@ class U8Array32 extends NonGrowableListView<int> {
   U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
 
   U8Array32.init() : this(Uint8List(arraySize));
+}
+
+class WormholeResult {
+  final String address;
+  final Uint8List firstHash;
+
+  const WormholeResult({required this.address, required this.firstHash});
+
+  @override
+  int get hashCode => address.hashCode ^ firstHash.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WormholeResult &&
+          runtimeType == other.runtimeType &&
+          address == other.address &&
+          firstHash == other.firstHash;
 }

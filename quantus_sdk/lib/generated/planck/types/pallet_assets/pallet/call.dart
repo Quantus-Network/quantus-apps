@@ -218,6 +218,10 @@ class $Call {
   TransferAll transferAll({required BigInt id, required _i3.MultiAddress dest, required bool keepAlive}) {
     return TransferAll(id: id, dest: dest, keepAlive: keepAlive);
   }
+
+  SetReserves setReserves({required BigInt id, required List<dynamic> reserves}) {
+    return SetReserves(id: id, reserves: reserves);
+  }
 }
 
 class $CallCodec with _i1.Codec<Call> {
@@ -293,6 +297,8 @@ class $CallCodec with _i1.Codec<Call> {
         return Block._decode(input);
       case 32:
         return TransferAll._decode(input);
+      case 33:
+        return SetReserves._decode(input);
       default:
         throw Exception('Call: Invalid variant index: "$index"');
     }
@@ -400,6 +406,9 @@ class $CallCodec with _i1.Codec<Call> {
       case TransferAll:
         (value as TransferAll).encodeTo(output);
         break;
+      case SetReserves:
+        (value as SetReserves).encodeTo(output);
+        break;
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -474,6 +483,8 @@ class $CallCodec with _i1.Codec<Call> {
         return (value as Block)._sizeHint();
       case TransferAll:
         return (value as TransferAll)._sizeHint();
+      case SetReserves:
+        return (value as SetReserves)._sizeHint();
       default:
         throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -2228,9 +2239,10 @@ class SetMinBalance extends Call {
 ///
 /// A deposit will be taken from the signer account.
 ///
-/// - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-///  must have sufficient funds for a deposit to be taken.
-/// - `id`: The identifier of the asset for the account to be created.
+/// - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+///  to be taken.
+/// - `id`: The identifier of the asset for the account to be created, the asset status must
+///  be live.
 /// - `who`: The account to be created.
 ///
 /// Emits `Touched` event when successful.
@@ -2435,4 +2447,55 @@ class TransferAll extends Call {
 
   @override
   int get hashCode => Object.hash(id, dest, keepAlive);
+}
+
+/// Sets the trusted reserve information of an asset.
+///
+/// Origin must be the Owner of the asset `id`. The origin must conform to the configured
+/// `CreateOrigin` or be the signed `owner` configured during asset creation.
+///
+/// - `id`: The identifier of the asset.
+/// - `reserves`: The full list of trusted reserves information.
+///
+/// Emits `AssetMinBalanceChanged` event when successful.
+class SetReserves extends Call {
+  const SetReserves({required this.id, required this.reserves});
+
+  factory SetReserves._decode(_i1.Input input) {
+    return SetReserves(
+      id: _i1.CompactBigIntCodec.codec.decode(input),
+      reserves: const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).decode(input),
+    );
+  }
+
+  /// T::AssetIdParameter
+  final BigInt id;
+
+  /// BoundedVec<T::ReserveData, ConstU32<MAX_RESERVES>>
+  final List<dynamic> reserves;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'set_reserves': {'id': id, 'reserves': reserves.map((value) => null).toList()},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.CompactBigIntCodec.codec.sizeHint(id);
+    size = size + const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).sizeHint(reserves);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(33, output);
+    _i1.CompactBigIntCodec.codec.encodeTo(id, output);
+    const _i1.SequenceCodec<dynamic>(_i1.NullCodec.codec).encodeTo(reserves, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is SetReserves && other.id == id && _i4.listsEqual(other.reserves, reserves);
+
+  @override
+  int get hashCode => Object.hash(id, reserves);
 }

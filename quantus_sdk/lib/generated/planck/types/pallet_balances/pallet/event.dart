@@ -2,10 +2,12 @@
 import 'dart:typed_data' as _i2;
 
 import 'package:polkadart/scale_codec.dart' as _i1;
-import 'package:quiver/collection.dart' as _i5;
+import 'package:quiver/collection.dart' as _i7;
 
 import '../../frame_support/traits/tokens/misc/balance_status.dart' as _i4;
+import '../../quantus_runtime/runtime_hold_reason.dart' as _i5;
 import '../../sp_core/crypto/account_id32.dart' as _i3;
+import 'unexpected_kind.dart' as _i6;
 
 /// The `Event` enum of this pallet
 abstract class Event {
@@ -29,7 +31,7 @@ abstract class Event {
     return codec.sizeHint(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson();
+  Map<String, dynamic> toJson();
 }
 
 class $Event {
@@ -84,8 +86,16 @@ class $Event {
     return Minted(who: who, amount: amount);
   }
 
+  MintedCredit mintedCredit({required BigInt amount}) {
+    return MintedCredit(amount: amount);
+  }
+
   Burned burned({required _i3.AccountId32 who, required BigInt amount}) {
     return Burned(who: who, amount: amount);
+  }
+
+  BurnedDebt burnedDebt({required BigInt amount}) {
+    return BurnedDebt(amount: amount);
   }
 
   Suspended suspended({required _i3.AccountId32 who, required BigInt amount}) {
@@ -127,6 +137,40 @@ class $Event {
   TotalIssuanceForced totalIssuanceForced({required BigInt old, required BigInt new_}) {
     return TotalIssuanceForced(old: old, new_: new_);
   }
+
+  Held held({required _i5.RuntimeHoldReason reason, required _i3.AccountId32 who, required BigInt amount}) {
+    return Held(reason: reason, who: who, amount: amount);
+  }
+
+  BurnedHeld burnedHeld({required _i5.RuntimeHoldReason reason, required _i3.AccountId32 who, required BigInt amount}) {
+    return BurnedHeld(reason: reason, who: who, amount: amount);
+  }
+
+  TransferOnHold transferOnHold({
+    required _i5.RuntimeHoldReason reason,
+    required _i3.AccountId32 source,
+    required _i3.AccountId32 dest,
+    required BigInt amount,
+  }) {
+    return TransferOnHold(reason: reason, source: source, dest: dest, amount: amount);
+  }
+
+  TransferAndHold transferAndHold({
+    required _i5.RuntimeHoldReason reason,
+    required _i3.AccountId32 source,
+    required _i3.AccountId32 dest,
+    required BigInt transferred,
+  }) {
+    return TransferAndHold(reason: reason, source: source, dest: dest, transferred: transferred);
+  }
+
+  Released released({required _i5.RuntimeHoldReason reason, required _i3.AccountId32 who, required BigInt amount}) {
+    return Released(reason: reason, who: who, amount: amount);
+  }
+
+  Unexpected unexpected(_i6.UnexpectedKind value0) {
+    return Unexpected(value0);
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -159,27 +203,43 @@ class $EventCodec with _i1.Codec<Event> {
       case 10:
         return Minted._decode(input);
       case 11:
-        return Burned._decode(input);
+        return MintedCredit._decode(input);
       case 12:
-        return Suspended._decode(input);
+        return Burned._decode(input);
       case 13:
-        return Restored._decode(input);
+        return BurnedDebt._decode(input);
       case 14:
-        return Upgraded._decode(input);
+        return Suspended._decode(input);
       case 15:
-        return Issued._decode(input);
+        return Restored._decode(input);
       case 16:
-        return Rescinded._decode(input);
+        return Upgraded._decode(input);
       case 17:
-        return Locked._decode(input);
+        return Issued._decode(input);
       case 18:
-        return Unlocked._decode(input);
+        return Rescinded._decode(input);
       case 19:
-        return Frozen._decode(input);
+        return Locked._decode(input);
       case 20:
-        return Thawed._decode(input);
+        return Unlocked._decode(input);
       case 21:
+        return Frozen._decode(input);
+      case 22:
+        return Thawed._decode(input);
+      case 23:
         return TotalIssuanceForced._decode(input);
+      case 24:
+        return Held._decode(input);
+      case 25:
+        return BurnedHeld._decode(input);
+      case 26:
+        return TransferOnHold._decode(input);
+      case 27:
+        return TransferAndHold._decode(input);
+      case 28:
+        return Released._decode(input);
+      case 29:
+        return Unexpected._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -221,8 +281,14 @@ class $EventCodec with _i1.Codec<Event> {
       case Minted:
         (value as Minted).encodeTo(output);
         break;
+      case MintedCredit:
+        (value as MintedCredit).encodeTo(output);
+        break;
       case Burned:
         (value as Burned).encodeTo(output);
+        break;
+      case BurnedDebt:
+        (value as BurnedDebt).encodeTo(output);
         break;
       case Suspended:
         (value as Suspended).encodeTo(output);
@@ -254,6 +320,24 @@ class $EventCodec with _i1.Codec<Event> {
       case TotalIssuanceForced:
         (value as TotalIssuanceForced).encodeTo(output);
         break;
+      case Held:
+        (value as Held).encodeTo(output);
+        break;
+      case BurnedHeld:
+        (value as BurnedHeld).encodeTo(output);
+        break;
+      case TransferOnHold:
+        (value as TransferOnHold).encodeTo(output);
+        break;
+      case TransferAndHold:
+        (value as TransferAndHold).encodeTo(output);
+        break;
+      case Released:
+        (value as Released).encodeTo(output);
+        break;
+      case Unexpected:
+        (value as Unexpected).encodeTo(output);
+        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -284,8 +368,12 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Slashed)._sizeHint();
       case Minted:
         return (value as Minted)._sizeHint();
+      case MintedCredit:
+        return (value as MintedCredit)._sizeHint();
       case Burned:
         return (value as Burned)._sizeHint();
+      case BurnedDebt:
+        return (value as BurnedDebt)._sizeHint();
       case Suspended:
         return (value as Suspended)._sizeHint();
       case Restored:
@@ -306,6 +394,18 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as Thawed)._sizeHint();
       case TotalIssuanceForced:
         return (value as TotalIssuanceForced)._sizeHint();
+      case Held:
+        return (value as Held)._sizeHint();
+      case BurnedHeld:
+        return (value as BurnedHeld)._sizeHint();
+      case TransferOnHold:
+        return (value as TransferOnHold)._sizeHint();
+      case TransferAndHold:
+        return (value as TransferAndHold)._sizeHint();
+      case Released:
+        return (value as Released)._sizeHint();
+      case Unexpected:
+        return (value as Unexpected)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -347,7 +447,7 @@ class Endowed extends Event {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Endowed && _i5.listsEqual(other.account, account) && other.freeBalance == freeBalance;
+      other is Endowed && _i7.listsEqual(other.account, account) && other.freeBalance == freeBalance;
 
   @override
   int get hashCode => Object.hash(account, freeBalance);
@@ -388,7 +488,7 @@ class DustLost extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is DustLost && _i5.listsEqual(other.account, account) && other.amount == amount;
+      identical(this, other) || other is DustLost && _i7.listsEqual(other.account, account) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(account, amount);
@@ -438,7 +538,7 @@ class Transfer extends Event {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Transfer && _i5.listsEqual(other.from, from) && _i5.listsEqual(other.to, to) && other.amount == amount;
+      other is Transfer && _i7.listsEqual(other.from, from) && _i7.listsEqual(other.to, to) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(from, to, amount);
@@ -478,7 +578,7 @@ class BalanceSet extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is BalanceSet && _i5.listsEqual(other.who, who) && other.free == free;
+      identical(this, other) || other is BalanceSet && _i7.listsEqual(other.who, who) && other.free == free;
 
   @override
   int get hashCode => Object.hash(who, free);
@@ -518,7 +618,7 @@ class Reserved extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Reserved && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Reserved && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -558,7 +658,7 @@ class Unreserved extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Unreserved && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Unreserved && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -626,8 +726,8 @@ class ReserveRepatriated extends Event {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ReserveRepatriated &&
-          _i5.listsEqual(other.from, from) &&
-          _i5.listsEqual(other.to, to) &&
+          _i7.listsEqual(other.from, from) &&
+          _i7.listsEqual(other.to, to) &&
           other.amount == amount &&
           other.destinationStatus == destinationStatus;
 
@@ -669,7 +769,7 @@ class Deposit extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Deposit && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Deposit && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -709,7 +809,7 @@ class Withdraw extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Withdraw && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Withdraw && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -749,7 +849,7 @@ class Slashed extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Slashed && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Slashed && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -789,10 +889,44 @@ class Minted extends Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Minted && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Minted && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
+}
+
+/// Some credit was balanced and added to the TotalIssuance.
+class MintedCredit extends Event {
+  const MintedCredit({required this.amount});
+
+  factory MintedCredit._decode(_i1.Input input) {
+    return MintedCredit(amount: _i1.U128Codec.codec.decode(input));
+  }
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, BigInt>> toJson() => {
+    'MintedCredit': {'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is MintedCredit && other.amount == amount;
+
+  @override
+  int get hashCode => amount.hashCode;
 }
 
 /// Some amount was burned from an account.
@@ -822,17 +956,51 @@ class Burned extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(11, output);
+    _i1.U8Codec.codec.encodeTo(12, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Burned && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Burned && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
+}
+
+/// Some debt has been dropped from the Total Issuance.
+class BurnedDebt extends Event {
+  const BurnedDebt({required this.amount});
+
+  factory BurnedDebt._decode(_i1.Input input) {
+    return BurnedDebt(amount: _i1.U128Codec.codec.decode(input));
+  }
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, BigInt>> toJson() => {
+    'BurnedDebt': {'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is BurnedDebt && other.amount == amount;
+
+  @override
+  int get hashCode => amount.hashCode;
 }
 
 /// Some amount was suspended from an account (it can be restored later).
@@ -862,14 +1030,14 @@ class Suspended extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(12, output);
+    _i1.U8Codec.codec.encodeTo(14, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Suspended && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Suspended && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -902,14 +1070,14 @@ class Restored extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(13, output);
+    _i1.U8Codec.codec.encodeTo(15, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Restored && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Restored && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -938,12 +1106,12 @@ class Upgraded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(14, output);
+    _i1.U8Codec.codec.encodeTo(16, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Upgraded && _i5.listsEqual(other.who, who);
+  bool operator ==(Object other) => identical(this, other) || other is Upgraded && _i7.listsEqual(other.who, who);
 
   @override
   int get hashCode => who.hashCode;
@@ -972,7 +1140,7 @@ class Issued extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(15, output);
+    _i1.U8Codec.codec.encodeTo(17, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
@@ -1006,7 +1174,7 @@ class Rescinded extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(16, output);
+    _i1.U8Codec.codec.encodeTo(18, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
@@ -1044,14 +1212,14 @@ class Locked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(17, output);
+    _i1.U8Codec.codec.encodeTo(19, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Locked && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Locked && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -1084,14 +1252,14 @@ class Unlocked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(18, output);
+    _i1.U8Codec.codec.encodeTo(20, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Unlocked && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Unlocked && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -1124,14 +1292,14 @@ class Frozen extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(19, output);
+    _i1.U8Codec.codec.encodeTo(21, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Frozen && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Frozen && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -1164,14 +1332,14 @@ class Thawed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(20, output);
+    _i1.U8Codec.codec.encodeTo(22, output);
     const _i1.U8ArrayCodec(32).encodeTo(who, output);
     _i1.U128Codec.codec.encodeTo(amount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Thawed && _i5.listsEqual(other.who, who) && other.amount == amount;
+      identical(this, other) || other is Thawed && _i7.listsEqual(other.who, who) && other.amount == amount;
 
   @override
   int get hashCode => Object.hash(who, amount);
@@ -1204,7 +1372,7 @@ class TotalIssuanceForced extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(21, output);
+    _i1.U8Codec.codec.encodeTo(23, output);
     _i1.U128Codec.codec.encodeTo(old, output);
     _i1.U128Codec.codec.encodeTo(new_, output);
   }
@@ -1215,4 +1383,311 @@ class TotalIssuanceForced extends Event {
 
   @override
   int get hashCode => Object.hash(old, new_);
+}
+
+/// Some balance was placed on hold.
+class Held extends Event {
+  const Held({required this.reason, required this.who, required this.amount});
+
+  factory Held._decode(_i1.Input input) {
+    return Held(
+      reason: _i5.RuntimeHoldReason.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+      amount: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::RuntimeHoldReason
+  final _i5.RuntimeHoldReason reason;
+
+  /// T::AccountId
+  final _i3.AccountId32 who;
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'Held': {'reason': reason.toJson(), 'who': who.toList(), 'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.RuntimeHoldReason.codec.sizeHint(reason);
+    size = size + const _i3.AccountId32Codec().sizeHint(who);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(24, output);
+    _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Held && other.reason == reason && _i7.listsEqual(other.who, who) && other.amount == amount;
+
+  @override
+  int get hashCode => Object.hash(reason, who, amount);
+}
+
+/// Held balance was burned from an account.
+class BurnedHeld extends Event {
+  const BurnedHeld({required this.reason, required this.who, required this.amount});
+
+  factory BurnedHeld._decode(_i1.Input input) {
+    return BurnedHeld(
+      reason: _i5.RuntimeHoldReason.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+      amount: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::RuntimeHoldReason
+  final _i5.RuntimeHoldReason reason;
+
+  /// T::AccountId
+  final _i3.AccountId32 who;
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'BurnedHeld': {'reason': reason.toJson(), 'who': who.toList(), 'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.RuntimeHoldReason.codec.sizeHint(reason);
+    size = size + const _i3.AccountId32Codec().sizeHint(who);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(25, output);
+    _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BurnedHeld && other.reason == reason && _i7.listsEqual(other.who, who) && other.amount == amount;
+
+  @override
+  int get hashCode => Object.hash(reason, who, amount);
+}
+
+/// A transfer of `amount` on hold from `source` to `dest` was initiated.
+class TransferOnHold extends Event {
+  const TransferOnHold({required this.reason, required this.source, required this.dest, required this.amount});
+
+  factory TransferOnHold._decode(_i1.Input input) {
+    return TransferOnHold(
+      reason: _i5.RuntimeHoldReason.codec.decode(input),
+      source: const _i1.U8ArrayCodec(32).decode(input),
+      dest: const _i1.U8ArrayCodec(32).decode(input),
+      amount: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::RuntimeHoldReason
+  final _i5.RuntimeHoldReason reason;
+
+  /// T::AccountId
+  final _i3.AccountId32 source;
+
+  /// T::AccountId
+  final _i3.AccountId32 dest;
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'TransferOnHold': {'reason': reason.toJson(), 'source': source.toList(), 'dest': dest.toList(), 'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.RuntimeHoldReason.codec.sizeHint(reason);
+    size = size + const _i3.AccountId32Codec().sizeHint(source);
+    size = size + const _i3.AccountId32Codec().sizeHint(dest);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(26, output);
+    _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
+    const _i1.U8ArrayCodec(32).encodeTo(source, output);
+    const _i1.U8ArrayCodec(32).encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TransferOnHold &&
+          other.reason == reason &&
+          _i7.listsEqual(other.source, source) &&
+          _i7.listsEqual(other.dest, dest) &&
+          other.amount == amount;
+
+  @override
+  int get hashCode => Object.hash(reason, source, dest, amount);
+}
+
+/// The `transferred` balance is placed on hold at the `dest` account.
+class TransferAndHold extends Event {
+  const TransferAndHold({required this.reason, required this.source, required this.dest, required this.transferred});
+
+  factory TransferAndHold._decode(_i1.Input input) {
+    return TransferAndHold(
+      reason: _i5.RuntimeHoldReason.codec.decode(input),
+      source: const _i1.U8ArrayCodec(32).decode(input),
+      dest: const _i1.U8ArrayCodec(32).decode(input),
+      transferred: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::RuntimeHoldReason
+  final _i5.RuntimeHoldReason reason;
+
+  /// T::AccountId
+  final _i3.AccountId32 source;
+
+  /// T::AccountId
+  final _i3.AccountId32 dest;
+
+  /// T::Balance
+  final BigInt transferred;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'TransferAndHold': {
+      'reason': reason.toJson(),
+      'source': source.toList(),
+      'dest': dest.toList(),
+      'transferred': transferred,
+    },
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.RuntimeHoldReason.codec.sizeHint(reason);
+    size = size + const _i3.AccountId32Codec().sizeHint(source);
+    size = size + const _i3.AccountId32Codec().sizeHint(dest);
+    size = size + _i1.U128Codec.codec.sizeHint(transferred);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(27, output);
+    _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
+    const _i1.U8ArrayCodec(32).encodeTo(source, output);
+    const _i1.U8ArrayCodec(32).encodeTo(dest, output);
+    _i1.U128Codec.codec.encodeTo(transferred, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TransferAndHold &&
+          other.reason == reason &&
+          _i7.listsEqual(other.source, source) &&
+          _i7.listsEqual(other.dest, dest) &&
+          other.transferred == transferred;
+
+  @override
+  int get hashCode => Object.hash(reason, source, dest, transferred);
+}
+
+/// Some balance was released from hold.
+class Released extends Event {
+  const Released({required this.reason, required this.who, required this.amount});
+
+  factory Released._decode(_i1.Input input) {
+    return Released(
+      reason: _i5.RuntimeHoldReason.codec.decode(input),
+      who: const _i1.U8ArrayCodec(32).decode(input),
+      amount: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::RuntimeHoldReason
+  final _i5.RuntimeHoldReason reason;
+
+  /// T::AccountId
+  final _i3.AccountId32 who;
+
+  /// T::Balance
+  final BigInt amount;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'Released': {'reason': reason.toJson(), 'who': who.toList(), 'amount': amount},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i5.RuntimeHoldReason.codec.sizeHint(reason);
+    size = size + const _i3.AccountId32Codec().sizeHint(who);
+    size = size + _i1.U128Codec.codec.sizeHint(amount);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(28, output);
+    _i5.RuntimeHoldReason.codec.encodeTo(reason, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Released && other.reason == reason && _i7.listsEqual(other.who, who) && other.amount == amount;
+
+  @override
+  int get hashCode => Object.hash(reason, who, amount);
+}
+
+/// An unexpected/defensive event was triggered.
+class Unexpected extends Event {
+  const Unexpected(this.value0);
+
+  factory Unexpected._decode(_i1.Input input) {
+    return Unexpected(_i6.UnexpectedKind.codec.decode(input));
+  }
+
+  /// UnexpectedKind
+  final _i6.UnexpectedKind value0;
+
+  @override
+  Map<String, String> toJson() => {'Unexpected': value0.toJson()};
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + _i6.UnexpectedKind.codec.sizeHint(value0);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(29, output);
+    _i6.UnexpectedKind.codec.encodeTo(value0, output);
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is Unexpected && other.value0 == value0;
+
+  @override
+  int get hashCode => value0.hashCode;
 }

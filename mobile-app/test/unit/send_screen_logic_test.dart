@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
+import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 
 void main() {
   group('SendScreenLogic', () {
@@ -68,7 +68,6 @@ void main() {
           amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
-          isFetchingFee: false,
         );
         expect(result, isTrue);
       });
@@ -79,7 +78,6 @@ void main() {
           amountStatus: AmountStatus.belowExistential,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
-          isFetchingFee: false,
         );
         expect(result, isTrue);
       });
@@ -90,18 +88,6 @@ void main() {
           amountStatus: AmountStatus.valid,
           recipientText: '',
           activeAccountId: 'sender_address',
-          isFetchingFee: false,
-        );
-        expect(result, isTrue);
-      });
-
-      test('returns true when fetching fee', () {
-        final result = SendScreenLogic.isButtonDisabled(
-          hasAddressError: false,
-          amountStatus: AmountStatus.valid,
-          recipientText: 'valid_address',
-          activeAccountId: 'sender_address',
-          isFetchingFee: true,
         );
         expect(result, isTrue);
       });
@@ -112,7 +98,6 @@ void main() {
           amountStatus: AmountStatus.valid,
           recipientText: 'same_address',
           activeAccountId: 'same_address',
-          isFetchingFee: false,
         );
         expect(result, isTrue);
       });
@@ -123,7 +108,6 @@ void main() {
           amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
           activeAccountId: 'sender_address',
-          isFetchingFee: false,
         );
         expect(result, isFalse);
       });

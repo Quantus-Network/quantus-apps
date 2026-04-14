@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -10,6 +11,7 @@ import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart'
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -31,6 +33,8 @@ class SendSheet extends ConsumerStatefulWidget {
 class _SendSheetState extends ConsumerState<SendSheet> {
   final _recipientController = TextEditingController();
   final _amountController = TextEditingController();
+  final _recipientFocus = FocusNode();
+  final _amountFocus = FocusNode();
   final _fmt = NumberFormattingService();
   final _checksumService = HumanReadableChecksumService();
 
@@ -42,6 +46,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   int _blockHeight = 0;
   bool _isFetchingFee = false;
   String? _errorMessage;
+  double _formKbHeight = 0;
+  bool _kbOpen = false;
+  Timer? _kbTimer;
 
   @override
   void initState() {
@@ -54,12 +61,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (widget.initialAmount != null) {
       _amountController.text = widget.initialAmount!;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchEstimatedFee();
+    });
   }
 
   @override
   void dispose() {
+    _kbTimer?.cancel();
     _recipientController.dispose();
     _amountController.dispose();
+    _recipientFocus.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -75,22 +88,46 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _lookupAddress(text);
   }
 
-  Future<void> _lookupAddress(String address) async {
+  void _lookupAddress(String address) {
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
-    final checksum = isValid ? await _checksumService.getHumanReadableName(address) : null;
-    if (!mounted) return;
     setState(() {
       _hasAddressError = !isValid;
-      _recipientChecksum = checksum;
+      _recipientChecksum = null;
     });
-    if (isValid && _amount > BigInt.zero) _fetchFee();
+    if (isValid) {
+      _checksumService.getHumanReadableName(address).then((checksum) {
+        if (mounted) setState(() => _recipientChecksum = checksum);
+      });
+      if (_amount > BigInt.zero) _fetchFee();
+    }
   }
 
   void _onAmountChanged() {
     final parsed = _fmt.parseAmount(_amountController.text);
     setState(() => _amount = parsed ?? BigInt.zero);
     if (!_hasAddressError && _amount > BigInt.zero) _fetchFee();
+  }
+
+  Future<void> _fetchEstimatedFee() async {
+    final displayAccount = ref.read(activeAccountProvider).value;
+    if (displayAccount is! RegularAccount) return;
+    final account = displayAccount.account;
+    try {
+      final balancesService = ref.read(balancesServiceProvider);
+      final feeData = await balancesService.getBalanceTransferFee(
+        account,
+        account.accountId,
+        _fmt.parseAmount('1000') ?? BigInt.zero,
+      );
+      if (!mounted) return;
+      setState(() {
+        _networkFee = feeData.fee;
+        _blockHeight = feeData.blockNumber;
+      });
+    } catch (e) {
+      debugPrint('Estimated fee fetch error: $e');
+    }
   }
 
   Future<void> _fetchFee() async {
@@ -117,7 +154,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   void _setMax() {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
-    _amountController.text = _fmt.formatBalance(max, addThousandsSeparators: false);
+    _amountController.text = _fmt.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
   }
 
   Future<void> _scanQr() async {
@@ -149,10 +186,20 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     }
   }
 
-  void _review() => setState(() => _step = _Step.confirm);
+  void _review() {
+    FocusScope.of(context).unfocus();
+    setState(() => _step = _Step.confirm);
+  }
+
   void _backToForm() => setState(() => _step = _Step.form);
 
   Future<void> _confirmSend() async {
+    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to confirm transaction');
+    if (!authed || !mounted) {
+      if (mounted) setState(() => _errorMessage = 'Authentication required to send');
+      return;
+    }
+
     setState(() {
       _step = _Step.sending;
       _errorMessage = null;
@@ -185,12 +232,38 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(effectiveMaxBalanceProvider);
+    final kb = MediaQuery.of(context).viewInsets.bottom;
 
-    return BottomSheetContainer(
-      title: widget.isPayMode ? 'Pay' : 'Send',
-      onBack: _step == _Step.confirm ? _backToForm : null,
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 200),
+    double bottomPadding;
+    if (_step == _Step.form) {
+      if (kb > 0) {
+        _kbTimer?.cancel();
+        _kbOpen = true;
+        if (kb > _formKbHeight) _formKbHeight = kb;
+      } else if (_kbOpen) {
+        _kbTimer?.cancel();
+        _kbTimer = Timer(const Duration(milliseconds: 200), () {
+          if (mounted) {
+            setState(() {
+              _kbOpen = false;
+              _formKbHeight = 0;
+            });
+          }
+        });
+      }
+      bottomPadding = _formKbHeight;
+    } else {
+      _kbTimer?.cancel();
+      _kbOpen = false;
+      _formKbHeight = 0;
+      bottomPadding = kb;
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: BottomSheetContainer(
+        title: widget.isPayMode ? 'Pay' : 'Send',
+        onBack: _step == _Step.confirm ? _backToForm : null,
         child: switch (_step) {
           _Step.form => _buildForm(colors, text, balance),
           _Step.confirm => _buildConfirm(colors, text),
@@ -210,7 +283,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       amountStatus: amountStatus,
       recipientText: recipient,
       activeAccountId: activeId,
-      isFetchingFee: _isFetchingFee,
     );
     final btnText = SendScreenLogic.getButtonText(
       hasAddressError: _hasAddressError,
@@ -254,59 +326,80 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   Widget _addressInput(AppColorsV2 colors, AppTextTheme text) {
     final hasRecipient = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
-    if (hasRecipient) {
-      return GestureDetector(
-        onTap: () => _recipientController.clear(),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
-          decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AddressFormattingService.formatAddress(
-                  _recipientController.text.trim(),
-                  prefix: 15,
-                  ellipses: '.......',
-                  postFix: 14,
-                ),
-                style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (_recipientChecksum != null) ...[
-                const SizedBox(height: 4),
-                Text(_recipientChecksum!, style: text.smallParagraph?.copyWith(color: colors.accentPink)),
-              ],
-            ],
-          ),
-        ),
-      );
-    }
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.only(left: 12, right: 8),
-        decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
-        child: TextField(
-          controller: _recipientController,
-          textAlignVertical: TextAlignVertical.center,
-          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.transparent,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            hintText: 'Quan Address',
-            hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: hasRecipient,
+              child: Opacity(
+                opacity: hasRecipient ? 0 : 1,
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+                  child: TextField(
+                    controller: _recipientController,
+                    focusNode: _recipientFocus,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
+                    scrollPadding: EdgeInsets.zero,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      hintText: 'Quan Address',
+                      hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+          if (hasRecipient)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  _recipientController.clear();
+                  _recipientFocus.requestFocus();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(color: colors.surfaceGlass, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AddressFormattingService.formatAddress(
+                          _recipientController.text.trim(),
+                          prefix: 15,
+                          ellipses: '.......',
+                          postFix: 14,
+                        ),
+                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_recipientChecksum != null)
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.accentPink)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -327,7 +420,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             top: 20,
             child: TextField(
               controller: _amountController,
+              focusNode: _amountFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              scrollPadding: EdgeInsets.zero,
               inputFormatters: [DecimalInputFilter()],
               style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 32),
               decoration: InputDecoration(
@@ -370,10 +465,17 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('Network Fee:', style: text.detail?.copyWith(color: colors.textSecondary)),
-        Text(
-          _isFetchingFee ? '...' : '${_fmt.formatBalance(_networkFee)} ${AppConstants.tokenSymbol}',
-          style: text.detail?.copyWith(color: colors.textSecondary),
-        ),
+        if (_isFetchingFee)
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: colors.textSecondary),
+          )
+        else
+          Text(
+            '${_fmt.formatBalance(_networkFee, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
+            style: text.detail?.copyWith(color: colors.textSecondary),
+          ),
       ],
     );
   }
@@ -468,9 +570,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 void showSendSheetV2(BuildContext context, {String? address, String? amount, bool isPayMode = false}) {
   BottomSheetContainer.show(
     context,
-    builder: (_) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
-    ),
+    builder: (_) => SendSheet(initialAddress: address, initialAmount: amount, isPayMode: isPayMode),
   );
 }

@@ -1,12 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/button.dart';
-import 'package:resonance_network_wallet/features/components/sphere.dart';
-import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
-import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
-import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class MigrationDialog extends StatefulWidget {
   final List<MigrationAccountData> migrationData;
@@ -25,36 +21,10 @@ class MigrationDialog extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width, // Ensure full width
-      ),
-      builder: (context) => Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black, const Color(0xFF312E6E).useOpacity(0.4), Colors.black],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-              child: Container(
-                color: Colors.black.useOpacity(0.3),
-                child: MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
-              ),
-            ),
-          ),
-        ],
-      ),
+      isDismissible: false,
+      enableDrag: false,
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
+      builder: (ctx) => MigrationDialog(migrationData: migrationData, onMigrate: onMigrate, onTryLater: onTryLater),
     );
   }
 
@@ -69,112 +39,74 @@ class _MigrationDialogState extends State<MigrationDialog> {
   @override
   Widget build(BuildContext context) {
     final accountCount = widget.migrationData.length;
+    final colors = context.colors;
+    final text = context.themeText;
 
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: ShapeDecoration(
-          color: context.themeColors.background,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: context.getHorizontalCenterPosition(
-                230 + (24 * 2),
-              ), // We add 24 * 2 because of the padding horizontal
-              bottom: -100,
-              child: const Sphere(variant: 7, size: 230),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
+      decoration: BoxDecoration(
+        color: colors.sheetBackground,
+        border: Border.all(color: const Color(0xFF3D3D3D)),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Migrate your accounts', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
+          const SizedBox(height: 24),
+          Text(
+            'We\'ll record your old\u2011chain mining rewards and actions to determine '
+            'rewards on the new Quantus Testnet.\n\n'
+            'Balances do not migrate.\n\n'
+            'Use the new testnet faucet for funds.',
+            style: text.smallParagraph?.copyWith(color: colors.textSecondary),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
+            style: text.paragraph?.copyWith(fontWeight: FontWeight.w600, color: colors.accentGreen),
+          ),
+          const SizedBox(height: 40),
+          if (_errorMessage != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(color: colors.error.useOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+              child: Text(_errorMessage!, style: text.smallParagraph?.copyWith(color: colors.textError)),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Migrate your accounts', style: context.themeText.mediumTitle),
-                const SizedBox(height: 16),
-                Text(
-                  'We\'ll record your old‑chain mining rewards and actions to determine '
-                  'airdrops and rewards on the new Quantus Testnet.\n\n'
-                  'Balances do not migrate. Use the new testnet faucet for funds; '
-                  'mining on the new testnet will earn rewards again.',
-                  style: context.themeText.smallParagraph,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  '$accountCount ${accountCount > 1 ? 'Accounts' : 'Account'} to migrate.',
-                  style: context.themeText.paragraph?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: context.themeColors.yellow,
-                  ),
-                ),
-                const SizedBox(height: 120),
-                if (_errorMessage != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: context.themeColors.error.useOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.error),
-                    ),
-                  ),
-                ],
-                Button(
-                  isLoading: _isMigrating,
-                  variant: ButtonVariant.primary,
-                  label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
-                  onPressed: () async {
-                    setState(() {
-                      _isMigrating = true;
-                    });
-
-                    try {
-                      await widget.onMigrate();
-                      if (mounted) {
-                        // ignore: use_build_context_synchronously
-                        Navigator.of(context).pop();
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        setState(() {
-                          _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.';
-                        });
-                      }
-                    } finally {
-                      if (mounted) {
-                        setState(() => _isMigrating = false);
-                      }
-                    }
-                  },
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Button(
-                    variant: ButtonVariant.transparent,
-                    label: 'Try later',
-                    onPressed: () async {
-                      if (widget.onTryLater != null) {
-                        await widget.onTryLater!();
-                      }
-                      if (mounted) {
-                        // ignore: use_build_context_synchronously
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    textStyle: context.themeText.smallParagraph?.copyWith(decoration: TextDecoration.underline),
-                  ),
-                ],
-                const SizedBox(height: 48),
-              ],
+          GlassButton.simple(
+            label: _errorMessage != null ? 'Retry' : 'Migrate Accounts',
+            isLoading: _isMigrating,
+            onTap: () async {
+              setState(() => _isMigrating = true);
+              try {
+                await widget.onMigrate();
+                // ignore: use_build_context_synchronously
+                if (mounted) Navigator.of(context).pop();
+              } catch (e) {
+                if (mounted) {
+                  setState(() => _errorMessage = 'We couldn\'t upload migration data. Please retry or try later.');
+                }
+              } finally {
+                if (mounted) setState(() => _isMigrating = false);
+              }
+            },
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            GlassButton.simple(
+              label: 'Try later',
+              variant: ButtonVariant.transparent,
+              onTap: () async {
+                if (widget.onTryLater != null) await widget.onTryLater!();
+                // ignore: use_build_context_synchronously
+                if (mounted) Navigator.of(context).pop();
+              },
             ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -168,10 +168,8 @@ class Txs {
   /// - A deposit (refundable - returned immediately on execution/cancellation)
   /// - A fee (non-refundable, burned immediately)
   ///
-  /// **Auto-cleanup:** Before creating a new proposal, ALL proposer's expired
-  /// proposals are automatically removed. This is the primary cleanup mechanism.
-  ///
-  /// **For threshold=1:** If the multisig threshold is 1, the proposal executes immediately.
+  /// **For threshold=1:** The proposal is created with `Approved` status immediately
+  /// and can be executed via `execute()` without additional approvals.
   ///
   /// **Weight:** Charged upfront for worst-case (high-security path with decode).
   /// Refunded to actual cost on success based on whether HS path was taken.
@@ -205,11 +203,14 @@ class Txs {
   /// Remove expired proposals and return deposits to proposers
   ///
   /// Can only be called by signers of the multisig.
-  /// Only removes Active proposals that have expired (past expiry block).
+  /// Removes Active or Approved proposals that have expired (past expiry block).
   /// Executed and Cancelled proposals are automatically cleaned up immediately.
   ///
+  /// Approved+expired proposals can become stuck if proposer is unavailable (e.g. lost
+  /// keys, compromise). Allowing any signer to remove them prevents permanent deposit
+  /// lockup and enables multisig dissolution.
+  ///
   /// The deposit is always returned to the original proposer, not the caller.
-  /// This allows any signer to help clean up storage even if proposer is inactive.
   _i8.Multisig removeExpired({required _i2.AccountId32 multisigAddress, required int proposalId}) {
     return _i8.Multisig(_i9.RemoveExpired(multisigAddress: multisigAddress, proposalId: proposalId));
   }
@@ -218,10 +219,10 @@ class Txs {
   ///
   /// This is a batch operation that removes all expired proposals where:
   /// - Caller is the proposer
-  /// - Proposal is Active and past expiry block
+  /// - Proposal is Active or Approved and past expiry block
   ///
   /// Note: Executed and Cancelled proposals are automatically cleaned up immediately,
-  /// so only Active+Expired proposals need manual cleanup.
+  /// so only Active+Expired and Approved+Expired proposals need manual cleanup.
   ///
   /// Returns all proposal deposits to the proposer in a single transaction.
   _i8.Multisig claimDeposits({required _i2.AccountId32 multisigAddress}) {

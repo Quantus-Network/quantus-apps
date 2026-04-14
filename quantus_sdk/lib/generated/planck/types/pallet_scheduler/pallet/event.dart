@@ -68,10 +68,6 @@ class $Event {
     return CallUnavailable(task: task, id: id);
   }
 
-  PeriodicFailed periodicFailed({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
-    return PeriodicFailed(task: task, id: id);
-  }
-
   RetryFailed retryFailed({required _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task, List<int>? id}) {
     return RetryFailed(task: task, id: id);
   }
@@ -104,10 +100,8 @@ class $EventCodec with _i1.Codec<Event> {
       case 5:
         return CallUnavailable._decode(input);
       case 6:
-        return PeriodicFailed._decode(input);
-      case 7:
         return RetryFailed._decode(input);
-      case 8:
+      case 7:
         return PermanentlyOverweight._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
@@ -135,9 +129,6 @@ class $EventCodec with _i1.Codec<Event> {
       case CallUnavailable:
         (value as CallUnavailable).encodeTo(output);
         break;
-      case PeriodicFailed:
-        (value as PeriodicFailed).encodeTo(output);
-        break;
       case RetryFailed:
         (value as RetryFailed).encodeTo(output);
         break;
@@ -164,8 +155,6 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as RetryCancelled)._sizeHint();
       case CallUnavailable:
         return (value as CallUnavailable)._sizeHint();
-      case PeriodicFailed:
-        return (value as PeriodicFailed)._sizeHint();
       case RetryFailed:
         return (value as RetryFailed)._sizeHint();
       case PermanentlyOverweight:
@@ -517,63 +506,6 @@ class CallUnavailable extends Event {
   int get hashCode => Object.hash(task, id);
 }
 
-/// The given task was unable to be renewed since the agenda is full at that block.
-class PeriodicFailed extends Event {
-  const PeriodicFailed({required this.task, this.id});
-
-  factory PeriodicFailed._decode(_i1.Input input) {
-    return PeriodicFailed(
-      task: const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
-        _i3.BlockNumberOrTimestamp.codec,
-        _i1.U32Codec.codec,
-      ).decode(input),
-      id: const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).decode(input),
-    );
-  }
-
-  /// TaskAddressOf<T>
-  final _i4.Tuple2<_i3.BlockNumberOrTimestamp, int> task;
-
-  /// Option<TaskName>
-  final List<int>? id;
-
-  @override
-  Map<String, Map<String, List<dynamic>?>> toJson() => {
-    'PeriodicFailed': {
-      'task': [task.value0.toJson(), task.value1],
-      'id': id?.toList(),
-    },
-  };
-
-  int _sizeHint() {
-    int size = 1;
-    size =
-        size +
-        const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
-          _i3.BlockNumberOrTimestamp.codec,
-          _i1.U32Codec.codec,
-        ).sizeHint(task);
-    size = size + const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).sizeHint(id);
-    return size;
-  }
-
-  void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(6, output);
-    const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
-      _i3.BlockNumberOrTimestamp.codec,
-      _i1.U32Codec.codec,
-    ).encodeTo(task, output);
-    const _i1.OptionCodec<List<int>>(_i1.U8ArrayCodec(32)).encodeTo(id, output);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) || other is PeriodicFailed && other.task == task && other.id == id;
-
-  @override
-  int get hashCode => Object.hash(task, id);
-}
-
 /// The given task was unable to be retried since the agenda is full at that block or there
 /// was not enough weight to reschedule it.
 class RetryFailed extends Event {
@@ -616,7 +548,7 @@ class RetryFailed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(7, output);
+    _i1.U8Codec.codec.encodeTo(6, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,
@@ -673,7 +605,7 @@ class PermanentlyOverweight extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(8, output);
+    _i1.U8Codec.codec.encodeTo(7, output);
     const _i4.Tuple2Codec<_i3.BlockNumberOrTimestamp, int>(
       _i3.BlockNumberOrTimestamp.codec,
       _i1.U32Codec.codec,

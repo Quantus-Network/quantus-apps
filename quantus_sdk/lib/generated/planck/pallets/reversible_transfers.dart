@@ -36,25 +36,10 @@ class Queries {
         hasher: _i1.StorageHasher.blake2b128Concat(_i4.H256Codec()),
       );
 
-  final _i1.StorageMap<_i2.AccountId32, int> _accountPendingIndex = const _i1.StorageMap<_i2.AccountId32, int>(
-    prefix: 'ReversibleTransfers',
-    storage: 'AccountPendingIndex',
-    valueCodec: _i6.U32Codec.codec,
-    hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-  );
-
   final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>> _pendingTransfersBySender =
       const _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>(
         prefix: 'ReversibleTransfers',
         storage: 'PendingTransfersBySender',
-        valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
-        hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
-      );
-
-  final _i1.StorageMap<_i2.AccountId32, List<_i4.H256>> _pendingTransfersByRecipient =
-      const _i1.StorageMap<_i2.AccountId32, List<_i4.H256>>(
-        prefix: 'ReversibleTransfers',
-        storage: 'PendingTransfersByRecipient',
         valueCodec: _i6.SequenceCodec<_i4.H256>(_i4.H256Codec()),
         hasher: _i1.StorageHasher.blake2b128Concat(_i2.AccountId32Codec()),
       );
@@ -95,35 +80,12 @@ class Queries {
     return null; /* Nullable */
   }
 
-  /// Indexes pending transaction IDs per account for efficient lookup and cancellation.
-  /// Also enforces the maximum pending transactions limit per account.
-  _i7.Future<int> accountPendingIndex(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
-    final hashedKey = _accountPendingIndex.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(hashedKey, at: at);
-    if (bytes != null) {
-      return _accountPendingIndex.decodeValue(bytes);
-    }
-    return 0; /* Default */
-  }
-
   /// Maps sender accounts to their list of pending transaction IDs.
-  /// This allows users to query all their outgoing pending transfers.
   _i7.Future<List<_i4.H256>> pendingTransfersBySender(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
     final hashedKey = _pendingTransfersBySender.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
     if (bytes != null) {
       return _pendingTransfersBySender.decodeValue(bytes);
-    }
-    return []; /* Default */
-  }
-
-  /// Maps recipient accounts to their list of pending incoming transaction IDs.
-  /// This allows users to query all their incoming pending transfers.
-  _i7.Future<List<_i4.H256>> pendingTransfersByRecipient(_i2.AccountId32 key1, {_i1.BlockHash? at}) async {
-    final hashedKey = _pendingTransfersByRecipient.hashedKeyFor(key1);
-    final bytes = await __api.getStorage(hashedKey, at: at);
-    if (bytes != null) {
-      return _pendingTransfersByRecipient.decodeValue(bytes);
     }
     return []; /* Default */
   }
@@ -175,19 +137,7 @@ class Queries {
     return []; /* Nullable */
   }
 
-  /// Indexes pending transaction IDs per account for efficient lookup and cancellation.
-  /// Also enforces the maximum pending transactions limit per account.
-  _i7.Future<List<int>> multiAccountPendingIndex(List<_i2.AccountId32> keys, {_i1.BlockHash? at}) async {
-    final hashedKeys = keys.map((key) => _accountPendingIndex.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
-    if (bytes.isNotEmpty) {
-      return bytes.first.changes.map((v) => _accountPendingIndex.decodeValue(v.key)).toList();
-    }
-    return (keys.map((key) => 0).toList() as List<int>); /* Default */
-  }
-
   /// Maps sender accounts to their list of pending transaction IDs.
-  /// This allows users to query all their outgoing pending transfers.
   _i7.Future<List<List<_i4.H256>>> multiPendingTransfersBySender(
     List<_i2.AccountId32> keys, {
     _i1.BlockHash? at,
@@ -196,20 +146,6 @@ class Queries {
     final bytes = await __api.queryStorageAt(hashedKeys, at: at);
     if (bytes.isNotEmpty) {
       return bytes.first.changes.map((v) => _pendingTransfersBySender.decodeValue(v.key)).toList();
-    }
-    return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
-  }
-
-  /// Maps recipient accounts to their list of pending incoming transaction IDs.
-  /// This allows users to query all their incoming pending transfers.
-  _i7.Future<List<List<_i4.H256>>> multiPendingTransfersByRecipient(
-    List<_i2.AccountId32> keys, {
-    _i1.BlockHash? at,
-  }) async {
-    final hashedKeys = keys.map((key) => _pendingTransfersByRecipient.hashedKeyFor(key)).toList();
-    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
-    if (bytes.isNotEmpty) {
-      return bytes.first.changes.map((v) => _pendingTransfersByRecipient.decodeValue(v.key)).toList();
     }
     return (keys.map((key) => []).toList() as List<List<_i4.H256>>); /* Default */
   }
@@ -238,21 +174,9 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage key for `accountPendingIndex`.
-  _i8.Uint8List accountPendingIndexKey(_i2.AccountId32 key1) {
-    final hashedKey = _accountPendingIndex.hashedKeyFor(key1);
-    return hashedKey;
-  }
-
   /// Returns the storage key for `pendingTransfersBySender`.
   _i8.Uint8List pendingTransfersBySenderKey(_i2.AccountId32 key1) {
     final hashedKey = _pendingTransfersBySender.hashedKeyFor(key1);
-    return hashedKey;
-  }
-
-  /// Returns the storage key for `pendingTransfersByRecipient`.
-  _i8.Uint8List pendingTransfersByRecipientKey(_i2.AccountId32 key1) {
-    final hashedKey = _pendingTransfersByRecipient.hashedKeyFor(key1);
     return hashedKey;
   }
 
@@ -280,21 +204,9 @@ class Queries {
     return hashedKey;
   }
 
-  /// Returns the storage map key prefix for `accountPendingIndex`.
-  _i8.Uint8List accountPendingIndexMapPrefix() {
-    final hashedKey = _accountPendingIndex.mapPrefix();
-    return hashedKey;
-  }
-
   /// Returns the storage map key prefix for `pendingTransfersBySender`.
   _i8.Uint8List pendingTransfersBySenderMapPrefix() {
     final hashedKey = _pendingTransfersBySender.mapPrefix();
-    return hashedKey;
-  }
-
-  /// Returns the storage map key prefix for `pendingTransfersByRecipient`.
-  _i8.Uint8List pendingTransfersByRecipientMapPrefix() {
-    final hashedKey = _pendingTransfersByRecipient.mapPrefix();
     return hashedKey;
   }
 
@@ -387,6 +299,8 @@ class Txs {
   /// account by transferring the entire balance to themselves.
   ///
   /// This is an emergency function for when the high security account may be compromised.
+  /// It cancels all pending transfers first (applying volume fees), then transfers
+  /// the remaining free balance to the guardian.
   _i9.ReversibleTransfers recoverFunds({required _i2.AccountId32 account}) {
     return _i9.ReversibleTransfers(_i11.RecoverFunds(account: account));
   }
@@ -395,11 +309,11 @@ class Txs {
 class Constants {
   Constants();
 
-  /// Maximum pending reversible transactions allowed per account. Used for BoundedVec.
-  final int maxPendingPerAccount = 10;
-
   /// Maximum number of accounts an interceptor can intercept for. Used for BoundedVec.
   final int maxInterceptorAccounts = 32;
+
+  /// Maximum pending reversible transactions allowed per account.
+  final int maxPendingPerAccount = 16;
 
   /// The default delay period for reversible transactions if none is specified.
   ///

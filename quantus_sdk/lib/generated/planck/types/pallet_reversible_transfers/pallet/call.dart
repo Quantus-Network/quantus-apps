@@ -517,6 +517,8 @@ class ScheduleAssetTransferWithDelay extends Call {
 /// account by transferring the entire balance to themselves.
 ///
 /// This is an emergency function for when the high security account may be compromised.
+/// It cancels all pending transfers first (applying volume fees), then transfers
+/// the remaining free balance to the guardian.
 class RecoverFunds extends Call {
   const RecoverFunds({required this.account});
 
