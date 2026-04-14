@@ -1,6 +1,5 @@
 use nam_tiny_hderive::bip32::ExtendedPrivKey;
-use qp_poseidon::PoseidonHasher;
-use qp_rusty_crystals_dilithium::{ml_dsa_87, SensitiveBytes32};
+use qp_rusty_crystals_dilithium::ml_dsa_87;
 use qp_poseidon_core::hash_bytes;
 use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
