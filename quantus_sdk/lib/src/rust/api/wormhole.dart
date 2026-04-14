@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `clone_prover`, `compute_block_hash_internal`, `compute_transfer_proof_leaf_hash`, `parse_hex_32`, `parse_hex`, `ss58_to_bytes`
+// These functions are ignored because they are not marked as `pub`: `compute_block_hash_internal`, `compute_merkle_positions`, `parse_hex_32`, `parse_hex`, `short_hex_bytes`, `short_hex`, `ss58_to_bytes`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`
 
 /// Derive a wormhole address pair from a mnemonic.
@@ -26,11 +26,18 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 ///     1,  // purpose: miner rewards
 ///     0,  // index: first address
 /// )?;
-/// println!("Rewards preimage (for --rewards-preimage): {}", result.first_hash_ss58);
+/// println!("Rewards inner hash (for --rewards-inner-hash): {}", result.first_hash_ss58);
 /// println!("Wormhole address (on-chain account): {}", result.address);
 /// ```
-WormholePairResult deriveWormholePair({required String mnemonic, required int purpose, required int index}) =>
-    RustLib.instance.api.crateApiWormholeDeriveWormholePair(mnemonic: mnemonic, purpose: purpose, index: index);
+WormholePairResult deriveWormholePair({
+  required String mnemonic,
+  required int purpose,
+  required int index,
+}) => RustLib.instance.api.crateApiWormholeDeriveWormholePair(
+  mnemonic: mnemonic,
+  purpose: purpose,
+  index: index,
+);
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
@@ -48,8 +55,10 @@ WormholePairResult deriveWormholePair({required String mnemonic, required int pu
 ///
 /// # Returns
 /// The wormhole address as SS58 string.
-String firstHashToAddress({required String firstHashHex}) =>
-    RustLib.instance.api.crateApiWormholeFirstHashToAddress(firstHashHex: firstHashHex);
+String firstHashToAddress({required String firstHashHex}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeFirstHashToAddress(firstHashHex: firstHashHex);
 
 /// Get the wormhole HD derivation path for a given purpose and index.
 ///
@@ -60,7 +69,10 @@ String firstHashToAddress({required String firstHashHex}) =>
 /// # Returns
 /// The full HD derivation path string.
 String getWormholeDerivationPath({required int purpose, required int index}) =>
-    RustLib.instance.api.crateApiWormholeGetWormholeDerivationPath(purpose: purpose, index: index);
+    RustLib.instance.api.crateApiWormholeGetWormholeDerivationPath(
+      purpose: purpose,
+      index: index,
+    );
 
 /// Compute the nullifier for a wormhole UTXO.
 ///
@@ -73,8 +85,13 @@ String getWormholeDerivationPath({required int purpose, required int index}) =>
 ///
 /// # Returns
 /// The nullifier as hex string with 0x prefix.
-String computeNullifier({required String secretHex, required BigInt transferCount}) =>
-    RustLib.instance.api.crateApiWormholeComputeNullifier(secretHex: secretHex, transferCount: transferCount);
+String computeNullifier({
+  required String secretHex,
+  required BigInt transferCount,
+}) => RustLib.instance.api.crateApiWormholeComputeNullifier(
+  secretHex: secretHex,
+  transferCount: transferCount,
+);
 
 /// Derive the wormhole address from a secret.
 ///
@@ -85,8 +102,10 @@ String computeNullifier({required String secretHex, required BigInt transferCoun
 ///
 /// # Returns
 /// The wormhole address as SS58 string.
-String deriveAddressFromSecret({required String secretHex}) =>
-    RustLib.instance.api.crateApiWormholeDeriveAddressFromSecret(secretHex: secretHex);
+String deriveAddressFromSecret({required String secretHex}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeDeriveAddressFromSecret(secretHex: secretHex);
 
 /// Quantize an amount from planck (12 decimals) to the circuit format (2 decimals).
 ///
@@ -98,8 +117,8 @@ String deriveAddressFromSecret({required String secretHex}) =>
 ///
 /// # Returns
 /// Quantized amount (2 decimal places) that can be used in proof outputs.
-int quantizeAmount({required BigInt amountPlanck}) =>
-    RustLib.instance.api.crateApiWormholeQuantizeAmount(amountPlanck: amountPlanck);
+int quantizeAmount({required BigInt amountPlanck}) => RustLib.instance.api
+    .crateApiWormholeQuantizeAmount(amountPlanck: amountPlanck);
 
 /// Dequantize an amount from circuit format (2 decimals) back to planck (12 decimals).
 ///
@@ -108,8 +127,8 @@ int quantizeAmount({required BigInt amountPlanck}) =>
 ///
 /// # Returns
 /// Amount in planck (12 decimal places).
-BigInt dequantizeAmount({required int quantizedAmount}) =>
-    RustLib.instance.api.crateApiWormholeDequantizeAmount(quantizedAmount: quantizedAmount);
+BigInt dequantizeAmount({required int quantizedAmount}) => RustLib.instance.api
+    .crateApiWormholeDequantizeAmount(quantizedAmount: quantizedAmount);
 
 /// Compute the output amount after fee deduction.
 ///
@@ -131,7 +150,10 @@ BigInt dequantizeAmount({required int quantizedAmount}) =>
 /// let output = compute_output_amount(input, 10); // 37 (after 0.1% fee)
 /// ```
 int computeOutputAmount({required int inputAmount, required int feeBps}) =>
-    RustLib.instance.api.crateApiWormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
+    RustLib.instance.api.crateApiWormholeComputeOutputAmount(
+      inputAmount: inputAmount,
+      feeBps: feeBps,
+    );
 
 /// Get the batch size for proof aggregation.
 ///
@@ -140,8 +162,10 @@ int computeOutputAmount({required int inputAmount, required int feeBps}) =>
 ///
 /// # Returns
 /// Number of proofs that must be aggregated together.
-BigInt getAggregationBatchSize({required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeGetAggregationBatchSize(binsDir: binsDir);
+BigInt getAggregationBatchSize({required String binsDir}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeGetAggregationBatchSize(binsDir: binsDir);
 
 /// Encode digest logs from RPC format to SCALE-encoded bytes.
 ///
@@ -160,35 +184,10 @@ BigInt getAggregationBatchSize({required String binsDir}) =>
 /// // From RPC: header.digest.logs = ["0x0642...", "0x0561..."]
 /// let digest_hex = encode_digest_from_rpc_logs(vec!["0x0642...".into(), "0x0561...".into()])?;
 /// ```
-String encodeDigestFromRpcLogs({required List<String> logsHex}) =>
-    RustLib.instance.api.crateApiWormholeEncodeDigestFromRpcLogs(logsHex: logsHex);
-
-/// Compute the full storage key for a wormhole TransferProof.
-///
-/// This key can be used with `state_getReadProof` RPC to fetch the Merkle proof
-/// needed for ZK proof generation.
-///
-/// The storage key is: module_prefix ++ storage_prefix ++ poseidon_hash(key)
-///
-/// # Arguments
-/// * `secret_hex` - The wormhole secret (32 bytes, hex with 0x prefix)
-/// * `transfer_count` - The transfer count from NativeTransferred event
-/// * `funding_account` - The account that sent the funds (SS58 format)
-/// * `amount` - The exact transfer amount in planck
-///
-/// # Returns
-/// The full storage key as hex string with 0x prefix.
-String computeTransferProofStorageKey({
-  required String secretHex,
-  required BigInt transferCount,
-  required String fundingAccount,
-  required BigInt amount,
-}) => RustLib.instance.api.crateApiWormholeComputeTransferProofStorageKey(
-  secretHex: secretHex,
-  transferCount: transferCount,
-  fundingAccount: fundingAccount,
-  amount: amount,
-);
+String encodeDigestFromRpcLogs({required List<String> logsHex}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeEncodeDigestFromRpcLogs(logsHex: logsHex);
 
 /// Create a new proof generator.
 ///
@@ -196,15 +195,20 @@ String computeTransferProofStorageKey({
 ///
 /// # Arguments
 /// * `bins_dir` - Path to directory containing prover.bin and common.bin
-Future<WormholeProofGenerator> createProofGenerator({required String binsDir}) =>
+Future<WormholeProofGenerator> createProofGenerator({
+  required String binsDir,
+}) =>
     RustLib.instance.api.crateApiWormholeCreateProofGenerator(binsDir: binsDir);
 
 /// Create a new proof aggregator.
 ///
 /// # Arguments
 /// * `bins_dir` - Path to directory containing aggregator circuit files
-Future<WormholeProofAggregator> createProofAggregator({required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeCreateProofAggregator(binsDir: binsDir);
+Future<WormholeProofAggregator> createProofAggregator({
+  required String binsDir,
+}) => RustLib.instance.api.crateApiWormholeCreateProofAggregator(
+  binsDir: binsDir,
+);
 
 /// Compute block hash from header components.
 ///
@@ -215,6 +219,7 @@ Future<WormholeProofAggregator> createProofAggregator({required String binsDir})
 /// * `parent_hash_hex` - Parent block hash (32 bytes, hex with 0x prefix)
 /// * `state_root_hex` - State root (32 bytes, hex with 0x prefix)
 /// * `extrinsics_root_hex` - Extrinsics root (32 bytes, hex with 0x prefix)
+/// * `zk_tree_root_hex` - ZK tree root (32 bytes, hex with 0x prefix)
 /// * `block_number` - Block number
 /// * `digest_hex` - SCALE-encoded digest (hex with 0x prefix, from encode_digest_from_rpc_logs)
 ///
@@ -224,12 +229,14 @@ String computeBlockHash({
   required String parentHashHex,
   required String stateRootHex,
   required String extrinsicsRootHex,
+  required String zkTreeRootHex,
   required int blockNumber,
   required String digestHex,
 }) => RustLib.instance.api.crateApiWormholeComputeBlockHash(
   parentHashHex: parentHashHex,
   stateRootHex: stateRootHex,
   extrinsicsRootHex: extrinsicsRootHex,
+  zkTreeRootHex: zkTreeRootHex,
   blockNumber: blockNumber,
   digestHex: digestHex,
 );
@@ -254,8 +261,13 @@ String computeBlockHash({
 /// - `aggregated_common.bin` - Aggregated circuit common data
 /// - `aggregated_verifier.bin` - Aggregated circuit verifier data
 /// - `config.json` - Configuration with hashes for integrity verification
-Future<CircuitGenerationResult> generateCircuitBinaries({required String outputDir, required int numLeafProofs}) =>
-    RustLib.instance.api.crateApiWormholeGenerateCircuitBinaries(outputDir: outputDir, numLeafProofs: numLeafProofs);
+Future<CircuitGenerationResult> generateCircuitBinaries({
+  required String outputDir,
+  required int numLeafProofs,
+}) => RustLib.instance.api.crateApiWormholeGenerateCircuitBinaries(
+  outputDir: outputDir,
+  numLeafProofs: numLeafProofs,
+);
 
 /// Check if circuit binaries exist and are valid in a directory.
 ///
@@ -264,8 +276,10 @@ Future<CircuitGenerationResult> generateCircuitBinaries({required String outputD
 ///
 /// # Returns
 /// True if all required files exist, false otherwise.
-bool checkCircuitBinariesExist({required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeCheckCircuitBinariesExist(binsDir: binsDir);
+bool checkCircuitBinariesExist({required String binsDir}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeCheckCircuitBinariesExist(binsDir: binsDir);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WormholeProofAggregator>>
 abstract class WormholeProofAggregator implements RustOpaqueInterface {
@@ -288,6 +302,9 @@ abstract class WormholeProofAggregator implements RustOpaqueInterface {
   Future<BigInt> batchSize();
 
   /// Clear the proof buffer without aggregating.
+  ///
+  /// Note: The new Layer0Aggregator API doesn't support clearing the buffer
+  /// directly. To clear, you need to create a new aggregator instance.
   Future<void> clear();
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
@@ -298,8 +315,11 @@ abstract class WormholeProofAggregator implements RustOpaqueInterface {
   ///
   /// # Returns
   /// A new proof aggregator instance.
-  static Future<WormholeProofAggregator> newInstance({required String binsDir}) =>
-      RustLib.instance.api.crateApiWormholeWormholeProofAggregatorNew(binsDir: binsDir);
+  static Future<WormholeProofAggregator> newInstance({
+    required String binsDir,
+  }) => RustLib.instance.api.crateApiWormholeWormholeProofAggregatorNew(
+    binsDir: binsDir,
+  );
 
   /// Get the number of proofs currently in the buffer.
   Future<BigInt> proofCount();
@@ -389,7 +409,9 @@ class CircuitConfig {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CircuitConfig && runtimeType == other.runtimeType && numLeafProofs == other.numLeafProofs;
+      other is CircuitConfig &&
+          runtimeType == other.runtimeType &&
+          numLeafProofs == other.numLeafProofs;
 }
 
 /// Result of circuit binary generation
@@ -403,7 +425,11 @@ class CircuitGenerationResult {
   /// Path to the generated binaries directory
   final String? outputDir;
 
-  const CircuitGenerationResult({required this.success, this.error, this.outputDir});
+  const CircuitGenerationResult({
+    required this.success,
+    this.error,
+    this.outputDir,
+  });
 
   @override
   int get hashCode => success.hashCode ^ error.hashCode ^ outputDir.hashCode;
@@ -462,7 +488,11 @@ class ProofOutputAssignment {
   });
 
   @override
-  int get hashCode => outputAmount1.hashCode ^ exitAccount1.hashCode ^ outputAmount2.hashCode ^ exitAccount2.hashCode;
+  int get hashCode =>
+      outputAmount1.hashCode ^
+      exitAccount1.hashCode ^
+      outputAmount2.hashCode ^
+      exitAccount2.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -475,28 +505,6 @@ class ProofOutputAssignment {
           exitAccount2 == other.exitAccount2;
 }
 
-/// Storage proof data for the transfer.
-class StorageProofData {
-  /// Raw proof nodes from the state trie (each node is hex encoded).
-  final List<String> proofNodesHex;
-
-  /// State root the proof is against (hex encoded).
-  final String stateRootHex;
-
-  const StorageProofData({required this.proofNodesHex, required this.stateRootHex});
-
-  @override
-  int get hashCode => proofNodesHex.hashCode ^ stateRootHex.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is StorageProofData &&
-          runtimeType == other.runtimeType &&
-          proofNodesHex == other.proofNodesHex &&
-          stateRootHex == other.stateRootHex;
-}
-
 /// Error type for wormhole operations
 class WormholeError implements FrbException {
   final String message;
@@ -505,14 +513,18 @@ class WormholeError implements FrbException {
 
   /// Returns the error message as a string for display.
   @override
-  String toString() => RustLib.instance.api.crateApiWormholeWormholeErrorToDisplayString(that: this);
+  String toString() => RustLib.instance.api
+      .crateApiWormholeWormholeErrorToDisplayString(that: this);
 
   @override
   int get hashCode => message.hashCode;
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is WormholeError && runtimeType == other.runtimeType && message == other.message;
+      identical(this, other) ||
+      other is WormholeError &&
+          runtimeType == other.runtimeType &&
+          message == other.message;
 }
 
 /// Result of wormhole pair derivation
@@ -523,7 +535,7 @@ class WormholePairResult {
   /// The raw address bytes (32 bytes, hex encoded)
   final String addressHex;
 
-  /// The first hash / rewards preimage as SS58 (pass to --rewards-preimage)
+  /// The first hash / rewards inner hash as SS58 (pass to --rewards-inner-hash)
   final String firstHashSs58;
 
   /// The first hash / rewards preimage bytes (32 bytes, hex encoded)
@@ -542,7 +554,11 @@ class WormholePairResult {
 
   @override
   int get hashCode =>
-      address.hashCode ^ addressHex.hashCode ^ firstHashSs58.hashCode ^ firstHashHex.hashCode ^ secretHex.hashCode;
+      address.hashCode ^
+      addressHex.hashCode ^
+      firstHashSs58.hashCode ^
+      firstHashHex.hashCode ^
+      secretHex.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -567,12 +583,15 @@ class WormholeProofGenerator {
 
   /// Generate a proof for a wormhole withdrawal.
   ///
+  /// This function delegates to quantus-cli's wormhole_lib to ensure
+  /// the proof generation logic is identical to the CLI.
+  ///
   /// # Arguments
-  /// * `utxo` - The UTXO to spend
+  /// * `utxo` - The UTXO to spend (with leaf_index and input_amount)
   /// * `output` - Where to send the funds
   /// * `fee_bps` - Fee in basis points
   /// * `block_header` - Block header for the proof
-  /// * `storage_proof` - Storage proof for the transfer
+  /// * `zk_merkle_proof` - ZK Merkle proof for the transfer
   ///
   /// # Returns
   /// The generated proof and nullifier.
@@ -581,15 +600,16 @@ class WormholeProofGenerator {
     required ProofOutputAssignment output,
     required int feeBps,
     required BlockHeaderData blockHeader,
-    required StorageProofData storageProof,
-  }) => RustLib.instance.api.crateApiWormholeWormholeProofGeneratorGenerateProof(
-    that: this,
-    utxo: utxo,
-    output: output,
-    feeBps: feeBps,
-    blockHeader: blockHeader,
-    storageProof: storageProof,
-  );
+    required ZkMerkleProofData zkMerkleProof,
+  }) =>
+      RustLib.instance.api.crateApiWormholeWormholeProofGeneratorGenerateProof(
+        that: this,
+        utxo: utxo,
+        output: output,
+        feeBps: feeBps,
+        blockHeader: blockHeader,
+        zkMerkleProof: zkMerkleProof,
+      );
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
   /// Create a new proof generator from circuit files.
@@ -599,8 +619,11 @@ class WormholeProofGenerator {
   ///
   /// # Returns
   /// A new proof generator instance.
-  static Future<WormholeProofGenerator> newInstance({required String binsDir}) =>
-      RustLib.instance.api.crateApiWormholeWormholeProofGeneratorNew(binsDir: binsDir);
+  static Future<WormholeProofGenerator> newInstance({
+    required String binsDir,
+  }) => RustLib.instance.api.crateApiWormholeWormholeProofGeneratorNew(
+    binsDir: binsDir,
+  );
 
   @override
   int get hashCode => binsDir.hashCode;
@@ -608,7 +631,9 @@ class WormholeProofGenerator {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is WormholeProofGenerator && runtimeType == other.runtimeType && binsDir == other.binsDir;
+      other is WormholeProofGenerator &&
+          runtimeType == other.runtimeType &&
+          binsDir == other.binsDir;
 }
 
 /// A wormhole UTXO (unspent transaction output) - FFI-friendly version.
@@ -619,32 +644,32 @@ class WormholeUtxo {
   /// The secret used to derive the wormhole address (hex encoded with 0x prefix).
   final String secretHex;
 
-  /// Amount in planck (12 decimal places).
-  final BigInt amount;
+  /// Input amount (quantized to 2 decimal places, as stored in ZK leaf).
+  final int inputAmount;
 
   /// Transfer count from the NativeTransferred event.
   final BigInt transferCount;
 
-  /// The funding account (sender of the original transfer) - hex encoded.
-  final String fundingAccountHex;
+  /// Leaf index in the ZK tree.
+  final BigInt leafIndex;
 
-  /// Block hash where the transfer was recorded - hex encoded.
+  /// Block hash where the proof is anchored - hex encoded.
   final String blockHashHex;
 
   const WormholeUtxo({
     required this.secretHex,
-    required this.amount,
+    required this.inputAmount,
     required this.transferCount,
-    required this.fundingAccountHex,
+    required this.leafIndex,
     required this.blockHashHex,
   });
 
   @override
   int get hashCode =>
       secretHex.hashCode ^
-      amount.hashCode ^
+      inputAmount.hashCode ^
       transferCount.hashCode ^
-      fundingAccountHex.hashCode ^
+      leafIndex.hashCode ^
       blockHashHex.hashCode;
 
   @override
@@ -653,8 +678,40 @@ class WormholeUtxo {
       other is WormholeUtxo &&
           runtimeType == other.runtimeType &&
           secretHex == other.secretHex &&
-          amount == other.amount &&
+          inputAmount == other.inputAmount &&
           transferCount == other.transferCount &&
-          fundingAccountHex == other.fundingAccountHex &&
+          leafIndex == other.leafIndex &&
           blockHashHex == other.blockHashHex;
+}
+
+/// ZK Merkle proof data for the transfer.
+class ZkMerkleProofData {
+  /// ZK tree root from block header (hex encoded, 32 bytes).
+  final String zkTreeRootHex;
+
+  /// Leaf hash (hex encoded, 32 bytes).
+  final String leafHashHex;
+
+  /// Unsorted sibling hashes at each level (3 siblings per level, each hex encoded).
+  /// Outer vec = levels, inner vec = 3 siblings per level.
+  final List<List<String>> siblingsHex;
+
+  const ZkMerkleProofData({
+    required this.zkTreeRootHex,
+    required this.leafHashHex,
+    required this.siblingsHex,
+  });
+
+  @override
+  int get hashCode =>
+      zkTreeRootHex.hashCode ^ leafHashHex.hashCode ^ siblingsHex.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ZkMerkleProofData &&
+          runtimeType == other.runtimeType &&
+          zkTreeRootHex == other.zkTreeRootHex &&
+          leafHashHex == other.leafHashHex &&
+          siblingsHex == other.siblingsHex;
 }

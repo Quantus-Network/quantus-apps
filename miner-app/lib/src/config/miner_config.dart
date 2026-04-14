@@ -109,7 +109,7 @@ class MinerConfig {
       description: 'Local development chain',
       rpcUrl: 'http://127.0.0.1:9933',
       subsquidUrl: 'http://127.0.0.1:4350/graphql',
-      isDefault: true,
+      isDefault: false,
     ),
     ChainConfig(
       id: 'dirac',
@@ -119,15 +119,27 @@ class MinerConfig {
       subsquidUrl: 'https://subsquid.quantus.com/graphql',
       isDefault: false,
     ),
+    ChainConfig(
+      id: 'planck',
+      displayName: 'Planck Testnet',
+      description: 'Planck testnet',
+      rpcUrl: 'https://a1-planck.quantus.cat',
+      subsquidUrl: null, // TODO: Add subsquid URL when indexer is available
+      isDefault: true,
+    ),
   ];
 
   /// Get chain config by ID, returns dev chain if not found
   static ChainConfig getChainById(String id) {
-    return availableChains.firstWhere((chain) => chain.id == id, orElse: () => availableChains.first);
+    return availableChains.firstWhere(
+      (chain) => chain.id == id,
+      orElse: () => availableChains.first,
+    );
   }
 
   /// The default chain ID
-  static String get defaultChainId => availableChains.firstWhere((c) => c.isDefault).id;
+  static String get defaultChainId =>
+      availableChains.firstWhere((c) => c.isDefault).id;
 
   // ============================================================
   // Process Names (for cleanup)
@@ -171,7 +183,7 @@ class ChainConfig {
   final String displayName;
   final String description;
   final String rpcUrl;
-  final String subsquidUrl;
+  final String? subsquidUrl;
   final bool isDefault;
 
   const ChainConfig({
@@ -179,13 +191,15 @@ class ChainConfig {
     required this.displayName,
     required this.description,
     required this.rpcUrl,
-    required this.subsquidUrl,
-    required this.isDefault,
+    this.subsquidUrl,
+    this.isDefault = false,
   });
 
   /// Whether this chain uses the local node RPC
-  bool get isLocalNode => rpcUrl.contains('127.0.0.1') || rpcUrl.contains('localhost');
+  bool get isLocalNode =>
+      rpcUrl.contains('127.0.0.1') || rpcUrl.contains('localhost');
 
   @override
-  String toString() => 'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
+  String toString() =>
+      'ChainConfig(id: $id, displayName: $displayName, rpcUrl: $rpcUrl)';
 }

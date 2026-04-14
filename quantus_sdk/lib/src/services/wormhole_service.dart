@@ -257,21 +257,6 @@ class WormholeService {
   /// - [fundingAccount]: The account that sent the funds (SS58 format)
   /// - [amount]: The exact transfer amount in planck
   ///
-  /// Returns the full storage key as hex string with 0x prefix.
-  String computeTransferProofStorageKey({
-    required String secretHex,
-    required BigInt transferCount,
-    required String fundingAccount,
-    required BigInt amount,
-  }) {
-    return wormhole.computeTransferProofStorageKey(
-      secretHex: secretHex,
-      transferCount: transferCount,
-      fundingAccount: fundingAccount,
-      amount: amount,
-    );
-  }
-
   /// Encode digest logs from RPC format to SCALE-encoded bytes.
   ///
   /// The RPC returns digest logs as an array of hex-encoded SCALE bytes.
@@ -305,6 +290,7 @@ class WormholeService {
   /// - [parentHashHex]: Parent block hash (32 bytes, hex with 0x prefix)
   /// - [stateRootHex]: State root (32 bytes, hex with 0x prefix)
   /// - [extrinsicsRootHex]: Extrinsics root (32 bytes, hex with 0x prefix)
+  /// - [zkTreeRootHex]: ZK tree root (32 bytes, hex with 0x prefix)
   /// - [blockNumber]: Block number
   /// - [digestHex]: SCALE-encoded digest (from [encodeDigestFromRpcLogs])
   ///
@@ -313,6 +299,7 @@ class WormholeService {
     required String parentHashHex,
     required String stateRootHex,
     required String extrinsicsRootHex,
+    required String zkTreeRootHex,
     required int blockNumber,
     required String digestHex,
   }) {
@@ -320,6 +307,7 @@ class WormholeService {
       parentHashHex: parentHashHex,
       stateRootHex: stateRootHex,
       extrinsicsRootHex: extrinsicsRootHex,
+      zkTreeRootHex: zkTreeRootHex,
       blockNumber: blockNumber,
       digestHex: digestHex,
     );
@@ -334,32 +322,32 @@ class WormholeUtxo {
   /// The wormhole secret (hex encoded with 0x prefix).
   final String secretHex;
 
-  /// Amount in planck (12 decimal places).
-  final BigInt amount;
+  /// Input amount (quantized to 2 decimal places, as stored in ZK leaf).
+  final int inputAmount;
 
   /// Transfer count from the NativeTransferred event.
   final BigInt transferCount;
 
-  /// The funding account (sender of the original transfer) - hex encoded.
-  final String fundingAccountHex;
+  /// Leaf index in the ZK tree.
+  final BigInt leafIndex;
 
-  /// Block hash where the transfer was recorded - hex encoded.
+  /// Block hash where the proof is anchored - hex encoded.
   final String blockHashHex;
 
   const WormholeUtxo({
     required this.secretHex,
-    required this.amount,
+    required this.inputAmount,
     required this.transferCount,
-    required this.fundingAccountHex,
+    required this.leafIndex,
     required this.blockHashHex,
   });
 
   wormhole.WormholeUtxo toFfi() {
     return wormhole.WormholeUtxo(
       secretHex: secretHex,
-      amount: amount,
+      inputAmount: inputAmount,
       transferCount: transferCount,
-      fundingAccountHex: fundingAccountHex,
+      leafIndex: leafIndex,
       blockHashHex: blockHashHex,
     );
   }
@@ -438,20 +426,29 @@ class BlockHeader {
   }
 }
 
-/// Storage proof data for verifying a transfer exists on-chain.
-class StorageProof {
-  /// Raw proof nodes from the state trie (each node is hex encoded).
-  final List<String> proofNodesHex;
+/// ZK Merkle proof data for verifying a transfer exists in the ZK tree.
+class ZkMerkleProof {
+  /// ZK tree root from block header (hex encoded, 32 bytes).
+  final String zkTreeRootHex;
 
-  /// State root the proof is against (hex encoded).
-  final String stateRootHex;
+  /// Leaf hash (hex encoded, 32 bytes).
+  final String leafHashHex;
 
-  const StorageProof({required this.proofNodesHex, required this.stateRootHex});
+  /// Unsorted sibling hashes at each level (3 siblings per level).
+  /// Outer list = levels, inner list = 3 siblings per level (each hex encoded).
+  final List<List<String>> siblingsHex;
 
-  wormhole.StorageProofData toFfi() {
-    return wormhole.StorageProofData(
-      proofNodesHex: proofNodesHex,
-      stateRootHex: stateRootHex,
+  const ZkMerkleProof({
+    required this.zkTreeRootHex,
+    required this.leafHashHex,
+    required this.siblingsHex,
+  });
+
+  wormhole.ZkMerkleProofData toFfi() {
+    return wormhole.ZkMerkleProofData(
+      zkTreeRootHex: zkTreeRootHex,
+      leafHashHex: leafHashHex,
+      siblingsHex: siblingsHex,
     );
   }
 }
@@ -512,7 +509,7 @@ class WormholeProofGenerator {
   /// - [output]: Where to send the funds
   /// - [feeBps]: Fee in basis points (e.g., 100 = 1%)
   /// - [blockHeader]: Block header data for the proof
-  /// - [storageProof]: Merkle proof that the UTXO exists
+  /// - [zkMerkleProof]: ZK Merkle proof that the UTXO exists in the tree
   ///
   /// Returns the generated proof and its nullifier.
   Future<GeneratedProof> generateProof({
@@ -520,14 +517,14 @@ class WormholeProofGenerator {
     required ProofOutput output,
     required int feeBps,
     required BlockHeader blockHeader,
-    required StorageProof storageProof,
+    required ZkMerkleProof zkMerkleProof,
   }) async {
     final result = await _inner.generateProof(
       utxo: utxo.toFfi(),
       output: output.toFfi(),
       feeBps: feeBps,
       blockHeader: blockHeader.toFfi(),
-      storageProof: storageProof.toFfi(),
+      zkMerkleProof: zkMerkleProof.toFfi(),
     );
     return GeneratedProof.fromFfi(result);
   }
