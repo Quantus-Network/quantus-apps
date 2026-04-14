@@ -31,8 +31,13 @@ Keypair generateDerivedKeypair({
   path: path,
 );
 
-WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+WormholeResult deriveWormhole({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoDeriveWormhole(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);

@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:convert/convert.dart';
 import 'package:http/http.dart' as http;
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/wormhole_service.dart';
 
@@ -80,11 +78,6 @@ class WormholeTransfer {
       leafIndex: leafIndex,
       blockHashHex: blockHash.startsWith('0x') ? blockHash : '0x$blockHash',
     );
-  }
-
-  static String _addressToHex(String ss58Address) {
-    final bytes = crypto.ss58ToAccountId(s: ss58Address);
-    return '0x${hex.encode(bytes)}';
   }
 
   @override

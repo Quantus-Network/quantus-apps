@@ -5,10 +5,12 @@
 
 import 'api/crypto.dart';
 import 'api/ur.dart';
+import 'api/wormhole.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart' if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'frb_generated.io.dart'
+    if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -46,10 +48,12 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   static void dispose() => instance.disposeImpl();
 
   @override
-  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor => RustLibApiImpl.new;
+  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor =>
+      RustLibApiImpl.new;
 
   @override
-  WireConstructor<RustLibWire> get wireConstructor => RustLibWire.fromExternalLibrary;
+  WireConstructor<RustLibWire> get wireConstructor =>
+      RustLibWire.fromExternalLibrary;
 
   @override
   Future<void> executeRustInitializers() async {
@@ -57,22 +61,82 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   }
 
   @override
-  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig => kDefaultExternalLibraryLoaderConfig;
+  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig =>
+      kDefaultExternalLibraryLoaderConfig;
 
   @override
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1266429595;
+  int get rustContentHash => -1632587045;
 
-  static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
-    stem: 'rust_lib_resonance_network_wallet',
-    ioDirectory: 'rust/target/release/',
-    webPrefix: 'pkg/',
-  );
+  static const kDefaultExternalLibraryLoaderConfig =
+      ExternalLibraryLoaderConfig(
+        stem: 'rust_lib_resonance_network_wallet',
+        ioDirectory: 'rust/target/release/',
+        webPrefix: 'pkg/',
+      );
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<void> crateApiWormholeWormholeProofAggregatorAddProof({
+    required WormholeProofAggregator that,
+    required String proofHex,
+  });
+
+  Future<AggregatedProof> crateApiWormholeWormholeProofAggregatorAggregate({
+    required WormholeProofAggregator that,
+  });
+
+  Future<BigInt> crateApiWormholeWormholeProofAggregatorBatchSize({
+    required WormholeProofAggregator that,
+  });
+
+  Future<void> crateApiWormholeWormholeProofAggregatorClear({
+    required WormholeProofAggregator that,
+  });
+
+  Future<WormholeProofAggregator> crateApiWormholeWormholeProofAggregatorNew({
+    required String binsDir,
+  });
+
+  Future<BigInt> crateApiWormholeWormholeProofAggregatorProofCount({
+    required WormholeProofAggregator that,
+  });
+
+  bool crateApiWormholeCheckCircuitBinariesExist({required String binsDir});
+
+  Future<CircuitConfig> crateApiWormholeCircuitConfigLoad({
+    required String binsDir,
+  });
+
+  String crateApiWormholeComputeBlockHash({
+    required String parentHashHex,
+    required String stateRootHex,
+    required String extrinsicsRootHex,
+    required String zkTreeRootHex,
+    required int blockNumber,
+    required String digestHex,
+  });
+
+  String crateApiWormholeComputeNullifier({
+    required String secretHex,
+    required BigInt transferCount,
+  });
+
+  int crateApiWormholeComputeOutputAmount({
+    required int inputAmount,
+    required int feeBps,
+  });
+
+  Future<WormholeProofAggregator> crateApiWormholeCreateProofAggregator({
+    required String binsDir,
+  });
+
+  Future<WormholeProofGenerator> crateApiWormholeCreateProofGenerator({
+    required String binsDir,
+  });
+
   Keypair crateApiCryptoCrystalAlice();
 
   Keypair crateApiCryptoCrystalBob();
@@ -81,17 +145,54 @@ abstract class RustLibApi extends BaseApi {
 
   Uint8List crateApiUrDecodeUr({required List<String> urParts});
 
-  Uint8List crateApiCryptoDeriveHdPath({required List<int> seed, required String path});
+  BigInt crateApiWormholeDequantizeAmount({required int quantizedAmount});
 
-  WormholeResult crateApiCryptoDeriveWormhole({required String mnemonicStr, required String path});
+  String crateApiWormholeDeriveAddressFromSecret({required String secretHex});
+
+  Uint8List crateApiCryptoDeriveHdPath({
+    required List<int> seed,
+    required String path,
+  });
+
+  WormholeResult crateApiCryptoDeriveWormhole({
+    required String mnemonicStr,
+    required String path,
+  });
+
+  WormholePairResult crateApiWormholeDeriveWormholePair({
+    required String mnemonic,
+    required int purpose,
+    required int index,
+  });
+
+  String crateApiWormholeEncodeDigestFromRpcLogs({
+    required List<String> logsHex,
+  });
 
   List<String> crateApiUrEncodeUr({required List<int> data});
 
-  Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path});
+  String crateApiWormholeFirstHashToAddress({required String firstHashHex});
+
+  Future<CircuitGenerationResult> crateApiWormholeGenerateCircuitBinaries({
+    required String outputDir,
+    required int numLeafProofs,
+  });
+
+  Keypair crateApiCryptoGenerateDerivedKeypair({
+    required String mnemonicStr,
+    required String path,
+  });
 
   Keypair crateApiCryptoGenerateKeypair({required String mnemonicStr});
 
   Keypair crateApiCryptoGenerateKeypairFromSeed({required List<int> seed});
+
+  BigInt crateApiWormholeGetAggregationBatchSize({required String binsDir});
+
+  String crateApiWormholeGetWormholeDerivationPath({
+    required int purpose,
+    required int index,
+  });
 
   Future<void> crateApiCryptoInitApp();
 
@@ -99,11 +200,17 @@ abstract class RustLibApi extends BaseApi {
 
   BigInt crateApiCryptoPublicKeyBytes();
 
+  int crateApiWormholeQuantizeAmount({required BigInt amountPlanck});
+
   BigInt crateApiCryptoSecretKeyBytes();
 
   void crateApiCryptoSetDefaultSs58Prefix({required int prefix});
 
-  Uint8List crateApiCryptoSignMessage({required Keypair keypair, required List<int> message, U8Array32? entropy});
+  Uint8List crateApiCryptoSignMessage({
+    required Keypair keypair,
+    required List<int> message,
+    U8Array32? entropy,
+  });
 
   Uint8List crateApiCryptoSignMessageWithPubkey({
     required Keypair keypair,
@@ -123,11 +230,40 @@ abstract class RustLibApi extends BaseApi {
     required List<int> signature,
   });
 
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_HdLatticeError;
+  String crateApiWormholeWormholeErrorToDisplayString({
+    required WormholeError that,
+  });
 
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_HdLatticeError;
+  Future<GeneratedProof> crateApiWormholeWormholeProofGeneratorGenerateProof({
+    required WormholeProofGenerator that,
+    required WormholeUtxo utxo,
+    required ProofOutputAssignment output,
+    required int feeBps,
+    required BlockHeaderData blockHeader,
+    required ZkMerkleProofData zkMerkleProof,
+  });
 
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_HdLatticeErrorPtr;
+  Future<WormholeProofGenerator> crateApiWormholeWormholeProofGeneratorNew({
+    required String binsDir,
+  });
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_HdLatticeError;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_HdLatticeError;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_HdLatticeErrorPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_WormholeProofAggregator;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_WormholeProofAggregator;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_WormholeProofAggregatorPtr;
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -139,14 +275,474 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<void> crateApiWormholeWormholeProofAggregatorAddProof({
+    required WormholeProofAggregator that,
+    required String proofHex,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+            that,
+            serializer,
+          );
+          sse_encode_String(proofHex, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorAddProofConstMeta,
+        argValues: [that, proofHex],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeWormholeProofAggregatorAddProofConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_add_proof',
+        argNames: ['that', 'proofHex'],
+      );
+
+  @override
+  Future<AggregatedProof> crateApiWormholeWormholeProofAggregatorAggregate({
+    required WormholeProofAggregator that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_aggregated_proof,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorAggregateConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiWormholeWormholeProofAggregatorAggregateConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_aggregate',
+        argNames: ['that'],
+      );
+
+  @override
+  Future<BigInt> crateApiWormholeWormholeProofAggregatorBatchSize({
+    required WormholeProofAggregator that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorBatchSizeConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiWormholeWormholeProofAggregatorBatchSizeConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_batch_size',
+        argNames: ['that'],
+      );
+
+  @override
+  Future<void> crateApiWormholeWormholeProofAggregatorClear({
+    required WormholeProofAggregator that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorClearConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeWormholeProofAggregatorClearConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_clear',
+        argNames: ['that'],
+      );
+
+  @override
+  Future<WormholeProofAggregator> crateApiWormholeWormholeProofAggregatorNew({
+    required String binsDir,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorNewConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeWormholeProofAggregatorNewConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_new',
+        argNames: ['binsDir'],
+      );
+
+  @override
+  Future<BigInt> crateApiWormholeWormholeProofAggregatorProofCount({
+    required WormholeProofAggregator that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofAggregatorProofCountConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiWormholeWormholeProofAggregatorProofCountConstMeta =>
+      const TaskConstMeta(
+        debugName: 'WormholeProofAggregator_proof_count',
+        argNames: ['that'],
+      );
+
+  @override
+  bool crateApiWormholeCheckCircuitBinariesExist({required String binsDir}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeCheckCircuitBinariesExistConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeCheckCircuitBinariesExistConstMeta =>
+      const TaskConstMeta(
+        debugName: 'check_circuit_binaries_exist',
+        argNames: ['binsDir'],
+      );
+
+  @override
+  Future<CircuitConfig> crateApiWormholeCircuitConfigLoad({
+    required String binsDir,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_circuit_config,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeCircuitConfigLoadConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeCircuitConfigLoadConstMeta =>
+      const TaskConstMeta(
+        debugName: 'circuit_config_load',
+        argNames: ['binsDir'],
+      );
+
+  @override
+  String crateApiWormholeComputeBlockHash({
+    required String parentHashHex,
+    required String stateRootHex,
+    required String extrinsicsRootHex,
+    required String zkTreeRootHex,
+    required int blockNumber,
+    required String digestHex,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(parentHashHex, serializer);
+          sse_encode_String(stateRootHex, serializer);
+          sse_encode_String(extrinsicsRootHex, serializer);
+          sse_encode_String(zkTreeRootHex, serializer);
+          sse_encode_u_32(blockNumber, serializer);
+          sse_encode_String(digestHex, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeComputeBlockHashConstMeta,
+        argValues: [
+          parentHashHex,
+          stateRootHex,
+          extrinsicsRootHex,
+          zkTreeRootHex,
+          blockNumber,
+          digestHex,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeComputeBlockHashConstMeta =>
+      const TaskConstMeta(
+        debugName: 'compute_block_hash',
+        argNames: [
+          'parentHashHex',
+          'stateRootHex',
+          'extrinsicsRootHex',
+          'zkTreeRootHex',
+          'blockNumber',
+          'digestHex',
+        ],
+      );
+
+  @override
+  String crateApiWormholeComputeNullifier({
+    required String secretHex,
+    required BigInt transferCount,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(secretHex, serializer);
+          sse_encode_u_64(transferCount, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeComputeNullifierConstMeta,
+        argValues: [secretHex, transferCount],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeComputeNullifierConstMeta =>
+      const TaskConstMeta(
+        debugName: 'compute_nullifier',
+        argNames: ['secretHex', 'transferCount'],
+      );
+
+  @override
+  int crateApiWormholeComputeOutputAmount({
+    required int inputAmount,
+    required int feeBps,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_32(inputAmount, serializer);
+          sse_encode_u_32(feeBps, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeComputeOutputAmountConstMeta,
+        argValues: [inputAmount, feeBps],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeComputeOutputAmountConstMeta =>
+      const TaskConstMeta(
+        debugName: 'compute_output_amount',
+        argNames: ['inputAmount', 'feeBps'],
+      );
+
+  @override
+  Future<WormholeProofAggregator> crateApiWormholeCreateProofAggregator({
+    required String binsDir,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeCreateProofAggregatorConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeCreateProofAggregatorConstMeta =>
+      const TaskConstMeta(
+        debugName: 'create_proof_aggregator',
+        argNames: ['binsDir'],
+      );
+
+  @override
+  Future<WormholeProofGenerator> crateApiWormholeCreateProofGenerator({
+    required String binsDir,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wormhole_proof_generator,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeCreateProofGeneratorConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeCreateProofGeneratorConstMeta =>
+      const TaskConstMeta(
+        debugName: 'create_proof_generator',
+        argNames: ['binsDir'],
+      );
+
+  @override
   Keypair crateApiCryptoCrystalAlice() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoCrystalAliceConstMeta,
         argValues: [],
         apiImpl: this,
@@ -163,9 +759,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoCrystalBobConstMeta,
         argValues: [],
         apiImpl: this,
@@ -173,7 +772,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiCryptoCrystalBobConstMeta => const TaskConstMeta(debugName: 'crystal_bob', argNames: []);
+  TaskConstMeta get kCrateApiCryptoCrystalBobConstMeta =>
+      const TaskConstMeta(debugName: 'crystal_bob', argNames: []);
 
   @override
   Keypair crateApiCryptoCrystalCharlie() {
@@ -181,9 +781,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoCrystalCharlieConstMeta,
         argValues: [],
         apiImpl: this,
@@ -201,9 +804,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_String(urParts, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: sse_decode_String),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: sse_decode_String,
+        ),
         constMeta: kCrateApiUrDecodeUrConstMeta,
         argValues: [urParts],
         apiImpl: this,
@@ -211,19 +817,78 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiUrDecodeUrConstMeta => const TaskConstMeta(debugName: 'decode_ur', argNames: ['urParts']);
+  TaskConstMeta get kCrateApiUrDecodeUrConstMeta =>
+      const TaskConstMeta(debugName: 'decode_ur', argNames: ['urParts']);
 
   @override
-  Uint8List crateApiCryptoDeriveHdPath({required List<int> seed, required String path}) {
+  BigInt crateApiWormholeDequantizeAmount({required int quantizedAmount}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_32(quantizedAmount, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeDequantizeAmountConstMeta,
+        argValues: [quantizedAmount],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeDequantizeAmountConstMeta =>
+      const TaskConstMeta(
+        debugName: 'dequantize_amount',
+        argNames: ['quantizedAmount'],
+      );
+
+  @override
+  String crateApiWormholeDeriveAddressFromSecret({required String secretHex}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(secretHex, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeDeriveAddressFromSecretConstMeta,
+        argValues: [secretHex],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeDeriveAddressFromSecretConstMeta =>
+      const TaskConstMeta(
+        debugName: 'derive_address_from_secret',
+        argNames: ['secretHex'],
+      );
+
+  @override
+  Uint8List crateApiCryptoDeriveHdPath({
+    required List<int> seed,
+    required String path,
+  }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(seed, serializer);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoDeriveHdPathConstMeta,
         argValues: [seed, path],
         apiImpl: this,
@@ -231,18 +896,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiCryptoDeriveHdPathConstMeta =>
-      const TaskConstMeta(debugName: 'derive_hd_path', argNames: ['seed', 'path']);
+  TaskConstMeta get kCrateApiCryptoDeriveHdPathConstMeta => const TaskConstMeta(
+    debugName: 'derive_hd_path',
+    argNames: ['seed', 'path'],
+  );
 
   @override
-  WormholeResult crateApiCryptoDeriveWormhole({required String mnemonicStr, required String path}) {
+  WormholeResult crateApiCryptoDeriveWormhole({
+    required String mnemonicStr,
+    required String path,
+  }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_wormhole_result,
@@ -257,7 +927,70 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoDeriveWormholeConstMeta =>
-      const TaskConstMeta(debugName: 'derive_wormhole', argNames: ['mnemonicStr', 'path']);
+      const TaskConstMeta(
+        debugName: 'derive_wormhole',
+        argNames: ['mnemonicStr', 'path'],
+      );
+
+  @override
+  WormholePairResult crateApiWormholeDeriveWormholePair({
+    required String mnemonic,
+    required int purpose,
+    required int index,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(mnemonic, serializer);
+          sse_encode_u_32(purpose, serializer);
+          sse_encode_u_32(index, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wormhole_pair_result,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeDeriveWormholePairConstMeta,
+        argValues: [mnemonic, purpose, index],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeDeriveWormholePairConstMeta =>
+      const TaskConstMeta(
+        debugName: 'derive_wormhole_pair',
+        argNames: ['mnemonic', 'purpose', 'index'],
+      );
+
+  @override
+  String crateApiWormholeEncodeDigestFromRpcLogs({
+    required List<String> logsHex,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_String(logsHex, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeEncodeDigestFromRpcLogsConstMeta,
+        argValues: [logsHex],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeEncodeDigestFromRpcLogsConstMeta =>
+      const TaskConstMeta(
+        debugName: 'encode_digest_from_rpc_logs',
+        argNames: ['logsHex'],
+      );
 
   @override
   List<String> crateApiUrEncodeUr({required List<int> data}) {
@@ -266,9 +999,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(data, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_String, decodeErrorData: sse_decode_String),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_String,
+        ),
         constMeta: kCrateApiUrEncodeUrConstMeta,
         argValues: [data],
         apiImpl: this,
@@ -276,17 +1012,82 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiUrEncodeUrConstMeta => const TaskConstMeta(debugName: 'encode_ur', argNames: ['data']);
+  TaskConstMeta get kCrateApiUrEncodeUrConstMeta =>
+      const TaskConstMeta(debugName: 'encode_ur', argNames: ['data']);
 
   @override
-  Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path}) {
+  String crateApiWormholeFirstHashToAddress({required String firstHashHex}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(firstHashHex, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeFirstHashToAddressConstMeta,
+        argValues: [firstHashHex],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeFirstHashToAddressConstMeta =>
+      const TaskConstMeta(
+        debugName: 'first_hash_to_address',
+        argNames: ['firstHashHex'],
+      );
+
+  @override
+  Future<CircuitGenerationResult> crateApiWormholeGenerateCircuitBinaries({
+    required String outputDir,
+    required int numLeafProofs,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(outputDir, serializer);
+          sse_encode_u_32(numLeafProofs, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 26,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_circuit_generation_result,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeGenerateCircuitBinariesConstMeta,
+        argValues: [outputDir, numLeafProofs],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeGenerateCircuitBinariesConstMeta =>
+      const TaskConstMeta(
+        debugName: 'generate_circuit_binaries',
+        argNames: ['outputDir', 'numLeafProofs'],
+      );
+
+  @override
+  Keypair crateApiCryptoGenerateDerivedKeypair({
+    required String mnemonicStr,
+    required String path,
+  }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_keypair,
@@ -301,7 +1102,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateDerivedKeypairConstMeta =>
-      const TaskConstMeta(debugName: 'generate_derived_keypair', argNames: ['mnemonicStr', 'path']);
+      const TaskConstMeta(
+        debugName: 'generate_derived_keypair',
+        argNames: ['mnemonicStr', 'path'],
+      );
 
   @override
   Keypair crateApiCryptoGenerateKeypair({required String mnemonicStr}) {
@@ -310,9 +1114,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoGenerateKeypairConstMeta,
         argValues: [mnemonicStr],
         apiImpl: this,
@@ -321,7 +1128,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateKeypairConstMeta =>
-      const TaskConstMeta(debugName: 'generate_keypair', argNames: ['mnemonicStr']);
+      const TaskConstMeta(
+        debugName: 'generate_keypair',
+        argNames: ['mnemonicStr'],
+      );
 
   @override
   Keypair crateApiCryptoGenerateKeypairFromSeed({required List<int> seed}) {
@@ -330,9 +1140,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(seed, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_keypair,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoGenerateKeypairFromSeedConstMeta,
         argValues: [seed],
         apiImpl: this,
@@ -341,7 +1154,66 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoGenerateKeypairFromSeedConstMeta =>
-      const TaskConstMeta(debugName: 'generate_keypair_from_seed', argNames: ['seed']);
+      const TaskConstMeta(
+        debugName: 'generate_keypair_from_seed',
+        argNames: ['seed'],
+      );
+
+  @override
+  BigInt crateApiWormholeGetAggregationBatchSize({required String binsDir}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeGetAggregationBatchSizeConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeGetAggregationBatchSizeConstMeta =>
+      const TaskConstMeta(
+        debugName: 'get_aggregation_batch_size',
+        argNames: ['binsDir'],
+      );
+
+  @override
+  String crateApiWormholeGetWormholeDerivationPath({
+    required int purpose,
+    required int index,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_32(purpose, serializer);
+          sse_encode_u_32(index, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeGetWormholeDerivationPathConstMeta,
+        argValues: [purpose, index],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeGetWormholeDerivationPathConstMeta =>
+      const TaskConstMeta(
+        debugName: 'get_wormhole_derivation_path',
+        argNames: ['purpose', 'index'],
+      );
 
   @override
   Future<void> crateApiCryptoInitApp() {
@@ -349,9 +1221,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11, port: port_);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 32,
+            port: port_,
+          );
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_unit, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoInitAppConstMeta,
         argValues: [],
         apiImpl: this,
@@ -359,7 +1239,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiCryptoInitAppConstMeta => const TaskConstMeta(debugName: 'init_app', argNames: []);
+  TaskConstMeta get kCrateApiCryptoInitAppConstMeta =>
+      const TaskConstMeta(debugName: 'init_app', argNames: []);
 
   @override
   bool crateApiUrIsCompleteUr({required List<String> urParts}) {
@@ -368,9 +1249,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_String(urParts, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_bool, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiUrIsCompleteUrConstMeta,
         argValues: [urParts],
         apiImpl: this,
@@ -387,9 +1271,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoPublicKeyBytesConstMeta,
         argValues: [],
         apiImpl: this,
@@ -401,14 +1288,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: 'public_key_bytes', argNames: []);
 
   @override
+  int crateApiWormholeQuantizeAmount({required BigInt amountPlanck}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_64(amountPlanck, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeQuantizeAmountConstMeta,
+        argValues: [amountPlanck],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeQuantizeAmountConstMeta =>
+      const TaskConstMeta(
+        debugName: 'quantize_amount',
+        argNames: ['amountPlanck'],
+      );
+
+  @override
   BigInt crateApiCryptoSecretKeyBytes() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSecretKeyBytesConstMeta,
         argValues: [],
         apiImpl: this,
@@ -426,9 +1342,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_16(prefix, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_unit, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSetDefaultSs58PrefixConstMeta,
         argValues: [prefix],
         apiImpl: this,
@@ -437,10 +1356,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoSetDefaultSs58PrefixConstMeta =>
-      const TaskConstMeta(debugName: 'set_default_ss58_prefix', argNames: ['prefix']);
+      const TaskConstMeta(
+        debugName: 'set_default_ss58_prefix',
+        argNames: ['prefix'],
+      );
 
   @override
-  Uint8List crateApiCryptoSignMessage({required Keypair keypair, required List<int> message, U8Array32? entropy}) {
+  Uint8List crateApiCryptoSignMessage({
+    required Keypair keypair,
+    required List<int> message,
+    U8Array32? entropy,
+  }) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
@@ -448,9 +1374,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSignMessageConstMeta,
         argValues: [keypair, message, entropy],
         apiImpl: this,
@@ -458,8 +1387,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiCryptoSignMessageConstMeta =>
-      const TaskConstMeta(debugName: 'sign_message', argNames: ['keypair', 'message', 'entropy']);
+  TaskConstMeta get kCrateApiCryptoSignMessageConstMeta => const TaskConstMeta(
+    debugName: 'sign_message',
+    argNames: ['keypair', 'message', 'entropy'],
+  );
 
   @override
   Uint8List crateApiCryptoSignMessageWithPubkey({
@@ -474,9 +1405,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 39)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
         argValues: [keypair, message, entropy],
         apiImpl: this,
@@ -485,7 +1419,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoSignMessageWithPubkeyConstMeta =>
-      const TaskConstMeta(debugName: 'sign_message_with_pubkey', argNames: ['keypair', 'message', 'entropy']);
+      const TaskConstMeta(
+        debugName: 'sign_message_with_pubkey',
+        argNames: ['keypair', 'message', 'entropy'],
+      );
 
   @override
   BigInt crateApiCryptoSignatureBytes() {
@@ -493,9 +1430,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSignatureBytesConstMeta,
         argValues: [],
         apiImpl: this,
@@ -513,9 +1453,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(s, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_8_strict,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoSs58ToAccountIdConstMeta,
         argValues: [s],
         apiImpl: this,
@@ -533,9 +1476,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_box_autoadd_keypair(obj, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_String, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoToAccountIdConstMeta,
         argValues: [obj],
         apiImpl: this,
@@ -559,9 +1505,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_list_prim_u_8_loose(signature, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
         },
-        codec: SseCodec(decodeSuccessData: sse_decode_bool, decodeErrorData: null),
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: null,
+        ),
         constMeta: kCrateApiCryptoVerifyMessageConstMeta,
         argValues: [keypair, message, signature],
         apiImpl: this,
@@ -570,16 +1519,146 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta get kCrateApiCryptoVerifyMessageConstMeta =>
-      const TaskConstMeta(debugName: 'verify_message', argNames: ['keypair', 'message', 'signature']);
+      const TaskConstMeta(
+        debugName: 'verify_message',
+        argNames: ['keypair', 'message', 'signature'],
+      );
 
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_HdLatticeError =>
-      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+  @override
+  String crateApiWormholeWormholeErrorToDisplayString({
+    required WormholeError that,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_wormhole_error(that, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiWormholeWormholeErrorToDisplayStringConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
 
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_HdLatticeError =>
-      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+  TaskConstMeta get kCrateApiWormholeWormholeErrorToDisplayStringConstMeta =>
+      const TaskConstMeta(
+        debugName: 'wormhole_error_to_display_string(dart_style=toString)',
+        argNames: ['that'],
+      );
+
+  @override
+  Future<GeneratedProof> crateApiWormholeWormholeProofGeneratorGenerateProof({
+    required WormholeProofGenerator that,
+    required WormholeUtxo utxo,
+    required ProofOutputAssignment output,
+    required int feeBps,
+    required BlockHeaderData blockHeader,
+    required ZkMerkleProofData zkMerkleProof,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_wormhole_proof_generator(that, serializer);
+          sse_encode_box_autoadd_wormhole_utxo(utxo, serializer);
+          sse_encode_box_autoadd_proof_output_assignment(output, serializer);
+          sse_encode_u_32(feeBps, serializer);
+          sse_encode_box_autoadd_block_header_data(blockHeader, serializer);
+          sse_encode_box_autoadd_zk_merkle_proof_data(
+            zkMerkleProof,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 45,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_generated_proof,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta:
+            kCrateApiWormholeWormholeProofGeneratorGenerateProofConstMeta,
+        argValues: [that, utxo, output, feeBps, blockHeader, zkMerkleProof],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiWormholeWormholeProofGeneratorGenerateProofConstMeta =>
+      const TaskConstMeta(
+        debugName: 'wormhole_proof_generator_generate_proof',
+        argNames: [
+          'that',
+          'utxo',
+          'output',
+          'feeBps',
+          'blockHeader',
+          'zkMerkleProof',
+        ],
+      );
+
+  @override
+  Future<WormholeProofGenerator> crateApiWormholeWormholeProofGeneratorNew({
+    required String binsDir,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(binsDir, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 46,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_wormhole_proof_generator,
+          decodeErrorData: sse_decode_wormhole_error,
+        ),
+        constMeta: kCrateApiWormholeWormholeProofGeneratorNewConstMeta,
+        argValues: [binsDir],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiWormholeWormholeProofGeneratorNewConstMeta =>
+      const TaskConstMeta(
+        debugName: 'wormhole_proof_generator_new',
+        argNames: ['binsDir'],
+      );
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_HdLatticeError => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_HdLatticeError => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_WormholeProofAggregator => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_WormholeProofAggregator => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator;
 
   @protected
-  HdLatticeError dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -587,9 +1666,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  HdLatticeError dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(dynamic raw) {
+  WormholeProofAggregator
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  WormholeProofAggregator
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  HdLatticeError
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+    dynamic raw,
+  ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return HdLatticeErrorImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  WormholeProofAggregator
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
   }
 
   @protected
@@ -599,9 +1714,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AggregatedProof dco_decode_aggregated_proof(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return AggregatedProof(
+      proofHex: dco_decode_String(arr[0]),
+      numRealProofs: dco_decode_usize(arr[1]),
+    );
+  }
+
+  @protected
+  BlockHeaderData dco_decode_block_header_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return BlockHeaderData(
+      parentHashHex: dco_decode_String(arr[0]),
+      stateRootHex: dco_decode_String(arr[1]),
+      extrinsicsRootHex: dco_decode_String(arr[2]),
+      blockNumber: dco_decode_u_32(arr[3]),
+      digestHex: dco_decode_String(arr[4]),
+    );
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
+  }
+
+  @protected
+  BlockHeaderData dco_decode_box_autoadd_block_header_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_block_header_data(raw);
   }
 
   @protected
@@ -611,10 +1759,79 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ProofOutputAssignment dco_decode_box_autoadd_proof_output_assignment(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_proof_output_assignment(raw);
+  }
+
+  @protected
+  WormholeError dco_decode_box_autoadd_wormhole_error(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wormhole_error(raw);
+  }
+
+  @protected
+  WormholeProofGenerator dco_decode_box_autoadd_wormhole_proof_generator(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wormhole_proof_generator(raw);
+  }
+
+  @protected
+  WormholeUtxo dco_decode_box_autoadd_wormhole_utxo(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_wormhole_utxo(raw);
+  }
+
+  @protected
+  ZkMerkleProofData dco_decode_box_autoadd_zk_merkle_proof_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_zk_merkle_proof_data(raw);
+  }
+
+  @protected
+  CircuitConfig dco_decode_circuit_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return CircuitConfig(numLeafProofs: dco_decode_usize(arr[0]));
+  }
+
+  @protected
+  CircuitGenerationResult dco_decode_circuit_generation_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return CircuitGenerationResult(
+      success: dco_decode_bool(arr[0]),
+      error: dco_decode_opt_String(arr[1]),
+      outputDir: dco_decode_opt_String(arr[2]),
+    );
+  }
+
+  @protected
+  GeneratedProof dco_decode_generated_proof(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return GeneratedProof(
+      proofHex: dco_decode_String(arr[0]),
+      nullifierHex: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
   Keypair dco_decode_keypair(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return Keypair(
       publicKey: dco_decode_list_prim_u_8_strict(arr[0]),
       secretKey: dco_decode_list_prim_u_8_strict(arr[1]),
@@ -625,6 +1842,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<String> dco_decode_list_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
+  List<List<String>> dco_decode_list_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_list_String).toList();
   }
 
   @protected
@@ -640,15 +1863,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
   U8Array32? dco_decode_opt_u_8_array_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_u_8_array_32(raw);
   }
 
   @protected
+  ProofOutputAssignment dco_decode_proof_output_assignment(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return ProofOutputAssignment(
+      outputAmount1: dco_decode_u_32(arr[0]),
+      exitAccount1: dco_decode_String(arr[1]),
+      outputAmount2: dco_decode_u_32(arr[2]),
+      exitAccount2: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
   int dco_decode_u_16(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
   }
 
   @protected
@@ -676,27 +1931,136 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  WormholeError dco_decode_wormhole_error(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return WormholeError(message: dco_decode_String(arr[0]));
+  }
+
+  @protected
+  WormholePairResult dco_decode_wormhole_pair_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return WormholePairResult(
+      address: dco_decode_String(arr[0]),
+      addressHex: dco_decode_String(arr[1]),
+      firstHashSs58: dco_decode_String(arr[2]),
+      firstHashHex: dco_decode_String(arr[3]),
+      secretHex: dco_decode_String(arr[4]),
+    );
+  }
+
+  @protected
+  WormholeProofGenerator dco_decode_wormhole_proof_generator(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return WormholeProofGenerator(binsDir: dco_decode_String(arr[0]));
+  }
+
+  @protected
   WormholeResult dco_decode_wormhole_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return WormholeResult(address: dco_decode_String(arr[0]), firstHash: dco_decode_list_prim_u_8_strict(arr[1]));
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return WormholeResult(
+      address: dco_decode_String(arr[0]),
+      firstHash: dco_decode_list_prim_u_8_strict(arr[1]),
+    );
   }
 
   @protected
-  HdLatticeError sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return HdLatticeErrorImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+  WormholeUtxo dco_decode_wormhole_utxo(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return WormholeUtxo(
+      secretHex: dco_decode_String(arr[0]),
+      inputAmount: dco_decode_u_32(arr[1]),
+      transferCount: dco_decode_u_64(arr[2]),
+      leafIndex: dco_decode_u_64(arr[3]),
+      blockHashHex: dco_decode_String(arr[4]),
+    );
   }
 
   @protected
-  HdLatticeError sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  ZkMerkleProofData dco_decode_zk_merkle_proof_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return ZkMerkleProofData(
+      zkTreeRootHex: dco_decode_String(arr[0]),
+      leafHashHex: dco_decode_String(arr[1]),
+      siblingsHex: dco_decode_list_list_String(arr[2]),
+    );
+  }
+
+  @protected
+  HdLatticeError
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return HdLatticeErrorImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
+    return HdLatticeErrorImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  WormholeProofAggregator
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  WormholeProofAggregator
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  HdLatticeError
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return HdLatticeErrorImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  WormholeProofAggregator
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return WormholeProofAggregatorImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
   }
 
   @protected
@@ -707,15 +2071,124 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AggregatedProof sse_decode_aggregated_proof(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_proofHex = sse_decode_String(deserializer);
+    var var_numRealProofs = sse_decode_usize(deserializer);
+    return AggregatedProof(
+      proofHex: var_proofHex,
+      numRealProofs: var_numRealProofs,
+    );
+  }
+
+  @protected
+  BlockHeaderData sse_decode_block_header_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_parentHashHex = sse_decode_String(deserializer);
+    var var_stateRootHex = sse_decode_String(deserializer);
+    var var_extrinsicsRootHex = sse_decode_String(deserializer);
+    var var_blockNumber = sse_decode_u_32(deserializer);
+    var var_digestHex = sse_decode_String(deserializer);
+    return BlockHeaderData(
+      parentHashHex: var_parentHashHex,
+      stateRootHex: var_stateRootHex,
+      extrinsicsRootHex: var_extrinsicsRootHex,
+      blockNumber: var_blockNumber,
+      digestHex: var_digestHex,
+    );
+  }
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
+  BlockHeaderData sse_decode_box_autoadd_block_header_data(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_block_header_data(deserializer));
+  }
+
+  @protected
   Keypair sse_decode_box_autoadd_keypair(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_keypair(deserializer));
+  }
+
+  @protected
+  ProofOutputAssignment sse_decode_box_autoadd_proof_output_assignment(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_proof_output_assignment(deserializer));
+  }
+
+  @protected
+  WormholeError sse_decode_box_autoadd_wormhole_error(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wormhole_error(deserializer));
+  }
+
+  @protected
+  WormholeProofGenerator sse_decode_box_autoadd_wormhole_proof_generator(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wormhole_proof_generator(deserializer));
+  }
+
+  @protected
+  WormholeUtxo sse_decode_box_autoadd_wormhole_utxo(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_wormhole_utxo(deserializer));
+  }
+
+  @protected
+  ZkMerkleProofData sse_decode_box_autoadd_zk_merkle_proof_data(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_zk_merkle_proof_data(deserializer));
+  }
+
+  @protected
+  CircuitConfig sse_decode_circuit_config(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_numLeafProofs = sse_decode_usize(deserializer);
+    return CircuitConfig(numLeafProofs: var_numLeafProofs);
+  }
+
+  @protected
+  CircuitGenerationResult sse_decode_circuit_generation_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_success = sse_decode_bool(deserializer);
+    var var_error = sse_decode_opt_String(deserializer);
+    var var_outputDir = sse_decode_opt_String(deserializer);
+    return CircuitGenerationResult(
+      success: var_success,
+      error: var_error,
+      outputDir: var_outputDir,
+    );
+  }
+
+  @protected
+  GeneratedProof sse_decode_generated_proof(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_proofHex = sse_decode_String(deserializer);
+    var var_nullifierHex = sse_decode_String(deserializer);
+    return GeneratedProof(
+      proofHex: var_proofHex,
+      nullifierHex: var_nullifierHex,
+    );
   }
 
   @protected
@@ -739,6 +2212,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<List<String>> sse_decode_list_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <List<String>>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_list_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -753,6 +2238,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   U8Array32? sse_decode_opt_u_8_array_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -764,9 +2260,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ProofOutputAssignment sse_decode_proof_output_assignment(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_outputAmount1 = sse_decode_u_32(deserializer);
+    var var_exitAccount1 = sse_decode_String(deserializer);
+    var var_outputAmount2 = sse_decode_u_32(deserializer);
+    var var_exitAccount2 = sse_decode_String(deserializer);
+    return ProofOutputAssignment(
+      outputAmount1: var_outputAmount1,
+      exitAccount1: var_exitAccount1,
+      outputAmount2: var_outputAmount2,
+      exitAccount2: var_exitAccount2,
+    );
+  }
+
+  @protected
   int sse_decode_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint16();
+  }
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
+  }
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getBigUint64();
   }
 
   @protected
@@ -794,11 +2319,78 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  WormholeError sse_decode_wormhole_error(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_message = sse_decode_String(deserializer);
+    return WormholeError(message: var_message);
+  }
+
+  @protected
+  WormholePairResult sse_decode_wormhole_pair_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_address = sse_decode_String(deserializer);
+    var var_addressHex = sse_decode_String(deserializer);
+    var var_firstHashSs58 = sse_decode_String(deserializer);
+    var var_firstHashHex = sse_decode_String(deserializer);
+    var var_secretHex = sse_decode_String(deserializer);
+    return WormholePairResult(
+      address: var_address,
+      addressHex: var_addressHex,
+      firstHashSs58: var_firstHashSs58,
+      firstHashHex: var_firstHashHex,
+      secretHex: var_secretHex,
+    );
+  }
+
+  @protected
+  WormholeProofGenerator sse_decode_wormhole_proof_generator(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_binsDir = sse_decode_String(deserializer);
+    return WormholeProofGenerator(binsDir: var_binsDir);
+  }
+
+  @protected
   WormholeResult sse_decode_wormhole_result(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_address = sse_decode_String(deserializer);
     var var_firstHash = sse_decode_list_prim_u_8_strict(deserializer);
     return WormholeResult(address: var_address, firstHash: var_firstHash);
+  }
+
+  @protected
+  WormholeUtxo sse_decode_wormhole_utxo(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_secretHex = sse_decode_String(deserializer);
+    var var_inputAmount = sse_decode_u_32(deserializer);
+    var var_transferCount = sse_decode_u_64(deserializer);
+    var var_leafIndex = sse_decode_u_64(deserializer);
+    var var_blockHashHex = sse_decode_String(deserializer);
+    return WormholeUtxo(
+      secretHex: var_secretHex,
+      inputAmount: var_inputAmount,
+      transferCount: var_transferCount,
+      leafIndex: var_leafIndex,
+      blockHashHex: var_blockHashHex,
+    );
+  }
+
+  @protected
+  ZkMerkleProofData sse_decode_zk_merkle_proof_data(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_zkTreeRootHex = sse_decode_String(deserializer);
+    var var_leafHashHex = sse_decode_String(deserializer);
+    var var_siblingsHex = sse_decode_list_list_String(deserializer);
+    return ZkMerkleProofData(
+      zkTreeRootHex: var_zkTreeRootHex,
+      leafHashHex: var_leafHashHex,
+      siblingsHex: var_siblingsHex,
+    );
   }
 
   @protected
@@ -808,21 +2400,68 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize((self as HdLatticeErrorImpl).frbInternalSseEncode(move: true), serializer);
+    sse_encode_usize(
+      (self as HdLatticeErrorImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
   }
 
   @protected
-  void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    WormholeProofAggregator self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as WormholeProofAggregatorImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    WormholeProofAggregator self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as WormholeProofAggregatorImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize((self as HdLatticeErrorImpl).frbInternalSseEncode(move: null), serializer);
+    sse_encode_usize(
+      (self as HdLatticeErrorImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWormholeProofAggregator(
+    WormholeProofAggregator self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as WormholeProofAggregatorImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
   }
 
   @protected
@@ -832,15 +2471,119 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_aggregated_proof(
+    AggregatedProof self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.proofHex, serializer);
+    sse_encode_usize(self.numRealProofs, serializer);
+  }
+
+  @protected
+  void sse_encode_block_header_data(
+    BlockHeaderData self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.parentHashHex, serializer);
+    sse_encode_String(self.stateRootHex, serializer);
+    sse_encode_String(self.extrinsicsRootHex, serializer);
+    sse_encode_u_32(self.blockNumber, serializer);
+    sse_encode_String(self.digestHex, serializer);
+  }
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
   }
 
   @protected
+  void sse_encode_box_autoadd_block_header_data(
+    BlockHeaderData self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_block_header_data(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_keypair(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_proof_output_assignment(
+    ProofOutputAssignment self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_proof_output_assignment(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wormhole_error(
+    WormholeError self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wormhole_error(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wormhole_proof_generator(
+    WormholeProofGenerator self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wormhole_proof_generator(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_wormhole_utxo(
+    WormholeUtxo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_wormhole_utxo(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_zk_merkle_proof_data(
+    ZkMerkleProofData self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_zk_merkle_proof_data(self, serializer);
+  }
+
+  @protected
+  void sse_encode_circuit_config(CircuitConfig self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(self.numLeafProofs, serializer);
+  }
+
+  @protected
+  void sse_encode_circuit_generation_result(
+    CircuitGenerationResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.success, serializer);
+    sse_encode_opt_String(self.error, serializer);
+    sse_encode_opt_String(self.outputDir, serializer);
+  }
+
+  @protected
+  void sse_encode_generated_proof(
+    GeneratedProof self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.proofHex, serializer);
+    sse_encode_String(self.nullifierHex, serializer);
   }
 
   @protected
@@ -860,17 +2603,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer) {
+  void sse_encode_list_list_String(
+    List<List<String>> self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
-    serializer.buffer.putUint8List(self is Uint8List ? self : Uint8List.fromList(self));
+    for (final item in self) {
+      sse_encode_list_String(item, serializer);
+    }
   }
 
   @protected
-  void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer) {
+  void sse_encode_list_prim_u_8_loose(
+    List<int> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer.putUint8List(
+      self is Uint8List ? self : Uint8List.fromList(self),
+    );
+  }
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+    Uint8List self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
   }
 
   @protected
@@ -884,9 +2657,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_proof_output_assignment(
+    ProofOutputAssignment self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.outputAmount1, serializer);
+    sse_encode_String(self.exitAccount1, serializer);
+    sse_encode_u_32(self.outputAmount2, serializer);
+    sse_encode_String(self.exitAccount2, serializer);
+  }
+
+  @protected
   void sse_encode_u_16(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint16(self);
+  }
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
+  }
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putBigUint64(self);
   }
 
   @protected
@@ -913,10 +2710,62 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_wormhole_result(WormholeResult self, SseSerializer serializer) {
+  void sse_encode_wormhole_error(WormholeError self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_wormhole_pair_result(
+    WormholePairResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.address, serializer);
+    sse_encode_String(self.addressHex, serializer);
+    sse_encode_String(self.firstHashSs58, serializer);
+    sse_encode_String(self.firstHashHex, serializer);
+    sse_encode_String(self.secretHex, serializer);
+  }
+
+  @protected
+  void sse_encode_wormhole_proof_generator(
+    WormholeProofGenerator self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.binsDir, serializer);
+  }
+
+  @protected
+  void sse_encode_wormhole_result(
+    WormholeResult self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.address, serializer);
     sse_encode_list_prim_u_8_strict(self.firstHash, serializer);
+  }
+
+  @protected
+  void sse_encode_wormhole_utxo(WormholeUtxo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.secretHex, serializer);
+    sse_encode_u_32(self.inputAmount, serializer);
+    sse_encode_u_64(self.transferCount, serializer);
+    sse_encode_u_64(self.leafIndex, serializer);
+    sse_encode_String(self.blockHashHex, serializer);
+  }
+
+  @protected
+  void sse_encode_zk_merkle_proof_data(
+    ZkMerkleProofData self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.zkTreeRootHex, serializer);
+    sse_encode_String(self.leafHashHex, serializer);
+    sse_encode_list_list_String(self.siblingsHex, serializer);
   }
 
   @protected
@@ -929,15 +2778,83 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 @sealed
 class HdLatticeErrorImpl extends RustOpaque implements HdLatticeError {
   // Not to be used by end users
-  HdLatticeErrorImpl.frbInternalDcoDecode(List<dynamic> wire) : super.frbInternalDcoDecode(wire, _kStaticData);
+  HdLatticeErrorImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
 
   // Not to be used by end users
   HdLatticeErrorImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
     : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
 
   static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_HdLatticeError,
-    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_HdLatticeError,
-    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_HdLatticeErrorPtr,
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_HdLatticeError,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_HdLatticeError,
+    rustArcDecrementStrongCountPtr:
+        RustLib.instance.api.rust_arc_decrement_strong_count_HdLatticeErrorPtr,
   );
+}
+
+@sealed
+class WormholeProofAggregatorImpl extends RustOpaque
+    implements WormholeProofAggregator {
+  // Not to be used by end users
+  WormholeProofAggregatorImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  WormholeProofAggregatorImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_WormholeProofAggregator,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_WormholeProofAggregator,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_WormholeProofAggregatorPtr,
+  );
+
+  /// Add a proof to the aggregation buffer.
+  ///
+  /// # Arguments
+  /// * `proof_hex` - The serialized proof bytes (hex encoded with 0x prefix)
+  Future<void> addProof({required String proofHex}) =>
+      RustLib.instance.api.crateApiWormholeWormholeProofAggregatorAddProof(
+        that: this,
+        proofHex: proofHex,
+      );
+
+  /// Aggregate all proofs in the buffer.
+  ///
+  /// If fewer than `batch_size` proofs have been added, the remaining
+  /// slots are filled with dummy proofs automatically.
+  ///
+  /// # Returns
+  /// The aggregated proof.
+  Future<AggregatedProof> aggregate() => RustLib.instance.api
+      .crateApiWormholeWormholeProofAggregatorAggregate(that: this);
+
+  /// Get the batch size (number of proofs per aggregation).
+  Future<BigInt> batchSize() => RustLib.instance.api
+      .crateApiWormholeWormholeProofAggregatorBatchSize(that: this);
+
+  /// Clear the proof buffer without aggregating.
+  ///
+  /// Note: The new Layer0Aggregator API doesn't support clearing the buffer
+  /// directly. To clear, you need to create a new aggregator instance.
+  Future<void> clear() => RustLib.instance.api
+      .crateApiWormholeWormholeProofAggregatorClear(that: this);
+
+  /// Get the number of proofs currently in the buffer.
+  Future<BigInt> proofCount() => RustLib.instance.api
+      .crateApiWormholeWormholeProofAggregatorProofCount(that: this);
 }
