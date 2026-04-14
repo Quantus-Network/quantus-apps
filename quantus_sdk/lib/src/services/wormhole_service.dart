@@ -17,7 +17,7 @@ class WormholeKeyPair {
   /// The raw address bytes (32 bytes, hex encoded with 0x prefix).
   final String addressHex;
 
-  /// The first hash / rewards preimage as SS58 (pass to node --rewards-preimage).
+  /// The first hash / rewards inner hash as SS58 (pass to node --rewards-inner-hash).
   final String rewardsPreimage;
 
   /// The first hash / rewards preimage bytes (32 bytes, hex encoded).
@@ -59,7 +59,7 @@ class WormholeKeyPair {
 /// // Derive a wormhole key pair for miner rewards
 /// final keyPair = service.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
 ///
-/// // Use keyPair.rewardsPreimage for the node's --rewards-preimage flag
+/// // Use keyPair.rewardsPreimage for the node's --rewards-inner-hash flag
 /// // Use keyPair.secretHex for generating withdrawal proofs
 /// ```
 class WormholeService {
@@ -70,10 +70,17 @@ class WormholeService {
   ///
   /// The returned key pair contains:
   /// - `address`: The on-chain wormhole address that will receive rewards
-  /// - `rewardsPreimage`: The value to pass to `--rewards-preimage` when starting the miner node
+  /// - `rewardsPreimage`: The value to pass to `--rewards-inner-hash` when starting the miner node
   /// - `secretHex`: The secret needed for generating withdrawal proofs (keep secure!)
-  WormholeKeyPair deriveMinerRewardsKeyPair({required String mnemonic, int index = 0}) {
-    final result = wormhole.deriveWormholePair(mnemonic: mnemonic, purpose: WormholePurpose.minerRewards, index: index);
+  WormholeKeyPair deriveMinerRewardsKeyPair({
+    required String mnemonic,
+    int index = 0,
+  }) {
+    final result = wormhole.deriveWormholePair(
+      mnemonic: mnemonic,
+      purpose: WormholePurpose.minerRewards,
+      index: index,
+    );
     return WormholeKeyPair.fromFfi(result);
   }
 
@@ -84,8 +91,16 @@ class WormholeService {
   ///
   /// Use [WormholePurpose.minerRewards] for miner reward addresses, or
   /// [WormholePurpose.mobileSends] for mobile app wormhole sends (future).
-  WormholeKeyPair deriveKeyPair({required String mnemonic, required int purpose, int index = 0}) {
-    final result = wormhole.deriveWormholePair(mnemonic: mnemonic, purpose: purpose, index: index);
+  WormholeKeyPair deriveKeyPair({
+    required String mnemonic,
+    required int purpose,
+    int index = 0,
+  }) {
+    final result = wormhole.deriveWormholePair(
+      mnemonic: mnemonic,
+      purpose: purpose,
+      index: index,
+    );
     return WormholeKeyPair.fromFfi(result);
   }
 
@@ -108,8 +123,14 @@ class WormholeService {
   /// The nullifier is a deterministic hash of (secret, transferCount) that
   /// prevents double-spending. Once revealed on-chain, the UTXO cannot be
   /// spent again.
-  String computeNullifier({required String secretHex, required BigInt transferCount}) {
-    return wormhole.computeNullifier(secretHex: secretHex, transferCount: transferCount);
+  String computeNullifier({
+    required String secretHex,
+    required BigInt transferCount,
+  }) {
+    return wormhole.computeNullifier(
+      secretHex: secretHex,
+      transferCount: transferCount,
+    );
   }
 
   /// Quantize an amount from planck (12 decimals) to circuit format (2 decimals).
@@ -138,7 +159,10 @@ class WormholeService {
   ///
   /// Example: `computeOutputAmount(38, 10)` = 37 (0.1% fee deducted)
   int computeOutputAmount(int inputAmount, int feeBps) {
-    return wormhole.computeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
+    return wormhole.computeOutputAmount(
+      inputAmount: inputAmount,
+      feeBps: feeBps,
+    );
   }
 
   /// Get the HD derivation path for a wormhole address.
@@ -161,8 +185,12 @@ class WormholeService {
   ///
   /// [circuitBinsDir] should point to a directory containing `prover.bin`
   /// and `common.bin`.
-  Future<WormholeProofGenerator> createProofGenerator(String circuitBinsDir) async {
-    final generator = await wormhole.createProofGenerator(binsDir: circuitBinsDir);
+  Future<WormholeProofGenerator> createProofGenerator(
+    String circuitBinsDir,
+  ) async {
+    final generator = await wormhole.createProofGenerator(
+      binsDir: circuitBinsDir,
+    );
     return WormholeProofGenerator._(generator);
   }
 
@@ -172,8 +200,12 @@ class WormholeService {
   ///
   /// [circuitBinsDir] should point to a directory containing the aggregator
   /// circuit files.
-  Future<WormholeProofAggregator> createProofAggregator(String circuitBinsDir) async {
-    final aggregator = await wormhole.createProofAggregator(binsDir: circuitBinsDir);
+  Future<WormholeProofAggregator> createProofAggregator(
+    String circuitBinsDir,
+  ) async {
+    final aggregator = await wormhole.createProofAggregator(
+      binsDir: circuitBinsDir,
+    );
     return WormholeProofAggregator._(aggregator);
   }
 
@@ -195,8 +227,14 @@ class WormholeService {
   /// - `aggregated_common.bin` - Aggregated circuit common data
   /// - `aggregated_verifier.bin` - Aggregated circuit verifier data
   /// - `config.json` - Configuration with hashes
-  Future<wormhole.CircuitGenerationResult> generateCircuitBinaries({required String outputDir, int numLeafProofs = 8}) {
-    return wormhole.generateCircuitBinaries(outputDir: outputDir, numLeafProofs: numLeafProofs);
+  Future<wormhole.CircuitGenerationResult> generateCircuitBinaries({
+    required String outputDir,
+    int numLeafProofs = 8,
+  }) {
+    return wormhole.generateCircuitBinaries(
+      outputDir: outputDir,
+      numLeafProofs: numLeafProofs,
+    );
   }
 
   /// Check if circuit binaries exist in a directory.
@@ -342,7 +380,9 @@ class ProofOutput {
   final String changeAccount;
 
   /// Create a single-output assignment (no change).
-  const ProofOutput.single({required this.amount, required this.exitAccount}) : changeAmount = 0, changeAccount = '';
+  const ProofOutput.single({required this.amount, required this.exitAccount})
+    : changeAmount = 0,
+      changeAccount = '';
 
   /// Create a dual-output assignment (spend + change).
   const ProofOutput.withChange({
@@ -409,7 +449,10 @@ class StorageProof {
   const StorageProof({required this.proofNodesHex, required this.stateRootHex});
 
   wormhole.StorageProofData toFfi() {
-    return wormhole.StorageProofData(proofNodesHex: proofNodesHex, stateRootHex: stateRootHex);
+    return wormhole.StorageProofData(
+      proofNodesHex: proofNodesHex,
+      stateRootHex: stateRootHex,
+    );
   }
 }
 
@@ -425,7 +468,10 @@ class GeneratedProof {
   const GeneratedProof({required this.proofHex, required this.nullifierHex});
 
   factory GeneratedProof.fromFfi(wormhole.GeneratedProof result) {
-    return GeneratedProof(proofHex: result.proofHex, nullifierHex: result.nullifierHex);
+    return GeneratedProof(
+      proofHex: result.proofHex,
+      nullifierHex: result.nullifierHex,
+    );
   }
 }
 
@@ -440,7 +486,10 @@ class AggregatedProof {
   const AggregatedProof({required this.proofHex, required this.numRealProofs});
 
   factory AggregatedProof.fromFfi(wormhole.AggregatedProof result) {
-    return AggregatedProof(proofHex: result.proofHex, numRealProofs: result.numRealProofs.toInt());
+    return AggregatedProof(
+      proofHex: result.proofHex,
+      numRealProofs: result.numRealProofs.toInt(),
+    );
   }
 }
 

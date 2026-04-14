@@ -10,7 +10,7 @@
 //! 1. `first_hash` = Poseidon(salt || secret) where salt = "wormhole"
 //! 2. `address` = Poseidon(first_hash)
 //!
-//! The `first_hash` is used as the rewards preimage (passed to the node via --rewards-preimage).
+//! The `first_hash` is used as the rewards inner hash (passed to the node via --rewards-inner-hash).
 //! The `address` is the actual on-chain account that receives funds.
 //!
 //! ## HD Path Convention
@@ -39,7 +39,7 @@ pub struct WormholePairResult {
     pub address: String,
     /// The raw address bytes (32 bytes, hex encoded)
     pub address_hex: String,
-    /// The first hash / rewards preimage as SS58 (pass to --rewards-preimage)
+    /// The first hash / rewards inner hash as SS58 (pass to --rewards-inner-hash)
     pub first_hash_ss58: String,
     /// The first hash / rewards preimage bytes (32 bytes, hex encoded)
     pub first_hash_hex: String,
@@ -102,7 +102,7 @@ impl std::error::Error for WormholeError {}
 ///     1,  // purpose: miner rewards
 ///     0,  // index: first address
 /// )?;
-/// println!("Rewards preimage (for --rewards-preimage): {}", result.first_hash_ss58);
+/// println!("Rewards inner hash (for --rewards-inner-hash): {}", result.first_hash_ss58);
 /// println!("Wormhole address (on-chain account): {}", result.address);
 /// ```
 #[flutter_rust_bridge::frb(sync)]

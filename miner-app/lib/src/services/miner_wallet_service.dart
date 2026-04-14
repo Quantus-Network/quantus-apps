@@ -72,7 +72,10 @@ class MinerWalletService {
 
     // Derive wormhole key pair
     final wormholeService = WormholeService();
-    final keyPair = wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic.trim(), index: 0);
+    final keyPair = wormholeService.deriveMinerRewardsKeyPair(
+      mnemonic: mnemonic.trim(),
+      index: 0,
+    );
 
     // Save the rewards preimage to file (needed by the node)
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
@@ -102,15 +105,19 @@ class MinerWalletService {
     }
 
     final wormholeService = WormholeService();
-    return wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
+    return wormholeService.deriveMinerRewardsKeyPair(
+      mnemonic: mnemonic,
+      index: 0,
+    );
   }
 
-  /// Get the rewards preimage from the stored mnemonic.
+  /// Get the rewards inner hash from the stored mnemonic.
   ///
-  /// This is the value passed to the node's --rewards-preimage flag.
-  Future<String?> getRewardsPreimage() async {
+  /// This is the value passed to the node's --rewards-inner-hash flag.
+  /// Returns the hex-encoded value with 0x prefix.
+  Future<String?> getRewardsInnerHash() async {
     final keyPair = await getWormholeKeyPair();
-    return keyPair?.rewardsPreimage;
+    return keyPair?.rewardsPreimageHex;
   }
 
   /// Get the wormhole address where rewards are sent.
@@ -191,7 +198,9 @@ class MinerWalletService {
     final trimmed = preimage.trim();
 
     if (!validatePreimage(trimmed)) {
-      throw ArgumentError('Invalid preimage format. Expected SS58-encoded address.');
+      throw ArgumentError(
+        'Invalid preimage format. Expected SS58-encoded address.',
+      );
     }
 
     // Save the preimage to file

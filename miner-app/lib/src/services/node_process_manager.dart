@@ -19,9 +19,10 @@ class NodeConfig {
   /// Path to the node identity key file.
   final File identityFile;
 
-  /// The rewards preimage (first hash) for mining rewards.
-  /// This is passed to the node via --rewards-preimage flag.
-  final String rewardsPreimage;
+  /// The rewards inner hash (first hash) for mining rewards.
+  /// This is passed to the node via --rewards-inner-hash flag.
+  /// Must be hex-encoded with 0x prefix.
+  final String rewardsInnerHash;
 
   /// Chain ID to connect to ('dev' or 'dirac').
   final String chainId;
@@ -41,7 +42,7 @@ class NodeConfig {
   NodeConfig({
     required this.binary,
     required this.identityFile,
-    required this.rewardsPreimage,
+    required this.rewardsInnerHash,
     this.chainId = 'dev',
     this.minerListenPort = 9833,
     this.rpcPort = 9933,
@@ -94,14 +95,18 @@ class NodeProcessManager extends BaseProcessManager {
 
     // Validate binary exists
     if (!await config.binary.exists()) {
-      final error = MinerError.nodeStartupFailed('Node binary not found: ${config.binary.path}');
+      final error = MinerError.nodeStartupFailed(
+        'Node binary not found: ${config.binary.path}',
+      );
       errorController.add(error);
       throw Exception(error.message);
     }
 
     // Validate identity file exists
     if (!await config.identityFile.exists()) {
-      final error = MinerError.nodeStartupFailed('Identity file not found: ${config.identityFile.path}');
+      final error = MinerError.nodeStartupFailed(
+        'Identity file not found: ${config.identityFile.path}',
+      );
       errorController.add(error);
       throw Exception(error.message);
     }
@@ -138,7 +143,7 @@ class NodeProcessManager extends BaseProcessManager {
       // Only use --base-path for non-dev chains (dev uses temp storage for fresh state)
       if (config.chainId != 'dev') ...['--base-path', basePath],
       '--node-key-file', config.identityFile.path,
-      '--rewards-preimage', config.rewardsPreimage,
+      '--rewards-inner-hash', config.rewardsInnerHash,
       '--validator',
       // Chain selection
       if (config.chainId == 'dev') '--dev' else ...['--chain', config.chainId],
