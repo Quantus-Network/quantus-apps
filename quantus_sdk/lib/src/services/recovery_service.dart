@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/active_recovery.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/pallet_recovery/recovery_config.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/planck/planck.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_recovery/active_recovery.dart';
+import 'package:quantus_sdk/generated/planck/types/pallet_recovery/recovery_config.dart';
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -16,7 +16,7 @@ class RecoveryService {
 
   final SubstrateService _substrateService = SubstrateService();
 
-  final dummyQuantusApi = Schrodinger.url(Uri.parse(AppConstants.rpcEndpoints[0]));
+  final dummyQuantusApi = Planck.url(Uri.parse(AppConstants.rpcEndpoints[0]));
   late final BigInt configDepositBase = dummyQuantusApi.constant.recovery.configDepositBase;
   late final BigInt friendDepositFactor = dummyQuantusApi.constant.recovery.friendDepositFactor;
   late final int maxFriends = dummyQuantusApi.constant.recovery.maxFriends;
@@ -31,7 +31,7 @@ class RecoveryService {
     required int delayPeriod,
   }) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final friends = friendAddresses.map((addr) => crypto.ss58ToAccountId(s: addr)).toList();
 
       // Create the call
@@ -61,7 +61,7 @@ class RecoveryService {
   }
 
   RuntimeCall getInitiateRecoveryCall(String lostAccountAddress) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
     return quantusApi.tx.recovery.initiateRecovery(account: lostAccount);
   }
@@ -83,7 +83,7 @@ class RecoveryService {
   }
 
   RuntimeCall getVouchRecoveryCall(String lostAccountAddress, String rescuerAddress) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
     final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
     return quantusApi.tx.recovery.vouchRecovery(lost: lostAccount, rescuer: rescuer);
@@ -102,7 +102,7 @@ class RecoveryService {
   }
 
   RuntimeCall getClaimRecoveryCall(String lostAccountAddress) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final lostAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: lostAccountAddress));
     return quantusApi.tx.recovery.claimRecovery(account: lostAccount);
   }
@@ -110,7 +110,7 @@ class RecoveryService {
   /// Close an active recovery process (called by the lost account owner)
   Future<Uint8List> closeRecovery({required Account lostAccount, required String rescuerAddress}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final rescuer = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: rescuerAddress));
 
       // Create the call
@@ -126,7 +126,7 @@ class RecoveryService {
   /// Remove recovery configuration from account
   Future<Uint8List> removeRecoveryConfig({required Account senderAccount}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
 
       // Create the call
       final call = quantusApi.tx.recovery.removeRecovery();
@@ -155,7 +155,7 @@ class RecoveryService {
   }
 
   RuntimeCall getAsRecoveredCall(String recoveredAccountAddress, RuntimeCall call) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final recoveredAccount = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: recoveredAccountAddress));
     return quantusApi.tx.recovery.asRecovered(account: recoveredAccount, call: call);
   }
@@ -163,7 +163,7 @@ class RecoveryService {
   /// Cancel the ability to use a recovered account
   Future<Uint8List> cancelRecovered({required Account rescuerAccount, required String recoveredAccountAddress}) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final recoveredAccount = const multi_address.$MultiAddress().id(
         crypto.ss58ToAccountId(s: recoveredAccountAddress),
       );
@@ -181,7 +181,7 @@ class RecoveryService {
   /// Query recovery configuration for an account
   Future<RecoveryConfig?> getRecoveryConfig(String address) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final accountId = crypto.ss58ToAccountId(s: address);
 
       return await quantusApi.query.recovery.recoverable(accountId);
@@ -193,7 +193,7 @@ class RecoveryService {
   /// Query active recovery process
   Future<ActiveRecovery?> getActiveRecovery(String lostAccountAddress, String rescuerAddress) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final lostAccountId = crypto.ss58ToAccountId(s: lostAccountAddress);
       final rescuerId = crypto.ss58ToAccountId(s: rescuerAddress);
 
@@ -206,7 +206,7 @@ class RecoveryService {
   /// Check if an account can act as proxy for a recovered account
   Future<String?> getProxyRecoveredAccount(String proxyAddress) async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final proxyId = crypto.ss58ToAccountId(s: proxyAddress);
 
       final recoveredAccountId = await quantusApi.query.recovery.proxy(proxyId);
@@ -264,7 +264,7 @@ class RecoveryService {
   /// Get recovery constants
   Future<Map<String, dynamic>> getConstants() async {
     try {
-      final quantusApi = Schrodinger(_substrateService.provider!);
+      final quantusApi = Planck(_substrateService.provider!);
       final constants = quantusApi.constant.recovery;
 
       return {
@@ -280,7 +280,7 @@ class RecoveryService {
 
   /// Helper to create a balance transfer call for recovered account
   Balances createBalanceTransferCall(String recipientAddress, BigInt amount) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final accountID = crypto.ss58ToAccountId(s: recipientAddress);
     final dest = const multi_address.$MultiAddress().id(accountID);
     final call = quantusApi.tx.balances.transferAllowDeath(dest: dest, value: amount);

@@ -1,5 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
+import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 
 enum AmountStatus { valid, negative, zero, belowExistential, insufficientBalance }
 

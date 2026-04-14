@@ -10,7 +10,7 @@ import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/shared/miner_app_constants.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
+import 'package:quantus_sdk/generated/planck/planck.dart';
 
 final _log = log.withTag('BalanceCard');
 
@@ -124,7 +124,7 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   Future<BigInt> _queryBalanceFromLocalNode(String address, String rpcUrl) async {
     try {
       final provider = Provider.fromUri(Uri.parse(rpcUrl));
-      final quantusApi = Schrodinger(provider);
+      final quantusApi = Planck(provider);
 
       // Convert SS58 address to account ID using the SDK's crypto
       final accountId = ss58ToAccountId(s: address);

@@ -73,7 +73,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: colors.error.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: colors.error.useOpacity(0.15), borderRadius: BorderRadius.circular(8)),
               child: Text(_errorMessage!, style: text.smallParagraph?.copyWith(color: colors.textError)),
             ),
           GlassButton.simple(
@@ -83,6 +83,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               setState(() => _isMigrating = true);
               try {
                 await widget.onMigrate();
+                // ignore: use_build_context_synchronously
                 if (mounted) Navigator.of(context).pop();
               } catch (e) {
                 if (mounted) {
@@ -100,6 +101,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
               variant: ButtonVariant.transparent,
               onTap: () async {
                 if (widget.onTryLater != null) await widget.onTryLater!();
+                // ignore: use_build_context_synchronously
                 if (mounted) Navigator.of(context).pop();
               },
             ),
