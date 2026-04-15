@@ -364,19 +364,5 @@ class Constants {
         minSupport: const _i14.LinearDecreasing(length: 1000000000, floor: 50000000, ceil: 250000000),
       ),
     ),
-    _i4.Tuple2<int, _i13.TrackDetails>(
-      1,
-      _i13.TrackDetails(
-        name: 'signaling',
-        maxDeciding: 20,
-        decisionDeposit: BigInt.from(100000000000000),
-        preparePeriod: 1800,
-        decisionPeriod: 36000,
-        confirmPeriod: 900,
-        minEnactmentPeriod: 1,
-        minApproval: const _i14.LinearDecreasing(length: 1000000000, floor: 500000000, ceil: 600000000),
-        minSupport: const _i14.LinearDecreasing(length: 1000000000, floor: 10000000, ceil: 100000000),
-      ),
-    ),
   ];
 }

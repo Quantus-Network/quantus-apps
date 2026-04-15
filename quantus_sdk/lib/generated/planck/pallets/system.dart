@@ -96,6 +96,12 @@ class Queries {
     valueCodec: _i7.Digest.codec,
   );
 
+  final _i1.StorageValue<_i6.H256> _zkTreeRoot = const _i1.StorageValue<_i6.H256>(
+    prefix: 'System',
+    storage: 'ZkTreeRoot',
+    valueCodec: _i6.H256Codec(),
+  );
+
   final _i1.StorageValue<List<_i8.EventRecord>> _events = const _i1.StorageValue<List<_i8.EventRecord>>(
     prefix: 'System',
     storage: 'Events',
@@ -269,6 +275,20 @@ class Queries {
       return _digest.decodeValue(bytes);
     }
     return _i7.Digest(logs: []); /* Default */
+  }
+
+  /// ZK tree root for the current block.
+  ///
+  /// Set by pallet-zk-tree during block finalization. This is included in the
+  /// block header as a dedicated field (not in digest) to ensure a fixed offset
+  /// for ZK circuit verification.
+  _i14.Future<_i6.H256> zkTreeRoot({_i1.BlockHash? at}) async {
+    final hashedKey = _zkTreeRoot.hashedKey();
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _zkTreeRoot.decodeValue(bytes);
+    }
+    return List<int>.filled(32, 0, growable: false); /* Default */
   }
 
   /// Events deposited for the current block.
@@ -508,6 +528,12 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `zkTreeRoot`.
+  _i16.Uint8List zkTreeRootKey() {
+    final hashedKey = _zkTreeRoot.hashedKey();
+    return hashedKey;
+  }
+
   /// Returns the storage key for `events`.
   _i16.Uint8List eventsKey() {
     final hashedKey = _events.hashedKey();
@@ -738,7 +764,7 @@ class Constants {
     specName: 'quantus-runtime',
     implName: 'quantus-runtime',
     authoringVersion: 1,
-    specVersion: 117,
+    specVersion: 126,
     implVersion: 1,
     apis: [
       _i9.Tuple2<List<int>, int>(<int>[223, 106, 203, 104, 153, 7, 96, 155], 5),
@@ -748,6 +774,7 @@ class Constants {
       _i9.Tuple2<List<int>, int>(<int>[247, 139, 39, 139, 229, 63, 69, 76], 2),
       _i9.Tuple2<List<int>, int>(<int>[171, 60, 5, 114, 41, 31, 235, 139], 1),
       _i9.Tuple2<List<int>, int>(<int>[19, 40, 169, 252, 46, 48, 6, 19], 1),
+      _i9.Tuple2<List<int>, int>(<int>[36, 88, 89, 217, 231, 139, 198, 105], 1),
       _i9.Tuple2<List<int>, int>(<int>[188, 157, 137, 144, 79, 91, 146, 63], 1),
       _i9.Tuple2<List<int>, int>(<int>[55, 200, 187, 19, 80, 169, 162, 168], 4),
       _i9.Tuple2<List<int>, int>(<int>[243, 255, 20, 213, 171, 82, 112, 89], 3),

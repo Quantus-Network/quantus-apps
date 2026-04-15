@@ -22,8 +22,8 @@ class WelcomeScreenV2 extends StatelessWidget {
       child: Column(
         children: [
           const Spacer(),
-          Image.asset('assets/v2/quantus_white_logo.png', height: 40),
-          const SizedBox(height: 24),
+          Image.asset('assets/v2/quantus_orange_logo.png', height: 40),
+          const SizedBox(height: 11),
           Text(
             'Quantum Secure Your Crypto',
             textAlign: TextAlign.center,
@@ -35,7 +35,7 @@ class WelcomeScreenV2 extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 220),
           GlassButton.simple(
             label: 'Create New Wallet',
             onTap: () => Navigator.push(

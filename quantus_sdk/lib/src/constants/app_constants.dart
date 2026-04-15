@@ -11,11 +11,11 @@ class AppConstants {
 
   static const stillOnTestnet = true;
   static const List<String> rpcEndpoints = [
-    'https://a1-dirac.quantus.cat',
-    'https://a2-dirac.quantus.cat',
+    'https://a1-planck.quantus.cat',
+    'https://a2-planck.quantus.cat',
     'https://matcha-latte.quantus.com',
   ];
-  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/green/graphql'];
+  static const List<String> graphQlEndpoints = ['https://subsquid.quantus.com/blue/graphql'];
 
   // local test android use special ip
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';

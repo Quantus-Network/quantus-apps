@@ -72,10 +72,7 @@ class MinerWalletService {
 
     // Derive wormhole key pair
     final wormholeService = WormholeService();
-    final keyPair = wormholeService.deriveMinerRewardsKeyPair(
-      mnemonic: mnemonic.trim(),
-      index: 0,
-    );
+    final keyPair = wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic.trim(), index: 0);
 
     // Save the rewards preimage to file (needed by the node)
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
@@ -105,10 +102,7 @@ class MinerWalletService {
     }
 
     final wormholeService = WormholeService();
-    return wormholeService.deriveMinerRewardsKeyPair(
-      mnemonic: mnemonic,
-      index: 0,
-    );
+    return wormholeService.deriveMinerRewardsKeyPair(mnemonic: mnemonic, index: 0);
   }
 
   /// Get the rewards inner hash from the stored mnemonic.
@@ -198,9 +192,7 @@ class MinerWalletService {
     final trimmed = preimage.trim();
 
     if (!validatePreimage(trimmed)) {
-      throw ArgumentError(
-        'Invalid preimage format. Expected SS58-encoded address.',
-      );
+      throw ArgumentError('Invalid preimage format. Expected SS58-encoded address.');
     }
 
     // Save the preimage to file

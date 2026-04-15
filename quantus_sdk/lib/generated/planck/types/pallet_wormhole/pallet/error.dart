@@ -5,26 +5,22 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 /// The `Error` enum of this pallet.
 enum Error {
-  invalidProof('InvalidProof', 0),
-  proofDeserializationFailed('ProofDeserializationFailed', 1),
-  verificationFailed('VerificationFailed', 2),
-  invalidPublicInputs('InvalidPublicInputs', 3),
-  nullifierAlreadyUsed('NullifierAlreadyUsed', 4),
-  verifierNotAvailable('VerifierNotAvailable', 5),
-  invalidStorageRoot('InvalidStorageRoot', 6),
-  storageRootMismatch('StorageRootMismatch', 7),
-  blockNotFound('BlockNotFound', 8),
-  invalidBlockNumber('InvalidBlockNumber', 9),
-  aggregatedVerifierNotAvailable('AggregatedVerifierNotAvailable', 10),
-  aggregatedProofDeserializationFailed('AggregatedProofDeserializationFailed', 11),
-  aggregatedVerificationFailed('AggregatedVerificationFailed', 12),
-  invalidAggregatedPublicInputs('InvalidAggregatedPublicInputs', 13),
+  invalidPublicInputs('InvalidPublicInputs', 0),
+  nullifierAlreadyUsed('NullifierAlreadyUsed', 1),
+  blockNotFound('BlockNotFound', 2),
+  aggregatedVerifierNotAvailable('AggregatedVerifierNotAvailable', 3),
+  aggregatedProofDeserializationFailed('AggregatedProofDeserializationFailed', 4),
+  aggregatedVerificationFailed('AggregatedVerificationFailed', 5),
+  invalidAggregatedPublicInputs('InvalidAggregatedPublicInputs', 6),
 
   /// The volume fee rate in the proof doesn't match the configured rate
-  invalidVolumeFeeRate('InvalidVolumeFeeRate', 14),
+  invalidVolumeFeeRate('InvalidVolumeFeeRate', 7),
 
   /// Transfer amount is below the minimum required
-  transferAmountBelowMinimum('TransferAmountBelowMinimum', 15);
+  transferAmountBelowMinimum('TransferAmountBelowMinimum', 8),
+
+  /// Only native asset (asset_id = 0) is supported in this version
+  nonNativeAssetNotSupported('NonNativeAssetNotSupported', 9);
 
   const Error(this.variantName, this.codecIndex);
 
@@ -53,37 +49,25 @@ class $ErrorCodec with _i1.Codec<Error> {
     final index = _i1.U8Codec.codec.decode(input);
     switch (index) {
       case 0:
-        return Error.invalidProof;
-      case 1:
-        return Error.proofDeserializationFailed;
-      case 2:
-        return Error.verificationFailed;
-      case 3:
         return Error.invalidPublicInputs;
-      case 4:
+      case 1:
         return Error.nullifierAlreadyUsed;
-      case 5:
-        return Error.verifierNotAvailable;
-      case 6:
-        return Error.invalidStorageRoot;
-      case 7:
-        return Error.storageRootMismatch;
-      case 8:
+      case 2:
         return Error.blockNotFound;
-      case 9:
-        return Error.invalidBlockNumber;
-      case 10:
+      case 3:
         return Error.aggregatedVerifierNotAvailable;
-      case 11:
+      case 4:
         return Error.aggregatedProofDeserializationFailed;
-      case 12:
+      case 5:
         return Error.aggregatedVerificationFailed;
-      case 13:
+      case 6:
         return Error.invalidAggregatedPublicInputs;
-      case 14:
+      case 7:
         return Error.invalidVolumeFeeRate;
-      case 15:
+      case 8:
         return Error.transferAmountBelowMinimum;
+      case 9:
+        return Error.nonNativeAssetNotSupported;
       default:
         throw Exception('Error: Invalid variant index: "$index"');
     }

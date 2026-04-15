@@ -52,6 +52,13 @@ class Queries {
     hasher: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
   );
 
+  final _i1.StorageMap<int, List<dynamic>> _reserves = const _i1.StorageMap<int, List<dynamic>>(
+    prefix: 'Assets',
+    storage: 'Reserves',
+    valueCodec: _i3.SequenceCodec<dynamic>(_i3.NullCodec.codec),
+    hasher: _i1.StorageHasher.blake2b128Concat(_i3.U32Codec.codec),
+  );
+
   final _i1.StorageValue<int> _nextAssetId = const _i1.StorageValue<int>(
     prefix: 'Assets',
     storage: 'NextAssetId',
@@ -106,6 +113,16 @@ class Queries {
     ); /* Default */
   }
 
+  /// Maps an asset to a list of its configured reserve information.
+  _i8.Future<List<dynamic>> reserves(int key1, {_i1.BlockHash? at}) async {
+    final hashedKey = _reserves.hashedKeyFor(key1);
+    final bytes = await __api.getStorage(hashedKey, at: at);
+    if (bytes != null) {
+      return _reserves.decodeValue(bytes);
+    }
+    return []; /* Default */
+  }
+
   /// The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
   /// item has no effect.
   ///
@@ -155,6 +172,16 @@ class Queries {
         as List<_i7.AssetMetadata>); /* Default */
   }
 
+  /// Maps an asset to a list of its configured reserve information.
+  _i8.Future<List<List<dynamic>>> multiReserves(List<int> keys, {_i1.BlockHash? at}) async {
+    final hashedKeys = keys.map((key) => _reserves.hashedKeyFor(key)).toList();
+    final bytes = await __api.queryStorageAt(hashedKeys, at: at);
+    if (bytes.isNotEmpty) {
+      return bytes.first.changes.map((v) => _reserves.decodeValue(v.key)).toList();
+    }
+    return (keys.map((key) => []).toList() as List<List<dynamic>>); /* Default */
+  }
+
   /// Returns the storage key for `asset`.
   _i9.Uint8List assetKey(int key1) {
     final hashedKey = _asset.hashedKeyFor(key1);
@@ -179,6 +206,12 @@ class Queries {
     return hashedKey;
   }
 
+  /// Returns the storage key for `reserves`.
+  _i9.Uint8List reservesKey(int key1) {
+    final hashedKey = _reserves.hashedKeyFor(key1);
+    return hashedKey;
+  }
+
   /// Returns the storage key for `nextAssetId`.
   _i9.Uint8List nextAssetIdKey() {
     final hashedKey = _nextAssetId.hashedKey();
@@ -200,6 +233,12 @@ class Queries {
   /// Returns the storage map key prefix for `metadata`.
   _i9.Uint8List metadataMapPrefix() {
     final hashedKey = _metadata.mapPrefix();
+    return hashedKey;
+  }
+
+  /// Returns the storage map key prefix for `reserves`.
+  _i9.Uint8List reservesMapPrefix() {
+    final hashedKey = _reserves.mapPrefix();
     return hashedKey;
   }
 }
@@ -784,9 +823,10 @@ class Txs {
   ///
   /// A deposit will be taken from the signer account.
   ///
-  /// - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-  ///  must have sufficient funds for a deposit to be taken.
-  /// - `id`: The identifier of the asset for the account to be created.
+  /// - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+  ///  to be taken.
+  /// - `id`: The identifier of the asset for the account to be created, the asset status must
+  ///  be live.
   /// - `who`: The account to be created.
   ///
   /// Emits `Touched` event when successful.
@@ -843,6 +883,19 @@ class Txs {
   ///  guarantee to keep the sender asset account alive (true).
   _i10.Assets transferAll({required BigInt id, required _i11.MultiAddress dest, required bool keepAlive}) {
     return _i10.Assets(_i12.TransferAll(id: id, dest: dest, keepAlive: keepAlive));
+  }
+
+  /// Sets the trusted reserve information of an asset.
+  ///
+  /// Origin must be the Owner of the asset `id`. The origin must conform to the configured
+  /// `CreateOrigin` or be the signed `owner` configured during asset creation.
+  ///
+  /// - `id`: The identifier of the asset.
+  /// - `reserves`: The full list of trusted reserves information.
+  ///
+  /// Emits `AssetMinBalanceChanged` event when successful.
+  _i10.Assets setReserves({required BigInt id, required List<dynamic> reserves}) {
+    return _i10.Assets(_i12.SetReserves(id: id, reserves: reserves));
   }
 }
 

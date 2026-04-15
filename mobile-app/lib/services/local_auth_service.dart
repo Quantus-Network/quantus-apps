@@ -11,7 +11,7 @@ class LocalAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SettingsService _settingsService = SettingsService();
 
-  static const _authTimeout = Duration(seconds: 30);
+  static const _authTimeout = Duration(seconds: 10);
 
   Future<bool> isBiometricAvailable() async {
     try {
@@ -48,7 +48,7 @@ class LocalAuthService {
         options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
       );
 
-      if (didAuthenticate) _cleanLastPausedTime();
+      if (didAuthenticate) cleanLastPausedTime();
       return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('Platform exception during authentication: $e');
@@ -74,7 +74,7 @@ class LocalAuthService {
     _settingsService.setLastPausedTime(DateTime.now());
   }
 
-  void _cleanLastPausedTime() {
+  void cleanLastPausedTime() {
     _settingsService.cleanLastPausedTime();
   }
 

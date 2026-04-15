@@ -31,12 +31,6 @@ class Queries {
     valueCodec: _i3.U512Codec(),
   );
 
-  final _i1.StorageValue<_i3.U512> _totalWork = const _i1.StorageValue<_i3.U512>(
-    prefix: 'QPoW',
-    storage: 'TotalWork',
-    valueCodec: _i3.U512Codec(),
-  );
-
   final _i1.StorageValue<BigInt> _blockTimeEma = const _i1.StorageValue<BigInt>(
     prefix: 'QPoW',
     storage: 'BlockTimeEma',
@@ -70,15 +64,6 @@ class Queries {
     return List<BigInt>.filled(8, BigInt.zero, growable: false); /* Default */
   }
 
-  _i4.Future<_i3.U512> totalWork({_i1.BlockHash? at}) async {
-    final hashedKey = _totalWork.hashedKey();
-    final bytes = await __api.getStorage(hashedKey, at: at);
-    if (bytes != null) {
-      return _totalWork.decodeValue(bytes);
-    }
-    return List<BigInt>.filled(8, BigInt.zero, growable: false); /* Default */
-  }
-
   _i4.Future<BigInt> blockTimeEma({_i1.BlockHash? at}) async {
     final hashedKey = _blockTimeEma.hashedKey();
     final bytes = await __api.getStorage(hashedKey, at: at);
@@ -103,12 +88,6 @@ class Queries {
   /// Returns the storage key for `currentDifficulty`.
   _i5.Uint8List currentDifficultyKey() {
     final hashedKey = _currentDifficulty.hashedKey();
-    return hashedKey;
-  }
-
-  /// Returns the storage key for `totalWork`.
-  _i5.Uint8List totalWorkKey() {
-    final hashedKey = _totalWork.hashedKey();
     return hashedKey;
   }
 
@@ -142,7 +121,4 @@ class Constants {
   final int emaAlpha = 100;
 
   final int maxReorgDepth = 180;
-
-  /// Fixed point scale for calculations (default: 10^18)
-  final BigInt fixedU128Scale = BigInt.parse('1000000000000000000', radix: 10);
 }

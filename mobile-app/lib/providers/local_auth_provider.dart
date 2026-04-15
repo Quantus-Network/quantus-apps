@@ -4,13 +4,15 @@ import 'package:resonance_network_wallet/services/local_auth_service.dart';
 class LocalAuthState {
   final bool isAuthenticated;
   final bool isAuthenticating;
+  final bool isVisuallyLocked;
 
-  LocalAuthState({this.isAuthenticated = false, this.isAuthenticating = false});
+  LocalAuthState({this.isAuthenticated = true, this.isAuthenticating = false, this.isVisuallyLocked = false});
 
-  LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating}) {
+  LocalAuthState copyWith({bool? isAuthenticated, bool? isAuthenticating, bool? isVisuallyLocked}) {
     return LocalAuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
+      isVisuallyLocked: isVisuallyLocked ?? this.isVisuallyLocked,
     );
   }
 }
@@ -35,20 +37,27 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
       localizedReason: 'Please authenticate to access your wallet',
     );
 
-    state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false);
+    state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false, isVisuallyLocked: false);
   }
 
   void checkAuthentication() {
     if (_localAuthService.shouldRequireAuthentication()) {
+      final alreadyAuthenticating = state.isAuthenticating;
       state = state.copyWith(isAuthenticated: false);
-      authenticate();
+      if (!alreadyAuthenticating) {
+        authenticate();
+      }
     } else {
-      state = state.copyWith(isAuthenticated: true);
+      state = state.copyWith(isAuthenticated: true, isAuthenticating: false, isVisuallyLocked: false);
     }
   }
 
-  void lockApp() {
+  void recordBackgroundTime() {
     _localAuthService.updateLastPausedTime();
-    state = state.copyWith(isAuthenticated: false);
+    state = state.copyWith(isVisuallyLocked: true);
+  }
+
+  void clearVisualLock() {
+    state = state.copyWith(isVisuallyLocked: false);
   }
 }

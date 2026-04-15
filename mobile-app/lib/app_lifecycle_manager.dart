@@ -97,7 +97,9 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           print('App resumed but offline - polling paused');
         }
 
-        // Always check authentication on resume to enforce inactivity timeout
+        // Check authentication ONLY on resume from background.
+        // This prevents flicker from transient backgrounds (FaceID, system overlays)
+        // that briefly pause/resume the app.
         localAuthNotifier.checkAuthentication();
 
         // Initialize Taskmaster login if wallet exists
@@ -108,17 +110,18 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)
-      // Only act if we haven't already processed a background transition
       if (!_isBackgrounded) {
-        print('AppLifecycleState.$state - pausing and locking');
+        print('AppLifecycleState.$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
         // Pause global polling when app goes to background
         // Transaction tracking continues for pending transactions
         pollingManager.pausePolling();
 
-        // When the app goes into the background, lock it.
-        localAuthNotifier.lockApp();
+        // Update last paused time for timeout calculation, but DO NOT lock
+        // the UI immediately. This avoids flicker on short system pauses.
+        // The checkAuthentication() on resume will decide if auth is needed.
+        localAuthNotifier.recordBackgroundTime();
       } else {
         print('AppLifecycleState.$state - already backgrounded, skipping actions');
       }

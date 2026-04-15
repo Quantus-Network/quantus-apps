@@ -201,7 +201,9 @@ class CargokitUserOptions {
 
   CargokitUserOptions({required this.usePrecompiledBinaries, required this.verboseLogging});
 
-  CargokitUserOptions._() : usePrecompiledBinaries = defaultUsePrecompiledBinaries(), verboseLogging = false;
+  CargokitUserOptions._()
+      : usePrecompiledBinaries = defaultUsePrecompiledBinaries(),
+        verboseLogging = false;
 
   static CargokitUserOptions parse(YamlNode node) {
     if (node is! YamlMap) {

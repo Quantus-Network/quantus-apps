@@ -1,27 +1,29 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
-// We define the following 5 levels in BIP32 path:
-// m / 44' / coin_type' / account' / change / address_index
-
-// Bip44 describes account discovery from seed phrase - it keeps looking by increasing acocunt index, for accounts with activity.
-// It defines the max allowed account gap as 20, if there's 20 addresses in a row where there's no activity, it assumes the highest index has been reached.
-
-/// Hierarchical deterministic wallet service.
-///
 class HdWalletService {
+  static const _devAccounts = {
+    AppConstants.crystalAlice: crypto.crystalAlice,
+    AppConstants.crystalBob: crypto.crystalBob,
+    AppConstants.crystalCharlie: crypto.crystalCharlie,
+  };
+
+  static bool isDevAccount(String mnemonic) => _devAccounts.containsKey(mnemonic);
+
   Keypair _deriveHDWallet({required String mnemonic, int account = 0, int change = 0, int addressIndex = 0}) {
-    // m/44'/189189'/0'/0/0
-    final derivationPath = "m/44'/189189'/$account'/$change/$addressIndex";
-    // print('derivationPath: $derivationPath');
+    final derivationPath = "m/44'/189189'/$account'/$change'/$addressIndex'";
     return crypto.generateDerivedKeypair(mnemonicStr: mnemonic, path: derivationPath);
   }
 
   Keypair keyPairAtIndex(String mnemonic, int index) {
-    if (index == -1) {
-      return crypto.generateKeypair(mnemonicStr: mnemonic);
-    }
-    final keypair = _deriveHDWallet(mnemonic: mnemonic, account: index);
-    return keypair;
+    final devKeypair = _devAccounts[mnemonic];
+    if (devKeypair != null) return devKeypair();
+    if (index == -1) return crypto.generateKeypair(mnemonicStr: mnemonic);
+    return _deriveHDWallet(mnemonic: mnemonic, account: index);
+  }
+
+  WormholeResult deriveWormhole(String mnemonic, {int account = 0, int change = 0, int addressIndex = 0}) {
+    final path = "m/44'/189189189'/$account'/$change'/$addressIndex'";
+    return crypto.deriveWormhole(mnemonicStr: mnemonic, path: path);
   }
 }

@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:convert/convert.dart';
 import 'package:http/http.dart' as http;
-import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/wormhole_service.dart';
 
@@ -70,7 +68,12 @@ class WormholeTransfer {
   /// [secretHex] should be the secret derived from the mnemonic for this
   /// wormhole address.
   /// [inputAmount] is the quantized amount (2 decimal places).
-  WormholeUtxo toUtxo(String secretHex, {required int inputAmount}) {
+  /// [leafIndex] is the ZK tree leaf index for the transfer.
+  WormholeUtxo toUtxo(
+    String secretHex, {
+    required int inputAmount,
+    required BigInt leafIndex,
+  }) {
     return WormholeUtxo(
       secretHex: secretHex,
       inputAmount: inputAmount,
@@ -78,11 +81,6 @@ class WormholeTransfer {
       leafIndex: leafIndex,
       blockHashHex: blockHash.startsWith('0x') ? blockHash : '0x$blockHash',
     );
-  }
-
-  static String _addressToHex(String ss58Address) {
-    final bytes = crypto.ss58ToAccountId(s: ss58Address);
-    return '0x${hex.encode(bytes)}';
   }
 
   @override

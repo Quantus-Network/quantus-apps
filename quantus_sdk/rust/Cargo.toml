@@ -12,10 +12,9 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 quantus-cli = { path = "../../../quantus-cli", default-features = false }
 
 # Quantus chain dependencies (from crates.io)
-qp-poseidon = { version = "1.4.0", default-features = false }
-qp-poseidon-core = { version = "1.4.0", default-features = false }
-qp-rusty-crystals-dilithium = { version = "2.4", default-features = false }
-qp-rusty-crystals-hdwallet = { version = "2.3" }
+qp-poseidon-core = "1.4.0"
+qp-rusty-crystals-dilithium = { version = "2.4.0", default-features = false }
+qp-rusty-crystals-hdwallet = { version = "2.3.1" }
 
 # ZK proof generation for wormhole withdrawals (from crates.io)
 # Note: Must match quantus-cli versions for type compatibility
@@ -36,7 +35,7 @@ flutter_rust_bridge = "=2.11.1"
 hex = "0.4.3"
 log = "0.4"
 nam-tiny-hderive = "0.3.1-nam.0"
-sp-core = "35.0.0"
+sp-core = { version = "39.0.0", default-features = true}
 quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.1.0" }
 
 # Substrate codec for storage proof processing
@@ -47,6 +46,9 @@ sp-externalities = { version = "0.31", features = ["std"] }
 
 [build-dependencies]
 qp-wormhole-circuit-builder = { version = "2.0.1", default-features = false }
+## This dependency has been yanked but sp-core depends on version 0.1.1... so we add it with a patch
+[patch.crates-io]
+ark-vrf = { git = "https://github.com/davxy/ark-vrf", tag = "v0.1.1" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

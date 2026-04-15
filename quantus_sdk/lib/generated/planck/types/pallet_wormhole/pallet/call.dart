@@ -73,7 +73,11 @@ class $CallCodec with _i1.Codec<Call> {
   }
 }
 
-/// Verify an aggregated wormhole proof and process all transfers in the batch
+/// Verify an aggregated wormhole proof and process all transfers in the batch.
+///
+/// Returns `DispatchResultWithPostInfo` to allow weight correction on early failures.
+/// If validation fails before ZK verification, we return minimal weight.
+/// If ZK verification fails, we return full weight since the work was done.
 class VerifyAggregatedProof extends Call {
   const VerifyAggregatedProof({required this.proofBytes});
 

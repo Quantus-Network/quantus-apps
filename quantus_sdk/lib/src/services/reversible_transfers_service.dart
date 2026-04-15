@@ -174,41 +174,23 @@ class ReversibleTransfersService {
     }
   }
 
-  /// Get all pending transfer IDs for an account
-  Future<List<List<int>>> getPendingTransferIds(String address) async {
-    try {
-      final quantusApi = Planck(_substrateService.provider!);
-      final accountId = crypto.ss58ToAccountId(s: address);
-
-      return await quantusApi.query.reversibleTransfers
-          .pendingTransfersBySender(accountId);
-    } catch (e) {
-      throw Exception('Failed to get pending transfer IDs: $e');
-    }
-  }
-
-  /// Get all pending transfers for an account by querying storage
+  /// Get all pending transfers for an account
   Future<List<PendingTransfer>> getAccountPendingTransfers(
     String address,
   ) async {
     try {
       final quantusApi = Planck(_substrateService.provider!);
+      final accountId = crypto.ss58ToAccountId(s: address);
+      final txIds = await quantusApi.query.reversibleTransfers
+          .pendingTransfersBySender(accountId);
 
-      // Get the list of pending transfer IDs for this account
-      final txIds = await getPendingTransferIds(address);
-
-      final pendingTransfers = <PendingTransfer>[];
-
-      // Query each pending transfer by its ID
+      final results = <PendingTransfer>[];
       for (final txId in txIds) {
         final transfer = await quantusApi.query.reversibleTransfers
             .pendingTransfers(txId);
-        if (transfer != null) {
-          pendingTransfers.add(transfer);
-        }
+        if (transfer != null) results.add(transfer);
       }
-
-      return pendingTransfers;
+      return results;
     } catch (e) {
       throw Exception('Failed to get account pending transfers: $e');
     }

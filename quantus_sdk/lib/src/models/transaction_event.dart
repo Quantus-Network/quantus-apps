@@ -55,7 +55,7 @@ class TransferEvent extends TransactionEvent {
       amount: BigInt.parse(json['amount'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
       fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
-      extrinsicHash: json['extrinsicHash'] as String?,
+      extrinsicHash: json['extrinsic']?['id'] as String?,
       blockNumber: blockHeight,
       blockHash: blockHash,
     );
@@ -115,7 +115,7 @@ class ReversibleTransferEvent extends TransactionEvent {
       txId: json['txId'] as String,
       status: status,
       scheduledAt: DateTime.parse(transfer['scheduledAt'] as String),
-      extrinsicHash: json['extrinsicHash'] as String?,
+      extrinsicHash: json['extrinsic']?['id'] as String?,
       blockNumber: block['height'] as int,
       blockHash: block['hash'] as String? ?? '',
     );

@@ -45,6 +45,10 @@ class $Event {
   TreasuryRewarded treasuryRewarded({required BigInt reward}) {
     return TreasuryRewarded(reward: reward);
   }
+
+  MinerRewardRedirected minerRewardRedirected({required _i3.AccountId32 miner, required BigInt reward}) {
+    return MinerRewardRedirected(miner: miner, reward: reward);
+  }
 }
 
 class $EventCodec with _i1.Codec<Event> {
@@ -60,6 +64,8 @@ class $EventCodec with _i1.Codec<Event> {
         return FeesCollected._decode(input);
       case 2:
         return TreasuryRewarded._decode(input);
+      case 3:
+        return MinerRewardRedirected._decode(input);
       default:
         throw Exception('Event: Invalid variant index: "$index"');
     }
@@ -77,6 +83,9 @@ class $EventCodec with _i1.Codec<Event> {
       case TreasuryRewarded:
         (value as TreasuryRewarded).encodeTo(output);
         break;
+      case MinerRewardRedirected:
+        (value as MinerRewardRedirected).encodeTo(output);
+        break;
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -91,6 +100,8 @@ class $EventCodec with _i1.Codec<Event> {
         return (value as FeesCollected)._sizeHint();
       case TreasuryRewarded:
         return (value as TreasuryRewarded)._sizeHint();
+      case MinerRewardRedirected:
+        return (value as MinerRewardRedirected)._sizeHint();
       default:
         throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
@@ -214,4 +225,50 @@ class TreasuryRewarded extends Event {
 
   @override
   int get hashCode => reward.hashCode;
+}
+
+/// Miner reward was redirected to treasury due to mint failure
+class MinerRewardRedirected extends Event {
+  const MinerRewardRedirected({required this.miner, required this.reward});
+
+  factory MinerRewardRedirected._decode(_i1.Input input) {
+    return MinerRewardRedirected(
+      miner: const _i1.U8ArrayCodec(32).decode(input),
+      reward: _i1.U128Codec.codec.decode(input),
+    );
+  }
+
+  /// T::AccountId
+  /// The miner who should have received the reward
+  final _i3.AccountId32 miner;
+
+  /// BalanceOf<T>
+  /// The reward amount redirected to treasury
+  final BigInt reward;
+
+  @override
+  Map<String, Map<String, dynamic>> toJson() => {
+    'MinerRewardRedirected': {'miner': miner.toList(), 'reward': reward},
+  };
+
+  int _sizeHint() {
+    int size = 1;
+    size = size + const _i3.AccountId32Codec().sizeHint(miner);
+    size = size + _i1.U128Codec.codec.sizeHint(reward);
+    return size;
+  }
+
+  void encodeTo(_i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(miner, output);
+    _i1.U128Codec.codec.encodeTo(reward, output);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MinerRewardRedirected && _i4.listsEqual(other.miner, miner) && other.reward == reward;
+
+  @override
+  int get hashCode => Object.hash(miner, reward);
 }

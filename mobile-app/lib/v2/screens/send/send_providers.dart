@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/generated/schrodinger/pallets/balances.dart' as balances;
+import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 // Local provider for existential deposit toggle in send screen

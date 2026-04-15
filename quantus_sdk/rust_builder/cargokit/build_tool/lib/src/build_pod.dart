@@ -42,10 +42,8 @@ class BuildPod {
         .expand((element) => element)
         .where((element) => element.type == AritifactType.staticlib)
         .toList();
-    final dynamicLibs = artifacts.values
-        .expand((element) => element)
-        .where((element) => element.type == AritifactType.dylib)
-        .toList();
+    final dynamicLibs =
+        artifacts.values.expand((element) => element).where((element) => element.type == AritifactType.dylib).toList();
 
     final libName = environment.crateInfo.packageName;
 

@@ -117,9 +117,6 @@ class Queries {
   }
 
   /// Lookup from a name to the block number and index of the task.
-  ///
-  /// For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
-  /// identities.
   _i7.Future<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>?> lookup(List<int> key1, {_i1.BlockHash? at}) async {
     final hashedKey = _lookup.hashedKeyFor(key1);
     final bytes = await __api.getStorage(hashedKey, at: at);
@@ -153,9 +150,6 @@ class Queries {
   }
 
   /// Lookup from a name to the block number and index of the task.
-  ///
-  /// For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
-  /// identities.
   _i7.Future<List<_i5.Tuple2<_i3.BlockNumberOrTimestamp, int>?>> multiLookup(
     List<List<int>> keys, {
     _i1.BlockHash? at,
@@ -226,14 +220,8 @@ class Queries {
 class Txs {
   const Txs();
 
-  /// Anonymously schedule a task.
-  _i9.Scheduler schedule({
-    required int when,
-    _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>? maybePeriodic,
-    required int priority,
-    required _i9.RuntimeCall call,
-  }) {
-    return _i9.Scheduler(_i10.Schedule(when: when, maybePeriodic: maybePeriodic, priority: priority, call: call));
+  _i9.Scheduler schedule({required int when, required int priority, required _i9.RuntimeCall call}) {
+    return _i9.Scheduler(_i10.Schedule(when: when, priority: priority, call: call));
   }
 
   /// Cancel an anonymously scheduled task.
@@ -241,17 +229,13 @@ class Txs {
     return _i9.Scheduler(_i10.Cancel(when: when, index: index));
   }
 
-  /// Schedule a named task.
   _i9.Scheduler scheduleNamed({
     required List<int> id,
     required int when,
-    _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(
-      _i10.ScheduleNamed(id: id, when: when, maybePeriodic: maybePeriodic, priority: priority, call: call),
-    );
+    return _i9.Scheduler(_i10.ScheduleNamed(id: id, when: when, priority: priority, call: call));
   }
 
   /// Cancel a named scheduled task.
@@ -259,29 +243,21 @@ class Txs {
     return _i9.Scheduler(_i10.CancelNamed(id: id));
   }
 
-  /// Anonymously schedule a task after a delay.
   _i9.Scheduler scheduleAfter({
     required _i3.BlockNumberOrTimestamp after,
-    _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(
-      _i10.ScheduleAfter(after: after, maybePeriodic: maybePeriodic, priority: priority, call: call),
-    );
+    return _i9.Scheduler(_i10.ScheduleAfter(after: after, priority: priority, call: call));
   }
 
-  /// Schedule a named task after a delay.
   _i9.Scheduler scheduleNamedAfter({
     required List<int> id,
     required _i3.BlockNumberOrTimestamp after,
-    _i5.Tuple2<_i3.BlockNumberOrTimestamp, int>? maybePeriodic,
     required int priority,
     required _i9.RuntimeCall call,
   }) {
-    return _i9.Scheduler(
-      _i10.ScheduleNamedAfter(id: id, after: after, maybePeriodic: maybePeriodic, priority: priority, call: call),
-    );
+    return _i9.Scheduler(_i10.ScheduleNamedAfter(id: id, after: after, priority: priority, call: call));
   }
 
   /// Set a retry configuration for a task so that, in case its scheduled run fails, it will
@@ -289,10 +265,9 @@ class Txs {
   /// succeeds.
   ///
   /// Tasks which need to be scheduled for a retry are still subject to weight metering and
-  /// agenda space, same as a regular task. If a periodic task fails, it will be scheduled
-  /// normally while the task is retrying.
+  /// agenda space, same as a regular task.
   ///
-  /// Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+  /// Tasks scheduled as a result of a retry are unnamed
   /// clones of the original task. Their retry configuration will be derived from the
   /// original task's configuration, but will have a lower value for `remaining` than the
   /// original `total_retries`.
@@ -309,10 +284,9 @@ class Txs {
   /// it succeeds.
   ///
   /// Tasks which need to be scheduled for a retry are still subject to weight metering and
-  /// agenda space, same as a regular task. If a periodic task fails, it will be scheduled
-  /// normally while the task is retrying.
+  /// agenda space, same as a regular task.
   ///
-  /// Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+  /// Tasks scheduled as a result of a retry are unnamed
   /// clones of the original task. Their retry configuration will be derived from the
   /// original task's configuration, but will have a lower value for `remaining` than the
   /// original `total_retries`.

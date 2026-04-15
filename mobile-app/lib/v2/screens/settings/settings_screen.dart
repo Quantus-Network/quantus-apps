@@ -2,23 +2,20 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/welcome/welcome_screen.dart';
-import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
@@ -66,20 +63,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   }
 
   Future<void> _resetAndClearData() async {
-    if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
-      ref.read(firebaseMessagingServiceProvider).unregisterDevice();
-    }
-
-    _settingsService.clearAll();
-    SubstrateService().logout();
-    ref.read(pendingTransactionsProvider.notifier).clear();
-    ref.read(accountsProvider.notifier).reset();
-    ref.read(activeAccountProvider.notifier).reset();
-    ref.read(accountAssociationsProvider.notifier).reset();
-
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
-    }
+    if (mounted) ref.read(logoutServiceProvider).logout(context);
   }
 
   void _showResetConfirmation() {
@@ -174,6 +158,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           ]),
           const SizedBox(height: 40),
           _resetButton(colors, text),
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              'Version: $appVersion ($appBuildNumber)',
+              style: text.detail?.copyWith(color: colors.textTertiary),
+            ),
+          ),
           const SizedBox(height: 48),
         ],
       ),
