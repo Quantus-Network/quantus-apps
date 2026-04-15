@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_scr
 import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
@@ -95,6 +96,8 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
             _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
           ]),
           const SizedBox(height: 40),
+          _miningRewardsSection(colors, text),
+          const SizedBox(height: 40),
           _section('Reversible Transactions', colors, text, [
             _comingSoonItem('Reversible Transactions', null, colors, text),
             // _toggleItem(
@@ -168,6 +171,38 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           const SizedBox(height: 48),
         ],
       ),
+    );
+  }
+
+  Widget _miningRewardsSection(AppColorsV2 colors, AppTextTheme text) {
+    final miningAsync = ref.watch(miningRewardsProvider);
+    return _section('Mining Rewards', colors, text, [
+      miningAsync.when(
+        data: (data) => Column(
+          children: [
+            _miningStatItem('Testnet 1', data.testnet1BlocksMined, colors, text),
+            _divider(colors),
+            _miningStatItem('Testnet 2', data.testnet2BlocksMined, colors, text),
+          ],
+        ),
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+        ),
+        error: (_, __) => Text('Unable to load mining data', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+      ),
+    ]);
+  }
+
+  Widget _miningStatItem(String label, int blocksMined, AppColorsV2 colors, AppTextTheme text) {
+    return Row(
+      children: [
+        Expanded(child: Text(label, style: text.paragraph?.copyWith(color: colors.textPrimary))),
+        Text(
+          'Mined $blocksMined blocks',
+          style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 

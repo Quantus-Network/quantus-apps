@@ -79,6 +79,7 @@ flutter:
   assets:
     - .env
     - assets/
+    - assets/testnet_data/
     - assets/text/human_checkphrase_final_wordlist.txt
     - assets/send_icon.png
     - assets/receive_icon.png
