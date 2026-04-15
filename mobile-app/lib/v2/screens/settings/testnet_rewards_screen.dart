@@ -25,7 +25,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
           child: _buildContent(data, colors, text),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

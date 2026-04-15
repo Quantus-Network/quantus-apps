@@ -183,7 +183,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
           Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       loading: () =>
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-      error: (_, __) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
+      error: (_, _) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
     );
     return GestureDetector(
       onTap: () {

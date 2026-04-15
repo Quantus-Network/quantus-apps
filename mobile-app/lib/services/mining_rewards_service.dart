@@ -57,14 +57,12 @@ class MiningRewardsService {
   }
 
   Future<int> _fetchPlanckBlocks(Set<String> accountIds) async {
-    // TODO: remove test ID after verifying
-    final queryIds = {...accountIds, 'qznJJmLc72y56wLzKjopYVwY2oa8jSodCfmxtqU2VjCs1jZXZ'};
-    print('[MiningRewards] Fetching Planck miner stats from subsquid for ${queryIds.length} IDs...');
+    print('[MiningRewards] Fetching Planck miner stats from subsquid for ${accountIds.length} IDs...');
     final query = jsonEncode({
       'query':
           '''
         query {
-          minerStats(where: {id_in: [${queryIds.map((id) => '"$id"').join(', ')}]}) {
+          minerStats(where: {id_in: [${accountIds.map((id) => '"$id"').join(', ')}]}) {
             id
             totalMinedBlocks
           }
