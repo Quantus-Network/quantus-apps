@@ -85,25 +85,26 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   /// Validate and save an imported mnemonic.
   Future<void> _saveImportedMnemonic() async {
-    final mnemonic = _importController.text.trim();
+    final raw = _importController.text.trim();
 
-    if (mnemonic.isEmpty) {
+    if (raw.isEmpty) {
       setState(() {
         _importError = 'Please enter your recovery phrase';
       });
       return;
     }
 
-    // Validate word count
-    final words = mnemonic.split(RegExp(r'\s+'));
-    if (words.length != 24) {
+    final words = raw.split(RegExp(r'\s+'));
+    if (words.length != 24 && words.length != 12) {
       setState(() {
-        _importError = 'Recovery phrase must be exactly 24 words (got ${words.length})';
+        _importError = 'Recovery phrase must be exactly 24 or 12 words (got ${words.length})';
       });
       return;
     }
 
-    // Validate using MinerWalletService
+    // Normalize: collapse any whitespace/newlines to single spaces
+    final mnemonic = words.join(' ');
+
     if (!_walletService.validateMnemonic(mnemonic)) {
       setState(() {
         _importError = 'Invalid recovery phrase. Please check your words.';
@@ -393,14 +394,14 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     if (preimage.isEmpty) {
       setState(() {
-        _importError = 'Please enter your rewards preimage';
+        _importError = 'Please enter your inner hash';
       });
       return;
     }
 
     if (!_walletService.validatePreimage(preimage)) {
       setState(() {
-        _importError = 'Invalid preimage format. Expected SS58-encoded address.';
+        _importError = 'Invalid inner hash format. Expected 64-character hex string.';
       });
       return;
     }
@@ -417,7 +418,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       });
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackbar(title: 'Error', message: 'Failed to save preimage: $e');
+        context.showErrorSnackbar(title: 'Error', message: 'Failed to save inner hash: $e');
       }
     } finally {
       if (mounted) {
@@ -440,7 +441,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             Icon(_importMode == _ImportMode.mnemonic ? Icons.download : Icons.key, size: 48, color: Colors.blue),
             const SizedBox(height: 16),
             Text(
-              _importMode == _ImportMode.mnemonic ? 'Import Recovery Phrase' : 'Import Rewards Preimage',
+              _importMode == _ImportMode.mnemonic ? 'Import Recovery Phrase' : 'Import Inner Hash',
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -448,7 +449,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             Text(
               _importMode == _ImportMode.mnemonic
                   ? 'Enter your 24-word recovery phrase to restore your wallet.'
-                  : 'Enter your rewards preimage (SS58 format) from the CLI or another source.',
+                  : 'Enter your inner hash (hex format) from the CLI or another source.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
@@ -458,7 +459,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             SegmentedButton<_ImportMode>(
               segments: const [
                 ButtonSegment(value: _ImportMode.mnemonic, label: Text('Recovery Phrase'), icon: Icon(Icons.vpn_key)),
-                ButtonSegment(value: _ImportMode.preimage, label: Text('Preimage Only'), icon: Icon(Icons.key)),
+                ButtonSegment(value: _ImportMode.preimage, label: Text('Inner Hash Only'), icon: Icon(Icons.key)),
               ],
               selected: {_importMode},
               onSelectionChanged: (selected) {
@@ -476,10 +477,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
               focusNode: _importFocusNode,
               maxLines: _importMode == _ImportMode.mnemonic ? 4 : 2,
               decoration: InputDecoration(
-                labelText: _importMode == _ImportMode.mnemonic ? 'Recovery Phrase' : 'Rewards Preimage',
+                labelText: _importMode == _ImportMode.mnemonic ? 'Recovery Phrase' : 'Inner Hash',
                 hintText: _importMode == _ImportMode.mnemonic
                     ? 'Enter your 24 words separated by spaces'
-                    : 'e.g., qXYZ123...',
+                    : 'e.g., 0xa9da183a...',
                 border: const OutlineInputBorder(),
                 errorText: _importError,
                 suffixIcon: IconButton(
@@ -537,7 +538,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child: Text(_importMode == _ImportMode.mnemonic ? 'Import Wallet' : 'Save Preimage'),
+              child: Text(_importMode == _ImportMode.mnemonic ? 'Import Wallet' : 'Save Inner Hash'),
             ),
           ],
         ),
@@ -555,21 +556,20 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           const Icon(Icons.check_circle, size: 64, color: Colors.green),
           const SizedBox(height: 16),
           const Text(
-            'Preimage Saved!',
+            'Inner Hash Saved!',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
-            'Your mining rewards will be directed using this preimage.',
+            'Your mining rewards will be directed using this inner hash.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 32),
 
-          // Rewards Preimage
           _buildInfoCard(
-            title: 'Rewards Preimage',
+            title: 'Inner Hash',
             subtitle: 'Used by the node to direct rewards',
             value: _savedPreimageOnly!,
             icon: Icons.key,
@@ -647,11 +647,10 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Rewards Preimage
           _buildInfoCard(
-            title: 'Rewards Preimage',
+            title: 'Inner Hash',
             subtitle: 'Used by the node (auto-configured)',
-            value: _savedKeyPair!.rewardsPreimage,
+            value: _savedKeyPair!.rewardsPreimageHex,
             icon: Icons.key,
             color: Colors.blue,
           ),
@@ -670,7 +669,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'The rewards preimage has been saved automatically. The mining node will use it to direct rewards to your wormhole address.',
+                    'The inner hash has been saved automatically. The mining node will use it to direct rewards to your wormhole address.',
                     style: TextStyle(fontSize: 14, color: Colors.green.shade200),
                   ),
                 ),
