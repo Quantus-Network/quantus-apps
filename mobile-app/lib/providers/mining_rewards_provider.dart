@@ -8,7 +8,7 @@ final miningRewardsProvider = FutureProvider<MiningRewardsData>((ref) async {
   final service = ref.watch(miningRewardsServiceProvider);
   final accounts = ref.watch(accountsProvider).value;
   if (accounts == null || accounts.isEmpty) {
-    return const MiningRewardsData(resonanceBlocks: 0, schrodingerBlocks: 0, diracBlocks: 0);
+    return const MiningRewardsData(resonanceBlocks: 0, schrodingerBlocks: 0, diracBlocks: 0, planckBlocks: 0);
   }
   return service.getMiningRewards(accounts.map((a) => a.accountId).toList());
 });

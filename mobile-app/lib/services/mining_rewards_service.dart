@@ -1,19 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class MiningRewardsData {
   final int resonanceBlocks;
   final int schrodingerBlocks;
   final int diracBlocks;
+  final int planckBlocks;
 
   const MiningRewardsData({
     required this.resonanceBlocks,
     required this.schrodingerBlocks,
     required this.diracBlocks,
+    required this.planckBlocks,
   });
 
-  int get totalBlocks => resonanceBlocks + schrodingerBlocks + diracBlocks;
+  int get totalBlocks => resonanceBlocks + schrodingerBlocks + diracBlocks + planckBlocks;
 }
 
 class MiningRewardsService {
@@ -23,6 +26,7 @@ class MiningRewardsService {
     'schrodinger': 'assets/testnet_data/schrodinger_miners.json',
   };
 
+  final _graphQl = GraphQlEndpointService();
   Set<String>? _cachedAccountIds;
 
   Future<MiningRewardsData> getMiningRewards(List<String> currentAccountIds) async {
@@ -41,9 +45,49 @@ class MiningRewardsService {
     final resonance = _countBlocks('resonance', miners['resonance']!, allAccountIds);
     final schrodinger = _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
     final dirac = _countBlocks('dirac', miners['dirac']!, allAccountIds);
+    final planck = await _fetchPlanckBlocks(allAccountIds);
 
-    print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac');
-    return MiningRewardsData(resonanceBlocks: resonance, schrodingerBlocks: schrodinger, diracBlocks: dirac);
+    print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac, Planck: $planck');
+    return MiningRewardsData(
+      resonanceBlocks: resonance,
+      schrodingerBlocks: schrodinger,
+      diracBlocks: dirac,
+      planckBlocks: planck,
+    );
+  }
+
+  Future<int> _fetchPlanckBlocks(Set<String> accountIds) async {
+    try {
+      final queryIds = accountIds;
+      print('[MiningRewards] Fetching Planck miner stats from subsquid for ${queryIds.length} IDs...');
+      final query = jsonEncode({
+        'query': '''
+          query {
+            minerStats(where: {id_in: [${queryIds.map((id) => '"$id"').join(', ')}]}) {
+              id
+              totalMinedBlocks
+            }
+          }
+        ''',
+      });
+      final response = await _graphQl.post(body: query);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final stats = decoded['data']['minerStats'] as List;
+        print('[MiningRewards] Planck: subsquid returned ${stats.length} matching miners');
+        int total = 0;
+        for (final s in stats) {
+          final blocks = (s['totalMinedBlocks'] as num).toInt();
+          print('[MiningRewards] Planck MATCH: ${s['id']} mined $blocks blocks');
+          total += blocks;
+        }
+        return total;
+      }
+      print('[MiningRewards] Planck: subsquid returned status ${response.statusCode}');
+    } catch (e) {
+      print('[MiningRewards] Planck fetch error: $e');
+    }
+    return 0;
   }
 
   List<_MinerEntry> _parseMiners(String jsonStr) {

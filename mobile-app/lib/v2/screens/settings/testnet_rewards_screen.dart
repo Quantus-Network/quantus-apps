@@ -19,9 +19,12 @@ class TestnetRewardsScreen extends ConsumerWidget {
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Testnet Rewards'),
       child: miningAsync.when(
-        data: (data) => _buildContent(data, colors, text),
+        data: (data) => RefreshIndicator(
+          onRefresh: () async => ref.invalidate(miningRewardsProvider),
+          child: _buildContent(data, colors, text),
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(
+        error: (_, _) => Center(
           child: Text('Unable to load mining data', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
         ),
       ),
@@ -30,12 +33,14 @@ class TestnetRewardsScreen extends ConsumerWidget {
 
   Widget _buildContent(MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
     final testnets = [
-      ('Resonance', data.resonanceBlocks),
-      ('Schrödinger', data.schrodingerBlocks),
+      ('Planck', data.planckBlocks),
       ('Dirac', data.diracBlocks),
+      ('Schrödinger', data.schrodingerBlocks),
+      ('Resonance', data.resonanceBlocks),
     ];
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       children: [
         Container(
@@ -43,7 +48,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
           decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
           child: Column(
             children: [
-              Text('💰', style: const TextStyle(fontSize: 40)),
+              const Text('💰', style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
               Text(
                 '${data.totalBlocks} blocks',
@@ -79,7 +84,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary))),
-                    Text('💰 ', style: const TextStyle(fontSize: 14)),
+                    const Text('💰 ', style: TextStyle(fontSize: 14)),
                     Text(
                       '${testnets[i].$2} blocks',
                       style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),

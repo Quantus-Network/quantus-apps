@@ -179,7 +179,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     final miningAsync = ref.watch(miningRewardsProvider);
     final subtitle = miningAsync.when(
       data: (data) => Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      loading: () => SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.textTertiary)),
+      loading: () => const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
       error: (_, _) => Text('Unable to load', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
     );
     return GestureDetector(
