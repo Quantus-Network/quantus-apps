@@ -401,6 +401,9 @@ class BlockHeader {
   /// Extrinsics root of the block (hex encoded).
   final String extrinsicsRootHex;
 
+  /// ZK tree root from block header (hex encoded).
+  final String zkTreeRootHex;
+
   /// Block number.
   final int blockNumber;
 
@@ -411,6 +414,7 @@ class BlockHeader {
     required this.parentHashHex,
     required this.stateRootHex,
     required this.extrinsicsRootHex,
+    required this.zkTreeRootHex,
     required this.blockNumber,
     required this.digestHex,
   });
@@ -438,17 +442,57 @@ class ZkMerkleProof {
   /// Outer list = levels, inner list = 3 siblings per level (each hex encoded).
   final List<List<String>> siblingsHex;
 
+  /// Raw leaf data (hex encoded).
+  /// ZkLeaf structure: (to: AccountId32, transfer_count: u64, asset_id: u32, amount: u128)
+  final String leafDataHex;
+
   const ZkMerkleProof({
     required this.zkTreeRootHex,
     required this.leafHashHex,
     required this.siblingsHex,
+    required this.leafDataHex,
   });
+
+  /// Decode the quantized input amount from the leaf data.
+  /// The leaf stores the raw amount in planck, but we need to quantize it for the circuit.
+  int get inputAmount {
+    // ZkLeaf is: (AccountId32, u64, u32, u128)
+    // AccountId32 = 32 bytes
+    // u64 = 8 bytes (transfer_count)
+    // u32 = 4 bytes (asset_id)
+    // u128 = 16 bytes (amount - RAW in planck)
+    // Total = 60 bytes
+    final hex = leafDataHex.startsWith('0x')
+        ? leafDataHex.substring(2)
+        : leafDataHex;
+    final bytes = List<int>.generate(
+      hex.length ~/ 2,
+      (i) => int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16),
+    );
+
+    if (bytes.length < 60) {
+      throw Exception(
+        'Invalid leaf data length: expected at least 60 bytes, got ${bytes.length}',
+      );
+    }
+
+    // The amount is bytes 44-60 (u128, little-endian)
+    BigInt rawAmount = BigInt.zero;
+    for (int i = 0; i < 16; i++) {
+      rawAmount += BigInt.from(bytes[44 + i]) << (8 * i);
+    }
+
+    // Quantize: divide by 10^10 to go from 12 decimals to 2 decimals
+    final quantized = rawAmount ~/ BigInt.from(10000000000);
+    return quantized.toInt();
+  }
 
   wormhole.ZkMerkleProofData toFfi() {
     return wormhole.ZkMerkleProofData(
       zkTreeRootHex: zkTreeRootHex,
       leafHashHex: leafHashHex,
       siblingsHex: siblingsHex,
+      leafDataHex: leafDataHex,
     );
   }
 }

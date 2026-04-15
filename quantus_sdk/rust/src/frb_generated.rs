@@ -1935,10 +1935,12 @@ impl SseDecode for crate::api::wormhole::ZkMerkleProofData {
         let mut var_zkTreeRootHex = <String>::sse_decode(deserializer);
         let mut var_leafHashHex = <String>::sse_decode(deserializer);
         let mut var_siblingsHex = <Vec<Vec<String>>>::sse_decode(deserializer);
+        let mut var_leafDataHex = <String>::sse_decode(deserializer);
         return crate::api::wormhole::ZkMerkleProofData {
             zk_tree_root_hex: var_zkTreeRootHex,
             leaf_hash_hex: var_leafHashHex,
             siblings_hex: var_siblingsHex,
+            leaf_data_hex: var_leafDataHex,
         };
     }
 }
@@ -2371,6 +2373,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::wormhole::ZkMerkleProofData {
             self.zk_tree_root_hex.into_into_dart().into_dart(),
             self.leaf_hash_hex.into_into_dart().into_dart(),
             self.siblings_hex.into_into_dart().into_dart(),
+            self.leaf_data_hex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2653,6 +2656,7 @@ impl SseEncode for crate::api::wormhole::ZkMerkleProofData {
         <String>::sse_encode(self.zk_tree_root_hex, serializer);
         <String>::sse_encode(self.leaf_hash_hex, serializer);
         <Vec<Vec<String>>>::sse_encode(self.siblings_hex, serializer);
+        <String>::sse_encode(self.leaf_data_hex, serializer);
     }
 }
 

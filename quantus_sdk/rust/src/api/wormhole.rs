@@ -252,6 +252,9 @@ pub struct ZkMerkleProofData {
     /// Unsorted sibling hashes at each level (3 siblings per level, each hex encoded).
     /// Outer vec = levels, inner vec = 3 siblings per level.
     pub siblings_hex: Vec<Vec<String>>,
+    /// Raw leaf data (hex encoded, 60 bytes SCALE-encoded ZkLeaf).
+    /// Structure: (to: AccountId32, transfer_count: u64, asset_id: u32, amount: u128)
+    pub leaf_data_hex: String,
 }
 
 /// Configuration loaded from circuit binaries directory.
@@ -576,6 +579,97 @@ impl WormholeProofGenerator {
         // Compute sorted siblings and position hints from unsorted siblings
         let (sorted_siblings, positions) = compute_merkle_positions(&unsorted_siblings, leaf_hash);
 
+        // Compute wormhole address (needed for leaf hash verification)
+        let wormhole_address =
+            quantus_cli::compute_wormhole_address(&secret).map_err(|e| WormholeError {
+                message: format!("Failed to compute wormhole address: {}", e),
+            })?;
+
+        // Verify input values match what's in the leaf_data from RPC
+        // This helps catch mismatches early with clear error messages
+        let leaf_data = parse_hex(&zk_merkle_proof.leaf_data_hex)?;
+        let (rpc_to_account, rpc_transfer_count, _rpc_asset_id, rpc_amount_raw) =
+            decode_leaf_data(&leaf_data)?;
+
+        // Quantize the raw amount (same as chain does)
+        const AMOUNT_SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
+        let rpc_amount_quantized = (rpc_amount_raw / AMOUNT_SCALE_DOWN_FACTOR) as u32;
+
+        // Check for mismatches between what we're using and what's in the leaf
+        if rpc_to_account != wormhole_address {
+            return Err(WormholeError {
+                message: format!(
+                    "to_account mismatch: leaf_data has 0x{} but secret derives 0x{}. \
+                     The secret doesn't match the wormhole address that received this transfer.",
+                    hex::encode(&rpc_to_account),
+                    hex::encode(&wormhole_address),
+                ),
+            });
+        }
+        if rpc_transfer_count != utxo.transfer_count {
+            return Err(WormholeError {
+                message: format!(
+                    "transfer_count mismatch: leaf_data has {} but UTXO has {}",
+                    rpc_transfer_count, utxo.transfer_count,
+                ),
+            });
+        }
+        if rpc_amount_quantized != utxo.input_amount {
+            return Err(WormholeError {
+                message: format!(
+                    "input_amount mismatch: leaf_data has {} (quantized from {}) but UTXO has {}",
+                    rpc_amount_quantized, rpc_amount_raw, utxo.input_amount,
+                ),
+            });
+        }
+
+        log::info!(
+            "[SDK] Input values verified against leaf_data: transfer_count={}, input_amount={}",
+            utxo.transfer_count,
+            utxo.input_amount,
+        );
+        log::info!(
+            "[SDK] Values we're using: wormhole_addr={}, transfer_count={}, asset_id={}, input_amount={}",
+            short_hex_bytes(&wormhole_address),
+            utxo.transfer_count,
+            quantus_cli::NATIVE_ASSET_ID,
+            utxo.input_amount,
+        );
+
+        // Check for mismatches
+        if rpc_to_account != wormhole_address {
+            return Err(WormholeError {
+                message: format!(
+                    "to_account mismatch: leaf_data has 0x{} but secret derives 0x{}. \
+                     The secret doesn't match the wormhole address that received this transfer.",
+                    hex::encode(&rpc_to_account),
+                    hex::encode(&wormhole_address),
+                ),
+            });
+        }
+        if rpc_transfer_count != utxo.transfer_count {
+            return Err(WormholeError {
+                message: format!(
+                    "transfer_count mismatch: leaf_data has {} but UTXO has {}",
+                    rpc_transfer_count, utxo.transfer_count,
+                ),
+            });
+        }
+        if rpc_amount_quantized != utxo.input_amount {
+            return Err(WormholeError {
+                message: format!(
+                    "input_amount mismatch: leaf_data has {} (quantized from {}) but UTXO has {}",
+                    rpc_amount_quantized, rpc_amount_raw, utxo.input_amount,
+                ),
+            });
+        }
+
+        log::info!(
+            "[SDK] Input values verified: transfer_count={}, input_amount={}",
+            utxo.transfer_count,
+            utxo.input_amount,
+        );
+
         let recomputed_block_hash = compute_block_hash_internal(
             &parent_hash,
             &state_root,
@@ -593,13 +687,8 @@ impl WormholeProofGenerator {
             ss58_to_bytes(&output.exit_account_2)?
         };
 
-        // Compute wormhole address using quantus-cli library
-        let wormhole_address =
-            quantus_cli::compute_wormhole_address(&secret).map_err(|e| WormholeError {
-                message: format!("Failed to compute wormhole address: {}", e),
-            })?;
-
         // Build proof generation input using quantus-cli types with ZK Merkle proof
+        // Note: wormhole_address was computed earlier for leaf hash verification
         let input = quantus_cli::ProofGenerationInput {
             secret,
             transfer_count: utxo.transfer_count,
@@ -952,8 +1041,46 @@ fn ss58_to_bytes(ss58: &str) -> Result<[u8; 32], WormholeError> {
     Ok(account.into())
 }
 
-// Note: compute_transfer_proof_leaf_hash has been replaced by quantus_cli::compute_leaf_hash
-// which is called directly from quantus_cli::generate_wormhole_proof
+/// Decode the SCALE-encoded ZkLeaf data.
+///
+/// ZkLeaf structure (60 bytes total):
+/// - to: AccountId32 (32 bytes)
+/// - transfer_count: u64 (8 bytes, little-endian)
+/// - asset_id: u32 (4 bytes, little-endian)
+/// - amount: u128 (16 bytes, little-endian) - RAW planck, not quantized
+fn decode_leaf_data(leaf_data: &[u8]) -> Result<([u8; 32], u64, u32, u128), WormholeError> {
+    if leaf_data.len() < 60 {
+        return Err(WormholeError {
+            message: format!(
+                "Invalid leaf_data length: expected at least 60 bytes, got {}",
+                leaf_data.len()
+            ),
+        });
+    }
+
+    // to_account: bytes 0-31
+    let to_account: [u8; 32] = leaf_data[0..32].try_into().map_err(|_| WormholeError {
+        message: "Failed to extract to_account".to_string(),
+    })?;
+
+    // transfer_count: bytes 32-39 (u64 LE)
+    let transfer_count =
+        u64::from_le_bytes(leaf_data[32..40].try_into().map_err(|_| WormholeError {
+            message: "Failed to extract transfer_count".to_string(),
+        })?);
+
+    // asset_id: bytes 40-43 (u32 LE)
+    let asset_id = u32::from_le_bytes(leaf_data[40..44].try_into().map_err(|_| WormholeError {
+        message: "Failed to extract asset_id".to_string(),
+    })?);
+
+    // amount: bytes 44-59 (u128 LE)
+    let amount = u128::from_le_bytes(leaf_data[44..60].try_into().map_err(|_| WormholeError {
+        message: "Failed to extract amount".to_string(),
+    })?);
+
+    Ok((to_account, transfer_count, asset_id, amount))
+}
 
 /// Compute block hash from header components.
 ///

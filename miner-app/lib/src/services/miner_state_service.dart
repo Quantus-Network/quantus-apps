@@ -4,6 +4,7 @@ import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/transfer_tracking_service.dart';
 import 'package:quantus_miner/src/services/wormhole_address_manager.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' as sdk;
 
 final _log = log.withTag('MinerState');
 
@@ -101,10 +102,18 @@ class MinerStateService {
     if (_wormholeAddress != null) {
       // Collect all addresses to track (primary + any derived change addresses)
       final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty ? allAddresses : {_wormholeAddress!};
+      final addressesToTrack = allAddresses.isNotEmpty
+          ? allAddresses
+          : {_wormholeAddress!};
 
-      await _transferTrackingService.initialize(rpcUrl: rpcUrl, wormholeAddresses: addressesToTrack);
+      await _transferTrackingService.initialize(
+        rpcUrl: rpcUrl,
+        wormholeAddresses: addressesToTrack,
+      );
       await _transferTrackingService.loadFromDisk();
+
+      // Fetch historical transfers from Subsquid for all tracked addresses
+      await _fetchHistoricalTransfers(addressesToTrack);
     }
 
     _isSessionActive = true;
@@ -114,6 +123,63 @@ class MinerStateService {
     await _refreshBalance();
 
     _log.i('Mining session started');
+  }
+
+  /// Fetch historical transfers from Subsquid for addresses not already tracked locally.
+  ///
+  /// This ensures we pick up transfers that occurred while the app was closed.
+  Future<void> _fetchHistoricalTransfers(Set<String> addresses) async {
+    _log.i(
+      'Fetching historical transfers from Subsquid for ${addresses.length} addresses',
+    );
+
+    final utxoService = sdk.WormholeUtxoService();
+
+    for (final address in addresses) {
+      try {
+        // Get transfers from Subsquid
+        final transfers = await utxoService.getTransfersTo(address, limit: 100);
+        _log.d('Subsquid returned ${transfers.length} transfers for $address');
+
+        // Get locally tracked transfers to avoid duplicates
+        final localTransfers = _transferTrackingService.getTransfers(address);
+        final localTransferCounts = localTransfers
+            .map((t) => t.transferCount)
+            .toSet();
+
+        // Add any transfers we don't already have locally
+        var added = 0;
+        for (final transfer in transfers) {
+          if (!localTransferCounts.contains(transfer.transferCount)) {
+            _transferTrackingService.addTrackedTransfer(
+              TrackedTransfer(
+                blockHash: transfer.blockHash,
+                blockNumber: transfer.blockNumber,
+                transferCount: transfer.transferCount,
+                leafIndex: transfer.leafIndex,
+                amount: transfer.amount,
+                wormholeAddress: transfer.wormholeAddress,
+                fundingAccount: transfer.fromAddress,
+                timestamp: transfer.timestamp,
+              ),
+            );
+            added++;
+          }
+        }
+
+        if (added > 0) {
+          _log.i(
+            'Added $added historical transfers for $address from Subsquid',
+          );
+        }
+      } catch (e) {
+        _log.w('Failed to fetch historical transfers for $address: $e');
+        // Continue with other addresses even if one fails
+      }
+    }
+
+    // Save any new transfers to disk
+    await _transferTrackingService.saveToDisk();
   }
 
   /// Stop the current mining session.
@@ -134,7 +200,9 @@ class MinerStateService {
     // Emit updates
     _sessionController.add(false);
     _blockController.add(0);
-    _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
+    _balanceController.add(
+      BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
+    );
 
     _log.i('Mining session stopped');
   }
@@ -155,14 +223,21 @@ class MinerStateService {
     // Re-initialize if we have RPC URL
     if (_rpcUrl != null && _wormholeAddress != null) {
       final allAddresses = _addressManager.allAddressStrings;
-      final addressesToTrack = allAddresses.isNotEmpty ? allAddresses : {_wormholeAddress!};
+      final addressesToTrack = allAddresses.isNotEmpty
+          ? allAddresses
+          : {_wormholeAddress!};
 
-      await _transferTrackingService.initialize(rpcUrl: _rpcUrl!, wormholeAddresses: addressesToTrack);
+      await _transferTrackingService.initialize(
+        rpcUrl: _rpcUrl!,
+        wormholeAddresses: addressesToTrack,
+      );
     }
 
     // Emit updates
     _blockController.add(0);
-    _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
+    _balanceController.add(
+      BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
+    );
   }
 
   // === Called by MiningOrchestrator ===
@@ -229,10 +304,11 @@ class MinerStateService {
     final changeAddresses = _addressManager.allAddresses;
     for (final trackedAddr in changeAddresses) {
       if (trackedAddr.address != _wormholeAddress) {
-        final changeUnspent = await _transferTrackingService.getUnspentTransfers(
-          wormholeAddress: trackedAddr.address,
-          secretHex: trackedAddr.secretHex,
-        );
+        final changeUnspent = await _transferTrackingService
+            .getUnspentTransfers(
+              wormholeAddress: trackedAddr.address,
+              secretHex: trackedAddr.secretHex,
+            );
         allUnspent.addAll(changeUnspent);
       }
     }
@@ -271,7 +347,9 @@ class MinerStateService {
     if (_wormholeAddress == null || _secretHex == null) {
       _balance = BigInt.zero;
       _unspentCount = 0;
-      _balanceController.add(BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false));
+      _balanceController.add(
+        BalanceState(balance: BigInt.zero, unspentCount: 0, canWithdraw: false),
+      );
       return;
     }
 
@@ -293,10 +371,11 @@ class MinerStateService {
     final changeAddresses = _addressManager.allAddresses;
     for (final trackedAddr in changeAddresses) {
       if (trackedAddr.address != _wormholeAddress) {
-        final changeUnspent = await _transferTrackingService.getUnspentTransfers(
-          wormholeAddress: trackedAddr.address,
-          secretHex: trackedAddr.secretHex,
-        );
+        final changeUnspent = await _transferTrackingService
+            .getUnspentTransfers(
+              wormholeAddress: trackedAddr.address,
+              secretHex: trackedAddr.secretHex,
+            );
         for (final transfer in changeUnspent) {
           totalBalance += transfer.amount;
           totalCount++;
@@ -332,8 +411,13 @@ class BalanceState {
   final int unspentCount;
   final bool canWithdraw;
 
-  const BalanceState({required this.balance, required this.unspentCount, required this.canWithdraw});
+  const BalanceState({
+    required this.balance,
+    required this.unspentCount,
+    required this.canWithdraw,
+  });
 
   @override
-  String toString() => 'BalanceState(balance: $balance, unspent: $unspentCount, canWithdraw: $canWithdraw)';
+  String toString() =>
+      'BalanceState(balance: $balance, unspent: $unspentCount, canWithdraw: $canWithdraw)';
 }

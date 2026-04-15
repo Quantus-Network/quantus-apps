@@ -10,9 +10,12 @@ class WithdrawalService {
   final MinerSettingsService _settingsService;
   final sdk.WormholeWithdrawalService _sdkWithdrawalService;
 
-  WithdrawalService({MinerSettingsService? settingsService, sdk.WormholeWithdrawalService? sdkWithdrawalService})
-    : _settingsService = settingsService ?? MinerSettingsService(),
-      _sdkWithdrawalService = sdkWithdrawalService ?? sdk.WormholeWithdrawalService();
+  WithdrawalService({
+    MinerSettingsService? settingsService,
+    sdk.WormholeWithdrawalService? sdkWithdrawalService,
+  }) : _settingsService = settingsService ?? MinerSettingsService(),
+       _sdkWithdrawalService =
+           sdkWithdrawalService ?? sdk.WormholeWithdrawalService();
 
   Future<WithdrawalResult> withdraw({
     required String secretHex,
@@ -25,10 +28,11 @@ class WithdrawalService {
     WithdrawalProgressCallback? onProgress,
   }) async {
     final transfers = trackedTransfers
-        ?.map(
+        ?.map<sdk.WormholeTransferInfo>(
           (t) => sdk.WormholeTransferInfo(
             blockHash: t.blockHash,
             transferCount: t.transferCount,
+            leafIndex: t.leafIndex,
             amount: t.amount,
             wormholeAddress: t.wormholeAddress,
             fundingAccount: t.fundingAccount,

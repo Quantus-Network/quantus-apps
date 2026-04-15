@@ -23,8 +23,11 @@ class WormholeTransfer {
   /// Amount in planck (12 decimal places).
   final BigInt amount;
 
-  /// Transfer count from the Wormhole pallet - required for ZK proof generation.
+  /// Transfer count from the Wormhole pallet - required for nullifier computation.
   final BigInt transferCount;
+
+  /// Leaf index in the ZK tree - required for ZK proof generation.
+  final BigInt leafIndex;
 
   /// Block number where the transfer was recorded.
   final int blockNumber;
@@ -41,6 +44,7 @@ class WormholeTransfer {
     required this.fromAddress,
     required this.amount,
     required this.transferCount,
+    required this.leafIndex,
     required this.blockNumber,
     required this.blockHash,
     required this.timestamp,
@@ -54,6 +58,7 @@ class WormholeTransfer {
       fromAddress: json['from']?['id'] as String? ?? '',
       amount: BigInt.parse(json['amount'] as String),
       transferCount: BigInt.parse(json['transferCount'] as String),
+      leafIndex: BigInt.parse(json['leafIndex'] as String),
       blockNumber: block?['height'] as int? ?? 0,
       blockHash: block?['hash'] as String? ?? '',
       timestamp: DateTime.parse(json['timestamp'] as String),
@@ -64,15 +69,8 @@ class WormholeTransfer {
   ///
   /// [secretHex] should be the secret derived from the mnemonic for this
   /// wormhole address.
-  ///
-  /// TODO: This needs to be updated to use ZK Merkle proofs for Planck.
-  /// The WormholeUtxo now requires inputAmount (quantized) and leafIndex
-  /// instead of raw amount and fundingAccount.
-  WormholeUtxo toUtxo(
-    String secretHex, {
-    required int inputAmount,
-    required BigInt leafIndex,
-  }) {
+  /// [inputAmount] is the quantized amount (2 decimal places).
+  WormholeUtxo toUtxo(String secretHex, {required int inputAmount}) {
     return WormholeUtxo(
       secretHex: secretHex,
       inputAmount: inputAmount,
@@ -90,7 +88,7 @@ class WormholeTransfer {
   @override
   String toString() {
     return 'WormholeTransfer{id: $id, to: $wormholeAddress, from: $fromAddress, '
-        'amount: $amount, transferCount: $transferCount, block: $blockNumber}';
+        'amount: $amount, transferCount: $transferCount, leafIndex: $leafIndex, block: $blockNumber}';
   }
 }
 
@@ -101,10 +99,25 @@ class WormholeTransfer {
 class WormholeUtxoService {
   final GraphQlEndpointService _graphQlEndpoint = GraphQlEndpointService();
 
-  /// GraphQL query to fetch wormhole transfers by recipient address.
+  /// GraphQL query to fetch account balance and privacy deposits.
   ///
-  /// Only returns transfers with source=WORMHOLE that have a transferCount
-  /// (required for ZK proof generation).
+  /// For wormhole addresses (isDepositOnly=true), the privacyDeposits field
+  /// contains a JSON array of individual deposit amounts.
+  static const String _accountBalanceQuery = r'''
+query GetAccountBalance($id: String!) {
+  accountById(id: $id) {
+    id
+    free
+    reserved
+    isDepositOnly
+    privacyDeposits
+    lastUpdated
+  }
+}''';
+
+  /// GraphQL query to fetch transfers to an address (Planck schema).
+  ///
+  /// Includes both leafIndex (for ZK Merkle proofs) and transferCount (for nullifier computation).
   static const String _transfersToWormholeQuery = r'''
 query WormholeTransfers($wormholeAddress: String!, $limit: Int!, $offset: Int!) {
   transfers(
@@ -112,8 +125,6 @@ query WormholeTransfers($wormholeAddress: String!, $limit: Int!, $offset: Int!) 
     offset: $offset
     where: {
       to: { id_eq: $wormholeAddress }
-      source_eq: WORMHOLE
-      transferCount_isNull: false
     }
     orderBy: timestamp_DESC
   ) {
@@ -121,6 +132,7 @@ query WormholeTransfers($wormholeAddress: String!, $limit: Int!, $offset: Int!) 
     from { id }
     to { id }
     amount
+    leafIndex
     transferCount
     timestamp
     block {
@@ -148,8 +160,6 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
     offset: $offset
     where: {
       to: { id_in: $wormholeAddresses }
-      source_eq: WORMHOLE
-      transferCount_isNull: false
     }
     orderBy: timestamp_DESC
   ) {
@@ -157,6 +167,7 @@ query WormholeTransfersMultiple($wormholeAddresses: [String!]!, $limit: Int!, $o
     from { id }
     to { id }
     amount
+    leafIndex
     transferCount
     timestamp
     block {

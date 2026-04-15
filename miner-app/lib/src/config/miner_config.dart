@@ -116,7 +116,7 @@ class MinerConfig {
       displayName: 'Dirac',
       description: 'Dirac testnet',
       rpcUrl: 'https://a1-dirac.quantus.cat',
-      subsquidUrl: 'https://subsquid.quantus.com/graphql',
+      subsquidUrl: 'https://subsquid.quantus.com/blue/graphql',
       isDefault: false,
     ),
     ChainConfig(
@@ -124,7 +124,8 @@ class MinerConfig {
       displayName: 'Planck Testnet',
       description: 'Planck testnet',
       rpcUrl: 'https://a1-planck.quantus.cat',
-      subsquidUrl: null, // TODO: Add subsquid URL when indexer is available
+      subsquidUrl:
+          'http://127.0.0.1:4000/graphql', // Local Subsquid for testing
       isDefault: true,
     ),
   ];

@@ -21,7 +21,6 @@ import 'package:quantus_sdk/generated/planck/types/frame_system/phase.dart'
 import 'package:quantus_sdk/src/services/substrate_service.dart';
 import 'package:quantus_sdk/src/services/wormhole_address_manager.dart';
 import 'package:quantus_sdk/src/services/wormhole_service.dart';
-import 'package:ss58/ss58.dart' as ss58;
 
 /// Progress callback for withdrawal operations.
 typedef WithdrawalProgressCallback =
@@ -54,6 +53,7 @@ class WithdrawalResult {
 class WormholeTransferInfo {
   final String blockHash;
   final BigInt transferCount;
+  final BigInt leafIndex;
   final BigInt amount;
   final String wormholeAddress;
   final String fundingAccount;
@@ -62,6 +62,7 @@ class WormholeTransferInfo {
   const WormholeTransferInfo({
     required this.blockHash,
     required this.transferCount,
+    required this.leafIndex,
     required this.amount,
     required this.wormholeAddress,
     required this.fundingAccount,
@@ -70,7 +71,7 @@ class WormholeTransferInfo {
 
   @override
   String toString() =>
-      'WormholeTransferInfo(blockHash: $blockHash, transferCount: $transferCount, amount: $amount)';
+      'WormholeTransferInfo(blockHash: $blockHash, transferCount: $transferCount, leafIndex: $leafIndex, amount: $amount)';
 }
 
 /// Service for handling wormhole withdrawals.
@@ -499,7 +500,6 @@ class WormholeWithdrawalService {
     final blockHeader = await _fetchBlockHeader(rpcUrl, blockHash);
 
     // Get ZK Merkle proof for this transfer at the proof block
-    // TODO: This needs a leaf_index from the transfer info
     final zkMerkleProof = await _fetchZkMerkleProof(
       rpcUrl: rpcUrl,
       blockHash: blockHash,
@@ -507,13 +507,23 @@ class WormholeWithdrawalService {
       secretHex: secretHex,
       wormholeService: wormholeService,
     );
-    _debug(
-      'proof dependencies blockNumber=${blockHeader.blockNumber} zkTreeRoot=${_shortHex(zkMerkleProof.zkTreeRootHex)} levels=${zkMerkleProof.siblingsHex.length}',
-    );
 
-    // Quantize the amount for the circuit
-    final quantizedInputAmount = wormholeService.quantizeAmount(
-      transfer.amount,
+    // Validate that the merkle proof root matches the block header's zkTreeRoot
+    final headerRoot = blockHeader.zkTreeRootHex.toLowerCase();
+    final proofRoot = zkMerkleProof.zkTreeRootHex.toLowerCase();
+    if (headerRoot != proofRoot) {
+      throw Exception(
+        'ZK tree root mismatch: header has $headerRoot but merkle proof has $proofRoot. '
+        'This indicates the merkle proof was fetched at a different block than the header.',
+      );
+    }
+
+    // CRITICAL: The input_amount MUST come from the leaf_data in the ZK Merkle proof,
+    // NOT from the transfer's stored amount. The circuit validates that the leaf data
+    // hashes to the leaf_hash, so any mismatch causes constraint violations.
+    final quantizedInputAmount = zkMerkleProof.inputAmount;
+    _debug(
+      'proof dependencies blockNumber=${blockHeader.blockNumber} zkTreeRoot=${_shortHex(zkMerkleProof.zkTreeRootHex)} levels=${zkMerkleProof.siblingsHex.length} inputAmount=$quantizedInputAmount (from leaf_data)',
     );
 
     // Compute the max output amount after fee deduction
@@ -533,13 +543,11 @@ class WormholeWithdrawalService {
     }
 
     // Create the UTXO with ZK Merkle proof data
-    // TODO: Get leafIndex from transfer info or ZK Merkle proof
     final utxo = WormholeUtxo(
       secretHex: secretHex,
       inputAmount: quantizedInputAmount,
       transferCount: transfer.transferCount,
-      leafIndex:
-          BigInt.zero, // TODO: Get actual leaf index from transfer or proof
+      leafIndex: transfer.leafIndex,
       blockHashHex: blockHash,
     );
     _debug(
@@ -612,87 +620,27 @@ class WormholeWithdrawalService {
     return blockHash;
   }
 
+  /// Select the proof block for all proofs in this withdrawal batch.
+  ///
+  /// CRITICAL: All proofs in an aggregation batch MUST use the same block for
+  /// ZK Merkle proofs. This block must be AFTER all transfers have been included
+  /// in the ZK tree. Using the current best block guarantees this.
+  ///
+  /// The CLI uses `at_best_block()` for the same reason - see generate_round_proofs
+  /// in quantus-cli/src/cli/wormhole.rs.
   Future<String> _selectCommonProofBlockHash({
     required String rpcUrl,
     required List<WormholeTransferInfo> selectedTransfers,
   }) async {
-    var maxTransferBlock = 0;
-    for (final transfer in selectedTransfers) {
-      final number = await _getBlockNumberByHash(rpcUrl, transfer.blockHash);
-      if (number != null && number > maxTransferBlock) {
-        maxTransferBlock = number;
-      }
-    }
-
-    if (maxTransferBlock <= 0) {
-      final best = await _fetchBestBlockHash(rpcUrl);
-      _debug('proof block fallback to best (missing block numbers): $best');
-      return best;
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse(rpcUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'jsonrpc': '2.0',
-          'id': 1,
-          'method': 'chain_getBlockHash',
-          'params': [maxTransferBlock],
-        }),
-      );
-
-      final result = jsonDecode(response.body);
-      if (result['error'] != null) {
-        throw Exception(result['error']);
-      }
-
-      final blockHash = result['result'] as String?;
-      if (blockHash == null || blockHash.isEmpty) {
-        throw Exception('No hash found for block $maxTransferBlock');
-      }
-
-      _debug(
-        'proof block selected from transfer max block=$maxTransferBlock hash=${_shortHex(blockHash)}',
-      );
-      return blockHash;
-    } catch (e) {
-      final best = await _fetchBestBlockHash(rpcUrl);
-      _debug(
-        'proof block lookup failed for block=$maxTransferBlock error=$e; fallback best=$best',
-      );
-      return best;
-    }
-  }
-
-  Future<int?> _getBlockNumberByHash(String rpcUrl, String blockHash) async {
-    try {
-      final response = await http.post(
-        Uri.parse(rpcUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'jsonrpc': '2.0',
-          'id': 1,
-          'method': 'chain_getHeader',
-          'params': [blockHash],
-        }),
-      );
-
-      final result = jsonDecode(response.body);
-      if (result['error'] != null) {
-        return null;
-      }
-
-      final header = result['result'] as Map<String, dynamic>?;
-      final numberHex = header?['number'] as String?;
-      if (numberHex == null) {
-        return null;
-      }
-
-      return int.parse(numberHex.substring(2), radix: 16);
-    } catch (_) {
-      return null;
-    }
+    // Always use the current best block. This ensures:
+    // 1. All transfers are guaranteed to be in the ZK tree (they happened in the past)
+    // 2. All proofs use the same block (required for aggregation)
+    // 3. The ZK tree root in the block header matches the Merkle proofs
+    final best = await _fetchBestBlockHash(rpcUrl);
+    _debug(
+      'proof block selected: best block=${_shortHex(best)} (transfers=${selectedTransfers.length})',
+    );
+    return best;
   }
 
   /// Fetch block header from RPC.
@@ -739,8 +687,14 @@ class WormholeWithdrawalService {
       (header['number'] as String).substring(2),
       radix: 16,
     );
-    // TODO: Get zkTreeRoot from header when available
-    final zkTreeRootHex = header['zkTreeRoot'] as String? ?? '0x' + '00' * 32;
+    // zkTreeRoot is required - fail if not present
+    final zkTreeRootHex = header['zkTreeRoot'] as String?;
+    if (zkTreeRootHex == null) {
+      throw Exception(
+        'Block header missing zkTreeRoot field. '
+        'The RPC endpoint may not support the extended header format.',
+      );
+    }
     final recomputedHash = wormholeService.computeBlockHash(
       parentHashHex: header['parentHash'] as String,
       stateRootHex: header['stateRoot'] as String,
@@ -755,22 +709,27 @@ class WormholeWithdrawalService {
       'header block=$blockNumber expectedHash=${_shortHex(expectedHash)} recomputedHash=${_shortHex(actualHash)} digestLogs=${digestLogs.length}',
     );
     if (actualHash != expectedHash) {
-      _debug('WARNING block hash mismatch for header at $blockHash');
+      throw Exception(
+        'Block hash mismatch: expected $expectedHash but computed $actualHash. '
+        'The SDK block hash computation may differ from the chain. '
+        'Block: $blockNumber, zkTreeRoot: ${_shortHex(zkTreeRootHex)}, '
+        'digestLogs: ${digestLogs.length}',
+      );
     }
 
     return BlockHeader(
       parentHashHex: header['parentHash'] as String,
       stateRootHex: header['stateRoot'] as String,
       extrinsicsRootHex: header['extrinsicsRoot'] as String,
+      zkTreeRootHex: zkTreeRootHex,
       blockNumber: blockNumber,
       digestHex: digestHex,
     );
   }
 
-  /// Fetch ZK Merkle proof for a transfer.
+  /// Fetch ZK Merkle proof for a transfer using zkTree_getMerkleProof RPC.
   ///
-  /// TODO: This needs to be updated to use the zkTree_getMerkleProof RPC
-  /// and return a ZkMerkleProof instead of the old StorageProof.
+  /// Returns the ZK Merkle proof needed for proof generation.
   Future<ZkMerkleProof> _fetchZkMerkleProof({
     required String rpcUrl,
     required String blockHash,
@@ -778,15 +737,87 @@ class WormholeWithdrawalService {
     required String secretHex,
     required WormholeService wormholeService,
   }) async {
-    // TODO: Implement zkTree_getMerkleProof RPC call for Planck
-    // 1. Get the leaf_index from the transfer
-    // 2. Call zkTree_getMerkleProof RPC with [leaf_index, block_hash]
-    // 3. Parse the response (leaf_data, leaf_hash, siblings, root, depth)
-    // 4. Return ZkMerkleProof with zkTreeRootHex, leafHashHex, siblingsHex
-    throw UnimplementedError(
-      'ZK Merkle proof fetching not yet implemented for Planck testnet. '
-      'The withdrawal functionality needs to be updated to use zkTree_getMerkleProof RPC.',
+    final leafIndex = transfer.leafIndex;
+    _debug(
+      'Fetching ZK Merkle proof for leafIndex=$leafIndex at block=$blockHash',
     );
+
+    // Call zkTree_getMerkleProof RPC
+    // Note: leafIndex must be converted to int for JSON encoding (BigInt is not JSON-encodable)
+    final response = await http.post(
+      Uri.parse(rpcUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'zkTree_getMerkleProof',
+        'params': [leafIndex.toInt(), blockHash],
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to fetch ZK Merkle proof: ${response.statusCode}',
+      );
+    }
+
+    final result = jsonDecode(response.body);
+    if (result['error'] != null) {
+      throw Exception('RPC error fetching ZK Merkle proof: ${result['error']}');
+    }
+
+    final proof = result['result'];
+    if (proof == null) {
+      throw Exception(
+        'ZK Merkle proof not found for leafIndex=$leafIndex at block=$blockHash. '
+        'The leaf may not exist at this block height.',
+      );
+    }
+
+    // Parse the response - handle both hex string and byte array formats
+    // The RPC may return either "0x..." strings or [byte, byte, ...] arrays
+    _debug('ZK Merkle proof raw response: $proof');
+
+    final leafHashHex = _toHexString(proof['leaf_hash']);
+    final rootHex = _toHexString(proof['root']);
+    final leafDataHex = _toHexString(proof['leaf_data']);
+    final siblingsRaw = proof['siblings'] as List<dynamic>;
+
+    // Convert siblings to List<List<String>>
+    // Each level has 3 siblings (4-ary tree)
+    // Siblings may be hex strings or byte arrays
+    final siblingsHex = siblingsRaw.map<List<String>>((level) {
+      final levelList = level as List<dynamic>;
+      return levelList.map<String>((s) => _toHexString(s)).toList();
+    }).toList();
+
+    _debug(
+      'ZK Merkle proof: leafHash=${_shortHex(leafHashHex)} root=${_shortHex(rootHex)} leafData=${_shortHex(leafDataHex)} levels=${siblingsHex.length}',
+    );
+
+    return ZkMerkleProof(
+      zkTreeRootHex: rootHex,
+      leafHashHex: leafHashHex,
+      siblingsHex: siblingsHex,
+      leafDataHex: leafDataHex,
+    );
+  }
+
+  /// Convert a value to a hex string.
+  /// Handles both hex strings (returns as-is) and byte arrays (converts to hex).
+  String _toHexString(dynamic value) {
+    if (value is String) {
+      return value;
+    } else if (value is List) {
+      // Byte array - convert to hex
+      final bytes = value.cast<int>();
+      final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      return '0x$hex';
+    } else {
+      throw Exception(
+        'Unexpected type for hex conversion: ${value.runtimeType}',
+      );
+    }
   }
 
   /// Submit aggregated proof to chain as an unsigned extrinsic.
@@ -1054,11 +1085,6 @@ class WormholeWithdrawalService {
     final bytes = Uint8List.fromList(utf8.encode(input));
     final hash = Hasher.twoxx128.hash(bytes);
     return _bytesToHex(hash);
-  }
-
-  String _ss58ToHex(String ss58Address) {
-    final decoded = ss58.Address.decode(ss58Address);
-    return '0x${decoded.pubkey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}';
   }
 
   Uint8List _hexToBytes(String hex) {

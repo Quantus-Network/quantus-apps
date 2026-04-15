@@ -1946,12 +1946,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ZkMerkleProofData dco_decode_zk_merkle_proof_data(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return ZkMerkleProofData(
       zkTreeRootHex: dco_decode_String(arr[0]),
       leafHashHex: dco_decode_String(arr[1]),
       siblingsHex: dco_decode_list_list_String(arr[2]),
+      leafDataHex: dco_decode_String(arr[3]),
     );
   }
 
@@ -2330,10 +2331,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_zkTreeRootHex = sse_decode_String(deserializer);
     var var_leafHashHex = sse_decode_String(deserializer);
     var var_siblingsHex = sse_decode_list_list_String(deserializer);
+    var var_leafDataHex = sse_decode_String(deserializer);
     return ZkMerkleProofData(
       zkTreeRootHex: var_zkTreeRootHex,
       leafHashHex: var_leafHashHex,
       siblingsHex: var_siblingsHex,
+      leafDataHex: var_leafDataHex,
     );
   }
 
@@ -2700,6 +2703,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.zkTreeRootHex, serializer);
     sse_encode_String(self.leafHashHex, serializer);
     sse_encode_list_list_String(self.siblingsHex, serializer);
+    sse_encode_String(self.leafDataHex, serializer);
   }
 
   @protected

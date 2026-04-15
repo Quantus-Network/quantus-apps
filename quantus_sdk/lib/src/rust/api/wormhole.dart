@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `compute_block_hash_internal`, `compute_merkle_positions`, `parse_hex_32`, `parse_hex`, `short_hex_bytes`, `short_hex`, `ss58_to_bytes`
+// These functions are ignored because they are not marked as `pub`: `compute_block_hash_internal`, `compute_leaf_hash`, `compute_merkle_positions`, `decode_leaf_data`, `parse_hex_32`, `parse_hex`, `short_hex_bytes`, `short_hex`, `ss58_to_bytes`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`
 
 /// Derive a wormhole address pair from a mnemonic.
@@ -696,15 +696,23 @@ class ZkMerkleProofData {
   /// Outer vec = levels, inner vec = 3 siblings per level.
   final List<List<String>> siblingsHex;
 
+  /// Raw leaf data (hex encoded, 60 bytes SCALE-encoded ZkLeaf).
+  /// Structure: (to: AccountId32, transfer_count: u64, asset_id: u32, amount: u128)
+  final String leafDataHex;
+
   const ZkMerkleProofData({
     required this.zkTreeRootHex,
     required this.leafHashHex,
     required this.siblingsHex,
+    required this.leafDataHex,
   });
 
   @override
   int get hashCode =>
-      zkTreeRootHex.hashCode ^ leafHashHex.hashCode ^ siblingsHex.hashCode;
+      zkTreeRootHex.hashCode ^
+      leafHashHex.hashCode ^
+      siblingsHex.hashCode ^
+      leafDataHex.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -713,5 +721,6 @@ class ZkMerkleProofData {
           runtimeType == other.runtimeType &&
           zkTreeRootHex == other.zkTreeRootHex &&
           leafHashHex == other.leafHashHex &&
-          siblingsHex == other.siblingsHex;
+          siblingsHex == other.siblingsHex &&
+          leafDataHex == other.leafDataHex;
 }
