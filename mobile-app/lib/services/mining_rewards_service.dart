@@ -93,13 +93,8 @@ class MiningRewardsService {
 
   Future<Set<String>> _resolveAllAccountIds(List<String> currentIds) async {
     final allIds = <String>{...currentIds};
-    print('[MiningRewards] Starting chain resolution from ${currentIds.length} current IDs');
 
     final mappings = await _fetchAccountMappings();
-    print('[MiningRewards] Account mappings total: ${mappings.length} rows');
-    for (final m in mappings) {
-      print('[MiningRewards]   new=${m['new_account_id']} <- old=${m['old_account_id']}');
-    }
 
     final newToOld = <String, String>{};
     for (final m in mappings) {
@@ -115,8 +110,6 @@ class MiningRewardsService {
         if (oldId != null && allIds.add(oldId)) {
           print('[MiningRewards] Chain depth $depth: $id -> $oldId');
           next.add(oldId);
-        } else if (oldId == null) {
-          print('[MiningRewards] Chain depth $depth: $id -> (no older ID found)');
         }
       }
       toCheck = next;
@@ -129,7 +122,6 @@ class MiningRewardsService {
   Future<List<Map<String, dynamic>>> _fetchAccountMappings() async {
     print('[MiningRewards] Fetching account_id_mappings from Supabase...');
     final data = await EnvUtils.supabaseClient.from('account_id_mappings').select();
-    print('[MiningRewards] Supabase returned ${data.length} rows');
     return List<Map<String, dynamic>>.from(data);
   }
 
@@ -137,11 +129,9 @@ class MiningRewardsService {
     int total = 0;
     for (final miner in miners) {
       if (accountIds.contains(miner.id)) {
-        print('[MiningRewards] MATCH in $network: ${miner.id} mined ${miner.blocks} blocks');
         total += miner.blocks;
       }
     }
-    if (total == 0) print('[MiningRewards] No matches in $network for any of ${accountIds.length} account IDs');
     return total;
   }
 }
