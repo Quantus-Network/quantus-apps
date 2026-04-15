@@ -35,7 +35,10 @@ class TestnetRewardsScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => ref.invalidate(miningRewardsProvider),
-                child: Text('Try Again', style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600)),
+                child: Text(
+                  'Try Again',
+                  style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
