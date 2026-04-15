@@ -105,8 +105,8 @@ void main() {
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
       final hdResult = HdWalletService().deriveWormhole(mnemonic);
-      final keyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic);
-      final minerKeyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic);
+      final keyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic, purpose: 0);
+      final minerKeyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic, purpose: 0);
 
       final expectedPreimageHex = hex.encode(hdResult.firstHash);
 
