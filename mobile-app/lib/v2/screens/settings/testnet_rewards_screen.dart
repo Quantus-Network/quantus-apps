@@ -19,13 +19,26 @@ class TestnetRewardsScreen extends ConsumerWidget {
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Testnet Rewards'),
       child: miningAsync.when(
+        skipLoadingOnRefresh: false,
         data: (data) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(miningRewardsProvider),
           child: _buildContent(data, colors, text),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => Center(
-          child: Text('Unable to load mining data', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        error: (_, __) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Failed to load mining rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+              const SizedBox(height: 8),
+              Text('Please check your connection', style: text.detail?.copyWith(color: colors.textTertiary)),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () => ref.invalidate(miningRewardsProvider),
+                child: Text('Try Again', style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
         ),
       ),
     );

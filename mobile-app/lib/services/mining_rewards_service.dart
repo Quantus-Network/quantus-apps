@@ -57,38 +57,33 @@ class MiningRewardsService {
   }
 
   Future<int> _fetchPlanckBlocks(Set<String> accountIds) async {
-    try {
-      final queryIds = accountIds;
-      print('[MiningRewards] Fetching Planck miner stats from subsquid for ${queryIds.length} IDs...');
-      final query = jsonEncode({
-        'query':
-            '''
-          query {
-            minerStats(where: {id_in: [${queryIds.map((id) => '"$id"').join(', ')}]}) {
-              id
-              totalMinedBlocks
-            }
+    // TODO: remove test ID after verifying
+    final queryIds = {...accountIds, 'qznJJmLc72y56wLzKjopYVwY2oa8jSodCfmxtqU2VjCs1jZXZ'};
+    print('[MiningRewards] Fetching Planck miner stats from subsquid for ${queryIds.length} IDs...');
+    final query = jsonEncode({
+      'query': '''
+        query {
+          minerStats(where: {id_in: [${queryIds.map((id) => '"$id"').join(', ')}]}) {
+            id
+            totalMinedBlocks
           }
-        ''',
-      });
-      final response = await _graphQl.post(body: query);
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final stats = decoded['data']['minerStats'] as List;
-        print('[MiningRewards] Planck: subsquid returned ${stats.length} matching miners');
-        int total = 0;
-        for (final s in stats) {
-          final blocks = (s['totalMinedBlocks'] as num).toInt();
-          print('[MiningRewards] Planck MATCH: ${s['id']} mined $blocks blocks');
-          total += blocks;
         }
-        return total;
-      }
-      print('[MiningRewards] Planck: subsquid returned status ${response.statusCode}');
-    } catch (e) {
-      print('[MiningRewards] Planck fetch error: $e');
+      ''',
+    });
+    final response = await _graphQl.post(body: query);
+    if (response.statusCode != 200) {
+      throw Exception('Planck query failed with status ${response.statusCode}');
     }
-    return 0;
+    final decoded = jsonDecode(response.body);
+    final stats = decoded['data']['minerStats'] as List;
+    print('[MiningRewards] Planck: subsquid returned ${stats.length} matching miners');
+    int total = 0;
+    for (final s in stats) {
+      final blocks = (s['totalMinedBlocks'] as num).toInt();
+      print('[MiningRewards] Planck MATCH: ${s['id']} mined $blocks blocks');
+      total += blocks;
+    }
+    return total;
   }
 
   List<_MinerEntry> _parseMiners(String jsonStr) {
@@ -100,52 +95,43 @@ class MiningRewardsService {
   Future<Set<String>> _resolveAllAccountIds(List<String> currentIds) async {
     final allIds = <String>{...currentIds};
     print('[MiningRewards] Starting chain resolution from ${currentIds.length} current IDs');
-    try {
-      final mappings = await _fetchAccountMappings();
-      print('[MiningRewards] Account mappings total: ${mappings.length} rows');
-      for (final m in mappings) {
-        print('[MiningRewards]   new=${m['new_account_id']} <- old=${m['old_account_id']}');
-      }
-      if (mappings.isEmpty) {
-        print('[MiningRewards] WARNING: No mappings available - cannot resolve old account IDs!');
-      }
-      final newToOld = <String, String>{};
-      for (final m in mappings) {
-        newToOld[m['new_account_id'] as String] = m['old_account_id'] as String;
-      }
-      var depth = 0;
-      var toCheck = currentIds.toList();
-      while (toCheck.isNotEmpty) {
-        depth++;
-        final next = <String>[];
-        for (final id in toCheck) {
-          final oldId = newToOld[id];
-          if (oldId != null && allIds.add(oldId)) {
-            print('[MiningRewards] Chain depth $depth: $id -> $oldId');
-            next.add(oldId);
-          } else if (oldId == null) {
-            print('[MiningRewards] Chain depth $depth: $id -> (no older ID found)');
-          }
-        }
-        toCheck = next;
-      }
-    } catch (e) {
-      print('[MiningRewards] Error resolving account IDs: $e');
+
+    final mappings = await _fetchAccountMappings();
+    print('[MiningRewards] Account mappings total: ${mappings.length} rows');
+    for (final m in mappings) {
+      print('[MiningRewards]   new=${m['new_account_id']} <- old=${m['old_account_id']}');
     }
+
+    final newToOld = <String, String>{};
+    for (final m in mappings) {
+      newToOld[m['new_account_id'] as String] = m['old_account_id'] as String;
+    }
+    var depth = 0;
+    var toCheck = currentIds.toList();
+    while (toCheck.isNotEmpty) {
+      depth++;
+      final next = <String>[];
+      for (final id in toCheck) {
+        final oldId = newToOld[id];
+        if (oldId != null && allIds.add(oldId)) {
+          print('[MiningRewards] Chain depth $depth: $id -> $oldId');
+          next.add(oldId);
+        } else if (oldId == null) {
+          print('[MiningRewards] Chain depth $depth: $id -> (no older ID found)');
+        }
+      }
+      toCheck = next;
+    }
+
     print('[MiningRewards] Final account ID set (${allIds.length}): $allIds');
     return allIds;
   }
 
   Future<List<Map<String, dynamic>>> _fetchAccountMappings() async {
-    try {
-      print('[MiningRewards] Fetching account_id_mappings from Supabase...');
-      final data = await EnvUtils.supabaseClient.from('account_id_mappings').select();
-      print('[MiningRewards] Supabase returned ${data.length} rows');
-      return List<Map<String, dynamic>>.from(data);
-    } catch (e) {
-      print('[MiningRewards] Supabase fetch error: $e');
-    }
-    return [];
+    print('[MiningRewards] Fetching account_id_mappings from Supabase...');
+    final data = await EnvUtils.supabaseClient.from('account_id_mappings').select();
+    print('[MiningRewards] Supabase returned ${data.length} rows');
+    return List<Map<String, dynamic>>.from(data);
   }
 
   int _countBlocks(String network, List<_MinerEntry> miners, Set<String> accountIds) {

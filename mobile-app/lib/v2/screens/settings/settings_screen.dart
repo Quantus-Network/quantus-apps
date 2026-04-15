@@ -178,14 +178,21 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   Widget _miningRewardsItem(AppColorsV2 colors, AppTextTheme text) {
     final miningAsync = ref.watch(miningRewardsProvider);
     final subtitle = miningAsync.when(
+      skipLoadingOnRefresh: false,
       data: (data) =>
           Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       loading: () =>
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-      error: (_, _) => Text('Unable to load', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+      error: (_, __) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
     );
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
+      onTap: () {
+        if (miningAsync.hasError) {
+          ref.invalidate(miningRewardsProvider);
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen()));
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
