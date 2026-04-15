@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:quantus_miner/features/settings/settings_app_bar.dart';
 import 'package:quantus_miner/main.dart';
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Chain selection
   final MinerSettingsService _settingsService = MinerSettingsService();
+  final MinerWalletService _walletService = MinerWalletService();
   String _selectedChainId = MinerConfig.defaultChainId;
 
   @override
@@ -61,8 +64,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: const Color(0xFF1C1C1C),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Stop Mining?', style: TextStyle(color: Colors.white)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Stop Mining?',
+            style: TextStyle(color: Colors.white),
+          ),
           content: const Text(
             'Changing the chain requires stopping mining first. '
             'Do you want to stop mining and switch chains?',
@@ -71,11 +79,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel', style: TextStyle(color: Colors.white.useOpacity(0.7))),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.useOpacity(0.7)),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF00E676)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF00E676),
+              ),
               child: const Text('Stop & Switch'),
             ),
           ],
@@ -99,7 +112,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Show confirmation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Switched to ${MinerConfig.getChainById(newChainId).displayName}'),
+          content: Text(
+            'Switched to ${MinerConfig.getChainById(newChainId).displayName}',
+          ),
           backgroundColor: const Color(0xFF00E676),
           behavior: SnackBarBehavior.floating,
         ),
@@ -136,7 +151,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 16.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -190,6 +208,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _buildChainSelector(accentColor),
 
                         const SizedBox(height: 32),
+
+                        // Wallet Section Header
+                        Text(
+                          'WALLET',
+                          style: TextStyle(
+                            color: Colors.white.useOpacity(0.5),
+                            fontSize: 12,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Backup Wallet Button
+                        _buildActionTile(
+                          title: 'Backup Recovery Phrase',
+                          subtitle: 'View your 24-word recovery phrase',
+                          icon: Icons.shield_outlined,
+                          accentColor: const Color(0xFFFF9800),
+                          onTap: _showBackupDialog,
+                        ),
+
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -215,14 +256,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: const Color(0xFF1C1C1C), // Slightly lighter than background
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.useOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: accentColor.useOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: accentColor.useOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
@@ -231,7 +281,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
 
@@ -240,7 +294,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.useOpacity(0.3)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.useOpacity(0.3),
+              ),
             )
           else
             Container(
@@ -274,14 +331,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: const Color(0xFF1C1C1C),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.useOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.useOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Icon Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: accentColor.useOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: accentColor.useOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(Icons.link_rounded, color: accentColor, size: 20),
           ),
           const SizedBox(width: 16),
@@ -293,10 +359,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Text(
                   'Chain',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                Text(selectedChain.description, style: TextStyle(color: Colors.white.useOpacity(0.5), fontSize: 12)),
+                Text(
+                  selectedChain.description,
+                  style: TextStyle(
+                    color: Colors.white.useOpacity(0.5),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -306,7 +382,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white.useOpacity(0.3)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.useOpacity(0.3),
+              ),
             )
           else
             Container(
@@ -320,7 +399,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: _selectedChainId,
                 dropdownColor: const Color(0xFF1C1C1C),
                 underline: const SizedBox(),
-                icon: Icon(Icons.arrow_drop_down, color: Colors.white.useOpacity(0.7)),
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white.useOpacity(0.7),
+                ),
                 style: TextStyle(
                   color: Colors.white.useOpacity(0.9),
                   fontFamily: 'Courier',
@@ -328,11 +410,242 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontSize: 13,
                 ),
                 items: MinerConfig.availableChains.map((chain) {
-                  return DropdownMenuItem<String>(value: chain.id, child: Text(chain.displayName));
+                  return DropdownMenuItem<String>(
+                    value: chain.id,
+                    child: Text(chain.displayName),
+                  );
                 }).toList(),
                 onChanged: _onChainChanged,
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1C),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.useOpacity(0.05), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.useOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon Container
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: accentColor.useOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: accentColor, size: 20),
+            ),
+            const SizedBox(width: 16),
+
+            // Title and subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.useOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Arrow
+            Icon(Icons.chevron_right, color: Colors.white.useOpacity(0.3)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBackupDialog() async {
+    final mnemonic = await _walletService.getMnemonic();
+
+    if (mnemonic == null || mnemonic.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No recovery phrase found. Please set up your wallet first.',
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final words = mnemonic.split(RegExp(r'\s+'));
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1C),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.shield_outlined, color: Colors.orange, size: 24),
+            const SizedBox(width: 12),
+            const Text(
+              'Recovery Phrase',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.useOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.useOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Never share this phrase. Anyone with these words can access your funds.',
+                        style: TextStyle(
+                          color: Colors.orange.useOpacity(0.9),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.useOpacity(0.1)),
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: words.asMap().entries.map((entry) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C2C2C),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${entry.key + 1}. ${entry.value}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Courier',
+                          fontSize: 12,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Use this phrase to import your wallet into the quantus-cli:',
+                style: TextStyle(
+                  color: Colors.white.useOpacity(0.7),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white.useOpacity(0.1)),
+                ),
+                child: SelectableText(
+                  'quantus wallet import --name my-wallet --mnemonic "${words.join(' ')}"',
+                  style: const TextStyle(
+                    color: Color(0xFF00E676),
+                    fontFamily: 'Courier',
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: mnemonic));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Recovery phrase copied to clipboard'),
+                  backgroundColor: Color(0xFF00E676),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text(
+              'Copy Phrase',
+              style: TextStyle(color: Colors.orange),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
