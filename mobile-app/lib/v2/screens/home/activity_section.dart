@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/utils/url_utils.dart';
@@ -141,7 +142,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     const links = [
       ('Get Testnet Tokens', AppConstants.faucetUrl),
       ('Community', AppConstants.communityUrl),
-      ('Tech Support', AppConstants.techSupportUrl),
+      // ('Tech Support', AppConstants.techSupportUrl),
     ];
 
     return Column(
@@ -190,12 +191,22 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                         ],
                       ),
                     ),
-                    if (i < links.length - 1)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(color: colors.separator, height: 0),
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(color: colors.separator, height: 0),
+                    ),
                   ],
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Mining Rewards', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+                        Icon(Icons.chevron_right, color: colors.textPrimary, size: 20),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,0 +1,96 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
+import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+
+class TestnetRewardsScreen extends ConsumerWidget {
+  const TestnetRewardsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final text = context.themeText;
+    final miningAsync = ref.watch(miningRewardsProvider);
+
+    return ScaffoldBase(
+      appBar: const V2AppBar(title: 'Testnet Rewards'),
+      child: miningAsync.when(
+        data: (data) => _buildContent(data, colors, text),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => Center(
+          child: Text('Unable to load mining data', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
+    final testnets = [
+      ('Resonance', data.resonanceBlocks),
+      ('Schrödinger', data.schrodingerBlocks),
+      ('Dirac', data.diracBlocks),
+    ];
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
+          child: Column(
+            children: [
+              Text('💰', style: const TextStyle(fontSize: 40)),
+              const SizedBox(height: 12),
+              Text(
+                '${data.totalBlocks} blocks',
+                style: text.largeTitle?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Total blocks mined across all testnets',
+                style: text.detail?.copyWith(color: colors.textTertiary),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Text(
+            'Breakdown',
+            style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: colors.surfaceCard, borderRadius: BorderRadius.circular(14)),
+          child: Column(
+            children: [
+              for (var i = 0; i < testnets.length; i++) ...[
+                if (i > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(color: colors.separator, height: 1),
+                  ),
+                Row(
+                  children: [
+                    Expanded(child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary))),
+                    Text('💰 ', style: const TextStyle(fontSize: 14)),
+                    Text(
+                      '${testnets[i].$2} blocks',
+                      style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

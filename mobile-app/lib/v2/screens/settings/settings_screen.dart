@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_scree
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -94,9 +95,9 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
         children: [
           _section('Wallet', colors, text, [
             _chevronItem('Recovery Phase', 'View Backup', colors, text, onTap: _navigateToRecoveryPhrase),
+            _divider(colors),
+            _miningRewardsItem(colors, text),
           ]),
-          const SizedBox(height: 40),
-          _miningRewardsSection(colors, text),
           const SizedBox(height: 40),
           _section('Reversible Transactions', colors, text, [
             _comingSoonItem('Reversible Transactions', null, colors, text),
@@ -174,35 +175,31 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Widget _miningRewardsSection(AppColorsV2 colors, AppTextTheme text) {
+  Widget _miningRewardsItem(AppColorsV2 colors, AppTextTheme text) {
     final miningAsync = ref.watch(miningRewardsProvider);
-    return _section('Mining Rewards', colors, text, [
-      miningAsync.when(
-        data: (data) => Column(
-          children: [
-            _miningStatItem('Testnet 1', data.testnet1BlocksMined, colors, text),
-            _divider(colors),
-            _miningStatItem('Testnet 2', data.testnet2BlocksMined, colors, text),
-          ],
-        ),
-        loading: () => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-        ),
-        error: (_, __) => Text('Unable to load mining data', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+    final subtitle = miningAsync.when(
+      data: (data) => Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+      loading: () => SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: colors.textTertiary)),
+      error: (_, _) => Text('Unable to load', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+    );
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Mining Rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                const SizedBox(height: 4),
+                subtitle,
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
+        ],
       ),
-    ]);
-  }
-
-  Widget _miningStatItem(String label, int blocksMined, AppColorsV2 colors, AppTextTheme text) {
-    return Row(
-      children: [
-        Expanded(child: Text(label, style: text.paragraph?.copyWith(color: colors.textPrimary))),
-        Text(
-          'Mined $blocksMined blocks',
-          style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
-        ),
-      ],
     );
   }
 

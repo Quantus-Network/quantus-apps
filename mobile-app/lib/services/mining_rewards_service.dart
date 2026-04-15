@@ -3,10 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
 
 class MiningRewardsData {
-  final int testnet1BlocksMined;
-  final int testnet2BlocksMined;
+  final int resonanceBlocks;
+  final int schrodingerBlocks;
+  final int diracBlocks;
 
-  const MiningRewardsData({required this.testnet1BlocksMined, required this.testnet2BlocksMined});
+  const MiningRewardsData({
+    required this.resonanceBlocks,
+    required this.schrodingerBlocks,
+    required this.diracBlocks,
+  });
+
+  int get totalBlocks => resonanceBlocks + schrodingerBlocks + diracBlocks;
 }
 
 class MiningRewardsService {
@@ -15,6 +22,9 @@ class MiningRewardsService {
     'resonance': 'assets/testnet_data/resonance_network_miners.json',
     'schrodinger': 'assets/testnet_data/schrodinger_miners.json',
   };
+
+  Set<String>? _cachedAccountIds;
+
   Future<MiningRewardsData> getMiningRewards(List<String> currentAccountIds) async {
     print('[MiningRewards] Current account IDs: $currentAccountIds');
 
@@ -25,15 +35,15 @@ class MiningRewardsService {
       print('[MiningRewards] ${entry.key}: loaded ${miners[entry.key]!.length} miners');
     }
 
-    final allAccountIds = await _resolveAllAccountIds(currentAccountIds);
+    _cachedAccountIds ??= await _resolveAllAccountIds(currentAccountIds);
+    final allAccountIds = _cachedAccountIds!;
 
-    final testnet1 =
-        _countBlocks('resonance', miners['resonance']!, allAccountIds) +
-        _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
-    final testnet2 = _countBlocks('dirac', miners['dirac']!, allAccountIds);
+    final resonance = _countBlocks('resonance', miners['resonance']!, allAccountIds);
+    final schrodinger = _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
+    final dirac = _countBlocks('dirac', miners['dirac']!, allAccountIds);
 
-    print('[MiningRewards] Testnet 1 blocks: $testnet1, Testnet 2 blocks: $testnet2');
-    return MiningRewardsData(testnet1BlocksMined: testnet1, testnet2BlocksMined: testnet2);
+    print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac');
+    return MiningRewardsData(resonanceBlocks: resonance, schrodingerBlocks: schrodinger, diracBlocks: dirac);
   }
 
   List<_MinerEntry> _parseMiners(String jsonStr) {
