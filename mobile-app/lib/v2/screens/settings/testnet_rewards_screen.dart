@@ -55,10 +55,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
                 style: text.largeTitle?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Total blocks mined across all testnets',
-                style: text.detail?.copyWith(color: colors.textTertiary),
-              ),
+              Text('Total blocks mined across all testnets', style: text.detail?.copyWith(color: colors.textTertiary)),
             ],
           ),
         ),
@@ -83,7 +80,9 @@ class TestnetRewardsScreen extends ConsumerWidget {
                   ),
                 Row(
                   children: [
-                    Expanded(child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary))),
+                    Expanded(
+                      child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                    ),
                     const Text('💰 ', style: TextStyle(fontSize: 14)),
                     Text(
                       '${testnets[i].$2} blocks',

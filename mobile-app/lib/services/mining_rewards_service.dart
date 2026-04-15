@@ -61,7 +61,8 @@ class MiningRewardsService {
       final queryIds = accountIds;
       print('[MiningRewards] Fetching Planck miner stats from subsquid for ${queryIds.length} IDs...');
       final query = jsonEncode({
-        'query': '''
+        'query':
+            '''
           query {
             minerStats(where: {id_in: [${queryIds.map((id) => '"$id"').join(', ')}]}) {
               id

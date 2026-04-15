@@ -198,7 +198,8 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                   ],
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
+                    onTap: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const TestnetRewardsScreen())),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
