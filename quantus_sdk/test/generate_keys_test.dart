@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // NOTE: If you get a "BadState" error you need to recompile the rust crate with release.. cargo build --release
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await QuantusSdk.init();
@@ -97,6 +98,26 @@ void main() {
       final addressBytes = ss58ToAccountId(s: result.address);
       final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
       expect(addressBytes, expectedAddressBytes);
+    });
+
+    test('WormholeService methods match HdWalletService.deriveWormhole', () {
+      const mnemonic =
+          'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
+
+      final hdResult = HdWalletService().deriveWormhole(mnemonic);
+      final keyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic);
+      final minerKeyPair = WormholeService().deriveKeyPair(mnemonic: mnemonic);
+
+      final expectedPreimageHex = hex.encode(hdResult.firstHash);
+
+      expect(keyPair.address, hdResult.address);
+      expect(keyPair.rewardsPreimageHex, '0x$expectedPreimageHex');
+      expect(minerKeyPair.address, hdResult.address);
+      expect(minerKeyPair.rewardsPreimageHex, '0x$expectedPreimageHex');
+
+      expect(keyPair.address, minerKeyPair.address);
+      expect(keyPair.rewardsPreimageHex, minerKeyPair.rewardsPreimageHex);
+      expect(keyPair.secretHex, minerKeyPair.secretHex);
     });
 
     test('test for keystone hardware wallet', () {
