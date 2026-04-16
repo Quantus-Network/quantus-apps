@@ -161,7 +161,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     if (widget.tx is PendingTransactionEvent) fee = (widget.tx as PendingTransactionEvent).fee;
     if (fee == null || fee == BigInt.zero) return const SizedBox.shrink();
     final fmt = NumberFormattingService();
-    final feeStr = '${fmt.formatBalance(fee)} ${AppConstants.tokenSymbol}';
+    final feeStr = '${fmt.formatBalance(fee, maxDecimals: 8)} ${AppConstants.tokenSymbol}';
     final style = text.detail?.copyWith(color: Colors.white.withValues(alpha: 0.5));
 
     return Padding(
