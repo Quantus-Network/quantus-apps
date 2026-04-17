@@ -185,10 +185,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                   ),
                   if (_accountNameError != null) ...[
                     const SizedBox(height: 6),
-                    Text(
-                      _accountNameError!,
-                      style: text.detail?.copyWith(color: colors.accentPink),
-                    ),
+                    Text(_accountNameError!, style: text.detail?.copyWith(color: colors.accentPink)),
                   ],
                   const SizedBox(height: 24),
                   _Field(
@@ -284,7 +281,8 @@ class _Field extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: child ??
+                child:
+                    child ??
                     Text(
                       value!,
                       style: text.smallParagraph?.copyWith(color: valueColor ?? colors.textPrimary),
@@ -294,11 +292,7 @@ class _Field extends StatelessWidget {
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassIconButton.rounded(
-                  radius: 8,
-                  icon: actionIcon,
-                  onTap: isLoading ? null : onAction,
-                ),
+                child: GlassIconButton.rounded(radius: 8, icon: actionIcon, onTap: isLoading ? null : onAction),
               ),
             ],
           ),
