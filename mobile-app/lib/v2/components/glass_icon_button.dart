@@ -13,6 +13,7 @@ class GlassIconButton extends StatelessWidget {
   final IconButtonSize size;
   final IconButtonShape shape;
   final bool isDisabled;
+  final double? radius;
 
   const GlassIconButton.rounded({
     super.key,
@@ -21,6 +22,7 @@ class GlassIconButton extends StatelessWidget {
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
+    this.radius,
   }) : shape = IconButtonShape.rounded;
 
   const GlassIconButton.circular({
@@ -30,6 +32,7 @@ class GlassIconButton extends StatelessWidget {
     this.onTap,
     this.isLoading = false,
     this.isDisabled = false,
+    this.radius,
   }) : shape = IconButtonShape.circular;
 
   @override
@@ -40,7 +43,7 @@ class GlassIconButton extends StatelessWidget {
 
     final double buttonSize = size == IconButtonSize.small ? 24 : 40;
     final double iconSize = size == IconButtonSize.small ? 12 : 20;
-    final double radius = size == IconButtonSize.small ? 6 : 14;
+    final double radius = this.radius ?? (size == IconButtonSize.small ? 6 : 14);
 
     final buttonContent = Center(
       child: isLoading
