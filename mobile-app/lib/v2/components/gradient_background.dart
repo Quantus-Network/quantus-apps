@@ -9,9 +9,7 @@ class GradientBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned.fill(
-          child: Image.asset('assets/v2/gradient_background.png', fit: BoxFit.cover),
-        ),
+        Positioned.fill(child: Image.asset('assets/v2/gradient_background.png', fit: BoxFit.cover)),
         child,
       ],
     );
