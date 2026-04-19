@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 
@@ -26,7 +28,16 @@ final localAuthProvider = StateNotifierProvider<LocalAuthController, LocalAuthSt
 class LocalAuthController extends StateNotifier<LocalAuthState> {
   final LocalAuthService _localAuthService;
 
+  static const _visualLockGrace = Duration(seconds: 5);
+  Timer? _visualLockTimer;
+
   LocalAuthController(this._localAuthService) : super(LocalAuthState());
+
+  @override
+  void dispose() {
+    _visualLockTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> authenticate() async {
     if (state.isAuthenticating) return;
@@ -41,6 +52,7 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
   }
 
   Future<void> checkAuthentication() async {
+    _cancelVisualLockTimer();
     if (await _localAuthService.shouldRequireAuthentication()) {
       final alreadyAuthenticating = state.isAuthenticating;
       state = state.copyWith(isAuthenticated: false);
@@ -55,10 +67,20 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
   Future<void> recordBackgroundTime() async {
     final didUpdate = await _localAuthService.updateLastPausedTime();
     if (!didUpdate) return;
-    state = state.copyWith(isVisuallyLocked: true);
+    _cancelVisualLockTimer();
+    _visualLockTimer = Timer(_visualLockGrace, () {
+      if (!mounted) return;
+      state = state.copyWith(isVisuallyLocked: true);
+    });
   }
 
   void clearVisualLock() {
+    _cancelVisualLockTimer();
     state = state.copyWith(isVisuallyLocked: false);
+  }
+
+  void _cancelVisualLockTimer() {
+    _visualLockTimer?.cancel();
+    _visualLockTimer = null;
   }
 }
