@@ -178,8 +178,8 @@ class TaskmasterService {
     }
     final address = HdWalletService().deriveWormhole(mnemonic).address;
     return address;
-  }  
-  
+  }
+
   // In the past in the beginnings some people mined with a non-derived account
   Future<String> getOldMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic(0);
@@ -189,8 +189,6 @@ class TaskmasterService {
     final rawKeyPair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(mnemonic);
     return rawKeyPair.ss58Address;
   }
-
-
 
   Future<TokenInfo> loginWithAccount1() async {
     final mnemonic = await _settingsService.getMnemonic(0);
