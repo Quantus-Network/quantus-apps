@@ -110,17 +110,13 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)
-      if (!_isBackgrounded) {
+      // Skip if the biometric dialog caused this lifecycle change — on some
+      // Android devices the prompt triggers inactive→resumed oscillation.
+      if (!_isBackgrounded && !ref.read(localAuthProvider).isAuthenticating) {
         print('AppLifecycleState.$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
-        // Pause global polling when app goes to background
-        // Transaction tracking continues for pending transactions
         pollingManager.pausePolling();
-
-        // Update last paused time for timeout calculation, but DO NOT lock
-        // the UI immediately. This avoids flicker on short system pauses.
-        // The checkAuthentication() on resume will decide if auth is needed.
         localAuthNotifier.recordBackgroundTime();
       } else {
         print('AppLifecycleState.$state - already backgrounded, skipping actions');
