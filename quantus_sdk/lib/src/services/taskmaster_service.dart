@@ -171,13 +171,13 @@ class TaskmasterService {
     return jsonEncode(requestBody);
   }
 
-  Future<String> getOldMiningAccountId() async {
+  Future<String> getMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
       throw Exception('Mnemonic not found.');
     }
-    final rawKeyPair = SubstrateService().nonHDdilithiumKeypairFromMnemonic(mnemonic);
-    return rawKeyPair.ss58Address;
+    final address = HdWalletService().deriveWormhole(mnemonic).address;
+    return address;
   }
 
   Future<TokenInfo> loginWithAccount1() async {
@@ -510,9 +510,8 @@ class TaskmasterService {
   }
 
   Future<MinerStats> getMinerStats() async {
-    final mainAccount = await getMainAccount();
-    final oldMiningAccountId = await getOldMiningAccountId();
-    final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
+    final miningAccountId = await getMiningAccountId();
+    final List<String> accountIds = [miningAccountId];
 
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,

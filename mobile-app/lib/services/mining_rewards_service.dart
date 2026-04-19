@@ -26,7 +26,6 @@ class MiningRewardsService {
     'schrodinger': 'assets/testnet_data/schrodinger_miners.json',
   };
 
-  final _graphQl = GraphQlEndpointService();
   Set<String>? _cachedAccountIds;
 
   Future<MiningRewardsData> getMiningRewards(List<String> currentAccountIds) async {
@@ -57,32 +56,8 @@ class MiningRewardsService {
   }
 
   Future<int> _fetchPlanckBlocks(Set<String> accountIds) async {
-    print('[MiningRewards] Fetching Planck miner stats from subsquid for ${accountIds.length} IDs...');
-    final query = jsonEncode({
-      'query':
-          '''
-        query {
-          minerStats(where: {id_in: [${accountIds.map((id) => '"$id"').join(', ')}]}) {
-            id
-            totalMinedBlocks
-          }
-        }
-      ''',
-    });
-    final response = await _graphQl.post(body: query);
-    if (response.statusCode != 200) {
-      throw Exception('Planck query failed with status ${response.statusCode}');
-    }
-    final decoded = jsonDecode(response.body);
-    final stats = decoded['data']['minerStats'] as List;
-    print('[MiningRewards] Planck: subsquid returned ${stats.length} matching miners');
-    int total = 0;
-    for (final s in stats) {
-      final blocks = (s['totalMinedBlocks'] as num).toInt();
-      print('[MiningRewards] Planck MATCH: ${s['id']} mined $blocks blocks');
-      total += blocks;
-    }
-    return total;
+    final minerStats = await TaskmasterService().getMinerStats();
+    return minerStats.totalMinedBlocks;
   }
 
   List<_MinerEntry> _parseMiners(String jsonStr) {
