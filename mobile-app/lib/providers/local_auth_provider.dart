@@ -40,8 +40,8 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
     state = state.copyWith(isAuthenticated: didAuthenticate, isAuthenticating: false, isVisuallyLocked: false);
   }
 
-  void checkAuthentication() {
-    if (_localAuthService.shouldRequireAuthentication()) {
+  Future<void> checkAuthentication() async {
+    if (await _localAuthService.shouldRequireAuthentication()) {
       final alreadyAuthenticating = state.isAuthenticating;
       state = state.copyWith(isAuthenticated: false);
       if (!alreadyAuthenticating) {
@@ -52,8 +52,9 @@ class LocalAuthController extends StateNotifier<LocalAuthState> {
     }
   }
 
-  void recordBackgroundTime() {
-    _localAuthService.updateLastPausedTime();
+  Future<void> recordBackgroundTime() async {
+    final didUpdate = await _localAuthService.updateLastPausedTime();
+    if (!didUpdate) return;
     state = state.copyWith(isVisuallyLocked: true);
   }
 

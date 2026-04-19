@@ -40,6 +40,8 @@ class LocalAuthService {
 
   Future<bool> authenticate({String localizedReason = 'Please authenticate to access your wallet'}) async {
     try {
+      if (!await _settingsService.getHasWallet()) return true;
+
       final isAvailable = await isBiometricAvailable();
       if (!isAvailable) return true;
 
@@ -59,8 +61,9 @@ class LocalAuthService {
     }
   }
 
-  bool shouldRequireAuthentication() {
+  Future<bool> shouldRequireAuthentication() async {
     try {
+      if (!await _settingsService.getHasWallet()) return false;
       final lastPausedTime = _settingsService.getLastPausedTime();
       if (lastPausedTime == null) return false;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
@@ -70,8 +73,10 @@ class LocalAuthService {
     }
   }
 
-  void updateLastPausedTime() {
+  Future<bool> updateLastPausedTime() async {
+    if (!await _settingsService.getHasWallet()) return false;
     _settingsService.setLastPausedTime(DateTime.now());
+    return true;
   }
 
   void cleanLastPausedTime() {
