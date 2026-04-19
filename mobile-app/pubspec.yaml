@@ -117,6 +117,7 @@ flutter:
     - assets/v2/swap_clock_counter_clockwise.svg
     - assets/v2/swap_qr_code.svg
     - assets/v2/auth_wrapper_bracket.png
+    - assets/v2/gradient_background.png
     - assets/v2/welcome_screen_bg_image.jpg
     - assets/v2/quantus_orange_logo.png
 
