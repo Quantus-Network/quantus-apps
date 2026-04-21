@@ -15,10 +15,11 @@ class ExchangeRateService {
   /// When a live price feed is integrated, populate this map from the API.
   static final Map<FiatCurrency, Decimal> _rates = {
     FiatCurrency.usd: Decimal.fromInt(1),
-    FiatCurrency.idr: Decimal.fromInt(1),
-    FiatCurrency.jpy: Decimal.fromInt(1),
-    FiatCurrency.eur: Decimal.fromInt(1),
-    FiatCurrency.gbp: Decimal.fromInt(1),
+    FiatCurrency.myr: Decimal.parse('3,96'),
+    FiatCurrency.idr: Decimal.parse('17138.90'),
+    FiatCurrency.jpy: Decimal.parse('158,99'),
+    FiatCurrency.eur: Decimal.parse('0,85'),
+    FiatCurrency.gbp: Decimal.parse('0,74'),
   };
 
   /// Returns the current QUAN price in [fiat].

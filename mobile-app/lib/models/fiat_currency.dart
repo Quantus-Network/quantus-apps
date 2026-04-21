@@ -5,6 +5,7 @@
 /// rate in [ExchangeRateService]. No widget or provider changes are needed.
 enum FiatCurrency {
   usd(code: 'USD', symbol: '\$', symbolPosition: SymbolPosition.prefix),
+  myr(code: 'MYR', symbol: 'RM', symbolPosition: SymbolPosition.prefix),
   idr(code: 'IDR', symbol: 'Rp', symbolPosition: SymbolPosition.prefix),
   jpy(code: 'JPY', symbol: '¥', symbolPosition: SymbolPosition.prefix),
   eur(code: 'EUR', symbol: '€', symbolPosition: SymbolPosition.prefix),
