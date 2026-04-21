@@ -6,11 +6,8 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -351,16 +348,14 @@ class TransactionSubmissionService {
 
       for (final targetIds in targets) {
         if (newTransaction != null) {
-          final controller = _ref.read(
-            filteredPaginationControllerProviderFamily(
-              FilteredTransactionsParams(accountIds: AccountIdListCache.get(targetIds), filter: TransactionFilter.all),
-            ).notifier,
-          );
-
-          controller.addTransactionToHistory(newTransaction);
+          updatePaginationFiltersFor(_ref.read, targetIds, (notifier, filter) {
+            if (filter != TransactionFilter.receive) {
+              notifier.addTransactionToHistory(newTransaction);
+            }
+          });
         }
 
-        refreshPaginationFiltersFor(_ref.read, targetIds, (notifier) {
+        updatePaginationFiltersFor(_ref.read, targetIds, (notifier, _) {
           notifier.silentRefresh();
         });
       }

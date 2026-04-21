@@ -1,6 +1,6 @@
 enum TransactionFilter { all, send, receive }
 
-extension DisplayName on TransactionFilter {
+extension TransactionFilterDisplayName on TransactionFilter {
   String get displayName {
     switch (this) {
       case TransactionFilter.all:

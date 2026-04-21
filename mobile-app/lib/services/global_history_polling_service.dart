@@ -95,7 +95,7 @@ class GlobalHistoryPollingService {
       ];
 
       for (final ids in targetIds) {
-        refreshPaginationFiltersFor(_ref.read, ids, (notifier) {
+        updatePaginationFiltersFor(_ref.read, ids, (notifier, _) {
           notifier.silentRefresh();
         });
       }
@@ -128,7 +128,7 @@ class GlobalHistoryPollingService {
     await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      refreshPaginationFiltersFor(_ref.read, [active.account.accountId], (notifier) {
+      updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
         notifier.loadingRefresh();
       });
     }

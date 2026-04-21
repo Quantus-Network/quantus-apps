@@ -550,7 +550,7 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
         // Filtered controllers for involved accounts
         final affectedAccounts = <String>{widget.transaction.from, widget.transaction.to};
         for (final accountId in affectedAccounts) {
-          refreshPaginationFiltersFor(ref.read, [accountId], (notifier) {
+          updatePaginationFiltersFor(ref.read, [accountId], (notifier, _) {
             notifier.updateReversibleTransferToExecuted(extrinsicHash, ReversibleTransferStatus.CANCELLED);
           });
         }

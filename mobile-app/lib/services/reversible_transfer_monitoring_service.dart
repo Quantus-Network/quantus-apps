@@ -155,7 +155,7 @@ class ReversibleTransferMonitoringService {
         // active-account views reflect the change immediately
         final affectedAccounts = <String>{transfer.from, transfer.to};
         for (final accountId in affectedAccounts) {
-          refreshPaginationFiltersFor(_ref.read, [accountId], (notifier) {
+          updatePaginationFiltersFor(_ref.read, [accountId], (notifier, _) {
             notifier.updateReversibleTransferToExecuted(transfer.txId, transaction.status);
           });
         }
@@ -163,7 +163,7 @@ class ReversibleTransferMonitoringService {
         // Also update filtered controllers for all accounts so
         // tx screen views for all accounts reflect the change immediately
         final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-        refreshPaginationFiltersFor(_ref.read, accountIds, (notifier) {
+        updatePaginationFiltersFor(_ref.read, accountIds, (notifier, _) {
           notifier.updateReversibleTransferToExecuted(transfer.txId, transaction.status);
         });
 
@@ -197,7 +197,7 @@ class ReversibleTransferMonitoringService {
       await _ref.read(paginationControllerProvider.notifier).silentRefresh();
       final active = _ref.read(activeAccountProvider).value;
       if (active != null) {
-        refreshPaginationFiltersFor(_ref.read, [active.account.accountId], (notifier) {
+        updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
           notifier.silentRefresh();
         });
       }
