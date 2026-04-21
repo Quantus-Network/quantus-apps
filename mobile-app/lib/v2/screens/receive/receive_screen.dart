@@ -112,6 +112,7 @@ class QrCodeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final qrSize = 267.0;
+    final qrLogoSize = 64.0;
 
     return Expanded(
       child: Column(
@@ -127,7 +128,7 @@ class QrCodeTab extends StatelessWidget {
               data: accountId,
               errorCorrectionLevel: QrErrorCorrectLevel.M,
               embeddedImage: const AssetImage('assets/v2/uppercase_q.png'),
-              embeddedImageStyle: const QrEmbeddedImageStyle(size: Size(64, 64)),
+              embeddedImageStyle: QrEmbeddedImageStyle(size: Size(qrLogoSize, qrLogoSize)),
               version: QrVersions.auto,
               size: qrSize,
               padding: const EdgeInsets.all(16),

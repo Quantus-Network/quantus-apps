@@ -86,9 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final text = context.themeText;
 
     Widget screen = accountAsync.when(
-      loading: () => const ScaffoldBase(
-        child: Center(child: Loader()),
-      ),
+      loading: () => const ScaffoldBase(child: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
         child: Center(
           child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),

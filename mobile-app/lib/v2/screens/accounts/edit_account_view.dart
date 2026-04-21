@@ -61,13 +61,7 @@ class EditAccountView extends StatelessWidget {
   Widget _buildAccountNameField(BuildContext context) {
     return AccountField(
       trailing: isSavingName
-          ? const SizedBox(
-              width: 40,
-              height: 40,
-              child: Center(
-                child: Loader(),
-              ),
-            )
+          ? const SizedBox(width: 40, height: 40, child: Center(child: Loader()))
           : AccountIconActionButton(
               icon: isEditingName ? Icons.check : Icons.edit_outlined,
               onTap: () {

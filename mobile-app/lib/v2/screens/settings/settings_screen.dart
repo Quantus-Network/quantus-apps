@@ -182,8 +182,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
       skipLoadingOnRefresh: false,
       data: (data) =>
           Text('Total: ${data.totalBlocks} blocks', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-      loading: () =>
-          const Loader(),
+      loading: () => const Loader(),
       error: (_, _) => Text('Tap to retry', style: text.smallParagraph?.copyWith(color: colors.textError)),
     );
     return GestureDetector(
