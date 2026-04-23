@@ -14,41 +14,61 @@ class AuthWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(localAuthProvider);
 
-    if (authState.isAuthenticated) {
-      // If authenticated, be invisible.
-      return const SizedBox.shrink();
+    if (!authState.isAuthenticated) {
+      return _buildLockScreen(context, ref, authState.isAuthenticating);
     }
 
-    return _buildLockScreen(context, ref, authState.isAuthenticating);
+    if (authState.isVisuallyLocked) {
+      return _buildPrivacyOverlay(context);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildPrivacyOverlay(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.colors.background,
+      body: GradientBackground(child: Center(child: Image.asset('assets/v2/auth_wrapper_bracket.png'))),
+    );
   }
 
   Widget _buildLockScreen(BuildContext context, WidgetRef ref, bool isAuthenticating) {
     return Scaffold(
       backgroundColor: context.colors.background,
       body: GradientBackground(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset('assets/v2/auth_wrapper_bracket.png'),
-                Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
-              ],
-            ),
-            const SizedBox(height: 120),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
-              child: GlassButton.simple(
-                label: 'Unlock Wallet',
-                onTap: () {
-                  ref.read(localAuthProvider.notifier).authenticate();
-                },
-                variant: ButtonVariant.secondary,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset('assets/v2/auth_wrapper_bracket.png'),
+                  Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 60),
+              if (isAuthenticating)
+                const CircularProgressIndicator()
+              else
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
+                  child: GlassButton.simple(
+                    label: 'Unlock Wallet',
+                    onTap: () {
+                      ref.read(localAuthProvider.notifier).authenticate();
+                    },
+                    variant: ButtonVariant.secondary,
+                  ),
+                ),
+              const SizedBox(height: 40),
+              Text(
+                isAuthenticating ? 'Authenticating...' : 'Use device biometrics to unlock',
+                style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

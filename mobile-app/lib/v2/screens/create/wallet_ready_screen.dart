@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/components/glass_container.dart';
+import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/create/recovery_phrase_sheet.dart';
@@ -37,7 +37,9 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
   final ReferralService _referralService = ReferralService();
 
   final _accountName = TextEditingController();
+  final FocusNode _accountNameFocus = FocusNode();
   String? _accountNameError;
+  bool _isEditingName = false;
 
   late String _address;
   late String _checksum;
@@ -71,6 +73,33 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
     }
   }
 
+  void _toggleEditName() {
+    setState(() {
+      _isEditingName = !_isEditingName;
+      if (_isEditingName) {
+        _accountNameError = null;
+      } else {
+        final v = _accountName.text.trim();
+        if (v.isEmpty) {
+          _accountNameError = "Name can't be empty";
+          _isEditingName = true;
+        }
+      }
+    });
+    if (_isEditingName) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _accountNameFocus.requestFocus());
+    } else {
+      _accountNameFocus.unfocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _accountName.dispose();
+    _accountNameFocus.dispose();
+    super.dispose();
+  }
+
   Future<void> _continue() async {
     if (_mnemonic.isEmpty || _accountNameError != null) return;
 
@@ -91,7 +120,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
 
-      if (FeatureFlags.enableRemoteNotifications) {
+      if (ref.read(remoteConfigProvider).enableRemoteNotifications) {
         ref.read(firebaseMessagingServiceProvider).registerDeviceIfPossible();
       }
 
@@ -127,11 +156,37 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                 children: [
                   _Field(
                     label: 'Wallet Name',
-                    value: _accountName.text,
                     isLoading: _isLoading,
-                    actionIcon: Icons.edit,
-                    onAction: () => _showEditNameSheet(colors, text),
+                    actionIcon: _isEditingName ? Icons.check : Icons.edit_outlined,
+                    onAction: _toggleEditName,
+                    child: TextField(
+                      controller: _accountName,
+                      focusNode: _accountNameFocus,
+                      readOnly: !_isEditingName,
+                      style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                      cursorColor: colors.textPrimary,
+                      decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onTap: () {
+                        if (!_isEditingName) _toggleEditName();
+                      },
+                      onSubmitted: (_) {
+                        if (_isEditingName) _toggleEditName();
+                      },
+                    ),
                   ),
+                  if (_accountNameError != null) ...[
+                    const SizedBox(height: 6),
+                    Text(_accountNameError!, style: text.detail?.copyWith(color: colors.accentPink)),
+                  ],
                   const SizedBox(height: 24),
                   _Field(
                     label: 'Wallet Address',
@@ -144,7 +199,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                             postFix: 14,
                           ),
                     isLoading: _isLoading,
-                    actionIcon: Icons.copy,
+                    actionIcon: Icons.copy_outlined,
                     onAction: () => context.copyTextWithToaster(_address),
                   ),
                   const SizedBox(height: 24),
@@ -153,7 +208,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
                     value: _isLoading ? '...' : _checksum,
                     isLoading: _isLoading,
                     valueColor: colors.accentPink,
-                    actionIcon: Icons.copy,
+                    actionIcon: Icons.copy_outlined,
                     onAction: () => context.copyTextWithToaster(_checksum, message: 'Checkphrase copied'),
                   ),
                   const SizedBox(height: 16),
@@ -189,54 +244,12 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
       ),
     );
   }
-
-  void _showEditNameSheet(AppColorsV2 colors, AppTextTheme text) {
-    final controller = TextEditingController(text: _accountName.text);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colors.background,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Wallet Name', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              style: text.paragraph?.copyWith(color: colors.textPrimary),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: colors.surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-            const SizedBox(height: 24),
-            GlassButton.simple(
-              label: 'Save',
-              onTap: () async {
-                final v = controller.text.trim();
-                if (v.isNotEmpty) {
-                  setState(() {
-                    _accountName.text = v;
-                    _accountNameError = null;
-                  });
-                  Navigator.pop(ctx);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _Field extends StatelessWidget {
   final String label;
-  final String value;
+  final String? value;
+  final Widget? child;
   final bool isLoading;
   final Color? valueColor;
   final IconData actionIcon;
@@ -244,12 +257,13 @@ class _Field extends StatelessWidget {
 
   const _Field({
     required this.label,
-    required this.value,
+    this.value,
+    this.child,
     required this.isLoading,
     this.valueColor,
     required this.actionIcon,
     required this.onAction,
-  });
+  }) : assert(value != null || child != null, 'Provide value or child');
 
   @override
   Widget build(BuildContext context) {
@@ -267,26 +281,18 @@ class _Field extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  value,
-                  style: text.smallParagraph?.copyWith(color: valueColor ?? colors.textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child:
+                    child ??
+                    Text(
+                      value!,
+                      style: text.smallParagraph?.copyWith(color: valueColor ?? colors.textPrimary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
               ),
               SizedBox(
                 width: 40,
                 height: 40,
-                child: GlassContainer(
-                  asset: GlassContainer.smallAsset,
-                  filled: true,
-                  padding: EdgeInsets.zero,
-                  onTap: isLoading
-                      ? null
-                      : () async {
-                          onAction();
-                        },
-                  child: Icon(actionIcon, size: 20, color: colors.textPrimary),
-                ),
+                child: GlassIconButton.rounded(radius: 8, icon: actionIcon, onTap: isLoading ? null : onAction),
               ),
             ],
           ),

@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 import 'package:resonance_network_wallet/wallet_initializer.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/screens/auth/auth_wrapper.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
-import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
 import 'package:resonance_network_wallet/services/notification_integration_service.dart';
 import 'package:resonance_network_wallet/services/referral_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_navigator_observer.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
 import 'dart:io' show Platform;
-
-// This ensures it's a single, persistent key for the entire app lifecycle.
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class ResonanceWalletApp extends ConsumerStatefulWidget {
   const ResonanceWalletApp({super.key});
@@ -34,10 +30,6 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       ref.read(deepLinkServiceProvider).init(navigatorKey);
       ref.read(localNotificationsServiceProvider).setupNotificationsClickListener(navigatorKey);
       ref.read(localNotificationsServiceProvider).handleLaunchByNotification(navigatorKey);
-
-      if (FeatureFlags.enableRemoteNotifications) {
-        ref.read(firebaseMessagingServiceProvider).setupNotificationTapHandlers(navigatorKey);
-      }
 
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });

@@ -3,17 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/account_gradient_image.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart' hide ButtonVariant;
 import 'package:resonance_network_wallet/v2/components/glass_icon_button.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
-import 'package:resonance_network_wallet/utils/feature_flags.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
@@ -158,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         GestureDetector(
           onTap: () => showAccountsSheet(context),
-          child: AccountGradientImage(accountId: active.account.accountId, width: 40.0, height: 40.0),
+          child: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 32, height: 32),
         ),
         Row(
           children: [
@@ -227,6 +226,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActionButtons() {
+    final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
+
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
       label: 'Receive',
@@ -239,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => showSendSheetV2(context),
     );
 
-    if (!FeatureFlags.enableSwap) {
+    if (!enableSwap) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

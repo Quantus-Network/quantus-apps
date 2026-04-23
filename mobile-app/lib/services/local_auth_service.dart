@@ -11,7 +11,7 @@ class LocalAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SettingsService _settingsService = SettingsService();
 
-  static const _authTimeout = Duration(seconds: 30);
+  static const _authTimeout = Duration(seconds: 10);
 
   Future<bool> isBiometricAvailable() async {
     try {
@@ -40,6 +40,8 @@ class LocalAuthService {
 
   Future<bool> authenticate({String localizedReason = 'Please authenticate to access your wallet'}) async {
     try {
+      if (!await _settingsService.getHasWallet()) return true;
+
       final isAvailable = await isBiometricAvailable();
       if (!isAvailable) return true;
 
@@ -48,7 +50,7 @@ class LocalAuthService {
         options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
       );
 
-      if (didAuthenticate) _cleanLastPausedTime();
+      if (didAuthenticate) cleanLastPausedTime();
       return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('Platform exception during authentication: $e');
@@ -59,8 +61,9 @@ class LocalAuthService {
     }
   }
 
-  bool shouldRequireAuthentication() {
+  Future<bool> shouldRequireAuthentication() async {
     try {
+      if (!await _settingsService.getHasWallet()) return false;
       final lastPausedTime = _settingsService.getLastPausedTime();
       if (lastPausedTime == null) return false;
       return DateTime.now().difference(lastPausedTime) > _authTimeout;
@@ -70,11 +73,13 @@ class LocalAuthService {
     }
   }
 
-  void updateLastPausedTime() {
+  Future<bool> updateLastPausedTime() async {
+    if (!await _settingsService.getHasWallet()) return false;
     _settingsService.setLastPausedTime(DateTime.now());
+    return true;
   }
 
-  void _cleanLastPausedTime() {
+  void cleanLastPausedTime() {
     _settingsService.cleanLastPausedTime();
   }
 

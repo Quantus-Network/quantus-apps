@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:quantus_sdk/generated/schrodinger/schrodinger.dart';
-import 'package:quantus_sdk/generated/schrodinger/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
+import 'package:quantus_sdk/generated/planck/planck.dart';
+import 'package:quantus_sdk/generated/planck/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 
@@ -38,14 +38,14 @@ class BalancesService {
   }
 
   Balances getBalanceTransferCall(String targetAddress, BigInt amount) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));
     final runtimeCall = quantusApi.tx.balances.transferAllowDeath(dest: multiDest, value: amount);
     return runtimeCall;
   }
 
   Balances getTransferAllCall(String targetAddress, {bool keepAlive = false}) {
-    final quantusApi = Schrodinger(_substrateService.provider!);
+    final quantusApi = Planck(_substrateService.provider!);
     final multiDest = const multi_address.$MultiAddress().id(crypto.ss58ToAccountId(s: targetAddress));
     final runtimeCall = quantusApi.tx.balances.transferAll(dest: multiDest, keepAlive: keepAlive);
     return runtimeCall;

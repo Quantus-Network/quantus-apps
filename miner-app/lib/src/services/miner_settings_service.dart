@@ -2,12 +2,22 @@ import 'dart:io';
 
 import 'package:quantus_miner/src/config/miner_config.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final _log = log.withTag('Settings');
 
+/// Service for managing miner app settings.
+///
+/// This is a singleton - use `MinerSettingsService()` to get the instance.
 class MinerSettingsService {
+  // Singleton
+  static final MinerSettingsService _instance = MinerSettingsService._internal();
+  factory MinerSettingsService() => _instance;
+  MinerSettingsService._internal();
+
   static const String _keyCpuWorkers = 'cpu_workers';
   static const String _keyGpuDevices = 'gpu_devices';
   static const String _keyChainId = 'chain_id';
@@ -32,25 +42,56 @@ class MinerSettingsService {
     return prefs.getInt(_keyGpuDevices);
   }
 
-  /// Save the selected chain ID.
+  /// Save the selected chain ID and configure endpoints accordingly.
   Future<void> saveChainId(String chainId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyChainId, chainId);
+    // Update GraphQL endpoint for the selected chain
+    _configureEndpointsForChain(chainId);
+  }
+
+  /// Configure RPC and GraphQL endpoints based on chain ID.
+  void _configureEndpointsForChain(String chainId) {
+    final chain = MinerConfig.getChainById(chainId);
+    _log.i('Configuring endpoints for chain $chainId:');
+    _log.i('  RPC: ${chain.rpcUrl}');
+    _log.i('  GraphQL: ${chain.subsquidUrl ?? 'not configured'}');
+
+    // Configure RPC endpoint for SubstrateService
+    final rpcService = RpcEndpointService();
+    _log.i('  RPC endpoints before: ${rpcService.endpoints.length}');
+    // rpcService.setEndpoints([chain.rpcUrl]);
+    // _log.i('  RPC endpoints after: ${rpcService.endpoints.length}');
+    // _log.i('  Best RPC endpoint: ${rpcService.bestEndpointUrl}');
+
+    // Configure GraphQL endpoint (for any remaining Subsquid usage)
+    // if (chain.subsquidUrl != null) {
+    //   GraphQlEndpointService().setEndpoints([chain.subsquidUrl!]);
+    // } else {
+    //   GraphQlEndpointService().setEndpoints([]);
+    // }
   }
 
   /// Get the saved chain ID, returns default if not set.
+  /// Also configures GraphQL endpoints for the chain.
   Future<String> getChainId() async {
     final prefs = await SharedPreferences.getInstance();
     final savedChainId = prefs.getString(_keyChainId);
+    String chainId;
     if (savedChainId == null) {
-      return MinerConfig.defaultChainId;
+      chainId = MinerConfig.defaultChainId;
+    } else {
+      // Validate that the chain ID is still valid
+      final validIds = MinerConfig.availableChains.map((c) => c.id).toList();
+      if (!validIds.contains(savedChainId)) {
+        chainId = MinerConfig.defaultChainId;
+      } else {
+        chainId = savedChainId;
+      }
     }
-    // Validate that the chain ID is still valid
-    final validIds = MinerConfig.availableChains.map((c) => c.id).toList();
-    if (!validIds.contains(savedChainId)) {
-      return MinerConfig.defaultChainId;
-    }
-    return savedChainId;
+    // Configure endpoints for this chain
+    _configureEndpointsForChain(chainId);
+    return chainId;
   }
 
   /// Get the ChainConfig for the saved chain ID.
@@ -68,26 +109,21 @@ class MinerSettingsService {
       final identityFile = File('$quantusHome/node_key.p2p');
       if (await identityFile.exists()) {
         await identityFile.delete();
-        _log.i('✅ Node identity file deleted: ${identityFile.path}');
+        _log.i('Node identity file deleted: ${identityFile.path}');
       } else {
-        _log.d('ℹ️ Node identity file not found, skipping deletion.');
+        _log.d('Node identity file not found, skipping deletion.');
       }
     } catch (e) {
-      _log.e('❌ Error deleting node identity file', error: e);
+      _log.e('Error deleting node identity file', error: e);
     }
 
-    // 2. Delete rewards address file
+    // 2. Delete wallet data (mnemonic from secure storage + preimage file)
     try {
-      final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
-      final rewardsFile = File('$quantusHome/rewards-address.txt');
-      if (await rewardsFile.exists()) {
-        await rewardsFile.delete();
-        _log.i('✅ Rewards address file deleted: ${rewardsFile.path}');
-      } else {
-        _log.d('ℹ️ Rewards address file not found, skipping deletion.');
-      }
+      final walletService = MinerWalletService();
+      await walletService.deleteWalletData();
+      _log.i('Wallet data deleted');
     } catch (e) {
-      _log.e('❌ Error deleting rewards address file', error: e);
+      _log.e('Error deleting wallet data', error: e);
     }
 
     // 3. Delete node binary

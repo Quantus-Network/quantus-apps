@@ -5,8 +5,8 @@ import 'package:quantus_sdk/src/services/settings_service.dart';
 
 import 'src/rust/frb_generated.dart';
 
-export 'generated/schrodinger/pallets/balances.dart';
-export 'generated/schrodinger/types/quantus_runtime/runtime_call.dart';
+export 'generated/planck/pallets/balances.dart';
+export 'generated/planck/types/quantus_runtime/runtime_call.dart';
 export 'src/constants/app_constants.dart';
 export 'src/extensions/color_extensions.dart';
 export 'src/extensions/context_extension.dart';
@@ -23,6 +23,7 @@ export 'src/models/event_type.dart';
 export 'src/models/extrinsic_data.dart';
 export 'src/models/extrinsic_fee_data.dart';
 export 'src/models/unsigned_transaction_data.dart';
+export 'src/models/remote_config_model.dart';
 export 'src/models/miner_reward_event.dart';
 export 'src/models/miner_stats.dart';
 export 'src/models/opted_in_position.dart';
@@ -60,6 +61,9 @@ export 'src/services/substrate_service.dart';
 export 'src/services/swap_service.dart';
 export 'src/services/taskmaster_service.dart';
 export 'src/services/senoti_service.dart';
+export 'src/services/circuit_manager.dart';
+export 'src/services/wormhole_address_manager.dart';
+export 'src/services/wormhole_utxo_service.dart';
 export 'src/extensions/account_extension.dart';
 export 'src/quantus_signing_payload.dart';
 export 'src/quantus_payload_parser.dart';

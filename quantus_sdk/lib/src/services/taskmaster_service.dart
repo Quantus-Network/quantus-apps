@@ -130,6 +130,7 @@ class TaskmasterService {
   final _referralEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/referrals');
   final _ethAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/eth');
   final _xAssociationsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/addresses/associations/x');
+  final remoteConfigsEndpoint = Uri.parse('${AppConstants.taskMasterEndpoint}/configs/wallet');
 
   final String _minerStatsQuery = r'''
     query MinerStats($ids: [String!]!) {
@@ -170,6 +171,16 @@ class TaskmasterService {
     return jsonEncode(requestBody);
   }
 
+  Future<String> getMiningAccountId() async {
+    final mnemonic = await _settingsService.getMnemonic(0);
+    if (mnemonic == null) {
+      throw Exception('Mnemonic not found.');
+    }
+    final address = HdWalletService().deriveWormhole(mnemonic).address;
+    return address;
+  }
+
+  // In the past in the beginnings some people mined with a non-derived account
   Future<String> getOldMiningAccountId() async {
     final mnemonic = await _settingsService.getMnemonic(0);
     if (mnemonic == null) {
@@ -492,10 +503,25 @@ class TaskmasterService {
     await ensureIsLoggedIn();
   }
 
+  Future<RemoteConfigModel> getRemoteConfig() async {
+    final http.Response response = await http.get(remoteConfigsEndpoint, headers: {'Content-Type': 'application/json'});
+    if (response.statusCode != 200) {
+      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final Map<String, dynamic>? responseBody = jsonDecode(response.body);
+    final Map<String, dynamic>? data = responseBody?['data'];
+
+    if (data == null) {
+      throw Exception('Configs request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    return RemoteConfigModel.fromJson(data);
+  }
+
   Future<MinerStats> getMinerStats() async {
-    final mainAccount = await getMainAccount();
-    final oldMiningAccountId = await getOldMiningAccountId();
-    final List<String> accountIds = [oldMiningAccountId, mainAccount.accountId];
+    final miningAccountId = await getMiningAccountId();
+    final List<String> accountIds = [miningAccountId];
 
     final Map<String, dynamic> requestBody = {
       'query': _minerStatsQuery,

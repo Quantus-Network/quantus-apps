@@ -34,6 +34,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   Timer? _timeoutTimer;
   TxWatchTransfer? _paidTransfer;
   bool _watching = false;
+  String? _watchError;
   bool get _isPaid => _paidTransfer != null;
 
   @override
@@ -47,7 +48,10 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     if (active == null) return;
 
     final expectedPlanck = _fmt.parseAmount(widget.amount);
-    setState(() => _watching = true);
+    setState(() {
+      _watching = true;
+      _watchError = null;
+    });
 
     _txWatch.watch(
       address: active.account.accountId,
@@ -55,7 +59,6 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (expectedPlanck != null && received == expectedPlanck) {
-          print('[TxWatch] Payment matched! ${tx.amount} planck from ${tx.from}');
           _timeoutTimer?.cancel();
           ref.read(pendingReceiveTrackerProvider).trackIncomingTransfer(
             from: tx.from,
@@ -66,13 +69,26 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           if (mounted) setState(() => _paidTransfer = tx);
         }
       },
-      onError: (e) => print('[TxWatch] Error: $e'),
+      onError: (e) {
+        _txWatch.dispose();
+        _timeoutTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _watching = false;
+            _watchError = 'Connection lost. Tap to retry.';
+          });
+        }
+      },
     );
 
     _timeoutTimer = Timer(const Duration(seconds: 30), () {
-      print('[TxWatch] Timeout — gave up waiting for payment');
       _txWatch.dispose();
-      if (mounted) setState(() => _watching = false);
+      if (mounted) {
+        setState(() {
+          _watching = false;
+          _watchError = 'Timed out. Tap to retry.';
+        });
+      }
     });
   }
 
@@ -120,14 +136,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           style: text.mediumTitle?.copyWith(color: colors.textSecondary),
         ),
         const Spacer(),
-        GlassButton.simple(
-          label: 'Done',
-          onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-          variant: ButtonVariant.primary,
-        ),
+        GlassButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
         const SizedBox(height: 24),
       ],
     );
+  }
+
+  void _newCharge() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PosAmountScreen()));
   }
 
   Widget _buildQrContent(PosPaymentRequest request, AppColorsV2 colors, AppTextTheme text) {
@@ -141,21 +158,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 32),
         _buildQrCode(request.paymentUrl, colors),
         const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () => Clipboard.setData(ClipboardData(text: request.paymentUrl)),
-          child: Text('Copy Link', style: text.detail?.copyWith(color: colors.textTertiary, decoration: TextDecoration.underline)),
-        ),
-        const SizedBox(height: 8),
         Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
         const Spacer(),
-        GlassButton.simple(
-          label: 'New Charge',
-          onTap: () {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen()));
-          },
-          variant: ButtonVariant.secondary,
-        ),
+        GlassButton.simple(label: 'New Charge', onTap: _newCharge, variant: ButtonVariant.secondary),
         const SizedBox(height: 16),
         _buildWaitingButton(colors, text),
         const SizedBox(height: 24),
@@ -183,10 +188,16 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       );
     }
 
-    return GlassButton.simple(
-      label: 'Done',
-      onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-      variant: ButtonVariant.primary,
+    return Column(
+      children: [
+        if (_watchError != null) ...[
+          Text('Network Error', style: text.detail?.copyWith(color: colors.textError)),
+          const SizedBox(height: 8),
+          GlassButton.simple(label: 'Try Again', onTap: _startWatching, variant: ButtonVariant.secondary),
+          const SizedBox(height: 12),
+        ],
+        GlassButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
+      ],
     );
   }
 

@@ -37,6 +37,10 @@ dependencies:
   
   # UI feedback
   flash: # Version managed by melos.yaml
+
+  # Filesystem helpers (used by circuit + wormhole address persistence)
+  path: # Version managed by melos.yaml
+  path_provider: # Version managed by melos.yaml
   
   # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:
@@ -52,7 +56,7 @@ dependencies:
 polkadart:
   output_dir: lib/generated # Optional. Sets the directory of generated files. Provided value should be a valid path on your system. Default: lib/generated
   chains: # Dictionary of chains and endpoints
-      schrodinger: wss://a1-dirac.quantus.cat
+      planck: wss://a1-planck.quantus.cat
 
 dev_dependencies:
   flutter_test:

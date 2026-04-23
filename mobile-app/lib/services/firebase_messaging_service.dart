@@ -22,6 +22,7 @@ class FirebaseMessagingService {
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
+  bool __hasRegisteredHandlers = false;
   String? _cachedToken;
 
   FirebaseMessagingService(this._ref);
@@ -147,6 +148,9 @@ class FirebaseMessagingService {
   /// Handle the user tapping on an FCM notification that launched/resumed the app.
   /// Call this after the navigator key is available.
   void setupNotificationTapHandlers(GlobalKey<NavigatorState> navigatorKey) {
+    if (__hasRegisteredHandlers) return;
+    __hasRegisteredHandlers = true;
+
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('FCM notification tapped (background): ${message.messageId}');
       _handleNotificationTap(message, navigatorKey);

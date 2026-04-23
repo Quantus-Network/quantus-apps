@@ -43,7 +43,9 @@ query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!
         height
         hash
       }
-      extrinsicHash
+      extrinsic {
+        id
+      }
       timestamp
     }
   }
@@ -52,7 +54,7 @@ query ScheduledReversibleTransfersByAccounts($accounts: [String!]!, $limit: Int!
 
   final String _accountEventsQuery = r'''
 query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
-  accountEvents(limit: $limit, offset: $offset, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsicHash_isNull: false}}]}]}, orderBy: timestamp_DESC) {
+  accountEvents(limit: $limit, offset: $offset, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}]}, orderBy: timestamp_DESC) {
     id
     transfer {
       id
@@ -68,7 +70,9 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
         height
         hash
       }
-      extrinsicHash
+      extrinsic {
+        id
+      }
       timestamp
       fee
       executedBy {
@@ -102,7 +106,9 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       txId
       timestamp
       id
-      extrinsicHash
+      extrinsic {
+        id
+      }
       scheduledTransfer {
         amount
         from {
@@ -127,7 +133,7 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
       }
     }
   }
-  accountEventsConnection(orderBy: id_ASC, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsicHash_isNull: false}}]}]}) {
+  accountEventsConnection(orderBy: id_ASC, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}]}) {
     totalCount
   }
 }
@@ -183,7 +189,9 @@ query SearchPendingTransaction(
   ) {
     id
     timestamp
-    extrinsicHash
+    extrinsic {
+      id
+    }
     transfer {
       id
       amount
@@ -191,7 +199,9 @@ query SearchPendingTransaction(
       from { id }
       to { id }
       block { height hash }
-      extrinsicHash
+      extrinsic {
+        id
+      }
       timestamp
       fee
     }
@@ -223,7 +233,9 @@ query SearchPendingTransaction(
   ) {
     id
     timestamp
-    extrinsicHash
+    extrinsic {
+      id
+    }
     scheduledReversibleTransfer {
       id
       amount
@@ -233,7 +245,9 @@ query SearchPendingTransaction(
       txId
       scheduledAt
       block { height hash }
-      extrinsicHash
+      extrinsic {
+        id
+      }
       timestamp
     }
   }

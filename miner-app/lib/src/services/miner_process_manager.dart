@@ -96,9 +96,8 @@ class MinerProcessManager extends BaseProcessManager {
       await Future.delayed(const Duration(seconds: 2));
 
       // Check if process is still running
-      // We just attached, so pid should be available
-      final processPid = pid;
-      final stillRunning = await ProcessCleanupService.isProcessRunning(processPid);
+      // We just attached, so pid is guaranteed to be available
+      final stillRunning = await ProcessCleanupService.isProcessRunning(pid);
       if (!stillRunning) {
         final error = MinerError.minerStartupFailed('Miner died during startup');
         errorController.add(error);

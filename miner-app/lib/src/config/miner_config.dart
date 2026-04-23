@@ -108,14 +108,25 @@ class MinerConfig {
       displayName: 'Development',
       description: 'Local development chain',
       rpcUrl: 'http://127.0.0.1:9933',
-      isDefault: true,
+      subsquidUrl: 'http://127.0.0.1:4350/graphql',
+      isDefault: false,
     ),
     ChainConfig(
       id: 'dirac',
       displayName: 'Dirac',
       description: 'Dirac testnet',
       rpcUrl: 'https://a1-dirac.quantus.cat',
+      subsquidUrl: 'https://subsquid.quantus.com/blue/graphql',
       isDefault: false,
+    ),
+    ChainConfig(
+      id: 'planck',
+      displayName: 'Planck Testnet',
+      description: 'Planck testnet',
+      rpcUrl: 'https://a1-planck.quantus.cat',
+      subsquidUrl:
+          'http://127.0.0.1:4000/graphql', // Local Subsquid for testing
+      isDefault: true,
     ),
   ];
 
@@ -169,6 +180,7 @@ class ChainConfig {
   final String displayName;
   final String description;
   final String rpcUrl;
+  final String? subsquidUrl;
   final bool isDefault;
 
   const ChainConfig({
@@ -176,7 +188,8 @@ class ChainConfig {
     required this.displayName,
     required this.description,
     required this.rpcUrl,
-    required this.isDefault,
+    this.subsquidUrl,
+    this.isDefault = false,
   });
 
   /// Whether this chain uses the local node RPC

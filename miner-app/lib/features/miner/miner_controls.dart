@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/services/mining_stats_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
@@ -98,10 +99,23 @@ class _MinerControlsState extends State<MinerControls> {
       setState(() => _chainId = chainId);
     }
 
+    // Get rewards preimage directly from the wallet (not from file)
+    final walletService = MinerWalletService();
+    final wormholeKeyPair = await walletService.getWormholeKeyPair();
+    if (wormholeKeyPair == null) {
+      _log.w('No wormhole keypair - wallet not set up');
+      if (mounted) {
+        context.showWarningSnackbar(
+          title: 'Wallet not configured!',
+          message: 'Please set up your inner hash first.',
+        );
+      }
+      return;
+    }
+
     // Check for required files
     final quantusHome = await BinaryManager.getQuantusHomeDirectoryPath();
     final identityFile = File('$quantusHome/node_key.p2p');
-    final rewardsFile = File('$quantusHome/rewards-address.txt');
     final nodeBinPath = await BinaryManager.getNodeBinaryFilePath();
     final nodeBin = File(nodeBinPath);
     final minerBinPath = await BinaryManager.getExternalMinerBinaryFilePath();
@@ -125,7 +139,8 @@ class _MinerControlsState extends State<MinerControls> {
           nodeBinary: nodeBin,
           minerBinary: minerBin,
           identityFile: identityFile,
-          rewardsFile: rewardsFile,
+          rewardsInnerHash: wormholeKeyPair.rewardsPreimageHex,
+          wormholeAddress: wormholeKeyPair.address,
           chainId: _chainId,
           cpuWorkers: _cpuWorkers,
           gpuDevices: _gpuDevices,

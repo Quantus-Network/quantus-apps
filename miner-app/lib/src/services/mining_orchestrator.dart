@@ -56,8 +56,13 @@ class MiningSessionConfig {
   /// Path to the node identity key file.
   final File identityFile;
 
-  /// Path to the rewards address file.
-  final File rewardsFile;
+  /// The rewards inner hash (hex format with 0x prefix) to pass to the node.
+  /// This is the first_hash derived from the wormhole secret.
+  final String rewardsInnerHash;
+
+  /// The wormhole address (SS58) where mining rewards are sent.
+  /// Used for transfer tracking.
+  final String? wormholeAddress;
 
   /// Chain ID to connect to.
   final String chainId;
@@ -78,7 +83,8 @@ class MiningSessionConfig {
     required this.nodeBinary,
     required this.minerBinary,
     required this.identityFile,
-    required this.rewardsFile,
+    required this.rewardsInnerHash,
+    this.wormholeAddress,
     this.chainId = 'dev',
     this.cpuWorkers = 8,
     this.gpuDevices = 0,
@@ -227,15 +233,12 @@ class MiningOrchestrator {
       _actualMetricsPort = ports['metrics']!;
       _updateMetricsClient();
 
-      // Read rewards address
-      final rewardsAddress = await _readRewardsAddress(config.rewardsFile);
-
-      // Start node
+      // Start node with rewards inner hash directly from config
       await _nodeManager.start(
         NodeConfig(
           binary: config.nodeBinary,
           identityFile: config.identityFile,
-          rewardsAddress: rewardsAddress,
+          rewardsInnerHash: config.rewardsInnerHash,
           chainId: config.chainId,
           minerListenPort: config.minerListenPort,
         ),
@@ -274,7 +277,7 @@ class MiningOrchestrator {
       nodeBinary: _currentConfig!.nodeBinary,
       minerBinary: _currentConfig!.minerBinary,
       identityFile: _currentConfig!.identityFile,
-      rewardsFile: _currentConfig!.rewardsFile,
+      rewardsInnerHash: _currentConfig!.rewardsInnerHash,
       chainId: _currentConfig!.chainId,
       cpuWorkers: cpuWorkers ?? _currentConfig!.cpuWorkers,
       gpuDevices: gpuDevices ?? _currentConfig!.gpuDevices,
@@ -482,14 +485,6 @@ class MiningOrchestrator {
     }
   }
 
-  Future<String> _readRewardsAddress(File rewardsFile) async {
-    if (!await rewardsFile.exists()) {
-      throw Exception('Rewards address file not found: ${rewardsFile.path}');
-    }
-    final address = await rewardsFile.readAsString();
-    return address.trim();
-  }
-
   Future<void> _waitForNodeRpc() async {
     _log.d('Waiting for node RPC...');
     int attempts = 0;
@@ -530,11 +525,7 @@ class MiningOrchestrator {
 
   Future<void> _stopInternal() async {
     _stopPolling();
-
-    // Stop miner first (depends on node)
     await _minerManager.stop();
-
-    // Then stop node
     await _nodeManager.stop();
   }
 

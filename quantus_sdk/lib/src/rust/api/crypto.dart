@@ -31,6 +31,24 @@ Keypair generateDerivedKeypair({
   path: path,
 );
 
+WormholeResult deriveWormhole({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoDeriveWormhole(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
+
+/// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
+///
+/// Mirrors how the chain and ZK circuit derive the address from the preimage:
+/// - Convert 32 bytes → 4 Poseidon field elements (8 bytes each)
+/// - Hash once without padding
+String firstHashToAddress({required String firstHashHex}) => RustLib
+    .instance
+    .api
+    .crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
+
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
@@ -110,4 +128,28 @@ class U8Array32 extends NonGrowableListView<int> {
   U8Array32(this._inner) : assert(_inner.length == arraySize), super(_inner);
 
   U8Array32.init() : this(Uint8List(arraySize));
+}
+
+class WormholeResult {
+  final String address;
+  final Uint8List firstHash;
+  final Uint8List secret;
+
+  const WormholeResult({
+    required this.address,
+    required this.firstHash,
+    required this.secret,
+  });
+
+  @override
+  int get hashCode => address.hashCode ^ firstHash.hashCode ^ secret.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WormholeResult &&
+          runtimeType == other.runtimeType &&
+          address == other.address &&
+          firstHash == other.firstHash &&
+          secret == other.secret;
 }

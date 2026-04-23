@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 
@@ -94,25 +97,27 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           print('App resumed but offline - polling paused');
         }
 
-        // Always check authentication on resume to enforce inactivity timeout
+        // Check authentication ONLY on resume from background.
+        // This prevents flicker from transient backgrounds (FaceID, system overlays)
+        // that briefly pause/resume the app.
         localAuthNotifier.checkAuthentication();
 
         // Initialize Taskmaster login if wallet exists
         _initializeTaskmasterLogin();
+
+        // Sync remote config on background resume
+        unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
       }
     } else {
       // Handle background states (inactive, paused, hidden, detached)
-      // Only act if we haven't already processed a background transition
-      if (!_isBackgrounded) {
-        print('AppLifecycleState.$state - pausing and locking');
+      // Skip if the biometric dialog caused this lifecycle change — on some
+      // Android devices the prompt triggers inactive→resumed oscillation.
+      if (!_isBackgrounded && !ref.read(localAuthProvider).isAuthenticating) {
+        print('AppLifecycleState.$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
-        // Pause global polling when app goes to background
-        // Transaction tracking continues for pending transactions
         pollingManager.pausePolling();
-
-        // When the app goes into the background, lock it.
-        localAuthNotifier.lockApp();
+        localAuthNotifier.recordBackgroundTime();
       } else {
         print('AppLifecycleState.$state - already backgrounded, skipping actions');
       }

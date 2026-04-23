@@ -67,14 +67,18 @@ void main() {
       const mnemonic1 =
           'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
 
-      const knownAccountId = 'qznBvupPsA9T8VJDuTDokKPiNUe88zMMUtHGA1AsGc8fXKSSA'; // schroedinger chain spec
+      const knownAccountId = 'qzmTAz3UUw1WGUuVh8nbFmPwcftomduwy6twq6NDR6y9qqtEs'; // schroedinger chain spec
       final keypair = generateKeypair(mnemonicStr: mnemonic1);
       final accountId = toAccountId(obj: keypair);
 
       expect(accountId, knownAccountId);
 
-      const knownAccountHdIndex0 = 'qznMJss7Ls1SWBhvvL2CSHVbgTxEfnL9GgpvMTq5CWMEwfCoe'; // account index 0
-      const knownAccountHdIndex1 = 'qzn4tYHSaU2Q4xhUnJ7KskQBWfgVQx1fNPMYuiQYhAVPtvrL8'; // account index 1
+      // pub const TEST_ADDRESS: &str = "qzmTAz3UUw1WGUuVh8nbFmPwcftomduwy6twq6NDR6y9qqtEs";
+      // pub const TEST_ADDRESS_HD_0: &str = "qzm5QCox8Dp5A3oSXZZYHD8YoYgPz7enykZb6RPUropdCyN5h";
+      // pub const TEST_ADDRESS_HD_1: &str = "qzmufPopkLKAwDmTzR5uXg8GMp5sUP48CqafJLUz3fPMSSGSh";
+
+      const knownAccountHdIndex0 = 'qzm5QCox8Dp5A3oSXZZYHD8YoYgPz7enykZb6RPUropdCyN5h'; // account index 0
+      const knownAccountHdIndex1 = 'qzmufPopkLKAwDmTzR5uXg8GMp5sUP48CqafJLUz3fPMSSGSh'; // account index 1
       final keyPair1 = HdWalletService().keyPairAtIndex(mnemonic1, 0);
       final keyPair2 = HdWalletService().keyPairAtIndex(mnemonic1, 1);
       final accountId1 = toAccountId(obj: keyPair1);
@@ -82,10 +86,23 @@ void main() {
       expect(accountId1, knownAccountHdIndex0);
       expect(accountId2, knownAccountHdIndex1);
     });
-    test('test for known values2', () {
+    test('wormhole derivation known values', () {
+      const mnemonic =
+          'orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven';
+      const expectedPreimage = 'e4be02a913727c01c1a155fd6e807b7c1a4a13abf37a352b7c9ed4412d127fc3';
+
+      final result = HdWalletService().deriveWormhole(mnemonic);
+      expect(hex.encode(result.firstHash), expectedPreimage);
+
+      final addressBytes = ss58ToAccountId(s: result.address);
+      final expectedAddressBytes = ss58ToAccountId(s: '5H8AGzwKPtKMfKKuKYCoAFApCoy4EVewCqc9k6GrSgqHoaXm');
+      expect(addressBytes, expectedAddressBytes);
+    });
+
+    test('test for keystone hardware wallet', () {
       const mnemonic1 = 'human snow truck virus now jaguar wall brisk shoe craft gravity diesel';
 
-      const knownAccountId = 'qzmuHhD8p2dvndwkbjw5htDvaptyis5rEVc7v5BmqR3pfQ7QN'; // schroedinger chain spec
+      const knownAccountId = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
       final keypair = HdWalletService().keyPairAtIndex(mnemonic1, 0);
       final accountId = toAccountId(obj: keypair);
       expect(accountId, knownAccountId);

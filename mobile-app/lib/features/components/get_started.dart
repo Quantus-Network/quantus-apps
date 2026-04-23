@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/utils/url_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GetStarted extends StatelessWidget {
@@ -24,10 +25,7 @@ class GetStarted extends StatelessWidget {
             Text('Get Started', style: context.themeText.paragraph?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 22),
             GestureDetector(
-              onTap: () {
-                final Uri url = Uri.parse(AppConstants.faucetBotUrl);
-                launchUrl(url);
-              },
+              onTap: () => launchXPost(AppConstants.faucetUrl),
               child: Text(
                 'Get Testnet Tokens →',
                 style: context.themeText.smallParagraph?.copyWith(color: context.themeColors.pink),

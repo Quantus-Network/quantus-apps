@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1692591137;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 910560431;
 
 // Section: executor
 
@@ -195,6 +195,37 @@ fn wire__crate__api__crypto__derive_hd_path_impl(
         },
     )
 }
+fn wire__crate__api__crypto__derive_wormhole_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "derive_wormhole",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_mnemonic_str = <String>::sse_decode(&mut deserializer);
+            let api_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, HDLatticeError>((move || {
+                let output_ok = crate::api::crypto::derive_wormhole(api_mnemonic_str, &api_path)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__ur__encode_ur_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -220,6 +251,36 @@ fn wire__crate__api__ur__encode_ur_impl(
             deserializer.end();
             transform_result_sse::<_, String>((move || {
                 let output_ok = crate::api::ur::encode_ur(api_data)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__crypto__first_hash_to_address_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "first_hash_to_address",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_first_hash_hex = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::crypto::first_hash_to_address(api_first_hash_hex)?;
                 Ok(output_ok)
             })())
         },
@@ -796,6 +857,20 @@ impl SseDecode for usize {
     }
 }
 
+impl SseDecode for crate::api::crypto::WormholeResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_address = <String>::sse_decode(deserializer);
+        let mut var_firstHash = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_secret = <Vec<u8>>::sse_decode(deserializer);
+        return crate::api::crypto::WormholeResult {
+            address: var_address,
+            first_hash: var_firstHash,
+            secret: var_secret,
+        };
+    }
+}
+
 impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -812,7 +887,7 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        10 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__crypto__init_app_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -830,20 +905,24 @@ fn pde_ffi_dispatcher_sync_impl(
         3 => wire__crate__api__crypto__crystal_charlie_impl(ptr, rust_vec_len, data_len),
         4 => wire__crate__api__ur__decode_ur_impl(ptr, rust_vec_len, data_len),
         5 => wire__crate__api__crypto__derive_hd_path_impl(ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__crypto__derive_wormhole_impl(ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__ur__encode_ur_impl(ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__crypto__first_hash_to_address_impl(ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__crypto__generate_derived_keypair_impl(ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__crypto__generate_keypair_impl(ptr, rust_vec_len, data_len),
+        11 => {
+            wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len)
+        }
+        13 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -880,6 +959,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::crypto::Keypair>
     for crate::api::crypto::Keypair
 {
     fn into_into_dart(self) -> crate::api::crypto::Keypair {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::crypto::WormholeResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.address.into_into_dart().into_dart(),
+            self.first_hash.into_into_dart().into_dart(),
+            self.secret.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::crypto::WormholeResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::crypto::WormholeResult>
+    for crate::api::crypto::WormholeResult
+{
+    fn into_into_dart(self) -> crate::api::crypto::WormholeResult {
         self
     }
 }
@@ -993,6 +1094,15 @@ impl SseEncode for usize {
             .cursor
             .write_u64::<NativeEndian>(self as _)
             .unwrap();
+    }
+}
+
+impl SseEncode for crate::api::crypto::WormholeResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.address, serializer);
+        <Vec<u8>>::sse_encode(self.first_hash, serializer);
+        <Vec<u8>>::sse_encode(self.secret, serializer);
     }
 }
 
