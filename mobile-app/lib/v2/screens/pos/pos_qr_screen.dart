@@ -60,12 +60,14 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         final received = BigInt.tryParse(tx.amount);
         if (expectedPlanck != null && received == expectedPlanck) {
           _timeoutTimer?.cancel();
-          ref.read(pendingReceiveTrackerProvider).trackIncomingTransfer(
-            from: tx.from,
-            to: active.account.accountId,
-            amount: expectedPlanck,
-            extrinsicHash: tx.txHash,
-          );
+          ref
+              .read(pendingReceiveTrackerProvider)
+              .trackIncomingTransfer(
+                from: tx.from,
+                to: active.account.accountId,
+                amount: expectedPlanck,
+                extrinsicHash: tx.txHash,
+              );
           if (mounted) setState(() => _paidTransfer = tx);
         }
       },

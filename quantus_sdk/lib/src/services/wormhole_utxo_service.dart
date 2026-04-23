@@ -111,11 +111,7 @@ query CheckNullifiers($nullifiers: [String!]!) {
 }''';
 
   /// Fetch all wormhole transfers to [wormholeAddress].
-  Future<List<WormholeTransfer>> getTransfersTo(
-    String wormholeAddress, {
-    int limit = 100,
-    int offset = 0,
-  }) async {
+  Future<List<WormholeTransfer>> getTransfersTo(String wormholeAddress, {int limit = 100, int offset = 0}) async {
     final body = jsonEncode({
       'query': _transfersToWormholeQuery,
       'variables': {'wormholeAddress': wormholeAddress, 'limit': limit, 'offset': offset},
@@ -200,18 +196,12 @@ query CheckNullifiers($nullifiers: [String!]!) {
     final hdWalletService = HdWalletService();
     final nullifierToTransfer = <String, WormholeTransfer>{};
     for (final transfer in transfers) {
-      final nullifier = hdWalletService.computeNullifier(
-        secretHex: secretHex,
-        transferCount: transfer.transferCount,
-      );
+      final nullifier = hdWalletService.computeNullifier(secretHex: secretHex, transferCount: transfer.transferCount);
       nullifierToTransfer[nullifier] = transfer;
     }
 
     final consumed = await getConsumedNullifiers(nullifierToTransfer.keys.toList());
-    return nullifierToTransfer.entries
-        .where((e) => !consumed.contains(e.key))
-        .map((e) => e.value)
-        .toList();
+    return nullifierToTransfer.entries.where((e) => !consumed.contains(e.key)).map((e) => e.value).toList();
   }
 
   /// Sum of unspent transfer amounts for [wormholeAddress].

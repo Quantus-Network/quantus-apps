@@ -77,10 +77,7 @@ class PendingReceiveTracker {
         print('[PendingReceiveTracker] Found matching tx for ${pendingTx.id}');
         _stopSearching(pendingTx.id);
 
-        _triggerSilentHistoryRefresh(
-          affectedAccountIds: {pendingTx.from, pendingTx.to},
-          newTransaction: result,
-        );
+        _triggerSilentHistoryRefresh(affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
 
         _ref
             .read(pendingTransactionsProvider.notifier)
