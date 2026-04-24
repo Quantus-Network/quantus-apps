@@ -17,13 +17,26 @@ class PendingTransactionPollingService {
 
   PendingTransactionPollingService(this._ref);
 
-  void startPolling(
-    PendingTransactionEvent pendingTx, {
-    bool isReversible = false,
-    int blockHeightAfter = 0,
-    int limit = 10,
-    void Function(TransactionEvent result)? onFound,
-  }) {
+  /// Polls the indexer until [pendingTx] is found on-chain. Uses
+  /// [PendingTransactionEvent.extrinsicHash] when available for an exact,
+  /// globally-unique match; otherwise falls back to (from, to, amount,
+  /// blockNumber) matching. Fails early if neither is usable.
+  void startPolling(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) {
+    if (pendingTx.extrinsicHash == null && pendingTx.blockNumber == 0) {
+      print(
+        '[PendingTxPoller] ERROR: cannot poll ${pendingTx.id} — no extrinsicHash and blockNumber is 0. '
+        'This would search all historical blocks and risk false positives.',
+      );
+      return;
+    }
+
+    print(
+      '[PendingTxPoller] startPolling id=${pendingTx.id} '
+      'hash=${pendingTx.extrinsicHash} block=${pendingTx.blockNumber} '
+      'reversible=${pendingTx.isReversible} from=${pendingTx.from} '
+      'to=${pendingTx.to} amount=${pendingTx.amount}',
+    );
+
     stopPolling(pendingTx.id);
     final startTime = DateTime.now();
 
@@ -34,43 +47,41 @@ class PendingTransactionPollingService {
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         return;
       }
-      _search(
-        pendingTx,
-        isReversible: isReversible,
-        blockHeightAfter: blockHeightAfter,
-        limit: limit,
-        onFound: onFound,
-      );
+      _search(pendingTx, onFound: onFound);
     });
 
     _timers[pendingTx.id] = timer;
-    _search(pendingTx, isReversible: isReversible, blockHeightAfter: blockHeightAfter, limit: limit, onFound: onFound);
+    _search(pendingTx, onFound: onFound);
   }
 
   void stopPolling(String id) {
     _timers.remove(id)?.cancel();
   }
 
-  Future<void> _search(
-    PendingTransactionEvent pendingTx, {
-    required bool isReversible,
-    required int blockHeightAfter,
-    required int limit,
-    void Function(TransactionEvent result)? onFound,
-  }) async {
+  Future<void> _search(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) async {
     try {
       final historyService = _ref.read(chainHistoryServiceProvider);
-      final result = await historyService.searchForPendingTransaction(
-        from: pendingTx.from,
-        to: pendingTx.to,
-        amount: pendingTx.amount,
-        isReversible: isReversible,
-        blockHeightAfter: blockHeightAfter,
-        limit: limit,
-      );
+      final hash = pendingTx.extrinsicHash;
+      final TransactionEvent? result;
+      if (hash != null) {
+        print('[PendingTxPoller] searching by extrinsic hash $hash for ${pendingTx.id}');
+        result = await historyService.searchByExtrinsicHash(extrinsicHash: hash, isReversible: pendingTx.isReversible);
+      } else {
+        print(
+          '[PendingTxPoller] searching fallback (from, to, amount, block>${pendingTx.blockNumber}) '
+          'for ${pendingTx.id}',
+        );
+        result = await historyService.searchForPendingTransaction(
+          from: pendingTx.from,
+          to: pendingTx.to,
+          amount: pendingTx.amount,
+          isReversible: pendingTx.isReversible,
+          blockHeightAfter: pendingTx.blockNumber,
+        );
+      }
 
       if (result != null) {
-        print('[PendingTxPoller] Found matching tx for ${pendingTx.id}');
+        print('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
         stopPolling(pendingTx.id);
 
         triggerSilentHistoryRefresh(_ref, affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
@@ -83,6 +94,8 @@ class PendingTransactionPollingService {
 
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         _ref.invalidate(balanceProviderFamily);
+      } else {
+        print('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
       }
     } catch (e) {
       print('[PendingTxPoller] Search error for ${pendingTx.id}: $e');

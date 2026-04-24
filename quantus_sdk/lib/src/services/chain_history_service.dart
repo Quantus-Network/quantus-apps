@@ -164,22 +164,25 @@ query ExecutedReversibleTransferByTxId($txId: String!) {
 }
 ''';
 
-  // GraphQL query to search for transactions matching pending transaction criteria
+  // GraphQL query to search for transactions matching pending transaction criteria.
+  // `extrinsic_isNull: false` excludes mining/wormhole transfers which share the
+  // transfer entity but have no extrinsic. Limit is 1 because we only ever use
+  // the first match.
   final String _searchPendingTransferQuery = r'''
 query SearchPendingTransaction(
   $from: String!,
   $to: String!,
   $amount: BigInt!,
   $blockHeightAfter: Int!,
-  $limit: Int!
 ) {
   events(
-    limit: $limit
+    limit: 1
     where: {
       transfer: {
         from: { id_eq: $from },
         to: { id_eq: $to },
         amount_eq: $amount,
+        extrinsic_isNull: false,
         block: {
           height_gt: $blockHeightAfter
         }
@@ -215,15 +218,15 @@ query SearchPendingTransaction(
   $to: String!,
   $amount: BigInt!,
   $blockHeightAfter: Int!,
-  $limit: Int!
 ) {
   events(
-    limit: $limit
-    where: {   
+    limit: 1
+    where: {
       scheduledReversibleTransfer: {
         from: { id_eq: $from },
         to: { id_eq: $to },
         amount_eq: $amount,
+        extrinsic_isNull: false,
         block: {
           height_gt: $blockHeightAfter
         }
@@ -248,6 +251,57 @@ query SearchPendingTransaction(
       extrinsic {
         id
       }
+      timestamp
+    }
+  }
+}
+''';
+
+  final String _searchByExtrinsicHashTransferQuery = r'''
+query SearchByExtrinsicHash($extrinsicHash: String!) {
+  events(
+    limit: 1
+    where: { transfer: { extrinsic: { id_eq: $extrinsicHash } } }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    timestamp
+    extrinsic { id }
+    transfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      block { height hash }
+      extrinsic { id }
+      timestamp
+      fee
+    }
+  }
+}
+''';
+
+  final String _searchByExtrinsicHashReversibleQuery = r'''
+query SearchByExtrinsicHash($extrinsicHash: String!) {
+  events(
+    limit: 1
+    where: { scheduledReversibleTransfer: { extrinsic: { id_eq: $extrinsicHash } } }
+    orderBy: timestamp_DESC
+  ) {
+    id
+    timestamp
+    extrinsic { id }
+    scheduledReversibleTransfer {
+      id
+      amount
+      timestamp
+      from { id }
+      to { id }
+      txId
+      scheduledAt
+      block { height hash }
+      extrinsic { id }
       timestamp
     }
   }
@@ -463,30 +517,45 @@ query SearchPendingTransaction(
 
   /// Searches for transactions matching the criteria of a pending transaction.
   /// This is used to find if a broadcast transaction has been confirmed.
-  /// Searches both transfer and reversibleTransfer types.
+  /// Searches both transfer and reversibleTransfer types. Excludes mining and
+  /// wormhole transfers (no extrinsic).
   Future<TransactionEvent?> searchForPendingTransaction({
     required String from,
     required String to,
     required BigInt amount,
     required bool isReversible,
     required int blockHeightAfter,
-    int limit = 10,
-  }) async {
+  }) {
     print(
       'Searching for pending transaction: $from → $to, amount: $amount, '
       'reversible: $isReversible, after block: $blockHeightAfter',
     );
+    return _searchEvent(
+      query: isReversible ? _searchPendingReversibleQuery : _searchPendingTransferQuery,
+      variables: {'from': from, 'to': to, 'amount': amount.toString(), 'blockHeightAfter': blockHeightAfter},
+      isReversible: isReversible,
+    );
+  }
 
-    final Map<String, dynamic> requestBody = {
-      'query': isReversible ? _searchPendingReversibleQuery : _searchPendingTransferQuery,
-      'variables': {
-        'from': from,
-        'to': to,
-        'amount': amount.toString(),
-        'blockHeightAfter': blockHeightAfter,
-        'limit': limit,
-      },
-    };
+  /// Searches for a transaction by its extrinsic hash. Preferred over
+  /// [searchForPendingTransaction] because the extrinsic hash is globally
+  /// unique — no risk of matching an unrelated historical transfer with the
+  /// same (from, to, amount).
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) {
+    print('Searching by extrinsic hash: $extrinsicHash, reversible: $isReversible');
+    return _searchEvent(
+      query: isReversible ? _searchByExtrinsicHashReversibleQuery : _searchByExtrinsicHashTransferQuery,
+      variables: {'extrinsicHash': extrinsicHash},
+      isReversible: isReversible,
+    );
+  }
+
+  Future<TransactionEvent?> _searchEvent({
+    required String query,
+    required Map<String, dynamic> variables,
+    required bool isReversible,
+  }) async {
+    final Map<String, dynamic> requestBody = {'query': query, 'variables': variables};
 
     try {
       final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
@@ -510,13 +579,12 @@ query SearchPendingTransaction(
       final List<dynamic>? events = data['events'];
 
       if (events == null || events.isEmpty) {
-        print('No matching transactions found for pending transaction');
+        print('No matching transactions found');
         return null;
       }
 
+      final eventJson = events.first!;
       final TransactionEvent transaction;
-      var eventJson = events.first!;
-
       if (isReversible) {
         final reversibleTransferData = eventJson['scheduledReversibleTransfer'] as Map<String, dynamic>;
         transaction = ReversibleTransferEvent.fromJson(
@@ -527,12 +595,11 @@ query SearchPendingTransaction(
         final transferData = eventJson['transfer'] as Map<String, dynamic>;
         transaction = TransferEvent.fromJson(transferData);
       }
-      final block = transaction.blockNumber;
 
-      print('Found 1 matching transactions for pending transaction at block $block');
+      print('Found matching transaction at block ${transaction.blockNumber}');
       return transaction;
     } catch (e, stackTrace) {
-      print('Error searching for pending transaction: $e');
+      print('Error searching for transaction: $e');
       print(stackTrace);
       rethrow;
     }

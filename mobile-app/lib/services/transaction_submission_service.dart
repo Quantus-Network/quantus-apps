@@ -176,20 +176,17 @@ class TransactionSubmissionService {
     try {
       print('Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}');
 
-      // Build a fresh submission for this attempt (gets fresh nonce,
-      // block headers, etc.)
-      final extrinsicHash = await submissionBuilder();
-
-      // Convert to hex string for better readability
-      final hexString = hex.encode(extrinsicHash);
-      print('submission hash: 0x$hexString');
+      final extrinsicHashBytes = await submissionBuilder();
+      final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
+      print('submission hash: $extrinsicHash');
 
       final newState = TransactionState.pending;
-      // Update state for all non-retry cases
       print('updating tx ${pendingTx.amount} to $newState');
-      _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, newState, error: pendingTx.error);
+      _ref
+          .read(pendingTransactionsProvider.notifier)
+          .updateState(pendingTx.id, newState, error: pendingTx.error, extrinsicHash: extrinsicHash);
 
-      _startPollingForTransaction(pendingTx);
+      _startPollingForTransaction(pendingTx.copyWith(extrinsicHash: extrinsicHash));
     } catch (e, stackTrace) {
       print('Failed submitting transaction attempt $attempt: $e');
 
@@ -216,16 +213,8 @@ class TransactionSubmissionService {
   }
 
   void _startPollingForTransaction(PendingTransactionEvent pendingTx) {
-    if (pendingTx.blockNumber == 0) {
-      print('No block number available for transaction ${pendingTx.id}, cannot search');
-      return;
-    }
-
     _poller.startPolling(
       pendingTx,
-      isReversible: pendingTx.isReversible,
-      blockHeightAfter: pendingTx.blockNumber,
-      limit: 5,
       onFound: (result) {
         final account = _ref.read(accountsProvider.notifier).getAccountWithId(pendingTx.from);
         if (result is TransferEvent) {
