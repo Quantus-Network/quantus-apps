@@ -414,7 +414,7 @@ class ChainRpcClient {
 
   /// Execute a JSON-RPC call
   Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
-    final request = {'jsonrpc': '2.0', 'id': _requestId++, 'method': method, if (params != null) 'params': params};
+    final request = {'jsonrpc': '2.0', 'id': _requestId++, 'method': method, 'params': ?params};
 
     // Only print RPC calls when debugging connection issues
     // print('DEBUG: Making RPC call: $method with request: ${json.encode(request)}');
