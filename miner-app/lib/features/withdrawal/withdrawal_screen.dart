@@ -57,10 +57,7 @@ class WithdrawalScreen extends StatelessWidget {
               ),
               if (wormholeAddress != null) ...[
                 const SizedBox(height: 24),
-                Text(
-                  'Rewards Address',
-                  style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.6)),
-                ),
+                Text('Rewards Address', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.6))),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),

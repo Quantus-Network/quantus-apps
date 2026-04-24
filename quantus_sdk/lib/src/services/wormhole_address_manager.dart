@@ -79,13 +79,10 @@ class WormholeAddressManager {
   final Map<String, TrackedWormholeAddress> _addresses = {};
   int _nextChangeIndex = 0;
 
-  WormholeAddressManager({
-    required MnemonicGetter getMnemonic,
-    HdWalletService? hdWalletService,
-    String? storageDir,
-  }) : _getMnemonic = getMnemonic,
-       _hdWalletService = hdWalletService ?? HdWalletService(),
-       _customStorageDir = storageDir;
+  WormholeAddressManager({required MnemonicGetter getMnemonic, HdWalletService? hdWalletService, String? storageDir})
+    : _getMnemonic = getMnemonic,
+      _hdWalletService = hdWalletService ?? HdWalletService(),
+      _customStorageDir = storageDir;
 
   List<TrackedWormholeAddress> get allAddresses => _addresses.values.toList();
   Set<String> get allAddressStrings => _addresses.keys.toSet();

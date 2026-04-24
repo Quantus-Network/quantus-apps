@@ -105,10 +105,7 @@ class _MinerControlsState extends State<MinerControls> {
     if (wormholeKeyPair == null) {
       _log.w('No wormhole keypair - wallet not set up');
       if (mounted) {
-        context.showWarningSnackbar(
-          title: 'Wallet not configured!',
-          message: 'Please set up your inner hash first.',
-        );
+        context.showWarningSnackbar(title: 'Wallet not configured!', message: 'Please set up your inner hash first.');
       }
       return;
     }

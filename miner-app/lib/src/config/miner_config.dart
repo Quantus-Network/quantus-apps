@@ -124,8 +124,7 @@ class MinerConfig {
       displayName: 'Planck Testnet',
       description: 'Planck testnet',
       rpcUrl: 'https://a1-planck.quantus.cat',
-      subsquidUrl:
-          'http://127.0.0.1:4000/graphql', // Local Subsquid for testing
+      subsquidUrl: 'http://127.0.0.1:4000/graphql', // Local Subsquid for testing
       isDefault: true,
     ),
   ];
