@@ -75,7 +75,7 @@ class MigrationService {
     return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   }
 
-  /// Debug method to create test old accounts
+  /// Debug method to test migration
   Future<void> createDebugOldAccounts() async {
     final debugAccounts = [
       const Account(
