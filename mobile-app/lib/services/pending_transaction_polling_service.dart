@@ -34,7 +34,13 @@ class PendingTransactionPollingService {
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         return;
       }
-      _search(pendingTx, isReversible: isReversible, blockHeightAfter: blockHeightAfter, limit: limit, onFound: onFound);
+      _search(
+        pendingTx,
+        isReversible: isReversible,
+        blockHeightAfter: blockHeightAfter,
+        limit: limit,
+        onFound: onFound,
+      );
     });
 
     _timers[pendingTx.id] = timer;
@@ -67,11 +73,7 @@ class PendingTransactionPollingService {
         print('[PendingTxPoller] Found matching tx for ${pendingTx.id}');
         stopPolling(pendingTx.id);
 
-        triggerSilentHistoryRefresh(
-          _ref,
-          affectedAccountIds: {pendingTx.from, pendingTx.to},
-          newTransaction: result,
-        );
+        triggerSilentHistoryRefresh(_ref, affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
 
         _ref
             .read(pendingTransactionsProvider.notifier)
@@ -101,11 +103,7 @@ final pendingTransactionPollingServiceProvider = Provider<PendingTransactionPoll
   return service;
 });
 
-void triggerSilentHistoryRefresh(
-  Ref ref, {
-  required Set<String> affectedAccountIds,
-  TransactionEvent? newTransaction,
-}) {
+void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountIds, TransactionEvent? newTransaction}) {
   try {
     final mainController = ref.read(paginationControllerProvider.notifier);
     if (newTransaction != null) mainController.addTransactionToHistory(newTransaction);
