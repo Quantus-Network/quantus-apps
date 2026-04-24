@@ -1,9 +1,9 @@
 import 'package:convert/convert.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:ss58/ss58.dart';
 
 import '../extensions/address_extension.dart';
 import '../rust/api/crypto.dart' as crypto;
-import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// HD derivation `change` values for wormhole addresses.
 ///
@@ -95,7 +95,6 @@ class HdWalletService {
 
   /// Compute the nullifier for a wormhole transfer.
   ///
-  /// TODO(wormhole-rebuild): wire up via new Rust FFI. Throws until then so
   /// withdrawal code paths fail loudly instead of silently misbehaving.
   String computeNullifier({required String secretHex, required BigInt transferCount}) =>
       throw UnimplementedError('HdWalletService.computeNullifier not yet wired — rebuild in progress');
