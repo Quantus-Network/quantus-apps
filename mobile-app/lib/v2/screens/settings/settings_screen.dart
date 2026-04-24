@@ -2,22 +2,22 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
-import 'package:resonance_network_wallet/v2/components/glass_button.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
+import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:resonance_network_wallet/v2/components/glass_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/reset_confirmation_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/select_wallet_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:resonance_network_wallet/generated/version.g.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreenV2 extends ConsumerStatefulWidget {
@@ -200,7 +200,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mining Rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                Text('Testnet Rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
                 const SizedBox(height: 4),
                 subtitle,
               ],

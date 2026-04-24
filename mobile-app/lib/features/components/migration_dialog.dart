@@ -56,7 +56,7 @@ class _MigrationDialogState extends State<MigrationDialog> {
           Text('Migrate your accounts', style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
           const SizedBox(height: 24),
           Text(
-            'We\'ll record your old\u2011chain mining rewards and actions to determine '
+            'We\'ll record your old\u2011chain testnet rewards and actions to determine '
             'rewards on the new Quantus Testnet.\n\n'
             'Balances do not migrate.\n\n'
             'Use the new testnet faucet for funds.',
