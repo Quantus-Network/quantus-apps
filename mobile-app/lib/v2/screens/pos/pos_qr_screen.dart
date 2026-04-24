@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/services/pending_receive_tracker.dart';
+import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
 import 'package:resonance_network_wallet/v2/components/glass_button.dart';
@@ -59,14 +60,19 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         final received = BigInt.tryParse(tx.amount);
         if (expectedPlanck != null && received == expectedPlanck) {
           _timeoutTimer?.cancel();
-          ref
-              .read(pendingReceiveTrackerProvider)
-              .trackIncomingTransfer(
-                from: tx.from,
-                to: active.account.accountId,
-                amount: expectedPlanck,
-                extrinsicHash: tx.txHash,
-              );
+          final pendingTx = PendingTransactionEvent(
+            tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
+            from: tx.from,
+            to: active.account.accountId,
+            amount: expectedPlanck,
+            timestamp: DateTime.now(),
+            transactionState: TransactionState.pending,
+            isReversible: false,
+            fee: null,
+            extrinsicHash: tx.txHash,
+          );
+          ref.read(pendingTransactionsProvider.notifier).add(pendingTx);
+          ref.read(pendingTransactionPollingServiceProvider).startPolling(pendingTx);
           if (mounted) setState(() => _paidTransfer = tx);
         }
       },

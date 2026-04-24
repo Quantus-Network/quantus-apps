@@ -6,21 +6,17 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
-  final Map<String, Timer> _broadcastSearchTimers = {};
-  static const Duration _searchInterval = Duration(seconds: 5);
+  final PendingTransactionPollingService _poller;
 
-  TransactionSubmissionService(this._ref);
+  TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
 
   Future<void> balanceTransfer(
     Account account,
@@ -193,7 +189,7 @@ class TransactionSubmissionService {
       print('updating tx ${pendingTx.amount} to $newState');
       _ref.read(pendingTransactionsProvider.notifier).updateState(pendingTx.id, newState, error: pendingTx.error);
 
-      _startSearchingForBroadcastTransaction(pendingTx);
+      _startPollingForTransaction(pendingTx);
     } catch (e, stackTrace) {
       print('Failed submitting transaction attempt $attempt: $e');
 
@@ -219,88 +215,19 @@ class TransactionSubmissionService {
     }
   }
 
-  /// Starts searching for a broadcast transaction in blockchain history
-  void _startSearchingForBroadcastTransaction(PendingTransactionEvent pendingTx) {
-    print('Starting broadcast search for transaction: ${pendingTx.id}');
-
+  void _startPollingForTransaction(PendingTransactionEvent pendingTx) {
     if (pendingTx.blockNumber == 0) {
-      print(
-        'No block number available for transaction ${pendingTx.id},'
-        ' cannot search',
-      );
+      print('No block number available for transaction ${pendingTx.id}, cannot search');
       return;
     }
 
-    // Cancel any existing timer for this transaction
-    _stopSearchingForBroadcastTransaction(pendingTx.id);
-
-    const timeoutDuration = Duration(minutes: 5);
-    final startTime = DateTime.now();
-
-    // Start periodic search
-    final timer = Timer.periodic(_searchInterval, (_) {
-      if (DateTime.now().difference(startTime) > timeoutDuration) {
-        print(
-          'Search timed out for transaction: ${pendingTx.id} - removing from pending but not marking as failed since we cannot verify failure on-chain',
-        );
-
-        _stopSearchingForBroadcastTransaction(pendingTx.id);
-        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-        return;
-      }
-
-      _searchForBroadcastTransaction(pendingTx);
-    });
-
-    _broadcastSearchTimers[pendingTx.id] = timer;
-
-    // Also search immediately
-    _searchForBroadcastTransaction(pendingTx);
-  }
-
-  /// Stops searching for a broadcast transaction
-  void _stopSearchingForBroadcastTransaction(String transactionId) {
-    final timer = _broadcastSearchTimers.remove(transactionId);
-    if (timer != null) {
-      timer.cancel();
-      print('Stopped broadcast search for transaction: $transactionId');
-    }
-  }
-
-  /// Searches for a broadcast transaction in blockchain history
-  Future<void> _searchForBroadcastTransaction(PendingTransactionEvent pendingTx) async {
-    try {
-      print(
-        'Searching blockchain history for broadcast transaction:'
-        ' ${pendingTx.id}',
-      );
-
-      final historyService = _ref.read(chainHistoryServiceProvider);
-      final result = await historyService.searchForPendingTransaction(
-        from: pendingTx.from,
-        to: pendingTx.to,
-        amount: pendingTx.amount,
-        isReversible: pendingTx.isReversible,
-        blockHeightAfter: pendingTx.blockNumber,
-        limit: 5,
-      );
-
-      if (result != null) {
-        print('Found matching transaction in blockchain for ${pendingTx.id}!');
-
-        // Stop searching since we found it
-        _stopSearchingForBroadcastTransaction(pendingTx.id);
-
-        // Trigger silent refresh of history to include the new transaction
-        _triggerSilentHistoryRefresh(affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
-
-        // Update to inHistory state
-        _ref
-            .read(pendingTransactionsProvider.notifier)
-            .updateState(pendingTx.id, TransactionState.inHistory, blockHash: result.blockHash);
-
+    _poller.startPolling(
+      pendingTx,
+      isReversible: pendingTx.isReversible,
+      blockHeightAfter: pendingTx.blockNumber,
+      limit: 5,
+      onFound: (result) {
         final account = _ref.read(accountsProvider.notifier).getAccountWithId(pendingTx.from);
-
         if (result is TransferEvent) {
           _ref.read(notificationProvider.notifier).addTokenSent(account: account, transactionData: result);
         } else if (result is ReversibleTransferEvent) {
@@ -308,73 +235,11 @@ class TransactionSubmissionService {
               .read(notificationProvider.notifier)
               .addReversibleTransactionReminder(account: account, transactionData: result);
         }
-
-        // Remove immediately to prevent duplication/glitches as we've already added it to history
-        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-
-        // Refresh balance since transaction was completed
-        _ref.invalidate(balanceProviderFamily);
-
-        print('Successfully completed broadcast transaction: ${pendingTx.id}');
-      }
-    } catch (e, stackTrace) {
-      print('Error searching for broadcast transaction ${pendingTx.id}: $e');
-      print('Stack trace: $stackTrace');
-    }
+      },
+    );
   }
 
-  /// Triggers silent refresh on relevant history providers
-  void _triggerSilentHistoryRefresh({Set<String>? affectedAccountIds, TransactionEvent? newTransaction}) {
-    print('Triggering silent history refresh for found transaction');
-
-    try {
-      // Trigger silent refresh on the main pagination controller (all accounts)
-      final mainController = _ref.read(paginationControllerProvider.notifier);
-      if (newTransaction != null) {
-        mainController.addTransactionToHistory(newTransaction);
-      }
-      mainController.silentRefresh();
-
-      final targets = <String>{...?(affectedAccountIds)};
-      final active = _ref.read(activeAccountProvider).value;
-      if (active != null) {
-        targets.add(active.account.accountId);
-      }
-
-      for (final accountId in targets) {
-        final controller = _ref.read(
-          filteredPaginationControllerProviderFamily(AccountIdListCache.get([accountId])).notifier,
-        );
-        if (newTransaction != null) {
-          controller.addTransactionToHistory(newTransaction);
-        }
-        controller.silentRefresh();
-      }
-
-      // Trigger silent refresh on all accounts filtered pagination so the tx history has the data without manual refresh
-      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      final allAccountsController = _ref.read(
-        filteredPaginationControllerProviderFamily(AccountIdListCache.get(accountIds)).notifier,
-      );
-      if (newTransaction != null) {
-        allAccountsController.addTransactionToHistory(newTransaction);
-      }
-      allAccountsController.silentRefresh();
-
-      print('Silent history refresh triggered successfully');
-    } catch (e, stackTrace) {
-      print('Error triggering silent history refresh: $e');
-      print('Stack trace: $stackTrace');
-    }
-  }
-
-  /// Cleanup method to stop all searches
-  void dispose() {
-    for (final timer in _broadcastSearchTimers.values) {
-      timer.cancel();
-    }
-    _broadcastSearchTimers.clear();
-  }
+  void dispose() => _poller.dispose();
 }
 
 // Provider for the service
