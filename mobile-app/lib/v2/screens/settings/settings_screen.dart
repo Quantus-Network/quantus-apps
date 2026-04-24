@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -14,7 +13,6 @@ import 'package:resonance_network_wallet/providers/notification_config_provider.
 import 'package:resonance_network_wallet/v2/screens/settings/testnet_rewards_screen.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -162,10 +160,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
               onTap: () => launchUrl(Uri.parse(AppConstants.termsOfServiceUrl)),
             ),
           ]),
-          if (kDebugMode) ...[
-            const SizedBox(height: 40),
-            _debugMigrationButton(colors, text),
-          ],
           const SizedBox(height: 40),
           _resetButton(colors, text),
           const SizedBox(height: 24),
@@ -318,22 +312,6 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Divider(color: colors.separator, height: 1),
-    );
-  }
-
-  Widget _debugMigrationButton(AppColorsV2 colors, AppTextTheme text) {
-    return GlassButton.simple(
-      label: 'Debug: Create Old Accounts',
-      variant: ButtonVariant.secondary,
-      onTap: () async {
-        try {
-          final migrationService = MigrationService(_settingsService, HdWalletService());
-          await migrationService.createDebugOldAccounts();
-          if (mounted) context.showSuccessToaster(message: 'Created debug old accounts. Restart app to test migration.');
-        } catch (e) {
-          if (mounted) context.showErrorToaster(message: 'Failed: $e');
-        }
-      },
     );
   }
 
