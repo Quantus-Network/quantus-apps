@@ -122,8 +122,8 @@ app.*.symbols
 .DS_Store
 /.idea
 /android/app/.cxx
+/mobile-app/android/app/.cxx/
 /.dart_tool
-/mobile-app/android/app
 .vscode/launch.json
 /mobile-app/android/.idea
 /mobile-app/.idea
@@ -132,3 +132,4 @@ app.*.symbols
 mobile-app/.env
 /rust-transaction-parser/target
 /.cursor
+mobile-app/android/app/google-services.json
