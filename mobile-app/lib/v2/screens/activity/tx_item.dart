@@ -32,8 +32,11 @@ class TxItemData {
     final isHighlighted = isPending || isScheduled;
 
     String getLabel() {
-      if (isPending) {
+      if (isPending && isSend) {
         return 'Sending';
+      }
+      if (isPending && !isSend) {
+        return 'Receiving';
       }
       if (isScheduled && isSend) {
         return 'Pending';

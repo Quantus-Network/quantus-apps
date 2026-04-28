@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/utils/env_utils.dart';
@@ -27,6 +28,10 @@ class MiningRewardsService {
   };
 
   Set<String>? _cachedAccountIds;
+
+  void clearCachedRewardsData() {
+    _cachedAccountIds = null;
+  }
 
   Future<MiningRewardsData> getMiningRewards(List<String> currentAccountIds) async {
     print('[MiningRewards] Current account IDs: $currentAccountIds');

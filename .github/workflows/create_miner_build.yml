@@ -14,7 +14,7 @@ permissions:
 jobs:
   build-macos:
     name: Build macOS App
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -43,83 +43,55 @@ jobs:
           GIT_TERMINAL_PROMPT: 0
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure Xcode project for manual signing
+      - name: Configure Xcode project for Developer ID signing
         run: |
           cd miner-app/macos/Runner.xcodeproj
           perl -i -pe '
             if (/33CC10FD2044A3C60003C045.*Release/../name = Release;/) {
               s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/;
-              s/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/;
-              s/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";/;
-              s/DEVELOPMENT_TEAM = 8BRRAHLVW5;/DEVELOPMENT_TEAM = "";/;
+              s/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "Developer ID Application";/;
+              s/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";/;
             }
           ' project.pbxproj
 
-      - name: Build macOS release (unsigned, will re-sign after)
-        run: |
-          flutter build macos --release
+      - name: Build macOS release (signed with Developer ID)
+        run: flutter build macos --release
         working-directory: ./miner-app
 
-      - name: Re-sign app and frameworks with Developer ID
+      - name: Re-sign frameworks with Developer ID and hardened runtime
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           APP_PATH="Quantus Miner.app"
           CERT_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk '{print $2}')
           if [ -z "$CERT_IDENTITY" ]; then
             echo "Error: Developer ID Application certificate not found in keychain"
-            echo "Available identities:"
             security find-identity -v -p codesigning
             exit 1
           fi
-          echo "Using certificate identity: $CERT_IDENTITY"
+          echo "Using certificate: $CERT_IDENTITY"
           find "$APP_PATH/Contents/Frameworks" -name "*.framework" -print0 | while IFS= read -r -d '' framework; do
             echo "Signing framework: $framework"
-            codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-              --options runtime \
-              --timestamp \
-              "$framework"
+            codesign --force --sign "$CERT_IDENTITY" --options runtime --timestamp "$framework"
           done
-          find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -perm +111 \) -print0 | while IFS= read -r -d '' binary; do
-            if [ -f "$binary" ] && ! [[ "$binary" =~ \.framework ]]; then
-              echo "Signing binary: $binary"
-              codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-                --options runtime \
-                --timestamp \
-                "$binary"
-            fi
-          done
-          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
-          if [ ! -f "$ENTITLEMENTS_PATH" ]; then
-            echo "Error: Entitlements file not found at $ENTITLEMENTS_PATH"
-            exit 1
-          fi
-          EXECUTABLE="$APP_PATH/Contents/MacOS/Quantus Miner"
-          if [ -f "$EXECUTABLE" ]; then
-            echo "Signing main executable: $EXECUTABLE"
-            codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-              --options runtime \
-              --timestamp \
-              --entitlements "$ENTITLEMENTS_PATH" \
-              "$EXECUTABLE"
-          fi
-          echo "Signing app bundle: $APP_PATH"
-          codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
+          echo "Re-signing app bundle (preserving Xcode entitlements)..."
+          codesign --force --sign "$CERT_IDENTITY" \
             --options runtime \
             --timestamp \
-            --entitlements "$ENTITLEMENTS_PATH" \
+            --preserve-metadata=entitlements \
+            "$APP_PATH/Contents/MacOS/Quantus Miner"
+          codesign --force --sign "$CERT_IDENTITY" \
+            --options runtime \
+            --timestamp \
+            --preserve-metadata=entitlements \
             "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           if [ $? -ne 0 ]; then
             echo "Error: Code signing verification failed"
             exit 1
           fi
-          
-          # Check for hardened runtime
-          codesign -d --entitlements - "$APP_PATH" | grep -q "com.apple.security.cs.allow-unsigned-executable-memory" || echo "Warning: Hardened runtime entitlements may be missing"
+          codesign -d --entitlements - "$APP_PATH"
 
-      # Create a single ZIP that we will both notarize AND ship to users.
-      # This guarantees the shipped bits are exactly what Apple accepted.
-      - name: Create ZIP for notarization and distribution
+      - name: Create ZIP for notarization submission
         run: |
           cd miner-app/build/macos/Build/Products/Release/
           ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
@@ -136,6 +108,15 @@ jobs:
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --wait
+
+      - name: Staple ticket and repackage for distribution
+        run: |
+          cd miner-app/build/macos/Build/Products/Release/
+          xcrun stapler staple "Quantus Miner.app"
+          xcrun stapler validate "Quantus Miner.app"
+          spctl --assess --type execute --verbose "Quantus Miner.app"
+          rm quantus_miner_macos.zip
+          ditto -c -k --keepParent "Quantus Miner.app" quantus_miner_macos.zip
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4

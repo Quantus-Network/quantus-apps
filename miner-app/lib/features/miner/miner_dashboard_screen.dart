@@ -387,7 +387,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         if (constraints.maxWidth > 800) {
           return Row(
             children: [
-              Expanded(child: MinerBalanceCard(currentBlock: _miningStats.currentBlock)),
+              const Expanded(child: MinerBalanceCard()),
               const SizedBox(width: 16),
               Expanded(child: MinerStatsCard(miningStats: _miningStats)),
             ],
@@ -395,7 +395,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
         } else {
           return Column(
             children: [
-              MinerBalanceCard(currentBlock: _miningStats.currentBlock),
+              const MinerBalanceCard(),
               MinerStatsCard(miningStats: _miningStats),
             ],
           );

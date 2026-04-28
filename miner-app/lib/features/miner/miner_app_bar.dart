@@ -24,7 +24,7 @@ class _MinerAppBarState extends State<MinerAppBar> {
         return AlertDialog(
           title: const Text('Logout?'),
           content: const Text(
-            'This will delete your stored rewards address mnemonic, node identity, and the downloaded node binary. You will need to go through the full setup process again.\n\nAre you sure you want to continue?',
+            'This will delete your stored inner hash, node identity, and the downloaded node binary. You will need to go through the full setup process again.\n\nAre you sure you want to continue?',
           ),
           actions: <Widget>[
             TextButton(
@@ -82,7 +82,7 @@ class _MinerAppBarState extends State<MinerAppBar> {
                 children: [
                   Row(
                     children: [
-                      SvgPicture.asset('assets/logo/logo.svg'),
+                      SvgPicture.asset('assets/logo/logo.svg', height: 28),
                       const SizedBox(width: 12),
                       const Text(
                         'Quantus Miner',

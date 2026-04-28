@@ -20,7 +20,8 @@ class _LogsWidgetState extends State<LogsWidget> {
   final List<LogEntry> _logs = [];
   StreamSubscription<LogEntry>? _logsSubscription;
   final ScrollController _scrollController = ScrollController();
-  bool _autoScroll = true;
+  bool _autoScroll = false; // Default to false so users can investigate logs
+  bool _isUserScrolling = false;
 
   @override
   void initState() {
@@ -51,8 +52,8 @@ class _LogsWidgetState extends State<LogsWidget> {
             }
           });
 
-          // Auto-scroll to bottom if enabled
-          if (_autoScroll) {
+          // Auto-scroll to bottom if enabled and not user-scrolling
+          if (_autoScroll && !_isUserScrolling) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _scrollToBottom();
             });
@@ -64,11 +65,8 @@ class _LogsWidgetState extends State<LogsWidget> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      // Use jumpTo instead of animateTo to prevent jittering
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
   }
 
@@ -142,57 +140,78 @@ class _LogsWidgetState extends State<LogsWidget> {
                         style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                       ),
                     )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      itemCount: _logs.length,
-                      itemBuilder: (context, index) {
-                        final log = _logs[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Timestamp
-                              SizedBox(
-                                width: 80,
-                                child: Text(
-                                  log.timestamp.toIso8601String().substring(11, 19),
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
-                                ),
-                              ),
-
-                              // Source indicator
-                              Container(
-                                width: 12,
-                                height: 12,
-                                margin: const EdgeInsets.only(right: 8, top: 2),
-                                decoration: BoxDecoration(color: _getLogColor(log.source), shape: BoxShape.circle),
-                              ),
-
-                              // Source label
-                              SizedBox(
-                                width: 100,
-                                child: Text(
-                                  '[${log.source}]',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _getLogColor(log.source),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-
-                              // Log message
-                              Expanded(
-                                child: SelectableText(
-                                  log.message,
-                                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace', height: 1.2),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        // Track when user is actively scrolling
+                        if (notification is ScrollStartNotification) {
+                          _isUserScrolling = true;
+                        } else if (notification is ScrollEndNotification) {
+                          _isUserScrolling = false;
+                          // Check if user scrolled to bottom - re-enable auto-scroll
+                          if (_scrollController.hasClients) {
+                            final isAtBottom =
+                                _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50;
+                            if (isAtBottom && !_autoScroll) {
+                              // User scrolled to bottom, could re-enable auto-scroll
+                            }
+                          }
+                        }
+                        return false;
                       },
+                      child: SelectionArea(
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _logs.length,
+                          itemBuilder: (context, index) {
+                            final log = _logs[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Timestamp
+                                  SizedBox(
+                                    width: 80,
+                                    child: Text(
+                                      log.timestamp.toIso8601String().substring(11, 19),
+                                      style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
+                                    ),
+                                  ),
+
+                                  // Source indicator
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    margin: const EdgeInsets.only(right: 8, top: 2),
+                                    decoration: BoxDecoration(color: _getLogColor(log.source), shape: BoxShape.circle),
+                                  ),
+
+                                  // Source label
+                                  SizedBox(
+                                    width: 100,
+                                    child: Text(
+                                      '[${log.source}]',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _getLogColor(log.source),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Log message
+                                  Expanded(
+                                    child: Text(
+                                      log.message,
+                                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace', height: 1.2),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
             ),
           ),

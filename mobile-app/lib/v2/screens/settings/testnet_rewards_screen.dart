@@ -31,7 +31,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Failed to load mining rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+              Text('Failed to load testnet rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 8),
               Text('Please check your connection', style: text.detail?.copyWith(color: colors.textTertiary)),
               const SizedBox(height: 20),
