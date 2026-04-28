@@ -26,11 +26,18 @@ class PendingTransactionsNotifier extends StateNotifier<List<PendingTransactionE
     DateTime? scheduledAtTime,
     String? blockHash,
     String? error,
+    String? extrinsicHash,
   }) {
     state = [
       for (final tx in state)
         if (tx.id == id)
-          tx.copyWith(transactionState: newState, blockHash: blockHash, scheduledAtTime: scheduledAtTime, error: error)
+          tx.copyWith(
+            transactionState: newState,
+            blockHash: blockHash,
+            scheduledAtTime: scheduledAtTime,
+            error: error,
+            extrinsicHash: extrinsicHash,
+          )
         else
           tx,
     ];

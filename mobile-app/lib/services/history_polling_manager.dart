@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/account_stats_polling_service.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 
@@ -14,13 +13,11 @@ class HistoryPollingManager {
   final Ref _ref;
   late final GlobalHistoryPollingService _globalPoller;
   late final ReversibleTransferMonitoringService _reversibleMonitor;
-  late final AccountStatsPollingService _accountStatsPoller;
   bool _initialized = false;
 
   HistoryPollingManager(this._ref) {
     _globalPoller = _ref.read(globalHistoryPollingServiceProvider);
     _reversibleMonitor = _ref.read(reversibleTransferMonitoringServiceProvider);
-    _accountStatsPoller = _ref.read(accountStatsPollingServiceProvider);
   }
 
   /// Initialize all polling services.
@@ -30,7 +27,6 @@ class HistoryPollingManager {
     if (_initialized) return;
     _globalPoller;
     _reversibleMonitor;
-    _accountStatsPoller;
     print('History polling manager initialized');
     _initialized = true;
   }
@@ -38,22 +34,14 @@ class HistoryPollingManager {
   /// Pause all polling (useful when app goes to background)
   void pausePolling() {
     _globalPoller.pausePolling();
-    _accountStatsPoller.pausePolling();
-    // Transaction tracker continues in background for pending transactions
   }
 
-  /// Resume all polling (useful when app comes to foreground)
   void resumePolling() {
     _globalPoller.resumePolling();
-    _accountStatsPoller.resumePolling();
-    // Transaction tracker automatically resumes
   }
 
-  /// Stop all polling (useful when user logs out)
   void stopPolling() {
     _globalPoller.stopPolling();
-    _accountStatsPoller.stopPolling();
-    // Transaction tracker automatically stops when no accounts
   }
 
   /// Trigger a manual refresh of all data // This is not called from anywhere!
@@ -65,7 +53,6 @@ class HistoryPollingManager {
 
     await _globalPoller.triggerManualRefresh();
     await _reversibleMonitor.forceCheckAllMonitoredTransfers();
-    await _accountStatsPoller.triggerManualRefresh();
   }
 
   /// Trigger a silent refresh of all data (no loading indicators)
@@ -100,7 +87,6 @@ class HistoryPollingManager {
   void dispose() {
     _globalPoller.dispose();
     _reversibleMonitor.dispose();
-    _accountStatsPoller.dispose();
   }
 }
 

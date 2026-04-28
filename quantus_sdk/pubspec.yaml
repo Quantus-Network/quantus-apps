@@ -37,6 +37,10 @@ dependencies:
   
   # UI feedback
   flash: # Version managed by melos.yaml
+
+  # Filesystem helpers (used by circuit + wormhole address persistence)
+  path: # Version managed by melos.yaml
+  path_provider: # Version managed by melos.yaml
   
   # Git dependencies (can't be managed by melos dependency_overrides)
   human_checksum:

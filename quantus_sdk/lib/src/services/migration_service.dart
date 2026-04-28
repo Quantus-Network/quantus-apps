@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/display_account.dart';
 import 'package:quantus_sdk/src/rust/api/crypto.dart' as crypto;
 import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/services/settings_service.dart';
@@ -47,7 +48,6 @@ class MigrationService {
 
   /// Perform the migration by creating new accounts and clearing old data
   Future<void> performMigration(List<MigrationAccountData> migrationData) async {
-    // Create new accounts with the same indices and names
     List<Account> newAccounts = [];
     for (final data in migrationData) {
       print(
@@ -64,10 +64,10 @@ class MigrationService {
       newAccounts.add(newAccount);
     }
 
-    // override any existing accounts wih new accounts
     await _settingsService.saveAccounts(newAccounts);
-
-    // Clear old accounts data
+    if (newAccounts.isNotEmpty) {
+      await _settingsService.setActiveAccount(RegularAccount(newAccounts.first));
+    }
     await _settingsService.clearOldAccounts();
   }
 
@@ -75,7 +75,7 @@ class MigrationService {
     return bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
   }
 
-  /// Debug method to create test old accounts
+  /// Debug method to test migration
   Future<void> createDebugOldAccounts() async {
     final debugAccounts = [
       const Account(

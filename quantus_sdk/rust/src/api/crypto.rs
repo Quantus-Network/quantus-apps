@@ -1,5 +1,5 @@
 use nam_tiny_hderive::bip32::ExtendedPrivKey;
-use qp_poseidon_core::hash_bytes;
+use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 use qp_rusty_crystals_dilithium::ml_dsa_87;
 use qp_rusty_crystals_hdwallet::{derive_key_from_mnemonic, derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
@@ -71,6 +71,7 @@ pub fn generate_derived_keypair(mnemonic_str: String, path: &str) -> Result<Keyp
 pub struct WormholeResult {
     pub address: String,
     pub first_hash: Vec<u8>,
+    pub secret: Vec<u8>,
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -80,7 +81,28 @@ pub fn derive_wormhole(mnemonic_str: String, path: &str) -> Result<WormholeResul
     Ok(WormholeResult {
         address: account.to_ss58check(),
         first_hash: pair.first_hash.to_vec(),
+        secret: pair.secret.to_vec(),
     })
+}
+
+/// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
+///
+/// Mirrors how the chain and ZK circuit derive the address from the preimage:
+/// - Convert 32 bytes → 4 Poseidon field elements (8 bytes each)
+/// - Hash once without padding
+#[flutter_rust_bridge::frb(sync)]
+pub fn first_hash_to_address(first_hash_hex: String) -> Result<String, String> {
+    let hex_str = first_hash_hex.trim_start_matches("0x");
+    let first_hash_bytes: [u8; 32] = hex::decode(hex_str)
+        .map_err(|e| format!("Invalid hex string: {}", e))?
+        .try_into()
+        .map_err(|_| "First hash must be exactly 32 bytes".to_string())?;
+
+    let first_hash_felts: [_; 4] = bytes_to_digest(&first_hash_bytes);
+    let address_bytes = hash_to_bytes(&first_hash_felts);
+
+    let account = AccountId32::from(address_bytes);
+    Ok(account.to_ss58check())
 }
 
 #[flutter_rust_bridge::frb(sync)]

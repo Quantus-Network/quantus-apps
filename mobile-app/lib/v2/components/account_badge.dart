@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -11,19 +12,10 @@ class AccountBadge extends StatelessWidget {
 
   const AccountBadge({super.key, required this.account, this.isActive = false, this.size = 40, this.textStyle});
 
-  String getAccountBadgeLabel(Account account) {
-    final splittedName = account.name.split(' ');
-    if (splittedName.length == 1) {
-      return splittedName[0][0];
-    }
-
-    return '${splittedName[0][0]}${splittedName[1][0]}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final label = getAccountBadgeLabel(account);
+    final label = getAccountBadgeInitials(account.name, separator: ' ');
     final effectiveTextStyle = textStyle ?? context.themeText.transactionDetailRowValue?.copyWith(letterSpacing: -0.25);
 
     return Container(

@@ -21,6 +21,20 @@ abstract final class SettingsTappableRowUtils {
   }
 
   static const Widget titleGap = SizedBox(height: 2);
+
+  static Widget titleAndSubtitle(String title, String subtitle, AppTextTheme text, AppColorsV2 colors) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title, style: SettingsTappableRowUtils.title(text, colors)),
+          SettingsTappableRowUtils.titleGap,
+          Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors)),
+        ],
+      ),
+    );
+  }
 }
 
 /// Title + subtitle cell with optional [leading], custom styles, and trailing control.
@@ -39,7 +53,6 @@ class SettingsTappableRow extends StatelessWidget {
 
   final String title;
   final Color? titleColor;
-  
   final String subtitle;
   final Color? subtitleColor;
 
@@ -58,17 +71,7 @@ class SettingsTappableRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (leading != null) ...[leading!, const SizedBox(width: 12)],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(title, style: SettingsTappableRowUtils.title(text, colors, color: titleColor)),
-              SettingsTappableRowUtils.titleGap,
-              Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors, color: subtitleColor)),
-            ],
-          ),
-        ),
+        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text, colors),
         trailing,
       ],
     );
@@ -107,17 +110,7 @@ class SettingsSwitchRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(title, style: SettingsTappableRowUtils.title(text, colors)),
-              SettingsTappableRowUtils.titleGap,
-              Text(subtitle, style: SettingsTappableRowUtils.subtitle(text, colors)),
-            ],
-          ),
-        ),
+        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text, colors),
         CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
     );
