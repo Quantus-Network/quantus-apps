@@ -63,7 +63,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1266429595;
+  int get rustContentHash => 910560431;
 
   static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
     stem: 'rust_lib_resonance_network_wallet',
@@ -86,6 +86,8 @@ abstract class RustLibApi extends BaseApi {
   WormholeResult crateApiCryptoDeriveWormhole({required String mnemonicStr, required String path});
 
   List<String> crateApiUrEncodeUr({required List<int> data});
+
+  String crateApiCryptoFirstHashToAddress({required String firstHashHex});
 
   Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path});
 
@@ -279,6 +281,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiUrEncodeUrConstMeta => const TaskConstMeta(debugName: 'encode_ur', argNames: ['data']);
 
   @override
+  String crateApiCryptoFirstHashToAddress({required String firstHashHex}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(firstHashHex, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+        },
+        codec: SseCodec(decodeSuccessData: sse_decode_String, decodeErrorData: sse_decode_String),
+        constMeta: kCrateApiCryptoFirstHashToAddressConstMeta,
+        argValues: [firstHashHex],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiCryptoFirstHashToAddressConstMeta =>
+      const TaskConstMeta(debugName: 'first_hash_to_address', argNames: ['firstHashHex']);
+
+  @override
   Keypair crateApiCryptoGenerateDerivedKeypair({required String mnemonicStr, required String path}) {
     return handler.executeSync(
       SyncTask(
@@ -286,7 +308,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_keypair,
@@ -310,7 +332,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(mnemonicStr, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
         constMeta: kCrateApiCryptoGenerateKeypairConstMeta,
@@ -330,7 +352,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(seed, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_keypair, decodeErrorData: null),
         constMeta: kCrateApiCryptoGenerateKeypairFromSeedConstMeta,
@@ -349,7 +371,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11, port: port_);
+          pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12, port: port_);
         },
         codec: SseCodec(decodeSuccessData: sse_decode_unit, decodeErrorData: null),
         constMeta: kCrateApiCryptoInitAppConstMeta,
@@ -368,7 +390,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_String(urParts, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_bool, decodeErrorData: null),
         constMeta: kCrateApiUrIsCompleteUrConstMeta,
@@ -387,7 +409,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
         constMeta: kCrateApiCryptoPublicKeyBytesConstMeta,
@@ -406,7 +428,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
         constMeta: kCrateApiCryptoSecretKeyBytesConstMeta,
@@ -426,7 +448,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_16(prefix, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_unit, decodeErrorData: null),
         constMeta: kCrateApiCryptoSetDefaultSs58PrefixConstMeta,
@@ -448,7 +470,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
         constMeta: kCrateApiCryptoSignMessageConstMeta,
@@ -474,7 +496,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_opt_u_8_array_32(entropy, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
         constMeta: kCrateApiCryptoSignMessageWithPubkeyConstMeta,
@@ -493,7 +515,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_usize, decodeErrorData: null),
         constMeta: kCrateApiCryptoSignatureBytesConstMeta,
@@ -513,7 +535,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(s, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_list_prim_u_8_strict, decodeErrorData: null),
         constMeta: kCrateApiCryptoSs58ToAccountIdConstMeta,
@@ -533,7 +555,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_box_autoadd_keypair(obj, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_String, decodeErrorData: null),
         constMeta: kCrateApiCryptoToAccountIdConstMeta,
@@ -559,7 +581,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_box_autoadd_keypair(keypair, serializer);
           sse_encode_list_prim_u_8_loose(message, serializer);
           sse_encode_list_prim_u_8_loose(signature, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
         },
         codec: SseCodec(decodeSuccessData: sse_decode_bool, decodeErrorData: null),
         constMeta: kCrateApiCryptoVerifyMessageConstMeta,
@@ -679,8 +701,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WormholeResult dco_decode_wormhole_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return WormholeResult(address: dco_decode_String(arr[0]), firstHash: dco_decode_list_prim_u_8_strict(arr[1]));
+    if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return WormholeResult(
+      address: dco_decode_String(arr[0]),
+      firstHash: dco_decode_list_prim_u_8_strict(arr[1]),
+      secret: dco_decode_list_prim_u_8_strict(arr[2]),
+    );
   }
 
   @protected
@@ -798,7 +824,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_address = sse_decode_String(deserializer);
     var var_firstHash = sse_decode_list_prim_u_8_strict(deserializer);
-    return WormholeResult(address: var_address, firstHash: var_firstHash);
+    var var_secret = sse_decode_list_prim_u_8_strict(deserializer);
+    return WormholeResult(address: var_address, firstHash: var_firstHash, secret: var_secret);
   }
 
   @protected
@@ -917,6 +944,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.address, serializer);
     sse_encode_list_prim_u_8_strict(self.firstHash, serializer);
+    sse_encode_list_prim_u_8_strict(self.secret, serializer);
   }
 
   @protected
