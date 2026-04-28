@@ -42,16 +42,19 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   String? _errorMessage;
 
   Future<void> _confirmSend() async {
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to confirm transaction');
-    if (!authed || !mounted) {
-      setState(() => _errorMessage = 'Authentication required to send');
-      return;
-    }
-
     setState(() {
       _submitting = true;
       _errorMessage = null;
     });
+
+    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to confirm transaction');
+    if (!authed || !mounted) {
+      setState(() {
+        _submitting = false;
+        _errorMessage = 'Authentication required to send';
+      });
+      return;
+    }
 
     try {
       final settings = SettingsService();
@@ -67,6 +70,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       RecentAddressesService().addAddress(widget.recipientAddress.trim());
       setState(() {
         _submitting = false;
+        _errorMessage = null;
       });
 
       if (mounted) {
