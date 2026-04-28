@@ -118,7 +118,7 @@ class _ComingSoonBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.sheetBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.buttonDanger),
+        border: Border.all(color: colors.borderButton),
       ),
       alignment: Alignment.center,
       child: Text(
