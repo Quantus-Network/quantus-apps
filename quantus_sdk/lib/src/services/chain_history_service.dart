@@ -5,9 +5,16 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 class OtherTransfersResult {
   final List<TransactionEvent> transfers;
-  final int totalCount;
+  final bool hasMore;
 
-  OtherTransfersResult({required this.transfers, required this.totalCount});
+  const OtherTransfersResult({required this.transfers, required this.hasMore});
+}
+
+class _Page<T> {
+  final List<T> items;
+  final bool hasMore;
+
+  const _Page({required this.items, required this.hasMore});
 }
 
 class ChainHistoryService {
@@ -132,9 +139,6 @@ query AccountEvents($accounts: [String!]!, $limit: Int!, $offset: Int!) {
         hash
       }
     }
-  }
-  accountEventsConnection(orderBy: id_ASC, where: {AND: [{account: {id_in: $accounts}, balanceEvent_isNull: true, scheduledReversibleTransfer_isNull: true}, {OR: [{transfer_isNull: true}, {transfer: {extrinsic_isNull: false}}]}]}) {
-    totalCount
   }
 }
 ''';
@@ -314,6 +318,48 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     }
   }
 
+  int _lookaheadLimit(int limit) => limit + 1;
+
+  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T Function(dynamic event) parseEvent) {
+    if (events == null || events.isEmpty) {
+      return _Page(items: <T>[], hasMore: false);
+    }
+
+    return _Page(items: events.take(limit).map(parseEvent).toList(), hasMore: events.length > limit);
+  }
+
+  ReversibleTransferEvent _parseScheduledTransferEvent(dynamic event) {
+    final eventMap = event as Map<String, dynamic>;
+    final scheduledTransfer = eventMap['scheduledReversibleTransfer'];
+    if (scheduledTransfer == null) {
+      throw Exception('Scheduled account event is missing scheduledReversibleTransfer: ${eventMap['id']}');
+    }
+    return ReversibleTransferEvent.fromJson(scheduledTransfer, status: ReversibleTransferStatus.SCHEDULED);
+  }
+
+  TransactionEvent _parseOtherTransferEvent(dynamic event) {
+    final eventMap = event as Map<String, dynamic>;
+    if (eventMap['cancelledReversibleTransfer'] != null) {
+      return ReversibleTransferEvent.fromJson(
+        eventMap['cancelledReversibleTransfer'],
+        status: ReversibleTransferStatus.CANCELLED,
+      );
+    }
+    if (eventMap['executedReversibleTransfer'] != null) {
+      return ReversibleTransferEvent.fromJson(
+        eventMap['executedReversibleTransfer'],
+        status: ReversibleTransferStatus.EXECUTED,
+      );
+    }
+    if (eventMap['transfer'] != null) {
+      return TransferEvent.fromJson(eventMap['transfer']);
+    }
+    if (eventMap['minerReward'] != null) {
+      return MinerRewardEvent.fromJson(eventMap['minerReward']);
+    }
+    throw Exception('Account event is missing a supported transaction payload: ${eventMap['id']}');
+  }
+
   // Make a graphQL query for specific transaction hashes, get the results back
   // Mostly to check if reversibles have been executed or failed.
   Future<ReversibleTransferEvent?> fetchExecutedTransactionByTxId({required String txId}) async {
@@ -367,11 +413,20 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     int limit = 10,
     int offset = 0,
   }) async {
+    final page = await _fetchScheduledReversibleTransfersPage(accountIds: accountIds, limit: limit, offset: offset);
+    return page.items;
+  }
+
+  Future<_Page<ReversibleTransferEvent>> _fetchScheduledReversibleTransfersPage({
+    required List<String> accountIds,
+    int limit = 10,
+    int offset = 0,
+  }) async {
     final after = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
 
     final Map<String, dynamic> requestBody = {
       'query': _scheduledReversibleTransfersQuery,
-      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset, 'after': after},
+      'variables': {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset, 'after': after},
     };
 
     final jsonBody = jsonEncode(requestBody);
@@ -392,20 +447,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       }
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      if (events == null) {
-        return [];
-      }
-
-      final result = events
-          .map(
-            (event) => ReversibleTransferEvent.fromJson(
-              event['scheduledReversibleTransfer'],
-              status: ReversibleTransferStatus.SCHEDULED,
-            ),
-          )
-          .toList();
-
-      return result;
+      return _pageFromEvents(events, limit, _parseScheduledTransferEvent);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
@@ -422,7 +464,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
   }) async {
     final Map<String, dynamic> requestBody = {
       'query': _accountEventsQuery,
-      'variables': {'accounts': accountIds, 'limit': limit, 'offset': offset},
+      'variables': {'accounts': accountIds, 'limit': _lookaheadLimit(limit), 'offset': offset},
     };
 
     final jsonBody = jsonEncode(requestBody);
@@ -443,37 +485,8 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       }
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      final int totalCount = responseBody['data']?['accountEventsConnection']?['totalCount'] ?? 0;
-
-      if (events == null || totalCount == 0) {
-        return OtherTransfersResult(transfers: [], totalCount: 0);
-      }
-
-      final List<TransactionEvent> otherTransfers = [];
-
-      for (var event in events) {
-        if (event['cancelledReversibleTransfer'] != null) {
-          final cancelledReversibleTransfer = ReversibleTransferEvent.fromJson(
-            event['cancelledReversibleTransfer'],
-            status: ReversibleTransferStatus.CANCELLED,
-          );
-
-          otherTransfers.add(cancelledReversibleTransfer);
-        } else if (event['executedReversibleTransfer'] != null) {
-          final executedReversibleTransfer = ReversibleTransferEvent.fromJson(
-            event['executedReversibleTransfer'],
-            status: ReversibleTransferStatus.EXECUTED,
-          );
-
-          otherTransfers.add(executedReversibleTransfer);
-        } else if (event['transfer'] != null) {
-          otherTransfers.add(TransferEvent.fromJson(event['transfer']));
-        } else if (event['minerReward'] != null) {
-          otherTransfers.add(MinerRewardEvent.fromJson(event['minerReward']));
-        }
-      }
-
-      return OtherTransfersResult(transfers: otherTransfers, totalCount: totalCount);
+      final page = _pageFromEvents(events, limit, _parseOtherTransferEvent);
+      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
@@ -491,22 +504,22 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
   }) async {
     try {
       final results = await Future.wait([
-        fetchScheduledReversibleTransfers(accountIds: accountIds, limit: limit, offset: scheduledOffset),
+        _fetchScheduledReversibleTransfersPage(accountIds: accountIds, limit: limit, offset: scheduledOffset),
         fetchOtherTransfers(accountIds: accountIds, limit: limit, offset: otherOffset),
       ]);
 
-      final scheduledReversibleTransfers = results[0] as List<ReversibleTransferEvent>;
+      final scheduledReversibleTransfers = results[0] as _Page<ReversibleTransferEvent>;
       final otherTransfers = results[1] as OtherTransfersResult;
 
-      final nextOtherOffset = otherOffset + limit;
-      final nextScheduledOffset = scheduledOffset + limit;
+      final nextOtherOffset = otherOffset + otherTransfers.transfers.length;
+      final nextScheduledOffset = scheduledOffset + scheduledReversibleTransfers.items.length;
 
       return SortedTransactionsList(
-        scheduledReversibleTransfers: scheduledReversibleTransfers,
+        scheduledReversibleTransfers: scheduledReversibleTransfers.items,
         otherTransfers: otherTransfers.transfers,
         nextOtherOffset: nextOtherOffset,
         nextScheduledOffset: nextScheduledOffset,
-        hasMore: nextOtherOffset < otherTransfers.totalCount,
+        hasMore: scheduledReversibleTransfers.hasMore || otherTransfers.hasMore,
       );
     } catch (e, stackTrace) {
       print('Error fetching all transaction types: $e');
