@@ -187,8 +187,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         balanceAsync.when(
           data: (balance) {
-            final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance);
-            final usdFormatted = isBalanceHidden ? '-----' : '\$${_fmt.formatBalance(balance)}';
+            final formatted = isBalanceHidden ? '-----' : _fmt.formatBalance(balance, maxDecimals: 2);
+            final usdFormatted = isBalanceHidden ? '-----' : '\$${_fmt.formatBalance(balance, maxDecimals: 2)}';
             return Column(
               children: [
                 Stack(

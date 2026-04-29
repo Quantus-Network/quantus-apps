@@ -14,7 +14,7 @@ class NumberFormattingService {
   /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4)
   String formatBalance(
     BigInt balance, {
-    int maxDecimals = 2,
+    int maxDecimals = 4,
     bool addThousandsSeparators = true,
     bool addSymbol = false,
   }) {
