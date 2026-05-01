@@ -144,6 +144,7 @@ class NodeProcessManager extends BaseProcessManager {
       // Chain selection
       if (config.chainId == 'dev') '--dev' else ...['--chain', config.chainId],
       '--port', config.p2pPort.toString(),
+      '--no-mdns',
       '--prometheus-port', config.prometheusPort.toString(),
       '--experimental-rpc-endpoint',
       'listen-addr=${MinerConfig.localhost}:${config.rpcPort},methods=unsafe,cors=all',
