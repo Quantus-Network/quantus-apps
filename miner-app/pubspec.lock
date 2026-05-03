@@ -499,8 +499,8 @@ packages:
     dependency: transitive
     description:
       path: dart
-      ref: "v2.0.1"
-      resolved-ref: "57ac13fd7f92afe8e89da30b94fc69fd68125f6f"
+      ref: "v2.2.0"
+      resolved-ref: cd1beb73c12e574dc6f6ac9a4cd6896d3603b62b
       url: "https://github.com/Quantus-Network/qp-human-checkphrase.git"
     source: git
     version: "0.1.0"

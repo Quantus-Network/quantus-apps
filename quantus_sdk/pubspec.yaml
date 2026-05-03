@@ -46,7 +46,7 @@ dependencies:
   human_checksum:
     git:
       url: https://github.com/Quantus-Network/qp-human-checkphrase.git
-      ref: v2.0.1
+      ref: v2.2.0
       path: dart
 
 # Generate Polkadart bindings
