@@ -181,7 +181,10 @@ Widget buildTxItem(
                 children: [
                   Text(
                     formattedAmount,
-                    style: text.paragraph?.copyWith(color: data.amountColor, fontFamily: AppTextTheme.fontFamilySecondary),
+                    style: text.paragraph?.copyWith(
+                      color: data.amountColor,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(

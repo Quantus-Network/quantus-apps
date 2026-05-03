@@ -1,17 +1,21 @@
-// Keep for potential future use (grouping)
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/quantus_sdk.dart'; // For debugPrint
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 class NumberFormattingService {
   static const int decimals = AppConstants.decimals;
   static final BigInt scaleFactorBigInt = BigInt.from(10).pow(decimals);
   static final Decimal scaleFactorDecimal = Decimal.fromBigInt(scaleFactorBigInt);
 
+  final LocaleNumberConfig _localeConfig;
+
+  NumberFormattingService({required LocaleNumberConfig localeConfig}) : _localeConfig = localeConfig;
+
   /// Formats a raw BigInt balance (representing the smallest unit) into a
   /// user-readable string with a specified number of decimal places.
   ///
-  /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4)
+  /// Example: 1234500000000 -> "1.2345" (with maxDecimals = 4, US locale)
+  /// Example: 1234500000000 -> "1,2345" (with maxDecimals = 4, Indonesian locale)
   String formatBalance(
     BigInt balance, {
     int maxDecimals = 4,
@@ -24,45 +28,28 @@ class NumberFormattingService {
       return addSymbol ? '$resultString ${AppConstants.tokenSymbol}' : resultString;
     }
 
-    // Perform division to get the precise decimal value.
     final decimalBalance = (Decimal.fromBigInt(balance) / scaleFactorDecimal).toDecimal(
-      scaleOnInfinitePrecision:
-          maxDecimals * 3, // Note: We never have an infinite number of decimals because we divide by powers of 10.
+      scaleOnInfinitePrecision: maxDecimals * 3,
     );
 
     String asString = decimalBalance.toString();
 
-    // Manually truncate the string representation.
     final dotIndex = asString.indexOf('.');
     if (dotIndex != -1) {
-      // Check if there are enough characters after the dot.
       if (asString.length > dotIndex + maxDecimals + 1) {
         asString = asString.substring(0, dotIndex + maxDecimals + 1);
       }
     }
 
-    // Remove any trailing zeros from the fractional part for a clean look.
     if (asString.contains('.')) {
       asString = asString.replaceAll(RegExp(r'0+$'), '');
-      // If we're left with a trailing dot, remove it.
       if (asString.endsWith('.')) {
         asString = asString.substring(0, asString.length - 1);
       }
     }
 
     resultString = asString;
-
-    if (addThousandsSeparators) {
-      final parts = asString.split('.');
-      final integerPart = parts[0];
-      final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
-
-      final formattedInteger = integerPart.replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]},',
-      );
-      resultString = formattedInteger + decimalPart;
-    }
+    resultString = _localeConfig.localize(resultString, addGroupingSeparators: addThousandsSeparators);
 
     if (addSymbol) {
       resultString = '$resultString ${AppConstants.tokenSymbol}';
@@ -70,30 +57,25 @@ class NumberFormattingService {
     return resultString;
   }
 
-  /// Parses a user-entered formatted string amount (e.g., "1.23" or "1,23"
-  /// depends on localization) into a raw BigInt amount scaled
-  /// by the chain's decimals.
+  /// Parses a user-entered formatted string amount into a raw BigInt amount
+  /// scaled by the chain's decimals.
   ///
-  /// Returns null if the input string is invalid.
+  /// The input is interpreted using the [LocaleNumberConfig] supplied at
+  /// construction (decimal/grouping separators come from the user's locale).
+  /// Returns [BigInt.zero] for an empty string and `null` for unparseable input.
   BigInt? parseAmount(String formattedAmount) {
     if (formattedAmount.isEmpty) {
       return BigInt.zero;
     }
 
     try {
-      final sanitizedText = formattedAmount.replaceAll(',', '.');
-
-      final decimalAmount = Decimal.parse(sanitizedText);
-      // Check if input precision exceeds chain precision
+      final decimalAmount = _localeConfig.parseDecimal(formattedAmount);
       if (decimalAmount.scale > decimals) {
-        // Option 1: Truncate (like toBigInt does)
-        // Option 2: Throw an error - let's stick with truncation for now
         debugPrint('Warning: Input amount $formattedAmount exceeds $decimals decimals, will be truncated.');
       }
       final rawDecimalAmount = decimalAmount * scaleFactorDecimal;
-      return rawDecimalAmount.toBigInt(); // toBigInt truncates
+      return rawDecimalAmount.toBigInt();
     } catch (e) {
-      // Correct debugPrint usage
       debugPrint('Error parsing amount $formattedAmount: $e');
       return null;
     }

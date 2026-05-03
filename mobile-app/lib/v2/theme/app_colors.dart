@@ -290,7 +290,8 @@ class AppColorsV2 extends ThemeExtension<AppColorsV2> {
       txItemOutgoingHighlightBg:
           Color.lerp(txItemOutgoingHighlightBg, other.txItemOutgoingHighlightBg, t) ?? txItemOutgoingHighlightBg,
       txItemOutgoingHighlightBorder:
-          Color.lerp(txItemOutgoingHighlightBorder, other.txItemOutgoingHighlightBorder, t) ?? txItemOutgoingHighlightBorder,
+          Color.lerp(txItemOutgoingHighlightBorder, other.txItemOutgoingHighlightBorder, t) ??
+          txItemOutgoingHighlightBorder,
       txItemIconDefault: Color.lerp(txItemIconDefault, other.txItemIconDefault, t) ?? txItemIconDefault,
       txItemIncomingHighlightBorder:
           Color.lerp(txItemIncomingHighlightBorder, other.txItemIncomingHighlightBorder, t) ??

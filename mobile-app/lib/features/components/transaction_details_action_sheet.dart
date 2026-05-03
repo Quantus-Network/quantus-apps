@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
@@ -346,7 +347,7 @@ class _TransactionDetailsActionSheetState extends ConsumerState<TransactionDetai
   }
 
   Widget _buildDetails() {
-    final NumberFormattingService formattingService = NumberFormattingService();
+    final formattingService = ref.watch(numberFormattingServiceProvider);
     final String formattedAmount = formattingService.formatBalance(widget.transaction.amount);
 
     return Column(

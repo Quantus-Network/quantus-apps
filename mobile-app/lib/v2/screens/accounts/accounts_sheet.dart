@@ -26,8 +26,6 @@ class AccountsSheet extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  final NumberFormattingService _formattingService = NumberFormattingService();
-
   List<Account> _displayAccounts(List<Account> accounts) {
     final sorted = [...accounts];
     sorted.sort((a, b) {
@@ -39,9 +37,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   void _openAddAccountMenu() {
-    Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()),
-    );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()));
   }
 
   Future<void> _switchAccount(Account account) async {
@@ -136,21 +135,18 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(
-          label: 'Add Account',
-          onTap: _openAddAccountMenu,
-          variant: ButtonVariant.primary,
-        ),
+        QuantusButton.simple(label: 'Add Account', onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
       ],
     );
   }
 
   Widget _buildAccountRow(Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+    final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
       loading: () => 'Loading...',
       error: (_, _) => 'Balance unavailable',
-      data: (balance) => '${_formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
     );
     final colors = context.colors;
 

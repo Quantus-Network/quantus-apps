@@ -14,7 +14,6 @@ class ResetConfirmationScreen extends ConsumerStatefulWidget {
 }
 
 class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScreen> {
-
   bool _backedUpChecked = false;
   bool _isResetting = false;
 
@@ -41,7 +40,6 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
 
   @override
   Widget build(BuildContext context) {
-
     return SettingsCautionScaffold(
       appBarTitle: 'Reset Wallet',
       data: const SettingsCautionScaffoldData.walletReset(),

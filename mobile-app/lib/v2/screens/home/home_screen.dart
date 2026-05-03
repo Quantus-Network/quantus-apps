@@ -215,19 +215,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Skeleton(width: 200, height: 36),
-                ],
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 200, height: 36)]),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Skeleton(width: 100, height: 18),
-                ],
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 100, height: 18)]),
             ],
           ),
           error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),

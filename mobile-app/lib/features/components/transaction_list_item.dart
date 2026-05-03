@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
@@ -10,11 +11,12 @@ import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 
-class TransactionListItem extends StatefulWidget {
+class TransactionListItem extends ConsumerStatefulWidget {
   final TransactionEvent transaction;
   final TransactionRole role;
   final bool showFromAndTo;
@@ -32,7 +34,7 @@ class TransactionListItem extends StatefulWidget {
   TransactionListItemState createState() => TransactionListItemState();
 }
 
-class TransactionListItemState extends State<TransactionListItem> {
+class TransactionListItemState extends ConsumerState<TransactionListItem> {
   Timer? _timer;
   Duration? _remainingTime;
 
@@ -111,10 +113,9 @@ class TransactionListItemState extends State<TransactionListItem> {
     super.dispose();
   }
 
-  final NumberFormattingService _formattingService = NumberFormattingService();
-
   String _formatAmount(BigInt amount) {
-    return _formattingService.formatBalance(amount, addSymbol: true);
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    return formattingService.formatBalance(amount, addSymbol: true);
   }
 
   String _formatAddress(String address) {

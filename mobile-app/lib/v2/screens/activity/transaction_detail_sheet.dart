@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -98,7 +99,7 @@ class _AmountSection extends ConsumerWidget {
   }
 }
 
-class _DetailsSection extends StatelessWidget {
+class _DetailsSection extends ConsumerWidget {
   final TransactionEvent tx;
   final bool isSend;
   final AppColorsV2 colors;
@@ -106,7 +107,9 @@ class _DetailsSection extends StatelessWidget {
   const _DetailsSection({required this.tx, required this.isSend, required this.colors});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+
     final counterparty = isSend ? tx.to : tx.from;
     final address = AddressFormattingService.formatAddress(counterparty, prefix: 7, ellipses: '.......', postFix: 6);
     final dateTime = DatetimeFormattingService.formatTxDateTime(tx.timestamp);
@@ -115,7 +118,7 @@ class _DetailsSection extends StatelessWidget {
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
-        ? '${NumberFormattingService().formatBalance(fee, maxDecimals: AppConstants.decimals)} ${AppConstants.tokenSymbol}'
+        ? '$formattingService).formatBalance(fee, maxDecimals: AppConstants.decimals) ${AppConstants.tokenSymbol}'
         : null;
 
     final txHash = tx.extrinsicHash != null

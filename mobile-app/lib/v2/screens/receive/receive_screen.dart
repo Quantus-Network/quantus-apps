@@ -128,7 +128,9 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
             ),
           ),
           const SizedBox(width: 18),
-          Expanded(child: ShareAccountButton(onTap: _share, isDisabled: isLoading)),
+          Expanded(
+            child: ShareAccountButton(onTap: _share, isDisabled: isLoading),
+          ),
         ],
       );
     }

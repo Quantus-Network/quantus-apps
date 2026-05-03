@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -19,8 +21,16 @@ final substrateServiceProvider = Provider<SubstrateService>((ref) {
   return SubstrateService();
 });
 
+/// Caveat: snapshots [Platform.localeName] at provider creation time.
+/// A mid-session locale change (rare) won't be picked up until app restart.
+final localeNumberConfigProvider = Provider<LocaleNumberConfig>((ref) {
+  return LocaleNumberConfig.fromLocale(Platform.localeName);
+});
+
 final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) {
-  return NumberFormattingService();
+  final localeConfig = ref.watch(localeNumberConfigProvider);
+
+  return NumberFormattingService(localeConfig: localeConfig);
 });
 
 final humanReadableChecksumServiceProvider = Provider<HumanReadableChecksumService>((ref) {

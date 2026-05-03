@@ -107,4 +107,3 @@ class ScaffoldBase extends StatelessWidget {
     return const SizedBox.shrink();
   }
 }
-

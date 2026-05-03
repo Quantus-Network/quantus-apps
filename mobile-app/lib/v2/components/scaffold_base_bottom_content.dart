@@ -3,7 +3,7 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 class ScaffoldBaseBottomContent extends StatelessWidget {
   final Widget child;
-    
+
   const ScaffoldBaseBottomContent({super.key, required this.child});
 
   @override

@@ -124,12 +124,7 @@ class SettingsSwitchRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SettingsTappableRowUtils.titleAndSubtitle(
-          title,
-          subtitle,
-          text: text,
-          colors: colors,
-        ),
+        SettingsTappableRowUtils.titleAndSubtitle(title, subtitle, text: text, colors: colors),
         CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: colors.accentGreen),
       ],
     );

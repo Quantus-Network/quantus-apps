@@ -71,10 +71,8 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
                       )
                     : ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (context, index) => const SettingsDivider(
-                          style: SettingsDividerStyle.currencyList,
-                          padding: EdgeInsets.zero,
-                        ),
+                        separatorBuilder: (context, index) =>
+                            const SettingsDivider(style: SettingsDividerStyle.currencyList, padding: EdgeInsets.zero),
                         itemBuilder: (context, index) {
                           final c = filtered[index];
                           final isSelected = c == selected;

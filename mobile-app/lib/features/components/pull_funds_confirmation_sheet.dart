@@ -27,7 +27,6 @@ class PullFundsConfirmationSheet extends ConsumerStatefulWidget {
 }
 
 class _PullFundsConfirmationSheetState extends ConsumerState<PullFundsConfirmationSheet> {
-  final NumberFormattingService _formattingService = NumberFormattingService();
   BigInt? _fee;
   BigInt? _guardianBalance;
   bool _isLoading = true;
@@ -74,6 +73,8 @@ class _PullFundsConfirmationSheetState extends ConsumerState<PullFundsConfirmati
 
   @override
   Widget build(BuildContext context) {
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+
     return SafeArea(
       bottom: false,
       child: Container(
@@ -118,7 +119,7 @@ class _PullFundsConfirmationSheetState extends ConsumerState<PullFundsConfirmati
               Column(
                 children: [
                   Text(
-                    'Fee: ${_formattingService.formatBalance(_fee!)} ${AppConstants.tokenSymbol}',
+                    'Fee: ${formattingService.formatBalance(_fee!)} ${AppConstants.tokenSymbol}',
                     textAlign: TextAlign.center,
                     style: context.themeText.smallTitle,
                   ),

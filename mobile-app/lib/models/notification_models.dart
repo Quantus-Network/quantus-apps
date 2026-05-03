@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Notification types as specified in requirements
@@ -360,7 +362,8 @@ class NotificationTemplates {
   }
 
   static String _formatAmount(BigInt amount) {
-    final NumberFormattingService formattingService = NumberFormattingService();
+    final localeConfig = LocaleNumberConfig.fromLocale(Platform.localeName);
+    final NumberFormattingService formattingService = NumberFormattingService(localeConfig: localeConfig);
     return formattingService.formatBalance(amount, addSymbol: true);
   }
 

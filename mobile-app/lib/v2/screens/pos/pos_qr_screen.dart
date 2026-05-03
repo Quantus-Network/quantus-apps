@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -27,7 +28,6 @@ class PosQrScreen extends ConsumerStatefulWidget {
 
 class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   final _posService = PosService();
-  final _fmt = NumberFormattingService();
   PosPaymentRequest? _request;
 
   final _txWatch = TxWatchService();
@@ -45,10 +45,11 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   void _startWatching() {
+    final formattingService = ref.watch(numberFormattingServiceProvider);
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 
-    final expectedPlanck = _fmt.parseAmount(widget.amount);
+    final expectedPlanck = formattingService.parseAmount(widget.amount);
     if (expectedPlanck == null) {
       print('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
       if (mounted) setState(() => _watchError = 'Invalid amount. Tap to retry.');

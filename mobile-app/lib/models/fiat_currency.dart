@@ -4,14 +4,20 @@
 /// Adding a new currency only requires a new enum case here and a matching
 /// rate in [ExchangeRateService]. No widget or provider changes are needed.
 enum FiatCurrency {
-  usd(code: 'USD', symbol: '\$', symbolPosition: SymbolPosition.prefix, fullName: 'United States Dollar'),
-  myr(code: 'MYR', symbol: 'RM', symbolPosition: SymbolPosition.prefix, fullName: 'Malaysian Ringgit'),
-  idr(code: 'IDR', symbol: 'Rp', symbolPosition: SymbolPosition.prefix, fullName: 'Indonesian Rupiah'),
-  jpy(code: 'JPY', symbol: '¥', symbolPosition: SymbolPosition.prefix, fullName: 'Japanese Yen'),
-  eur(code: 'EUR', symbol: '€', symbolPosition: SymbolPosition.prefix, fullName: 'Euro'),
-  gbp(code: 'GBP', symbol: '£', symbolPosition: SymbolPosition.prefix, fullName: 'British Pound');
+  usd(code: 'USD', symbol: '\$', symbolPosition: SymbolPosition.prefix, fullName: 'United States Dollar', decimals: 2),
+  myr(code: 'MYR', symbol: 'RM', symbolPosition: SymbolPosition.prefix, fullName: 'Malaysian Ringgit', decimals: 2),
+  idr(code: 'IDR', symbol: 'Rp', symbolPosition: SymbolPosition.prefix, fullName: 'Indonesian Rupiah', decimals: 0),
+  jpy(code: 'JPY', symbol: '¥', symbolPosition: SymbolPosition.prefix, fullName: 'Japanese Yen', decimals: 0),
+  eur(code: 'EUR', symbol: '€', symbolPosition: SymbolPosition.prefix, fullName: 'Euro', decimals: 2),
+  gbp(code: 'GBP', symbol: '£', symbolPosition: SymbolPosition.prefix, fullName: 'British Pound', decimals: 2);
 
-  const FiatCurrency({required this.code, required this.symbol, required this.symbolPosition, required this.fullName});
+  const FiatCurrency({
+    required this.code,
+    required this.symbol,
+    required this.symbolPosition,
+    required this.fullName,
+    required this.decimals,
+  });
 
   /// ISO 4217 code, e.g. "USD", "IDR". Used for persistence and display.
   final String code;
@@ -22,6 +28,11 @@ enum FiatCurrency {
   final SymbolPosition symbolPosition;
 
   final String fullName;
+
+  /// Number of decimal places to display for this currency (ISO 4217 minor unit).
+  ///
+  /// Examples: USD/EUR/GBP → 2, IDR/JPY → 0.
+  final int decimals;
 
   /// Wraps a pre-formatted numeric [amount] string with this currency's symbol.
   ///

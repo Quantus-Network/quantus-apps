@@ -27,12 +27,7 @@ class AccountTypeSettingsScreenV2 extends StatelessWidget {
       appBar: const V2AppBar(title: 'Account Type'),
       mainContent: ListView(
         children: [
-          Text(
-            _intro,
-            style: text.smallParagraph?.copyWith(
-              color: colors.textMuted,
-            ),
-          ),
+          Text(_intro, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
           const SizedBox(height: 40),
           for (var i = 0; i < _upcomingFeatures.length; i++)
             _AccountFeatureBlock(
@@ -78,19 +73,9 @@ class _AccountFeatureBlock extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: text.smallTitle?.copyWith(
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                    Text(title, style: text.smallTitle?.copyWith(fontWeight: FontWeight.w400)),
                     const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: text.smallParagraph?.copyWith(
-                        color: colors.textTertiary,
-                      ),
-                    ),
+                    Text(subtitle, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
                   ],
                 ),
               ),
@@ -121,10 +106,7 @@ class _ComingSoonBadge extends StatelessWidget {
         border: Border.all(color: colors.borderButton),
       ),
       alignment: Alignment.center,
-      child: Text(
-        'Coming Soon',
-        style: text.detail?.copyWith(color: colors.textMuted),
-      ),
+      child: Text('Coming Soon', style: text.detail?.copyWith(color: colors.textMuted)),
     );
   }
 }

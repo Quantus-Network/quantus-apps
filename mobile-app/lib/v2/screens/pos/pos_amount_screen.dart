@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/button.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_qr_screen.dart';
@@ -18,17 +18,18 @@ class PosAmountScreen extends ConsumerStatefulWidget {
 
 class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   String _input = '0';
-  final _fmt = NumberFormattingService();
-  final _decimalFilter = DecimalInputFilter();
+  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
 
   void _onDigit(String digit) {
-    final oldText = _input == '0' && digit != '.' && digit != ',' ? '' : _input;
+    final sep = _localeConfig.decimalSeparator;
+    final oldText = _input == '0' && digit != sep ? '' : _input;
     final newText = oldText + digit;
 
     final oldValue = TextEditingValue(text: oldText);
     final newValue = TextEditingValue(text: newText);
 
-    final formatted = _decimalFilter.formatEditUpdate(oldValue, newValue);
+    final filter = DecimalInputFilter(localeConfig: _localeConfig);
+    final formatted = filter.formatEditUpdate(oldValue, newValue);
 
     setState(() {
       _input = formatted.text.isEmpty ? '0' : formatted.text;
@@ -48,13 +49,15 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   void _onClear() => setState(() => _input = '0');
 
   void _onCharge() {
-    final amount = _fmt.parseAmount(_input);
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final amount = formattingService.parseAmount(_input);
     if (amount == null || amount <= BigInt.zero) return;
     Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amount: _input)));
   }
 
   bool get _isValid {
-    final amount = _fmt.parseAmount(_input);
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final amount = formattingService.parseAmount(_input);
     return amount != null && amount > BigInt.zero;
   }
 
@@ -92,7 +95,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   }
 
   Widget _buildKeypad(AppColorsV2 colors, AppTextTheme text) {
-    final decimalSeparator = NumberFormat().symbols.DECIMAL_SEP;
+    final decimalSeparator = _localeConfig.decimalSeparator;
     final keys = [
       ['1', '2', '3'],
       ['4', '5', '6'],

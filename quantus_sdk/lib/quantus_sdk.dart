@@ -53,6 +53,7 @@ export 'src/services/high_security_service.dart';
 export 'src/services/human_readable_checksum_service.dart';
 export 'src/services/migration_service.dart';
 export 'src/services/network/redundant_endpoint.dart';
+export 'src/services/locale_number_config.dart';
 export 'src/services/number_formatting_service.dart';
 export 'src/services/recent_addresses_service.dart';
 export 'src/services/recovery_service.dart';

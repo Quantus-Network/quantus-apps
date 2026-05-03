@@ -456,16 +456,6 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     }
   }
 
-  Future<List<ReversibleTransferEvent>> fetchScheduledReversibleTransfers({
-    required List<String> accountIds,
-    int limit = 10,
-    int offset = 0,
-    required TransactionFilter filter,
-  }) async {
-    final page = await _fetchScheduledReversibleTransfersPage(accountIds: accountIds, limit: limit, offset: offset, filter: filter);
-    return page.items;
-  }
-
   Future<_Page<ReversibleTransferEvent>> _fetchScheduledReversibleTransfersPage({
     required List<String> accountIds,
     int limit = 10,
@@ -556,7 +546,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
   }) async {
     try {
       final results = await Future.wait([
-        fetchScheduledReversibleTransfers(
+        _fetchScheduledReversibleTransfersPage(
           accountIds: accountIds,
           limit: limit,
           offset: scheduledOffset,

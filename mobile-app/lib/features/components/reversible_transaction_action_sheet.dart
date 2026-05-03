@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
@@ -45,7 +46,6 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   late Timer _timer;
   late Duration _remainingTime;
 
-  final NumberFormattingService _formattingService = NumberFormattingService();
   final SettingsService _settingsService = SettingsService();
   final ReversibleTransfersService _reversibleTransfersService = ReversibleTransfersService();
 
@@ -95,7 +95,8 @@ class _ReversibleTransactionActionSheetState extends ConsumerState<ReversibleTra
   }
 
   String _formatAmount(BigInt amount) {
-    return _formattingService.formatBalance(amount, addSymbol: true);
+    final numberFormattingService = ref.watch(numberFormattingServiceProvider);
+    return numberFormattingService.formatBalance(amount, addSymbol: true);
   }
 
   Widget _buildActionButton({

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -9,7 +11,7 @@ import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class TxSubmittedScreen extends StatelessWidget {
+class TxSubmittedScreen extends ConsumerWidget {
   final BigInt amount;
   final String recipientAddress;
   final String? recipientChecksum;
@@ -27,15 +29,15 @@ class TxSubmittedScreen extends StatelessWidget {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
   }
 
-  String get _headline {
-    final fmt = NumberFormattingService();
-    final n = fmt.formatBalance(amount, maxDecimals: 4);
+  String _headline(WidgetRef ref) {
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final n = formattingService.formatBalance(amount, maxDecimals: 4);
     final action = isPayMode ? 'paid' : 'sent';
     return '$n ${AppConstants.tokenSymbol} $action';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final text = context.themeText;
     final addr = recipientAddress.trim();
@@ -62,7 +64,7 @@ class TxSubmittedScreen extends StatelessWidget {
                   _successMark(colors),
                   const SizedBox(height: 32),
                   Text(
-                    _headline,
+                    _headline(ref),
                     textAlign: TextAlign.center,
                     style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400),
                   ),

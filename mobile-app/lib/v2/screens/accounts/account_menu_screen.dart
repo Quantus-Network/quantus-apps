@@ -59,11 +59,7 @@ class AccountMenuScreen extends ConsumerWidget {
   void _openRecoveryPhrase(BuildContext context, Account account) {
     Navigator.of(
       context,
-    ).push<void>(
-      MaterialPageRoute(
-        builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: account.walletIndex),
-      ),
-    );
+    ).push<void>(MaterialPageRoute(builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: account.walletIndex)));
   }
 
   void _openAddressDetails(BuildContext context, Account account) {

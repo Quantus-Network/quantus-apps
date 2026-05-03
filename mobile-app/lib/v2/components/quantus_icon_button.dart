@@ -65,6 +65,7 @@ class QuantusIconButton extends StatelessWidget {
         return 20;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final bool disabled = onTap == null || isLoading || isDisabled;

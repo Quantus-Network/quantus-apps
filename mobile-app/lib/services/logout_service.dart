@@ -29,10 +29,6 @@ class LogoutService {
     _ref.read(activeAccountProvider.notifier).reset();
     _ref.read(accountAssociationsProvider.notifier).reset();
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const WelcomeScreenV2()),
-      (r) => false,
-    );
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
   }
 }

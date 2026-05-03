@@ -8,7 +8,7 @@ void main() {
     late NumberFormattingService formattingService;
 
     setUp(() {
-      formattingService = NumberFormattingService();
+      formattingService = NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal);
     });
 
     group('getAmountStatus', () {
@@ -174,7 +174,7 @@ void main() {
         expect(result, equals('Below Existential Deposit'));
       });
 
-      test('returns formatted send amount for valid status', () {
+      test('returns Review Send for valid status', () {
         final result = SendScreenLogic.getButtonText(
           hasAddressError: false,
           amountStatus: AmountStatus.valid,
@@ -183,7 +183,7 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, startsWith('Send'));
+        expect(result, equals('Review Send'));
       });
     });
 

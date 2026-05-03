@@ -43,10 +43,7 @@ class BottomSheetContainer extends StatelessWidget {
               child: Container(
                 width: 56,
                 height: 4,
-                decoration: BoxDecoration(
-                  color: colors.borderButton,
-                  borderRadius: BorderRadius.circular(23),
-                ),
+                decoration: BoxDecoration(color: colors.borderButton, borderRadius: BorderRadius.circular(23)),
               ),
             ),
             const SizedBox(height: 20),

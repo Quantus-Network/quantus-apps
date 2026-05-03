@@ -18,7 +18,14 @@ class WelcomeScreenV2 extends StatelessWidget {
         children: [
           Image.asset('assets/v2/quantus_orange_logo.png', height: 32),
           const SizedBox(height: 16),
-          SizedBox(width: 210, child: Text('Quantum Secure Encrypted Money', textAlign: TextAlign.center, style: context.themeText.mediumTitle)),
+          SizedBox(
+            width: 210,
+            child: Text(
+              'Quantum Secure Encrypted Money',
+              textAlign: TextAlign.center,
+              style: context.themeText.mediumTitle,
+            ),
+          ),
           const SizedBox(height: 56),
           QuantusButton.simple(
             label: 'Create New Wallet',

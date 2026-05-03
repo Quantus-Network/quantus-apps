@@ -30,10 +30,7 @@ class SettingsScreenV2 extends StatelessWidget {
               leading: e.value.leading,
               title: e.value.title,
               subtitle: e.value.subtitle,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => e.value.page),
-              ),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => e.value.page)),
               trailing: trailing,
             ),
             if (e.key < entries.length - 1) const SettingsDivider(),
@@ -45,12 +42,7 @@ class SettingsScreenV2 extends StatelessWidget {
 }
 
 class _SettingsHubItem {
-  const _SettingsHubItem({
-    required this.leading,
-    required this.title,
-    required this.subtitle,
-    required this.page,
-  });
+  const _SettingsHubItem({required this.leading, required this.title, required this.subtitle, required this.page});
 
   final Widget leading;
   final String title;
@@ -85,10 +77,7 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors) {
       page: const HelpAndSupportScreenV2(),
     ),
     _SettingsHubItem(
-      leading: _settingsHubIcon(
-        colors,
-        svg: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 18, height: 18),
-      ),
+      leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 18, height: 18)),
       title: 'About Quantus',
       subtitle: 'Version $appVersion ($appBuildNumber)',
       page: const AboutQuantusScreenV2(),

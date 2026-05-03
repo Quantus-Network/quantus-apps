@@ -42,7 +42,6 @@ class _RecoveryPhraseConfirmationScreenState extends State<RecoveryPhraseConfirm
       checkboxChecked: _acknowledged,
       onCheckboxChanged: () => setState(() => _acknowledged = !_acknowledged),
       onContinue: _onContinue,
-      
     );
   }
 }

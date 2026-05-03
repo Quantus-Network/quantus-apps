@@ -92,7 +92,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
             children: [
               for (var i = 0; i < testnets.length; i++) ...[
                 if (i > 0) const SettingsDivider(style: SettingsDividerStyle.cardInterior),
-                
+
                 Row(
                   children: [
                     Expanded(

@@ -3,33 +3,62 @@ import 'package:resonance_network_wallet/models/fiat_currency.dart';
 
 /// Provides QUAN → fiat exchange rates.
 ///
-/// All rates are currently fixed at 1:1 against USD (and approximate
-/// cross-rates for other currencies). Replace [_rates] with a real API
-/// response when live pricing is available.
+/// Constructed with a live [rates] map (ISO-4217 code → value in that currency
+/// per 1 USD). Falls back to [fallbackRates] for any code not present.
+///
+/// [quanToUsdRate] defaults to `1` (1 QUAN = 1 USD). Wire a dedicated QUAN
+/// price feed into this field when one becomes available.
 class ExchangeRateService {
-  static final ExchangeRateService _instance = ExchangeRateService._internal();
-  factory ExchangeRateService() => _instance;
-  ExchangeRateService._internal();
-
-  /// Fixed rates: 1 QUAN in each fiat currency.
-  /// When a live price feed is integrated, populate this map from the API.
-  static final Map<FiatCurrency, Decimal> _rates = {
-    FiatCurrency.usd: Decimal.fromInt(1),
-    FiatCurrency.myr: Decimal.parse('3.96'),
-    FiatCurrency.idr: Decimal.parse('17138.90'),
-    FiatCurrency.jpy: Decimal.parse('158.99'),
-    FiatCurrency.eur: Decimal.parse('0.85'),
-    FiatCurrency.gbp: Decimal.parse('0.74'),
+  /// Static rates used before any live or cached data is available (e.g. on
+  /// fresh install with no network). Values are approximate and intentionally
+  /// conservative — they are replaced by real rates as soon as the first
+  /// successful fetch completes.
+  static final Map<String, Decimal> fallbackRates = {
+    'USD': Decimal.parse('1'),
+    'MYR': Decimal.parse('3.97'),
+    'IDR': Decimal.parse('17337.90'),
+    'JPY': Decimal.parse('156.54'),
+    'EUR': Decimal.parse('0.85'),
+    'GBP': Decimal.parse('0.73'),
   };
 
-  /// Returns the current QUAN price in [fiat].
+  final Map<String, Decimal> _rates;
+  final Decimal quanToUsdRate;
+
+  ExchangeRateService({required Map<String, Decimal> rates, Decimal? quanToUsdRate})
+    : _rates = rates,
+      quanToUsdRate = quanToUsdRate ?? Decimal.one;
+
+  /// Returns the exchange rate for [fiat] (units per 1 USD).
   Decimal getRate(FiatCurrency fiat) {
-    final rate = _rates[fiat];
-    if (rate == null) throw StateError('No rate for ${fiat.code}');
+    final rate = _rates[fiat.code] ?? fallbackRates[fiat.code];
+    if (rate == null) throw Exception('Exchange rate not found for ${fiat.code}!');
+
     return rate;
   }
 
-  /// Converts a [quanAmount] (precise Decimal)
-  /// to the given [fiat] currency using the current rate.
-  Decimal convert(Decimal quanAmount, FiatCurrency fiat) => quanAmount * getRate(fiat);
+  /// Converts [quanAmount] to [fiat] using the current rates.
+  Decimal convert(Decimal quanAmount, FiatCurrency fiat) => quanAmount * quanToUsdRate * getRate(fiat);
+
+  /// Converts a raw QUAN [BigInt] (scaled by 10^[quanDecimals]) to a fiat [Decimal].
+  ///
+  /// Centralises the scale-factor arithmetic so both display providers and the
+  /// send screen share a single, testable conversion path.
+  Decimal quanRawToFiat(BigInt rawQuan, FiatCurrency fiat, int quanDecimals) {
+    final scaleFactor = BigInt.from(10).pow(quanDecimals);
+    final quanDecimal = (Decimal.fromBigInt(rawQuan) / Decimal.fromBigInt(scaleFactor)).toDecimal();
+    return convert(quanDecimal, fiat);
+  }
+
+  /// Converts a [fiatAmount] back to raw QUAN [BigInt] scaled by 10^[quanDecimals].
+  ///
+  /// Uses the inverse of [convert]: fiat / (quanToUsdRate × rate).
+  /// Returns [BigInt.zero] when the effective rate is zero.
+  BigInt fiatToQuanRaw(Decimal fiatAmount, FiatCurrency fiat, int quanDecimals) {
+    final effectiveRate = quanToUsdRate * getRate(fiat);
+    if (effectiveRate == Decimal.zero) return BigInt.zero;
+    final scaleFactor = Decimal.fromBigInt(BigInt.from(10).pow(quanDecimals));
+    final quanDecimal = (fiatAmount / effectiveRate).toDecimal(scaleOnInfinitePrecision: quanDecimals);
+    return (quanDecimal * scaleFactor).toBigInt();
+  }
 }
