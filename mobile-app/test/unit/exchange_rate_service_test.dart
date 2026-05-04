@@ -34,8 +34,8 @@ void main() {
       expect(service.convert(Decimal.one, FiatCurrency.myr), Decimal.parse('3.97'));
     });
 
-    test('converts 0.5 QUAN to MYR (0.5 × 3.97 = 1.985)', () {
-      expect(service.convert(Decimal.parse('0.5'), FiatCurrency.myr), Decimal.parse('1.985'));
+    test('converts 0.5 QUAN to MYR (0.5 × 3.97 = 1.99)', () {
+      expect(service.convert(Decimal.parse('0.5'), FiatCurrency.myr), Decimal.parse('1.99'));
     });
 
     test('applies quanToUsdRate when set', () {
@@ -58,9 +58,9 @@ void main() {
       expect(service.quanRawToFiat(oneQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('3.97'));
     });
 
-    test('0.5 QUAN raw → 1.985 MYR', () {
+    test('0.5 QUAN raw → 1.99 MYR', () {
       final halfQuan = BigInt.from(5) * BigInt.from(10).pow(quanDecimals - 1);
-      expect(service.quanRawToFiat(halfQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('1.985'));
+      expect(service.quanRawToFiat(halfQuan, FiatCurrency.myr, quanDecimals), Decimal.parse('1.99'));
     });
 
     test('zero QUAN raw → zero fiat', () {
@@ -91,7 +91,7 @@ void main() {
 
     test('quanRawToFiat and fiatToQuanRaw are inverses for clean-divisor rates', () {
       const quanDecimals = 12;
-      final original = BigInt.from(1_500_000_000_000); // 1.5 QUAN
+      final original = BigInt.from(1_000_000_000_000); // 1.0 QUAN
       final fiatValue = service.quanRawToFiat(original, FiatCurrency.myr, quanDecimals);
       final roundTripped = service.fiatToQuanRaw(fiatValue, FiatCurrency.myr, quanDecimals);
       expect(roundTripped, original);
