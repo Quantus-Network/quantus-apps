@@ -218,7 +218,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Future<void> _toggleFlip() async {
-    
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
     final formattingService = ref.read(numberFormattingServiceProvider);
