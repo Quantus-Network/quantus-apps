@@ -218,6 +218,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Future<void> _toggleFlip() async {
+    
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
     final formattingService = ref.read(numberFormattingServiceProvider);
@@ -233,16 +234,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ? ''
           : formattingService.formatBalance(_amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
     } else {
-      // QUAN -> Fiat: The user was looking at a QUAN amount.
-      // We want to ensure the fiat amount shown is the rounded version of this QUAN.
+      // QUAN -> Fiat: re-parse _amount from the rounded fiat string so
+      // the displayed value and _amount stay in sync.
       _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
-      // Re-parse _amount from the rounded fiat string to ensure they stay in sync.
       if (_amount != BigInt.zero) {
-        try {
-          _amount = _fiatStringToQuan(_amountController.text);
-        } catch (_) {
-          // Fallback to existing _amount if parsing fails
-        }
+        _amount = _fiatStringToQuan(_amountController.text);
       }
     }
   }
