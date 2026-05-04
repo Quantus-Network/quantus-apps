@@ -231,11 +231,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       // No change needed to _amount, just update the controller.
       _amountController.text = _amount == BigInt.zero
           ? ''
-          : formattingService.formatBalance(
-              _amount,
-              maxDecimals: AppConstants.decimals,
-              addThousandsSeparators: false,
-            );
+          : formattingService.formatBalance(_amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
     } else {
       // QUAN -> Fiat: The user was looking at a QUAN amount.
       // We want to ensure the fiat amount shown is the rounded version of this QUAN.
@@ -284,7 +280,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final formattingService = ref.read(numberFormattingServiceProvider);
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
-    final btnDisabled = _isFetchingFee ||
+    final btnDisabled =
+        _isFetchingFee ||
         _recipientChecksum == null ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
