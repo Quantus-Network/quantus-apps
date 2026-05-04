@@ -28,7 +28,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   final _amountController = TextEditingController();
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
-  final _checksumService = HumanReadableChecksumService();
 
   final Map<String, String> _checksums = {};
   List<String> _recents = [];
@@ -54,9 +53,13 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Future<void> _loadRecents() async {
+    final checksumService = ref.read(humanReadableChecksumServiceProvider);
+    final settingsService = ref.read(settingsServiceProvider);
+    final recentAddressesService = ref.read(recentAddressesServiceProvider);
+
     try {
-      final all = await RecentAddressesService().getAddresses();
-      final active = await SettingsService().getActiveAccount();
+      final all = await recentAddressesService.getAddresses();
+      final active = await settingsService.getActiveAccount();
       final currentId = active?.account.accountId;
       final addresses = all.where((a) => a != currentId).toList();
       if (!mounted) return;
@@ -65,7 +68,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _loadingRecents = false;
       });
       for (final addr in addresses) {
-        _checksumService.getHumanReadableName(addr).then((name) {
+        checksumService.getHumanReadableName(addr).then((name) {
           if (mounted) setState(() => _checksums[addr] = name);
         });
       }
@@ -90,6 +93,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   void _lookupAddress(String address) {
+    final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
     setState(() {
@@ -97,7 +101,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _recipientChecksum = null;
     });
     if (isValid) {
-      _checksumService.getHumanReadableName(address).then((checksum) {
+      checksumService.getHumanReadableName(address).then((checksum) {
         if (mounted) setState(() => _recipientChecksum = checksum);
       });
     }

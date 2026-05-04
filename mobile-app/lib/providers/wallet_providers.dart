@@ -21,6 +21,10 @@ final substrateServiceProvider = Provider<SubstrateService>((ref) {
   return SubstrateService();
 });
 
+final recentAddressesServiceProvider = Provider<RecentAddressesService>((ref) {
+  return RecentAddressesService();
+});
+
 /// Caveat: snapshots [Platform.localeName] at provider creation time.
 /// A mid-session locale change (rare) won't be picked up until app restart.
 final localeNumberConfigProvider = Provider<LocaleNumberConfig>((ref) {

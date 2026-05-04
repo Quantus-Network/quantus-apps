@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -73,7 +75,11 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         widget.networkFee,
         widget.blockHeight,
       );
-      RecentAddressesService().addAddress(widget.recipientAddress.trim());
+      unawaited(
+        RecentAddressesService()
+            .addAddress(widget.recipientAddress.trim())
+            .catchError((Object e) => debugPrint('Failed to save recent address: $e')),
+      );
       setState(() {
         _submitting = false;
         _errorMessage = null;
@@ -93,10 +99,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         );
       }
     } catch (e) {
+      debugPrint('Transfer failed: $e');
+
       if (mounted) {
         setState(() {
           _submitting = false;
-          _errorMessage = 'Transfer failed: $e';
+          _errorMessage = 'Failed submitting transaction';
         });
       }
     }

@@ -128,7 +128,7 @@ class TxItemData {
       borderColor: getBorderColor(),
       isSend: isSend,
       amount: tx.amount,
-      counterpartyAddr: _shortenAddress(isSend ? tx.to : tx.from),
+      counterpartyAddr: AddressFormattingService.formatAddress(isSend ? tx.to : tx.from, prefix: 5, postFix: 3),
     );
   }
 }
@@ -200,11 +200,6 @@ Widget buildTxItem(
       ],
     ),
   );
-}
-
-String _shortenAddress(String addr) {
-  if (addr.length <= 10) return addr;
-  return '${addr.substring(0, 5)}...${addr.substring(addr.length - 3)}';
 }
 
 String _formatDuration(Duration d) {

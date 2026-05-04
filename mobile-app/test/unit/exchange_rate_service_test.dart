@@ -97,16 +97,27 @@ void main() {
       expect(roundTripped, original);
     });
 
-    test('round-trip is lossy for non-clean-divisor rates (documents expected drift)', () {
-      // 3.971 doesn't cleanly divide 1.5 QUAN's fiat value, so the inverse
-      // truncates to fit quanDecimals. Lock the expected ≤ 1-raw-unit drift in.
+    test('round-trip is stable for non-clean-divisor rates (anchors to fiat precision)', () {
+      // 3.971 doesn't cleanly divide 1.5 QUAN's fiat value.
+      // By rounding the intermediate fiat value to fiat.decimals (2),
+      // we ensure that the round-tripped QUAN value is the canonical QUAN
+      // representation of that specific fiat amount.
       const quanDecimals = 12;
       final lossyService = ExchangeRateService(rates: {'MYR': Decimal.parse('3.971')});
       final original = BigInt.from(1_500_000_000_000); // 1.5 QUAN
+
+      // 1.5 * 3.971 = 5.9565 -> rounded to 5.96 MYR
       final fiatValue = lossyService.quanRawToFiat(original, FiatCurrency.myr, quanDecimals);
+      expect(fiatValue, Decimal.parse('5.96'));
+
       final roundTripped = lossyService.fiatToQuanRaw(fiatValue, FiatCurrency.myr, quanDecimals);
-      final drift = (roundTripped - original).abs();
-      expect(drift, lessThanOrEqualTo(BigInt.one), reason: 'round-trip drift should be at most 1 raw unit');
+
+      // Subsequent round-trips from this fiatValue should be identical
+      final secondFiat = lossyService.quanRawToFiat(roundTripped, FiatCurrency.myr, quanDecimals);
+      final secondQUAN = lossyService.fiatToQuanRaw(secondFiat, FiatCurrency.myr, quanDecimals);
+
+      expect(secondFiat, fiatValue);
+      expect(secondQUAN, roundTripped);
     });
   });
 

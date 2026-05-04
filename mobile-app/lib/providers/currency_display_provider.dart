@@ -230,7 +230,7 @@ class CurrencyDisplayState {
 // Balance display provider
 // ---------------------------------------------------------------------------
 
-final _hiddenAmountText = '- - - - -';
+final _hiddenAmountText = '-----';
 
 /// Combines balance, hidden state, flip state, selected fiat, and exchange
 /// rate into [CurrencyDisplayState] ready for widgets to render.

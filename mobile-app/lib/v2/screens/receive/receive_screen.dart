@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -19,20 +20,17 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 enum ReceiveTab { qrCode, address }
 
-class ReceiveScreen extends StatefulWidget {
+class ReceiveScreen extends ConsumerStatefulWidget {
   const ReceiveScreen({super.key});
 
   @override
-  State<ReceiveScreen> createState() => _ReceiveScreenState();
+  ConsumerState<ReceiveScreen> createState() => _ReceiveScreenState();
 }
 
-class _ReceiveScreenState extends State<ReceiveScreen> {
+class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   ReceiveTab _selectedTab = ReceiveTab.qrCode;
   String? _accountId;
   String? _checksum;
-
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -41,9 +39,12 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   }
 
   Future<void> _loadAccountData() async {
+    final settingsService = ref.read(settingsServiceProvider);
+    final checksumService = ref.read(humanReadableChecksumServiceProvider);
+
     try {
-      final account = (await _settingsService.getActiveAccount())!;
-      final checksum = await _checksumService.getHumanReadableName(account.account.accountId);
+      final account = (await settingsService.getActiveAccount())!;
+      final checksum = await checksumService.getHumanReadableName(account.account.accountId);
       setState(() {
         _accountId = account.account.accountId;
         _checksum = checksum;

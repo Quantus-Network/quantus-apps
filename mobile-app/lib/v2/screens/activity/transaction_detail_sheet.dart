@@ -118,7 +118,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
-        ? '$formattingService).formatBalance(fee, maxDecimals: AppConstants.decimals) ${AppConstants.tokenSymbol}'
+        ? '${formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals)} ${AppConstants.tokenSymbol}'
         : null;
 
     final txHash = tx.extrinsicHash != null

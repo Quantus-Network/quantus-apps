@@ -51,7 +51,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
   bool _isFetchingFee = true;
-  bool _isUpdatingProgrammatically = false;
 
   LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
 
@@ -59,20 +58,19 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   void initState() {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
-    _amountController.addListener(_onAmountChanged);
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null) {
       final isFlipped = ref.read(isCurrencyFlippedProvider);
+      final formattingService = ref.read(numberFormattingServiceProvider);
       if (!isFlipped) {
+        final parsed = formattingService.parseAmount(widget.initialAmount!);
+        _amount = parsed ?? BigInt.zero;
         _amountController.text = widget.initialAmount!;
       } else {
-        final formattingService = ref.read(numberFormattingServiceProvider);
         final parsed = formattingService.parseAmount(widget.initialAmount!);
         if (parsed != null && parsed > BigInt.zero) {
           _amount = parsed;
-          _isUpdatingProgrammatically = true;
           _amountController.text = _quanToFiatString(parsed);
-          _isUpdatingProgrammatically = false;
         }
       }
     }
@@ -92,7 +90,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   @override
   void dispose() {
     _feeDebouncer.cancel();
-    _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
     _amountFocus.removeListener(_onAmountFocusChanged);
     _amountFocus.dispose();
@@ -119,8 +116,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     });
   }
 
-  void _onAmountChanged() {
-    if (_isUpdatingProgrammatically) return;
+  void _onAmountChanged(String _) {
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     if (isFlipped) {
       try {
@@ -214,14 +210,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     final formattingService = ref.read(numberFormattingServiceProvider);
-    _isUpdatingProgrammatically = true;
-    try {
-      _amountController.text = isFlipped
-          ? _quanToFiatString(max)
-          : formattingService.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
-    } finally {
-      _isUpdatingProgrammatically = false;
-    }
+    _amountController.text = isFlipped
+        ? _quanToFiatString(max)
+        : formattingService.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
     setState(() => _amount = max);
     if (max > BigInt.zero) _fetchFee();
   }
@@ -230,21 +221,33 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
     final formattingService = ref.read(numberFormattingServiceProvider);
-    _isUpdatingProgrammatically = true;
-    try {
-      if (!wasFlipped) {
-        _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
-      } else {
-        _amountController.text = _amount == BigInt.zero
-            ? ''
-            : formattingService.formatBalance(
-                _amount,
-                maxDecimals: AppConstants.decimals,
-                addThousandsSeparators: false,
-              );
+
+    // Anchor the amount to the current primary value before flipping.
+    // If we were in fiat mode, the 'canonical' amount is the fiat value.
+    // If we were in QUAN mode, the 'canonical' amount is the QUAN value.
+    if (wasFlipped) {
+      // Fiat -> QUAN: The user was looking at a fiat amount.
+      // We already have _amount which was calculated from that fiat amount.
+      // No change needed to _amount, just update the controller.
+      _amountController.text = _amount == BigInt.zero
+          ? ''
+          : formattingService.formatBalance(
+              _amount,
+              maxDecimals: AppConstants.decimals,
+              addThousandsSeparators: false,
+            );
+    } else {
+      // QUAN -> Fiat: The user was looking at a QUAN amount.
+      // We want to ensure the fiat amount shown is the rounded version of this QUAN.
+      _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
+      // Re-parse _amount from the rounded fiat string to ensure they stay in sync.
+      if (_amount != BigInt.zero) {
+        try {
+          _amount = _fiatStringToQuan(_amountController.text);
+        } catch (_) {
+          // Fallback to existing _amount if parsing fails
+        }
       }
-    } finally {
-      _isUpdatingProgrammatically = false;
     }
   }
 
@@ -281,7 +284,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final formattingService = ref.read(numberFormattingServiceProvider);
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
-    final btnDisabled =
+    final btnDisabled = _isFetchingFee ||
         _recipientChecksum == null ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
@@ -403,6 +406,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       child: TextField(
         controller: _amountController,
         focusNode: _amountFocus,
+        onChanged: _onAmountChanged,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
         inputFormatters: [DecimalInputFilter(localeConfig: localeConfig, maxDecimalPlaces: maxDecimals)],

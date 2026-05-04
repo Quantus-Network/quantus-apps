@@ -38,7 +38,11 @@ class ExchangeRateService {
   }
 
   /// Converts [quanAmount] to [fiat] using the current rates.
-  Decimal convert(Decimal quanAmount, FiatCurrency fiat) => quanAmount * quanToUsdRate * getRate(fiat);
+  Decimal convert(Decimal quanAmount, FiatCurrency fiat) {
+    final result = (quanAmount * quanToUsdRate * getRate(fiat));
+    // Round to fiat precision to ensure stable round-trips
+    return Decimal.parse(result.toStringAsFixed(fiat.decimals));
+  }
 
   /// Converts a raw QUAN [BigInt] (scaled by 10^[quanDecimals]) to a fiat [Decimal].
   ///

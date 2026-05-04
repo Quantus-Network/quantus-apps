@@ -57,31 +57,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _processIntentIfAvailable() {
-    final payment = ref.read(paymentIntentProvider);
-    if (payment != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(paymentIntentProvider.notifier).state = null;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
-          ),
-        );
-      });
-      return;
-    }
-
-    final shared = ref.read(sharedAccountIntentProvider);
-    if (shared != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(sharedAccountIntentProvider.notifier).state = null;
-        showSharedAddressActionSheet(context, shared);
-      });
-    }
-  }
-
   Future<void> _toggleBalanceHidden() async {
     final notifier = ref.read(isBalanceHiddenProvider.notifier);
     await notifier.setIsBalanceHidden(!ref.read(isBalanceHiddenProvider));
@@ -93,7 +68,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _processIntentIfAvailable();
+    ref.listen(paymentIntentProvider, (_, payment) {
+      if (payment == null) return;
+      ref.read(paymentIntentProvider.notifier).state = null;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+        ),
+      );
+    });
+
+    ref.listen(sharedAccountIntentProvider, (_, shared) {
+      if (shared == null) return;
+      ref.read(sharedAccountIntentProvider.notifier).state = null;
+      showSharedAddressActionSheet(context, shared);
+    });
 
     final isPosMode = ref.watch(posModeProvider);
     final accountAsync = ref.watch(activeAccountProvider);
