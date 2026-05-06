@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/shared/utils/debouncer.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -52,7 +53,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   int _blockHeight = 0;
   bool _isFetchingFee = true;
 
-  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
+  AmountInputLogic get _amountInputLogic => AmountInputLogic(
+        exchangeRateService: ref.read(exchangeRateServiceProvider),
+        selectedFiat: ref.read(selectedFiatCurrencyProvider),
+        localeConfig: ref.read(localeNumberConfigProvider),
+        formattingService: ref.read(numberFormattingServiceProvider),
+      );
 
   @override
   void initState() {
@@ -61,16 +67,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null) {
       final isFlipped = ref.read(isCurrencyFlippedProvider);
-      final formattingService = ref.read(numberFormattingServiceProvider);
       if (!isFlipped) {
-        final parsed = formattingService.parseAmount(widget.initialAmount!);
-        _amount = parsed ?? BigInt.zero;
+        _amount = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
         _amountController.text = widget.initialAmount!;
       } else {
-        final parsed = formattingService.parseAmount(widget.initialAmount!);
-        if (parsed != null && parsed > BigInt.zero) {
+        final parsed = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
+        if (parsed > BigInt.zero) {
           _amount = parsed;
-          _amountController.text = _quanToFiatString(parsed);
+          _amountController.text = _amountInputLogic.quanToFiatString(parsed);
         }
       }
     }
@@ -118,19 +122,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   void _onAmountChanged(String _) {
     final isFlipped = ref.read(isCurrencyFlippedProvider);
-    if (isFlipped) {
-      try {
-        final convertedAmount = _fiatStringToQuan(_amountController.text);
-        setState(() => _amount = convertedAmount);
-      } on InvalidNumberInputException catch (e, stack) {
-        debugPrint('Fiat→QUAN parse failed: $e\n$stack');
-        context.showErrorToaster(message: 'Please enter a valid amount');
-        return;
-      }
-    } else {
-      final formattingService = ref.read(numberFormattingServiceProvider);
-      final parsed = formattingService.parseAmount(_amountController.text);
-      setState(() => _amount = parsed ?? BigInt.zero);
+    try {
+      setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
+    } on InvalidNumberInputException catch (e, stack) {
+      debugPrint('Amount parse failed: $e\n$stack');
+      context.showErrorToaster(message: 'Please enter a valid amount');
+      return;
     }
     if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
   }
@@ -185,34 +182,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   /// Converts a raw QUAN [BigInt] to a fiat input string using the current
   /// exchange rate and selected fiat currency, formatted for the user's locale.
-  String _quanToFiatString(BigInt quanAmount) {
-    final xRate = ref.read(exchangeRateServiceProvider);
-    final selectedFiat = ref.read(selectedFiatCurrencyProvider);
-    final fiatValue = xRate.quanRawToFiat(quanAmount, selectedFiat, AppConstants.decimals);
-    final canonical = fiatValue.toStringAsFixed(selectedFiat.decimals);
-    return _localeConfig.localize(canonical, addGroupingSeparators: false);
-  }
-
-  /// Parses a locale-formatted fiat input string and returns the equivalent
-  /// raw QUAN [BigInt] scaled by [AppConstants.decimals].
-  ///
-  /// Throws [InvalidNumberInputException] when [fiatText] cannot be parsed.
-  BigInt _fiatStringToQuan(String fiatText) {
-    if (fiatText.isEmpty) return BigInt.zero;
-    final fiatDecimal = _localeConfig.parseDecimal(fiatText);
-    final xRate = ref.read(exchangeRateServiceProvider);
-    final selectedFiat = ref.read(selectedFiatCurrencyProvider);
-    return xRate.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
-  }
-
   void _setMax() {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
-    final formattingService = ref.read(numberFormattingServiceProvider);
-    _amountController.text = isFlipped
-        ? _quanToFiatString(max)
-        : formattingService.formatBalance(max, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
+    _amountController.text = isFlipped ? _amountInputLogic.quanToFiatString(max) : _amountInputLogic.formatQuanAmount(max);
     setState(() => _amount = max);
     if (max > BigInt.zero) _fetchFee();
   }
@@ -220,26 +194,16 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Future<void> _toggleFlip() async {
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
-    final formattingService = ref.read(numberFormattingServiceProvider);
 
-    // Anchor the amount to the current primary value before flipping.
-    // If we were in fiat mode, the 'canonical' amount is the fiat value.
-    // If we were in QUAN mode, the 'canonical' amount is the QUAN value.
-    if (wasFlipped) {
-      // Fiat -> QUAN: The user was looking at a fiat amount.
-      // We already have _amount which was calculated from that fiat amount.
-      // No change needed to _amount, just update the controller.
-      _amountController.text = _amount == BigInt.zero
-          ? ''
-          : formattingService.formatBalance(_amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
-    } else {
-      // QUAN -> Fiat: re-parse _amount from the rounded fiat string so
-      // the displayed value and _amount stay in sync.
-      _amountController.text = _amount == BigInt.zero ? '' : _quanToFiatString(_amount);
-      if (_amount != BigInt.zero) {
-        _amount = _fiatStringToQuan(_amountController.text);
-      }
-    }
+    final result = _amountInputLogic.getToggledInput(
+      wasFlipped: wasFlipped,
+      currentAmount: _amount,
+    );
+
+    setState(() {
+      _amountController.text = result.text;
+      _amount = result.amount;
+    });
   }
 
   Future<void> _openReview() async {

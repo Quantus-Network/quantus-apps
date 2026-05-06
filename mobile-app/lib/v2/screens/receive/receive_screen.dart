@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_qr.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/share_account_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -148,32 +148,10 @@ class QrCodeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final qrSize = 267.0;
-    final qrLogoSize = 64.0;
-
     return Expanded(
       child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: context.colors.textTertiary, width: 1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            width: qrSize,
-            height: qrSize,
-            child: QrImageView(
-              data: accountId,
-              errorCorrectionLevel: QrErrorCorrectLevel.M,
-              embeddedImage: const AssetImage('assets/v2/uppercase_q_black_bg.png'),
-              embeddedImageStyle: QrEmbeddedImageStyle(size: Size(qrLogoSize, qrLogoSize)),
-              version: QrVersions.auto,
-              size: qrSize,
-              padding: const EdgeInsets.all(16),
-              eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.white),
-              dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.white),
-            ),
-          ),
-
+          QuantusQr(accountId: accountId),
           const SizedBox(height: 12),
           Text(
             checksum,

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_qr_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -17,129 +23,157 @@ class PosAmountScreen extends ConsumerStatefulWidget {
 }
 
 class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
-  String _input = '0';
-  LocaleNumberConfig get _localeConfig => ref.read(localeNumberConfigProvider);
+  final _amountController = TextEditingController();
+  final _amountFocus = FocusNode();
+  BigInt _amount = BigInt.zero;
 
-  void _onDigit(String digit) {
-    final sep = _localeConfig.decimalSeparator;
-    final oldText = _input == '0' && digit != sep ? '' : _input;
-    final newText = oldText + digit;
+  AmountInputLogic get _amountInputLogic => AmountInputLogic(
+    exchangeRateService: ref.read(exchangeRateServiceProvider),
+    selectedFiat: ref.read(selectedFiatCurrencyProvider),
+    localeConfig: ref.read(localeNumberConfigProvider),
+    formattingService: ref.read(numberFormattingServiceProvider),
+  );
 
-    final oldValue = TextEditingValue(text: oldText);
-    final newValue = TextEditingValue(text: newText);
-
-    final filter = DecimalInputFilter(localeConfig: _localeConfig);
-    final formatted = filter.formatEditUpdate(oldValue, newValue);
-
-    setState(() {
-      _input = formatted.text.isEmpty ? '0' : formatted.text;
-    });
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _amountFocus.dispose();
+    super.dispose();
   }
 
-  void _onBackspace() {
-    setState(() {
-      if (_input.length <= 1) {
-        _input = '0';
-      } else {
-        _input = _input.substring(0, _input.length - 1);
-      }
-    });
+  void _onAmountChanged(String _) {
+    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    try {
+      setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
+    } on InvalidNumberInputException catch (e, stack) {
+      debugPrint('Amount parse failed: $e\n$stack');
+      context.showErrorToaster(message: 'Please enter a valid amount');
+      return;
+    }
   }
-
-  void _onClear() => setState(() => _input = '0');
 
   void _onCharge() {
-    final formattingService = ref.watch(numberFormattingServiceProvider);
-    final amount = formattingService.parseAmount(_input);
-    if (amount == null || amount <= BigInt.zero) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amount: _input)));
+    if (_amount <= BigInt.zero) return;
+    final quanString = _amountInputLogic.formatQuanAmount(_amount);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amount: quanString)));
   }
 
-  bool get _isValid {
-    final formattingService = ref.watch(numberFormattingServiceProvider);
-    final amount = formattingService.parseAmount(_input);
-    return amount != null && amount > BigInt.zero;
+  Future<void> _toggleFlip() async {
+    final wasFlipped = ref.read(isCurrencyFlippedProvider);
+    await ref.read(isCurrencyFlippedProvider.notifier).toggle();
+
+    final result = _amountInputLogic.getToggledInput(wasFlipped: wasFlipped, currentAmount: _amount);
+
+    setState(() {
+      _amountController.text = result.text;
+      _amount = result.amount;
+    });
   }
+
+  bool get _isValid => _amount > BigInt.zero;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
+    final primaryAmount = ref.watch(txAmountDisplayProvider)(
+      _amount,
+      withSignPrefix: false,
+      isSend: true,
+    ).primaryAmount;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'New Charge'),
-      mainContent: Column(
+      mainContent: _amountCenter(colors, text),
+      bottomContent: _bottomContent(colors, text, primaryAmount),
+    );
+  }
+
+  Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+    final isFlipped = ref.watch(isCurrencyFlippedProvider);
+    final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
+    final display = ref.watch(txAmountDisplayProvider)(
+      _amount,
+      withSignPrefix: false,
+      quanDecimals: 4,
+      isSend: true,
+      withQuanSymbol: false,
+    );
+
+    final symbolStyle = text.transactionDetailAmountSymbol?.copyWith(color: colors.textPrimary);
+    final isPrefixFiat = isFlipped && selectedFiat.symbolPosition == SymbolPosition.prefix;
+
+    final maxDecimals = isFlipped ? selectedFiat.decimals : null;
+    final inputField = IntrinsicWidth(
+      child: TextField(
+        controller: _amountController,
+        focusNode: _amountFocus,
+        onChanged: _onAmountChanged,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textAlign: isPrefixFiat ? TextAlign.left : TextAlign.right,
+        inputFormatters: [
+          DecimalInputFilter(localeConfig: ref.read(localeNumberConfigProvider), maxDecimalPlaces: maxDecimals),
+        ],
+        style: text.transactionDetailAmountPrimary?.copyWith(
+          color: _amount == BigInt.zero ? colors.textTertiary : colors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: '0',
+          hintStyle: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+        ),
+      ),
+    );
+
+    final symbolWidget = Text(isFlipped ? selectedFiat.symbol : AppConstants.tokenSymbol, style: symbolStyle);
+
+    final List<Widget> primaryRowChildren = isPrefixFiat
+        ? [symbolWidget, const SizedBox(width: 8), inputField]
+        : [inputField, const SizedBox(width: 8), symbolWidget];
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  '$_input ${AppConstants.tokenSymbol}',
-                  style: text.extraLargeTitle?.copyWith(
-                    color: colors.textPrimary,
-                    fontSize: 56,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: primaryRowChildren,
             ),
           ),
-          _buildKeypad(colors, text),
           const SizedBox(height: 16),
-          _buildChargeButton(colors, text),
-          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '≈ ${display.secondaryAmount}',
+                style: text.paragraph?.copyWith(
+                  color: colors.textTertiary,
+                  fontFamily: AppTextTheme.fontFamilySecondary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              QuantusIconButton.circular(
+                icon: Icons.swap_vert,
+                onTap: _toggleFlip,
+                isActive: display.isFlipped,
+                size: IconButtonSize.small,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildKeypad(AppColorsV2 colors, AppTextTheme text) {
-    final decimalSeparator = _localeConfig.decimalSeparator;
-    final keys = [
-      ['1', '2', '3'],
-      ['4', '5', '6'],
-      ['7', '8', '9'],
-      [decimalSeparator, '0', 'backspace'],
-    ];
+  Widget _bottomContent(AppColorsV2 colors, AppTextTheme text, String amountDisplay) {
+    final label = _amount > BigInt.zero ? 'Charge $amountDisplay' : 'Enter Amount';
 
-    return Column(
-      children: keys.map((row) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: row.map((key) => _buildKey(key, colors, text)).toList(),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildKey(String key, AppColorsV2 colors, AppTextTheme text) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => key == 'backspace' ? _onBackspace() : _onDigit(key),
-        onLongPress: key == 'backspace' ? _onClear : null,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          height: 60,
-          alignment: Alignment.center,
-          child: key == 'backspace'
-              ? Icon(Icons.backspace_outlined, color: colors.textPrimary, size: 28)
-              : Text(key, style: text.mediumTitle?.copyWith(color: colors.textPrimary, fontSize: 28)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChargeButton(AppColorsV2 colors, AppTextTheme text) {
-    final disabled = !_isValid;
-    return QuantusButton.simple(
-      label: _isValid ? 'Charge $_input ${AppConstants.tokenSymbol}' : 'Enter Amount',
-      onTap: _onCharge,
-      isDisabled: disabled,
-      textStyle: text.smallTitle?.copyWith(fontWeight: FontWeight.w700),
+    return ScaffoldBaseBottomContent(
+      child: QuantusButton.simple(label: label, onTap: _onCharge, isDisabled: !_isValid),
     );
   }
 }

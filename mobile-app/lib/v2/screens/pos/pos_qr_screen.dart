@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_qr.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/services/tx_watch_service.dart';
 import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -120,11 +123,23 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     super.dispose();
   }
 
+  void _toggleFlip() {
+    ref.read(isCurrencyFlippedProvider.notifier).toggle();
+  }
+
+  void _newCharge() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PosAmountScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final planck = formattingService.parseAmount(widget.amount) ?? BigInt.zero;
+    final display = ref.watch(txAmountDisplayProvider)(planck, withSignPrefix: false, isSend: false, quanDecimals: 4);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: _isPaid ? 'Payment Received' : 'Scan to Pay'),
@@ -136,14 +151,21 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         data: (active) {
           if (active == null) return const Center(child: Text('No active account'));
           _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
-          if (_isPaid) return _buildPaidContent(colors, text);
-          return _buildQrContent(_request!, colors, text);
+          if (_isPaid) return _buildPaidContent(colors, text, display.primaryAmount);
+          return _buildQrContent(_request!, colors, text, display);
         },
+      ),
+      bottomContent: ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: _isPaid ? 'Done' : 'New Charge',
+          onTap: _newCharge,
+          variant: ButtonVariant.primary,
+        ),
       ),
     );
   }
 
-  Widget _buildPaidContent(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildPaidContent(AppColorsV2 colors, AppTextTheme text, String amountDisplay) {
     return Column(
       children: [
         const Spacer(),
@@ -151,86 +173,90 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 24),
         Text('Paid', style: text.extraLargeTitle?.copyWith(color: colors.accentGreen, fontSize: 48)),
         const SizedBox(height: 16),
-        Text(
-          '${widget.amount} ${AppConstants.tokenSymbol}',
-          style: text.mediumTitle?.copyWith(color: colors.textSecondary),
-        ),
+        Text(amountDisplay, style: text.mediumTitle?.copyWith(color: colors.textSecondary)),
         const Spacer(),
-        QuantusButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
-        const SizedBox(height: 24),
       ],
     );
   }
 
-  void _newCharge() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PosAmountScreen()));
-  }
-
-  Widget _buildQrContent(PosPaymentRequest request, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildQrContent(
+    PosPaymentRequest request,
+    AppColorsV2 colors,
+    AppTextTheme text,
+    CurrencyDisplayState display,
+  ) {
     return Column(
       children: [
-        const Spacer(),
-        Text(
-          '${request.amount} ${AppConstants.tokenSymbol}',
-          style: text.extraLargeTitle?.copyWith(color: colors.textPrimary, fontSize: 40),
-        ),
-        const SizedBox(height: 32),
-        _buildQrCode(request.paymentUrl, colors),
-        const SizedBox(height: 12),
-        Text('Ref: ${request.refId}', style: text.detail?.copyWith(color: colors.textTertiary)),
-        const Spacer(),
-        QuantusButton.simple(label: 'New Charge', onTap: _newCharge, variant: ButtonVariant.secondary),
+        _buildAmountSection(colors, text, display),
         const SizedBox(height: 16),
-        _buildWaitingButton(colors, text),
-        const SizedBox(height: 24),
+        QuantusQr(accountId: request.paymentUrl),
+        const Spacer(),
+        if (!_watching && _watchError != null) _buildErrorSection(colors, text),
+        if (_watching) _buildWaitingPill(colors, text),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildWaitingButton(AppColorsV2 colors, AppTextTheme text) {
-    if (_watching) {
-      return QuantusButton(
-        variant: ButtonVariant.primary,
-        onTap: () {},
-        child: Row(
+  Widget _buildAmountSection(AppColorsV2 colors, AppTextTheme text, CurrencyDisplayState display) {
+    return Column(
+      children: [
+        Text(
+          display.primaryAmount,
+          style: text.totalMinedBlocks?.copyWith(color: colors.textPrimary, letterSpacing: -2.77),
+        ),
+        const SizedBox(height: 8),
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Loader(),
-            const SizedBox(width: 10),
-            Text('Waiting for payment', style: text.smallTitle?.copyWith(color: colors.textSecondary, fontSize: 16)),
+            Text(
+              '≈ ${display.secondaryAmount}',
+              style: text.paragraph?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+            ),
+            const SizedBox(width: 8),
+            QuantusIconButton.circular(
+              icon: Icons.swap_vert,
+              onTap: _toggleFlip,
+              isActive: display.isFlipped,
+              size: IconButtonSize.small,
+            ),
           ],
         ),
-      );
-    }
-
-    return Column(
-      children: [
-        if (_watchError != null) ...[
-          Text('Network Error', style: text.detail?.copyWith(color: colors.textError)),
-          const SizedBox(height: 8),
-          QuantusButton.simple(label: 'Try Again', onTap: _startWatching, variant: ButtonVariant.secondary),
-          const SizedBox(height: 12),
-        ],
-        QuantusButton.simple(label: 'Done', onTap: _newCharge, variant: ButtonVariant.primary),
       ],
     );
   }
 
-  Widget _buildQrCode(String data, AppColorsV2 colors) {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: QrImageView(
-          data: data,
-          version: QrVersions.auto,
-          size: 280,
-          padding: const EdgeInsets.all(16),
-          backgroundColor: Colors.white,
-          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-          dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
-        ),
+  Widget _buildWaitingPill(AppColorsV2 colors, AppTextTheme text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 9),
+      decoration: BoxDecoration(
+        color: colors.toasterBackground,
+        border: Border.all(color: colors.toasterBorder),
+        borderRadius: BorderRadius.circular(35),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Loader(size: 14, color: colors.textMuted),
+          const SizedBox(width: 9),
+          Text('Waiting for payment', style: text.detail?.copyWith(color: colors.textMuted)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorSection(AppColorsV2 colors, AppTextTheme text) {
+    return Column(
+      children: [
+        Text('Network Error', style: text.detail?.copyWith(color: colors.textError)),
+        const SizedBox(height: 8),
+        QuantusButton.simple(
+          label: 'Try Again',
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+          onTap: _startWatching,
+          variant: ButtonVariant.secondary,
+        ),
+      ],
     );
   }
 }
