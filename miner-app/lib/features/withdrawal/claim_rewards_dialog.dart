@@ -414,7 +414,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
                 _buildStepConnector(4),
                 _buildStepRow(5, 'Generating ZK proofs'),
                 _buildStepConnector(5),
-                _buildStepRow(6, 'Submitting to chain'),
+                _buildStepRow(6, 'Aggregating proofs and submitting to chain'),
               ],
             ),
           ),
