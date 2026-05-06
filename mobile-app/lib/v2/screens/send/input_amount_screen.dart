@@ -54,11 +54,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   bool _isFetchingFee = true;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
-        exchangeRateService: ref.read(exchangeRateServiceProvider),
-        selectedFiat: ref.read(selectedFiatCurrencyProvider),
-        localeConfig: ref.read(localeNumberConfigProvider),
-        formattingService: ref.read(numberFormattingServiceProvider),
-      );
+    exchangeRateService: ref.read(exchangeRateServiceProvider),
+    selectedFiat: ref.read(selectedFiatCurrencyProvider),
+    localeConfig: ref.read(localeNumberConfigProvider),
+    formattingService: ref.read(numberFormattingServiceProvider),
+  );
 
   @override
   void initState() {
@@ -186,7 +186,9 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final balance = ref.read(effectiveMaxBalanceProvider).value ?? BigInt.zero;
     final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _networkFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
-    _amountController.text = isFlipped ? _amountInputLogic.quanToFiatString(max) : _amountInputLogic.formatQuanAmount(max);
+    _amountController.text = isFlipped
+        ? _amountInputLogic.quanToFiatString(max)
+        : _amountInputLogic.formatQuanAmount(max);
     setState(() => _amount = max);
     if (max > BigInt.zero) _fetchFee();
   }
@@ -195,10 +197,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final wasFlipped = ref.read(isCurrencyFlippedProvider);
     await ref.read(isCurrencyFlippedProvider.notifier).toggle();
 
-    final result = _amountInputLogic.getToggledInput(
-      wasFlipped: wasFlipped,
-      currentAmount: _amount,
-    );
+    final result = _amountInputLogic.getToggledInput(wasFlipped: wasFlipped, currentAmount: _amount);
 
     setState(() {
       _amountController.text = result.text;

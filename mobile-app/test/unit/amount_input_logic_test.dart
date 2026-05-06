@@ -42,7 +42,7 @@ void main() {
       final logic = createLogic();
       final amount = BigInt.from(1500000000000); // 1.5 QUAN
       final result = logic.getToggledInput(wasFlipped: false, currentAmount: amount);
-      
+
       expect(result.text, '1.50');
       expect(result.amount, BigInt.from(1500000000000));
     });
@@ -51,7 +51,7 @@ void main() {
       final logic = createLogic();
       final amount = BigInt.from(1500000000000); // 1.5 QUAN
       final result = logic.getToggledInput(wasFlipped: true, currentAmount: amount);
-      
+
       expect(result.text, '1.5');
       expect(result.amount, amount);
     });

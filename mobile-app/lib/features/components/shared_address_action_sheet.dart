@@ -201,10 +201,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                 const SizedBox(height: 26),
                 SizedBox(
                   width: context.isTablet ? 465 : 305,
-                  child: QuantusButton.simple(
-                    label: 'Send To This Account',
-                    onTap: _sendToAddress,
-                  ),
+                  child: QuantusButton.simple(label: 'Send To This Account', onTap: _sendToAddress),
                 ),
                 const SizedBox(height: 80),
               ],

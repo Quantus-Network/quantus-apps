@@ -11,10 +11,7 @@ class ToggledInputResult {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ToggledInputResult &&
-          runtimeType == other.runtimeType &&
-          text == other.text &&
-          amount == other.amount;
+      other is ToggledInputResult && runtimeType == other.runtimeType && text == other.text && amount == other.amount;
 
   @override
   int get hashCode => text.hashCode ^ amount.hashCode;
@@ -61,18 +58,11 @@ class AmountInputLogic {
   /// Formats a QUAN amount for display in an input field.
   String formatQuanAmount(BigInt amount) {
     if (amount == BigInt.zero) return '';
-    return formattingService.formatBalance(
-      amount,
-      maxDecimals: AppConstants.decimals,
-      addThousandsSeparators: false,
-    );
+    return formattingService.formatBalance(amount, maxDecimals: AppConstants.decimals, addThousandsSeparators: false);
   }
 
   /// Returns the new input string and amount when toggling between QUAN and Fiat.
-  ToggledInputResult getToggledInput({
-    required bool wasFlipped,
-    required BigInt currentAmount,
-  }) {
+  ToggledInputResult getToggledInput({required bool wasFlipped, required BigInt currentAmount}) {
     if (wasFlipped) {
       // Fiat -> QUAN: The user was looking at a fiat amount.
       // We already have currentAmount which was calculated from that fiat amount.
@@ -88,10 +78,7 @@ class AmountInputLogic {
   }
 
   /// Handles amount change and returns the updated BigInt amount.
-  BigInt onAmountChanged({
-    required String value,
-    required bool isFlipped,
-  }) {
+  BigInt onAmountChanged({required String value, required bool isFlipped}) {
     if (isFlipped) {
       return fiatStringToQuan(value);
     } else {

@@ -64,7 +64,11 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
                 gradient: LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
-                  colors: [context.colors.skeletonHighlightA, context.colors.skeletonHighlightB, context.colors.skeletonHighlightA],
+                  colors: [
+                    context.colors.skeletonHighlightA,
+                    context.colors.skeletonHighlightB,
+                    context.colors.skeletonHighlightA,
+                  ],
                   stops: const [0.0, 0.5, 1.0],
                   transform: _SlideGradientTransform(_animation.value),
                 ),

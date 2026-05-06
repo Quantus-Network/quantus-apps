@@ -76,11 +76,9 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    final primaryAmount = ref.watch(txAmountDisplayProvider)(
-      _amount,
-      withSignPrefix: false,
-      isSend: true,
-    ).primaryAmount;
+    final primaryAmount = ref
+        .watch(txAmountDisplayProvider)(_amount, withSignPrefix: false, isSend: true)
+        .primaryAmount;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'New Charge'),
