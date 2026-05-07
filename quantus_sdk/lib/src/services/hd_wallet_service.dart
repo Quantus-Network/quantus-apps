@@ -4,6 +4,7 @@ import 'package:ss58/ss58.dart';
 
 import '../extensions/address_extension.dart';
 import '../rust/api/crypto.dart' as crypto;
+import '../rust/api/wormhole.dart' as wormhole_ffi;
 
 /// A wormhole commitment chain: `secret -> first_hash = poseidon(salt || secret) -> address = poseidon(first_hash)`.
 ///
@@ -81,9 +82,9 @@ class HdWalletService {
     return RegExp(r'^[1-9A-HJ-NP-Za-km-z]+$').hasMatch(trimmed);
   }
 
-  /// Compute the nullifier for a wormhole transfer.
-  ///
-  /// withdrawal code paths fail loudly instead of silently misbehaving.
-  String computeNullifier({required String secretHex, required BigInt transferCount}) =>
-      throw UnimplementedError('HdWalletService.computeNullifier not yet wired — rebuild in progress');
+  String computeNullifier({required String secretHex, required BigInt transferCount}) {
+    final secretBytes = hex.decode(secretHex.replaceFirst('0x', ''));
+    final nullifierBytes = wormhole_ffi.computeNullifier(secret: secretBytes, transferCount: transferCount);
+    return '0x${hex.encode(nullifierBytes)}';
+  }
 }

@@ -11,8 +11,8 @@ final _log = log.withTag('MinerWallet');
 /// Miner wallet: rewards preimage persisted on disk.
 ///
 /// Two setup flows are supported:
-/// - Full: mnemonic is used once to derive wormhole data; only the rewards
-///   preimage is saved.
+/// - Full: mnemonic is stored via the SDK secure storage and the rewards preimage
+///   is saved on disk.
 /// - Preimage-only: only the rewards preimage file is written. The node can mine
 ///   but the user must withdraw via CLI.
 class MinerWalletService {
@@ -21,8 +21,10 @@ class MinerWalletService {
 
   static const String _rewardsPreimageFileName = 'rewards-preimage.txt';
   static const String _legacyRewardsAddressFileName = 'rewards-address.txt';
+  static const int _minerWalletIndex = 0;
 
   final HdWalletService _hdWallet = HdWalletService();
+  final SettingsService _settings = SettingsService();
 
   MinerWalletService._internal();
 
@@ -48,27 +50,38 @@ class MinerWalletService {
     }
   }
 
-  /// Use the mnemonic once, then persist only the rewards preimage.
+  /// Save the mnemonic via SDK secure storage and persist the rewards preimage.
   Future<WormholeKeyPair> saveMnemonic(String mnemonic) async {
     if (!validateMnemonic(mnemonic)) {
       throw ArgumentError('Invalid mnemonic phrase');
     }
 
     final trimmed = mnemonic.trim();
+    await _settings.setMnemonic(trimmed, _minerWalletIndex);
+    _log.i('Mnemonic saved securely via SDK settings');
+
     final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: trimmed);
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
 
-    _log.i('Mnemonic used for derivation only (not persisted)');
     _log.i('Wormhole address derived: ${keyPair.address}');
     return keyPair;
   }
 
-  Future<String?> getMnemonic() async => null;
+  Future<String?> getMnemonic() => _settings.getMnemonic(_minerWalletIndex);
 
-  Future<bool> hasMnemonic() async => false;
+  Future<bool> hasMnemonic() async {
+    final mnemonic = await getMnemonic();
+    return mnemonic != null && mnemonic.isNotEmpty;
+  }
 
-  /// Wormhole key pair reconstructed from stored preimage data.
+  /// Wormhole key pair derived from the stored mnemonic, or reconstructed from
+  /// stored preimage data when only mining is configured.
   Future<WormholeKeyPair?> getWormholeKeyPair() async {
+    final mnemonic = await getMnemonic();
+    if (mnemonic != null && mnemonic.isNotEmpty) {
+      return _hdWallet.deriveWormholeKeyPair(mnemonic: mnemonic);
+    }
+
     final preimage = await readRewardsPreimageFile();
     if (preimage == null || preimage.isEmpty) return null;
     final rewardsPreimageHex = _hdWallet.preimageSs58ToHex(preimage);
@@ -84,6 +97,9 @@ class MinerWalletService {
 
   /// Hex value for the node's `--rewards-inner-hash` flag.
   Future<String?> getRewardsInnerHash() async {
+    final keyPair = await getWormholeKeyPair();
+    if (keyPair != null) return keyPair.rewardsPreimageHex;
+
     final fromFile = await readRewardsPreimageFile();
     if (fromFile == null || fromFile.isEmpty) return null;
     return _hdWallet.preimageSs58ToHex(fromFile);
@@ -91,6 +107,9 @@ class MinerWalletService {
 
   /// SS58 wormhole address where rewards are sent.
   Future<String?> getRewardsAddress() async {
+    final keyPair = await getWormholeKeyPair();
+    if (keyPair != null) return keyPair.address;
+
     final hexPreimage = await getRewardsInnerHash();
     if (hexPreimage == null) return null;
     return _hdWallet.preimageToAddress(hexPreimage);
@@ -147,11 +166,18 @@ class MinerWalletService {
     _log.i('Preimage saved (without mnemonic)');
   }
 
-  Future<bool> canWithdraw() async => false;
+  Future<bool> canWithdraw() => hasMnemonic();
 
-  /// Delete preimage files (logout/reset).
+  /// Delete mnemonic + preimage files (logout/reset).
   Future<void> deleteWalletData() async {
     _log.i('Deleting wallet data...');
+
+    try {
+      await _settings.deleteMnemonic(_minerWalletIndex);
+      _log.i('Mnemonic deleted from SDK secure storage');
+    } catch (e) {
+      _log.e('Error deleting mnemonic', error: e);
+    }
 
     for (final getFile in [_preimageFile, _legacyPreimageFile]) {
       try {

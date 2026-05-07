@@ -1,18 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Placeholder withdrawal screen.
-///
-/// The original in-app flow depended on a ZK proof SDK + nullifier Rust FFI
-/// that is being rebuilt. Until that lands, we direct users to the CLI.
-class WithdrawalScreen extends StatelessWidget {
+import 'claim_rewards_dialog.dart';
+
+class WithdrawalScreen extends StatefulWidget {
   final String? wormholeAddress;
 
   const WithdrawalScreen({super.key, this.wormholeAddress});
 
   @override
+  State<WithdrawalScreen> createState() => _WithdrawalScreenState();
+}
+
+class _WithdrawalScreenState extends State<WithdrawalScreen> {
+  final _walletService = MinerWalletService();
+  final _utxoService = WormholeUtxoService();
+  BigInt? _balance;
+  bool _loading = true;
+  bool _canWithdraw = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final keyPair = await _walletService.getWormholeKeyPair();
+    final canWithdraw = await _walletService.canWithdraw();
+    BigInt? balance;
+    if (keyPair != null && keyPair.secretHex.isNotEmpty) {
+      try {
+        balance = await _utxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() {
+      _balance = balance;
+      _canWithdraw = canWithdraw;
+      _loading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final address = widget.wormholeAddress;
+    final hasBalance = _balance != null && _balance! > BigInt.zero;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
@@ -26,37 +63,7 @@ class WithdrawalScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.construction, color: Colors.blue.shade300),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Withdrawals coming soon',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'In-app ZK withdrawals are being rebuilt. For now, claim rewards from the CLI '
-                      'using your wormhole secret.',
-                      style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.85)),
-                    ),
-                  ],
-                ),
-              ),
-              if (wormholeAddress != null) ...[
-                const SizedBox(height: 24),
+              if (address != null) ...[
                 Text('Rewards Address', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.6))),
                 const SizedBox(height: 8),
                 Container(
@@ -70,18 +77,43 @@ class WithdrawalScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: SelectableText(
-                          wormholeAddress!,
+                          address,
                           style: const TextStyle(fontFamily: 'Fira Code', fontSize: 12, color: Colors.white),
                         ),
                       ),
                       IconButton(
                         icon: Icon(Icons.copy, color: Colors.white.withValues(alpha: 0.7), size: 18),
-                        onPressed: () => context.copyTextWithSnackbar(wormholeAddress!),
+                        onPressed: () => context.copyTextWithSnackbar(address),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
+              if (_loading)
+                const Center(child: CircularProgressIndicator())
+              else
+                ElevatedButton.icon(
+                  onPressed: _canWithdraw && hasBalance
+                      ? () => showClaimRewardsDialog(context: context, balance: _balance!)
+                      : null,
+                  icon: const Icon(Icons.account_balance_wallet),
+                  label: Text(
+                    !_canWithdraw
+                        ? 'Mnemonic required to claim'
+                        : !hasBalance
+                        ? 'No rewards to claim'
+                        : 'Claim Rewards',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.white.withValues(alpha: 0.05),
+                    disabledForegroundColor: Colors.white.withValues(alpha: 0.3),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
             ],
           ),
         ),

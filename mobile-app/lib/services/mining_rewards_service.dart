@@ -9,12 +9,14 @@ class MiningRewardsData {
   final int schrodingerBlocks;
   final int diracBlocks;
   final int planckBlocks;
+  final BigInt planckRewards;
 
   const MiningRewardsData({
     required this.resonanceBlocks,
     required this.schrodingerBlocks,
     required this.diracBlocks,
     required this.planckBlocks,
+    required this.planckRewards,
   });
 
   int get totalBlocks => resonanceBlocks + schrodingerBlocks + diracBlocks + planckBlocks;
@@ -49,20 +51,16 @@ class MiningRewardsService {
     final resonance = _countBlocks('resonance', miners['resonance']!, allAccountIds);
     final schrodinger = _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
     final dirac = _countBlocks('dirac', miners['dirac']!, allAccountIds);
-    final planck = await _fetchPlanckBlocks(allAccountIds);
+    final planck = await TaskmasterService().getMinerStats();
 
     print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac, Planck: $planck');
     return MiningRewardsData(
       resonanceBlocks: resonance,
       schrodingerBlocks: schrodinger,
       diracBlocks: dirac,
-      planckBlocks: planck,
+      planckBlocks: planck.totalMinedBlocks,
+      planckRewards: planck.totalRewards,
     );
-  }
-
-  Future<int> _fetchPlanckBlocks(Set<String> accountIds) async {
-    final minerStats = await TaskmasterService().getMinerStats();
-    return minerStats.totalMinedBlocks;
   }
 
   List<_MinerEntry> _parseMiners(String jsonStr) {

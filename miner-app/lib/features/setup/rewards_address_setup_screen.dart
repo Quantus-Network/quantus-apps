@@ -39,8 +39,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
   // Result after saving
   WormholeKeyPair? _savedKeyPair;
 
-  // For preimage-only flow (no keypair available)
-  String? _savedPreimageOnly;
+  // For preimage-only flow (no keypair available). Stored in `0x...` hex form.
+  String? _savedInnerHashHex;
 
   @override
   void initState() {
@@ -184,7 +184,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notSaved = _savedKeyPair == null && _savedPreimageOnly == null;
+    final notSaved = _savedKeyPair == null && _savedInnerHashHex == null;
     final canGoBack = notSaved && (_showImportView || _generatedMnemonic != null);
 
     return Scaffold(
@@ -196,7 +196,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _savedKeyPair != null
           ? _buildSuccessView()
-          : _savedPreimageOnly != null
+          : _savedInnerHashHex != null
           ? _buildPreimageOnlySuccessView()
           : _showImportView
           ? _buildImportView()
@@ -427,8 +427,12 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     try {
       await _walletService.savePreimageOnly(preimage);
+      final innerHashHex = await _walletService.getRewardsInnerHash();
+      if (innerHashHex == null) {
+        throw StateError('Failed to read back saved inner hash');
+      }
       setState(() {
-        _savedPreimageOnly = preimage;
+        _savedInnerHashHex = innerHashHex;
       });
     } catch (e) {
       if (mounted) {
@@ -585,7 +589,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
           _buildInfoCard(
             title: 'Inner Hash',
             subtitle: 'Used by the node to direct rewards',
-            value: _savedPreimageOnly!,
+            value: _savedInnerHashHex!,
             icon: Icons.key,
             color: Colors.blue,
           ),

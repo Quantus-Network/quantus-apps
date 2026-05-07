@@ -15,6 +15,7 @@ import 'src/services/process_cleanup_service.dart';
 import 'src/utils/app_logger.dart';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:telemetrydecksdk/telemetrydecksdk.dart';
 
 final _log = log.withTag('App');
 
@@ -128,7 +129,7 @@ Future<String?> initialRedirect(BuildContext context, GoRouterState state) async
 }
 
 final _router = GoRouter(
-  initialLocation: '/', // Start at a neutral path that will be redirected
+  initialLocation: '/',
   redirect: initialRedirect,
   routes: [
     GoRoute(
@@ -162,6 +163,11 @@ Future<void> main() async {
   } catch (e) {
     _log.e('Error initializing SDK', error: e);
   }
+
+  Telemetrydecksdk.start(
+    const TelemetryManagerConfiguration(appID: '22C2FABE-0070-4BCA-B774-AB4380607EB2', salt: 'QDay'),
+  );
+
   runApp(const MinerApp());
 }
 

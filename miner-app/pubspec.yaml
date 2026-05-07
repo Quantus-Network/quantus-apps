@@ -15,6 +15,9 @@ dependencies:
   # Workspace packages (managed by melos.yaml)
   quantus_sdk: # Version managed by melos.yaml
   
+  # Hex/byte encoding
+  convert:
+  
   # Networking and storage
   http: # Version managed by melos.yaml
   shared_preferences: # Version managed by melos.yaml
@@ -41,6 +44,7 @@ dependencies:
   logger: # Version managed by melos.yaml
   flash: ^3.1.1
   lucide_icons_flutter: ^3.1.5
+  telemetrydecksdk: ^3.0.0
 
 dev_dependencies:
   flutter_test:

@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
+import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -156,7 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ? ScaffoldBaseBottomContent(
                   child: QuantusButton.simple(
                     label: 'Get Testnet Tokens ↗',
-                    onTap: () => openUrl(AppConstants.faucetUrl),
+                    onTap: () => launchXPost(AppConstants.faucetUrl),
                   ),
                 )
               : null,

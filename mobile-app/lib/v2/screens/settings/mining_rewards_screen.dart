@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -35,18 +36,15 @@ class MiningRewardsScreen extends ConsumerWidget {
   }
 }
 
-class _WithRewards extends StatelessWidget {
+class _WithRewards extends ConsumerWidget {
   final MiningRewardsData data;
 
   const _WithRewards({required this.data});
 
-  static const _blockReward = 0.386613134081;
   static const _resonanceSince = 'Jul 2025';
   static const _schrodingerSince = 'Oct 2025';
   static const _diracSince = 'Nov 2025';
   static const _planckSince = 'Jan 2026';
-
-  String get _quanEarned => (data.totalBlocks * _blockReward).toStringAsFixed(1);
 
   String get _activeSince {
     if (data.resonanceBlocks > 0) return _resonanceSince;
@@ -56,12 +54,14 @@ class _WithRewards extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final numberFmt = ref.watch(numberFormattingServiceProvider);
+    final quanEarned = numberFmt.formatBalance(data.planckRewards, maxDecimals: 1);
+
     final colors = context.colors;
     final text = context.themeText;
 
     final testnets = [
-      _TestnetEntry('Planck', 'Canary network · Active now', data.planckBlocks, isActive: true),
       _TestnetEntry('Dirac', _diracSince, data.diracBlocks),
       _TestnetEntry('Schrödinger', _schrodingerSince, data.schrodingerBlocks),
       _TestnetEntry('Resonance', _resonanceSince, data.resonanceBlocks),
@@ -72,14 +72,14 @@ class _WithRewards extends StatelessWidget {
       children: [
         SplitCard(
           topChild: _CardTopSection(
-            totalBlocks: data.totalBlocks,
-            totalBlocksColor: colors.textLightGray,
+            totalBlocks: data.planckBlocks,
+            totalBlocksColor: colors.success,
             statusLabel: 'Mining',
             statusColor: colors.success,
           ),
           bottomChild: Row(
             children: [
-              _StatColumn(label: 'QUAN EARNED', value: _quanEarned, valueColor: colors.accentOrange),
+              _StatColumn(label: 'QUAN EARNED', value: quanEarned, valueColor: colors.accentOrange),
               const SizedBox(width: 64),
               _StatColumn(label: 'ACTIVE SINCE', value: _activeSince, valueColor: colors.textPrimary),
             ],
@@ -230,7 +230,7 @@ class _CardTopSection extends StatelessWidget {
         else
           Text('$totalBlocks', style: text.totalMinedBlocks?.copyWith(color: totalBlocksColor)),
         const SizedBox(height: 4),
-        Text('blocks across all testnets', style: text.detail?.copyWith(color: colors.textMuted)),
+        Text('on the Planck testnet', style: text.detail?.copyWith(color: colors.textMuted)),
       ],
     );
   }
@@ -272,7 +272,7 @@ class _TestnetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    final countColor = entry.isActive ? colors.success : colors.textLightGray;
+    final countColor = colors.textLightGray;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -369,7 +369,6 @@ class _TestnetEntry {
   final String name;
   final String subtitle;
   final int blocks;
-  final bool isActive;
 
-  const _TestnetEntry(this.name, this.subtitle, this.blocks, {this.isActive = false});
+  const _TestnetEntry(this.name, this.subtitle, this.blocks);
 }

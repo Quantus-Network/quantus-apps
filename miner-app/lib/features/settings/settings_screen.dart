@@ -416,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showInnerHashDialog() async {
-    final innerHash = await _walletService.readRewardsPreimageFile();
+    final innerHash = await _walletService.getRewardsInnerHash();
 
     if (innerHash == null || innerHash.isEmpty) {
       if (mounted) {

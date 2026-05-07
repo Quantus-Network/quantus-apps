@@ -264,6 +264,10 @@ class SettingsService {
     return await _secureStorage.read(key: getMnemonicKey(walletIndex));
   }
 
+  Future<void> deleteMnemonic(int walletIndex) async {
+    await _secureStorage.delete(key: getMnemonicKey(walletIndex));
+  }
+
   // Reversible Transaction Settings
   Future<void> setReversibleEnabled(bool enabled) async {
     await _prefs.setBool('reversible_enabled', enabled);

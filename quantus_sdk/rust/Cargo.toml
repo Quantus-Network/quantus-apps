@@ -18,9 +18,28 @@ nam-tiny-hderive = "0.3.1-nam.0"
 sp-core = { version = "39.0.0", default-features = true}
 quantus_ur = { git = "https://github.com/Quantus-Network/quantus_ur.git", tag = "1.1.0" }
 
+# ZK proof generation (aligned with quantus-cli / chain)
+anyhow = "1.0"
+blake3 = "1.8"
+qp-plonky2 = { version = "1.4.1", default-features = false, features = ["rand", "std"] }
+qp-wormhole-circuit = { version = "2.0.1", default-features = false, features = ["std"] }
+qp-wormhole-prover = { version = "2.0.1", default-features = false, features = ["std"] }
+qp-wormhole-aggregator = { version = "2.0.1", default-features = false, features = ["std"] }
+qp-wormhole-inputs = { version = "2.0.1", default-features = false, features = ["std"] }
+qp-zk-circuits-common = { version = "2.0.1", default-features = false, features = ["std"] }
+qp-wormhole-circuit-builder = { version = "2.0.1" }
+
 ## This dependency has been yanked but sp-core depends on version 0.1.1... so we add it with a patch
 [patch.crates-io]
 ark-vrf = { git = "https://github.com/davxy/ark-vrf", tag = "v0.1.1" }
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+# Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
+[profile.dev.build-override]
+opt-level = 3
+
+[profile.release.build-override]
+opt-level = 3
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(frb_expand)']

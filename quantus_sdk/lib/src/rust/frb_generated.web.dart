@@ -8,6 +8,7 @@
 
 import 'api/crypto.dart';
 import 'api/ur.dart';
+import 'api/wormhole.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -42,10 +43,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Keypair dco_decode_box_autoadd_keypair(dynamic raw);
 
   @protected
+  ProofInput dco_decode_box_autoadd_proof_input(dynamic raw);
+
+  @protected
   Keypair dco_decode_keypair(dynamic raw);
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<Uint8List> dco_decode_list_list_prim_u_8_strict(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -54,10 +61,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  MerkleProcessed dco_decode_merkle_processed(dynamic raw);
+
+  @protected
   U8Array32? dco_decode_opt_u_8_array_32(dynamic raw);
 
   @protected
+  ProofInput dco_decode_proof_input(dynamic raw);
+
+  @protected
+  ProofOutput dco_decode_proof_output(dynamic raw);
+
+  @protected
   int dco_decode_u_16(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -94,10 +116,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Keypair sse_decode_box_autoadd_keypair(SseDeserializer deserializer);
 
   @protected
+  ProofInput sse_decode_box_autoadd_proof_input(SseDeserializer deserializer);
+
+  @protected
   Keypair sse_decode_keypair(SseDeserializer deserializer);
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<Uint8List> sse_decode_list_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -106,10 +134,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  MerkleProcessed sse_decode_merkle_processed(SseDeserializer deserializer);
+
+  @protected
   U8Array32? sse_decode_opt_u_8_array_32(SseDeserializer deserializer);
 
   @protected
+  ProofInput sse_decode_proof_input(SseDeserializer deserializer);
+
+  @protected
+  ProofOutput sse_decode_proof_output(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_u_16(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -151,10 +194,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_proof_input(ProofInput self, SseSerializer serializer);
+
+  @protected
   void sse_encode_keypair(Keypair self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_list_prim_u_8_strict(List<Uint8List> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -163,10 +212,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
 
   @protected
+  void sse_encode_merkle_processed(MerkleProcessed self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_u_8_array_32(U8Array32? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_proof_input(ProofInput self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_proof_output(ProofOutput self, SseSerializer serializer);
+
+  @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
