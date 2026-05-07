@@ -88,7 +88,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       showSharedAddressActionSheet(context, shared);
     });
 
-    final balanceAsync = ref.watch(balanceProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
@@ -112,18 +111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             const SizedBox(height: 58),
           ],
-          bottomContent: balanceAsync
-              .whenData(
-                (balance) => balance == BigInt.zero
-                    ? ScaffoldBaseBottomContent(
-                        child: QuantusButton.simple(
-                          label: 'Get Testnet Tokens ↗',
-                          onTap: () => openUrl(AppConstants.faucetUrl),
-                        ),
-                      )
-                    : null,
-              )
-              .value,
+          bottomContent: _buildBottomContent(),
         );
       },
     );
@@ -147,6 +135,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ],
     );
+  }
+
+  Widget? _buildBottomContent() {
+    final enablePos = ref.watch(posModeProvider);
+    final balanceAsync = ref.watch(balanceProvider);
+
+    if (enablePos) {
+      return ScaffoldBaseBottomContent(
+        child: QuantusButton.simple(
+          label: 'Charge',
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
+        ),
+      );
+    }
+
+    return balanceAsync
+        .whenData(
+          (balance) => balance == BigInt.zero
+              ? ScaffoldBaseBottomContent(
+                  child: QuantusButton.simple(
+                    label: 'Get Testnet Tokens ↗',
+                    onTap: () => openUrl(AppConstants.faucetUrl),
+                  ),
+                )
+              : null,
+        )
+        .value;
   }
 
   Widget _buildTopBar() {
@@ -210,7 +225,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildActionButtons() {
     final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
-    final enablePos = ref.watch(posModeProvider);
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
@@ -230,12 +244,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 
-    final chargeCard = _actionCard(
-      iconAsset: 'assets/v2/action_charge.svg',
-      label: 'Charge',
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
-    );
-
     final List<Widget> children = [];
 
     children.add(receiveCard);
@@ -245,11 +253,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (enableSwap) {
       children.add(const SizedBox(width: 15));
       children.add(swapCard);
-    }
-
-    if (enablePos) {
-      children.add(const SizedBox(width: 15));
-      children.add(chargeCard);
     }
 
     return Row(children: children);

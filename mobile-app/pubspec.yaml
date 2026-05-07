@@ -85,7 +85,6 @@ flutter:
     - assets/v2/action_receive.svg
     - assets/v2/action_send.svg
     - assets/v2/action_swap.svg
-    - assets/v2/action_charge.svg
     - assets/v2/uppercase_q.svg
     - assets/v2/uppercase_q.png
     - assets/v2/axe.svg
