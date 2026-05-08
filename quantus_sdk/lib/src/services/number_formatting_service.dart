@@ -9,7 +9,8 @@ class NumberFormattingService {
 
   final LocaleNumberConfig _localeConfig;
 
-  NumberFormattingService({LocaleNumberConfig? localeConfig}) : _localeConfig = localeConfig ?? LocaleNumberConfig.fromDefaultLocale();
+  NumberFormattingService({LocaleNumberConfig? localeConfig})
+    : _localeConfig = localeConfig ?? LocaleNumberConfig.fromDefaultLocale();
 
   /// Formats a raw BigInt balance (representing the smallest unit) into a
   /// user-readable string with a specified number of decimal places.
