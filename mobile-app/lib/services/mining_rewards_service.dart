@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
 class MiningRewardsData {
   final int resonanceBlocks;

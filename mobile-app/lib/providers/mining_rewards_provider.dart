@@ -23,7 +23,10 @@ final miningRewardsProvider = FutureProvider<MiningRewardsData>((ref) async {
   }
 
   final mnemonic = await ref.watch(settingsServiceProvider).getMnemonic(0);
-  final keyPair = ref.watch(hdWalletServiceProvider).deriveWormholeKeyPair(mnemonic: mnemonic!);
+  if (mnemonic == null) {
+    throw Exception('Mnemonic not found!');
+  }
+  final keyPair = ref.watch(hdWalletServiceProvider).deriveWormholeKeyPair(mnemonic: mnemonic);
 
   final oldMiningAccountId = await TaskmasterService().getOldMiningAccountId();
   final accountsList = accounts.map((a) => a.accountId).toList();

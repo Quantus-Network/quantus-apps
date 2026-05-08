@@ -32,7 +32,7 @@ class MiningRewardsScreen extends ConsumerWidget {
           loading: () => const _NoRewards(isLoading: true),
           error: (err, _) =>
               _ErrorState(colors: colors, text: text, onRetry: () => ref.invalidate(miningRewardsProvider)),
-        ),  
+        ),
       ],
       bottomContent: miningAsync.when(
         data: (data) => data.totalBlocks > 0
