@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
 
@@ -10,6 +11,8 @@ class MiningRewardsData {
   final int diracBlocks;
   final int planckBlocks;
   final BigInt planckRewards;
+  final BigInt redeemedRewards;
+  final BigInt redeemableRewards;
 
   const MiningRewardsData({
     required this.resonanceBlocks,
@@ -17,6 +20,8 @@ class MiningRewardsData {
     required this.diracBlocks,
     required this.planckBlocks,
     required this.planckRewards,
+    required this.redeemedRewards,
+    required this.redeemableRewards,
   });
 
   int get totalBlocks => resonanceBlocks + schrodingerBlocks + diracBlocks + planckBlocks;
@@ -35,8 +40,9 @@ class MiningRewardsService {
     _cachedAccountIds = null;
   }
 
-  Future<MiningRewardsData> getMiningRewards(List<String> currentAccountIds) async {
+  Future<MiningRewardsData> getMiningRewards(Ref ref, WormholeKeyPair keyPair, List<String> currentAccountIds) async {
     print('[MiningRewards] Current account IDs: $currentAccountIds');
+    final wormholeUtxoService = ref.read(wormholeUtxoServiceProvider);
 
     final miners = <String, List<_MinerEntry>>{};
     for (final entry in _assets.entries) {
@@ -51,15 +57,20 @@ class MiningRewardsService {
     final resonance = _countBlocks('resonance', miners['resonance']!, allAccountIds);
     final schrodinger = _countBlocks('schrodinger', miners['schrodinger']!, allAccountIds);
     final dirac = _countBlocks('dirac', miners['dirac']!, allAccountIds);
-    final planck = await TaskmasterService().getMinerStats();
+    final (planckStats, redeemableRewards) = await (
+      TaskmasterService().getMinerStats(),
+      wormholeUtxoService.getUnspentBalance(wormholeAddress: keyPair.address, secretHex: keyPair.secretHex),
+    ).wait;
+    final redeemedRewards = planckStats.totalRewards - redeemableRewards;
 
-    print('[MiningRewards] Resonance: $resonance, Schrödinger: $schrodinger, Dirac: $dirac, Planck: $planck');
     return MiningRewardsData(
       resonanceBlocks: resonance,
       schrodingerBlocks: schrodinger,
       diracBlocks: dirac,
-      planckBlocks: planck.totalMinedBlocks,
-      planckRewards: planck.totalRewards,
+      planckBlocks: planckStats.totalMinedBlocks,
+      planckRewards: planckStats.totalRewards,
+      redeemedRewards: redeemedRewards,
+      redeemableRewards: redeemableRewards,
     );
   }
 

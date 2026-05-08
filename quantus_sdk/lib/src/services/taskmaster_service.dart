@@ -566,8 +566,6 @@ class TaskmasterService {
 
       final Map<String, dynamic> data = responseBody['data'];
 
-      print('data $data');
-
       final List<dynamic>? minerStatsList = data['minerStats'];
       if (minerStatsList == null || minerStatsList.isEmpty) {
         return MinerStats(totalMinedBlocks: 0, totalRewards: BigInt.zero);

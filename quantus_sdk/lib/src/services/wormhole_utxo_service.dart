@@ -198,7 +198,7 @@ class WormholeUtxoService {
 query TransfersToAddress($to: String!, $limit: Int!, $offset: Int!, $afterBlock: Int) {
   transfers: transfer(
     where: { to: { id: {_eq: $to } }, block: { height: {_gt: $afterBlock } } }
-    order_by: {block_height: asc}
+    order_by: {block: {height: asc}}
     limit: $limit
     offset: $offset
   ) {

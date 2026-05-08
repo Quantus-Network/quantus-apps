@@ -186,7 +186,6 @@ below
 belt
 bench
 benefit
-benifits
 best
 better
 between
@@ -229,6 +228,7 @@ borrow
 boss
 bottom
 bounce
+bounty
 box
 boy
 bracket
@@ -638,7 +638,7 @@ example
 excess
 exchange
 excite
-exellent
+excellent
 exemplar
 exercise
 exhibit
@@ -892,7 +892,7 @@ hire
 history
 hobby
 hockey
-hodl
+hold
 holiday
 hollow
 holy
@@ -1199,6 +1199,7 @@ myth
 name
 narrow
 nature
+nautilus
 navigable
 near
 neat
@@ -1212,7 +1213,6 @@ neutral
 never
 news
 next
-nft
 nice
 nifty
 night
@@ -1736,7 +1736,7 @@ super
 supple
 supply
 supreme
-supurb
+superb
 sure
 surface
 surge
@@ -1889,8 +1889,8 @@ uncle
 uncover
 undamaged
 undefeated
+undeniable
 under
-undisputable
 unfazed
 unfold
 unified

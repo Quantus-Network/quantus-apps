@@ -53,6 +53,14 @@ final highSecurityServiceProvider = Provider<HighSecurityService>((ref) {
   return HighSecurityService();
 });
 
+final hdWalletServiceProvider = Provider<HdWalletService>((ref) {
+  return HdWalletService();
+});
+
+final wormholeUtxoServiceProvider = Provider<WormholeUtxoService>((ref) {
+  return WormholeUtxoService();
+});
+
 final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, account) async {
   final highSecurityService = ref.watch(highSecurityServiceProvider);
   return await highSecurityService.isHighSecurity(account);

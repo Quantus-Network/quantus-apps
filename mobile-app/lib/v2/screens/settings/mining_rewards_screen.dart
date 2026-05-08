@@ -6,7 +6,9 @@ import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart'
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
+import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
+import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -30,8 +32,15 @@ class MiningRewardsScreen extends ConsumerWidget {
           loading: () => const _NoRewards(isLoading: true),
           error: (err, _) =>
               _ErrorState(colors: colors, text: text, onRetry: () => ref.invalidate(miningRewardsProvider)),
-        ),
+        ),  
       ],
+      bottomContent: miningAsync.when(
+        data: (data) => data.totalBlocks > 0
+            ? const ScaffoldBaseBottomContent(child: QuantusButton.simple(label: 'Redeem', onTap: null))
+            : null,
+        loading: () => null,
+        error: (err, _) => null,
+      ),
     );
   }
 }
@@ -44,19 +53,13 @@ class _WithRewards extends ConsumerWidget {
   static const _resonanceSince = 'Jul 2025';
   static const _schrodingerSince = 'Oct 2025';
   static const _diracSince = 'Nov 2025';
-  static const _planckSince = 'Jan 2026';
-
-  String get _activeSince {
-    if (data.resonanceBlocks > 0) return _resonanceSince;
-    if (data.schrodingerBlocks > 0) return _schrodingerSince;
-    if (data.diracBlocks > 0) return _diracSince;
-    return _planckSince;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final numberFmt = ref.watch(numberFormattingServiceProvider);
-    final quanEarned = numberFmt.formatBalance(data.planckRewards, maxDecimals: 1);
+    final quanEarned = numberFmt.formatBalance(data.planckRewards, addSymbol: true);
+    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, addSymbol: true);
+    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, addSymbol: true);
 
     final colors = context.colors;
     final text = context.themeText;
@@ -67,21 +70,34 @@ class _WithRewards extends ConsumerWidget {
       _TestnetEntry('Resonance', _resonanceSince, data.resonanceBlocks),
     ];
 
+    final miningSummaryPairRows = [
+      _StatPairRow(
+        left: _MiningStatCell(label: 'TESTNET BLOCKS', value: '${data.totalBlocks}', valueColor: colors.textLightGray),
+        right: _MiningStatCell(label: 'TESTNET REWARDS', value: quanEarned, valueColor: colors.accentOrange),
+      ),
+      _StatPairRow(
+        left: _MiningStatCell(label: 'REDEEMED', value: redeemedRewards, valueColor: colors.textLightGray),
+        right: _MiningStatCell(label: 'REDEEMABLE', value: redeemableRewards, valueColor: colors.success),
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SplitCard(
           topChild: _CardTopSection(
-            totalBlocks: data.planckBlocks,
-            totalBlocksColor: colors.success,
+            totalBlocks: data.totalBlocks,
+            totalBlocksColor: colors.textLightGray,
             statusLabel: 'Mining',
             statusColor: colors.success,
           ),
-          bottomChild: Row(
+          bottomChild: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StatColumn(label: 'QUAN EARNED', value: quanEarned, valueColor: colors.accentOrange),
-              const SizedBox(width: 64),
-              _StatColumn(label: 'ACTIVE SINCE', value: _activeSince, valueColor: colors.textPrimary),
+              for (var i = 0; i < miningSummaryPairRows.length; i++) ...[
+                if (i > 0) const SizedBox(height: 24),
+                miningSummaryPairRows[i],
+              ],
             ],
           ),
         ),
@@ -230,7 +246,37 @@ class _CardTopSection extends StatelessWidget {
         else
           Text('$totalBlocks', style: text.totalMinedBlocks?.copyWith(color: totalBlocksColor)),
         const SizedBox(height: 4),
-        Text('on the Planck testnet', style: text.detail?.copyWith(color: colors.textMuted)),
+        Text('blocks across all testnets', style: text.detail?.copyWith(color: colors.textMuted)),
+      ],
+    );
+  }
+}
+
+class _MiningStatCell {
+  const _MiningStatCell({required this.label, required this.value, required this.valueColor});
+
+  final String label;
+  final String value;
+  final Color valueColor;
+}
+
+class _StatPairRow extends StatelessWidget {
+  const _StatPairRow({required this.left, required this.right});
+
+  final _MiningStatCell left;
+  final _MiningStatCell right;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatColumn(label: left.label, value: left.value, valueColor: left.valueColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatColumn(label: right.label, value: right.value, valueColor: right.valueColor),
+        ),
       ],
     );
   }
