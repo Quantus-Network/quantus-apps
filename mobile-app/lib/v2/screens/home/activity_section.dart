@@ -81,7 +81,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             _header(colors, text, context),
             const SizedBox(height: 24),
             for (var i = 0; i < 3; i++) ...[
-              const TxItemSkeleton(),
+              const Skeleton.txItem(),
               if (i < 2) Divider(color: colors.txItemSeparator, height: 24),
             ],
           ],

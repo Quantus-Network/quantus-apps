@@ -81,7 +81,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         const SizedBox(height: 12),
 
                         for (var j = 0; j < 3; j++) ...[
-                          const TxItemSkeleton(),
+                          const Skeleton.txItem(),
                           if (j < 2) Divider(color: colors.txItemSeparator, height: 24),
                         ],
                       ],
