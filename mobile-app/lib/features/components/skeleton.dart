@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
 /// A skeleton widget with shimmer animation for loading states
@@ -54,24 +55,21 @@ class _SkeletonState extends State<Skeleton> with SingleTickerProviderStateMixin
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(borderRadius: borderRadius, color: context.colors.skeletonBase),
-          child: Opacity(
-            opacity: 0.2,
-            child: Container(
-              width: widget.width,
-              height: widget.height,
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    context.colors.skeletonHighlightA,
-                    context.colors.skeletonHighlightB,
-                    context.colors.skeletonHighlightA,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                  transform: _SlideGradientTransform(_animation.value),
-                ),
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  context.colors.skeletonHighlightA.useOpacity(0.2),
+                  context.colors.skeletonHighlightB.useOpacity(0.2),
+                  context.colors.skeletonHighlightA.useOpacity(0.2),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+                transform: _SlideGradientTransform(_animation.value),
               ),
             ),
           ),
@@ -97,27 +95,27 @@ class TxItemSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double txItemHeight = 32.0;
-    final double txItemDetailHeight = 12.0;
+    const double txItemHeight = 32.0;
+    const double txItemDetailHeight = 12.0;
 
-    return Row(
+    return const Row(
       children: [
         Skeleton(width: txItemHeight, height: txItemHeight),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Skeleton(width: 64, height: txItemDetailHeight),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Skeleton(width: 52, height: txItemDetailHeight),
           ],
         ),
-        const Spacer(),
+        Spacer(),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Skeleton(width: 100, height: txItemDetailHeight),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Skeleton(width: 88, height: txItemDetailHeight),
           ],
         ),

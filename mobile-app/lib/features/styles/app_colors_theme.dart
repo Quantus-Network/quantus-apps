@@ -38,8 +38,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
   final Color buttonSuccess;
   final Color buttonNeutral;
   final List<Color> buttonPrimary;
-  final Color skeletonBase;
-  final Color skeletonHighlight;
   final Color accountTagGuardian;
   final Color accountTagEntrusted;
   final Color accountTagHighSecurity;
@@ -78,8 +76,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     required this.buttonSuccess,
     required this.buttonNeutral,
     required this.buttonPrimary,
-    required this.skeletonBase,
-    required this.skeletonHighlight,
     required this.accountTagGuardian,
     required this.accountTagEntrusted,
     required this.accountTagHighSecurity,
@@ -120,8 +116,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         buttonSuccess: const Color(0xFF1FFFA7),
         buttonNeutral: const Color(0xFFF4F6F9),
         buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
-        skeletonBase: const Color(0xFF3D3C44),
-        skeletonHighlight: const Color(0xFF5A5A5A),
         accountTagGuardian: const Color(0xFF9747FF),
         accountTagEntrusted: const Color(0xFFFFD541),
         accountTagHighSecurity: const Color(0xFF4CEDE7),
@@ -162,8 +156,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
         buttonSuccess: const Color(0xFF1FFFA7),
         buttonNeutral: const Color(0xFFF4F6F9),
         buttonPrimary: const [Color(0xFF0000FF), Color(0xFFED4CCE)],
-        skeletonBase: const Color(0xFF3D3C44),
-        skeletonHighlight: const Color(0xFF5A5A5A),
         accountTagGuardian: const Color(0xFF9747FF),
         accountTagEntrusted: const Color(0xFFFFD541),
         accountTagHighSecurity: const Color(0xFF4CEDE7),
@@ -204,8 +196,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
     Color? buttonNeutral,
     Color? buttonDanger,
     Color? buttonSuccess,
-    Color? skeletonBase,
-    Color? skeletonHighlight,
     Color? accountTagGuardian,
     Color? accountTagEntrusted,
     Color? accountTagHighSecurity,
@@ -243,8 +233,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       buttonNeutral: buttonNeutral ?? this.buttonNeutral,
       buttonDanger: buttonDanger ?? this.buttonDanger,
       buttonSuccess: buttonSuccess ?? this.buttonSuccess,
-      skeletonBase: skeletonBase ?? this.skeletonBase,
-      skeletonHighlight: skeletonHighlight ?? this.skeletonHighlight,
       accountTagGuardian: accountTagGuardian ?? this.accountTagGuardian,
       accountTagEntrusted: accountTagEntrusted ?? this.accountTagEntrusted,
       accountTagHighSecurity: accountTagHighSecurity ?? this.accountTagHighSecurity,
@@ -287,8 +275,6 @@ class AppColorsTheme extends ThemeExtension<AppColorsTheme> {
       buttonDanger: Color.lerp(buttonDanger, other.buttonDanger, t) ?? buttonDanger,
       buttonSuccess: Color.lerp(buttonSuccess, other.buttonSuccess, t) ?? buttonSuccess,
       buttonPrimary: other.buttonPrimary,
-      skeletonBase: Color.lerp(skeletonBase, other.skeletonBase, t) ?? skeletonBase,
-      skeletonHighlight: Color.lerp(skeletonHighlight, other.skeletonHighlight, t) ?? skeletonHighlight,
       accountTagGuardian: Color.lerp(accountTagGuardian, other.accountTagGuardian, t) ?? accountTagGuardian,
       accountTagEntrusted: Color.lerp(accountTagEntrusted, other.accountTagEntrusted, t) ?? accountTagEntrusted,
       accountTagHighSecurity:
