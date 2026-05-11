@@ -1,3 +1,5 @@
+import 'package:quantus_miner/src/config/miner_config.dart';
+
 class LogFilterService {
   final int initialLinesToPrint;
   int _linesProcessed = 0;
@@ -33,7 +35,7 @@ class LogFilterService {
       'finalized',
       'sealed',
       'proposed',
-      'Miner rewarded:',
+      MinerConfig.blockSubmittedLogMarker,
       // Keep existing keywords
       '[peers]',
     ],

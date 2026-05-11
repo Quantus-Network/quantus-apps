@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:quantus_miner/src/config/miner_config.dart';
+import 'package:quantus_miner/src/services/log_stream_processor.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
+import 'package:quantus_miner/src/services/mining_orchestrator.dart';
 import 'package:quantus_miner/src/shared/extensions/snackbar_extensions.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -9,7 +14,9 @@ import '../withdrawal/claim_rewards_dialog.dart';
 final _log = log.withTag('BalanceCard');
 
 class MinerBalanceCard extends StatefulWidget {
-  const MinerBalanceCard({super.key});
+  final MiningOrchestrator? orchestrator;
+
+  const MinerBalanceCard({super.key, this.orchestrator});
 
   @override
   State<MinerBalanceCard> createState() => _MinerBalanceCardState();
@@ -24,10 +31,54 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   bool _balanceLoading = false;
   bool _canWithdraw = false;
 
+  StreamSubscription<LogEntry>? _logsSubscription;
+  Timer? _periodicRefreshTimer;
+  Timer? _pendingPostBlockRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _subscribeToOrchestrator(widget.orchestrator);
+    _periodicRefreshTimer = Timer.periodic(MinerConfig.balancePollingInterval, (_) => _refresh());
+  }
+
+  @override
+  void didUpdateWidget(covariant MinerBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.orchestrator != widget.orchestrator) {
+      _subscribeToOrchestrator(widget.orchestrator);
+    }
+  }
+
+  @override
+  void dispose() {
+    _logsSubscription?.cancel();
+    _periodicRefreshTimer?.cancel();
+    _pendingPostBlockRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _subscribeToOrchestrator(MiningOrchestrator? orchestrator) {
+    _logsSubscription?.cancel();
+    _logsSubscription = orchestrator?.logsStream.listen((entry) {
+      if (entry.message.contains(MinerConfig.blockSubmittedLogMarker)) {
+        _scheduleRefreshAfterBlock();
+      }
+    });
+  }
+
+  void _scheduleRefreshAfterBlock() {
+    if (_pendingPostBlockRefreshTimer?.isActive == true) {
+      _log.d('Block submitted but a post-block refresh is already pending');
+      return;
+    }
+    final delay = MinerConfig.balanceRefreshDelayAfterBlock;
+    _log.i('Block submission detected — refreshing balance in ${delay.inSeconds}s');
+    _pendingPostBlockRefreshTimer = Timer(delay, () {
+      _pendingPostBlockRefreshTimer = null;
+      _refresh();
+    });
   }
 
   String? _secretHex;
@@ -77,10 +128,10 @@ class _MinerBalanceCardState extends State<MinerBalanceCard> {
   }
 
   void _refresh() {
+    if (_balanceLoading) return;
     final address = _address;
     final secret = _secretHex;
     if (address != null && secret != null && secret.isNotEmpty) {
-      _log.i('Manual refresh triggered');
       _loadBalance(address, secret);
     }
   }

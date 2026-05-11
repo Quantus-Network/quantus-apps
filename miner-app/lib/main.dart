@@ -9,6 +9,7 @@ import 'features/setup/rewards_address_setup_screen.dart';
 import 'features/miner/miner_dashboard_screen.dart';
 import 'features/withdrawal/withdrawal_screen.dart';
 import 'src/services/binary_manager.dart';
+import 'src/services/log_file_sink.dart';
 import 'src/services/miner_wallet_service.dart';
 import 'src/services/mining_orchestrator.dart';
 import 'src/services/process_cleanup_service.dart';
@@ -156,6 +157,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter bindings are initialized
 
   // Note: Startup cleanup removed for simplicity
+
+  try {
+    final logsDir = await LogFileSink.getLogsDirectory();
+    _log.i('Process logs directory: ${logsDir.path}');
+  } catch (e, st) {
+    _log.e('Failed to prepare logs directory', error: e, stackTrace: st);
+  }
 
   try {
     await QuantusSdk.init();

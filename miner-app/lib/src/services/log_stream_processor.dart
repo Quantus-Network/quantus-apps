@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:quantus_miner/src/services/log_file_sink.dart';
 import 'package:quantus_miner/src/services/log_filter_service.dart';
 import 'package:quantus_miner/src/shared/extensions/log_string_extension.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
@@ -45,6 +46,7 @@ class LogStreamProcessor {
   final String sourceName;
   final LogFilterService _filter;
   final SyncStateProvider? _getSyncState;
+  final LogFileSink _fileSink;
 
   StreamSubscription<String>? _stdoutSubscription;
   StreamSubscription<String>? _stderrSubscription;
@@ -59,7 +61,8 @@ class LogStreamProcessor {
 
   LogStreamProcessor({required this.sourceName, SyncStateProvider? getSyncState})
     : _filter = LogFilterService(),
-      _getSyncState = getSyncState;
+      _getSyncState = getSyncState,
+      _fileSink = LogFileSink(source: sourceName);
 
   /// Start processing logs from a process.
   ///
@@ -86,18 +89,21 @@ class LogStreamProcessor {
     _stderrSubscription?.cancel();
     _stdoutSubscription = null;
     _stderrSubscription = null;
+    _fileSink.flush();
     _log.d('Detached from process');
   }
 
   /// Close the log stream permanently.
   void dispose() {
     detach();
+    _fileSink.close();
     if (!_logController.isClosed) {
       _logController.close();
     }
   }
 
   void _processStdoutLine(String line) {
+    _fileSink.writeLine(line);
     final shouldPrint = _filter.shouldPrintLine(line, isNodeSyncing: _getSyncState?.call() ?? false);
 
     if (shouldPrint) {
@@ -119,6 +125,7 @@ class LogStreamProcessor {
   }
 
   void _processStderrLine(String line) {
+    _fileSink.writeLine(line);
     // stderr is always potentially important
     final isError = _isErrorLine(line);
     final entry = LogEntry(

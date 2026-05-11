@@ -1,0 +1,1 @@
+tail -f ~/.quantus/logs/node.log
