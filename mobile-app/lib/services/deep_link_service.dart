@@ -47,7 +47,6 @@ class DeepLinkService {
 
       if (accountId != null && accountId.isNotEmpty) {
         _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
-        navigatorKey.currentState?.pushNamed('/account');
       } else {
         print('Missing or empty account id');
       }
@@ -57,7 +56,6 @@ class DeepLinkService {
       final payment = PaymentIntent.tryParseUrl(uri.toString());
       if (payment != null) {
         _ref.read(paymentIntentProvider.notifier).state = payment;
-        navigatorKey.currentState?.pushNamed('/account');
       } else {
         print('Missing payment parameters');
       }

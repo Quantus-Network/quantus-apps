@@ -28,7 +28,7 @@ dependencies:
   
   # Storage, networking, and utilities
   shared_preferences: # Version managed by melos.yaml
-  flutter_secure_storage: # Version managed by melos.yaml
+  flutter_secure_storage: ^10.1.0
   http: # Version managed by melos.yaml
   decimal: # Version managed by melos.yaml
   quiver: # Version managed by melos.yaml

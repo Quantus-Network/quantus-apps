@@ -62,60 +62,102 @@ jobs:
 
       - name: Re-sign app and frameworks with Developer ID
         run: |
+          set -euo pipefail
           cd miner-app/build/macos/Build/Products/Release/
           APP_PATH="Quantus Miner.app"
+          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
+          if [ ! -f "$ENTITLEMENTS_PATH" ]; then
+            echo "::error::Entitlements file not found at $ENTITLEMENTS_PATH"
+            exit 1
+          fi
           CERT_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk '{print $2}')
           if [ -z "$CERT_IDENTITY" ]; then
-            echo "Error: Developer ID Application certificate not found in keychain"
-            echo "Available identities:"
+            echo "::error::Developer ID Application certificate not found in keychain"
             security find-identity -v -p codesigning
             exit 1
           fi
           echo "Using certificate identity: $CERT_IDENTITY"
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -print0 | while IFS= read -r -d '' framework; do
+          echo "Using entitlements:        $ENTITLEMENTS_PATH"
+          echo "--- Entitlements to be applied ---"
+          cat "$ENTITLEMENTS_PATH"
+          echo "----------------------------------"
+          while IFS= read -r -d '' framework; do
             echo "Signing framework: $framework"
             codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-              --options runtime \
-              --timestamp \
-              "$framework"
-          done
-          find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -perm +111 \) -print0 | while IFS= read -r -d '' binary; do
+              --options runtime --timestamp "$framework"
+          done < <(find "$APP_PATH/Contents/Frameworks" -name "*.framework" -print0)
+          while IFS= read -r -d '' binary; do
             if [ -f "$binary" ] && ! [[ "$binary" =~ \.framework ]]; then
               echo "Signing binary: $binary"
               codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-                --options runtime \
-                --timestamp \
-                "$binary"
+                --options runtime --timestamp "$binary"
             fi
-          done
-          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
-          if [ ! -f "$ENTITLEMENTS_PATH" ]; then
-            echo "Error: Entitlements file not found at $ENTITLEMENTS_PATH"
-            exit 1
-          fi
-          EXECUTABLE="$APP_PATH/Contents/MacOS/Quantus Miner"
-          if [ -f "$EXECUTABLE" ]; then
-            echo "Signing main executable: $EXECUTABLE"
-            codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-              --options runtime \
-              --timestamp \
-              --entitlements "$ENTITLEMENTS_PATH" \
-              "$EXECUTABLE"
-          fi
+          done < <(find "$APP_PATH/Contents/Frameworks" -type f \( -name "*.dylib" -o -perm +111 \) -print0)
           echo "Signing app bundle: $APP_PATH"
           codesign --force --verify --verbose --sign "$CERT_IDENTITY" \
-            --options runtime \
-            --timestamp \
+            --options runtime --timestamp \
             --entitlements "$ENTITLEMENTS_PATH" \
             "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          if [ $? -ne 0 ]; then
-            echo "Error: Code signing verification failed"
+
+      - name: Verify signed app entitlements match Release.entitlements
+        run: |
+          set -euo pipefail
+          cd miner-app/build/macos/Build/Products/Release/
+          APP_PATH="Quantus Miner.app"
+          ENTITLEMENTS_PATH="$(cd ../../../../.. && pwd)/macos/Runner/Release.entitlements"
+          ACTUAL=$(codesign -d --entitlements :- "$APP_PATH" 2>/dev/null)
+          echo "--- Entitlements embedded in signed app ---"
+          echo "$ACTUAL"
+          echo "-------------------------------------------"
+          EXPECTED_KEYS=$(grep -oE '<key>[^<]+</key>' "$ENTITLEMENTS_PATH" | sed -E 's|</?key>||g')
+          MISSING=""
+          while IFS= read -r KEY; do
+            [ -z "$KEY" ] && continue
+            if ! grep -qF "<key>$KEY</key>" <<<"$ACTUAL"; then
+              MISSING="$MISSING $KEY"
+            fi
+          done <<<"$EXPECTED_KEYS"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Signed app is missing entitlements from Release.entitlements:$MISSING"
             exit 1
           fi
-          
-          # Check for hardened runtime
-          codesign -d --entitlements - "$APP_PATH" | grep -q "com.apple.security.cs.allow-unsigned-executable-memory" || echo "Warning: Hardened runtime entitlements may be missing"
+          if ! grep -qF '<key>com.apple.security.cs.allow-unsigned-executable-memory</key>' <<<"$ACTUAL"; then
+            echo "::error::Hardened runtime entitlements missing from signed app"
+            exit 1
+          fi
+          if [ ! -f "$APP_PATH/Contents/embedded.provisionprofile" ]; then
+            RESTRICTED='keychain-access-groups|application-identifier|com\.apple\.application-identifier|aps-environment|get-task-allow|com\.apple\.developer\.'
+            FOUND=$(grep -oE "<key>($RESTRICTED)[^<]*</key>" "$ENTITLEMENTS_PATH" || true)
+            if [ -n "$FOUND" ]; then
+              echo "::error::Restricted entitlement(s) present without embedded provisioning profile; AMFI will block launch:"
+              echo "$FOUND"
+              echo "Remove from $ENTITLEMENTS_PATH or ship an embedded.provisionprofile."
+              exit 1
+            fi
+          fi
+          echo "All entitlements from Release.entitlements are present in the signed app."
+
+      - name: Smoke-launch signed app to catch AMFI/launchd rejections
+        run: |
+          set -euo pipefail
+          cd miner-app/build/macos/Build/Products/Release/
+          EXE="Quantus Miner.app/Contents/MacOS/Quantus Miner"
+          "$EXE" >/tmp/miner_launch.log 2>&1 &
+          PID=$!
+          sleep 4
+          if kill -0 "$PID" 2>/dev/null; then
+            echo "Signed app launched successfully (pid=$PID); terminating."
+            kill -9 "$PID" 2>/dev/null || true
+            wait "$PID" 2>/dev/null || true
+            exit 0
+          fi
+          wait "$PID" 2>/dev/null || true
+          STATUS=$?
+          echo "::error::Signed app failed to launch (exit=$STATUS). Recent system log:"
+          cat /tmp/miner_launch.log || true
+          /usr/bin/log show --predicate 'eventMessage CONTAINS "Quantus Miner"' --last 1m --info 2>&1 | tail -40 || true
+          exit 1
 
       # Create a single ZIP that we will both notarize AND ship to users.
       # This guarantees the shipped bits are exactly what Apple accepted.

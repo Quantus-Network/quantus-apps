@@ -31,7 +31,7 @@ dependency_overrides:
 
   # Storage and preferences
   shared_preferences: ^2.5.2
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.1.0
 
   # Math and utilities
   decimal: ^3.2.2
