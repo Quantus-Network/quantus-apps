@@ -13,6 +13,7 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -86,6 +87,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (shared == null) return;
       ref.read(sharedAccountIntentProvider.notifier).state = null;
       showSharedAddressActionSheet(context, shared);
+    });
+
+    ref.listen(transactionIntentProvider, (_, transaction) {
+      if (transaction == null) return;
+
+      ref.read(transactionIntentProvider.notifier).state = null;
+      final active = ref.read(activeAccountProvider).value;
+
+      if (active != null) {
+        showTransactionDetailSheet(context, transaction, active.account.accountId);
+      }
     });
 
     final accountAsync = ref.watch(activeAccountProvider);

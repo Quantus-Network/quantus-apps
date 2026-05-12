@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
@@ -89,12 +88,11 @@ class TransactionService {
     }
   }
 
-  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic>? json, GlobalKey<NavigatorState> navigatorKey) {
+  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic>? json) {
     final event = deserializeTxEventFromJsonIfPossible(json);
 
     if (event != null) {
       _ref.read(transactionIntentProvider.notifier).state = event;
-      navigatorKey.currentState?.pushNamed('/transactions');
     }
   }
 

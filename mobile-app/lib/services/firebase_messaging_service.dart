@@ -105,6 +105,7 @@ class FirebaseMessagingService {
       return;
     }
     try {
+      _cachedToken = null;
       await _senotiService.unregisterDevice(token, _platform);
     } catch (e) {
       debugPrint('Failed to unregister device: $e');
@@ -169,10 +170,12 @@ class FirebaseMessagingService {
 
   void _handleNotificationTap(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) {
     final data = message.data;
+
+    print('FCM notification data: $data');
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    txService.navigateToTransactionFromPayloadIfPossible(data, navigatorKey);
+    txService.navigateToTransactionFromPayloadIfPossible(data);
   }
 
   NotificationData? _remoteMessageToNotificationData(RemoteMessage message) {
