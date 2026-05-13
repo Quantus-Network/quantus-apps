@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_badge.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -26,7 +28,7 @@ class AccountsSheet extends ConsumerStatefulWidget {
 }
 
 class _AccountsScreenState extends ConsumerState<AccountsSheet> {
-  List<Account> _displayAccounts(List<Account> accounts) {
+  List<Account> _sortedRegular(List<Account> accounts) {
     final sorted = [...accounts];
     sorted.sort((a, b) {
       final walletCmp = a.walletIndex.compareTo(b.walletIndex);
@@ -43,8 +45,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     ).push<void>(MaterialPageRoute<void>(builder: (_) => const AddAccountMenuScreen()));
   }
 
-  Future<void> _switchAccount(Account account) async {
-    await ref.read(activeAccountProvider.notifier).setActiveAccount(RegularAccount(account));
+  Future<void> _switchAccount(DisplayAccount display) async {
+    await ref.read(activeAccountProvider.notifier).setActiveAccount(display);
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -57,11 +59,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsProvider);
+    final multisigAsync = ref.watch(multisigAccountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
-    final accounts = accountsAsync.value ?? <Account>[];
     final activeDisplayAccount = activeDisplayAccountAsync.value;
-    final displayAccounts = _displayAccounts(accounts);
     final activeAccountId = activeDisplayAccount?.account.accountId;
 
     final media = MediaQuery.of(context);
@@ -73,8 +74,8 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       height: sheetHeight,
       child: _buildContent(
         accountsAsync: accountsAsync,
+        multisigAsync: multisigAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
-        displayAccounts: displayAccounts,
         activeAccountId: activeAccountId,
       ),
     );
@@ -82,15 +83,15 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   Widget _buildContent({
     required AsyncValue<List<Account>> accountsAsync,
+    required AsyncValue<List<MultisigAccount>> multisigAsync,
     required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
-    required List<Account> displayAccounts,
     required String? activeAccountId,
   }) {
-    if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading) {
+    if (accountsAsync.isLoading || activeDisplayAccountAsync.isLoading || multisigAsync.isLoading) {
       return const Center(child: Loader());
     }
 
-    if (accountsAsync.hasError) {
+    if (accountsAsync.hasError || multisigAsync.hasError) {
       return Center(
         child: Text(
           'Failed to load accounts.',
@@ -108,15 +109,19 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       );
     }
 
-    return _buildAccountsListView(displayAccounts, activeAccountId);
+    final regulars = _sortedRegular(accountsAsync.value ?? []);
+    final multisigs = multisigAsync.value ?? [];
+    final items = <BaseAccount>[...regulars, ...multisigs];
+
+    return _buildAccountsListView(items, activeAccountId);
   }
 
-  Widget _buildAccountsListView(List<Account> displayAccounts, String? activeAccountId) {
+  Widget _buildAccountsListView(List<BaseAccount> items, String? activeAccountId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: displayAccounts.isEmpty
+          child: items.isEmpty
               ? Center(
                   child: Text(
                     'No accounts found.',
@@ -124,13 +129,14 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                   ),
                 )
               : ListView.separated(
-                  itemCount: displayAccounts.length,
+                  itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (_, index) {
-                    final account = displayAccounts[index];
-                    final isActive = account.accountId == activeAccountId;
-
-                    return _buildAccountRow(account, isActive);
+                    final item = items[index];
+                    final isActive = item.accountId == activeAccountId;
+                    if (item is Account) return _buildRegularRow(item, isActive);
+                    if (item is MultisigAccount) return _buildMultisigRow(item, isActive);
+                    return const SizedBox.shrink();
                   },
                 ),
         ),
@@ -140,7 +146,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildAccountRow(Account account, bool isActive) {
+  Widget _buildRegularRow(Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
@@ -148,10 +154,65 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       error: (_, _) => 'Balance unavailable',
       data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
     );
-    final colors = context.colors;
 
+    return _AccountRowShell(
+      isActive: isActive,
+      onTap: () => _switchAccount(RegularAccount(account)),
+      leading: AccountBadge(account: account, isActive: isActive),
+      title: account.name,
+      subtitle: balanceText,
+      trailing: QuantusIconButton.circular(
+        icon: Icons.edit_outlined,
+        onTap: () => _openAccountMenu(account),
+        size: IconButtonSize.medium,
+      ),
+    );
+  }
+
+  Widget _buildMultisigRow(MultisigAccount account, bool isActive) {
+    final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
+    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final balanceText = balanceAsync.when(
+      loading: () => 'Loading...',
+      error: (_, _) => '— ${AppConstants.tokenSymbol}',
+      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+    );
+
+    return _AccountRowShell(
+      isActive: isActive,
+      onTap: () => _switchAccount(MultisigDisplayAccount(account)),
+      leading: MultisigBadge(account: account, isActive: isActive),
+      title: account.name,
+      subtitle: balanceText,
+      tag: const MultisigTag(),
+    );
+  }
+}
+
+class _AccountRowShell extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final Widget? tag;
+
+  const _AccountRowShell({
+    required this.isActive,
+    required this.onTap,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+    this.tag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
-      onTap: () => _switchAccount(account),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -166,24 +227,33 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  AccountBadge(account: account, isActive: isActive),
+                  leading,
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          account.name,
-                          style: context.themeText.paragraph!.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                            color: colors.textPrimary,
-                            height: 1,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                title,
+                                style: context.themeText.paragraph!.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  color: colors.textPrimary,
+                                  height: 1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (tag != null) ...[const SizedBox(width: 8), tag!],
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          balanceText,
+                          subtitle,
                           style: context.themeText.smallParagraph!.copyWith(
                             fontSize: 14,
                             color: colors.textTertiary,
@@ -196,12 +266,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            QuantusIconButton.circular(
-              icon: Icons.edit_outlined,
-              onTap: () => _openAccountMenu(account),
-              size: IconButtonSize.medium,
-            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing!],
           ],
         ),
       ),

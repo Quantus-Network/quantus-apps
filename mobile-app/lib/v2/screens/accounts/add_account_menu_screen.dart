@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/create_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/import/import_wallet_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/add_multisig_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -27,6 +28,10 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
     final walletIndex = nextNonHardwareWalletIndex(accounts);
 
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ImportWalletScreenV2(walletIndex: walletIndex)));
+  }
+
+  void _onAddMultisig() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddMultisigScreen()));
   }
 
   @override
@@ -54,6 +59,17 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
             title: 'Import Wallet',
             subtitle: 'Use a recovery phrase to import',
             onTap: _onImportWallet,
+            colors: colors,
+            text: context.themeText,
+          ),
+          const SizedBox(height: 16),
+          Divider(color: colors.toasterBackground, height: 1),
+          const SizedBox(height: 24),
+          _AddMenuRow(
+            icon: Icons.group_outlined,
+            title: 'Add Multisig',
+            subtitle: 'Discover or paste a multisig address',
+            onTap: _onAddMultisig,
             colors: colors,
             text: context.themeText,
           ),

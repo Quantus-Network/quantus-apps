@@ -14,6 +14,8 @@ import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart'
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposals_section.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
@@ -108,10 +110,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onRefresh: _refresh,
           slivers: [
             _buildContent(active, colors, text),
-            ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+            if (active is MultisigDisplayAccount)
+              MultisigProposalsSection(msig: active.account)
+            else
+              ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             const SizedBox(height: 58),
           ],
-          bottomContent: _buildBottomContent(),
+          bottomContent: _buildBottomContent(active),
         );
       },
     );
@@ -127,6 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _buildBalance(colors, text),
         const SizedBox(height: 40),
         if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
+        if (active is MultisigDisplayAccount) ...[_buildProposeButton(active.account), const SizedBox(height: 40)],
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
@@ -137,7 +143,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget? _buildBottomContent() {
+  Widget? _buildBottomContent(DisplayAccount active) {
+    if (active is MultisigDisplayAccount) return null;
+
     final enablePos = ref.watch(posModeProvider);
     final balanceAsync = ref.watch(balanceProvider);
 
@@ -256,6 +264,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Row(children: children);
+  }
+
+  Widget _buildProposeButton(MultisigAccount msig) {
+    return QuantusButton.simple(
+      label: 'Propose',
+      variant: ButtonVariant.primary,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig)),
+      ),
+    );
   }
 
   Widget _actionCard({required String iconAsset, required String label, required VoidCallback onTap}) {
