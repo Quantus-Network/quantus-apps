@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 import 'package:resonance_network_wallet/wallet_initializer.dart';
 import 'package:resonance_network_wallet/v2/screens/auth/auth_wrapper.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
@@ -27,9 +26,9 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationIntegrationServiceProvider);
-      ref.read(deepLinkServiceProvider).init(navigatorKey);
-      ref.read(localNotificationsServiceProvider).setupNotificationsClickListener(navigatorKey);
-      ref.read(localNotificationsServiceProvider).handleLaunchByNotification(navigatorKey);
+      ref.read(deepLinkServiceProvider).init();
+      ref.read(localNotificationsServiceProvider).setupNotificationsClickListener();
+      ref.read(localNotificationsServiceProvider).handleLaunchByNotification();
 
       if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
     });
@@ -45,7 +44,6 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Quantus Wallet',
-      navigatorKey: navigatorKey,
       navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
       routes: {

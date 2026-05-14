@@ -6,7 +6,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 
 final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
   return RemoteConfigService();
@@ -71,7 +70,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
 
     // Ensure navigatorKey.currentState is attached before handling any initial message.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      fcmService.setupNotificationTapHandlers(navigatorKey);
+      fcmService.setupNotificationTapHandlers();
     });
 
     _isEnablingRemoteNotifications = false;

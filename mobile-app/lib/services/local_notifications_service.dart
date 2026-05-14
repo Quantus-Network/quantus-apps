@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
@@ -69,7 +68,7 @@ class LocalNotificationsService {
   }
 
   // This is for handling when app is in terminated state then launched by tapping notification.
-  Future<void> handleLaunchByNotification(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> handleLaunchByNotification() async {
     final notificationAppLaunchDetails = await _notificationPlugin.getNotificationAppLaunchDetails();
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
 
@@ -125,7 +124,7 @@ class LocalNotificationsService {
     }
   }
 
-  void setupNotificationsClickListener(GlobalKey<NavigatorState> navigatorKey) {
+  void setupNotificationsClickListener() {
     _onNotificationClick.stream.listen((payload) {
       if (payload == null || payload.isEmpty) return;
 

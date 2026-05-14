@@ -12,13 +12,9 @@ Map<String, dynamic>? jsonMapOrNull(dynamic value) {
     final decoded = jsonDecode(trimmed);
     if (decoded is Map<String, dynamic>) return decoded;
     if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    throw FormatException(
-      'JSON string must decode to an object, got ${decoded.runtimeType}',
-    );
+    throw FormatException('JSON string must decode to an object, got ${decoded.runtimeType}');
   }
-  throw FormatException(
-    'Expected Map or JSON object string, got ${value.runtimeType}',
-  );
+  throw FormatException('Expected Map or JSON object string, got ${value.runtimeType}');
 }
 
 Map<String, dynamic> jsonMapRequired(dynamic value, String fieldName) {
@@ -33,17 +29,13 @@ BigInt bigIntFromJson(dynamic value) {
   if (value is BigInt) return value;
   if (value is int) return BigInt.from(value);
   if (value is String) return BigInt.parse(value);
-  throw FormatException(
-    'Cannot parse BigInt from ${value.runtimeType}: $value',
-  );
+  throw FormatException('Cannot parse BigInt from ${value.runtimeType}: $value');
 }
 
 DateTime dateTimeFromJson(dynamic value) {
   if (value is DateTime) return value;
   if (value is String) return DateTime.parse(value);
-  throw FormatException(
-    'Cannot parse DateTime from ${value.runtimeType}: $value',
-  );
+  throw FormatException('Cannot parse DateTime from ${value.runtimeType}: $value');
 }
 
 String stringFromJson(dynamic value) {

@@ -105,10 +105,7 @@ class ReversibleTransferEvent extends TransactionEvent {
   });
 
   // Create a ReversibleTransferEvent with a known status
-  factory ReversibleTransferEvent.fromJson(
-    Map<String, dynamic> json, {
-    required ReversibleTransferStatus status,
-  }) {
+  factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json, {required ReversibleTransferStatus status}) {
     final block = jsonMapRequired(json['block'], 'block');
     final transfer = jsonMapOrNull(json['scheduledTransfer']) ?? json;
     return ReversibleTransferEvent(
@@ -127,9 +124,7 @@ class ReversibleTransferEvent extends TransactionEvent {
   }
 
   // Create a ReversibleTransferEvent we previously stored as JSON using toJson()
-  factory ReversibleTransferEvent.deserializeFromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory ReversibleTransferEvent.deserializeFromJson(Map<String, dynamic> json) {
     return ReversibleTransferEvent.fromJson(
       json,
       status: ReversibleTransferStatus.values.byName(json['status'] as String),

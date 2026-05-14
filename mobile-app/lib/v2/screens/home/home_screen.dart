@@ -95,9 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(transactionIntentProvider.notifier).state = null;
       final active = ref.read(activeAccountProvider).value;
 
-      if (active != null) {
-        showTransactionDetailSheet(context, transaction, active.account.accountId);
-      }
+      showTransactionDetailSheet(context, transaction, active?.account.accountId);
     });
 
     final accountAsync = ref.watch(activeAccountProvider);

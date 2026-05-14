@@ -148,30 +148,29 @@ class FirebaseMessagingService {
 
   /// Handle the user tapping on an FCM notification that launched/resumed the app.
   /// Call this after the navigator key is available.
-  void setupNotificationTapHandlers(GlobalKey<NavigatorState> navigatorKey) {
+  void setupNotificationTapHandlers() {
     if (__hasRegisteredHandlers) return;
     __hasRegisteredHandlers = true;
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('FCM notification tapped (background): ${message.messageId}');
-      _handleNotificationTap(message, navigatorKey);
+      _handleNotificationTap(message);
     });
 
-    _handleInitialMessage(navigatorKey);
+    _handleInitialMessage();
   }
 
-  Future<void> _handleInitialMessage(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> _handleInitialMessage() async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       debugPrint('FCM initial message (terminated): ${initialMessage.messageId}');
-      _handleNotificationTap(initialMessage, navigatorKey);
+      _handleNotificationTap(initialMessage);
     }
   }
 
-  void _handleNotificationTap(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) {
+  void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
 
-    print('FCM notification data: $data');
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);

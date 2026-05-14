@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
@@ -17,22 +16,22 @@ class DeepLinkService {
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
 
-  Future<void> init(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> init() async {
     // Handle links when the app is already open (warm state)
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       print('Received link while app is open: $uri');
-      _handleLink(uri, navigatorKey);
+      _handleLink(uri);
     });
 
     // Handle the link that opened the app (cold state)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
       print('Received initial link: $initialUri');
-      _handleLink(initialUri, navigatorKey);
+      _handleLink(initialUri);
     }
   }
 
-  void _handleLink(Uri uri, GlobalKey<NavigatorState> navigatorKey) {
+  void _handleLink(Uri uri) {
     if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'account') {
       String? accountId;
 
