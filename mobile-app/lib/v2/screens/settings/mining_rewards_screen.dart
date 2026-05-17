@@ -306,12 +306,7 @@ class _StatColumn extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              softWrap: false,
-              style: text.sendSectionLabel?.copyWith(color: valueColor),
-            ),
+            child: Text(value, maxLines: 1, softWrap: false, style: text.sendSectionLabel?.copyWith(color: valueColor)),
           ),
       ],
     );
