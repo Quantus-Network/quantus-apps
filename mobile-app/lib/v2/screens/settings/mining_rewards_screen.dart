@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/redeem_address_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -35,9 +36,21 @@ class MiningRewardsScreen extends ConsumerWidget {
         ),
       ],
       bottomContent: miningAsync.when(
-        data: (data) => data.totalBlocks > 0
-            ? const ScaffoldBaseBottomContent(child: QuantusButton.simple(label: 'Redeem', onTap: null))
-            : null,
+        data: (data) {
+          if (data.totalBlocks == 0) return null;
+          final canRedeem = data.redeemableRewards > BigInt.zero;
+          return ScaffoldBaseBottomContent(
+            child: QuantusButton.simple(
+              label: 'Redeem',
+              isDisabled: !canRedeem,
+              onTap: canRedeem
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => RedeemAddressScreen(redeemableRewards: data.redeemableRewards)),
+                    )
+                  : null,
+            ),
+          );
+        },
         loading: () => null,
         error: (err, _) => null,
       ),
@@ -306,12 +319,7 @@ class _StatColumn extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              softWrap: false,
-              style: text.sendSectionLabel?.copyWith(color: valueColor),
-            ),
+            child: Text(value, maxLines: 1, softWrap: false, style: text.sendSectionLabel?.copyWith(color: valueColor)),
           ),
       ],
     );
