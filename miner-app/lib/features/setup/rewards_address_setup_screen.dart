@@ -138,7 +138,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
 
     if (!_walletService.validateMnemonic(mnemonic)) {
       setState(() {
-        _importError = 'Recovery phrase checksum is invalid. All words are valid, '
+        _importError =
+            'Recovery phrase checksum is invalid. All words are valid, '
             'but they may be in the wrong order or one word is misspelled into another valid word.';
       });
       return;

@@ -173,10 +173,7 @@ class _MinerAppBarState extends State<MinerAppBar> {
                             children: [
                               Icon(Icons.logout, color: Colors.red.useOpacity(0.8), size: 20),
                               const SizedBox(width: 12),
-                              Text(
-                                'Reset App',
-                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
-                              ),
+                              Text('Reset App', style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14)),
                             ],
                           ),
                         ),

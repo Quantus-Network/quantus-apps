@@ -42,8 +42,7 @@ class MinerWalletService {
 
   /// Normalize user-entered mnemonic input: lowercase + collapse whitespace.
   /// The BIP-39 English wordlist is lowercase only.
-  String normalizeMnemonic(String mnemonic) =>
-      mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
+  String normalizeMnemonic(String mnemonic) => mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
 
   bool validateMnemonic(String mnemonic) {
     try {
