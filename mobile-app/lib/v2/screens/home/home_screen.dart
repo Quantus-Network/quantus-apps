@@ -41,6 +41,36 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual<TransactionEvent?>(transactionIntentProvider, (_, transaction) {
+      if (transaction == null || !mounted) return;
+      ref.read(transactionIntentProvider.notifier).state = null;
+      final active = ref.read(activeAccountProvider).value;
+      showTransactionDetailSheet(context, transaction, active?.account.accountId);
+    }, fireImmediately: true);
+
+    ref.listenManual<PaymentIntent?>(paymentIntentProvider, (_, payment) {
+      if (payment == null || !mounted) return;
+      ref.read(paymentIntentProvider.notifier).state = null;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+        ),
+      );
+    }, fireImmediately: true);
+
+    ref.listenManual<String?>(sharedAccountIntentProvider, (_, shared) {
+      if (shared == null || !mounted) return;
+      ref.read(sharedAccountIntentProvider.notifier).state = null;
+      showSharedAddressActionSheet(context, shared);
+    }, fireImmediately: true);
+  }
+
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
     ref.invalidate(balanceProviderFamily);
@@ -71,33 +101,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(paymentIntentProvider, (_, payment) {
-      if (payment == null) return;
-      ref.read(paymentIntentProvider.notifier).state = null;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
-        ),
-      );
-    });
-
-    ref.listen(sharedAccountIntentProvider, (_, shared) {
-      if (shared == null) return;
-      ref.read(sharedAccountIntentProvider.notifier).state = null;
-      showSharedAddressActionSheet(context, shared);
-    });
-
-    ref.listen(transactionIntentProvider, (_, transaction) {
-      if (transaction == null) return;
-
-      ref.read(transactionIntentProvider.notifier).state = null;
-      final active = ref.read(activeAccountProvider).value;
-
-      showTransactionDetailSheet(context, transaction, active?.account.accountId);
-    });
-
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
