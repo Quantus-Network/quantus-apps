@@ -125,12 +125,21 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       return;
     }
 
-    // Normalize: collapse any whitespace/newlines to single spaces
     final mnemonic = words.join(' ');
+
+    final invalidWords = _walletService.findInvalidMnemonicWords(mnemonic);
+    if (invalidWords.isNotEmpty) {
+      final formatted = invalidWords.map((w) => '"${w.word}" (word ${w.position})').join(', ');
+      setState(() {
+        _importError = 'Not in the BIP-39 wordlist: $formatted. Check for typos.';
+      });
+      return;
+    }
 
     if (!_walletService.validateMnemonic(mnemonic)) {
       setState(() {
-        _importError = 'Invalid recovery phrase. Please check your words.';
+        _importError = 'Recovery phrase checksum is invalid. All words are valid, '
+            'but they may be in the wrong order or one word is misspelled into another valid word.';
       });
       return;
     }

@@ -40,14 +40,33 @@ class MinerWalletService {
     return Mnemonic(entropy, Language.english).sentence;
   }
 
+  /// Normalize user-entered mnemonic input: lowercase + collapse whitespace.
+  /// The BIP-39 English wordlist is lowercase only.
+  String normalizeMnemonic(String mnemonic) =>
+      mnemonic.trim().toLowerCase().split(RegExp(r'\s+')).join(' ');
+
   bool validateMnemonic(String mnemonic) {
     try {
-      Mnemonic.fromSentence(mnemonic.trim(), Language.english);
+      Mnemonic.fromSentence(normalizeMnemonic(mnemonic), Language.english);
       return true;
     } catch (e) {
       _log.w('Invalid mnemonic: $e');
       return false;
     }
+  }
+
+  /// Returns words that are not in the BIP-39 English wordlist, with their
+  /// 1-based positions. Useful for telling the user which word(s) are typos.
+  List<({int position, String word})> findInvalidMnemonicWords(String mnemonic) {
+    final words = normalizeMnemonic(mnemonic).split(' ');
+    final invalid = <({int position, String word})>[];
+    for (var i = 0; i < words.length; i++) {
+      if (words[i].isEmpty) continue;
+      if (!Language.english.isValid(words[i])) {
+        invalid.add((position: i + 1, word: words[i]));
+      }
+    }
+    return invalid;
   }
 
   /// Save the mnemonic via SDK secure storage and persist the rewards preimage.
@@ -56,11 +75,11 @@ class MinerWalletService {
       throw ArgumentError('Invalid mnemonic phrase');
     }
 
-    final trimmed = mnemonic.trim();
-    await _settings.setMnemonic(trimmed, _minerWalletIndex);
+    final normalized = normalizeMnemonic(mnemonic);
+    await _settings.setMnemonic(normalized, _minerWalletIndex);
     _log.i('Mnemonic saved securely via SDK settings');
 
-    final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: trimmed);
+    final keyPair = _hdWallet.deriveWormholeKeyPair(mnemonic: normalized);
     await _saveRewardsPreimage(keyPair.rewardsPreimage);
 
     _log.i('Wormhole address derived: ${keyPair.address}');

@@ -174,7 +174,7 @@ class _MinerAppBarState extends State<MinerAppBar> {
                               Icon(Icons.logout, color: Colors.red.useOpacity(0.8), size: 20),
                               const SizedBox(width: 12),
                               Text(
-                                'Logout (Full Reset)',
+                                'Reset App',
                                 style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
                               ),
                             ],
