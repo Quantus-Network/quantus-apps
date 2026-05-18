@@ -45,30 +45,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-    ref.listenManual<TransactionEvent?>(transactionIntentProvider, (_, transaction) {
-      if (transaction == null || !mounted) return;
-      ref.read(transactionIntentProvider.notifier).state = null;
-      final active = ref.read(activeAccountProvider).value;
-      showTransactionDetailSheet(context, transaction, active?.account.accountId);
-    }, fireImmediately: true);
+    ref.listenManual<TransactionEvent?>(transactionIntentProvider, _onTransactionIntent);
+    ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
+    ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
+    ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
+      if (async.value == null) return;
+      _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    });
 
-    ref.listenManual<PaymentIntent?>(paymentIntentProvider, (_, payment) {
-      if (payment == null || !mounted) return;
-      ref.read(paymentIntentProvider.notifier).state = null;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
-        ),
-      );
-    }, fireImmediately: true);
+    Future.microtask(_drainPendingIntents);
+  }
 
-    ref.listenManual<String?>(sharedAccountIntentProvider, (_, shared) {
-      if (shared == null || !mounted) return;
-      ref.read(sharedAccountIntentProvider.notifier).state = null;
-      showSharedAddressActionSheet(context, shared);
-    }, fireImmediately: true);
+  void _drainPendingIntents() {
+    if (!mounted) return;
+    _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    _onPaymentIntent(null, ref.read(paymentIntentProvider));
+    _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
+  }
+
+  void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
+    if (transaction == null || !mounted) return;
+    final active = ref.read(activeAccountProvider).value;
+    if (active == null) return;
+    ref.read(transactionIntentProvider.notifier).state = null;
+    showTransactionDetailSheet(context, transaction, active.account.accountId);
+  }
+
+  void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
+    if (payment == null || !mounted) return;
+    ref.read(paymentIntentProvider.notifier).state = null;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+      ),
+    );
+  }
+
+  void _onSharedIntent(String? _, String? shared) {
+    if (shared == null || !mounted) return;
+    ref.read(sharedAccountIntentProvider.notifier).state = null;
+    showSharedAddressActionSheet(context, shared);
   }
 
   Future<void> _refresh() async {

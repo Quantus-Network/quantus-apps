@@ -11,7 +11,7 @@ import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.da
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String? activeAccountId) {
+void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, String activeAccountId) {
   BottomSheetContainer.show(
     context,
     builder: (_) => _TransactionDetailSheet(tx: tx, activeAccountId: activeAccountId),
@@ -20,7 +20,7 @@ void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, Strin
 
 class _TransactionDetailSheet extends StatelessWidget {
   final TransactionEvent tx;
-  final String? activeAccountId;
+  final String activeAccountId;
 
   const _TransactionDetailSheet({required this.tx, required this.activeAccountId});
 
@@ -28,7 +28,6 @@ class _TransactionDetailSheet extends StatelessWidget {
   bool get _isPending => tx is PendingTransactionEvent;
 
   String get _title {
-    if (activeAccountId == null) return 'Transaction Details';
     if (_isPending) return 'Sending';
     if (tx.isReversibleScheduled) return _isSend ? 'Scheduled' : 'Receiving';
     return _isSend ? 'Sent' : 'Received';

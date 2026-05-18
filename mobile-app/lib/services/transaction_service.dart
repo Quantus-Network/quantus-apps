@@ -112,7 +112,11 @@ class TransactionService {
       }
     } catch (e) {
       debugPrint('Failed deserializing $txType event: $e');
-      TelemetryService().sendError('Failed deserializing $txType event', error: e, stackTrace: StackTrace.current);
+      TelemetryService().sendError(
+        'Failed deserializing $txType event',
+        error: e.runtimeType.toString(),
+        stackTrace: StackTrace.current,
+      );
     }
 
     return event;
