@@ -77,6 +77,7 @@ class LocalNotificationsService {
 
     final txService = _ref.read(transactionServiceProvider);
     final json = jsonDecode(payload);
+    if (json == null) return;
 
     txService.navigateToTransactionFromPayloadIfPossible(json);
   }
@@ -130,6 +131,7 @@ class LocalNotificationsService {
 
       final txService = _ref.read(transactionServiceProvider);
       final json = jsonDecode(payload);
+      if (json == null) return;
 
       txService.navigateToTransactionFromPayloadIfPossible(json);
     });

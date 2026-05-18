@@ -90,7 +90,7 @@ class TransactionService {
     }
   }
 
-  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic>? json) {
+  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic> json) {
     final event = deserializeTxEventFromJsonIfPossible(json);
 
     if (event != null) {
