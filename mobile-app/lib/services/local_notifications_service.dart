@@ -147,7 +147,8 @@ class LocalNotificationsService {
         debugPrint('Error decoding payload setup notifications click listener: $e');
         TelemetryService().sendError(
           'Error decoding payload',
-          error: 'When decoding json payload in setup notifications click listener, it failed. There might be malformed data.',
+          error:
+              'When decoding json payload in setup notifications click listener, it failed. There might be malformed data.',
           stackTrace: StackTrace.current,
         );
       }

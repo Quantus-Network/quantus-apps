@@ -77,8 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+        builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
       ),
     );
   }
