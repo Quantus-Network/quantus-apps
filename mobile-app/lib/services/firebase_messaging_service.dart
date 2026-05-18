@@ -105,8 +105,8 @@ class FirebaseMessagingService {
       return;
     }
     try {
-      _cachedToken = null;
       await _senotiService.unregisterDevice(token, _platform);
+      _cachedToken = null;
     } catch (e) {
       debugPrint('Failed to unregister device: $e');
     }
@@ -147,7 +147,6 @@ class FirebaseMessagingService {
   }
 
   /// Handle the user tapping on an FCM notification that launched/resumed the app.
-  /// Call this after the navigator key is available.
   void setupNotificationTapHandlers() {
     if (_hasRegisteredHandlers) return;
     _hasRegisteredHandlers = true;

@@ -45,12 +45,7 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
       title: 'Quantus Wallet',
       navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
-      routes: {
-        '/': (context) => const WalletInitializer(),
-        // These routes are for deep linking, each will carry an intent
-        '/account': (context) => const WalletInitializer(),
-        '/transactions': (context) => const WalletInitializer(),
-      },
+      routes: {'/': (context) => const WalletInitializer()},
       theme: AppTheme.darkTheme(context),
       darkTheme: AppTheme.darkTheme(context),
       themeMode: ThemeMode.dark,

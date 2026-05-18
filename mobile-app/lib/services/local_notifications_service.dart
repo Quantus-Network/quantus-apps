@@ -84,8 +84,8 @@ class LocalNotificationsService {
     } catch (e) {
       debugPrint('Error decoding payload handle launch by notification: $e');
       TelemetryService().sendError(
-        'Error decoding payload',
-        error: 'When decoding json payload in handle launch by notification, it failed. There might be malformed data.',
+        'Error decoding notification launch payload',
+        error: e.runtimeType.toString(),
         stackTrace: StackTrace.current,
       );
     }
@@ -146,9 +146,8 @@ class LocalNotificationsService {
       } catch (e) {
         debugPrint('Error decoding payload setup notifications click listener: $e');
         TelemetryService().sendError(
-          'Error decoding payload',
-          error:
-              'When decoding json payload in setup notifications click listener, it failed. There might be malformed data.',
+          'Error decoding notification click payload',
+          error: e.runtimeType.toString(),
           stackTrace: StackTrace.current,
         );
       }
