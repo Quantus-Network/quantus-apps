@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -76,10 +78,17 @@ class LocalNotificationsService {
     if (payload == null || payload.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    final json = jsonDecode(payload);
-    if (json == null) return;
-
-    txService.navigateToTransactionFromPayloadIfPossible(json);
+    try {
+      final json = jsonDecode(payload);
+      txService.navigateToTransactionFromPayloadIfPossible(json);
+    } catch (e) {
+      debugPrint('Error decoding payload handle launch by notification: $e');
+      TelemetryService().sendError(
+        'Error decoding payload launch by notification',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
+    }
   }
 
   Future<void> _showNotification(NotificationData notification) async {
@@ -130,10 +139,18 @@ class LocalNotificationsService {
       if (payload == null || payload.isEmpty) return;
 
       final txService = _ref.read(transactionServiceProvider);
-      final json = jsonDecode(payload);
-      if (json == null) return;
 
-      txService.navigateToTransactionFromPayloadIfPossible(json);
+      try {
+        final json = jsonDecode(payload);
+        txService.navigateToTransactionFromPayloadIfPossible(json);
+      } catch (e) {
+        debugPrint('Error decoding payload setup notifications click listener: $e');
+        TelemetryService().sendError(
+          'Error decoding payload setup notifications click listener',
+          error: e,
+          stackTrace: StackTrace.current,
+        );
+      }
     });
   }
 
