@@ -511,4 +511,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'View in Explorer ↗';
+
+  @override
+  String get receiveTitle => 'Receive';
+
+  @override
+  String get receiveTabQrCode => 'QR Code';
+
+  @override
+  String get receiveTabAddress => 'Address';
+
+  @override
+  String get receiveCopy => 'Copy';
+
+  @override
+  String receiveErrorLoadingAccount(String error) {
+    return 'Error loading account data: $error';
+  }
+
+  @override
+  String receiveClipboardContent(String accountId, String checksum) {
+    return 'Account Id:\n$accountId\n\nCheckphrase:\n$checksum';
+  }
+
+  @override
+  String get receiveCopiedMessage => 'Account details copied to clipboard';
+
+  @override
+  String get posAmountTitle => 'New Charge';
+
+  @override
+  String posAmountCharge(String amount) {
+    return 'Charge $amount';
+  }
+
+  @override
+  String get posAmountEnterAmount => 'Enter Amount';
+
+  @override
+  String get posQrTitleScanToPay => 'Scan to Pay';
+
+  @override
+  String get posQrTitlePaymentReceived => 'Payment Received';
+
+  @override
+  String posQrError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get posQrNoActiveAccount => 'No active account';
+
+  @override
+  String get posQrInvalidAmount => 'Invalid amount. Tap to retry.';
+
+  @override
+  String get posQrConnectionLost => 'Connection lost. Tap to retry.';
+
+  @override
+  String get posQrTimedOut => 'Timed out. Tap to retry.';
+
+  @override
+  String get posQrNewCharge => 'New Charge';
+
+  @override
+  String get posQrDone => 'Done';
+
+  @override
+  String posQrAmountReceived(String amount) {
+    return '$amount received';
+  }
+
+  @override
+  String get posQrFrom => 'From:';
+
+  @override
+  String get posQrWaitingForPayment => 'Waiting for payment';
+
+  @override
+  String get posQrNetworkError => 'Network Error';
+
+  @override
+  String get posQrTryAgain => 'Try Again';
+
+  @override
+  String posQrPaidAt(String time) {
+    return 'At $time';
+  }
 }

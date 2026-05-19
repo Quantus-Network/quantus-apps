@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
@@ -47,7 +49,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
       debugPrint('Amount parse failed: $e\n$stack');
-      context.showErrorToaster(message: 'Please enter a valid amount');
+      context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountInvalidAmount);
       return;
     }
   }
@@ -74,6 +76,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final primaryAmount = ref
@@ -81,9 +84,9 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
         .primaryAmount;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'New Charge'),
+      appBar: V2AppBar(title: l10n.posAmountTitle),
       mainContent: _amountCenter(colors, text),
-      bottomContent: _bottomContent(colors, text, primaryAmount),
+      bottomContent: _bottomContent(l10n, primaryAmount),
     );
   }
 
@@ -167,8 +170,10 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
     );
   }
 
-  Widget _bottomContent(AppColorsV2 colors, AppTextTheme text, String amountDisplay) {
-    final label = _amount > BigInt.zero ? 'Charge $amountDisplay' : 'Enter Amount';
+  Widget _bottomContent(AppLocalizations l10n, String amountDisplay) {
+    final label = _amount > BigInt.zero
+        ? l10n.posAmountCharge(amountDisplay)
+        : l10n.posAmountEnterAmount;
 
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(label: label, onTap: _onCharge, isDisabled: !_isValid),

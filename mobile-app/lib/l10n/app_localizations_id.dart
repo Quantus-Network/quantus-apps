@@ -512,4 +512,91 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'Lihat di Explorer ↗';
+
+  @override
+  String get receiveTitle => 'Terima';
+
+  @override
+  String get receiveTabQrCode => 'Kode QR';
+
+  @override
+  String get receiveTabAddress => 'Alamat';
+
+  @override
+  String get receiveCopy => 'Salin';
+
+  @override
+  String receiveErrorLoadingAccount(String error) {
+    return 'Gagal memuat data akun: $error';
+  }
+
+  @override
+  String receiveClipboardContent(String accountId, String checksum) {
+    return 'ID Akun:\n$accountId\n\nCheckphrase:\n$checksum';
+  }
+
+  @override
+  String get receiveCopiedMessage => 'Detail akun disalin ke clipboard';
+
+  @override
+  String get posAmountTitle => 'Tagihan Baru';
+
+  @override
+  String posAmountCharge(String amount) {
+    return 'Tagih $amount';
+  }
+
+  @override
+  String get posAmountEnterAmount => 'Masukkan Jumlah';
+
+  @override
+  String get posQrTitleScanToPay => 'Pindai untuk Bayar';
+
+  @override
+  String get posQrTitlePaymentReceived => 'Pembayaran Diterima';
+
+  @override
+  String posQrError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get posQrNoActiveAccount => 'Tidak ada akun aktif';
+
+  @override
+  String get posQrInvalidAmount => 'Jumlah tidak valid. Ketuk untuk coba lagi.';
+
+  @override
+  String get posQrConnectionLost => 'Koneksi terputus. Ketuk untuk coba lagi.';
+
+  @override
+  String get posQrTimedOut => 'Waktu habis. Ketuk untuk coba lagi.';
+
+  @override
+  String get posQrNewCharge => 'Tagihan Baru';
+
+  @override
+  String get posQrDone => 'Selesai';
+
+  @override
+  String posQrAmountReceived(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String get posQrFrom => 'Dari:';
+
+  @override
+  String get posQrWaitingForPayment => 'Menunggu pembayaran';
+
+  @override
+  String get posQrNetworkError => 'Error Jaringan';
+
+  @override
+  String get posQrTryAgain => 'Coba Lagi';
+
+  @override
+  String posQrPaidAt(String time) {
+    return 'Pada $time';
+  }
 }

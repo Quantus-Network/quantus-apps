@@ -179,5 +179,33 @@
   "activityDetailDate": "TANGGAL",
   "activityDetailNetworkFee": "BIAYA JARINGAN",
   "activityDetailTxHash": "HASH TX",
-  "activityDetailViewExplorer": "Lihat di Explorer ↗"
+  "activityDetailViewExplorer": "Lihat di Explorer ↗",
+
+  "receiveTitle": "Terima",
+  "receiveTabQrCode": "Kode QR",
+  "receiveTabAddress": "Alamat",
+  "receiveCopy": "Salin",
+  "receiveErrorLoadingAccount": "Gagal memuat data akun: {error}",
+  "receiveClipboardContent": "ID Akun:\n{accountId}\n\nCheckphrase:\n{checksum}",
+  "receiveCopiedMessage": "Detail akun disalin ke clipboard",
+
+  "posAmountTitle": "Tagihan Baru",
+  "posAmountCharge": "Tagih {amount}",
+  "posAmountEnterAmount": "Masukkan Jumlah",
+
+  "posQrTitleScanToPay": "Pindai untuk Bayar",
+  "posQrTitlePaymentReceived": "Pembayaran Diterima",
+  "posQrError": "Error: {error}",
+  "posQrNoActiveAccount": "Tidak ada akun aktif",
+  "posQrInvalidAmount": "Jumlah tidak valid. Ketuk untuk coba lagi.",
+  "posQrConnectionLost": "Koneksi terputus. Ketuk untuk coba lagi.",
+  "posQrTimedOut": "Waktu habis. Ketuk untuk coba lagi.",
+  "posQrNewCharge": "Tagihan Baru",
+  "posQrDone": "Selesai",
+  "posQrAmountReceived": "{amount} diterima",
+  "posQrFrom": "Dari:",
+  "posQrWaitingForPayment": "Menunggu pembayaran",
+  "posQrNetworkError": "Error Jaringan",
+  "posQrTryAgain": "Coba Lagi",
+  "posQrPaidAt": "Pada {time}"
 }

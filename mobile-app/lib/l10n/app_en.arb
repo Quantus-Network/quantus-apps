@@ -743,5 +743,141 @@
     "activityDetailViewExplorer": "View in Explorer ↗",
     "@activityDetailViewExplorer": {
       "description": "Link to view transaction in explorer"
+    },
+
+    "receiveTitle": "Receive",
+    "@receiveTitle": {
+      "description": "App bar title on receive screen"
+    },
+    "receiveTabQrCode": "QR Code",
+    "@receiveTabQrCode": {
+      "description": "QR Code tab on receive screen"
+    },
+    "receiveTabAddress": "Address",
+    "@receiveTabAddress": {
+      "description": "Address tab on receive screen"
+    },
+    "receiveCopy": "Copy",
+    "@receiveCopy": {
+      "description": "Copy button on receive screen"
+    },
+    "receiveErrorLoadingAccount": "Error loading account data: {error}",
+    "@receiveErrorLoadingAccount": {
+      "description": "Error when account data fails to load on receive screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "receiveClipboardContent": "Account Id:\n{accountId}\n\nCheckphrase:\n{checksum}",
+    "@receiveClipboardContent": {
+      "description": "Clipboard content when copying account details",
+      "placeholders": {
+        "accountId": {
+          "type": "String"
+        },
+        "checksum": {
+          "type": "String"
+        }
+      }
+    },
+    "receiveCopiedMessage": "Account details copied to clipboard",
+    "@receiveCopiedMessage": {
+      "description": "Toast when account details are copied"
+    },
+
+    "posAmountTitle": "New Charge",
+    "@posAmountTitle": {
+      "description": "App bar title on POS amount screen"
+    },
+    "posAmountCharge": "Charge {amount}",
+    "@posAmountCharge": {
+      "description": "Charge button with formatted amount",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "posAmountEnterAmount": "Enter Amount",
+    "@posAmountEnterAmount": {
+      "description": "Charge button when amount is empty"
+    },
+
+    "posQrTitleScanToPay": "Scan to Pay",
+    "@posQrTitleScanToPay": {
+      "description": "App bar title while waiting for payment"
+    },
+    "posQrTitlePaymentReceived": "Payment Received",
+    "@posQrTitlePaymentReceived": {
+      "description": "App bar title when payment is received"
+    },
+    "posQrError": "Error: {error}",
+    "@posQrError": {
+      "description": "Error message on POS QR screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "posQrNoActiveAccount": "No active account",
+    "@posQrNoActiveAccount": {
+      "description": "Shown when no active account on POS QR screen"
+    },
+    "posQrInvalidAmount": "Invalid amount. Tap to retry.",
+    "@posQrInvalidAmount": {
+      "description": "Error when amount cannot be parsed"
+    },
+    "posQrConnectionLost": "Connection lost. Tap to retry.",
+    "@posQrConnectionLost": {
+      "description": "Error when payment watch connection is lost"
+    },
+    "posQrTimedOut": "Timed out. Tap to retry.",
+    "@posQrTimedOut": {
+      "description": "Error when payment watch times out"
+    },
+    "posQrNewCharge": "New Charge",
+    "@posQrNewCharge": {
+      "description": "New charge button on POS QR screen"
+    },
+    "posQrDone": "Done",
+    "@posQrDone": {
+      "description": "Done button after payment received"
+    },
+    "posQrAmountReceived": "{amount} received",
+    "@posQrAmountReceived": {
+      "description": "Headline when payment is received",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "posQrFrom": "From:",
+    "@posQrFrom": {
+      "description": "Sender label on payment received screen"
+    },
+    "posQrWaitingForPayment": "Waiting for payment",
+    "@posQrWaitingForPayment": {
+      "description": "Status while waiting for payment"
+    },
+    "posQrNetworkError": "Network Error",
+    "@posQrNetworkError": {
+      "description": "Network error title on POS QR screen"
+    },
+    "posQrTryAgain": "Try Again",
+    "@posQrTryAgain": {
+      "description": "Retry button on POS QR screen"
+    },
+    "posQrPaidAt": "At {time}",
+    "@posQrPaidAt": {
+      "description": "Paid at timestamp on payment received screen",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
     }
   }

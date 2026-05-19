@@ -1033,6 +1033,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View in Explorer ↗'**
   String get activityDetailViewExplorer;
+
+  /// App bar title on receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get receiveTitle;
+
+  /// QR Code tab on receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'QR Code'**
+  String get receiveTabQrCode;
+
+  /// Address tab on receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get receiveTabAddress;
+
+  /// Copy button on receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get receiveCopy;
+
+  /// Error when account data fails to load on receive screen
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading account data: {error}'**
+  String receiveErrorLoadingAccount(String error);
+
+  /// Clipboard content when copying account details
+  ///
+  /// In en, this message translates to:
+  /// **'Account Id:\n{accountId}\n\nCheckphrase:\n{checksum}'**
+  String receiveClipboardContent(String accountId, String checksum);
+
+  /// Toast when account details are copied
+  ///
+  /// In en, this message translates to:
+  /// **'Account details copied to clipboard'**
+  String get receiveCopiedMessage;
+
+  /// App bar title on POS amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'New Charge'**
+  String get posAmountTitle;
+
+  /// Charge button with formatted amount
+  ///
+  /// In en, this message translates to:
+  /// **'Charge {amount}'**
+  String posAmountCharge(String amount);
+
+  /// Charge button when amount is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Amount'**
+  String get posAmountEnterAmount;
+
+  /// App bar title while waiting for payment
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to Pay'**
+  String get posQrTitleScanToPay;
+
+  /// App bar title when payment is received
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Received'**
+  String get posQrTitlePaymentReceived;
+
+  /// Error message on POS QR screen
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String posQrError(String error);
+
+  /// Shown when no active account on POS QR screen
+  ///
+  /// In en, this message translates to:
+  /// **'No active account'**
+  String get posQrNoActiveAccount;
+
+  /// Error when amount cannot be parsed
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid amount. Tap to retry.'**
+  String get posQrInvalidAmount;
+
+  /// Error when payment watch connection is lost
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost. Tap to retry.'**
+  String get posQrConnectionLost;
+
+  /// Error when payment watch times out
+  ///
+  /// In en, this message translates to:
+  /// **'Timed out. Tap to retry.'**
+  String get posQrTimedOut;
+
+  /// New charge button on POS QR screen
+  ///
+  /// In en, this message translates to:
+  /// **'New Charge'**
+  String get posQrNewCharge;
+
+  /// Done button after payment received
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get posQrDone;
+
+  /// Headline when payment is received
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} received'**
+  String posQrAmountReceived(String amount);
+
+  /// Sender label on payment received screen
+  ///
+  /// In en, this message translates to:
+  /// **'From:'**
+  String get posQrFrom;
+
+  /// Status while waiting for payment
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for payment'**
+  String get posQrWaitingForPayment;
+
+  /// Network error title on POS QR screen
+  ///
+  /// In en, this message translates to:
+  /// **'Network Error'**
+  String get posQrNetworkError;
+
+  /// Retry button on POS QR screen
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get posQrTryAgain;
+
+  /// Paid at timestamp on payment received screen
+  ///
+  /// In en, this message translates to:
+  /// **'At {time}'**
+  String posQrPaidAt(String time);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
