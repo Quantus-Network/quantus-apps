@@ -57,14 +57,14 @@ scripts:
   # Format all packages
   format:
     description: Format all packages in the workspace
-    run: melos exec -- dart format . --line-length=120
+    run: melos exec -- dart format lib test --line-length=120
 
   # Auto-apply lint fixes, then format
   fix:
     description: Auto-apply lint fixes (dart fix), then format
     run: |
       melos exec --concurrency=1 -- "dart fix --apply"
-      melos exec -- "dart format . --line-length=120"
+      melos exec -- "dart format lib test --line-length=120"
 
   # Test all packages
   test:
