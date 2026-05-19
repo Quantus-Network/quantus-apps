@@ -58,7 +58,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n);
               final isLastItem = index == recentTransactions.length - 1;
 
               return buildTxItem(
@@ -66,6 +66,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
+                l10n,
                 formattedAmount: formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {

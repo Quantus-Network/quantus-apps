@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
@@ -18,7 +20,7 @@ void showTransactionDetailSheet(BuildContext context, TransactionEvent tx, Strin
   );
 }
 
-class _TransactionDetailSheet extends StatelessWidget {
+class _TransactionDetailSheet extends ConsumerWidget {
   final TransactionEvent tx;
   final String activeAccountId;
 
@@ -27,16 +29,16 @@ class _TransactionDetailSheet extends StatelessWidget {
   bool get _isSend => tx.from == activeAccountId;
   bool get _isPending => tx is PendingTransactionEvent;
 
-  String get _title {
-    if (_isPending) return 'Sending';
-    if (tx.isReversibleScheduled) return _isSend ? 'Scheduled' : 'Receiving';
-    return _isSend ? 'Sent' : 'Received';
+  String _title(AppLocalizations l10n) {
+    if (_isPending) return l10n.activityDetailTitleSending;
+    if (tx.isReversibleScheduled) return _isSend ? l10n.activityDetailTitleScheduled : l10n.activityDetailTitleReceiving;
+    return _isSend ? l10n.activityDetailTitleSent : l10n.activityDetailTitleReceived;
   }
 
-  String get _statusLabel {
-    if (_isPending) return 'In Process';
-    if (tx.isReversibleScheduled) return 'Scheduled';
-    return 'Completed';
+  String _statusLabel(AppLocalizations l10n) {
+    if (_isPending) return l10n.activityDetailStatusInProcess;
+    if (tx.isReversibleScheduled) return l10n.activityDetailStatusScheduled;
+    return l10n.activityDetailStatusCompleted;
   }
 
   Color _statusColor(AppColorsV2 colors) {
@@ -45,12 +47,13 @@ class _TransactionDetailSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return BottomSheetContainer(
-      title: _title,
+      title: _title(l10n),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,7 +61,12 @@ class _TransactionDetailSheet extends StatelessWidget {
           const SizedBox(height: 16),
           _AmountSection(tx: tx, isSend: _isSend, colors: colors),
           const SizedBox(height: 20),
-          _DetailRow(label: 'STATUS', value: _statusLabel, valueColor: _statusColor(colors), colors: colors),
+          _DetailRow(
+            label: l10n.activityDetailStatus,
+            value: _statusLabel(l10n),
+            valueColor: _statusColor(colors),
+            colors: colors,
+          ),
           const SizedBox(height: 8),
           DottedBorder(
             dashLength: 3,
@@ -108,6 +116,7 @@ class _DetailsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
 
     final counterparty = isSend ? tx.to : tx.from;
@@ -118,7 +127,10 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
-        ? '${formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals)} ${AppConstants.tokenSymbol}'
+        ? l10n.sendInputAmountBalance(
+            formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals),
+            AppConstants.tokenSymbol,
+          )
         : null;
 
     final txHash = tx.extrinsicHash != null
@@ -127,10 +139,10 @@ class _DetailsSection extends ConsumerWidget {
 
     return Column(
       children: [
-        _DetailRow(label: isSend ? 'TO' : 'FROM', value: address, colors: colors),
-        _DetailRow(label: 'DATE', value: dateTime, colors: colors),
-        if (feeStr != null) _DetailRow(label: 'NETWORK FEE', value: feeStr, colors: colors),
-        if (txHash != null) _DetailRow(label: 'TX HASH', value: txHash, colors: colors),
+        _DetailRow(label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom, value: address, colors: colors),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
+        if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr, colors: colors),
+        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
       ],
     );
   }
@@ -164,7 +176,7 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _ExplorerLink extends StatelessWidget {
+class _ExplorerLink extends ConsumerWidget {
   final TransactionEvent tx;
   final AppColorsV2 colors;
   final AppTextTheme text;
@@ -172,7 +184,8 @@ class _ExplorerLink extends StatelessWidget {
   const _ExplorerLink({required this.tx, required this.colors, required this.text});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final isPending = tx is PendingTransactionEvent;
     final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
@@ -184,7 +197,7 @@ class _ExplorerLink extends StatelessWidget {
           border: Border(bottom: BorderSide(color: color, width: 1)),
         ),
         child: Text(
-          'View in Explorer ↗',
+          l10n.activityDetailViewExplorer,
           style: text.smallParagraph?.copyWith(color: color, fontWeight: FontWeight.w400),
         ),
       ),

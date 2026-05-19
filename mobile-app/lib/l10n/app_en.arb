@@ -565,5 +565,183 @@
     "sendLogicReviewSend": "Review Send",
     "@sendLogicReviewSend": {
       "description": "Button label to proceed to review"
+    },
+
+    "activityTitle": "Activity",
+    "@activityTitle": {
+      "description": "App bar title on activity screen"
+    },
+    "activityError": "Error: {error}",
+    "@activityError": {
+      "description": "Error message on activity screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "activityNoAccount": "No account",
+    "@activityNoAccount": {
+      "description": "Shown when no account is active on activity screen"
+    },
+    "activityEmpty": "No transactions yet",
+    "@activityEmpty": {
+      "description": "Empty state on activity screen"
+    },
+    "activityFilterAll": "All",
+    "@activityFilterAll": {
+      "description": "Filter button for all transactions"
+    },
+    "activityFilterSend": "Send",
+    "@activityFilterSend": {
+      "description": "Filter button for sent transactions"
+    },
+    "activityFilterReceive": "Receive",
+    "@activityFilterReceive": {
+      "description": "Filter button for received transactions"
+    },
+    "activityDateToday": "Today",
+    "@activityDateToday": {
+      "description": "Date group label for today"
+    },
+    "activityDateYesterday": "Yesterday",
+    "@activityDateYesterday": {
+      "description": "Date group label for yesterday"
+    },
+
+    "activityTxSending": "Sending",
+    "@activityTxSending": {
+      "description": "Transaction row label for pending send"
+    },
+    "activityTxReceiving": "Receiving",
+    "@activityTxReceiving": {
+      "description": "Transaction row label for pending or scheduled receive"
+    },
+    "activityTxPending": "Pending",
+    "@activityTxPending": {
+      "description": "Transaction row label for scheduled send"
+    },
+    "activityTxSent": "Sent",
+    "@activityTxSent": {
+      "description": "Transaction row label for completed send"
+    },
+    "activityTxReceived": "Received",
+    "@activityTxReceived": {
+      "description": "Transaction row label for completed receive"
+    },
+    "activityTxTo": "To",
+    "@activityTxTo": {
+      "description": "Counterparty direction label for send"
+    },
+    "activityTxFrom": "From",
+    "@activityTxFrom": {
+      "description": "Counterparty direction label for receive"
+    },
+    "activityTxTimeNow": "now",
+    "@activityTxTimeNow": {
+      "description": "Time label for just now"
+    },
+    "activityTxTimeMinutesAgo": "{minutes}m ago",
+    "@activityTxTimeMinutesAgo": {
+      "description": "Time label for minutes ago",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeHoursAgo": "{hours}h ago",
+    "@activityTxTimeHoursAgo": {
+      "description": "Time label for hours ago",
+      "placeholders": {
+        "hours": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeDaysAgo": "{days}d ago",
+    "@activityTxTimeDaysAgo": {
+      "description": "Time label for days ago",
+      "placeholders": {
+        "days": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeRemaining": "{days}d:{hours}h:{minutes}m",
+    "@activityTxTimeRemaining": {
+      "description": "Time remaining for scheduled transaction",
+      "placeholders": {
+        "days": {
+          "type": "String"
+        },
+        "hours": {
+          "type": "String"
+        },
+        "minutes": {
+          "type": "String"
+        }
+      }
+    },
+
+    "activityDetailTitleSending": "Sending",
+    "@activityDetailTitleSending": {
+      "description": "Detail sheet title for pending send"
+    },
+    "activityDetailTitleScheduled": "Scheduled",
+    "@activityDetailTitleScheduled": {
+      "description": "Detail sheet title for scheduled send"
+    },
+    "activityDetailTitleReceiving": "Receiving",
+    "@activityDetailTitleReceiving": {
+      "description": "Detail sheet title for receiving"
+    },
+    "activityDetailTitleSent": "Sent",
+    "@activityDetailTitleSent": {
+      "description": "Detail sheet title for completed send"
+    },
+    "activityDetailTitleReceived": "Received",
+    "@activityDetailTitleReceived": {
+      "description": "Detail sheet title for completed receive"
+    },
+    "activityDetailStatusInProcess": "In Process",
+    "@activityDetailStatusInProcess": {
+      "description": "Status label for in-process transaction"
+    },
+    "activityDetailStatusScheduled": "Scheduled",
+    "@activityDetailStatusScheduled": {
+      "description": "Status label for scheduled transaction"
+    },
+    "activityDetailStatusCompleted": "Completed",
+    "@activityDetailStatusCompleted": {
+      "description": "Status label for completed transaction"
+    },
+    "activityDetailStatus": "STATUS",
+    "@activityDetailStatus": {
+      "description": "Status row label on detail sheet"
+    },
+    "activityDetailTo": "TO",
+    "@activityDetailTo": {
+      "description": "To row label on detail sheet"
+    },
+    "activityDetailFrom": "FROM",
+    "@activityDetailFrom": {
+      "description": "From row label on detail sheet"
+    },
+    "activityDetailDate": "DATE",
+    "@activityDetailDate": {
+      "description": "Date row label on detail sheet"
+    },
+    "activityDetailNetworkFee": "NETWORK FEE",
+    "@activityDetailNetworkFee": {
+      "description": "Network fee row label on detail sheet"
+    },
+    "activityDetailTxHash": "TX HASH",
+    "@activityDetailTxHash": {
+      "description": "Transaction hash row label on detail sheet"
+    },
+    "activityDetailViewExplorer": "View in Explorer ↗",
+    "@activityDetailViewExplorer": {
+      "description": "Link to view transaction in explorer"
     }
   }

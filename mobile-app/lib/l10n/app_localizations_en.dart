@@ -393,4 +393,122 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendLogicReviewSend => 'Review Send';
+
+  @override
+  String get activityTitle => 'Activity';
+
+  @override
+  String activityError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get activityNoAccount => 'No account';
+
+  @override
+  String get activityEmpty => 'No transactions yet';
+
+  @override
+  String get activityFilterAll => 'All';
+
+  @override
+  String get activityFilterSend => 'Send';
+
+  @override
+  String get activityFilterReceive => 'Receive';
+
+  @override
+  String get activityDateToday => 'Today';
+
+  @override
+  String get activityDateYesterday => 'Yesterday';
+
+  @override
+  String get activityTxSending => 'Sending';
+
+  @override
+  String get activityTxReceiving => 'Receiving';
+
+  @override
+  String get activityTxPending => 'Pending';
+
+  @override
+  String get activityTxSent => 'Sent';
+
+  @override
+  String get activityTxReceived => 'Received';
+
+  @override
+  String get activityTxTo => 'To';
+
+  @override
+  String get activityTxFrom => 'From';
+
+  @override
+  String get activityTxTimeNow => 'now';
+
+  @override
+  String activityTxTimeMinutesAgo(int minutes) {
+    return '${minutes}m ago';
+  }
+
+  @override
+  String activityTxTimeHoursAgo(int hours) {
+    return '${hours}h ago';
+  }
+
+  @override
+  String activityTxTimeDaysAgo(int days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String activityTxTimeRemaining(String days, String hours, String minutes) {
+    return '${days}d:${hours}h:${minutes}m';
+  }
+
+  @override
+  String get activityDetailTitleSending => 'Sending';
+
+  @override
+  String get activityDetailTitleScheduled => 'Scheduled';
+
+  @override
+  String get activityDetailTitleReceiving => 'Receiving';
+
+  @override
+  String get activityDetailTitleSent => 'Sent';
+
+  @override
+  String get activityDetailTitleReceived => 'Received';
+
+  @override
+  String get activityDetailStatusInProcess => 'In Process';
+
+  @override
+  String get activityDetailStatusScheduled => 'Scheduled';
+
+  @override
+  String get activityDetailStatusCompleted => 'Completed';
+
+  @override
+  String get activityDetailStatus => 'STATUS';
+
+  @override
+  String get activityDetailTo => 'TO';
+
+  @override
+  String get activityDetailFrom => 'FROM';
+
+  @override
+  String get activityDetailDate => 'DATE';
+
+  @override
+  String get activityDetailNetworkFee => 'NETWORK FEE';
+
+  @override
+  String get activityDetailTxHash => 'TX HASH';
+
+  @override
+  String get activityDetailViewExplorer => 'View in Explorer ↗';
 }

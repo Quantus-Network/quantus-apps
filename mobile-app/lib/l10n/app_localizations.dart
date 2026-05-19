@@ -817,6 +817,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review Send'**
   String get sendLogicReviewSend;
+
+  /// App bar title on activity screen
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get activityTitle;
+
+  /// Error message on activity screen
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String activityError(String error);
+
+  /// Shown when no account is active on activity screen
+  ///
+  /// In en, this message translates to:
+  /// **'No account'**
+  String get activityNoAccount;
+
+  /// Empty state on activity screen
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet'**
+  String get activityEmpty;
+
+  /// Filter button for all transactions
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get activityFilterAll;
+
+  /// Filter button for sent transactions
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get activityFilterSend;
+
+  /// Filter button for received transactions
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get activityFilterReceive;
+
+  /// Date group label for today
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get activityDateToday;
+
+  /// Date group label for yesterday
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get activityDateYesterday;
+
+  /// Transaction row label for pending send
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get activityTxSending;
+
+  /// Transaction row label for pending or scheduled receive
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving'**
+  String get activityTxReceiving;
+
+  /// Transaction row label for scheduled send
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get activityTxPending;
+
+  /// Transaction row label for completed send
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get activityTxSent;
+
+  /// Transaction row label for completed receive
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get activityTxReceived;
+
+  /// Counterparty direction label for send
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get activityTxTo;
+
+  /// Counterparty direction label for receive
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get activityTxFrom;
+
+  /// Time label for just now
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get activityTxTimeNow;
+
+  /// Time label for minutes ago
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m ago'**
+  String activityTxTimeMinutesAgo(int minutes);
+
+  /// Time label for hours ago
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h ago'**
+  String activityTxTimeHoursAgo(int hours);
+
+  /// Time label for days ago
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d ago'**
+  String activityTxTimeDaysAgo(int days);
+
+  /// Time remaining for scheduled transaction
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d:{hours}h:{minutes}m'**
+  String activityTxTimeRemaining(String days, String hours, String minutes);
+
+  /// Detail sheet title for pending send
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get activityDetailTitleSending;
+
+  /// Detail sheet title for scheduled send
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get activityDetailTitleScheduled;
+
+  /// Detail sheet title for receiving
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving'**
+  String get activityDetailTitleReceiving;
+
+  /// Detail sheet title for completed send
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get activityDetailTitleSent;
+
+  /// Detail sheet title for completed receive
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get activityDetailTitleReceived;
+
+  /// Status label for in-process transaction
+  ///
+  /// In en, this message translates to:
+  /// **'In Process'**
+  String get activityDetailStatusInProcess;
+
+  /// Status label for scheduled transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get activityDetailStatusScheduled;
+
+  /// Status label for completed transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get activityDetailStatusCompleted;
+
+  /// Status row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'STATUS'**
+  String get activityDetailStatus;
+
+  /// To row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'TO'**
+  String get activityDetailTo;
+
+  /// From row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'FROM'**
+  String get activityDetailFrom;
+
+  /// Date row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'DATE'**
+  String get activityDetailDate;
+
+  /// Network fee row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'NETWORK FEE'**
+  String get activityDetailNetworkFee;
+
+  /// Transaction hash row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'TX HASH'**
+  String get activityDetailTxHash;
+
+  /// Link to view transaction in explorer
+  ///
+  /// In en, this message translates to:
+  /// **'View in Explorer ↗'**
+  String get activityDetailViewExplorer;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

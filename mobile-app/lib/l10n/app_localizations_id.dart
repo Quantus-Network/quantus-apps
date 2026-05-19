@@ -394,4 +394,122 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sendLogicReviewSend => 'Tinjau Pengiriman';
+
+  @override
+  String get activityTitle => 'Aktivitas';
+
+  @override
+  String activityError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get activityNoAccount => 'Tidak ada akun';
+
+  @override
+  String get activityEmpty => 'Belum ada transaksi';
+
+  @override
+  String get activityFilterAll => 'Semua';
+
+  @override
+  String get activityFilterSend => 'Kirim';
+
+  @override
+  String get activityFilterReceive => 'Terima';
+
+  @override
+  String get activityDateToday => 'Hari Ini';
+
+  @override
+  String get activityDateYesterday => 'Kemarin';
+
+  @override
+  String get activityTxSending => 'Mengirim';
+
+  @override
+  String get activityTxReceiving => 'Menerima';
+
+  @override
+  String get activityTxPending => 'Tertunda';
+
+  @override
+  String get activityTxSent => 'Terkirim';
+
+  @override
+  String get activityTxReceived => 'Diterima';
+
+  @override
+  String get activityTxTo => 'Ke';
+
+  @override
+  String get activityTxFrom => 'Dari';
+
+  @override
+  String get activityTxTimeNow => 'sekarang';
+
+  @override
+  String activityTxTimeMinutesAgo(int minutes) {
+    return '${minutes}m lalu';
+  }
+
+  @override
+  String activityTxTimeHoursAgo(int hours) {
+    return '${hours}j lalu';
+  }
+
+  @override
+  String activityTxTimeDaysAgo(int days) {
+    return '${days}h lalu';
+  }
+
+  @override
+  String activityTxTimeRemaining(String days, String hours, String minutes) {
+    return '${days}h:${hours}j:${minutes}m';
+  }
+
+  @override
+  String get activityDetailTitleSending => 'Mengirim';
+
+  @override
+  String get activityDetailTitleScheduled => 'Terjadwal';
+
+  @override
+  String get activityDetailTitleReceiving => 'Menerima';
+
+  @override
+  String get activityDetailTitleSent => 'Terkirim';
+
+  @override
+  String get activityDetailTitleReceived => 'Diterima';
+
+  @override
+  String get activityDetailStatusInProcess => 'Diproses';
+
+  @override
+  String get activityDetailStatusScheduled => 'Terjadwal';
+
+  @override
+  String get activityDetailStatusCompleted => 'Selesai';
+
+  @override
+  String get activityDetailStatus => 'STATUS';
+
+  @override
+  String get activityDetailTo => 'KE';
+
+  @override
+  String get activityDetailFrom => 'DARI';
+
+  @override
+  String get activityDetailDate => 'TANGGAL';
+
+  @override
+  String get activityDetailNetworkFee => 'BIAYA JARINGAN';
+
+  @override
+  String get activityDetailTxHash => 'HASH TX';
+
+  @override
+  String get activityDetailViewExplorer => 'Lihat di Explorer ↗';
 }

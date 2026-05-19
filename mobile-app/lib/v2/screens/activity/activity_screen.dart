@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -33,8 +35,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     });
   }
 
+  String _filterLabel(TransactionFilter filter, AppLocalizations l10n) => switch (filter) {
+    TransactionFilter.all => l10n.activityFilterAll,
+    TransactionFilter.send => l10n.activityFilterSend,
+    TransactionFilter.receive => l10n.activityFilterReceive,
+  };
+
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+    final locale = ref.watch(localeProvider);
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
@@ -43,13 +53,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     final filterButtons = TransactionFilter.values
         .map(
-          (e) =>
-              _buildFilterButton(e.displayName, onTap: () => _onFilterOptionChanged(e), isSelected: _filterOption == e),
+          (e) => _buildFilterButton(
+            _filterLabel(e, l10n),
+            onTap: () => _onFilterOptionChanged(e),
+            isSelected: _filterOption == e,
+          ),
         )
         .toList();
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Activity'),
+      appBar: V2AppBar(title: l10n.activityTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -58,17 +71,17 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(spacing: 12, children: filterButtons),
           ),
-
           const SizedBox(height: 40),
-
           Expanded(
             child: accountAsync.when(
               loading: () => const Center(child: Loader()),
               error: (e, _) => Center(
-                child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+                child: Text(l10n.activityError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
               ),
               data: (active) {
-                if (active == null) return const Center(child: Text('No account'));
+                if (active == null) {
+                  return Center(child: Text(l10n.activityNoAccount));
+                }
                 return txAsync.when(
                   loading: () => ListView.builder(
                     itemCount: 3,
@@ -76,10 +89,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (i > 0) const SizedBox(height: 32),
-
                         const Skeleton(width: 100, height: 24),
                         const SizedBox(height: 12),
-
                         for (var j = 0; j < 3; j++) ...[
                           const TxItemSkeleton(),
                           if (j < 2) Divider(color: colors.txItemSeparator, height: 24),
@@ -88,7 +99,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ),
                   ),
                   error: (e, _) => Center(
-                    child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+                    child: Text(l10n.activityError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
                   ),
                   data: (data) {
                     final txService = ref.read(transactionServiceProvider);
@@ -101,12 +112,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     if (all.isEmpty) {
                       return Center(
                         child: Text(
-                          'No transactions yet',
+                          l10n.activityEmpty,
                           style: text.paragraph?.copyWith(color: colors.textSecondary),
                         ),
                       );
                     }
-                    final grouped = _groupByDate(all);
+                    final grouped = _groupByDate(all, l10n, locale.toString());
 
                     return ListView.builder(
                       padding: EdgeInsets.zero,
@@ -119,13 +130,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             if (i > 0) const SizedBox(height: 32),
                             Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
                             ...group.transactions.mapIndexed((index, tx) {
-                              final itemData = TxItemData.from(tx, active.account.accountId, colors);
+                              final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
                               final isLastItem = index == group.transactions.length - 1;
                               return buildTxItem(
                                 tx,
                                 itemData,
                                 colors,
                                 text,
+                                l10n,
                                 formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
                                 isLastItem: isLastItem,
                                 onTap: () {
@@ -160,7 +172,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     );
   }
 
-  List<_DateGroup> _groupByDate(List<TransactionEvent> transactions) {
+  List<_DateGroup> _groupByDate(List<TransactionEvent> transactions, AppLocalizations l10n, String localeName) {
     final Map<String, List<TransactionEvent>> groups = {};
     final Map<String, String> labelMap = {};
 
@@ -169,7 +181,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       final key = '${day.year}-${day.month}-${day.day}';
       groups.putIfAbsent(key, () => []);
       groups[key]!.add(tx);
-      labelMap.putIfAbsent(key, () => dateGroupLabel(tx.timestamp));
+      labelMap.putIfAbsent(key, () => dateGroupLabel(tx.timestamp, l10n, localeName));
     }
 
     return groups.entries.map((e) => _DateGroup(label: labelMap[e.key]!.toUpperCase(), transactions: e.value)).toList();
