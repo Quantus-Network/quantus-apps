@@ -276,4 +276,122 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get addHardwareAccountInvalidAddress => 'Alamat tidak valid';
+
+  @override
+  String get sendTitle => 'Kirim';
+
+  @override
+  String get sendPayTitle => 'Bayar';
+
+  @override
+  String get sendEnterAddress => 'Masukkan Alamat';
+
+  @override
+  String get sendSelectRecipientSendTo => 'Kirim Ke';
+
+  @override
+  String sendSelectRecipientSearchHint(String symbol) {
+    return 'Cari Alamat $symbol';
+  }
+
+  @override
+  String get sendSelectRecipientScanTitle => 'Pindai kode QR';
+
+  @override
+  String sendSelectRecipientScanSubtitle(String symbol) {
+    return 'Ketuk untuk memindai Alamat $symbol';
+  }
+
+  @override
+  String get sendSelectRecipientRecents => 'Terbaru';
+
+  @override
+  String get sendSelectRecipientContinue => 'Lanjutkan';
+
+  @override
+  String get sendInputAmountSendTo => 'KIRIM KE';
+
+  @override
+  String get sendInputAmountAvailableBalance => 'Saldo Tersedia:';
+
+  @override
+  String get sendInputAmountNetworkFee => 'Biaya Jaringan:';
+
+  @override
+  String get sendInputAmountMax => 'Maks';
+
+  @override
+  String get sendInputAmountInvalidAmount => 'Masukkan jumlah yang valid';
+
+  @override
+  String get sendInputAmountChecksumRequired => 'Checksum penerima diperlukan';
+
+  @override
+  String sendInputAmountBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
+
+  @override
+  String get sendReviewSending => 'MENGIRIM';
+
+  @override
+  String get sendReviewTo => 'KE';
+
+  @override
+  String get sendReviewAmount => 'JUMLAH';
+
+  @override
+  String get sendReviewNetworkFee => 'BIAYA JARINGAN';
+
+  @override
+  String get sendReviewYouPay => 'ANDA BAYAR';
+
+  @override
+  String get sendReviewConfirm => 'Konfirmasi';
+
+  @override
+  String get sendReviewAuthReason => 'Autentikasi untuk mengonfirmasi transaksi';
+
+  @override
+  String get sendReviewAuthRequired => 'Autentikasi diperlukan untuk mengirim';
+
+  @override
+  String get sendReviewSubmitFailed => 'Gagal mengirim transaksi';
+
+  @override
+  String sendTxSubmittedHeadlinePaid(String amount, String symbol) {
+    return '$amount $symbol dibayar';
+  }
+
+  @override
+  String sendTxSubmittedHeadlineSent(String amount, String symbol) {
+    return '$amount $symbol terkirim';
+  }
+
+  @override
+  String get sendTxSubmittedOnItsWay => 'Sedang dalam perjalanan';
+
+  @override
+  String get sendTxSubmittedToLabel => 'Ke';
+
+  @override
+  String get sendTxSubmittedDone => 'Selesai';
+
+  @override
+  String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
+
+  @override
+  String get sendLogicEnterAmount => 'Masukkan Jumlah';
+
+  @override
+  String get sendLogicInvalidAmount => 'Jumlah Tidak Valid';
+
+  @override
+  String get sendLogicBelowExistentialDeposit => 'Di Bawah Deposit Eksistensial';
+
+  @override
+  String get sendLogicInsufficientBalance => 'Saldo Tidak Cukup';
+
+  @override
+  String get sendLogicReviewSend => 'Tinjau Pengiriman';
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -126,7 +128,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
       debugPrint('Amount parse failed: $e\n$stack');
-      context.showErrorToaster(message: 'Please enter a valid amount');
+      final l10n = ref.read(l10nProvider);
+      context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
     if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
@@ -207,7 +210,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   Future<void> _openReview() async {
     if (_recipientChecksum == null) {
-      context.showErrorToaster(message: 'Recipient checksum is required');
+      final l10n = ref.read(l10nProvider);
+      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
       return;
     }
 
@@ -229,6 +233,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -248,6 +253,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           activeAccountId: activeId,
         );
     final btnText = SendScreenLogic.getButtonText(
+      l10n: l10n,
       hasAddressError: false,
       amountStatus: amountStatus,
       recipientText: recipient,
@@ -257,7 +263,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
+      appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           controller: _scrollController,
@@ -267,7 +273,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _recipientCard(colors, text),
+                _recipientCard(colors, text, l10n),
                 const SizedBox(height: 32),
                 _amountCenter(colors, text),
                 const SizedBox(height: 32),
@@ -277,11 +283,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, btnText, balance, btnDisabled),
+      bottomContent: _bottomSection(colors, text, l10n, btnText, balance, btnDisabled),
     );
   }
 
-  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text) {
+  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final addr = widget.recipientAddress.trim();
     final shortAddr = AddressFormattingService.formatAddress(addr);
 
@@ -295,7 +301,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SEND TO', style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel)),
+                Text(l10n.sendInputAmountSendTo, style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel)),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -426,6 +432,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget _bottomSection(
     AppColorsV2 colors,
     AppTextTheme text,
+    AppLocalizations l10n,
     String btnText,
     AsyncValue<BigInt> balance,
     bool btnDisabled,
@@ -448,11 +455,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Available Balance:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(l10n.sendInputAmountAvailableBalance, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
-                            '${formattingService.formatBalance(b)} ${AppConstants.tokenSymbol}',
+                            l10n.sendInputAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           ),
                           loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
@@ -465,11 +472,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('Network Fee:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(l10n.sendInputAmountNetworkFee, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
                         const SizedBox(height: 4),
                         if (!_isFetchingFee)
                           Text(
-                            '${formattingService.formatBalance(_networkFee, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
+                            l10n.sendInputAmountBalance(
+                              formattingService.formatBalance(_networkFee, maxDecimals: 5),
+                              AppConstants.tokenSymbol,
+                            ),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           )
                         else
@@ -482,7 +492,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               const SizedBox(height: 4),
               IntrinsicWidth(
                 child: QuantusButton.simple(
-                  label: 'Max',
+                  label: l10n.sendInputAmountMax,
                   onTap: _setMax,
                   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                   variant: ButtonVariant.transparent,

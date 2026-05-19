@@ -275,4 +275,122 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addHardwareAccountInvalidAddress => 'Invalid address';
+
+  @override
+  String get sendTitle => 'Send';
+
+  @override
+  String get sendPayTitle => 'Pay';
+
+  @override
+  String get sendEnterAddress => 'Enter Address';
+
+  @override
+  String get sendSelectRecipientSendTo => 'Send To';
+
+  @override
+  String sendSelectRecipientSearchHint(String symbol) {
+    return 'Search $symbol Address';
+  }
+
+  @override
+  String get sendSelectRecipientScanTitle => 'Scan QR code';
+
+  @override
+  String sendSelectRecipientScanSubtitle(String symbol) {
+    return 'Tap to scan a $symbol Address';
+  }
+
+  @override
+  String get sendSelectRecipientRecents => 'Recents';
+
+  @override
+  String get sendSelectRecipientContinue => 'Continue';
+
+  @override
+  String get sendInputAmountSendTo => 'SEND TO';
+
+  @override
+  String get sendInputAmountAvailableBalance => 'Available Balance:';
+
+  @override
+  String get sendInputAmountNetworkFee => 'Network Fee:';
+
+  @override
+  String get sendInputAmountMax => 'Max';
+
+  @override
+  String get sendInputAmountInvalidAmount => 'Please enter a valid amount';
+
+  @override
+  String get sendInputAmountChecksumRequired => 'Recipient checksum is required';
+
+  @override
+  String sendInputAmountBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
+
+  @override
+  String get sendReviewSending => 'SENDING';
+
+  @override
+  String get sendReviewTo => 'TO';
+
+  @override
+  String get sendReviewAmount => 'AMOUNT';
+
+  @override
+  String get sendReviewNetworkFee => 'NETWORK FEE';
+
+  @override
+  String get sendReviewYouPay => 'YOU PAY';
+
+  @override
+  String get sendReviewConfirm => 'Confirm';
+
+  @override
+  String get sendReviewAuthReason => 'Authenticate to confirm transaction';
+
+  @override
+  String get sendReviewAuthRequired => 'Authentication required to send';
+
+  @override
+  String get sendReviewSubmitFailed => 'Failed submitting transaction';
+
+  @override
+  String sendTxSubmittedHeadlinePaid(String amount, String symbol) {
+    return '$amount $symbol paid';
+  }
+
+  @override
+  String sendTxSubmittedHeadlineSent(String amount, String symbol) {
+    return '$amount $symbol sent';
+  }
+
+  @override
+  String get sendTxSubmittedOnItsWay => 'On its way';
+
+  @override
+  String get sendTxSubmittedToLabel => 'To';
+
+  @override
+  String get sendTxSubmittedDone => 'Done';
+
+  @override
+  String get sendLogicCantSelfTransfer => 'Can\'t Self Transfer';
+
+  @override
+  String get sendLogicEnterAmount => 'Enter Amount';
+
+  @override
+  String get sendLogicInvalidAmount => 'Invalid Amount';
+
+  @override
+  String get sendLogicBelowExistentialDeposit => 'Below Existential Deposit';
+
+  @override
+  String get sendLogicInsufficientBalance => 'Insufficient Balance';
+
+  @override
+  String get sendLogicReviewSend => 'Review Send';
 }

@@ -98,5 +98,47 @@
   "addHardwareAccountScanQr": "Pindai Kode QR",
   "addHardwareAccountDebugFill": "Isi Debug",
   "addHardwareAccountNameRequired": "Nama wajib diisi",
-  "addHardwareAccountInvalidAddress": "Alamat tidak valid"
+  "addHardwareAccountInvalidAddress": "Alamat tidak valid",
+
+  "sendTitle": "Kirim",
+  "sendPayTitle": "Bayar",
+  "sendEnterAddress": "Masukkan Alamat",
+
+  "sendSelectRecipientSendTo": "Kirim Ke",
+  "sendSelectRecipientSearchHint": "Cari Alamat {symbol}",
+  "sendSelectRecipientScanTitle": "Pindai kode QR",
+  "sendSelectRecipientScanSubtitle": "Ketuk untuk memindai Alamat {symbol}",
+  "sendSelectRecipientRecents": "Terbaru",
+  "sendSelectRecipientContinue": "Lanjutkan",
+
+  "sendInputAmountSendTo": "KIRIM KE",
+  "sendInputAmountAvailableBalance": "Saldo Tersedia:",
+  "sendInputAmountNetworkFee": "Biaya Jaringan:",
+  "sendInputAmountMax": "Maks",
+  "sendInputAmountInvalidAmount": "Masukkan jumlah yang valid",
+  "sendInputAmountChecksumRequired": "Checksum penerima diperlukan",
+  "sendInputAmountBalance": "{balance} {symbol}",
+
+  "sendReviewSending": "MENGIRIM",
+  "sendReviewTo": "KE",
+  "sendReviewAmount": "JUMLAH",
+  "sendReviewNetworkFee": "BIAYA JARINGAN",
+  "sendReviewYouPay": "ANDA BAYAR",
+  "sendReviewConfirm": "Konfirmasi",
+  "sendReviewAuthReason": "Autentikasi untuk mengonfirmasi transaksi",
+  "sendReviewAuthRequired": "Autentikasi diperlukan untuk mengirim",
+  "sendReviewSubmitFailed": "Gagal mengirim transaksi",
+
+  "sendTxSubmittedHeadlinePaid": "{amount} {symbol} dibayar",
+  "sendTxSubmittedHeadlineSent": "{amount} {symbol} terkirim",
+  "sendTxSubmittedOnItsWay": "Sedang dalam perjalanan",
+  "sendTxSubmittedToLabel": "Ke",
+  "sendTxSubmittedDone": "Selesai",
+
+  "sendLogicCantSelfTransfer": "Tidak Bisa Transfer ke Diri Sendiri",
+  "sendLogicEnterAmount": "Masukkan Jumlah",
+  "sendLogicInvalidAmount": "Jumlah Tidak Valid",
+  "sendLogicBelowExistentialDeposit": "Di Bawah Deposit Eksistensial",
+  "sendLogicInsufficientBalance": "Saldo Tidak Cukup",
+  "sendLogicReviewSend": "Tinjau Pengiriman"
 }

@@ -601,6 +601,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid address'**
   String get addHardwareAccountInvalidAddress;
+
+  /// Send flow app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get sendTitle;
+
+  /// Pay flow app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get sendPayTitle;
+
+  /// Button label when recipient address is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Address'**
+  String get sendEnterAddress;
+
+  /// Section label on select recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Send To'**
+  String get sendSelectRecipientSendTo;
+
+  /// Hint for recipient search field
+  ///
+  /// In en, this message translates to:
+  /// **'Search {symbol} Address'**
+  String sendSelectRecipientSearchHint(String symbol);
+
+  /// Scan QR row title
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get sendSelectRecipientScanTitle;
+
+  /// Scan QR row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to scan a {symbol} Address'**
+  String sendSelectRecipientScanSubtitle(String symbol);
+
+  /// Recents section title
+  ///
+  /// In en, this message translates to:
+  /// **'Recents'**
+  String get sendSelectRecipientRecents;
+
+  /// Continue button on select recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get sendSelectRecipientContinue;
+
+  /// Recipient card label on input amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'SEND TO'**
+  String get sendInputAmountSendTo;
+
+  /// Available balance label
+  ///
+  /// In en, this message translates to:
+  /// **'Available Balance:'**
+  String get sendInputAmountAvailableBalance;
+
+  /// Network fee label
+  ///
+  /// In en, this message translates to:
+  /// **'Network Fee:'**
+  String get sendInputAmountNetworkFee;
+
+  /// Max amount button
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get sendInputAmountMax;
+
+  /// Error when amount input is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid amount'**
+  String get sendInputAmountInvalidAmount;
+
+  /// Error when recipient checksum is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient checksum is required'**
+  String get sendInputAmountChecksumRequired;
+
+  /// Formatted balance with token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{balance} {symbol}'**
+  String sendInputAmountBalance(String balance, String symbol);
+
+  /// Sending section label on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'SENDING'**
+  String get sendReviewSending;
+
+  /// To section label on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'TO'**
+  String get sendReviewTo;
+
+  /// Amount row label on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'AMOUNT'**
+  String get sendReviewAmount;
+
+  /// Network fee row label on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'NETWORK FEE'**
+  String get sendReviewNetworkFee;
+
+  /// Total you pay row label on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'YOU PAY'**
+  String get sendReviewYouPay;
+
+  /// Confirm button on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get sendReviewConfirm;
+
+  /// Biometric auth prompt on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to confirm transaction'**
+  String get sendReviewAuthReason;
+
+  /// Error when auth fails on review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required to send'**
+  String get sendReviewAuthRequired;
+
+  /// Error when transaction submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed submitting transaction'**
+  String get sendReviewSubmitFailed;
+
+  /// Success headline when payment completed
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {symbol} paid'**
+  String sendTxSubmittedHeadlinePaid(String amount, String symbol);
+
+  /// Success headline when send completed
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {symbol} sent'**
+  String sendTxSubmittedHeadlineSent(String amount, String symbol);
+
+  /// Subtitle on transaction submitted screen
+  ///
+  /// In en, this message translates to:
+  /// **'On its way'**
+  String get sendTxSubmittedOnItsWay;
+
+  /// Recipient label on transaction submitted screen
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get sendTxSubmittedToLabel;
+
+  /// Done button on transaction submitted screen
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get sendTxSubmittedDone;
+
+  /// Button label when sending to own address
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t Self Transfer'**
+  String get sendLogicCantSelfTransfer;
+
+  /// Button label when amount is zero
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Amount'**
+  String get sendLogicEnterAmount;
+
+  /// Button label when amount is negative
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Amount'**
+  String get sendLogicInvalidAmount;
+
+  /// Button label when amount is below existential deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Below Existential Deposit'**
+  String get sendLogicBelowExistentialDeposit;
+
+  /// Button label when balance is insufficient
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient Balance'**
+  String get sendLogicInsufficientBalance;
+
+  /// Button label to proceed to review
+  ///
+  /// In en, this message translates to:
+  /// **'Review Send'**
+  String get sendLogicReviewSend;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

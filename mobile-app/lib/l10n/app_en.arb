@@ -381,5 +381,189 @@
     "addHardwareAccountInvalidAddress": "Invalid address",
     "@addHardwareAccountInvalidAddress": {
       "description": "Validation when address is invalid"
+    },
+
+    "sendTitle": "Send",
+    "@sendTitle": {
+      "description": "Send flow app bar title"
+    },
+    "sendPayTitle": "Pay",
+    "@sendPayTitle": {
+      "description": "Pay flow app bar title"
+    },
+    "sendEnterAddress": "Enter Address",
+    "@sendEnterAddress": {
+      "description": "Button label when recipient address is missing"
+    },
+
+    "sendSelectRecipientSendTo": "Send To",
+    "@sendSelectRecipientSendTo": {
+      "description": "Section label on select recipient screen"
+    },
+    "sendSelectRecipientSearchHint": "Search {symbol} Address",
+    "@sendSelectRecipientSearchHint": {
+      "description": "Hint for recipient search field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientScanTitle": "Scan QR code",
+    "@sendSelectRecipientScanTitle": {
+      "description": "Scan QR row title"
+    },
+    "sendSelectRecipientScanSubtitle": "Tap to scan a {symbol} Address",
+    "@sendSelectRecipientScanSubtitle": {
+      "description": "Scan QR row subtitle",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientRecents": "Recents",
+    "@sendSelectRecipientRecents": {
+      "description": "Recents section title"
+    },
+    "sendSelectRecipientContinue": "Continue",
+    "@sendSelectRecipientContinue": {
+      "description": "Continue button on select recipient screen"
+    },
+
+    "sendInputAmountSendTo": "SEND TO",
+    "@sendInputAmountSendTo": {
+      "description": "Recipient card label on input amount screen"
+    },
+    "sendInputAmountAvailableBalance": "Available Balance:",
+    "@sendInputAmountAvailableBalance": {
+      "description": "Available balance label"
+    },
+    "sendInputAmountNetworkFee": "Network Fee:",
+    "@sendInputAmountNetworkFee": {
+      "description": "Network fee label"
+    },
+    "sendInputAmountMax": "Max",
+    "@sendInputAmountMax": {
+      "description": "Max amount button"
+    },
+    "sendInputAmountInvalidAmount": "Please enter a valid amount",
+    "@sendInputAmountInvalidAmount": {
+      "description": "Error when amount input is invalid"
+    },
+    "sendInputAmountChecksumRequired": "Recipient checksum is required",
+    "@sendInputAmountChecksumRequired": {
+      "description": "Error when recipient checksum is missing"
+    },
+    "sendInputAmountBalance": "{balance} {symbol}",
+    "@sendInputAmountBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "sendReviewSending": "SENDING",
+    "@sendReviewSending": {
+      "description": "Sending section label on review screen"
+    },
+    "sendReviewTo": "TO",
+    "@sendReviewTo": {
+      "description": "To section label on review screen"
+    },
+    "sendReviewAmount": "AMOUNT",
+    "@sendReviewAmount": {
+      "description": "Amount row label on review screen"
+    },
+    "sendReviewNetworkFee": "NETWORK FEE",
+    "@sendReviewNetworkFee": {
+      "description": "Network fee row label on review screen"
+    },
+    "sendReviewYouPay": "YOU PAY",
+    "@sendReviewYouPay": {
+      "description": "Total you pay row label on review screen"
+    },
+    "sendReviewConfirm": "Confirm",
+    "@sendReviewConfirm": {
+      "description": "Confirm button on review screen"
+    },
+    "sendReviewAuthReason": "Authenticate to confirm transaction",
+    "@sendReviewAuthReason": {
+      "description": "Biometric auth prompt on review screen"
+    },
+    "sendReviewAuthRequired": "Authentication required to send",
+    "@sendReviewAuthRequired": {
+      "description": "Error when auth fails on review screen"
+    },
+    "sendReviewSubmitFailed": "Failed submitting transaction",
+    "@sendReviewSubmitFailed": {
+      "description": "Error when transaction submission fails"
+    },
+
+    "sendTxSubmittedHeadlinePaid": "{amount} {symbol} paid",
+    "@sendTxSubmittedHeadlinePaid": {
+      "description": "Success headline when payment completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedHeadlineSent": "{amount} {symbol} sent",
+    "@sendTxSubmittedHeadlineSent": {
+      "description": "Success headline when send completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedOnItsWay": "On its way",
+    "@sendTxSubmittedOnItsWay": {
+      "description": "Subtitle on transaction submitted screen"
+    },
+    "sendTxSubmittedToLabel": "To",
+    "@sendTxSubmittedToLabel": {
+      "description": "Recipient label on transaction submitted screen"
+    },
+    "sendTxSubmittedDone": "Done",
+    "@sendTxSubmittedDone": {
+      "description": "Done button on transaction submitted screen"
+    },
+
+    "sendLogicCantSelfTransfer": "Can't Self Transfer",
+    "@sendLogicCantSelfTransfer": {
+      "description": "Button label when sending to own address"
+    },
+    "sendLogicEnterAmount": "Enter Amount",
+    "@sendLogicEnterAmount": {
+      "description": "Button label when amount is zero"
+    },
+    "sendLogicInvalidAmount": "Invalid Amount",
+    "@sendLogicInvalidAmount": {
+      "description": "Button label when amount is negative"
+    },
+    "sendLogicBelowExistentialDeposit": "Below Existential Deposit",
+    "@sendLogicBelowExistentialDeposit": {
+      "description": "Button label when amount is below existential deposit"
+    },
+    "sendLogicInsufficientBalance": "Insufficient Balance",
+    "@sendLogicInsufficientBalance": {
+      "description": "Button label when balance is insufficient"
+    },
+    "sendLogicReviewSend": "Review Send",
+    "@sendLogicReviewSend": {
+      "description": "Button label to proceed to review"
     }
   }

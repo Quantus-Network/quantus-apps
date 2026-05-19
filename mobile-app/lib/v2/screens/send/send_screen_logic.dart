@@ -1,5 +1,6 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 enum AmountStatus { valid, negative, zero, belowExistential, insufficientBalance }
 
@@ -36,6 +37,7 @@ class SendScreenLogic {
   }
 
   static String getButtonText({
+    required AppLocalizations l10n,
     required bool hasAddressError,
     required AmountStatus amountStatus,
     required String recipientText,
@@ -43,20 +45,20 @@ class SendScreenLogic {
     required String activeAccountId,
     required NumberFormattingService formattingService,
   }) {
-    if (hasAddressError || recipientText.isEmpty) return 'Enter Address';
-    if (_isSelfTransfer(recipientText, activeAccountId)) return "Can't Self Transfer";
+    if (hasAddressError || recipientText.isEmpty) return l10n.sendEnterAddress;
+    if (_isSelfTransfer(recipientText, activeAccountId)) return l10n.sendLogicCantSelfTransfer;
 
     switch (amountStatus) {
       case AmountStatus.zero:
-        return 'Enter Amount';
+        return l10n.sendLogicEnterAmount;
       case AmountStatus.negative:
-        return 'Invalid Amount';
+        return l10n.sendLogicInvalidAmount;
       case AmountStatus.belowExistential:
-        return 'Below Existential Deposit';
+        return l10n.sendLogicBelowExistentialDeposit;
       case AmountStatus.insufficientBalance:
-        return 'Insufficient Balance';
+        return l10n.sendLogicInsufficientBalance;
       case AmountStatus.valid:
-        return 'Review Send';
+        return l10n.sendLogicReviewSend;
     }
   }
 
