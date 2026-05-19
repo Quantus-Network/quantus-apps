@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -89,16 +90,22 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   Future<void> _showMnemonicLostDialog() async {
+    final l10n = ref.watch(l10nProvider);
+
     await BottomSheetContainer.show(
       context,
       builder: (ctx) => BottomSheetContainer(
-        title: 'Wallet Error',
+        title: l10n.walletInitErrorTitle,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Unable to find secret phrase. Please restore your wallet.', style: ctx.themeText.smallParagraph),
+            Text(l10n.walletInitErrorMessage, style: ctx.themeText.smallParagraph),
             const SizedBox(height: 32),
-            QuantusButton.simple(label: 'OK', onTap: () => Navigator.pop(ctx), variant: ButtonVariant.secondary),
+            QuantusButton.simple(
+              label: l10n.walletInitErrorButtonLabel,
+              onTap: () => Navigator.pop(ctx),
+              variant: ButtonVariant.secondary,
+            ),
           ],
         ),
       ),

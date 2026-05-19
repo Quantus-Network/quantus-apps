@@ -9,9 +9,13 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String greeting(String name) {
-    return 'Hello, $name!';
-  }
+  String get walletInitErrorTitle => 'Wallet Error';
+
+  @override
+  String get walletInitErrorMessage => 'Unable to find secret phrase. Please restore your wallet.';
+
+  @override
+  String get walletInitErrorButtonLabel => 'OK';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';

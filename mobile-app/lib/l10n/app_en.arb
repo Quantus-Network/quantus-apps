@@ -1,14 +1,16 @@
 {
-    "greeting": "Hello, {name}!",
-    "@greeting": {
-      "description": "A welcome message",
-      "placeholders": {
-        "name": {
-          "type": "String"
-        }
-      }
+    "walletInitErrorTitle": "Wallet Error",
+    "@walletInitErrorTitle": {
+      "description": "Title for the error dialog when the wallet is not found"
     },
-
+    "walletInitErrorMessage": "Unable to find secret phrase. Please restore your wallet.",
+    "@walletInitErrorMessage": {
+      "description": "Message for the error dialog when the wallet is not found"
+    },
+    "walletInitErrorButtonLabel": "OK",
+    "@walletInitErrorButtonLabel": {
+      "description": "Label for the button on the error dialog when the wallet is not found"
+    },
 
     "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
     "@authUseDeviceBiometricsToUnlock": {

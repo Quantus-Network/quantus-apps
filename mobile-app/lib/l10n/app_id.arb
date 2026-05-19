@@ -1,5 +1,7 @@
 {
-  "greeting": "Halo, {name}!",
+  "walletInitErrorTitle": "Wallet Eror",
+  "walletInitErrorMessage": "Gagal mencari secret phrase. Coba pulihkan wallet anda.",
+  "walletInitErrorButtonLabel": "OK",
 
   "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk membuka perangkat",
   "authAuthenticating": "Mengotentikasi...",

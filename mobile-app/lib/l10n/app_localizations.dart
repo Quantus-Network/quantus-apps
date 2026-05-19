@@ -92,11 +92,23 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en'), Locale('id')];
 
-  /// A welcome message
+  /// Title for the error dialog when the wallet is not found
   ///
   /// In en, this message translates to:
-  /// **'Hello, {name}!'**
-  String greeting(String name);
+  /// **'Wallet Error'**
+  String get walletInitErrorTitle;
+
+  /// Message for the error dialog when the wallet is not found
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to find secret phrase. Please restore your wallet.'**
+  String get walletInitErrorMessage;
+
+  /// Label for the button on the error dialog when the wallet is not found
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get walletInitErrorButtonLabel;
 
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///

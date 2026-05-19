@@ -9,9 +9,13 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String greeting(String name) {
-    return 'Halo, $name!';
-  }
+  String get walletInitErrorTitle => 'Wallet Eror';
+
+  @override
+  String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
+
+  @override
+  String get walletInitErrorButtonLabel => 'OK';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk membuka perangkat';
