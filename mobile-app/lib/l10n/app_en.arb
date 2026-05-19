@@ -205,5 +205,181 @@
     "homeActivityEmptyMessage": "Your activity will appear here once you send or receive QUAN.",
     "@homeActivityEmptyMessage": {
       "description": "Empty state message in home activity section"
+    },
+
+    "accountsSheetTitle": "Accounts",
+    "@accountsSheetTitle": {
+      "description": "Title of the accounts bottom sheet"
+    },
+    "accountsSheetFailedLoadAccounts": "Failed to load accounts.",
+    "@accountsSheetFailedLoadAccounts": {
+      "description": "Error when accounts list fails to load"
+    },
+    "accountsSheetFailedLoadActiveAccount": "Failed to load active account.",
+    "@accountsSheetFailedLoadActiveAccount": {
+      "description": "Error when active account fails to load"
+    },
+    "accountsSheetNoAccountsFound": "No accounts found.",
+    "@accountsSheetNoAccountsFound": {
+      "description": "Empty state in accounts sheet"
+    },
+    "accountsSheetAddAccount": "Add Account",
+    "@accountsSheetAddAccount": {
+      "description": "Button to add a new account"
+    },
+    "accountsSheetLoading": "Loading...",
+    "@accountsSheetLoading": {
+      "description": "Loading balance in accounts sheet"
+    },
+    "accountsSheetBalanceUnavailable": "Balance unavailable",
+    "@accountsSheetBalanceUnavailable": {
+      "description": "When account balance fails to load"
+    },
+    "accountsSheetBalance": "{balance} {symbol}",
+    "@accountsSheetBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "addAccountMenuTitle": "Add Account",
+    "@addAccountMenuTitle": {
+      "description": "App bar title on add account menu"
+    },
+    "addAccountMenuCreateTitle": "Create New Account",
+    "@addAccountMenuCreateTitle": {
+      "description": "Create new account menu row title"
+    },
+    "addAccountMenuCreateSubtitle": "Generate a fresh wallet address",
+    "@addAccountMenuCreateSubtitle": {
+      "description": "Create new account menu row subtitle"
+    },
+    "addAccountMenuImportTitle": "Import Wallet",
+    "@addAccountMenuImportTitle": {
+      "description": "Import wallet menu row title"
+    },
+    "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
+    "@addAccountMenuImportSubtitle": {
+      "description": "Import wallet menu row subtitle"
+    },
+
+    "createAccountAppBarTitle": "Account Name",
+    "@createAccountAppBarTitle": {
+      "description": "App bar title when creating an account"
+    },
+    "createAccountSubtitle": "Give this account a name you'll recognize. You can change it anytime.",
+    "@createAccountSubtitle": {
+      "description": "Subtitle on create account name field"
+    },
+    "createAccountButton": "Create",
+    "@createAccountButton": {
+      "description": "Create account button"
+    },
+    "createAccountErrorCouldNotAdd": "Could not add account.",
+    "@createAccountErrorCouldNotAdd": {
+      "description": "Error when account creation fails"
+    },
+    "createAccountDefaultName": "Account {number}",
+    "@createAccountDefaultName": {
+      "description": "Default name for a new account",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+
+    "editAccountAppBarTitle": "Account Name",
+    "@editAccountAppBarTitle": {
+      "description": "App bar title when editing account name"
+    },
+    "editAccountDone": "Done",
+    "@editAccountDone": {
+      "description": "Done button on edit account screen"
+    },
+    "editAccountNameEmpty": "Account name can't be empty",
+    "@editAccountNameEmpty": {
+      "description": "Validation error when account name is empty"
+    },
+    "editAccountRenameFailed": "Failed to rename account.",
+    "@editAccountRenameFailed": {
+      "description": "Error when renaming account fails"
+    },
+
+    "accountMenuTitle": "Accounts",
+    "@accountMenuTitle": {
+      "description": "App bar title on account menu screen"
+    },
+    "accountMenuAccountName": "Account Name",
+    "@accountMenuAccountName": {
+      "description": "Account name menu row label"
+    },
+    "accountMenuAddressDetails": "Address Details",
+    "@accountMenuAddressDetails": {
+      "description": "Address details menu row label"
+    },
+    "accountMenuShowRecoveryPhrase": "Show Recovery Phrase",
+    "@accountMenuShowRecoveryPhrase": {
+      "description": "Show recovery phrase menu row label"
+    },
+    "accountMenuNotFound": "Account not found",
+    "@accountMenuNotFound": {
+      "description": "When account is not found on menu screen"
+    },
+
+    "accountDetailsTitle": "Address Details",
+    "@accountDetailsTitle": {
+      "description": "App bar title on account details screen"
+    },
+
+    "addHardwareAccountAddWallet": "Add Hardware Wallet",
+    "@addHardwareAccountAddWallet": {
+      "description": "Title when adding a new hardware wallet"
+    },
+    "addHardwareAccountAddAccount": "Add Hardware Account",
+    "@addHardwareAccountAddAccount": {
+      "description": "Title when adding a hardware account to existing wallet"
+    },
+    "addHardwareAccountNameLabel": "NAME",
+    "@addHardwareAccountNameLabel": {
+      "description": "Name field label"
+    },
+    "addHardwareAccountNameHintWallet": "Hardware Wallet",
+    "@addHardwareAccountNameHintWallet": {
+      "description": "Name field hint for new hardware wallet"
+    },
+    "addHardwareAccountNameHintAccount": "Account",
+    "@addHardwareAccountNameHintAccount": {
+      "description": "Name field hint for hardware account"
+    },
+    "addHardwareAccountAddressLabel": "ADDRESS",
+    "@addHardwareAccountAddressLabel": {
+      "description": "Address field label"
+    },
+    "addHardwareAccountAddressHint": "SS58 address",
+    "@addHardwareAccountAddressHint": {
+      "description": "Address field hint"
+    },
+    "addHardwareAccountScanQr": "Scan QR Code",
+    "@addHardwareAccountScanQr": {
+      "description": "Scan QR code button"
+    },
+    "addHardwareAccountDebugFill": "Debug Fill",
+    "@addHardwareAccountDebugFill": {
+      "description": "Debug fill button"
+    },
+    "addHardwareAccountNameRequired": "Name is required",
+    "@addHardwareAccountNameRequired": {
+      "description": "Validation when name is empty"
+    },
+    "addHardwareAccountInvalidAddress": "Invalid address",
+    "@addHardwareAccountInvalidAddress": {
+      "description": "Validation when address is invalid"
     }
   }

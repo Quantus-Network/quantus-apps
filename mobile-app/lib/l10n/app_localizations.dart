@@ -367,6 +367,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your activity will appear here once you send or receive QUAN.'**
   String get homeActivityEmptyMessage;
+
+  /// Title of the accounts bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accountsSheetTitle;
+
+  /// Error when accounts list fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load accounts.'**
+  String get accountsSheetFailedLoadAccounts;
+
+  /// Error when active account fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load active account.'**
+  String get accountsSheetFailedLoadActiveAccount;
+
+  /// Empty state in accounts sheet
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts found.'**
+  String get accountsSheetNoAccountsFound;
+
+  /// Button to add a new account
+  ///
+  /// In en, this message translates to:
+  /// **'Add Account'**
+  String get accountsSheetAddAccount;
+
+  /// Loading balance in accounts sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get accountsSheetLoading;
+
+  /// When account balance fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Balance unavailable'**
+  String get accountsSheetBalanceUnavailable;
+
+  /// Formatted balance with token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{balance} {symbol}'**
+  String accountsSheetBalance(String balance, String symbol);
+
+  /// App bar title on add account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Add Account'**
+  String get addAccountMenuTitle;
+
+  /// Create new account menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Account'**
+  String get addAccountMenuCreateTitle;
+
+  /// Create new account menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a fresh wallet address'**
+  String get addAccountMenuCreateSubtitle;
+
+  /// Import wallet menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet'**
+  String get addAccountMenuImportTitle;
+
+  /// Import wallet menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Use a recovery phrase to import'**
+  String get addAccountMenuImportSubtitle;
+
+  /// App bar title when creating an account
+  ///
+  /// In en, this message translates to:
+  /// **'Account Name'**
+  String get createAccountAppBarTitle;
+
+  /// Subtitle on create account name field
+  ///
+  /// In en, this message translates to:
+  /// **'Give this account a name you\'ll recognize. You can change it anytime.'**
+  String get createAccountSubtitle;
+
+  /// Create account button
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createAccountButton;
+
+  /// Error when account creation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add account.'**
+  String get createAccountErrorCouldNotAdd;
+
+  /// Default name for a new account
+  ///
+  /// In en, this message translates to:
+  /// **'Account {number}'**
+  String createAccountDefaultName(int number);
+
+  /// App bar title when editing account name
+  ///
+  /// In en, this message translates to:
+  /// **'Account Name'**
+  String get editAccountAppBarTitle;
+
+  /// Done button on edit account screen
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get editAccountDone;
+
+  /// Validation error when account name is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Account name can\'t be empty'**
+  String get editAccountNameEmpty;
+
+  /// Error when renaming account fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to rename account.'**
+  String get editAccountRenameFailed;
+
+  /// App bar title on account menu screen
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accountMenuTitle;
+
+  /// Account name menu row label
+  ///
+  /// In en, this message translates to:
+  /// **'Account Name'**
+  String get accountMenuAccountName;
+
+  /// Address details menu row label
+  ///
+  /// In en, this message translates to:
+  /// **'Address Details'**
+  String get accountMenuAddressDetails;
+
+  /// Show recovery phrase menu row label
+  ///
+  /// In en, this message translates to:
+  /// **'Show Recovery Phrase'**
+  String get accountMenuShowRecoveryPhrase;
+
+  /// When account is not found on menu screen
+  ///
+  /// In en, this message translates to:
+  /// **'Account not found'**
+  String get accountMenuNotFound;
+
+  /// App bar title on account details screen
+  ///
+  /// In en, this message translates to:
+  /// **'Address Details'**
+  String get accountDetailsTitle;
+
+  /// Title when adding a new hardware wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Add Hardware Wallet'**
+  String get addHardwareAccountAddWallet;
+
+  /// Title when adding a hardware account to existing wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Add Hardware Account'**
+  String get addHardwareAccountAddAccount;
+
+  /// Name field label
+  ///
+  /// In en, this message translates to:
+  /// **'NAME'**
+  String get addHardwareAccountNameLabel;
+
+  /// Name field hint for new hardware wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Hardware Wallet'**
+  String get addHardwareAccountNameHintWallet;
+
+  /// Name field hint for hardware account
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get addHardwareAccountNameHintAccount;
+
+  /// Address field label
+  ///
+  /// In en, this message translates to:
+  /// **'ADDRESS'**
+  String get addHardwareAccountAddressLabel;
+
+  /// Address field hint
+  ///
+  /// In en, this message translates to:
+  /// **'SS58 address'**
+  String get addHardwareAccountAddressHint;
+
+  /// Scan QR code button
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get addHardwareAccountScanQr;
+
+  /// Debug fill button
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Fill'**
+  String get addHardwareAccountDebugFill;
+
+  /// Validation when name is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get addHardwareAccountNameRequired;
+
+  /// Validation when address is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid address'**
+  String get addHardwareAccountInvalidAddress;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

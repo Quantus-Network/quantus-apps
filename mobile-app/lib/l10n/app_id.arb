@@ -52,5 +52,51 @@
   "homeActivityErrorLoading": "Gagal memuat transaksi",
   "homeActivityRetry": "Coba Lagi",
   "homeActivityEmptyTitle": "Belum Ada Transaksi",
-  "homeActivityEmptyMessage": "Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN."
+  "homeActivityEmptyMessage": "Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN.",
+
+  "accountsSheetTitle": "Akun",
+  "accountsSheetFailedLoadAccounts": "Gagal memuat akun.",
+  "accountsSheetFailedLoadActiveAccount": "Gagal memuat akun aktif.",
+  "accountsSheetNoAccountsFound": "Tidak ada akun ditemukan.",
+  "accountsSheetAddAccount": "Tambah Akun",
+  "accountsSheetLoading": "Memuat...",
+  "accountsSheetBalanceUnavailable": "Saldo tidak tersedia",
+  "accountsSheetBalance": "{balance} {symbol}",
+
+  "addAccountMenuTitle": "Tambah Akun",
+  "addAccountMenuCreateTitle": "Buat Akun Baru",
+  "addAccountMenuCreateSubtitle": "Buat alamat wallet baru",
+  "addAccountMenuImportTitle": "Impor Wallet",
+  "addAccountMenuImportSubtitle": "Gunakan recovery phrase untuk mengimpor",
+
+  "createAccountAppBarTitle": "Nama Akun",
+  "createAccountSubtitle": "Berikan nama yang mudah Anda kenali. Anda bisa mengubahnya kapan saja.",
+  "createAccountButton": "Buat",
+  "createAccountErrorCouldNotAdd": "Gagal menambahkan akun.",
+  "createAccountDefaultName": "Akun {number}",
+
+  "editAccountAppBarTitle": "Nama Akun",
+  "editAccountDone": "Selesai",
+  "editAccountNameEmpty": "Nama akun tidak boleh kosong",
+  "editAccountRenameFailed": "Gagal mengganti nama akun.",
+
+  "accountMenuTitle": "Akun",
+  "accountMenuAccountName": "Nama Akun",
+  "accountMenuAddressDetails": "Detail Alamat",
+  "accountMenuShowRecoveryPhrase": "Tampilkan Recovery Phrase",
+  "accountMenuNotFound": "Akun tidak ditemukan",
+
+  "accountDetailsTitle": "Detail Alamat",
+
+  "addHardwareAccountAddWallet": "Tambah Hardware Wallet",
+  "addHardwareAccountAddAccount": "Tambah Akun Hardware",
+  "addHardwareAccountNameLabel": "NAMA",
+  "addHardwareAccountNameHintWallet": "Hardware Wallet",
+  "addHardwareAccountNameHintAccount": "Akun",
+  "addHardwareAccountAddressLabel": "ALAMAT",
+  "addHardwareAccountAddressHint": "Alamat SS58",
+  "addHardwareAccountScanQr": "Pindai Kode QR",
+  "addHardwareAccountDebugFill": "Isi Debug",
+  "addHardwareAccountNameRequired": "Nama wajib diisi",
+  "addHardwareAccountInvalidAddress": "Alamat tidak valid"
 }

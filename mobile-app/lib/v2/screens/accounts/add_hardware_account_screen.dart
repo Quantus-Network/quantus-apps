@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/features/styles/app_size_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 
 class AddHardwareAccountScreen extends ConsumerStatefulWidget {
@@ -52,12 +53,13 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
     final name = _name.text.trim();
     final address = _address.text.trim();
 
+    final l10n = ref.read(l10nProvider);
     if (name.isEmpty) {
-      setState(() => _error = 'Name is required');
+      setState(() => _error = l10n.addHardwareAccountNameRequired);
       return;
     }
     if (!_substrateService.isValidSS58Address(address)) {
-      setState(() => _error = 'Invalid address');
+      setState(() => _error = l10n.addHardwareAccountInvalidAddress);
       return;
     }
 
@@ -95,7 +97,9 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.isNewWallet ? 'Add Hardware Wallet' : 'Add Hardware Account';
+    final l10n = ref.watch(l10nProvider);
+    final title = widget.isNewWallet ? l10n.addHardwareAccountAddWallet : l10n.addHardwareAccountAddAccount;
+
     return ScaffoldBase(
       appBar: V2AppBar(title: title),
       mainContent: Column(
@@ -106,8 +110,8 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           const SizedBox(height: 16),
           CustomTextField(
             controller: _name,
-            labelText: 'NAME',
-            hintText: widget.isNewWallet ? 'Hardware Wallet' : 'Account',
+            labelText: l10n.addHardwareAccountNameLabel,
+            hintText: widget.isNewWallet ? l10n.addHardwareAccountNameHintWallet : l10n.addHardwareAccountNameHintAccount,
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
             },
@@ -115,8 +119,8 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           const SizedBox(height: 16),
           CustomTextField(
             controller: _address,
-            labelText: 'ADDRESS',
-            hintText: 'SS58 address',
+            labelText: l10n.addHardwareAccountAddressLabel,
+            hintText: l10n.addHardwareAccountAddressHint,
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
             },
@@ -126,7 +130,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             children: [
               Expanded(
                 child: QuantusButton.simple(
-                  label: 'Scan QR Code',
+                  label: l10n.addHardwareAccountScanQr,
                   variant: ButtonVariant.secondary,
                   onTap: _scanQRCode,
                 ),
@@ -135,7 +139,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
                 const SizedBox(width: 12),
                 Expanded(
                   child: QuantusButton.simple(
-                    label: 'Debug Fill',
+                    label: l10n.addHardwareAccountDebugFill,
                     variant: ButtonVariant.secondary,
                     onTap: _fillDebugAddress,
                   ),
@@ -149,7 +153,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           ],
           const Spacer(),
           QuantusButton.simple(
-            label: widget.isNewWallet ? 'Add Hardware Wallet' : 'Add Hardware Account',
+            label: title,
             onTap: _isSaving ? null : _save,
             isLoading: _isSaving,
           ),

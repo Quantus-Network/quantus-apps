@@ -114,7 +114,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String homeError(String error) {
-    return 'Error: $error';
+    return 'Eror: $error';
   }
 
   @override
@@ -155,4 +155,125 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get homeActivityEmptyMessage => 'Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN.';
+
+  @override
+  String get accountsSheetTitle => 'Akun';
+
+  @override
+  String get accountsSheetFailedLoadAccounts => 'Gagal memuat akun.';
+
+  @override
+  String get accountsSheetFailedLoadActiveAccount => 'Gagal memuat akun aktif.';
+
+  @override
+  String get accountsSheetNoAccountsFound => 'Tidak ada akun ditemukan.';
+
+  @override
+  String get accountsSheetAddAccount => 'Tambah Akun';
+
+  @override
+  String get accountsSheetLoading => 'Memuat...';
+
+  @override
+  String get accountsSheetBalanceUnavailable => 'Saldo tidak tersedia';
+
+  @override
+  String accountsSheetBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
+
+  @override
+  String get addAccountMenuTitle => 'Tambah Akun';
+
+  @override
+  String get addAccountMenuCreateTitle => 'Buat Akun Baru';
+
+  @override
+  String get addAccountMenuCreateSubtitle => 'Buat alamat wallet baru';
+
+  @override
+  String get addAccountMenuImportTitle => 'Impor Wallet';
+
+  @override
+  String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
+
+  @override
+  String get createAccountAppBarTitle => 'Nama Akun';
+
+  @override
+  String get createAccountSubtitle => 'Berikan nama yang mudah Anda kenali. Anda bisa mengubahnya kapan saja.';
+
+  @override
+  String get createAccountButton => 'Buat';
+
+  @override
+  String get createAccountErrorCouldNotAdd => 'Gagal menambahkan akun.';
+
+  @override
+  String createAccountDefaultName(int number) {
+    return 'Akun $number';
+  }
+
+  @override
+  String get editAccountAppBarTitle => 'Nama Akun';
+
+  @override
+  String get editAccountDone => 'Selesai';
+
+  @override
+  String get editAccountNameEmpty => 'Nama akun tidak boleh kosong';
+
+  @override
+  String get editAccountRenameFailed => 'Gagal mengganti nama akun.';
+
+  @override
+  String get accountMenuTitle => 'Akun';
+
+  @override
+  String get accountMenuAccountName => 'Nama Akun';
+
+  @override
+  String get accountMenuAddressDetails => 'Detail Alamat';
+
+  @override
+  String get accountMenuShowRecoveryPhrase => 'Tampilkan Recovery Phrase';
+
+  @override
+  String get accountMenuNotFound => 'Akun tidak ditemukan';
+
+  @override
+  String get accountDetailsTitle => 'Detail Alamat';
+
+  @override
+  String get addHardwareAccountAddWallet => 'Tambah Hardware Wallet';
+
+  @override
+  String get addHardwareAccountAddAccount => 'Tambah Akun Hardware';
+
+  @override
+  String get addHardwareAccountNameLabel => 'NAMA';
+
+  @override
+  String get addHardwareAccountNameHintWallet => 'Hardware Wallet';
+
+  @override
+  String get addHardwareAccountNameHintAccount => 'Akun';
+
+  @override
+  String get addHardwareAccountAddressLabel => 'ALAMAT';
+
+  @override
+  String get addHardwareAccountAddressHint => 'Alamat SS58';
+
+  @override
+  String get addHardwareAccountScanQr => 'Pindai Kode QR';
+
+  @override
+  String get addHardwareAccountDebugFill => 'Isi Debug';
+
+  @override
+  String get addHardwareAccountNameRequired => 'Nama wajib diisi';
+
+  @override
+  String get addHardwareAccountInvalidAddress => 'Alamat tidak valid';
 }

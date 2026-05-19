@@ -154,4 +154,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeActivityEmptyMessage => 'Your activity will appear here once you send or receive QUAN.';
+
+  @override
+  String get accountsSheetTitle => 'Accounts';
+
+  @override
+  String get accountsSheetFailedLoadAccounts => 'Failed to load accounts.';
+
+  @override
+  String get accountsSheetFailedLoadActiveAccount => 'Failed to load active account.';
+
+  @override
+  String get accountsSheetNoAccountsFound => 'No accounts found.';
+
+  @override
+  String get accountsSheetAddAccount => 'Add Account';
+
+  @override
+  String get accountsSheetLoading => 'Loading...';
+
+  @override
+  String get accountsSheetBalanceUnavailable => 'Balance unavailable';
+
+  @override
+  String accountsSheetBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
+
+  @override
+  String get addAccountMenuTitle => 'Add Account';
+
+  @override
+  String get addAccountMenuCreateTitle => 'Create New Account';
+
+  @override
+  String get addAccountMenuCreateSubtitle => 'Generate a fresh wallet address';
+
+  @override
+  String get addAccountMenuImportTitle => 'Import Wallet';
+
+  @override
+  String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
+
+  @override
+  String get createAccountAppBarTitle => 'Account Name';
+
+  @override
+  String get createAccountSubtitle => 'Give this account a name you\'ll recognize. You can change it anytime.';
+
+  @override
+  String get createAccountButton => 'Create';
+
+  @override
+  String get createAccountErrorCouldNotAdd => 'Could not add account.';
+
+  @override
+  String createAccountDefaultName(int number) {
+    return 'Account $number';
+  }
+
+  @override
+  String get editAccountAppBarTitle => 'Account Name';
+
+  @override
+  String get editAccountDone => 'Done';
+
+  @override
+  String get editAccountNameEmpty => 'Account name can\'t be empty';
+
+  @override
+  String get editAccountRenameFailed => 'Failed to rename account.';
+
+  @override
+  String get accountMenuTitle => 'Accounts';
+
+  @override
+  String get accountMenuAccountName => 'Account Name';
+
+  @override
+  String get accountMenuAddressDetails => 'Address Details';
+
+  @override
+  String get accountMenuShowRecoveryPhrase => 'Show Recovery Phrase';
+
+  @override
+  String get accountMenuNotFound => 'Account not found';
+
+  @override
+  String get accountDetailsTitle => 'Address Details';
+
+  @override
+  String get addHardwareAccountAddWallet => 'Add Hardware Wallet';
+
+  @override
+  String get addHardwareAccountAddAccount => 'Add Hardware Account';
+
+  @override
+  String get addHardwareAccountNameLabel => 'NAME';
+
+  @override
+  String get addHardwareAccountNameHintWallet => 'Hardware Wallet';
+
+  @override
+  String get addHardwareAccountNameHintAccount => 'Account';
+
+  @override
+  String get addHardwareAccountAddressLabel => 'ADDRESS';
+
+  @override
+  String get addHardwareAccountAddressHint => 'SS58 address';
+
+  @override
+  String get addHardwareAccountScanQr => 'Scan QR Code';
+
+  @override
+  String get addHardwareAccountDebugFill => 'Debug Fill';
+
+  @override
+  String get addHardwareAccountNameRequired => 'Name is required';
+
+  @override
+  String get addHardwareAccountInvalidAddress => 'Invalid address';
 }

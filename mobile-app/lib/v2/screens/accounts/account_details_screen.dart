@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/share_utils.dart';
 import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -7,16 +9,16 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/components/share_account_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 
-class AccountDetailsScreen extends StatefulWidget {
+class AccountDetailsScreen extends ConsumerStatefulWidget {
   final Account account;
 
   const AccountDetailsScreen({super.key, required this.account});
 
   @override
-  State<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
+  ConsumerState<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
 }
 
-class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
+class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   final _checksumService = HumanReadableChecksumService();
   String? _checksum;
   bool _isLoading = true;
@@ -45,9 +47,11 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final account = widget.account;
+
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Address Details'),
+      appBar: V2AppBar(title: l10n.accountDetailsTitle),
       mainContent: AddressDetailsCard(accountId: account.accountId, checksum: _checksum),
       bottomContent: ScaffoldBaseBottomContent(
         child: ShareAccountButton(onTap: _share, isDisabled: _isLoading),

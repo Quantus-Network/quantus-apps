@@ -7,7 +7,9 @@ import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
@@ -56,6 +58,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
 
@@ -69,9 +72,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final sheetHeight = math.min(610.0, maxHeight);
 
     return BottomSheetContainer(
-      title: 'Accounts',
+      title: l10n.accountsSheetTitle,
       height: sheetHeight,
       child: _buildContent(
+        l10n: l10n,
         accountsAsync: accountsAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
         displayAccounts: displayAccounts,
@@ -81,6 +85,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   Widget _buildContent({
+    required AppLocalizations l10n,
     required AsyncValue<List<Account>> accountsAsync,
     required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
     required List<Account> displayAccounts,
@@ -93,7 +98,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (accountsAsync.hasError) {
       return Center(
         child: Text(
-          'Failed to load accounts.',
+          l10n.accountsSheetFailedLoadAccounts,
           style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
@@ -102,16 +107,16 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (activeDisplayAccountAsync.hasError) {
       return Center(
         child: Text(
-          'Failed to load active account.',
+          l10n.accountsSheetFailedLoadActiveAccount,
           style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
     }
 
-    return _buildAccountsListView(displayAccounts, activeAccountId);
+    return _buildAccountsListView(l10n, displayAccounts, activeAccountId);
   }
 
-  Widget _buildAccountsListView(List<Account> displayAccounts, String? activeAccountId) {
+  Widget _buildAccountsListView(AppLocalizations l10n, List<Account> displayAccounts, String? activeAccountId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -119,7 +124,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           child: displayAccounts.isEmpty
               ? Center(
                   child: Text(
-                    'No accounts found.',
+                    l10n.accountsSheetNoAccountsFound,
                     style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
                   ),
                 )
@@ -130,23 +135,26 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                     final account = displayAccounts[index];
                     final isActive = account.accountId == activeAccountId;
 
-                    return _buildAccountRow(account, isActive);
+                    return _buildAccountRow(l10n, account, isActive);
                   },
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(label: 'Add Account', onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
+        QuantusButton.simple(label: l10n.accountsSheetAddAccount, onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
       ],
     );
   }
 
-  Widget _buildAccountRow(Account account, bool isActive) {
+  Widget _buildAccountRow(AppLocalizations l10n, Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
-      loading: () => 'Loading...',
-      error: (_, _) => 'Balance unavailable',
-      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      loading: () => l10n.accountsSheetLoading,
+      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
+      data: (balance) => l10n.accountsSheetBalance(
+        formattingService.formatBalance(balance),
+        AppConstants.tokenSymbol,
+      ),
     );
     final colors = context.colors;
 

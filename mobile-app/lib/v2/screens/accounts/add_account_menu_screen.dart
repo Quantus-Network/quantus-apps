@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -31,17 +32,18 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Add Account'),
+      appBar: V2AppBar(title: l10n.addAccountMenuTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _AddMenuRow(
             icon: Icons.add,
-            title: 'Create New Account',
-            subtitle: 'Generate a fresh wallet address',
+            title: l10n.addAccountMenuCreateTitle,
+            subtitle: l10n.addAccountMenuCreateSubtitle,
             onTap: _onCreateNewAccount,
             colors: colors,
             text: context.themeText,
@@ -51,8 +53,8 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
           const SizedBox(height: 24),
           _AddMenuRow(
             icon: Icons.save_alt,
-            title: 'Import Wallet',
-            subtitle: 'Use a recovery phrase to import',
+            title: l10n.addAccountMenuImportTitle,
+            subtitle: l10n.addAccountMenuImportSubtitle,
             onTap: _onImportWallet,
             colors: colors,
             text: context.themeText,

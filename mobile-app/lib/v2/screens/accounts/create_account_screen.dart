@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
@@ -90,7 +91,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       }
     } catch (_) {
       if (mounted) {
-        context.showErrorToaster(message: 'Could not add account.');
+        final l10n = ref.read(l10nProvider);
+        context.showErrorToaster(message: l10n.createAccountErrorCouldNotAdd);
       }
     } finally {
       if (mounted) {
@@ -107,7 +109,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     _accounts = ref.read(accountsProvider).value ?? <Account>[];
     _walletIndex = _walletIndexForActiveAccount(_accounts, activeAccount);
 
-    _accountName.text = 'Account ${_accounts.length + 1}';
+    final l10n = ref.read(l10nProvider);
+    _accountName.text = l10n.createAccountDefaultName(_accounts.length + 1);
     _accountName.addListener(() => setState(() {}));
   }
 
@@ -119,16 +122,18 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Account Name'),
+      appBar: V2AppBar(title: l10n.createAccountAppBarTitle),
       mainContent: NameField(
         controller: _accountName,
-        subtitle: "Give this account a name you'll recognize. You can change it anytime.",
+        subtitle: l10n.createAccountSubtitle,
         error: _error,
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: 'Create',
+          label: l10n.createAccountButton,
           onTap: _createAccount,
           isLoading: _isLoading,
           isDisabled: _isDisabled,
