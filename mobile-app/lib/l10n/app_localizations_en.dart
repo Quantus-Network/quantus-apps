@@ -612,7 +612,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPreferencesTitle => 'Preferences';
 
   @override
-  String get settingsPreferencesSubtitle => 'Currency, POS mode, notifications';
+  String get settingsPreferencesSubtitle => 'Language, currency, POS mode, notifications';
 
   @override
   String get settingsMiningRewards => 'Mining Rewards';
@@ -723,6 +723,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPreferencesCurrencySubtitle => 'Fiat display preference';
 
   @override
+  String get settingsPreferencesLanguage => 'Language';
+
+  @override
+  String get settingsPreferencesLanguageSubtitle => 'App display language';
+
+  @override
   String get settingsPreferencesPosMode => 'POS Mode';
 
   @override
@@ -742,6 +748,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCurrencyNoMatch => 'No currencies match your search';
+
+  @override
+  String get settingsLanguageTitle => 'Language';
+
+  @override
+  String get settingsLanguageSearchHint => 'Search';
+
+  @override
+  String get settingsLanguageNoMatch => 'No languages match your search';
 
   @override
   String get settingsMiningTitle => 'Mining Rewards';

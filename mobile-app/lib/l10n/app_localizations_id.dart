@@ -613,7 +613,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsPreferencesTitle => 'Preferensi';
 
   @override
-  String get settingsPreferencesSubtitle => 'Mata uang, mode POS, notifikasi';
+  String get settingsPreferencesSubtitle => 'Bahasa, mata uang, mode POS, notifikasi';
 
   @override
   String get settingsMiningRewards => 'Hadiah Mining';
@@ -724,6 +724,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsPreferencesCurrencySubtitle => 'Preferensi tampilan fiat';
 
   @override
+  String get settingsPreferencesLanguage => 'Bahasa';
+
+  @override
+  String get settingsPreferencesLanguageSubtitle => 'Bahasa tampilan aplikasi';
+
+  @override
   String get settingsPreferencesPosMode => 'Mode POS';
 
   @override
@@ -743,6 +749,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsCurrencyNoMatch => 'Tidak ada mata uang yang cocok dengan pencarian Anda';
+
+  @override
+  String get settingsLanguageTitle => 'Bahasa';
+
+  @override
+  String get settingsLanguageSearchHint => 'Cari';
+
+  @override
+  String get settingsLanguageNoMatch => 'Tidak ada bahasa yang cocok dengan pencarian Anda';
 
   @override
   String get settingsMiningTitle => 'Hadiah Mining';

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:resonance_network_wallet/models/app_locale.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -10,15 +9,15 @@ import 'package:resonance_network_wallet/v2/screens/settings/settings_picker_wid
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class CurrencyPickerScreenV2 extends ConsumerStatefulWidget {
-  const CurrencyPickerScreenV2({super.key});
+class LanguagePickerScreenV2 extends ConsumerStatefulWidget {
+  const LanguagePickerScreenV2({super.key});
 
   @override
-  ConsumerState<CurrencyPickerScreenV2> createState() =>
-      _CurrencyPickerScreenV2State();
+  ConsumerState<LanguagePickerScreenV2> createState() =>
+      _LanguagePickerScreenV2State();
 }
 
-class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2> {
+class _LanguagePickerScreenV2State extends ConsumerState<LanguagePickerScreenV2> {
   final _searchController = TextEditingController();
 
   @override
@@ -27,18 +26,18 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
     super.dispose();
   }
 
-  List<FiatCurrency> _filtered(String query) {
+  List<AppLocale> _filtered(String query) {
     final q = query.trim().toLowerCase();
-    final list = List<FiatCurrency>.from(FiatCurrency.values);
+    final list = List<AppLocale>.from(AppLocale.values);
     if (q.isEmpty) return list;
-    return list.where((c) {
-      final line = c.line.toLowerCase();
-      return line.contains(q) || c.code.toLowerCase().contains(q);
+    return list.where((l) {
+      return l.displayName.toLowerCase().contains(q) ||
+          l.languageCode.toLowerCase().contains(q);
     }).toList();
   }
 
-  Future<void> _onSelect(FiatCurrency c) async {
-    await ref.read(selectedFiatCurrencyProvider.notifier).select(c);
+  Future<void> _onSelect(AppLocale locale) async {
+    await ref.read(selectedAppLocaleProvider.notifier).select(locale);
     if (mounted) Navigator.pop(context);
   }
 
@@ -47,11 +46,11 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final selected = ref.watch(selectedFiatCurrencyProvider);
+    final selected = ref.watch(selectedAppLocaleProvider);
     final filtered = _filtered(_searchController.text);
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.settingsCurrencyTitle),
+      appBar: V2AppBar(title: l10n.settingsLanguageTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -59,7 +58,7 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
             controller: _searchController,
             colors: colors,
             text: text,
-            hintText: l10n.settingsCurrencySearchHint,
+            hintText: l10n.settingsLanguageSearchHint,
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 24),
@@ -77,7 +76,7 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          l10n.settingsCurrencyNoMatch,
+                          l10n.settingsLanguageNoMatch,
                           style: text.smallParagraph?.copyWith(
                             color: colors.textMuted,
                           ),
@@ -92,13 +91,13 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
                           padding: EdgeInsets.zero,
                         ),
                         itemBuilder: (context, index) {
-                          final c = filtered[index];
+                          final locale = filtered[index];
                           return SettingsPickerListTile(
-                            label: c.line,
-                            selected: c == selected,
+                            label: locale.displayName,
+                            selected: locale == selected,
                             colors: colors,
                             text: text,
-                            onTap: () => _onSelect(c),
+                            onTap: () => _onSelect(locale),
                           );
                         },
                       ),

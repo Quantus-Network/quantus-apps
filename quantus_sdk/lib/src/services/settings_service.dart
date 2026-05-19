@@ -28,6 +28,7 @@ class SettingsService {
   static const String _balanceHiddenKey = 'balance_hidden';
   static const String _currencyFlippedKey = 'currency_flipped';
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
+  static const String _selectedAppLocaleKey = 'selected_app_locale';
 
   static const String _lastPausedTimeKey = 'last_paused_time';
 
@@ -312,6 +313,17 @@ class SettingsService {
   /// preference has been saved yet (caller should fall back to the default).
   String? getSelectedFiatCurrency() {
     return _prefs.getString(_selectedFiatCurrencyKey);
+  }
+
+  // Selected App Locale Settings
+  Future<void> setSelectedAppLocale(String languageCode) async {
+    await _prefs.setString(_selectedAppLocaleKey, languageCode);
+  }
+
+  /// Returns the persisted language code (e.g. "en", "id"), or null when no
+  /// preference has been saved yet (caller should fall back to English).
+  String? getSelectedAppLocale() {
+    return _prefs.getString(_selectedAppLocaleKey);
   }
 
   // POS Mode Settings

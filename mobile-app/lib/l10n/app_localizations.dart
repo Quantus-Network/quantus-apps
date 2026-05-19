@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// Preferences row subtitle on settings hub
   ///
   /// In en, this message translates to:
-  /// **'Currency, POS mode, notifications'**
+  /// **'Language, currency, POS mode, notifications'**
   String get settingsPreferencesSubtitle;
 
   /// Mining rewards row title on settings hub
@@ -1412,6 +1412,18 @@ abstract class AppLocalizations {
   /// **'Fiat display preference'**
   String get settingsPreferencesCurrencySubtitle;
 
+  /// Language row on preferences screen
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsPreferencesLanguage;
+
+  /// Language row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'App display language'**
+  String get settingsPreferencesLanguageSubtitle;
+
   /// POS mode row on preferences
   ///
   /// In en, this message translates to:
@@ -1453,6 +1465,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No currencies match your search'**
   String get settingsCurrencyNoMatch;
+
+  /// App bar on language picker
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguageTitle;
+
+  /// Search field hint on language picker
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get settingsLanguageSearchHint;
+
+  /// Empty state when language search has no results
+  ///
+  /// In en, this message translates to:
+  /// **'No languages match your search'**
+  String get settingsLanguageNoMatch;
 
   /// App bar on mining rewards screen
   ///

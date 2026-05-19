@@ -897,7 +897,7 @@
     "@settingsPreferencesTitle": {
       "description": "Preferences row title on settings hub"
     },
-    "settingsPreferencesSubtitle": "Currency, POS mode, notifications",
+    "settingsPreferencesSubtitle": "Language, currency, POS mode, notifications",
     "@settingsPreferencesSubtitle": {
       "description": "Preferences row subtitle on settings hub"
     },
@@ -1062,6 +1062,14 @@
     "@settingsPreferencesCurrencySubtitle": {
       "description": "Currency row subtitle"
     },
+    "settingsPreferencesLanguage": "Language",
+    "@settingsPreferencesLanguage": {
+      "description": "Language row on preferences screen"
+    },
+    "settingsPreferencesLanguageSubtitle": "App display language",
+    "@settingsPreferencesLanguageSubtitle": {
+      "description": "Language row subtitle"
+    },
     "settingsPreferencesPosMode": "POS Mode",
     "@settingsPreferencesPosMode": {
       "description": "POS mode row on preferences"
@@ -1090,6 +1098,19 @@
     "settingsCurrencyNoMatch": "No currencies match your search",
     "@settingsCurrencyNoMatch": {
       "description": "Empty state when search has no results"
+    },
+
+    "settingsLanguageTitle": "Language",
+    "@settingsLanguageTitle": {
+      "description": "App bar on language picker"
+    },
+    "settingsLanguageSearchHint": "Search",
+    "@settingsLanguageSearchHint": {
+      "description": "Search field hint on language picker"
+    },
+    "settingsLanguageNoMatch": "No languages match your search",
+    "@settingsLanguageNoMatch": {
+      "description": "Empty state when language search has no results"
     },
 
     "settingsMiningTitle": "Mining Rewards",

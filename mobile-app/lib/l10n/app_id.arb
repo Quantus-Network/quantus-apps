@@ -213,7 +213,7 @@
   "settingsWalletTitle": "Dompet",
   "settingsWalletSubtitle": "Frasa Pemulihan, Reset Dompet",
   "settingsPreferencesTitle": "Preferensi",
-  "settingsPreferencesSubtitle": "Mata uang, mode POS, notifikasi",
+  "settingsPreferencesSubtitle": "Bahasa, mata uang, mode POS, notifikasi",
   "settingsMiningRewards": "Hadiah Mining",
   "settingsMiningRewardsSubtitle": "{count} blok ditambang",
   "settingsMiningRewardsError": "Gagal memuat hadiah mining",
@@ -251,6 +251,8 @@
   "settingsResetCautionBullet3": "Tanpa frasa pemulihan, dana Anda hilang selamanya",
   "settingsResetCautionCheckbox": "Saya sudah mencadangkan frasa pemulihan saya",
 
+  "settingsPreferencesLanguage": "Bahasa",
+  "settingsPreferencesLanguageSubtitle": "Bahasa tampilan aplikasi",
   "settingsPreferencesCurrency": "Mata Uang",
   "settingsPreferencesCurrencySubtitle": "Preferensi tampilan fiat",
   "settingsPreferencesPosMode": "Mode POS",
@@ -261,6 +263,10 @@
   "settingsCurrencyTitle": "Mata Uang",
   "settingsCurrencySearchHint": "Cari",
   "settingsCurrencyNoMatch": "Tidak ada mata uang yang cocok dengan pencarian Anda",
+
+  "settingsLanguageTitle": "Bahasa",
+  "settingsLanguageSearchHint": "Cari",
+  "settingsLanguageNoMatch": "Tidak ada bahasa yang cocok dengan pencarian Anda",
 
   "settingsMiningTitle": "Hadiah Mining",
   "settingsMiningRedeem": "Tukar",
