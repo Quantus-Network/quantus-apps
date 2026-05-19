@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import 'package:polkadart/scale_codec.dart' as scale;
 import 'package:quantus_miner/src/services/chain_rpc_client.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
@@ -382,8 +381,8 @@ class WormholeClaimService {
 
   static List<int> _encodeDigest(Map<String, dynamic> digest) {
     final logs = digest['logs'] as List<dynamic>? ?? [];
-    final output = scale.ByteOutput(256);
-    scale.CompactCodec.codec.encodeTo(logs.length, output);
+    final output = ByteOutput(256);
+    CompactCodec.codec.encodeTo(logs.length, output);
     for (final logEntry in logs) {
       final logHex = logEntry as String;
       output.write(_hexBytes(logHex));
@@ -392,8 +391,8 @@ class WormholeClaimService {
   }
 
   static Uint8List _compactEncode(int value) {
-    final output = scale.ByteOutput(5);
-    scale.CompactCodec.codec.encodeTo(value, output);
+    final output = ByteOutput(5);
+    CompactCodec.codec.encodeTo(value, output);
     return output.toBytes();
   }
 }
