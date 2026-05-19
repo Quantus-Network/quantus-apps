@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'dart:async';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';

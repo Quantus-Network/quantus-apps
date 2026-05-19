@@ -34,12 +34,6 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
   }
 
   @override
-  void dispose() {
-    ref.read(deepLinkServiceProvider).dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Quantus Wallet',
