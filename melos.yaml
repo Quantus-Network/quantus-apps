@@ -49,15 +49,22 @@ dependency_overrides:
 #   flutter_lints        ^6.0.0
 
 scripts:
-  # Analyze all packages
+  # Analyze all packages (matches CI: flutter analyze with fatal infos)
   analyze:
-    description: Analyze all packages in the workspace
-    run: melos exec -- dart analyze .
+    description: Analyze all packages in the workspace (matches CI)
+    run: melos exec --concurrency=1 -- "flutter analyze . --fatal-infos"
 
   # Format all packages
   format:
     description: Format all packages in the workspace
     run: melos exec -- dart format . --line-length=120
+
+  # Auto-apply lint fixes, then format
+  fix:
+    description: Auto-apply lint fixes (dart fix), then format
+    run: |
+      melos exec --concurrency=1 -- "dart fix --apply"
+      melos exec -- "dart format . --line-length=120"
 
   # Test all packages
   test:
