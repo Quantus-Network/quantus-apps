@@ -27,5 +27,120 @@
     "authAuthorizationRequired": "Authorization \n Required",
     "@authAuthorizationRequired": {
       "description": "Text for displayed on the lock screen when authorization is required"
+    },
+
+    "welcomeTagline": "Quantum Secure Encrypted Money",
+    "@welcomeTagline": {
+      "description": "Tagline on the welcome screen"
+    },
+    "welcomeCreateNewWallet": "Create New Wallet",
+    "@welcomeCreateNewWallet": {
+      "description": "Button to start creating a new wallet on the welcome screen"
+    },
+    "welcomeImportWallet": "Import Wallet",
+    "@welcomeImportWallet": {
+      "description": "Button to import an existing wallet on the welcome screen"
+    },
+
+    "createWalletAppBarTitle": "Create Wallet",
+    "@createWalletAppBarTitle": {
+      "description": "App bar title for the create wallet flow"
+    },
+    "createWalletCautionHeadline": "Keep your Recovery Phrase Secret",
+    "@createWalletCautionHeadline": {
+      "description": "Headline on the recovery phrase caution screen during wallet creation"
+    },
+    "createWalletCautionBullet1": "If you lose this device, your recovery phrase is the only way back",
+    "@createWalletCautionBullet1": {
+      "description": "First bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet2": "Anyone who gets hold of it has complete control over your funds, permanently",
+    "@createWalletCautionBullet2": {
+      "description": "Second bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet3": "Write it down and keep it somewhere safe. Do not save it digitally",
+    "@createWalletCautionBullet3": {
+      "description": "Third bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionCheckboxLabel": "I understand that anyone with my recovery phrase can access my wallet. I will store it safely.",
+    "@createWalletCautionCheckboxLabel": {
+      "description": "Checkbox label on the recovery phrase caution screen"
+    },
+    "createWalletCautionContinue": "Continue",
+    "@createWalletCautionContinue": {
+      "description": "Continue button on the recovery phrase caution screen"
+    },
+    "createWalletRecoveryPhraseNext": "Next",
+    "@createWalletRecoveryPhraseNext": {
+      "description": "Primary button on the new wallet recovery phrase screen"
+    },
+    "createWalletRecoveryPhraseFailedGenerate": "Failed to generate: {error}",
+    "@createWalletRecoveryPhraseFailedGenerate": {
+      "description": "Error when mnemonic generation fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "createWalletRecoveryPhraseSaveError": "Error saving wallet: {error}",
+    "@createWalletRecoveryPhraseSaveError": {
+      "description": "Error when saving a new wallet fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "recoveryPhraseBodyInstructions": "Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.",
+    "@recoveryPhraseBodyInstructions": {
+      "description": "Instructions above the recovery phrase word grid"
+    },
+    "recoveryPhraseBodyCopy": "Copy",
+    "@recoveryPhraseBodyCopy": {
+      "description": "Copy button on the recovery phrase screen"
+    },
+    "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied to clipboard",
+    "@recoveryPhraseBodyCopiedMessage": {
+      "description": "Toast when recovery phrase is copied"
+    },
+
+    "accountReadyAccountCreated": "Account Created",
+    "@accountReadyAccountCreated": {
+      "description": "Title when a new account is created"
+    },
+    "accountReadyWalletCreated": "Wallet Created",
+    "@accountReadyWalletCreated": {
+      "description": "Title when a new wallet is created"
+    },
+    "accountReadyWalletImported": "Wallet Imported",
+    "@accountReadyWalletImported": {
+      "description": "Title when a wallet is imported"
+    },
+    "accountReadyDone": "Done",
+    "@accountReadyDone": {
+      "description": "Done button on the account ready screen"
+    },
+
+    "importWalletAppBarTitle": "Import Wallet",
+    "@importWalletAppBarTitle": {
+      "description": "App bar title on the import wallet screen"
+    },
+    "importWalletDescription": "Restore an existing wallet with your 12 or 24 words recovery phrase",
+    "@importWalletDescription": {
+      "description": "Description on the import wallet screen"
+    },
+    "importWalletHint": "Type in or paste your recovery phrase. Separate words with spaces.",
+    "@importWalletHint": {
+      "description": "Hint for the recovery phrase text field"
+    },
+    "importWalletButton": "Import",
+    "@importWalletButton": {
+      "description": "Import button on the import wallet screen"
+    },
+    "importWalletValidationError": "Recovery phrase must be 12 or 24 words",
+    "@importWalletValidationError": {
+      "description": "Validation error when recovery phrase word count is invalid"
     }
   }

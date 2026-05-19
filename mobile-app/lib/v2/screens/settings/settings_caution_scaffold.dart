@@ -41,6 +41,7 @@ class SettingsCautionScaffoldData {
 
 class SettingsCautionScaffold extends StatelessWidget {
   final String appBarTitle;
+  final String continueLabel;
   final bool checkboxChecked;
   final VoidCallback onCheckboxChanged;
   final VoidCallback onContinue;
@@ -55,6 +56,7 @@ class SettingsCautionScaffold extends StatelessWidget {
     required this.onCheckboxChanged,
     required this.onContinue,
     required this.data,
+    this.continueLabel = 'Continue',
     this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
   });
@@ -85,6 +87,7 @@ class SettingsCautionScaffold extends StatelessWidget {
       ),
       bottomContent: _SettingsCautionBottom(
         checkboxLabel: data.checkboxLabel,
+        continueLabel: continueLabel,
         checked: checkboxChecked,
         onCheckboxChanged: onCheckboxChanged,
         onContinue: onContinue,
@@ -97,6 +100,7 @@ class SettingsCautionScaffold extends StatelessWidget {
 class _SettingsCautionBottom extends StatelessWidget {
   const _SettingsCautionBottom({
     required this.checkboxLabel,
+    required this.continueLabel,
     required this.checked,
     required this.onCheckboxChanged,
     required this.onContinue,
@@ -104,6 +108,7 @@ class _SettingsCautionBottom extends StatelessWidget {
   });
 
   final String checkboxLabel;
+  final String continueLabel;
   final bool checked;
   final VoidCallback onCheckboxChanged;
   final VoidCallback onContinue;
@@ -118,7 +123,7 @@ class _SettingsCautionBottom extends StatelessWidget {
           SettingsCheckbox(checked: checked, label: checkboxLabel, onTap: onCheckboxChanged),
           const SizedBox(height: 32),
           QuantusButton.simple(
-            label: 'Continue',
+            label: continueLabel,
             onTap: onContinue,
             variant: ButtonVariant.primary,
             isDisabled: !checked,

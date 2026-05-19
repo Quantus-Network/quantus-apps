@@ -133,6 +133,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authorization \n Required'**
   String get authAuthorizationRequired;
+
+  /// Tagline on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quantum Secure Encrypted Money'**
+  String get welcomeTagline;
+
+  /// Button to start creating a new wallet on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Wallet'**
+  String get welcomeCreateNewWallet;
+
+  /// Button to import an existing wallet on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet'**
+  String get welcomeImportWallet;
+
+  /// App bar title for the create wallet flow
+  ///
+  /// In en, this message translates to:
+  /// **'Create Wallet'**
+  String get createWalletAppBarTitle;
+
+  /// Headline on the recovery phrase caution screen during wallet creation
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your Recovery Phrase Secret'**
+  String get createWalletCautionHeadline;
+
+  /// First bullet on the recovery phrase caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'If you lose this device, your recovery phrase is the only way back'**
+  String get createWalletCautionBullet1;
+
+  /// Second bullet on the recovery phrase caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who gets hold of it has complete control over your funds, permanently'**
+  String get createWalletCautionBullet2;
+
+  /// Third bullet on the recovery phrase caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'Write it down and keep it somewhere safe. Do not save it digitally'**
+  String get createWalletCautionBullet3;
+
+  /// Checkbox label on the recovery phrase caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'I understand that anyone with my recovery phrase can access my wallet. I will store it safely.'**
+  String get createWalletCautionCheckboxLabel;
+
+  /// Continue button on the recovery phrase caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get createWalletCautionContinue;
+
+  /// Primary button on the new wallet recovery phrase screen
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get createWalletRecoveryPhraseNext;
+
+  /// Error when mnemonic generation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to generate: {error}'**
+  String createWalletRecoveryPhraseFailedGenerate(String error);
+
+  /// Error when saving a new wallet fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving wallet: {error}'**
+  String createWalletRecoveryPhraseSaveError(String error);
+
+  /// Instructions above the recovery phrase word grid
+  ///
+  /// In en, this message translates to:
+  /// **'Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.'**
+  String get recoveryPhraseBodyInstructions;
+
+  /// Copy button on the recovery phrase screen
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get recoveryPhraseBodyCopy;
+
+  /// Toast when recovery phrase is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery phrase copied to clipboard'**
+  String get recoveryPhraseBodyCopiedMessage;
+
+  /// Title when a new account is created
+  ///
+  /// In en, this message translates to:
+  /// **'Account Created'**
+  String get accountReadyAccountCreated;
+
+  /// Title when a new wallet is created
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet Created'**
+  String get accountReadyWalletCreated;
+
+  /// Title when a wallet is imported
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet Imported'**
+  String get accountReadyWalletImported;
+
+  /// Done button on the account ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get accountReadyDone;
+
+  /// App bar title on the import wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet'**
+  String get importWalletAppBarTitle;
+
+  /// Description on the import wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'Restore an existing wallet with your 12 or 24 words recovery phrase'**
+  String get importWalletDescription;
+
+  /// Hint for the recovery phrase text field
+  ///
+  /// In en, this message translates to:
+  /// **'Type in or paste your recovery phrase. Separate words with spaces.'**
+  String get importWalletHint;
+
+  /// Import button on the import wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importWalletButton;
+
+  /// Validation error when recovery phrase word count is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery phrase must be 12 or 24 words'**
+  String get importWalletValidationError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
