@@ -1496,5 +1496,30 @@
     "swapRefundPickerEmpty": "No recent refund addresses",
     "@swapRefundPickerEmpty": {
       "description": "Empty state on refund address picker"
+    },
+
+    "componentQrScannerNoCode": "No QR code found in image",
+    "@componentQrScannerNoCode": {
+      "description": "Snackbar when gallery image has no QR code"
+    },
+    "componentShare": "Share",
+    "@componentShare": {
+      "description": "Share button label on account screens"
+    },
+    "componentAddressLabel": "ADDRESS",
+    "@componentAddressLabel": {
+      "description": "Address field label on address details card"
+    },
+    "componentCheckphraseLabel": "CHECKPHRASE",
+    "@componentCheckphraseLabel": {
+      "description": "Checkphrase field label on address details card"
+    },
+    "componentCheckphraseCopied": "Checkphrase copied",
+    "@componentCheckphraseCopied": {
+      "description": "Toast when checkphrase is copied"
+    },
+    "componentNameFieldHint": "Enter a name for your account",
+    "@componentNameFieldHint": {
+      "description": "Hint text on account name field"
     }
   }

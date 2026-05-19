@@ -1010,4 +1010,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapRefundPickerEmpty => 'No recent refund addresses';
+
+  @override
+  String get componentQrScannerNoCode => 'No QR code found in image';
+
+  @override
+  String get componentShare => 'Share';
+
+  @override
+  String get componentAddressLabel => 'ADDRESS';
+
+  @override
+  String get componentCheckphraseLabel => 'CHECKPHRASE';
+
+  @override
+  String get componentCheckphraseCopied => 'Checkphrase copied';
+
+  @override
+  String get componentNameFieldHint => 'Enter a name for your account';
 }

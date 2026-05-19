@@ -352,5 +352,12 @@
   "swapDepositDone": "Selesai",
 
   "swapRefundPickerTitle": "Alamat Refund",
-  "swapRefundPickerEmpty": "Tidak ada alamat refund terbaru"
+  "swapRefundPickerEmpty": "Tidak ada alamat refund terbaru",
+
+  "componentQrScannerNoCode": "Tidak ada kode QR pada gambar",
+  "componentShare": "Bagikan",
+  "componentAddressLabel": "ALAMAT",
+  "componentCheckphraseLabel": "CHECKPHRASE",
+  "componentCheckphraseCopied": "Checkphrase disalin",
+  "componentNameFieldHint": "Masukkan nama untuk akun Anda"
 }

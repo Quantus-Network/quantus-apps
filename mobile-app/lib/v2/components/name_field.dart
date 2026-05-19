@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class NameField extends StatelessWidget {
+class NameField extends ConsumerWidget {
   final TextEditingController controller;
   final String? subtitle;
   final String? error;
@@ -10,7 +12,8 @@ class NameField extends StatelessWidget {
   const NameField({super.key, required this.controller, this.subtitle, this.error});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final textStyle = context.themeText.smallTitle!.copyWith(fontWeight: FontWeight.w400);
 
     return Column(
@@ -25,7 +28,7 @@ class NameField extends StatelessWidget {
                   controller: controller,
                   style: textStyle,
                   decoration: InputDecoration.collapsed(
-                    hintText: 'Enter a name for your account',
+                    hintText: l10n.componentNameFieldHint,
                     hintStyle: textStyle.copyWith(color: context.colors.textSecondary),
                   ),
                 ),

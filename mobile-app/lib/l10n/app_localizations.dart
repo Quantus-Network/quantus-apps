@@ -1945,6 +1945,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No recent refund addresses'**
   String get swapRefundPickerEmpty;
+
+  /// Snackbar when gallery image has no QR code
+  ///
+  /// In en, this message translates to:
+  /// **'No QR code found in image'**
+  String get componentQrScannerNoCode;
+
+  /// Share button label on account screens
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get componentShare;
+
+  /// Address field label on address details card
+  ///
+  /// In en, this message translates to:
+  /// **'ADDRESS'**
+  String get componentAddressLabel;
+
+  /// Checkphrase field label on address details card
+  ///
+  /// In en, this message translates to:
+  /// **'CHECKPHRASE'**
+  String get componentCheckphraseLabel;
+
+  /// Toast when checkphrase is copied
+  ///
+  /// In en, this message translates to:
+  /// **'Checkphrase copied'**
+  String get componentCheckphraseCopied;
+
+  /// Hint text on account name field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for your account'**
+  String get componentNameFieldHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

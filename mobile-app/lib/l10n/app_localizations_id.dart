@@ -1011,4 +1011,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapRefundPickerEmpty => 'Tidak ada alamat refund terbaru';
+
+  @override
+  String get componentQrScannerNoCode => 'Tidak ada kode QR pada gambar';
+
+  @override
+  String get componentShare => 'Bagikan';
+
+  @override
+  String get componentAddressLabel => 'ALAMAT';
+
+  @override
+  String get componentCheckphraseLabel => 'CHECKPHRASE';
+
+  @override
+  String get componentCheckphraseCopied => 'Checkphrase disalin';
+
+  @override
+  String get componentNameFieldHint => 'Masukkan nama untuk akun Anda';
 }
