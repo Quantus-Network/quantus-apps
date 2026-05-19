@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -41,17 +42,24 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final selected = ref.watch(selectedFiatCurrencyProvider);
     final filtered = _filtered(_searchController.text);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Currency'),
+      appBar: V2AppBar(title: l10n.settingsCurrencyTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SearchField(controller: _searchController, colors: colors, text: text, onChanged: (_) => setState(() {})),
+          _SearchField(
+            controller: _searchController,
+            colors: colors,
+            text: text,
+            hintText: l10n.settingsCurrencySearchHint,
+            onChanged: (_) => setState(() {}),
+          ),
           const SizedBox(height: 24),
           Expanded(
             child: Container(
@@ -64,7 +72,7 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No currencies match your search',
+                          l10n.settingsCurrencyNoMatch,
                           style: text.smallParagraph?.copyWith(color: colors.textMuted),
                           textAlign: TextAlign.center,
                         ),
@@ -97,11 +105,18 @@ class _CurrencyPickerScreenV2State extends ConsumerState<CurrencyPickerScreenV2>
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.colors, required this.text, required this.onChanged});
+  const _SearchField({
+    required this.controller,
+    required this.colors,
+    required this.text,
+    required this.hintText,
+    required this.onChanged,
+  });
 
   final TextEditingController controller;
   final AppColorsV2 colors;
   final AppTextTheme text;
+  final String hintText;
   final ValueChanged<String> onChanged;
 
   @override
@@ -123,7 +138,7 @@ class _SearchField extends StatelessWidget {
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
-                  hintText: 'Search',
+                  hintText: hintText,
                   hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel),
                 ),
               ),

@@ -598,4 +598,306 @@ class AppLocalizationsEn extends AppLocalizations {
   String posQrPaidAt(String time) {
     return 'At $time';
   }
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsWalletTitle => 'Wallet';
+
+  @override
+  String get settingsWalletSubtitle => 'Recovery Phrase, Reset Wallet';
+
+  @override
+  String get settingsPreferencesTitle => 'Preferences';
+
+  @override
+  String get settingsPreferencesSubtitle => 'Currency, POS mode, notifications';
+
+  @override
+  String get settingsMiningRewards => 'Mining Rewards';
+
+  @override
+  String settingsMiningRewardsSubtitle(int count) {
+    return '$count blocks mined';
+  }
+
+  @override
+  String get settingsMiningRewardsError => 'Error getting mining rewards';
+
+  @override
+  String get settingsAccountTypeTitle => 'Account Type';
+
+  @override
+  String get settingsAccountTypeSubtitle => 'Advanced Account Features';
+
+  @override
+  String get settingsHelpTitle => 'Help & Support';
+
+  @override
+  String get settingsHelpSubtitle => 'FAQs, Contact the team';
+
+  @override
+  String get settingsAboutTitle => 'About Quantus';
+
+  @override
+  String settingsAboutHubSubtitle(String version, String build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String get settingsWalletRecoveryPhrase => 'Recovery Phrase';
+
+  @override
+  String get settingsWalletRecoveryPhraseSubtitle => 'View your 24-word Backup Password';
+
+  @override
+  String get settingsWalletReset => 'Reset Wallet';
+
+  @override
+  String get settingsWalletResetSubtitle => 'Removes all data from this device';
+
+  @override
+  String get settingsWalletNoWalletsFound => 'No wallets found';
+
+  @override
+  String get settingsWalletFailedToLoad => 'Failed to load wallets';
+
+  @override
+  String get settingsSelectWalletTitle => 'Select Wallet';
+
+  @override
+  String get settingsSelectWalletNoWallets => 'No wallets found';
+
+  @override
+  String settingsSelectWalletItem(int number) {
+    return 'Wallet $number';
+  }
+
+  @override
+  String get settingsRecoveryConfirmAuthReason => 'Authenticate to see recovery phrase';
+
+  @override
+  String get settingsRecoveryConfirmAuthRequired => 'Authentication required to see recovery phrase';
+
+  @override
+  String get settingsRecoveryPhraseTitle => 'Recovery Phrase';
+
+  @override
+  String get settingsRecoveryPhraseDone => 'Done';
+
+  @override
+  String get settingsResetTitle => 'Reset Wallet';
+
+  @override
+  String get settingsResetAuthReason => 'Authenticate to reset wallet';
+
+  @override
+  String settingsResetFailed(String error) {
+    return 'Failed to reset wallet: $error';
+  }
+
+  @override
+  String get settingsResetAuthRequired => 'Authentication required to reset wallet';
+
+  @override
+  String get settingsResetCautionHeadline => 'This will erase\nyour wallet';
+
+  @override
+  String get settingsResetCautionBullet1 => 'All wallet data will be permanently removed from this device';
+
+  @override
+  String get settingsResetCautionBullet2 =>
+      'Your funds stay on the blockchain but only your recovery phrase can restore access';
+
+  @override
+  String get settingsResetCautionBullet3 => 'Without it, your funds are gone forever';
+
+  @override
+  String get settingsResetCautionCheckbox => 'I\'ve backed up my recovery phrase';
+
+  @override
+  String get settingsPreferencesCurrency => 'Currency';
+
+  @override
+  String get settingsPreferencesCurrencySubtitle => 'Fiat display preference';
+
+  @override
+  String get settingsPreferencesPosMode => 'POS Mode';
+
+  @override
+  String get settingsPreferencesPosModeSubtitle => 'Point of sale features';
+
+  @override
+  String get settingsPreferencesNotifications => 'Notifications';
+
+  @override
+  String get settingsPreferencesNotificationsSubtitle => 'Transaction and wallet alerts';
+
+  @override
+  String get settingsCurrencyTitle => 'Currency';
+
+  @override
+  String get settingsCurrencySearchHint => 'Search';
+
+  @override
+  String get settingsCurrencyNoMatch => 'No currencies match your search';
+
+  @override
+  String get settingsMiningTitle => 'Mining Rewards';
+
+  @override
+  String get settingsMiningRedeem => 'Redeem';
+
+  @override
+  String get settingsMiningStatusMining => 'Mining';
+
+  @override
+  String get settingsMiningStatusPending => 'Pending';
+
+  @override
+  String get settingsMiningBlocksMined => 'BLOCKS MINED';
+
+  @override
+  String get settingsMiningBlocksAcrossTestnets => 'blocks across all testnets';
+
+  @override
+  String get settingsMiningStatTestnetBlocks => 'TESTNET BLOCKS';
+
+  @override
+  String get settingsMiningStatTestnetRewards => 'TESTNET REWARDS';
+
+  @override
+  String get settingsMiningStatRedeemed => 'REDEEMED';
+
+  @override
+  String get settingsMiningStatRedeemable => 'REDEEMABLE';
+
+  @override
+  String get settingsMiningQuanEarned => 'QUAN EARNED';
+
+  @override
+  String get settingsMiningViewTelemetry => 'View Telemetry ↗';
+
+  @override
+  String get settingsMiningNoDataTitle => 'No mining data yet';
+
+  @override
+  String get settingsMiningNoDataBody => 'Set up a Quantus mining node to start earning rewards.';
+
+  @override
+  String get settingsMiningSetupGuide => 'Mining Setup Guide ↗';
+
+  @override
+  String get settingsMiningLoadError => 'Failed to load mining rewards';
+
+  @override
+  String get settingsMiningCheckConnection => 'Please check your connection';
+
+  @override
+  String get settingsMiningTestnetBlocks => 'blocks';
+
+  @override
+  String get settingsMiningDiracSince => 'Nov 2025';
+
+  @override
+  String get settingsMiningSchrodingerSince => 'Oct 2025';
+
+  @override
+  String get settingsMiningResonanceSince => 'Jul 2025';
+
+  @override
+  String get settingsTestnetTitle => 'Testnet Rewards';
+
+  @override
+  String get settingsTestnetLoadError => 'Failed to load testnet rewards';
+
+  @override
+  String settingsTestnetTotalBlocks(int count) {
+    return '$count blocks';
+  }
+
+  @override
+  String get settingsTestnetTotalDescription => 'Total blocks mined across all testnets';
+
+  @override
+  String get settingsTestnetBreakdown => 'Breakdown';
+
+  @override
+  String settingsTestnetRowBlocks(int count) {
+    return '$count blocks';
+  }
+
+  @override
+  String get settingsHelpScreenTitle => 'Help & Support';
+
+  @override
+  String get settingsHelpEmail => 'Email Support';
+
+  @override
+  String get settingsHelpTelegram => 'Telegram';
+
+  @override
+  String get settingsAboutScreenTitle => 'About';
+
+  @override
+  String get settingsAboutIntro =>
+      'Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.';
+
+  @override
+  String get settingsAboutTerms => 'Terms of Service';
+
+  @override
+  String get settingsAboutTermsSubtitle => 'quantus.com/terms/';
+
+  @override
+  String get settingsAboutPrivacy => 'Privacy policy';
+
+  @override
+  String get settingsAboutPrivacySubtitle => 'quantus.com/privacy-policy/';
+
+  @override
+  String get settingsAboutWebsite => 'Visit Website';
+
+  @override
+  String get settingsAboutWebsiteSubtitle => 'quantus.com';
+
+  @override
+  String settingsAboutVersion(String version, String build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String get settingsAccountTypeScreenTitle => 'Account Type';
+
+  @override
+  String get settingsAccountTypeIntro =>
+      'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.';
+
+  @override
+  String get settingsAccountTypeReversibleTitle => 'Reversible Transactions';
+
+  @override
+  String get settingsAccountTypeReversibleSubtitle => 'Reverse your sends within a time window';
+
+  @override
+  String get settingsAccountTypeHighSecurityTitle => 'High Security Account';
+
+  @override
+  String get settingsAccountTypeHighSecuritySubtitle => 'Guardian approval required';
+
+  @override
+  String get settingsAccountTypeMultiSigTitle => 'Multi-Signature';
+
+  @override
+  String get settingsAccountTypeMultiSigSubtitle => 'Multiple approvals required';
+
+  @override
+  String get settingsAccountTypeHardwareTitle => 'Hardware Wallet';
+
+  @override
+  String get settingsAccountTypeHardwareSubtitle => 'Pair a hardware device';
+
+  @override
+  String get settingsAccountTypeComingSoon => 'Coming Soon';
 }

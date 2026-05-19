@@ -1183,6 +1183,576 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'At {time}'**
   String posQrPaidAt(String time);
+
+  /// App bar title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// Wallet row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get settingsWalletTitle;
+
+  /// Wallet row subtitle on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Phrase, Reset Wallet'**
+  String get settingsWalletSubtitle;
+
+  /// Preferences row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferencesTitle;
+
+  /// Preferences row subtitle on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Currency, POS mode, notifications'**
+  String get settingsPreferencesSubtitle;
+
+  /// Mining rewards row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Rewards'**
+  String get settingsMiningRewards;
+
+  /// Mining rewards row subtitle when data loaded
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks mined'**
+  String settingsMiningRewardsSubtitle(int count);
+
+  /// Mining rewards row subtitle on error
+  ///
+  /// In en, this message translates to:
+  /// **'Error getting mining rewards'**
+  String get settingsMiningRewardsError;
+
+  /// Account type row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Account Type'**
+  String get settingsAccountTypeTitle;
+
+  /// Account type row subtitle on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Account Features'**
+  String get settingsAccountTypeSubtitle;
+
+  /// Help row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get settingsHelpTitle;
+
+  /// Help row subtitle on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'FAQs, Contact the team'**
+  String get settingsHelpSubtitle;
+
+  /// About row title on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'About Quantus'**
+  String get settingsAboutTitle;
+
+  /// About row subtitle on settings hub
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} ({build})'**
+  String settingsAboutHubSubtitle(String version, String build);
+
+  /// Recovery phrase row on wallet settings
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Phrase'**
+  String get settingsWalletRecoveryPhrase;
+
+  /// Recovery phrase row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'View your 24-word Backup Password'**
+  String get settingsWalletRecoveryPhraseSubtitle;
+
+  /// Reset wallet row title
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Wallet'**
+  String get settingsWalletReset;
+
+  /// Reset wallet row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Removes all data from this device'**
+  String get settingsWalletResetSubtitle;
+
+  /// Error when no wallets exist
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets found'**
+  String get settingsWalletNoWalletsFound;
+
+  /// Error when wallet list fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load wallets'**
+  String get settingsWalletFailedToLoad;
+
+  /// App bar on select wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'Select Wallet'**
+  String get settingsSelectWalletTitle;
+
+  /// Empty state on select wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets found'**
+  String get settingsSelectWalletNoWallets;
+
+  /// Wallet list item label on select wallet screen
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet {number}'**
+  String settingsSelectWalletItem(int number);
+
+  /// Biometric prompt when viewing recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to see recovery phrase'**
+  String get settingsRecoveryConfirmAuthReason;
+
+  /// Toaster when auth fails for recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required to see recovery phrase'**
+  String get settingsRecoveryConfirmAuthRequired;
+
+  /// App bar on recovery phrase screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Phrase'**
+  String get settingsRecoveryPhraseTitle;
+
+  /// Done button on recovery phrase screen
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get settingsRecoveryPhraseDone;
+
+  /// App bar on reset wallet caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Wallet'**
+  String get settingsResetTitle;
+
+  /// Biometric prompt when resetting wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to reset wallet'**
+  String get settingsResetAuthReason;
+
+  /// Toaster when wallet reset fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reset wallet: {error}'**
+  String settingsResetFailed(String error);
+
+  /// Toaster when auth fails for wallet reset
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required to reset wallet'**
+  String get settingsResetAuthRequired;
+
+  /// Headline on wallet reset caution screen
+  ///
+  /// In en, this message translates to:
+  /// **'This will erase\nyour wallet'**
+  String get settingsResetCautionHeadline;
+
+  /// First bullet on wallet reset caution
+  ///
+  /// In en, this message translates to:
+  /// **'All wallet data will be permanently removed from this device'**
+  String get settingsResetCautionBullet1;
+
+  /// Second bullet on wallet reset caution
+  ///
+  /// In en, this message translates to:
+  /// **'Your funds stay on the blockchain but only your recovery phrase can restore access'**
+  String get settingsResetCautionBullet2;
+
+  /// Third bullet on wallet reset caution
+  ///
+  /// In en, this message translates to:
+  /// **'Without it, your funds are gone forever'**
+  String get settingsResetCautionBullet3;
+
+  /// Checkbox label on wallet reset caution
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve backed up my recovery phrase'**
+  String get settingsResetCautionCheckbox;
+
+  /// Currency row on preferences screen
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get settingsPreferencesCurrency;
+
+  /// Currency row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Fiat display preference'**
+  String get settingsPreferencesCurrencySubtitle;
+
+  /// POS mode row on preferences
+  ///
+  /// In en, this message translates to:
+  /// **'POS Mode'**
+  String get settingsPreferencesPosMode;
+
+  /// POS mode row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Point of sale features'**
+  String get settingsPreferencesPosModeSubtitle;
+
+  /// Notifications row on preferences
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsPreferencesNotifications;
+
+  /// Notifications row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction and wallet alerts'**
+  String get settingsPreferencesNotificationsSubtitle;
+
+  /// App bar on currency picker
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get settingsCurrencyTitle;
+
+  /// Search field hint on currency picker
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get settingsCurrencySearchHint;
+
+  /// Empty state when search has no results
+  ///
+  /// In en, this message translates to:
+  /// **'No currencies match your search'**
+  String get settingsCurrencyNoMatch;
+
+  /// App bar on mining rewards screen
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Rewards'**
+  String get settingsMiningTitle;
+
+  /// Redeem button on mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem'**
+  String get settingsMiningRedeem;
+
+  /// Active mining status label
+  ///
+  /// In en, this message translates to:
+  /// **'Mining'**
+  String get settingsMiningStatusMining;
+
+  /// Pending mining status label
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get settingsMiningStatusPending;
+
+  /// Blocks mined stat label
+  ///
+  /// In en, this message translates to:
+  /// **'BLOCKS MINED'**
+  String get settingsMiningBlocksMined;
+
+  /// Subtitle under blocks mined count
+  ///
+  /// In en, this message translates to:
+  /// **'blocks across all testnets'**
+  String get settingsMiningBlocksAcrossTestnets;
+
+  /// Testnet blocks stat label
+  ///
+  /// In en, this message translates to:
+  /// **'TESTNET BLOCKS'**
+  String get settingsMiningStatTestnetBlocks;
+
+  /// Testnet rewards stat label
+  ///
+  /// In en, this message translates to:
+  /// **'TESTNET REWARDS'**
+  String get settingsMiningStatTestnetRewards;
+
+  /// Redeemed rewards stat label
+  ///
+  /// In en, this message translates to:
+  /// **'REDEEMED'**
+  String get settingsMiningStatRedeemed;
+
+  /// Redeemable rewards stat label
+  ///
+  /// In en, this message translates to:
+  /// **'REDEEMABLE'**
+  String get settingsMiningStatRedeemable;
+
+  /// QUAN earned stat label
+  ///
+  /// In en, this message translates to:
+  /// **'QUAN EARNED'**
+  String get settingsMiningQuanEarned;
+
+  /// Link to mining telemetry
+  ///
+  /// In en, this message translates to:
+  /// **'View Telemetry ↗'**
+  String get settingsMiningViewTelemetry;
+
+  /// Empty state title on mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'No mining data yet'**
+  String get settingsMiningNoDataTitle;
+
+  /// Empty state body on mining rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a Quantus mining node to start earning rewards.'**
+  String get settingsMiningNoDataBody;
+
+  /// Link to mining setup guide
+  ///
+  /// In en, this message translates to:
+  /// **'Mining Setup Guide ↗'**
+  String get settingsMiningSetupGuide;
+
+  /// Error title on mining rewards screen
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load mining rewards'**
+  String get settingsMiningLoadError;
+
+  /// Error subtitle when connection fails
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your connection'**
+  String get settingsMiningCheckConnection;
+
+  /// Blocks label on testnet row
+  ///
+  /// In en, this message translates to:
+  /// **'blocks'**
+  String get settingsMiningTestnetBlocks;
+
+  /// Dirac testnet active since date
+  ///
+  /// In en, this message translates to:
+  /// **'Nov 2025'**
+  String get settingsMiningDiracSince;
+
+  /// Schrödinger testnet active since date
+  ///
+  /// In en, this message translates to:
+  /// **'Oct 2025'**
+  String get settingsMiningSchrodingerSince;
+
+  /// Resonance testnet active since date
+  ///
+  /// In en, this message translates to:
+  /// **'Jul 2025'**
+  String get settingsMiningResonanceSince;
+
+  /// App bar on testnet rewards screen
+  ///
+  /// In en, this message translates to:
+  /// **'Testnet Rewards'**
+  String get settingsTestnetTitle;
+
+  /// Error title on testnet rewards
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load testnet rewards'**
+  String get settingsTestnetLoadError;
+
+  /// Total blocks headline on testnet rewards
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks'**
+  String settingsTestnetTotalBlocks(int count);
+
+  /// Description under total blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Total blocks mined across all testnets'**
+  String get settingsTestnetTotalDescription;
+
+  /// Breakdown section header
+  ///
+  /// In en, this message translates to:
+  /// **'Breakdown'**
+  String get settingsTestnetBreakdown;
+
+  /// Blocks count in testnet breakdown row
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocks'**
+  String settingsTestnetRowBlocks(int count);
+
+  /// App bar on help and support screen
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get settingsHelpScreenTitle;
+
+  /// Email support row title
+  ///
+  /// In en, this message translates to:
+  /// **'Email Support'**
+  String get settingsHelpEmail;
+
+  /// Telegram row title
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram'**
+  String get settingsHelpTelegram;
+
+  /// App bar on about screen
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAboutScreenTitle;
+
+  /// Intro paragraph on about screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.'**
+  String get settingsAboutIntro;
+
+  /// Terms of service link title
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get settingsAboutTerms;
+
+  /// Terms of service link subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'quantus.com/terms/'**
+  String get settingsAboutTermsSubtitle;
+
+  /// Privacy policy link title
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get settingsAboutPrivacy;
+
+  /// Privacy policy link subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'quantus.com/privacy-policy/'**
+  String get settingsAboutPrivacySubtitle;
+
+  /// Website link title
+  ///
+  /// In en, this message translates to:
+  /// **'Visit Website'**
+  String get settingsAboutWebsite;
+
+  /// Website link subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'quantus.com'**
+  String get settingsAboutWebsiteSubtitle;
+
+  /// Version label on about screen
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} ({build})'**
+  String settingsAboutVersion(String version, String build);
+
+  /// App bar on account type settings
+  ///
+  /// In en, this message translates to:
+  /// **'Account Type'**
+  String get settingsAccountTypeScreenTitle;
+
+  /// Intro on account type settings
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.'**
+  String get settingsAccountTypeIntro;
+
+  /// Reversible transactions feature title
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible Transactions'**
+  String get settingsAccountTypeReversibleTitle;
+
+  /// Reversible transactions feature subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse your sends within a time window'**
+  String get settingsAccountTypeReversibleSubtitle;
+
+  /// High security account feature title
+  ///
+  /// In en, this message translates to:
+  /// **'High Security Account'**
+  String get settingsAccountTypeHighSecurityTitle;
+
+  /// High security account feature subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Guardian approval required'**
+  String get settingsAccountTypeHighSecuritySubtitle;
+
+  /// Multi-signature feature title
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-Signature'**
+  String get settingsAccountTypeMultiSigTitle;
+
+  /// Multi-signature feature subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple approvals required'**
+  String get settingsAccountTypeMultiSigSubtitle;
+
+  /// Hardware wallet feature title
+  ///
+  /// In en, this message translates to:
+  /// **'Hardware Wallet'**
+  String get settingsAccountTypeHardwareTitle;
+
+  /// Hardware wallet feature subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a hardware device'**
+  String get settingsAccountTypeHardwareSubtitle;
+
+  /// Coming soon badge on account type features
+  ///
+  /// In en, this message translates to:
+  /// **'Coming Soon'**
+  String get settingsAccountTypeComingSoon;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

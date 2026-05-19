@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/notification_config_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
@@ -30,6 +31,7 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final notifConfig = ref.watch(notificationConfigProvider);
@@ -37,12 +39,12 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
     final fiat = ref.watch(selectedFiatCurrencyProvider);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Preferences'),
+      appBar: V2AppBar(title: l10n.settingsPreferencesTitle),
       mainContent: ListView(
         children: [
           SettingsTappableRow(
-            title: 'Currency',
-            subtitle: 'Fiat display preference',
+            title: l10n.settingsPreferencesCurrency,
+            subtitle: l10n.settingsPreferencesCurrencySubtitle,
             onTap: _openCurrencyPicker,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -55,15 +57,15 @@ class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSetting
           ),
           const SettingsDivider(),
           SettingsSwitchRow(
-            title: 'POS Mode',
-            subtitle: 'Point of sale features',
+            title: l10n.settingsPreferencesPosMode,
+            subtitle: l10n.settingsPreferencesPosModeSubtitle,
             value: posMode,
             onChanged: (v) => ref.read(posModeProvider.notifier).setPosMode(v),
           ),
           const SettingsDivider(),
           SettingsSwitchRow(
-            title: 'Notifications',
-            subtitle: 'Transaction and wallet alerts',
+            title: l10n.settingsPreferencesNotifications,
+            subtitle: l10n.settingsPreferencesNotificationsSubtitle,
             value: notifConfig.enabled,
             onChanged: _toggleNotifications,
           ),

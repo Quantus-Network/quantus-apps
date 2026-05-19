@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/recovery_phrase_body.dart';
 
-class RecoveryPhraseScreen extends StatefulWidget {
+class RecoveryPhraseScreen extends ConsumerStatefulWidget {
   const RecoveryPhraseScreen({super.key, this.walletIndex = 0});
 
   final int walletIndex;
 
   @override
-  State<RecoveryPhraseScreen> createState() => _RecoveryPhraseScreenState();
+  ConsumerState<RecoveryPhraseScreen> createState() => _RecoveryPhraseScreenState();
 }
 
-class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
+class _RecoveryPhraseScreenState extends ConsumerState<RecoveryPhraseScreen> {
   final _settingsService = SettingsService();
   List<String> _words = [];
 
@@ -32,10 +34,12 @@ class _RecoveryPhraseScreenState extends State<RecoveryPhraseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+
     return RecoveryPhraseBody(
-      appBarTitle: 'Recovery Phrase',
+      appBarTitle: l10n.settingsRecoveryPhraseTitle,
       words: _words,
-      primaryButtonLabel: 'Done',
+      primaryButtonLabel: l10n.settingsRecoveryPhraseDone,
       onPrimary: () => Navigator.of(context).pop(),
     );
   }

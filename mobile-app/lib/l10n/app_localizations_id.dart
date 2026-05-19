@@ -599,4 +599,306 @@ class AppLocalizationsId extends AppLocalizations {
   String posQrPaidAt(String time) {
     return 'Pada $time';
   }
+
+  @override
+  String get settingsTitle => 'Pengaturan';
+
+  @override
+  String get settingsWalletTitle => 'Dompet';
+
+  @override
+  String get settingsWalletSubtitle => 'Frasa Pemulihan, Reset Dompet';
+
+  @override
+  String get settingsPreferencesTitle => 'Preferensi';
+
+  @override
+  String get settingsPreferencesSubtitle => 'Mata uang, mode POS, notifikasi';
+
+  @override
+  String get settingsMiningRewards => 'Hadiah Mining';
+
+  @override
+  String settingsMiningRewardsSubtitle(int count) {
+    return '$count blok ditambang';
+  }
+
+  @override
+  String get settingsMiningRewardsError => 'Gagal memuat hadiah mining';
+
+  @override
+  String get settingsAccountTypeTitle => 'Jenis Akun';
+
+  @override
+  String get settingsAccountTypeSubtitle => 'Fitur Akun Lanjutan';
+
+  @override
+  String get settingsHelpTitle => 'Bantuan & Dukungan';
+
+  @override
+  String get settingsHelpSubtitle => 'FAQ, Hubungi tim';
+
+  @override
+  String get settingsAboutTitle => 'Tentang Quantus';
+
+  @override
+  String settingsAboutHubSubtitle(String version, String build) {
+    return 'Versi $version ($build)';
+  }
+
+  @override
+  String get settingsWalletRecoveryPhrase => 'Frasa Pemulihan';
+
+  @override
+  String get settingsWalletRecoveryPhraseSubtitle => 'Lihat Kata Sandi Cadangan 24 kata Anda';
+
+  @override
+  String get settingsWalletReset => 'Reset Dompet';
+
+  @override
+  String get settingsWalletResetSubtitle => 'Menghapus semua data dari perangkat ini';
+
+  @override
+  String get settingsWalletNoWalletsFound => 'Tidak ada dompet ditemukan';
+
+  @override
+  String get settingsWalletFailedToLoad => 'Gagal memuat dompet';
+
+  @override
+  String get settingsSelectWalletTitle => 'Pilih Dompet';
+
+  @override
+  String get settingsSelectWalletNoWallets => 'Tidak ada dompet ditemukan';
+
+  @override
+  String settingsSelectWalletItem(int number) {
+    return 'Dompet $number';
+  }
+
+  @override
+  String get settingsRecoveryConfirmAuthReason => 'Autentikasi untuk melihat frasa pemulihan';
+
+  @override
+  String get settingsRecoveryConfirmAuthRequired => 'Autentikasi diperlukan untuk melihat frasa pemulihan';
+
+  @override
+  String get settingsRecoveryPhraseTitle => 'Frasa Pemulihan';
+
+  @override
+  String get settingsRecoveryPhraseDone => 'Selesai';
+
+  @override
+  String get settingsResetTitle => 'Reset Dompet';
+
+  @override
+  String get settingsResetAuthReason => 'Autentikasi untuk mereset dompet';
+
+  @override
+  String settingsResetFailed(String error) {
+    return 'Gagal mereset dompet: $error';
+  }
+
+  @override
+  String get settingsResetAuthRequired => 'Autentikasi diperlukan untuk mereset dompet';
+
+  @override
+  String get settingsResetCautionHeadline => 'Ini akan menghapus\ndompet Anda';
+
+  @override
+  String get settingsResetCautionBullet1 => 'Semua data dompet akan dihapus permanen dari perangkat ini';
+
+  @override
+  String get settingsResetCautionBullet2 =>
+      'Dana Anda tetap di blockchain tetapi hanya frasa pemulihan yang dapat memulihkan akses';
+
+  @override
+  String get settingsResetCautionBullet3 => 'Tanpa frasa pemulihan, dana Anda hilang selamanya';
+
+  @override
+  String get settingsResetCautionCheckbox => 'Saya sudah mencadangkan frasa pemulihan saya';
+
+  @override
+  String get settingsPreferencesCurrency => 'Mata Uang';
+
+  @override
+  String get settingsPreferencesCurrencySubtitle => 'Preferensi tampilan fiat';
+
+  @override
+  String get settingsPreferencesPosMode => 'Mode POS';
+
+  @override
+  String get settingsPreferencesPosModeSubtitle => 'Fitur point of sale';
+
+  @override
+  String get settingsPreferencesNotifications => 'Notifikasi';
+
+  @override
+  String get settingsPreferencesNotificationsSubtitle => 'Peringatan transaksi dan dompet';
+
+  @override
+  String get settingsCurrencyTitle => 'Mata Uang';
+
+  @override
+  String get settingsCurrencySearchHint => 'Cari';
+
+  @override
+  String get settingsCurrencyNoMatch => 'Tidak ada mata uang yang cocok dengan pencarian Anda';
+
+  @override
+  String get settingsMiningTitle => 'Hadiah Mining';
+
+  @override
+  String get settingsMiningRedeem => 'Tukar';
+
+  @override
+  String get settingsMiningStatusMining => 'Mining';
+
+  @override
+  String get settingsMiningStatusPending => 'Menunggu';
+
+  @override
+  String get settingsMiningBlocksMined => 'BLOK DITAMBANG';
+
+  @override
+  String get settingsMiningBlocksAcrossTestnets => 'blok di semua testnet';
+
+  @override
+  String get settingsMiningStatTestnetBlocks => 'BLOK TESTNET';
+
+  @override
+  String get settingsMiningStatTestnetRewards => 'HADIAH TESTNET';
+
+  @override
+  String get settingsMiningStatRedeemed => 'DITUKAR';
+
+  @override
+  String get settingsMiningStatRedeemable => 'DAPAT DITUKAR';
+
+  @override
+  String get settingsMiningQuanEarned => 'QUAN DIHASILKAN';
+
+  @override
+  String get settingsMiningViewTelemetry => 'Lihat Telemetri ↗';
+
+  @override
+  String get settingsMiningNoDataTitle => 'Belum ada data mining';
+
+  @override
+  String get settingsMiningNoDataBody => 'Siapkan node mining Quantus untuk mulai mendapatkan hadiah.';
+
+  @override
+  String get settingsMiningSetupGuide => 'Panduan Setup Mining ↗';
+
+  @override
+  String get settingsMiningLoadError => 'Gagal memuat hadiah mining';
+
+  @override
+  String get settingsMiningCheckConnection => 'Periksa koneksi Anda';
+
+  @override
+  String get settingsMiningTestnetBlocks => 'blok';
+
+  @override
+  String get settingsMiningDiracSince => 'Nov 2025';
+
+  @override
+  String get settingsMiningSchrodingerSince => 'Okt 2025';
+
+  @override
+  String get settingsMiningResonanceSince => 'Jul 2025';
+
+  @override
+  String get settingsTestnetTitle => 'Hadiah Testnet';
+
+  @override
+  String get settingsTestnetLoadError => 'Gagal memuat hadiah testnet';
+
+  @override
+  String settingsTestnetTotalBlocks(int count) {
+    return '$count blok';
+  }
+
+  @override
+  String get settingsTestnetTotalDescription => 'Total blok ditambang di semua testnet';
+
+  @override
+  String get settingsTestnetBreakdown => 'Rincian';
+
+  @override
+  String settingsTestnetRowBlocks(int count) {
+    return '$count blok';
+  }
+
+  @override
+  String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
+
+  @override
+  String get settingsHelpEmail => 'Dukungan Email';
+
+  @override
+  String get settingsHelpTelegram => 'Telegram';
+
+  @override
+  String get settingsAboutScreenTitle => 'Tentang';
+
+  @override
+  String get settingsAboutIntro =>
+      'Quantus adalah blockchain Layer 1 yang diamankan oleh ML-DSA Dilithium-5, standar emas enkripsi tahan kuantum. Dibangun untuk masa depan di mana kriptografi klasik tidak lagi cukup. Kriptografi pasca-kuantum untuk semua orang.';
+
+  @override
+  String get settingsAboutTerms => 'Ketentuan Layanan';
+
+  @override
+  String get settingsAboutTermsSubtitle => 'quantus.com/terms/';
+
+  @override
+  String get settingsAboutPrivacy => 'Kebijakan privasi';
+
+  @override
+  String get settingsAboutPrivacySubtitle => 'quantus.com/privacy-policy/';
+
+  @override
+  String get settingsAboutWebsite => 'Kunjungi Situs Web';
+
+  @override
+  String get settingsAboutWebsiteSubtitle => 'quantus.com';
+
+  @override
+  String settingsAboutVersion(String version, String build) {
+    return 'Versi $version ($build)';
+  }
+
+  @override
+  String get settingsAccountTypeScreenTitle => 'Jenis Akun';
+
+  @override
+  String get settingsAccountTypeIntro =>
+      'Fitur akun lanjutan akan segera hadir. Fitur ini memberi Anda kontrol lebih besar atas cara transaksi diotorisasi dan diamankan.';
+
+  @override
+  String get settingsAccountTypeReversibleTitle => 'Transaksi Reversible';
+
+  @override
+  String get settingsAccountTypeReversibleSubtitle => 'Batalkan pengiriman dalam jangka waktu tertentu';
+
+  @override
+  String get settingsAccountTypeHighSecurityTitle => 'Akun Keamanan Tinggi';
+
+  @override
+  String get settingsAccountTypeHighSecuritySubtitle => 'Persetujuan guardian diperlukan';
+
+  @override
+  String get settingsAccountTypeMultiSigTitle => 'Multi-Tanda Tangan';
+
+  @override
+  String get settingsAccountTypeMultiSigSubtitle => 'Beberapa persetujuan diperlukan';
+
+  @override
+  String get settingsAccountTypeHardwareTitle => 'Dompet Hardware';
+
+  @override
+  String get settingsAccountTypeHardwareSubtitle => 'Pasangkan perangkat hardware';
+
+  @override
+  String get settingsAccountTypeComingSoon => 'Segera Hadir';
 }
