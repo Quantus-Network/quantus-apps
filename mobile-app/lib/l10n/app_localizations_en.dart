@@ -900,4 +900,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAccountTypeComingSoon => 'Coming Soon';
+
+  @override
+  String get swapTitle => 'Swap';
+
+  @override
+  String get swapFrom => 'From';
+
+  @override
+  String get swapTo => 'To';
+
+  @override
+  String get swapRefundAddress => 'Refund Address';
+
+  @override
+  String swapRefundAddressHint(String network) {
+    return '$network Address';
+  }
+
+  @override
+  String get swapSlippageTolerance => 'Slippage Tolerance';
+
+  @override
+  String get swapRate => 'Rate';
+
+  @override
+  String get swapGetQuote => 'Get a Quote';
+
+  @override
+  String swapRateLabel(String amount, String symbol) {
+    return '1 QUAN = $amount $symbol';
+  }
+
+  @override
+  String swapRateZero(String symbol) {
+    return '1 QUAN = 0 $symbol';
+  }
+
+  @override
+  String get swapTokenPickerTitle => 'Select Token';
+
+  @override
+  String get swapTokenPickerLoadError => 'Failed to load tokens';
+
+  @override
+  String get swapReviewTitle => 'Review Quote';
+
+  @override
+  String get swapReviewTotalFees => 'Total fees';
+
+  @override
+  String get swapReviewTotalAmount => 'Total Amount';
+
+  @override
+  String swapReviewSlippageWarning(String amount, String percent) {
+    return 'You could receive up to \$$amount less based on the $percent% slippage you set';
+  }
+
+  @override
+  String get swapReviewConfirm => 'Confirm';
+
+  @override
+  String get swapDepositAmount => 'Deposit Amount';
+
+  @override
+  String get swapDepositAmountCopied => 'Deposit amount copied to clipboard';
+
+  @override
+  String get swapDepositDemoWarning => 'For demo purposes only - do not send funds!';
+
+  @override
+  String get swapDepositShareQr => 'Share QR';
+
+  @override
+  String swapDepositShareContent(String network, String token, String address) {
+    return 'Network: $network\nToken: $token\nAddress: $address';
+  }
+
+  @override
+  String swapDepositNotice(String symbol, String network) {
+    return 'Use your $symbol or $network wallet to deposit funds. Depositing other assets may result in loss of funds.';
+  }
+
+  @override
+  String get swapDepositProcessingTitle => 'Processing Swap';
+
+  @override
+  String get swapDepositProcessingBody => 'This may take a few minutes...';
+
+  @override
+  String get swapDepositCompleteTitle => 'Swap Complete';
+
+  @override
+  String swapDepositCompleteBody(String amount) {
+    return 'Your swap for $amount QUAN is complete.';
+  }
+
+  @override
+  String get swapDepositTestnetBanner => 'DEMO ONLY - WE ARE STILL ON TESTNET';
+
+  @override
+  String get swapDepositSentFunds => 'I\'ve sent the funds';
+
+  @override
+  String get swapDepositDone => 'Done';
+
+  @override
+  String get swapRefundPickerTitle => 'Refund Addresses';
+
+  @override
+  String get swapRefundPickerEmpty => 'No recent refund addresses';
 }

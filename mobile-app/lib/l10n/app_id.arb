@@ -315,5 +315,42 @@
   "settingsAccountTypeMultiSigSubtitle": "Beberapa persetujuan diperlukan",
   "settingsAccountTypeHardwareTitle": "Dompet Hardware",
   "settingsAccountTypeHardwareSubtitle": "Pasangkan perangkat hardware",
-  "settingsAccountTypeComingSoon": "Segera Hadir"
+  "settingsAccountTypeComingSoon": "Segera Hadir",
+
+  "swapTitle": "Tukar",
+  "swapFrom": "Dari",
+  "swapTo": "Ke",
+  "swapRefundAddress": "Alamat Refund",
+  "swapRefundAddressHint": "Alamat {network}",
+  "swapSlippageTolerance": "Toleransi Slippage",
+  "swapRate": "Kurs",
+  "swapGetQuote": "Dapatkan Penawaran",
+  "swapRateLabel": "1 QUAN = {amount} {symbol}",
+  "swapRateZero": "1 QUAN = 0 {symbol}",
+
+  "swapTokenPickerTitle": "Pilih Token",
+  "swapTokenPickerLoadError": "Gagal memuat token",
+
+  "swapReviewTitle": "Tinjau Penawaran",
+  "swapReviewTotalFees": "Total biaya",
+  "swapReviewTotalAmount": "Jumlah Total",
+  "swapReviewSlippageWarning": "Anda bisa menerima hingga ${amount} lebih sedikit berdasarkan slippage {percent}% yang Anda atur",
+  "swapReviewConfirm": "Konfirmasi",
+
+  "swapDepositAmount": "Jumlah Deposit",
+  "swapDepositAmountCopied": "Jumlah deposit disalin ke clipboard",
+  "swapDepositDemoWarning": "Hanya untuk demo - jangan kirim dana!",
+  "swapDepositShareQr": "Bagikan QR",
+  "swapDepositShareContent": "Jaringan: {network}\nToken: {token}\nAlamat: {address}",
+  "swapDepositNotice": "Gunakan dompet {symbol} atau {network} Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.",
+  "swapDepositProcessingTitle": "Memproses Swap",
+  "swapDepositProcessingBody": "Ini mungkin memakan waktu beberapa menit...",
+  "swapDepositCompleteTitle": "Swap Selesai",
+  "swapDepositCompleteBody": "Swap Anda untuk {amount} QUAN telah selesai.",
+  "swapDepositTestnetBanner": "HANYA DEMO - KAMI MASIH DI TESTNET",
+  "swapDepositSentFunds": "Saya sudah mengirim dana",
+  "swapDepositDone": "Selesai",
+
+  "swapRefundPickerTitle": "Alamat Refund",
+  "swapRefundPickerEmpty": "Tidak ada alamat refund terbaru"
 }

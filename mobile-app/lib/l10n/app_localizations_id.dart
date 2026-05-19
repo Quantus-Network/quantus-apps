@@ -901,4 +901,114 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsAccountTypeComingSoon => 'Segera Hadir';
+
+  @override
+  String get swapTitle => 'Tukar';
+
+  @override
+  String get swapFrom => 'Dari';
+
+  @override
+  String get swapTo => 'Ke';
+
+  @override
+  String get swapRefundAddress => 'Alamat Refund';
+
+  @override
+  String swapRefundAddressHint(String network) {
+    return 'Alamat $network';
+  }
+
+  @override
+  String get swapSlippageTolerance => 'Toleransi Slippage';
+
+  @override
+  String get swapRate => 'Kurs';
+
+  @override
+  String get swapGetQuote => 'Dapatkan Penawaran';
+
+  @override
+  String swapRateLabel(String amount, String symbol) {
+    return '1 QUAN = $amount $symbol';
+  }
+
+  @override
+  String swapRateZero(String symbol) {
+    return '1 QUAN = 0 $symbol';
+  }
+
+  @override
+  String get swapTokenPickerTitle => 'Pilih Token';
+
+  @override
+  String get swapTokenPickerLoadError => 'Gagal memuat token';
+
+  @override
+  String get swapReviewTitle => 'Tinjau Penawaran';
+
+  @override
+  String get swapReviewTotalFees => 'Total biaya';
+
+  @override
+  String get swapReviewTotalAmount => 'Jumlah Total';
+
+  @override
+  String swapReviewSlippageWarning(String amount, String percent) {
+    return 'Anda bisa menerima hingga \$$amount lebih sedikit berdasarkan slippage $percent% yang Anda atur';
+  }
+
+  @override
+  String get swapReviewConfirm => 'Konfirmasi';
+
+  @override
+  String get swapDepositAmount => 'Jumlah Deposit';
+
+  @override
+  String get swapDepositAmountCopied => 'Jumlah deposit disalin ke clipboard';
+
+  @override
+  String get swapDepositDemoWarning => 'Hanya untuk demo - jangan kirim dana!';
+
+  @override
+  String get swapDepositShareQr => 'Bagikan QR';
+
+  @override
+  String swapDepositShareContent(String network, String token, String address) {
+    return 'Jaringan: $network\nToken: $token\nAlamat: $address';
+  }
+
+  @override
+  String swapDepositNotice(String symbol, String network) {
+    return 'Gunakan dompet $symbol atau $network Anda untuk deposit. Menyetor aset lain dapat mengakibatkan kehilangan dana.';
+  }
+
+  @override
+  String get swapDepositProcessingTitle => 'Memproses Swap';
+
+  @override
+  String get swapDepositProcessingBody => 'Ini mungkin memakan waktu beberapa menit...';
+
+  @override
+  String get swapDepositCompleteTitle => 'Swap Selesai';
+
+  @override
+  String swapDepositCompleteBody(String amount) {
+    return 'Swap Anda untuk $amount QUAN telah selesai.';
+  }
+
+  @override
+  String get swapDepositTestnetBanner => 'HANYA DEMO - KAMI MASIH DI TESTNET';
+
+  @override
+  String get swapDepositSentFunds => 'Saya sudah mengirim dana';
+
+  @override
+  String get swapDepositDone => 'Selesai';
+
+  @override
+  String get swapRefundPickerTitle => 'Alamat Refund';
+
+  @override
+  String get swapRefundPickerEmpty => 'Tidak ada alamat refund terbaru';
 }

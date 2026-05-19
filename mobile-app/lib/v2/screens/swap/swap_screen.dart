@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -12,14 +15,14 @@ import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class SwapScreen extends StatefulWidget {
+class SwapScreen extends ConsumerStatefulWidget {
   const SwapScreen({super.key});
 
   @override
-  State<SwapScreen> createState() => _SwapScreenState();
+  ConsumerState<SwapScreen> createState() => _SwapScreenState();
 }
 
-class _SwapScreenState extends State<SwapScreen> {
+class _SwapScreenState extends ConsumerState<SwapScreen> {
   static const _qrIconAsset = 'assets/v2/swap_qr_code.svg';
   static const _historyIconAsset = 'assets/v2/swap_clock_counter_clockwise.svg';
   static const _swapDirectionIconAsset = 'assets/v2/swap_arrows_down_up.svg';
@@ -34,9 +37,10 @@ class _SwapScreenState extends State<SwapScreen> {
   bool _loading = false;
 
   double get _rate => _swapService.getRate(_fromToken);
-  String get _rateLabel {
+
+  String _rateLabel(AppLocalizations l10n) {
     final val = 1 / _rate;
-    if (val == 0) return '1 QUAN = 0 ${_fromToken.symbol}';
+    if (val == 0) return l10n.swapRateZero(_fromToken.symbol);
     final decimals = val >= 100
         ? 2
         : val >= 1
@@ -48,7 +52,7 @@ class _SwapScreenState extends State<SwapScreen> {
         : 10;
     var formatted = val.toStringAsFixed(decimals).replaceAll(RegExp(r'0+$'), '');
     if (formatted.endsWith('.')) formatted = formatted.substring(0, formatted.length - 1);
-    return '1 QUAN = $formatted ${_fromToken.symbol}';
+    return l10n.swapRateLabel(formatted, _fromToken.symbol);
   }
 
   @override
@@ -90,6 +94,7 @@ class _SwapScreenState extends State<SwapScreen> {
       _swapService.addRefundAddress(_fromToken.network, _addressController.text.trim());
       showReviewQuoteSheet(context, quote, _addressController.text);
     } catch (e) {
+      debugPrint('Swap quote failed: $e');
       setState(() => _loading = false);
     }
   }
@@ -117,12 +122,13 @@ class _SwapScreenState extends State<SwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return ScaffoldBase(
       appBar: V2AppBar(
-        title: 'Swap',
+        title: l10n.swapTitle,
         trailing: Icon(Icons.info_outline, color: colors.textPrimary, size: 24),
       ),
       mainContent: Column(
@@ -133,32 +139,32 @@ class _SwapScreenState extends State<SwapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _fromSection(colors, text),
+                  _fromSection(l10n, colors, text),
                   const SizedBox(height: 32),
-                  _refundAddressSection(colors, text),
+                  _refundAddressSection(l10n, colors, text),
                   const SizedBox(height: 32),
                   _swapDivider(colors),
                   const SizedBox(height: 32),
-                  _toSection(colors, text),
+                  _toSection(l10n, colors, text),
                   const SizedBox(height: 32),
-                  _infoSection(colors, text),
+                  _infoSection(l10n, colors, text),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          _quoteButton(colors, text),
+          _quoteButton(l10n, colors, text),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _fromSection(AppColorsV2 colors, AppTextTheme text) {
+  Widget _fromSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('From', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+        Text(l10n.swapFrom, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -234,13 +240,13 @@ class _SwapScreenState extends State<SwapScreen> {
     );
   }
 
-  Widget _refundAddressSection(AppColorsV2 colors, AppTextTheme text) {
+  Widget _refundAddressSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text('Refund Address', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+            Text(l10n.swapRefundAddress, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
             const SizedBox(width: 4),
             Icon(Icons.info_outline, color: colors.textSecondary, size: 14),
           ],
@@ -256,7 +262,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   controller: _addressController,
                   style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                   decoration: InputDecoration(
-                    hintText: '${_fromToken.network} Address',
+                    hintText: l10n.swapRefundAddressHint(_fromToken.network),
                     hintStyle: text.smallParagraph?.copyWith(color: colors.textTertiary),
                     border: InputBorder.none,
                     isDense: true,
@@ -322,11 +328,11 @@ class _SwapScreenState extends State<SwapScreen> {
     );
   }
 
-  Widget _toSection(AppColorsV2 colors, AppTextTheme text) {
+  Widget _toSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('To', style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
+        Text(l10n.swapTo, style: text.smallParagraph?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -382,13 +388,13 @@ class _SwapScreenState extends State<SwapScreen> {
     );
   }
 
-  Widget _infoSection(AppColorsV2 colors, AppTextTheme text) {
+  Widget _infoSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Slippage Tolerance', style: text.detail?.copyWith(color: colors.textSecondary)),
+            Text(l10n.swapSlippageTolerance, style: text.detail?.copyWith(color: colors.textSecondary)),
             Row(
               children: [
                 Text('1%', style: text.detail?.copyWith(color: colors.textSecondary)),
@@ -402,9 +408,9 @@ class _SwapScreenState extends State<SwapScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Rate', style: text.detail?.copyWith(color: colors.textSecondary)),
+            Text(l10n.swapRate, style: text.detail?.copyWith(color: colors.textSecondary)),
             Text(
-              _rateLabel,
+              _rateLabel(l10n),
               style: text.detail?.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w500),
             ),
           ],
@@ -413,10 +419,10 @@ class _SwapScreenState extends State<SwapScreen> {
     );
   }
 
-  Widget _quoteButton(AppColorsV2 colors, AppTextTheme text) {
+  Widget _quoteButton(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     final enabled = _canGetQuote && !_loading;
     return QuantusButton.simple(
-      label: 'Get a Quote',
+      label: l10n.swapGetQuote,
       onTap: _getQuote,
       isDisabled: !enabled,
       variant: ButtonVariant.secondary,

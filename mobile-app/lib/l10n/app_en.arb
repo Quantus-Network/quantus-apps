@@ -1313,5 +1313,188 @@
     "settingsAccountTypeComingSoon": "Coming Soon",
     "@settingsAccountTypeComingSoon": {
       "description": "Coming soon badge on account type features"
+    },
+
+    "swapTitle": "Swap",
+    "@swapTitle": {
+      "description": "App bar title on swap screens"
+    },
+    "swapFrom": "From",
+    "@swapFrom": {
+      "description": "From token section label on swap screen"
+    },
+    "swapTo": "To",
+    "@swapTo": {
+      "description": "To token section label on swap screen"
+    },
+    "swapRefundAddress": "Refund Address",
+    "@swapRefundAddress": {
+      "description": "Refund address field label on swap screen"
+    },
+    "swapRefundAddressHint": "{network} Address",
+    "@swapRefundAddressHint": {
+      "description": "Refund address field hint",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapSlippageTolerance": "Slippage Tolerance",
+    "@swapSlippageTolerance": {
+      "description": "Slippage tolerance label on swap screen"
+    },
+    "swapRate": "Rate",
+    "@swapRate": {
+      "description": "Exchange rate label on swap screen"
+    },
+    "swapGetQuote": "Get a Quote",
+    "@swapGetQuote": {
+      "description": "Get quote button on swap screen"
+    },
+    "swapRateLabel": "1 QUAN = {amount} {symbol}",
+    "@swapRateLabel": {
+      "description": "Exchange rate display",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRateZero": "1 QUAN = 0 {symbol}",
+    "@swapRateZero": {
+      "description": "Exchange rate when amount is zero",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "swapTokenPickerTitle": "Select Token",
+    "@swapTokenPickerTitle": {
+      "description": "Title on token picker sheet"
+    },
+    "swapTokenPickerLoadError": "Failed to load tokens",
+    "@swapTokenPickerLoadError": {
+      "description": "Error when token list fails to load"
+    },
+
+    "swapReviewTitle": "Review Quote",
+    "@swapReviewTitle": {
+      "description": "Title on review quote sheet"
+    },
+    "swapReviewTotalFees": "Total fees",
+    "@swapReviewTotalFees": {
+      "description": "Total fees row on review quote sheet"
+    },
+    "swapReviewTotalAmount": "Total Amount",
+    "@swapReviewTotalAmount": {
+      "description": "Total amount row on review quote sheet"
+    },
+    "swapReviewSlippageWarning": "You could receive up to ${amount} less based on the {percent}% slippage you set",
+    "@swapReviewSlippageWarning": {
+      "description": "Slippage warning on review quote sheet",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapReviewConfirm": "Confirm",
+    "@swapReviewConfirm": {
+      "description": "Confirm button on review quote sheet"
+    },
+
+    "swapDepositAmount": "Deposit Amount",
+    "@swapDepositAmount": {
+      "description": "Deposit amount label on deposit screen"
+    },
+    "swapDepositAmountCopied": "Deposit amount copied to clipboard",
+    "@swapDepositAmountCopied": {
+      "description": "Toast when deposit amount is copied"
+    },
+    "swapDepositDemoWarning": "For demo purposes only - do not send funds!",
+    "@swapDepositDemoWarning": {
+      "description": "Demo warning on deposit screen"
+    },
+    "swapDepositShareQr": "Share QR",
+    "@swapDepositShareQr": {
+      "description": "Share QR button on deposit screen"
+    },
+    "swapDepositShareContent": "Network: {network}\nToken: {token}\nAddress: {address}",
+    "@swapDepositShareContent": {
+      "description": "Share text for deposit details",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        },
+        "token": {
+          "type": "String"
+        },
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositNotice": "Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.",
+    "@swapDepositNotice": {
+      "description": "Deposit wallet notice on deposit screen",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositProcessingTitle": "Processing Swap",
+    "@swapDepositProcessingTitle": {
+      "description": "Title while swap is processing"
+    },
+    "swapDepositProcessingBody": "This may take a few minutes...",
+    "@swapDepositProcessingBody": {
+      "description": "Body while swap is processing"
+    },
+    "swapDepositCompleteTitle": "Swap Complete",
+    "@swapDepositCompleteTitle": {
+      "description": "Title when swap is complete"
+    },
+    "swapDepositCompleteBody": "Your swap for {amount} QUAN is complete.",
+    "@swapDepositCompleteBody": {
+      "description": "Body when swap is complete",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositTestnetBanner": "DEMO ONLY - WE ARE STILL ON TESTNET",
+    "@swapDepositTestnetBanner": {
+      "description": "Testnet demo banner on deposit screen"
+    },
+    "swapDepositSentFunds": "I've sent the funds",
+    "@swapDepositSentFunds": {
+      "description": "Button to confirm funds sent"
+    },
+    "swapDepositDone": "Done",
+    "@swapDepositDone": {
+      "description": "Done button after swap completes"
+    },
+
+    "swapRefundPickerTitle": "Refund Addresses",
+    "@swapRefundPickerTitle": {
+      "description": "Title on refund address picker sheet"
+    },
+    "swapRefundPickerEmpty": "No recent refund addresses",
+    "@swapRefundPickerEmpty": {
+      "description": "Empty state on refund address picker"
     }
   }
