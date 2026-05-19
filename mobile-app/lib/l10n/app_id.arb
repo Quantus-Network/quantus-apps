@@ -1,0 +1,8 @@
+{
+  "greeting": "Halo, {name}!",
+
+  "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk membuka perangkat",
+  "authAuthenticating": "Mengotentikasi...",
+  "authUnlockWallet": "Buka Wallet",
+  "authAuthorizationRequired": "Otorisasi \n Diperlukan"
+}

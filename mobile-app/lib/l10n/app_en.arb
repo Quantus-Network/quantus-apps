@@ -1,0 +1,29 @@
+{
+    "greeting": "Hello, {name}!",
+    "@greeting": {
+      "description": "A welcome message",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+
+
+    "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
+    "@authUseDeviceBiometricsToUnlock": {
+      "description": "Text for the text on the lock screen when using device biometrics to unlock"
+    },
+    "authAuthenticating": "Authenticating...",
+    "@authAuthenticating": {
+      "description": "Text for the text on the lock screen when authenticating"
+    },
+    "authUnlockWallet": "Unlock Wallet",
+    "@authUnlockWallet": {
+      "description": "Text for the button on the lock screen to unlock the wallet"
+    },
+    "authAuthorizationRequired": "Authorization \n Required",
+    "@authAuthorizationRequired": {
+      "description": "Text for displayed on the lock screen when authorization is required"
+    }
+  }

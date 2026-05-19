@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/v2/components/base_background.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -34,6 +35,8 @@ class AuthWrapper extends ConsumerWidget {
   }
 
   Widget _buildLockScreen(BuildContext context, WidgetRef ref, bool isAuthenticating) {
+    final l10n = ref.watch(l10nProvider);
+
     return Scaffold(
       backgroundColor: context.colors.background,
       body: BaseBackground(
@@ -45,7 +48,7 @@ class AuthWrapper extends ConsumerWidget {
                 alignment: Alignment.center,
                 children: [
                   Image.asset('assets/v2/auth_wrapper_bracket.png'),
-                  Text('Authorization \n Required', style: context.themeText.lockTitle, textAlign: TextAlign.center),
+                  Text(l10n.authAuthorizationRequired, style: context.themeText.lockTitle, textAlign: TextAlign.center),
                 ],
               ),
               const SizedBox(height: 60),
@@ -55,7 +58,7 @@ class AuthWrapper extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: context.themeSize.screenPadding),
                   child: QuantusButton.simple(
-                    label: 'Unlock Wallet',
+                    label: l10n.authUnlockWallet,
                     onTap: () {
                       ref.read(localAuthProvider.notifier).authenticate();
                     },
@@ -64,7 +67,7 @@ class AuthWrapper extends ConsumerWidget {
                 ),
               const SizedBox(height: 40),
               Text(
-                isAuthenticating ? 'Authenticating...' : 'Use device biometrics to unlock',
+                isAuthenticating ? l10n.authAuthenticating : l10n.authUseDeviceBiometricsToUnlock,
                 style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
