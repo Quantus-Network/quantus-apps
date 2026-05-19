@@ -50,7 +50,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get createWalletCautionBullet2 =>
-      'Siapa pun yang mendapatkannya memiliki kendali penuh atas dana Anda, secara permanen';
+      'Siapa pun yang mendapatkannya akan memiliki kendali penuh atas dana Anda, secara permanen';
 
   @override
   String get createWalletCautionBullet3 => 'Tuliskan dan simpan di tempat yang aman. Jangan simpan secara digital';
@@ -111,4 +111,48 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get importWalletValidationError => 'Recovery phrase harus 12 atau 24 kata';
+
+  @override
+  String homeError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get homeNoActiveAccount => 'Tidak ada akun aktif';
+
+  @override
+  String get homeCharge => 'Tagih';
+
+  @override
+  String get homeGetTestnetTokens => 'Dapatkan Token Testnet ↗';
+
+  @override
+  String get homeErrorLoadingBalance => 'Gagal memuat saldo';
+
+  @override
+  String get homeReceive => 'Terima';
+
+  @override
+  String get homeSend => 'Kirim';
+
+  @override
+  String get homeSwap => 'Tukar';
+
+  @override
+  String get homeActivityTitle => 'Aktivitas';
+
+  @override
+  String get homeActivityViewAll => 'Lihat Semua';
+
+  @override
+  String get homeActivityErrorLoading => 'Gagal memuat transaksi';
+
+  @override
+  String get homeActivityRetry => 'Coba Lagi';
+
+  @override
+  String get homeActivityEmptyTitle => 'Belum Ada Transaksi';
+
+  @override
+  String get homeActivityEmptyMessage => 'Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN.';
 }

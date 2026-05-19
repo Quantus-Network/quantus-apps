@@ -110,4 +110,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importWalletValidationError => 'Recovery phrase must be 12 or 24 words';
+
+  @override
+  String homeError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get homeNoActiveAccount => 'No active account';
+
+  @override
+  String get homeCharge => 'Charge';
+
+  @override
+  String get homeGetTestnetTokens => 'Get Testnet Tokens ↗';
+
+  @override
+  String get homeErrorLoadingBalance => 'Error loading balance';
+
+  @override
+  String get homeReceive => 'Receive';
+
+  @override
+  String get homeSend => 'Send';
+
+  @override
+  String get homeSwap => 'Swap';
+
+  @override
+  String get homeActivityTitle => 'Activity';
+
+  @override
+  String get homeActivityViewAll => 'View All';
+
+  @override
+  String get homeActivityErrorLoading => 'Error loading transactions';
+
+  @override
+  String get homeActivityRetry => 'Retry';
+
+  @override
+  String get homeActivityEmptyTitle => 'No Transactions Yet';
+
+  @override
+  String get homeActivityEmptyMessage => 'Your activity will appear here once you send or receive QUAN.';
 }

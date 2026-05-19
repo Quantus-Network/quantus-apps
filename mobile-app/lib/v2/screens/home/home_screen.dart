@@ -22,7 +22,9 @@ import 'package:resonance_network_wallet/v2/screens/pos/pos_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
@@ -118,6 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;
@@ -127,36 +130,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
       error: (e, _) => ScaffoldBase(
         mainContent: Center(
-          child: Text('Error: $e', style: text.detail?.copyWith(color: colors.textError)),
+          child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
         ),
       ),
       data: (active) {
         if (active == null) {
-          return const ScaffoldBase(mainContent: Center(child: Text('No active account')));
+          return ScaffoldBase(
+            mainContent: Center(child: Text(l10n.homeNoActiveAccount)),
+          );
         }
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,
           slivers: [
-            _buildContent(active, colors, text),
+            _buildContent(active, colors, text, l10n),
             ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
             const SizedBox(height: 58),
           ],
-          bottomContent: _buildBottomContent(),
+          bottomContent: _buildBottomContent(l10n),
         );
       },
     );
   }
 
-  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildContent(DisplayAccount active, AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         _buildTopBar(),
         const SizedBox(height: 40),
-        _buildBalance(colors, text),
+        _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
-        if (active is RegularAccount) ...[_buildActionButtons(), const SizedBox(height: 40)],
+        if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
         DottedBorder(
           dashLength: 3,
           gapLength: 5,
@@ -167,14 +172,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget? _buildBottomContent() {
+  Widget? _buildBottomContent(AppLocalizations l10n) {
     final enablePos = ref.watch(posModeProvider);
     final balanceAsync = ref.watch(balanceProvider);
 
     if (enablePos) {
       return ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: 'Charge',
+          label: l10n.homeCharge,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosAmountScreen())),
         ),
       );
@@ -185,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           (balance) => balance == BigInt.zero
               ? ScaffoldBaseBottomContent(
                   child: QuantusButton.simple(
-                    label: 'Get Testnet Tokens ↗',
+                    label: l10n.homeGetTestnetTokens,
                     onTap: () => launchXPost(AppConstants.faucetUrl),
                   ),
                 )
@@ -223,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildBalance(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final currencyAsync = ref.watch(balanceDisplayProvider);
 
     return Column(
@@ -247,30 +252,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Skeleton(width: 100, height: 18)]),
             ],
           ),
-          error: (_, _) => Text('Error loading balance', style: text.detail?.copyWith(color: colors.textError)),
+          error: (_, _) => Text(l10n.homeErrorLoadingBalance, style: text.detail?.copyWith(color: colors.textError)),
         ),
       ],
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(AppLocalizations l10n) {
     final enableSwap = ref.watch(remoteConfigProvider).enableSwap;
 
     final receiveCard = _actionCard(
       iconAsset: 'assets/v2/action_receive.svg',
-      label: 'Receive',
+      label: l10n.homeReceive,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
     );
 
     final sendCard = _actionCard(
       iconAsset: 'assets/v2/action_send.svg',
-      label: 'Send',
+      label: l10n.homeSend,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRecipientScreen())),
     );
 
     final swapCard = _actionCard(
       iconAsset: 'assets/v2/action_swap.svg',
-      label: 'Swap',
+      label: l10n.homeSwap,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SwapScreen())),
     );
 

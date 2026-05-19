@@ -283,6 +283,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recovery phrase must be 12 or 24 words'**
   String get importWalletValidationError;
+
+  /// Error message on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String homeError(String error);
+
+  /// Shown when no account is active on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'No active account'**
+  String get homeNoActiveAccount;
+
+  /// POS charge button on the home screen bottom bar
+  ///
+  /// In en, this message translates to:
+  /// **'Charge'**
+  String get homeCharge;
+
+  /// Faucet button when balance is zero on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Get Testnet Tokens ↗'**
+  String get homeGetTestnetTokens;
+
+  /// Error when balance fails to load on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading balance'**
+  String get homeErrorLoadingBalance;
+
+  /// Receive action button on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Receive'**
+  String get homeReceive;
+
+  /// Send action button on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get homeSend;
+
+  /// Swap action button on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get homeSwap;
+
+  /// Section title for recent activity on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get homeActivityTitle;
+
+  /// Link to full activity screen from home
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get homeActivityViewAll;
+
+  /// Error when transactions fail to load in home activity section
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading transactions'**
+  String get homeActivityErrorLoading;
+
+  /// Retry link in home activity section error state
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get homeActivityRetry;
+
+  /// Empty state title in home activity section
+  ///
+  /// In en, this message translates to:
+  /// **'No Transactions Yet'**
+  String get homeActivityEmptyTitle;
+
+  /// Empty state message in home activity section
+  ///
+  /// In en, this message translates to:
+  /// **'Your activity will appear here once you send or receive QUAN.'**
+  String get homeActivityEmptyMessage;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

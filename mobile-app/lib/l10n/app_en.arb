@@ -142,5 +142,68 @@
     "importWalletValidationError": "Recovery phrase must be 12 or 24 words",
     "@importWalletValidationError": {
       "description": "Validation error when recovery phrase word count is invalid"
+    },
+
+    "homeError": "Error: {error}",
+    "@homeError": {
+      "description": "Error message on the home screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "homeNoActiveAccount": "No active account",
+    "@homeNoActiveAccount": {
+      "description": "Shown when no account is active on the home screen"
+    },
+    "homeCharge": "Charge",
+    "@homeCharge": {
+      "description": "POS charge button on the home screen bottom bar"
+    },
+    "homeGetTestnetTokens": "Get Testnet Tokens ↗",
+    "@homeGetTestnetTokens": {
+      "description": "Faucet button when balance is zero on the home screen"
+    },
+    "homeErrorLoadingBalance": "Error loading balance",
+    "@homeErrorLoadingBalance": {
+      "description": "Error when balance fails to load on the home screen"
+    },
+    "homeReceive": "Receive",
+    "@homeReceive": {
+      "description": "Receive action button on the home screen"
+    },
+    "homeSend": "Send",
+    "@homeSend": {
+      "description": "Send action button on the home screen"
+    },
+    "homeSwap": "Swap",
+    "@homeSwap": {
+      "description": "Swap action button on the home screen"
+    },
+
+    "homeActivityTitle": "Activity",
+    "@homeActivityTitle": {
+      "description": "Section title for recent activity on the home screen"
+    },
+    "homeActivityViewAll": "View All",
+    "@homeActivityViewAll": {
+      "description": "Link to full activity screen from home"
+    },
+    "homeActivityErrorLoading": "Error loading transactions",
+    "@homeActivityErrorLoading": {
+      "description": "Error when transactions fail to load in home activity section"
+    },
+    "homeActivityRetry": "Retry",
+    "@homeActivityRetry": {
+      "description": "Retry link in home activity section error state"
+    },
+    "homeActivityEmptyTitle": "No Transactions Yet",
+    "@homeActivityEmptyTitle": {
+      "description": "Empty state title in home activity section"
+    },
+    "homeActivityEmptyMessage": "Your activity will appear here once you send or receive QUAN.",
+    "@homeActivityEmptyMessage": {
+      "description": "Empty state message in home activity section"
     }
   }

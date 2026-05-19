@@ -36,5 +36,21 @@
   "importWalletDescription": "Pulihkan wallet yang ada dengan recovery phrase 12 atau 24 kata Anda",
   "importWalletHint": "Ketik atau tempel recovery phrase Anda. Pisahkan kata dengan spasi.",
   "importWalletButton": "Impor",
-  "importWalletValidationError": "Recovery phrase harus 12 atau 24 kata"
+  "importWalletValidationError": "Recovery phrase harus 12 atau 24 kata",
+
+  "homeError": "Eror: {error}",
+  "homeNoActiveAccount": "Tidak ada akun aktif",
+  "homeCharge": "Tagih",
+  "homeGetTestnetTokens": "Dapatkan Token Testnet ↗",
+  "homeErrorLoadingBalance": "Gagal memuat saldo",
+  "homeReceive": "Terima",
+  "homeSend": "Kirim",
+  "homeSwap": "Tukar",
+
+  "homeActivityTitle": "Aktivitas",
+  "homeActivityViewAll": "Lihat Semua",
+  "homeActivityErrorLoading": "Gagal memuat transaksi",
+  "homeActivityRetry": "Coba Lagi",
+  "homeActivityEmptyTitle": "Belum Ada Transaksi",
+  "homeActivityEmptyMessage": "Aktivitas Anda akan muncul di sini setelah Anda mengirim atau menerima QUAN."
 }
