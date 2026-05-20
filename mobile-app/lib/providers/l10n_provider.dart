@@ -33,6 +33,8 @@
 /// `lookupAppLocalizations(const Locale('en'))` in unit tests.
 library;
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,9 +63,14 @@ class SelectedAppLocaleNotifier extends StateNotifier<AppLocale> {
     state = locale;
   }
 
+  void reset() {
+    state = _load(_settings);
+  }
+
   static AppLocale _load(SettingsService settings) {
-    final code = settings.getSelectedAppLocale();
-    if (code == null) return AppLocale.en;
+    String? code = settings.getSelectedAppLocale();
+    code ??= Platform.localeName.split('_').first.toLowerCase();
+
     return AppLocale.fromCode(code);
   }
 }

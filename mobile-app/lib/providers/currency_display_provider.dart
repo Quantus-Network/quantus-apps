@@ -153,6 +153,10 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
     state = currency;
   }
 
+  void reset() {
+    state = _load(_settings);
+  }
+
   static FiatCurrency _load(SettingsService settings) {
     final code = settings.getSelectedFiatCurrency();
     if (code == null) return FiatCurrency.usd;

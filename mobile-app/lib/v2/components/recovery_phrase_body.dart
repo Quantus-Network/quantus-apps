@@ -62,6 +62,7 @@ class RecoveryPhraseBody extends ConsumerWidget {
 
   Widget _bottomBar(BuildContext context, WidgetRef ref, AppColorsV2 colors) {
     final l10n = ref.watch(l10nProvider);
+    final padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12);
 
     return ScaffoldBaseBottomContent(
       child: Row(
@@ -73,6 +74,7 @@ class RecoveryPhraseBody extends ConsumerWidget {
               iconPlacement: IconPlacement.leading,
               onTap: () => _copyToClipboard(context, ref),
               variant: ButtonVariant.secondary,
+              padding: padding,
             ),
           ),
           const SizedBox(width: 24),
@@ -83,6 +85,7 @@ class RecoveryPhraseBody extends ConsumerWidget {
               isLoading: isPrimaryButtonLoading,
               onTap: onPrimary,
               variant: ButtonVariant.primary,
+              padding: padding,
             ),
           ),
         ],
