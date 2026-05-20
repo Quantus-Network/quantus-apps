@@ -50,7 +50,7 @@ Future<void> showWarningSnackbar(BuildContext context, {required String title, r
     context,
     title: title,
     message: message,
-    icon: Icon(Icons.warning, color: Colors.amber),
+    icon: const Icon(Icons.warning, color: Colors.amber),
   );
 }
 
@@ -59,6 +59,6 @@ Future<void> showErrorSnackbar(BuildContext context, {required String title, req
     context,
     title: title,
     message: message,
-    icon: Icon(Icons.warning, color: Colors.red),
+    icon: const Icon(Icons.warning, color: Colors.red),
   );
 }

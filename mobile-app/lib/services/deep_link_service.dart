@@ -5,7 +5,9 @@ import 'package:resonance_network_wallet/providers/account_associations_provider
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
-  return DeepLinkService(ref);
+  final service = DeepLinkService(ref);
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 class DeepLinkService {

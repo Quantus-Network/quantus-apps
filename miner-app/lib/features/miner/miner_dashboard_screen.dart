@@ -284,7 +284,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                   SliverToBoxAdapter(
                     child: UpdateBanner(
                       updateProgress: _minerUpdateProgress,
-                      version: _minerUpdateInfo.latestVersion ?? "undefined",
+                      version: _minerUpdateInfo.latestVersion ?? 'undefined',
                       message: 'New miner binary available!',
                       onUpdate: _handleUpdateMiner,
                     ),
@@ -295,14 +295,14 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
                     child: UpdateBanner(
                       updateProgress: _nodeUpdateProgress,
                       backgroundColor: Colors.green.shade500,
-                      version: _nodeUpdateInfo.latestVersion ?? "undefined",
+                      version: _nodeUpdateInfo.latestVersion ?? 'undefined',
                       message: 'New node binary available!',
                       onUpdate: _handleUpdateNode,
                     ),
                   ),
 
                 // Custom app bar with glass effect
-                MinerAppBar(),
+                const MinerAppBar(),
 
                 // Main content
                 SliverPadding(
@@ -313,7 +313,7 @@ class _MinerDashboardScreenState extends State<MinerDashboardScreen> {
 
                       Center(
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 400),
+                          constraints: const BoxConstraints(maxWidth: 400),
                           child: SizedBox(
                             width: double.infinity,
                             child: MinerControls(

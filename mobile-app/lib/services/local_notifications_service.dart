@@ -54,7 +54,7 @@ class LocalNotificationsService {
     const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
 
     await _notificationPlugin.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
     );
 
@@ -94,10 +94,10 @@ class LocalNotificationsService {
   Future<void> _showNotification(NotificationData notification) async {
     final String? payload = notification.metadata != null ? jsonEncode(notification.metadata) : null;
     return _notificationPlugin.show(
-      notification.id.hashCode,
-      notification.title,
-      notification.message,
-      _notificationDetails(),
+      id: notification.id.hashCode,
+      title: notification.title,
+      body: notification.message,
+      notificationDetails: _notificationDetails(),
       payload: payload,
     );
   }
@@ -116,11 +116,11 @@ class LocalNotificationsService {
     final String? payload = notification.metadata != null ? jsonEncode(notification.metadata) : null;
 
     await _notificationPlugin.zonedSchedule(
-      notification.id.hashCode,
-      notification.title,
-      notification.message,
-      scheduledDate,
-      _notificationDetails(),
+      id: notification.id.hashCode,
+      title: notification.title,
+      body: notification.message,
+      scheduledDate: scheduledDate,
+      notificationDetails: _notificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: payload,
     );
@@ -155,7 +155,7 @@ class LocalNotificationsService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await _notificationPlugin.cancel(id);
+    await _notificationPlugin.cancel(id: id);
   }
 
   Future<void> cancelAllNotifications() async {

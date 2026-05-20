@@ -47,7 +47,9 @@ class LocalAuthService {
 
       final didAuthenticate = await _localAuth.authenticate(
         localizedReason: localizedReason,
-        options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true, sensitiveTransaction: true),
+        biometricOnly: false,
+        persistAcrossBackgrounding: true,
+        sensitiveTransaction: true,
       );
 
       if (didAuthenticate) cleanLastPausedTime();

@@ -228,12 +228,12 @@ class _LogsWidgetState extends State<LogsWidget> {
               children: [
                 Text('Total logs: ${_logs.length}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                 if (widget.orchestrator?.isMining ?? false)
-                  Text(
+                  const Text(
                     'Live',
                     style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
                   )
                 else
-                  Text('Not connected', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Not connected', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),

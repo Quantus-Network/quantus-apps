@@ -6,53 +6,38 @@ publish_to: none
 environment:
   sdk: ">=3.8.0 <4.0.0"
 
+# Convention: see dependency placement section in ../melos.yaml.
+# Shared dep versions must match the canonical list there.
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
-    
-  # Workspace packages (managed by melos.yaml)
-  quantus_sdk: # Version managed by melos.yaml
-  
-  # Hex/byte encoding
-  convert:
-  
-  # Networking and storage
-  http: # Version managed by melos.yaml
-  shared_preferences: # Version managed by melos.yaml
-  polkadart: # For local node RPC queries
-  ss58: # SS58 address encoding/decoding
-  
-  # Mnemonic generation
-  bip39_mnemonic: # Version managed by melos.yaml
-  
-  # Routing
-  go_router: # Version managed by melos.yaml
-  
-  # UI and utilities
-  flutter_svg: # Version managed by melos.yaml
-  
-  # System and file operations
-  path: # Version managed by melos.yaml
-  path_provider: # Version managed by melos.yaml
-  permission_handler: # Version managed by melos.yaml
-  image_picker: # Version managed by melos.yaml
-  
-  # Math and logging
-  decimal: # Version managed by melos.yaml
-  logger: # Version managed by melos.yaml
+
+  # quantus_sdk re-exports polkadart, bip39_mnemonic, ss58 etc.
+  # so miner-app doesn't list them directly.
+  quantus_sdk:
+
+  # Shared (canonical versions in melos.yaml)
+  convert: ^3.1.2
+  http: ^1.6.0
+  shared_preferences: ^2.5.5
+  path: ^1.9.1
+  flutter_svg: ^2.3.0
   flash: ^3.1.1
-  lucide_icons_flutter: ^3.1.5
   telemetrydecksdk: ^3.0.0
+
+  # Miner-only
+  go_router: ^17.2.2
+  logger: ^2.7.0
+  lucide_icons_flutter: ^3.1.13
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: # Version managed by melos.yaml
   integration_test:
     sdk: flutter
-  flutter_launcher_icons: "^0.14.4"
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  analyzer: ^10.0.1
 
 flutter:
   uses-material-design: true
@@ -63,4 +48,3 @@ flutter:
     - assets/tr-ee-u1vxT1-qrcode-white.png
     - assets/tr-ee-u1vxT1-qrcode-black.svg
     - assets/tr-ee-u1vxT1-qrcode-white.svg
-  

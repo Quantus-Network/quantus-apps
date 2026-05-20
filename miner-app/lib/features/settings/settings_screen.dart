@@ -438,11 +438,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1C),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.shield_outlined, color: Colors.orange, size: 24),
-            const SizedBox(width: 12),
-            const Text('Inner Hash', style: TextStyle(color: Colors.white, fontSize: 18)),
+            SizedBox(width: 12),
+            Text('Inner Hash', style: TextStyle(color: Colors.white, fontSize: 18)),
           ],
         ),
         content: SizedBox(
@@ -460,7 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
