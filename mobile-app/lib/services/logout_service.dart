@@ -22,7 +22,6 @@ class LogoutService {
       _ref.read(firebaseMessagingServiceProvider).unregisterDevice();
     }
 
-    SettingsService().clearAll();
     SubstrateService().logout();
     _ref.read(pendingTransactionsProvider.notifier).clear();
     _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
