@@ -1,9 +1,9 @@
 {
-  "walletInitErrorTitle": "Wallet Eror",
+  "walletInitErrorTitle": "Wallet Bermasalah",
   "walletInitErrorMessage": "Gagal mencari secret phrase. Coba pulihkan wallet anda.",
   "walletInitErrorButtonLabel": "OK",
 
-  "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk membuka perangkat",
+  "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk mengakses wallet",
   "authAuthenticating": "Mengotentikasi...",
   "authUnlockWallet": "Buka Wallet",
   "authAuthorizationRequired": "Otorisasi \n Diperlukan",
@@ -38,7 +38,7 @@
   "importWalletButton": "Impor",
   "importWalletValidationError": "Recovery phrase harus 12 atau 24 kata",
 
-  "homeError": "Eror: {error}",
+  "homeError": "Gagal: {error}",
   "homeNoActiveAccount": "Tidak ada akun aktif",
   "homeCharge": "Tagih",
   "homeGetTestnetTokens": "Dapatkan Token Testnet ↗",
@@ -59,7 +59,6 @@
   "accountsSheetFailedLoadActiveAccount": "Gagal memuat akun aktif.",
   "accountsSheetNoAccountsFound": "Tidak ada akun ditemukan.",
   "accountsSheetAddAccount": "Tambah Akun",
-  "accountsSheetLoading": "Memuat...",
   "accountsSheetBalanceUnavailable": "Saldo tidak tersedia",
   "accountsSheetBalance": "{balance} {symbol}",
 
@@ -95,7 +94,6 @@
   "addHardwareAccountNameHintAccount": "Akun",
   "addHardwareAccountAddressLabel": "ALAMAT",
   "addHardwareAccountAddressHint": "Alamat SS58",
-  "addHardwareAccountScanQr": "Pindai Kode QR",
   "addHardwareAccountDebugFill": "Isi Debug",
   "addHardwareAccountNameRequired": "Nama wajib diisi",
   "addHardwareAccountInvalidAddress": "Alamat tidak valid",
@@ -117,7 +115,6 @@
   "sendInputAmountMax": "Maks",
   "sendInputAmountInvalidAmount": "Masukkan jumlah yang valid",
   "sendInputAmountChecksumRequired": "Checksum penerima diperlukan",
-  "sendInputAmountBalance": "{balance} {symbol}",
 
   "sendReviewSending": "MENGIRIM",
   "sendReviewTo": "KE",
@@ -143,7 +140,7 @@
   "sendLogicReviewSend": "Tinjau Pengiriman",
 
   "activityTitle": "Aktivitas",
-  "activityError": "Error: {error}",
+  "activityError": "Gagal: {error}",
   "activityNoAccount": "Tidak ada akun",
   "activityEmpty": "Belum ada transaksi",
   "activityFilterAll": "Semua",
@@ -195,7 +192,7 @@
 
   "posQrTitleScanToPay": "Pindai untuk Bayar",
   "posQrTitlePaymentReceived": "Pembayaran Diterima",
-  "posQrError": "Error: {error}",
+  "posQrError": "Gagal: {error}",
   "posQrNoActiveAccount": "Tidak ada akun aktif",
   "posQrInvalidAmount": "Jumlah tidak valid. Ketuk untuk coba lagi.",
   "posQrConnectionLost": "Koneksi terputus. Ketuk untuk coba lagi.",
@@ -205,7 +202,7 @@
   "posQrAmountReceived": "{amount} diterima",
   "posQrFrom": "Dari:",
   "posQrWaitingForPayment": "Menunggu pembayaran",
-  "posQrNetworkError": "Error Jaringan",
+  "posQrNetworkError": "Jaringan Bermasalah",
   "posQrTryAgain": "Coba Lagi",
   "posQrPaidAt": "Pada {time}",
 
@@ -362,10 +359,14 @@
   "swapRefundPickerTitle": "Alamat Refund",
   "swapRefundPickerEmpty": "Tidak ada alamat refund terbaru",
 
+  "componentQrScannerTitle": "Pindai Kode QR",
   "componentQrScannerNoCode": "Tidak ada kode QR pada gambar",
   "componentShare": "Bagikan",
   "componentAddressLabel": "ALAMAT",
   "componentCheckphraseLabel": "CHECKPHRASE",
   "componentCheckphraseCopied": "Checkphrase disalin",
-  "componentNameFieldHint": "Masukkan nama untuk akun Anda"
+  "componentNameFieldHint": "Masukkan nama untuk akun Anda",
+
+  "commonLoading": "Memuat...",
+  "commonAmountBalance": "{balance} {symbol}"
 }

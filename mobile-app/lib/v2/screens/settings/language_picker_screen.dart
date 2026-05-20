@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/app_locale.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_picker_screen.dart';
 
 class LanguagePickerScreenV2 extends ConsumerWidget {
@@ -23,19 +22,8 @@ class LanguagePickerScreenV2 extends ConsumerWidget {
       filter: (locale, query) {
         return locale.displayName.toLowerCase().contains(query) || locale.languageCode.toLowerCase().contains(query);
       },
-      onSelect: (locale) async {
-        try {
-          await ref.read(selectedAppLocaleProvider.notifier).select(locale);
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
-        } catch (e) {
-          debugPrint('error selecting locale: $e');
-          if (context.mounted) {
-            context.showErrorToaster(message: l10n.settingsLanguageError(e.toString()));
-          }
-        }
-      },
+      onSelect: ref.read(selectedAppLocaleProvider.notifier).select,
+      errorMessageBuilder: l10n.settingsLanguageError,
     );
   }
 }

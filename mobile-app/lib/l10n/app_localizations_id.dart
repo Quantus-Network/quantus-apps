@@ -9,7 +9,7 @@ class AppLocalizationsId extends AppLocalizations {
   AppLocalizationsId([String locale = 'id']) : super(locale);
 
   @override
-  String get walletInitErrorTitle => 'Wallet Eror';
+  String get walletInitErrorTitle => 'Wallet Bermasalah';
 
   @override
   String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
@@ -18,7 +18,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorButtonLabel => 'OK';
 
   @override
-  String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk membuka perangkat';
+  String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
 
   @override
   String get authAuthenticating => 'Mengotentikasi...';
@@ -114,7 +114,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String homeError(String error) {
-    return 'Eror: $error';
+    return 'Gagal: $error';
   }
 
   @override
@@ -170,9 +170,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountsSheetAddAccount => 'Tambah Akun';
-
-  @override
-  String get accountsSheetLoading => 'Memuat...';
 
   @override
   String get accountsSheetBalanceUnavailable => 'Saldo tidak tersedia';
@@ -266,9 +263,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get addHardwareAccountAddressHint => 'Alamat SS58';
 
   @override
-  String get addHardwareAccountScanQr => 'Pindai Kode QR';
-
-  @override
   String get addHardwareAccountDebugFill => 'Isi Debug';
 
   @override
@@ -325,11 +319,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sendInputAmountChecksumRequired => 'Checksum penerima diperlukan';
-
-  @override
-  String sendInputAmountBalance(String balance, String symbol) {
-    return '$balance $symbol';
-  }
 
   @override
   String get sendReviewSending => 'MENGIRIM';
@@ -400,7 +389,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String activityError(String error) {
-    return 'Error: $error';
+    return 'Gagal: $error';
   }
 
   @override
@@ -557,7 +546,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String posQrError(String error) {
-    return 'Error: $error';
+    return 'Gagal: $error';
   }
 
   @override
@@ -590,7 +579,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get posQrWaitingForPayment => 'Menunggu pembayaran';
 
   @override
-  String get posQrNetworkError => 'Error Jaringan';
+  String get posQrNetworkError => 'Jaringan Bermasalah';
 
   @override
   String get posQrTryAgain => 'Coba Lagi';
@@ -1038,6 +1027,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapRefundPickerEmpty => 'Tidak ada alamat refund terbaru';
 
   @override
+  String get componentQrScannerTitle => 'Pindai Kode QR';
+
+  @override
   String get componentQrScannerNoCode => 'Tidak ada kode QR pada gambar';
 
   @override
@@ -1054,4 +1046,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get componentNameFieldHint => 'Masukkan nama untuk akun Anda';
+
+  @override
+  String get commonLoading => 'Memuat...';
+
+  @override
+  String commonAmountBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
 }

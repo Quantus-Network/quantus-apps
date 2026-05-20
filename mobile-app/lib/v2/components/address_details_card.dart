@@ -82,7 +82,7 @@ class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
         child: _buildItem(
           context,
           l10n.componentCheckphraseLabel,
-          widget.checksum ?? l10n.accountsSheetLoading,
+          widget.checksum ?? l10n.commonLoading,
           isCheckphrase: true,
           isCopied: _checksumCopied,
         ),

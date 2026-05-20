@@ -398,12 +398,6 @@ abstract class AppLocalizations {
   /// **'Add Account'**
   String get accountsSheetAddAccount;
 
-  /// Loading balance in accounts sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Loading...'**
-  String get accountsSheetLoading;
-
   /// When account balance fails to load
   ///
   /// In en, this message translates to:
@@ -578,12 +572,6 @@ abstract class AppLocalizations {
   /// **'SS58 address'**
   String get addHardwareAccountAddressHint;
 
-  /// Scan QR code button
-  ///
-  /// In en, this message translates to:
-  /// **'Scan QR Code'**
-  String get addHardwareAccountScanQr;
-
   /// Debug fill button
   ///
   /// In en, this message translates to:
@@ -691,12 +679,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recipient checksum is required'**
   String get sendInputAmountChecksumRequired;
-
-  /// Formatted balance with token symbol
-  ///
-  /// In en, this message translates to:
-  /// **'{balance} {symbol}'**
-  String sendInputAmountBalance(String balance, String symbol);
 
   /// Sending section label on review screen
   ///
@@ -1988,6 +1970,12 @@ abstract class AppLocalizations {
   /// **'No recent refund addresses'**
   String get swapRefundPickerEmpty;
 
+  /// Text for app bar or button label on QR scanner component
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get componentQrScannerTitle;
+
   /// Snackbar when gallery image has no QR code
   ///
   /// In en, this message translates to:
@@ -2023,6 +2011,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name for your account'**
   String get componentNameFieldHint;
+
+  /// Text for generic loading state
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get commonLoading;
+
+  /// Formatted balance with token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{balance} {symbol}'**
+  String commonAmountBalance(String balance, String symbol);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

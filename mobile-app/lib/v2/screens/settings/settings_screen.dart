@@ -46,7 +46,7 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                   subtitle: l10n.settingsMiningRewardsSubtitle(data.totalBlocks),
                   trailing: trailing,
                 ),
-                loading: () => _buildTappableRow(e.value, subtitle: l10n.accountsSheetLoading, trailing: trailing),
+                loading: () => _buildTappableRow(e.value, subtitle: l10n.commonLoading, trailing: trailing),
                 error: (err, st) {
                   debugPrint('Error getting mining rewards: ${err.toString()}');
                   debugPrint('Stack trace: ${st.toString()}');
@@ -105,7 +105,7 @@ List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l1
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/axe.svg', width: 18, height: 18)),
       title: l10n.settingsMiningRewards,
-      subtitle: l10n.accountsSheetLoading,
+      subtitle: l10n.commonLoading,
       page: const MiningRewardsScreen(),
       isMiningRewards: true,
     ),

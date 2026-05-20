@@ -132,7 +132,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             children: [
               Expanded(
                 child: QuantusButton.simple(
-                  label: l10n.addHardwareAccountScanQr,
+                  label: l10n.componentQrScannerTitle,
                   variant: ButtonVariant.secondary,
                   onTap: _scanQRCode,
                 ),

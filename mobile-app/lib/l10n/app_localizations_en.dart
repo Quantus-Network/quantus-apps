@@ -171,9 +171,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountsSheetAddAccount => 'Add Account';
 
   @override
-  String get accountsSheetLoading => 'Loading...';
-
-  @override
   String get accountsSheetBalanceUnavailable => 'Balance unavailable';
 
   @override
@@ -265,9 +262,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addHardwareAccountAddressHint => 'SS58 address';
 
   @override
-  String get addHardwareAccountScanQr => 'Scan QR Code';
-
-  @override
   String get addHardwareAccountDebugFill => 'Debug Fill';
 
   @override
@@ -324,11 +318,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendInputAmountChecksumRequired => 'Recipient checksum is required';
-
-  @override
-  String sendInputAmountBalance(String balance, String symbol) {
-    return '$balance $symbol';
-  }
 
   @override
   String get sendReviewSending => 'SENDING';
@@ -1037,6 +1026,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapRefundPickerEmpty => 'No recent refund addresses';
 
   @override
+  String get componentQrScannerTitle => 'Scan QR Code';
+
+  @override
   String get componentQrScannerNoCode => 'No QR code found in image';
 
   @override
@@ -1053,4 +1045,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get componentNameFieldHint => 'Enter a name for your account';
+
+  @override
+  String get commonLoading => 'Loading...';
+
+  @override
+  String commonAmountBalance(String balance, String symbol) {
+    return '$balance $symbol';
+  }
 }

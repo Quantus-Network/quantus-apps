@@ -227,10 +227,6 @@
     "@accountsSheetAddAccount": {
       "description": "Button to add a new account"
     },
-    "accountsSheetLoading": "Loading...",
-    "@accountsSheetLoading": {
-      "description": "Loading balance in accounts sheet"
-    },
     "accountsSheetBalanceUnavailable": "Balance unavailable",
     "@accountsSheetBalanceUnavailable": {
       "description": "When account balance fails to load"
@@ -366,10 +362,6 @@
     "@addHardwareAccountAddressHint": {
       "description": "Address field hint"
     },
-    "addHardwareAccountScanQr": "Scan QR Code",
-    "@addHardwareAccountScanQr": {
-      "description": "Scan QR code button"
-    },
     "addHardwareAccountDebugFill": "Debug Fill",
     "@addHardwareAccountDebugFill": {
       "description": "Debug fill button"
@@ -454,18 +446,6 @@
     "sendInputAmountChecksumRequired": "Recipient checksum is required",
     "@sendInputAmountChecksumRequired": {
       "description": "Error when recipient checksum is missing"
-    },
-    "sendInputAmountBalance": "{balance} {symbol}",
-    "@sendInputAmountBalance": {
-      "description": "Formatted balance with token symbol",
-      "placeholders": {
-        "balance": {
-          "type": "String"
-        },
-        "symbol": {
-          "type": "String"
-        }
-      }
     },
 
     "sendReviewSending": "SENDING",
@@ -1537,6 +1517,10 @@
       "description": "Empty state on refund address picker"
     },
 
+    "componentQrScannerTitle": "Scan QR Code",
+    "@componentQrScannerTitle": {
+      "description": "Text for app bar or button label on QR scanner component"
+    },
     "componentQrScannerNoCode": "No QR code found in image",
     "@componentQrScannerNoCode": {
       "description": "Snackbar when gallery image has no QR code"
@@ -1560,5 +1544,22 @@
     "componentNameFieldHint": "Enter a name for your account",
     "@componentNameFieldHint": {
       "description": "Hint text on account name field"
+    },
+
+    "commonLoading": "Loading...",
+    "@commonLoading": {
+      "description": "Text for generic loading state"
+    },
+    "commonAmountBalance": "{balance} {symbol}",
+    "@commonAmountBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
     }
   }

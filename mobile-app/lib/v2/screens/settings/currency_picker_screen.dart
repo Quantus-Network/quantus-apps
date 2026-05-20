@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_picker_screen.dart';
 
 class CurrencyPickerScreenV2 extends ConsumerWidget {
@@ -25,19 +24,8 @@ class CurrencyPickerScreenV2 extends ConsumerWidget {
         final line = currency.line.toLowerCase();
         return line.contains(query) || currency.code.toLowerCase().contains(query);
       },
-      onSelect: (currency) async {
-        try {
-          await ref.read(selectedFiatCurrencyProvider.notifier).select(currency);
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
-        } catch (e) {
-          debugPrint('error selecting locale: $e');
-          if (context.mounted) {
-            context.showErrorToaster(message: l10n.settingsCurrencyError(e.toString()));
-          }
-        }
-      },
+      onSelect: ref.read(selectedFiatCurrencyProvider.notifier).select,
+      errorMessageBuilder: l10n.settingsCurrencyError,
     );
   }
 }

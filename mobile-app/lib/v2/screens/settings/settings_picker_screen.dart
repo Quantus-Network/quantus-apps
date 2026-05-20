@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -17,6 +18,7 @@ class SettingsPickerScreen<T> extends StatefulWidget {
     required this.selected,
     required this.labelBuilder,
     required this.onSelect,
+    required this.errorMessageBuilder,
     this.filter,
   });
 
@@ -28,6 +30,7 @@ class SettingsPickerScreen<T> extends StatefulWidget {
   final String Function(T) labelBuilder;
   final bool Function(T item, String query)? filter;
   final Future<void> Function(T) onSelect;
+  final String Function(String error) errorMessageBuilder;
 
   @override
   State<SettingsPickerScreen<T>> createState() => _SettingsPickerScreenState<T>();
@@ -100,12 +103,24 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
                             selected: item == widget.selected,
                             colors: colors,
                             text: text,
-                            onTap: () {
+                            onTap: () async {
                               if (_isLoading) return;
 
                               setState(() => _isLoading = true);
-                              widget.onSelect(item);
-                              setState(() => _isLoading = false);
+
+                              try {
+                                await widget.onSelect(item);
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
+                              } catch (e) {
+                                debugPrint('error selecting locale: $e');
+                                if (context.mounted) {
+                                  context.showErrorToaster(message: widget.errorMessageBuilder(e.toString()));
+                                }
+                              } finally {
+                                if (mounted) setState(() => _isLoading = false);
+                              }
                             },
                           );
                         },

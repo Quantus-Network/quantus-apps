@@ -465,7 +465,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
-                            l10n.sendInputAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
+                            l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           ),
                           loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
@@ -485,7 +485,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                         const SizedBox(height: 4),
                         if (!_isFetchingFee)
                           Text(
-                            l10n.sendInputAmountBalance(
+                            l10n.commonAmountBalance(
                               formattingService.formatBalance(_networkFee, maxDecimals: 5),
                               AppConstants.tokenSymbol,
                             ),

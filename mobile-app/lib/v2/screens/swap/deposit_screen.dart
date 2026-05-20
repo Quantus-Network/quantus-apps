@@ -64,6 +64,8 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     }
   }
 
+  // Currently this is only for demo purposes
+  // We just return the demo warning for now
   String _getDepositAddress(AppLocalizations l10n) {
     return l10n.swapDepositDemoWarning;
   }

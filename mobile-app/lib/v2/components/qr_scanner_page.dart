@@ -87,7 +87,7 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
               ],
             ),
           ),
-          Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: l10n.addHardwareAccountScanQr)),
+          Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: l10n.componentQrScannerTitle)),
         ],
       ),
     );

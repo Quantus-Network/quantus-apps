@@ -153,7 +153,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
-      loading: () => l10n.accountsSheetLoading,
+      loading: () => l10n.commonLoading,
       error: (_, _) => l10n.accountsSheetBalanceUnavailable,
       data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );

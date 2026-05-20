@@ -129,7 +129,7 @@ class _DetailsSection extends ConsumerWidget {
     if (tx is TransferEvent) fee = (tx as TransferEvent).fee;
     if (tx is PendingTransactionEvent) fee = (tx as PendingTransactionEvent).fee;
     final feeStr = (fee != null && fee != BigInt.zero)
-        ? l10n.sendInputAmountBalance(
+        ? l10n.commonAmountBalance(
             formattingService.formatBalance(fee, maxDecimals: AppConstants.decimals),
             AppConstants.tokenSymbol,
           )
