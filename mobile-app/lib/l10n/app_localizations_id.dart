@@ -751,6 +751,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsCurrencyNoMatch => 'Tidak ada mata uang yang cocok dengan pencarian Anda';
 
   @override
+  String settingsCurrencyError(String error) {
+    return 'Gagal memilih mata uang: $error';
+  }
+
+  @override
   String get settingsLanguageTitle => 'Bahasa';
 
   @override
@@ -758,6 +763,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsLanguageNoMatch => 'Tidak ada bahasa yang cocok dengan pencarian Anda';
+
+  @override
+  String settingsLanguageError(String error) {
+    return 'Gagal memilih bahasa: $error';
+  }
 
   @override
   String get settingsMiningTitle => 'Hadiah Mining';

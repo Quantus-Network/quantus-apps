@@ -263,10 +263,12 @@
   "settingsCurrencyTitle": "Mata Uang",
   "settingsCurrencySearchHint": "Cari",
   "settingsCurrencyNoMatch": "Tidak ada mata uang yang cocok dengan pencarian Anda",
+  "settingsCurrencyError": "Gagal memilih mata uang: {error}",
 
   "settingsLanguageTitle": "Bahasa",
   "settingsLanguageSearchHint": "Cari",
   "settingsLanguageNoMatch": "Tidak ada bahasa yang cocok dengan pencarian Anda",
+  "settingsLanguageError": "Gagal memilih bahasa: {error}",
 
   "settingsMiningTitle": "Hadiah Mining",
   "settingsMiningRedeem": "Tukar",

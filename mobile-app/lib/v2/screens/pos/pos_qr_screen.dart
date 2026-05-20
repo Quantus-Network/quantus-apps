@@ -55,7 +55,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
   void _startWatching() {
     final l10n = ref.read(l10nProvider);
-    final formattingService = ref.watch(numberFormattingServiceProvider);
+    final formattingService = ref.read(numberFormattingServiceProvider);
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 

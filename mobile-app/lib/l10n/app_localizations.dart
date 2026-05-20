@@ -1466,6 +1466,12 @@ abstract class AppLocalizations {
   /// **'No currencies match your search'**
   String get settingsCurrencyNoMatch;
 
+  /// Error when currency selection fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error selecting currency: {error}'**
+  String settingsCurrencyError(String error);
+
   /// App bar on language picker
   ///
   /// In en, this message translates to:
@@ -1483,6 +1489,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No languages match your search'**
   String get settingsLanguageNoMatch;
+
+  /// Error when language selection fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error selecting language: {error}'**
+  String settingsLanguageError(String error);
 
   /// App bar on mining rewards screen
   ///

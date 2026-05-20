@@ -35,6 +35,7 @@ class SettingsPickerScreen<T> extends StatefulWidget {
 
 class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
   final _searchController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -74,10 +75,7 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
           const SizedBox(height: 24),
           Expanded(
             child: Container(
-              decoration: BoxDecoration(
-                color: colors.surfaceDeep,
-                borderRadius: BorderRadius.circular(14),
-              ),
+              decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
               clipBehavior: Clip.antiAlias,
               child: Scrollbar(
                 thumbVisibility: true,
@@ -87,18 +85,14 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
                     ? Center(
                         child: Text(
                           widget.emptyMessage,
-                          style: text.smallParagraph?.copyWith(
-                            color: colors.textMuted,
-                          ),
+                          style: text.smallParagraph?.copyWith(color: colors.textMuted),
                           textAlign: TextAlign.center,
                         ),
                       )
                     : ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (context, index) => const SettingsDivider(
-                          style: SettingsDividerStyle.currencyList,
-                          padding: EdgeInsets.zero,
-                        ),
+                        separatorBuilder: (context, index) =>
+                            const SettingsDivider(style: SettingsDividerStyle.currencyList, padding: EdgeInsets.zero),
                         itemBuilder: (context, index) {
                           final item = filtered[index];
                           return SettingsPickerListTile(
@@ -106,7 +100,13 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
                             selected: item == widget.selected,
                             colors: colors,
                             text: text,
-                            onTap: () => widget.onSelect(item),
+                            onTap: () {
+                              if (_isLoading) return;
+
+                              setState(() => _isLoading = true);
+                              widget.onSelect(item);
+                              setState(() => _isLoading = false);
+                            },
                           );
                         },
                       ),

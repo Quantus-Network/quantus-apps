@@ -750,6 +750,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCurrencyNoMatch => 'No currencies match your search';
 
   @override
+  String settingsCurrencyError(String error) {
+    return 'Error selecting currency: $error';
+  }
+
+  @override
   String get settingsLanguageTitle => 'Language';
 
   @override
@@ -757,6 +762,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguageNoMatch => 'No languages match your search';
+
+  @override
+  String settingsLanguageError(String error) {
+    return 'Error selecting language: $error';
+  }
 
   @override
   String get settingsMiningTitle => 'Mining Rewards';

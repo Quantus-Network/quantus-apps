@@ -34,7 +34,7 @@ class CurrencyPickerScreenV2 extends ConsumerWidget {
         } catch (e) {
           debugPrint('error selecting locale: $e');
           if (context.mounted) {
-            context.showErrorToaster(message: 'Error selecting locale: $e');
+            context.showErrorToaster(message: l10n.settingsCurrencyError(e.toString()));
           }
         }
       },
