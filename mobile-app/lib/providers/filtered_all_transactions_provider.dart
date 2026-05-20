@@ -32,8 +32,7 @@ final filteredTransactionsProviderFamily =
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
       final hasLoadedChainData =
-          pagination.otherTransfers.isNotEmpty ||
-          pagination.scheduledReversibleTransfers.isNotEmpty;
+          pagination.otherTransfers.isNotEmpty || pagination.scheduledReversibleTransfers.isNotEmpty;
       if (pagination.error != null && !hasLoadedChainData) {
         print('FilteredTransactionsProvider: Error: ${pagination.error}');
         return AsyncValue.error(pagination.error!, pagination.stackTrace!);

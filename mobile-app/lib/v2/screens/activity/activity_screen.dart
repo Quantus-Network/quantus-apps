@@ -167,8 +167,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       );
                     }
                     final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
-                    final showLoadMoreFooter =
-                        pagination != null && pagination.isFetching && pagination.hasMore;
+                    final showLoadMoreFooter = pagination != null && pagination.isFetching && pagination.hasMore;
 
                     return RefreshIndicator(
                       onRefresh: _refresh,
@@ -202,7 +201,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   colors,
                                   text,
                                   l10n,
-                                  formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                                  formattedAmount: formatTxAmount(
+                                    itemData.amount,
+                                    isSend: itemData.isSend,
+                                  ).primaryAmount,
                                   isLastItem: isLastItem,
                                   onTap: () {
                                     showTransactionDetailSheet(context, tx, active.account.accountId);

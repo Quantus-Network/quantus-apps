@@ -8,10 +8,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 
-FilteredTransactionsParams? activeAccountFilteredParams(
-  DisplayAccount? activeAccount,
-  TransactionFilter filter,
-) {
+FilteredTransactionsParams? activeAccountFilteredParams(DisplayAccount? activeAccount, TransactionFilter filter) {
   if (activeAccount == null) return null;
   return FilteredTransactionsParams(
     accountIds: AccountIdListCache.get([activeAccount.account.accountId]),
@@ -19,10 +16,7 @@ FilteredTransactionsParams? activeAccountFilteredParams(
   );
 }
 
-UnifiedPaginationController? activeAccountPaginationNotifier(
-  WidgetRef ref,
-  TransactionFilter filter,
-) {
+UnifiedPaginationController? activeAccountPaginationNotifier(WidgetRef ref, TransactionFilter filter) {
   final params = activeAccountFilteredParams(ref.read(activeAccountProvider).value, filter);
   if (params == null) return null;
   return ref.read(filteredPaginationControllerProviderFamily(params).notifier);
