@@ -22,21 +22,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.portManager,
   });
 
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_HdLatticeErrorPtr => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_HdLatticeErrorPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError;
 
   @protected
-  HdLatticeError
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     dynamic raw,
   );
 
   @protected
-  HdLatticeError
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    dynamic raw,
-  );
+  HdLatticeError dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -102,14 +97,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WormholeResult dco_decode_wormhole_result(dynamic raw);
 
   @protected
-  HdLatticeError
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     SseDeserializer deserializer,
   );
 
   @protected
-  HdLatticeError
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  HdLatticeError sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     SseDeserializer deserializer,
   );
 
@@ -132,9 +125,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
-  List<Uint8List> sse_decode_list_list_prim_u_8_strict(
-    SseDeserializer deserializer,
-  );
+  List<Uint8List> sse_decode_list_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -182,15 +173,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   );
 
   @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     HdLatticeError self,
     SseSerializer serializer,
   );
@@ -205,10 +194,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_proof_input(
-    ProofInput self,
-    SseSerializer serializer,
-  );
+  void sse_encode_box_autoadd_proof_input(ProofInput self, SseSerializer serializer);
 
   @protected
   void sse_encode_keypair(Keypair self, SseSerializer serializer);
@@ -217,25 +203,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_list_prim_u_8_strict(
-    List<Uint8List> self,
-    SseSerializer serializer,
-  );
+  void sse_encode_list_list_prim_u_8_strict(List<Uint8List> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_prim_u_8_strict(
-    Uint8List self,
-    SseSerializer serializer,
-  );
+  void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
 
   @protected
-  void sse_encode_merkle_processed(
-    MerkleProcessed self,
-    SseSerializer serializer,
-  );
+  void sse_encode_merkle_processed(MerkleProcessed self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_u_8_array_32(U8Array32? self, SseSerializer serializer);
@@ -268,10 +245,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_usize(BigInt self, SseSerializer serializer);
 
   @protected
-  void sse_encode_wormhole_result(
-    WormholeResult self,
-    SseSerializer serializer,
-  );
+  void sse_encode_wormhole_result(WormholeResult self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -282,16 +256,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 class RustLibWire implements BaseWire {
   RustLibWire.fromExternalLibrary(ExternalLibrary lib);
 
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     int ptr,
   ) => wasmModule
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
         ptr,
       );
 
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
+  void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
     int ptr,
   ) => wasmModule
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
@@ -306,12 +278,8 @@ external RustLibWasmModule get wasmModule;
 @anonymous
 extension type RustLibWasmModule._(JSObject _) implements JSObject {
   external void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    int ptr,
-  );
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(int ptr);
 
   external void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(
-    int ptr,
-  );
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerHDLatticeError(int ptr);
 }
