@@ -56,6 +56,8 @@ final selectedAppLocaleProvider = StateNotifierProvider<SelectedAppLocaleNotifie
 class SelectedAppLocaleNotifier extends StateNotifier<AppLocale> {
   final SettingsService _settings;
 
+  static final String _defaultLocaleCode = Platform.localeName.split('_').first.toLowerCase();
+
   SelectedAppLocaleNotifier(this._settings) : super(_load(_settings));
 
   Future<void> select(AppLocale locale) async {
@@ -64,12 +66,12 @@ class SelectedAppLocaleNotifier extends StateNotifier<AppLocale> {
   }
 
   void reset() {
-    state = _load(_settings);
+    state = AppLocale.fromCode(_defaultLocaleCode);
   }
 
   static AppLocale _load(SettingsService settings) {
     String? code = settings.getSelectedAppLocale();
-    code ??= Platform.localeName.split('_').first.toLowerCase();
+    code ??= _defaultLocaleCode;
 
     return AppLocale.fromCode(code);
   }
