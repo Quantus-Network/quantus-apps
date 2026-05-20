@@ -24,10 +24,7 @@ class SettingsPickerSearchField extends StatelessWidget {
       height: 48,
       child: Container(
         padding: const EdgeInsets.only(left: 12, right: 8),
-        decoration: BoxDecoration(
-          color: colors.surfaceDeep,
-          borderRadius: BorderRadius.circular(14),
-        ),
+        decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
         child: Row(
           children: [
             Icon(Icons.search, size: 18, color: colors.textLabel),
@@ -41,9 +38,7 @@ class SettingsPickerSearchField extends StatelessWidget {
                   isDense: true,
                   border: InputBorder.none,
                   hintText: hintText,
-                  hintStyle: text.smallParagraph?.copyWith(
-                    color: colors.textLabel,
-                  ),
+                  hintStyle: text.smallParagraph?.copyWith(color: colors.textLabel),
                 ),
               ),
             ),
@@ -85,15 +80,9 @@ class SettingsPickerListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(
-                  label,
-                  style: text.paragraph?.copyWith(color: fg, height: 1.2),
-                ),
+                child: Text(label, style: text.paragraph?.copyWith(color: fg, height: 1.2)),
               ),
-              if (selected) ...[
-                const SizedBox(width: 12),
-                Icon(Icons.check, size: 18, color: accent),
-              ],
+              if (selected) ...[const SizedBox(width: 12), Icon(Icons.check, size: 18, color: accent)],
             ],
           ),
         ),

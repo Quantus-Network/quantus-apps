@@ -102,13 +102,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     );
   }
 
-  Widget _depositBody(
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
-    SwapQuote quote,
-    double usd,
-  ) {
+  Widget _depositBody(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, SwapQuote quote, double usd) {
     final demoWarning = l10n.swapDepositDemoWarning;
 
     return Column(
@@ -240,10 +234,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
           style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
         ),
         const SizedBox(height: 12),
-        Text(
-          l10n.swapDepositProcessingBody,
-          style: text.paragraph?.copyWith(color: colors.textSecondary),
-        ),
+        Text(l10n.swapDepositProcessingBody, style: text.paragraph?.copyWith(color: colors.textSecondary)),
       ],
     );
   }
@@ -256,10 +247,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
         const SizedBox(height: 80),
         const SuccessCheck(),
         const SizedBox(height: 32),
-        Text(
-          l10n.swapDepositCompleteTitle,
-          style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20),
-        ),
+        Text(l10n.swapDepositCompleteTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary, fontSize: 20)),
         const SizedBox(height: 12),
         Text(
           l10n.swapDepositCompleteBody(amount),

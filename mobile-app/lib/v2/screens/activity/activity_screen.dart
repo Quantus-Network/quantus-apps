@@ -99,7 +99,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ),
                   ),
                   error: (e, _) => Center(
-                    child: Text(l10n.activityError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+                    child: Text(
+                      l10n.activityError(e.toString()),
+                      style: text.detail?.copyWith(color: colors.textError),
+                    ),
                   ),
                   data: (data) {
                     final txService = ref.read(transactionServiceProvider);
@@ -111,10 +114,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     );
                     if (all.isEmpty) {
                       return Center(
-                        child: Text(
-                          l10n.activityEmpty,
-                          style: text.paragraph?.copyWith(color: colors.textSecondary),
-                        ),
+                        child: Text(l10n.activityEmpty, style: text.paragraph?.copyWith(color: colors.textSecondary)),
                       );
                     }
                     final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);

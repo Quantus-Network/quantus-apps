@@ -171,9 +171,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
   }
 
   Widget _bottomContent(AppLocalizations l10n, String amountDisplay) {
-    final label = _amount > BigInt.zero
-        ? l10n.posAmountCharge(amountDisplay)
-        : l10n.posAmountEnterAmount;
+    final label = _amount > BigInt.zero ? l10n.posAmountCharge(amountDisplay) : l10n.posAmountEnterAmount;
 
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(label: label, onTap: _onCharge, isDisabled: !_isValid),

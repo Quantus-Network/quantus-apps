@@ -22,9 +22,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
     final l10n = ref.read(l10nProvider);
     setState(() => _isResetting = true);
 
-    final authed = await LocalAuthService().authenticate(
-      localizedReason: l10n.settingsResetAuthReason,
-    );
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsResetAuthReason);
 
     if (authed && mounted) {
       try {

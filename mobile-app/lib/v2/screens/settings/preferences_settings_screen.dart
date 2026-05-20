@@ -17,31 +17,21 @@ class PreferencesSettingsScreenV2 extends ConsumerStatefulWidget {
   const PreferencesSettingsScreenV2({super.key});
 
   @override
-  ConsumerState<PreferencesSettingsScreenV2> createState() =>
-      _PreferencesSettingsScreenV2State();
+  ConsumerState<PreferencesSettingsScreenV2> createState() => _PreferencesSettingsScreenV2State();
 }
 
-class _PreferencesSettingsScreenV2State
-    extends ConsumerState<PreferencesSettingsScreenV2> {
+class _PreferencesSettingsScreenV2State extends ConsumerState<PreferencesSettingsScreenV2> {
   void _toggleNotifications(bool enable) {
     final current = ref.read(notificationConfigProvider);
-    ref
-        .read(notificationConfigProvider.notifier)
-        .updateConfig(current.copyWith(enabled: enable));
+    ref.read(notificationConfigProvider.notifier).updateConfig(current.copyWith(enabled: enable));
   }
 
   void _openLanguagePicker() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const LanguagePickerScreenV2()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePickerScreenV2()));
   }
 
   void _openCurrencyPicker() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CurrencyPickerScreenV2()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const CurrencyPickerScreenV2()));
   }
 
   @override
@@ -65,16 +55,9 @@ class _PreferencesSettingsScreenV2State
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  appLocale.displayName,
-                  style: text.smallParagraph?.copyWith(color: colors.textMuted),
-                ),
+                Text(appLocale.displayName, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
                 const SizedBox(width: 4),
-                SettingsTappableRowUtils.chevron(
-                  colors,
-                  color: colors.textMuted,
-                  size: 18,
-                ),
+                SettingsTappableRowUtils.chevron(colors, color: colors.textMuted, size: 18),
               ],
             ),
           ),
@@ -86,16 +69,9 @@ class _PreferencesSettingsScreenV2State
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  fiat.code,
-                  style: text.smallParagraph?.copyWith(color: colors.textMuted),
-                ),
+                Text(fiat.code, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
                 const SizedBox(width: 4),
-                SettingsTappableRowUtils.chevron(
-                  colors,
-                  color: colors.textMuted,
-                  size: 18,
-                ),
+                SettingsTappableRowUtils.chevron(colors, color: colors.textMuted, size: 18),
               ],
             ),
           ),

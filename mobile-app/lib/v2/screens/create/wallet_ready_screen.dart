@@ -23,11 +23,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
     final l10n = ref.watch(l10nProvider);
     final data = SettingsCautionScaffoldData(
       headline: l10n.createWalletCautionHeadline,
-      bulletItems: [
-        l10n.createWalletCautionBullet1,
-        l10n.createWalletCautionBullet2,
-        l10n.createWalletCautionBullet3,
-      ],
+      bulletItems: [l10n.createWalletCautionBullet1, l10n.createWalletCautionBullet2, l10n.createWalletCautionBullet3],
       checkboxLabel: l10n.createWalletCautionCheckboxLabel,
     );
 

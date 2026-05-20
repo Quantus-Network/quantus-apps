@@ -21,8 +21,7 @@ class LanguagePickerScreenV2 extends ConsumerWidget {
       selected: selected,
       labelBuilder: (locale) => locale.displayName,
       filter: (locale, query) {
-        return locale.displayName.toLowerCase().contains(query) ||
-            locale.languageCode.toLowerCase().contains(query);
+        return locale.displayName.toLowerCase().contains(query) || locale.languageCode.toLowerCase().contains(query);
       },
       onSelect: (locale) async {
         try {

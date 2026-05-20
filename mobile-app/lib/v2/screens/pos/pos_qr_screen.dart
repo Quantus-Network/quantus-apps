@@ -71,21 +71,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    debugPrint(
-      '[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck',
-    );
+    debugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
-        debugPrint(
-          '[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}',
-        );
+        debugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (received != expectedPlanck) {
-          debugPrint(
-            '[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring',
-          );
+          debugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
           return;
         }
 
@@ -180,49 +174,29 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final display = ref.watch(txAmountDisplayProvider)(planck, withSignPrefix: false, isSend: false, quanDecimals: 4);
 
     return ScaffoldBase(
-      appBar: V2AppBar(
-        title: _isPaid ? l10n.posQrTitlePaymentReceived : l10n.posQrTitleScanToPay,
-      ),
+      appBar: V2AppBar(title: _isPaid ? l10n.posQrTitlePaymentReceived : l10n.posQrTitleScanToPay),
       mainContent: accountAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
-          child: Text(
-            l10n.posQrError('$e'),
-            style: text.detail?.copyWith(color: colors.textError),
-          ),
+          child: Text(l10n.posQrError('$e'), style: text.detail?.copyWith(color: colors.textError)),
         ),
         data: (active) {
           if (active == null) {
             return Center(child: Text(l10n.posQrNoActiveAccount));
           }
-          _request ??= _posService.createPaymentRequest(
-            accountId: active.account.accountId,
-            amount: widget.amount,
-          );
+          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
           if (_isPaid) {
-            return _buildPaidContent(
-              l10n,
-              appLocale.numberFormatLocale,
-              colors,
-              text,
-              display.primaryAmount,
-            );
+            return _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
           }
           return _buildQrContent(l10n, _request!, colors, text, display);
         },
       ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: _isPaid ? _buildPaidButtons(l10n) : _buildQrButton(l10n),
-      ),
+      bottomContent: ScaffoldBaseBottomContent(child: _isPaid ? _buildPaidButtons(l10n) : _buildQrButton(l10n)),
     );
   }
 
   Widget _buildQrButton(AppLocalizations l10n) {
-    return QuantusButton.simple(
-      label: l10n.posQrNewCharge,
-      onTap: _newCharge,
-      variant: ButtonVariant.primary,
-    );
+    return QuantusButton.simple(label: l10n.posQrNewCharge, onTap: _newCharge, variant: ButtonVariant.primary);
   }
 
   Widget _buildPaidButtons(AppLocalizations l10n) {
@@ -269,21 +243,14 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 32),
         Text(
           l10n.posQrAmountReceived(amountDisplay),
-          style: text.smallTitle?.copyWith(
-            color: colors.textLightGray,
-            fontSize: 32,
-            fontWeight: FontWeight.w400,
-          ),
+          style: text.smallTitle?.copyWith(color: colors.textLightGray, fontSize: 32, fontWeight: FontWeight.w400),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         if (_paidAt != null)
           Text(
             _formatPaidAt(_paidAt!, localeName, l10n),
-            style: text.smallParagraph?.copyWith(
-              color: colors.textTertiary,
-              letterSpacing: 0.7,
-            ),
+            style: text.smallParagraph?.copyWith(color: colors.textTertiary, letterSpacing: 0.7),
             textAlign: TextAlign.center,
           ),
         const SizedBox(height: 32),
@@ -307,21 +274,13 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     );
   }
 
-  Widget _buildFromSection(
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
-    String formattedAddress,
-  ) {
+  Widget _buildFromSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, String formattedAddress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           l10n.posQrFrom,
-          style: text.paragraph?.copyWith(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w500,
-          ),
+          style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
@@ -360,10 +319,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           border: Border(bottom: BorderSide(color: colors.textTertiary, width: 1)),
         ),
         padding: const EdgeInsets.only(bottom: 3),
-        child: Text(
-          l10n.activityDetailViewExplorer,
-          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-        ),
+        child: Text(l10n.activityDetailViewExplorer, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       ),
     );
   }
@@ -393,10 +349,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       children: [
         Text(
           display.primaryAmount,
-          style: text.totalMinedBlocks?.copyWith(
-            color: colors.textPrimary,
-            letterSpacing: -2.77,
-          ),
+          style: text.totalMinedBlocks?.copyWith(color: colors.textPrimary, letterSpacing: -2.77),
         ),
         const SizedBox(height: 8),
         Row(
@@ -404,10 +357,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           children: [
             Text(
               '≈ ${display.secondaryAmount}',
-              style: text.paragraph?.copyWith(
-                color: colors.textTertiary,
-                fontFamily: AppTextTheme.fontFamilySecondary,
-              ),
+              style: text.paragraph?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
             ),
             const SizedBox(width: 8),
             QuantusIconButton.circular(
@@ -435,10 +385,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         children: [
           Loader(size: 14, color: colors.textMuted),
           const SizedBox(width: 9),
-          Text(
-            l10n.posQrWaitingForPayment,
-            style: text.detail?.copyWith(color: colors.textMuted),
-          ),
+          Text(l10n.posQrWaitingForPayment, style: text.detail?.copyWith(color: colors.textMuted)),
         ],
       ),
     );
@@ -447,10 +394,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   Widget _buildErrorSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       children: [
-        Text(
-          l10n.posQrNetworkError,
-          style: text.detail?.copyWith(color: colors.textError),
-        ),
+        Text(l10n.posQrNetworkError, style: text.detail?.copyWith(color: colors.textError)),
         const SizedBox(height: 8),
         QuantusButton.simple(
           label: l10n.posQrTryAgain,

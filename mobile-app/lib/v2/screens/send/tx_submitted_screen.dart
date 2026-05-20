@@ -120,7 +120,11 @@ class TxSubmittedScreen extends ConsumerWidget {
           ],
         ),
         bottomContent: ScaffoldBaseBottomContent(
-          child: QuantusButton.simple(label: l10n.sendTxSubmittedDone, variant: ButtonVariant.primary, onTap: () => _popToHome(context)),
+          child: QuantusButton.simple(
+            label: l10n.sendTxSubmittedDone,
+            variant: ButtonVariant.primary,
+            onTap: () => _popToHome(context),
+          ),
         ),
       ),
     );

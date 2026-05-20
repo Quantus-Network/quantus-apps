@@ -140,7 +140,11 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(label: l10n.accountsSheetAddAccount, onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
+        QuantusButton.simple(
+          label: l10n.accountsSheetAddAccount,
+          onTap: _openAddAccountMenu,
+          variant: ButtonVariant.primary,
+        ),
       ],
     );
   }
@@ -151,10 +155,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final balanceText = balanceAsync.when(
       loading: () => l10n.accountsSheetLoading,
       error: (_, _) => l10n.accountsSheetBalanceUnavailable,
-      data: (balance) => l10n.accountsSheetBalance(
-        formattingService.formatBalance(balance),
-        AppConstants.tokenSymbol,
-      ),
+      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
     final colors = context.colors;
 

@@ -20,14 +20,12 @@ class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhras
 
   Future<void> _onContinue() async {
     final l10n = ref.read(l10nProvider);
-    final authed = await LocalAuthService().authenticate(
-      localizedReason: l10n.settingsRecoveryConfirmAuthReason,
-    );
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsRecoveryConfirmAuthReason);
 
     if (authed && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: widget.walletIndex)),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => RecoveryPhraseScreen(walletIndex: widget.walletIndex)));
     } else {
       if (mounted) {
         context.showErrorToaster(message: l10n.settingsRecoveryConfirmAuthRequired);

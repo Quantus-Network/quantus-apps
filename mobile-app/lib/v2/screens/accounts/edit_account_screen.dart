@@ -77,7 +77,12 @@ class EditAccountScreenState extends ConsumerState<EditAccountScreen> {
         children: [NameField(controller: _controller)],
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(variant: ButtonVariant.primary, label: l10n.editAccountDone, onTap: _save, isLoading: _saving),
+        child: QuantusButton.simple(
+          variant: ButtonVariant.primary,
+          label: l10n.editAccountDone,
+          onTap: _save,
+          isLoading: _saving,
+        ),
       ),
     );
   }

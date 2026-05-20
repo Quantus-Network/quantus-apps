@@ -126,11 +126,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.createAccountAppBarTitle),
-      mainContent: NameField(
-        controller: _accountName,
-        subtitle: l10n.createAccountSubtitle,
-        error: _error,
-      ),
+      mainContent: NameField(controller: _accountName, subtitle: l10n.createAccountSubtitle, error: _error),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           label: l10n.createAccountButton,

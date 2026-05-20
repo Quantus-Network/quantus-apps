@@ -216,7 +216,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                   const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
                 else if (_recents.isNotEmpty) ...[
                   SliverToBoxAdapter(
-                    child: Text(l10n.sendSelectRecipientRecents, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                    child: Text(
+                      l10n.sendSelectRecipientRecents,
+                      style: text.smallTitle?.copyWith(color: colors.textPrimary),
+                    ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   SliverList(
@@ -278,7 +281,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                           textCapitalization: TextCapitalization.none,
                           scrollPadding: const EdgeInsets.only(bottom: 120),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                          decoration: InputDecoration(hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol)),
+                          decoration: InputDecoration(
+                            hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
+                          ),
                         ),
                       ),
                     ],

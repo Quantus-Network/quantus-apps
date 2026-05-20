@@ -34,15 +34,9 @@ class TestnetRewardsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                l10n.settingsTestnetLoadError,
-                style: text.paragraph?.copyWith(color: colors.textPrimary),
-              ),
+              Text(l10n.settingsTestnetLoadError, style: text.paragraph?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 8),
-              Text(
-                l10n.settingsMiningCheckConnection,
-                style: text.detail?.copyWith(color: colors.textTertiary),
-              ),
+              Text(l10n.settingsMiningCheckConnection, style: text.detail?.copyWith(color: colors.textTertiary)),
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => ref.invalidate(miningRewardsProvider),
@@ -58,12 +52,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(
-    AppLocalizations l10n,
-    MiningRewardsData data,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
+  Widget _buildContent(AppLocalizations l10n, MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
     final testnets = [
       ('Planck', data.planckBlocks),
       ('Dirac', data.diracBlocks),
@@ -87,10 +76,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
                 style: text.largeTitle?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              Text(
-                l10n.settingsTestnetTotalDescription,
-                style: text.detail?.copyWith(color: colors.textTertiary),
-              ),
+              Text(l10n.settingsTestnetTotalDescription, style: text.detail?.copyWith(color: colors.textTertiary)),
             ],
           ),
         ),
@@ -112,18 +98,12 @@ class TestnetRewardsScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        testnets[i].$1,
-                        style: text.paragraph?.copyWith(color: colors.textPrimary),
-                      ),
+                      child: Text(testnets[i].$1, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                     ),
                     const Text('💰 ', style: TextStyle(fontSize: 14)),
                     Text(
                       l10n.settingsTestnetRowBlocks(testnets[i].$2),
-                      style: text.smallParagraph?.copyWith(
-                        color: colors.accentGreen,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

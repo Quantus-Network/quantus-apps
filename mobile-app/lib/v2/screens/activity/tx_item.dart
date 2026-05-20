@@ -31,12 +31,7 @@ class TxItemData {
     required this.counterpartyAddr,
   });
 
-  factory TxItemData.from(
-    TransactionEvent tx,
-    String accountId,
-    AppColorsV2 colors,
-    AppLocalizations l10n,
-  ) {
+  factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;

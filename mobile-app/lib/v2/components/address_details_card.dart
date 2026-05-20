@@ -75,12 +75,7 @@ class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
     return SplitCard(
       topChild: InkWell(
         onTap: () => _copyAddress(context),
-        child: _buildItem(
-          context,
-          l10n.componentAddressLabel,
-          widget.accountId,
-          isCopied: _addressCopied,
-        ),
+        child: _buildItem(context, l10n.componentAddressLabel, widget.accountId, isCopied: _addressCopied),
       ),
       bottomChild: InkWell(
         onTap: () => _copyChecksum(context, l10n),

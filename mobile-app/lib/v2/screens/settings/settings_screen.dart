@@ -46,20 +46,12 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
                   subtitle: l10n.settingsMiningRewardsSubtitle(data.totalBlocks),
                   trailing: trailing,
                 ),
-                loading: () => _buildTappableRow(
-                  e.value,
-                  subtitle: l10n.accountsSheetLoading,
-                  trailing: trailing,
-                ),
+                loading: () => _buildTappableRow(e.value, subtitle: l10n.accountsSheetLoading, trailing: trailing),
                 error: (err, st) {
                   debugPrint('Error getting mining rewards: ${err.toString()}');
                   debugPrint('Stack trace: ${st.toString()}');
 
-                  return _buildTappableRow(
-                    e.value,
-                    subtitle: l10n.settingsMiningRewardsError,
-                    trailing: trailing,
-                  );
+                  return _buildTappableRow(e.value, subtitle: l10n.settingsMiningRewardsError, trailing: trailing);
                 },
               )
             else
@@ -71,14 +63,13 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
     );
   }
 
-  Widget _buildTappableRow(_SettingsHubItem item, {required Widget trailing, String? subtitle}) =>
-      SettingsTappableRow(
-        leading: item.leading,
-        title: item.title,
-        subtitle: subtitle ?? item.subtitle,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.page)),
-        trailing: trailing,
-      );
+  Widget _buildTappableRow(_SettingsHubItem item, {required Widget trailing, String? subtitle}) => SettingsTappableRow(
+    leading: item.leading,
+    title: item.title,
+    subtitle: subtitle ?? item.subtitle,
+    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.page)),
+    trailing: trailing,
+  );
 }
 
 class _SettingsHubItem {

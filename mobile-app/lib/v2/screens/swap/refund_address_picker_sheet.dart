@@ -52,10 +52,7 @@ class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPicke
           if (_addresses.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(
-                l10n.swapRefundPickerEmpty,
-                style: text.detail?.copyWith(color: colors.textTertiary),
-              ),
+              child: Text(l10n.swapRefundPickerEmpty, style: text.detail?.copyWith(color: colors.textTertiary)),
             )
           else
             ConstrainedBox(

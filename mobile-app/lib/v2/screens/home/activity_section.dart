@@ -47,7 +47,11 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
         if (all.isEmpty) {
           return Column(
-            children: [const SizedBox(height: 40), _header(colors, text, context, l10n), _emptyState(text, colors, l10n)],
+            children: [
+              const SizedBox(height: 40),
+              _header(colors, text, context, l10n),
+              _emptyState(text, colors, l10n),
+            ],
           );
         }
 

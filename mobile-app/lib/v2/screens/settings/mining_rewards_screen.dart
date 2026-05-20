@@ -33,19 +33,13 @@ class MiningRewardsScreen extends ConsumerWidget {
         miningAsync.when(
           data: (data) => data.totalBlocks > 0 ? _WithRewards(data: data) : _NoRewards(l10n: l10n),
           loading: () => _NoRewards(l10n: l10n, isLoading: true),
-          error: (err, _) => _ErrorState(
-            colors: colors,
-            text: text,
-            l10n: l10n,
-            onRetry: () => ref.invalidate(miningRewardsProvider),
-          ),
+          error: (err, _) =>
+              _ErrorState(colors: colors, text: text, l10n: l10n, onRetry: () => ref.invalidate(miningRewardsProvider)),
         ),
       ],
       bottomContent: miningAsync.when(
         data: (data) => data.totalBlocks > 0
-            ? ScaffoldBaseBottomContent(
-                child: QuantusButton.simple(label: l10n.settingsMiningRedeem, onTap: null),
-              )
+            ? ScaffoldBaseBottomContent(child: QuantusButton.simple(label: l10n.settingsMiningRedeem, onTap: null))
             : null,
         loading: () => null,
         error: (err, _) => null,
@@ -250,10 +244,7 @@ class _CardTopSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              l10n.settingsMiningBlocksMined,
-              style: text.receiveLabel?.copyWith(color: colors.textLabel),
-            ),
+            Text(l10n.settingsMiningBlocksMined, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
             Row(
               children: [
                 Container(
@@ -276,10 +267,7 @@ class _CardTopSection extends StatelessWidget {
         else
           Text('$totalBlocks', style: text.totalMinedBlocks?.copyWith(color: totalBlocksColor)),
         const SizedBox(height: 4),
-        Text(
-          l10n.settingsMiningBlocksAcrossTestnets,
-          style: text.detail?.copyWith(color: colors.textMuted),
-        ),
+        Text(l10n.settingsMiningBlocksAcrossTestnets, style: text.detail?.copyWith(color: colors.textMuted)),
       ],
     );
   }
@@ -339,12 +327,7 @@ class _StatColumn extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              softWrap: false,
-              style: text.sendSectionLabel?.copyWith(color: valueColor),
-            ),
+            child: Text(value, maxLines: 1, softWrap: false, style: text.sendSectionLabel?.copyWith(color: valueColor)),
           ),
       ],
     );
@@ -427,12 +410,7 @@ class _ErrorState extends StatelessWidget {
   final AppLocalizations l10n;
   final VoidCallback onRetry;
 
-  const _ErrorState({
-    required this.colors,
-    required this.text,
-    required this.l10n,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.colors, required this.text, required this.l10n, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -442,15 +420,9 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              l10n.settingsMiningLoadError,
-              style: text.paragraph?.copyWith(color: colors.textPrimary),
-            ),
+            Text(l10n.settingsMiningLoadError, style: text.paragraph?.copyWith(color: colors.textPrimary)),
             const SizedBox(height: 8),
-            Text(
-              l10n.settingsMiningCheckConnection,
-              style: text.detail?.copyWith(color: colors.textTertiary),
-            ),
+            Text(l10n.settingsMiningCheckConnection, style: text.detail?.copyWith(color: colors.textTertiary)),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: onRetry,

@@ -111,7 +111,9 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
           CustomTextField(
             controller: _name,
             labelText: l10n.addHardwareAccountNameLabel,
-            hintText: widget.isNewWallet ? l10n.addHardwareAccountNameHintWallet : l10n.addHardwareAccountNameHintAccount,
+            hintText: widget.isNewWallet
+                ? l10n.addHardwareAccountNameHintWallet
+                : l10n.addHardwareAccountNameHintAccount,
             onChanged: (_) {
               if (_error != null) setState(() => _error = null);
             },
@@ -152,11 +154,7 @@ class _AddHardwareAccountScreenState extends ConsumerState<AddHardwareAccountScr
             Text(_error!, style: context.themeText.tiny?.copyWith(color: Colors.red)),
           ],
           const Spacer(),
-          QuantusButton.simple(
-            label: title,
-            onTap: _isSaving ? null : _save,
-            isLoading: _isSaving,
-          ),
+          QuantusButton.simple(label: title, onTap: _isSaving ? null : _save, isLoading: _isSaving),
           SizedBox(height: context.themeSize.bottomButtonSpacing),
         ],
       ),

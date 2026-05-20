@@ -43,9 +43,7 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
       _onDetect(capture);
     } else {
       final l10n = ref.read(l10nProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.componentQrScannerNoCode)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.componentQrScannerNoCode)));
     }
   }
 
@@ -89,12 +87,7 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
               ],
             ),
           ),
-          Positioned(
-            top: 20,
-            left: 24,
-            right: 24,
-            child: V2AppBar(title: l10n.addHardwareAccountScanQr),
-          ),
+          Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: l10n.addHardwareAccountScanQr)),
         ],
       ),
     );

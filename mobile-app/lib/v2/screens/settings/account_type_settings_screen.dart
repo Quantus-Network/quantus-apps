@@ -14,10 +14,7 @@ class AccountTypeSettingsScreenV2 extends ConsumerWidget {
   static List<({String title, String subtitle})> _upcomingFeatures(AppLocalizations l10n) {
     return [
       (title: l10n.settingsAccountTypeReversibleTitle, subtitle: l10n.settingsAccountTypeReversibleSubtitle),
-      (
-        title: l10n.settingsAccountTypeHighSecurityTitle,
-        subtitle: l10n.settingsAccountTypeHighSecuritySubtitle,
-      ),
+      (title: l10n.settingsAccountTypeHighSecurityTitle, subtitle: l10n.settingsAccountTypeHighSecuritySubtitle),
       (title: l10n.settingsAccountTypeMultiSigTitle, subtitle: l10n.settingsAccountTypeMultiSigSubtitle),
       (title: l10n.settingsAccountTypeHardwareTitle, subtitle: l10n.settingsAccountTypeHardwareSubtitle),
     ];
@@ -34,10 +31,7 @@ class AccountTypeSettingsScreenV2 extends ConsumerWidget {
       appBar: V2AppBar(title: l10n.settingsAccountTypeScreenTitle),
       mainContent: ListView(
         children: [
-          Text(
-            l10n.settingsAccountTypeIntro,
-            style: text.smallParagraph?.copyWith(color: colors.textMuted),
-          ),
+          Text(l10n.settingsAccountTypeIntro, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
           const SizedBox(height: 40),
           for (var i = 0; i < upcomingFeatures.length; i++)
             _AccountFeatureBlock(

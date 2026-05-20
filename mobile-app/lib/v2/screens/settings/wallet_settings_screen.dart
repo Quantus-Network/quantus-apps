@@ -61,10 +61,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
-          child: Text(
-            l10n.settingsWalletFailedToLoad,
-            style: text.paragraph?.copyWith(color: colors.textSecondary),
-          ),
+          child: Text(l10n.settingsWalletFailedToLoad, style: text.paragraph?.copyWith(color: colors.textSecondary)),
         ),
         data: (accounts) => ListView(
           children: [

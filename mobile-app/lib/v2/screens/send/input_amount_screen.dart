@@ -301,7 +301,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.sendInputAmountSendTo, style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel)),
+                Text(
+                  l10n.sendInputAmountSendTo,
+                  style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel),
+                ),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -455,7 +458,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.sendInputAmountAvailableBalance, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(
+                          l10n.sendInputAmountAvailableBalance,
+                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                        ),
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
@@ -472,7 +478,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(l10n.sendInputAmountNetworkFee, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(
+                          l10n.sendInputAmountNetworkFee,
+                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                        ),
                         const SizedBox(height: 4),
                         if (!_isFetchingFee)
                           Text(

@@ -15,20 +15,12 @@ class SettingsCautionScaffoldData {
   final List<String> bulletItems;
   final String checkboxLabel;
 
-  const SettingsCautionScaffoldData({
-    required this.headline,
-    required this.bulletItems,
-    required this.checkboxLabel,
-  });
+  const SettingsCautionScaffoldData({required this.headline, required this.bulletItems, required this.checkboxLabel});
 
   factory SettingsCautionScaffoldData.recoveryPhrase(AppLocalizations l10n) {
     return SettingsCautionScaffoldData(
       headline: l10n.createWalletCautionHeadline,
-      bulletItems: [
-        l10n.createWalletCautionBullet1,
-        l10n.createWalletCautionBullet2,
-        l10n.createWalletCautionBullet3,
-      ],
+      bulletItems: [l10n.createWalletCautionBullet1, l10n.createWalletCautionBullet2, l10n.createWalletCautionBullet3],
       checkboxLabel: l10n.createWalletCautionCheckboxLabel,
     );
   }

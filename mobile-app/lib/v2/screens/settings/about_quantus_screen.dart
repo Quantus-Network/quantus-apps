@@ -25,11 +25,7 @@ class AboutQuantusScreenV2 extends ConsumerWidget {
   static List<({String title, String subtitle, String path})> _externalLinks(AppLocalizations l10n) {
     return [
       (title: l10n.settingsAboutTerms, subtitle: l10n.settingsAboutTermsSubtitle, path: '/terms'),
-      (
-        title: l10n.settingsAboutPrivacy,
-        subtitle: l10n.settingsAboutPrivacySubtitle,
-        path: '/privacy-policy',
-      ),
+      (title: l10n.settingsAboutPrivacy, subtitle: l10n.settingsAboutPrivacySubtitle, path: '/privacy-policy'),
       (title: l10n.settingsAboutWebsite, subtitle: l10n.settingsAboutWebsiteSubtitle, path: ''),
     ];
   }

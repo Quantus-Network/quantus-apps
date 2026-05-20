@@ -33,10 +33,7 @@ class RecoveryPhraseBody extends ConsumerWidget {
 
   void _copyToClipboard(BuildContext context, WidgetRef ref) {
     final l10n = ref.read(l10nProvider);
-    context.copyTextWithToaster(
-      words.join(' '),
-      message: l10n.recoveryPhraseBodyCopiedMessage,
-    );
+    context.copyTextWithToaster(words.join(' '), message: l10n.recoveryPhraseBodyCopiedMessage);
   }
 
   @override
@@ -50,10 +47,7 @@ class RecoveryPhraseBody extends ConsumerWidget {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.recoveryPhraseBodyInstructions,
-            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-          ),
+          Text(l10n.recoveryPhraseBodyInstructions, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
           const SizedBox(height: 24),
           Expanded(
             child: isGridLoading

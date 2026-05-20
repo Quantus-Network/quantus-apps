@@ -24,11 +24,7 @@ class WelcomeScreenV2 extends ConsumerWidget {
           const SizedBox(height: 16),
           SizedBox(
             width: 210,
-            child: Text(
-              l10n.welcomeTagline,
-              textAlign: TextAlign.center,
-              style: context.themeText.mediumTitle,
-            ),
+            child: Text(l10n.welcomeTagline, textAlign: TextAlign.center, style: context.themeText.mediumTitle),
           ),
           const SizedBox(height: 56),
           QuantusButton.simple(

@@ -111,11 +111,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     );
   }
 
-  Widget? _buildBottomContent(
-    AppLocalizations l10n,
-    bool isLoading,
-    ReceiveTab selectedTab,
-  ) {
+  Widget? _buildBottomContent(AppLocalizations l10n, bool isLoading, ReceiveTab selectedTab) {
     Widget content;
 
     if (isLoading) {

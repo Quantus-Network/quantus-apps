@@ -135,9 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       data: (active) {
         if (active == null) {
-          return ScaffoldBase(
-            mainContent: Center(child: Text(l10n.homeNoActiveAccount)),
-          );
+          return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
         }
         return ScaffoldBase.refreshable(
           onRefresh: _refresh,
