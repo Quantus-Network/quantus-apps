@@ -90,7 +90,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   Future<void> _showMnemonicLostDialog() async {
-    final l10n = ref.watch(l10nProvider);
+    final l10n = ref.read(l10nProvider);
 
     await BottomSheetContainer.show(
       context,

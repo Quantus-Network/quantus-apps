@@ -44,7 +44,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final locale = ref.watch(localeProvider);
+    final appLocale = ref.watch(selectedAppLocaleProvider);
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
@@ -117,7 +117,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         ),
                       );
                     }
-                    final grouped = _groupByDate(all, l10n, locale.toString());
+                    final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
 
                     return ListView.builder(
                       padding: EdgeInsets.zero,

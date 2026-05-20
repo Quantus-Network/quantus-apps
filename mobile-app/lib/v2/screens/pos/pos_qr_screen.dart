@@ -171,7 +171,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final locale = ref.watch(localeProvider);
+    final appLocale = ref.watch(selectedAppLocaleProvider);
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
@@ -202,7 +202,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           if (_isPaid) {
             return _buildPaidContent(
               l10n,
-              locale.toString(),
+              appLocale.numberFormatLocale,
               colors,
               text,
               display.primaryAmount,

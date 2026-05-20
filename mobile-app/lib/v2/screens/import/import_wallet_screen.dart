@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -114,7 +115,10 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-    } catch (_) {}
+    } catch (e, st) {
+      print('error discovering accounts: $e');
+      TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
+    }
   }
 
   @override
@@ -132,10 +136,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Text(
-                l10n.importWalletDescription,
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
-              ),
+              Text(l10n.importWalletDescription, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 16),
               Container(
                 height: 202,

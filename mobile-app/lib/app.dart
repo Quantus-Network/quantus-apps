@@ -43,11 +43,12 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
 
   @override
   Widget build(BuildContext context) {
-    final locale = ref.watch(localeProvider);
+    final appLocale = ref.watch(selectedAppLocaleProvider);
 
     return MaterialApp(
       title: 'Quantus Wallet',
-      locale: locale,
+      locale: appLocale.flutterLocale,
+      // Framework widgets only; app strings use l10nProvider (see l10n_provider.dart).
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       navigatorObservers: [TelemetryNavigatorObserver()],
