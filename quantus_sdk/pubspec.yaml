@@ -12,9 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  rust_lib_resonance_network_wallet:
+  rust_lib_quantus_wallet:
     path: ./rust_builder
-  flutter_rust_bridge: ^2.11.1
+  flutter_rust_bridge: ^2.12.0
 
   # Shared (canonical versions in melos.yaml)
   # DO NOT UPDATE polkadart - newer versions are incompatible with our ML-DSA

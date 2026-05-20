@@ -90,5 +90,5 @@ dependencies {
 apply from: "../../../quantus_sdk/rust_builder/cargokit/gradle/plugin.gradle"
 cargokit {
     manifestDir = "../../../quantus_sdk/rust"
-    libname = "rust_lib_resonance_network_wallet"
+    libname = "rust_lib_quantus_wallet"
 }
