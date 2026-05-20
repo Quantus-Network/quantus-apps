@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
@@ -228,5 +227,5 @@ String dateGroupLabel(DateTime date, AppLocalizations l10n, String localeName) {
   final diff = today.difference(txDay).inDays;
   if (diff == 0) return l10n.activityDateToday;
   if (diff == 1) return l10n.activityDateYesterday;
-  return DateFormat.yMMMd(localeName).format(date);
+  return DatetimeFormattingService.formatDateGroupLabel(date, localeName);
 }

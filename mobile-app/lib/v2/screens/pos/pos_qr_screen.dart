@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
@@ -407,8 +406,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   String _formatPaidAt(DateTime dt, String localeName, AppLocalizations l10n) {
-    final date = DateFormat.yMMMd(localeName).format(dt);
-    final time = DateFormat.jm(localeName).format(dt);
-    return l10n.posQrPaidAt('$date, $time');
+    final dateTime = DatetimeFormattingService.formatPaidAt(dt, localeName);
+    return l10n.posQrPaidAt(dateTime);
   }
 }

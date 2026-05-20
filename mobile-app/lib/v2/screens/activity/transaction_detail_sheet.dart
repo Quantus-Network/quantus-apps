@@ -31,8 +31,9 @@ class _TransactionDetailSheet extends ConsumerWidget {
 
   String _title(AppLocalizations l10n) {
     if (_isPending) return l10n.activityDetailTitleSending;
-    if (tx.isReversibleScheduled)
+    if (tx.isReversibleScheduled) {
       return _isSend ? l10n.activityDetailTitleScheduled : l10n.activityDetailTitleReceiving;
+    }
     return _isSend ? l10n.activityDetailTitleSent : l10n.activityDetailTitleReceived;
   }
 
