@@ -26,7 +26,38 @@ class ActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
+  static const _loadMoreThreshold = 200.0;
+
   TransactionFilter _filterOption = TransactionFilter.all;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels < pos.maxScrollExtent - _loadMoreThreshold) return;
+
+    final pagination = ref.read(activeAccountPaginationProvider(_filterOption));
+    if (pagination == null || pagination.isFetching || !pagination.hasMore) return;
+
+    activeAccountPaginationNotifier(ref, _filterOption)?.fetchMore();
+  }
+
+  Future<void> _refresh() async {
+    await activeAccountPaginationNotifier(ref, _filterOption)?.loadingRefresh();
+  }
 
   void _onFilterOptionChanged(TransactionFilter option) {
     if (_filterOption == option) return;
@@ -49,6 +80,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(_filterOption));
+    final pagination = ref.watch(activeAccountPaginationProvider(_filterOption));
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
     final filterButtons = TransactionFilter.values
@@ -113,41 +145,74 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       otherTransfers: data.otherTransfers,
                     );
                     if (all.isEmpty) {
-                      return Center(
-                        child: Text(l10n.activityEmpty, style: text.paragraph?.copyWith(color: colors.textSecondary)),
+                      return RefreshIndicator(
+                        onRefresh: _refresh,
+                        color: colors.textPrimary,
+                        backgroundColor: colors.surface,
+                        child: ListView(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.sizeOf(context).height * 0.3,
+                              child: Center(
+                                child: Text(
+                                  l10n.activityEmpty,
+                                  style: text.paragraph?.copyWith(color: colors.textSecondary),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }
                     final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
+                    final showLoadMoreFooter =
+                        pagination != null && pagination.isFetching && pagination.hasMore;
 
-                    return ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: grouped.length,
-                      itemBuilder: (context, i) {
-                        final group = grouped[i];
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (i > 0) const SizedBox(height: 32),
-                            Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
-                            ...group.transactions.mapIndexed((index, tx) {
-                              final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
-                              final isLastItem = index == group.transactions.length - 1;
-                              return buildTxItem(
-                                tx,
-                                itemData,
-                                colors,
-                                text,
-                                l10n,
-                                formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
-                                isLastItem: isLastItem,
-                                onTap: () {
-                                  showTransactionDetailSheet(context, tx, active.account.accountId);
-                                },
-                              );
-                            }),
-                          ],
-                        );
-                      },
+                    return RefreshIndicator(
+                      onRefresh: _refresh,
+                      color: colors.textPrimary,
+                      backgroundColor: colors.surface,
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: grouped.length + (showLoadMoreFooter ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (showLoadMoreFooter && i == grouped.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: Center(child: Loader()),
+                            );
+                          }
+
+                          final group = grouped[i];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (i > 0) const SizedBox(height: 32),
+                              Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
+                              ...group.transactions.mapIndexed((index, tx) {
+                                final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
+                                final isLastItem = index == group.transactions.length - 1;
+                                return buildTxItem(
+                                  tx,
+                                  itemData,
+                                  colors,
+                                  text,
+                                  l10n,
+                                  formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                                  isLastItem: isLastItem,
+                                  onTap: () {
+                                    showTransactionDetailSheet(context, tx, active.account.accountId);
+                                  },
+                                );
+                              }),
+                            ],
+                          );
+                        },
+                      ),
                     );
                   },
                 );

@@ -31,9 +31,15 @@ final filteredTransactionsProviderFamily =
       final pending = ref.watch(pendingTransactionsProvider);
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
-      if (pagination.error != null) {
+      final hasLoadedChainData =
+          pagination.otherTransfers.isNotEmpty ||
+          pagination.scheduledReversibleTransfers.isNotEmpty;
+      if (pagination.error != null && !hasLoadedChainData) {
         print('FilteredTransactionsProvider: Error: ${pagination.error}');
         return AsyncValue.error(pagination.error!, pagination.stackTrace!);
+      }
+      if (pagination.error != null) {
+        print('FilteredTransactionsProvider: Load-more error: ${pagination.error}');
       }
       if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
         return const AsyncValue.loading();

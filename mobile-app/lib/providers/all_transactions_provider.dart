@@ -16,7 +16,10 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
   final pending = ref.watch(pendingTransactionsProvider);
   final pagination = ref.watch(paginationControllerProvider);
 
-  if (pagination.error != null) {
+  final hasLoadedChainData =
+      pagination.otherTransfers.isNotEmpty ||
+      pagination.scheduledReversibleTransfers.isNotEmpty;
+  if (pagination.error != null && !hasLoadedChainData) {
     return AsyncValue.error(pagination.error!, pagination.stackTrace!);
   }
   if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
