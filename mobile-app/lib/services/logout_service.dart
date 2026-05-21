@@ -17,12 +17,12 @@ class LogoutService {
   final Ref _ref;
   LogoutService(this._ref);
 
-  Future<void> logout(BuildContext context) async {
+  Future<void> _clearSettingsAndMemory() async {
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
       _ref.read(firebaseMessagingServiceProvider).unregisterDevice();
     }
 
-    SubstrateService().logout();
+    await SubstrateService().logout();
     _ref.read(pendingTransactionsProvider.notifier).clear();
     _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
     _ref.invalidate(miningRewardsProvider);
@@ -31,7 +31,10 @@ class LogoutService {
     _ref.read(accountAssociationsProvider.notifier).reset();
     _ref.read(selectedAppLocaleProvider.notifier).reset();
     _ref.read(selectedFiatCurrencyProvider.notifier).reset();
+  }
 
+  void logout(BuildContext context) {
+    _clearSettingsAndMemory();
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
   }
 }

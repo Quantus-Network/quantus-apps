@@ -26,7 +26,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
 
     if (authed && mounted) {
       try {
-        await ref.read(logoutServiceProvider).logout(context);
+        ref.read(logoutServiceProvider).logout(context);
       } catch (e) {
         if (mounted) {
           context.showErrorToaster(message: l10n.settingsResetFailed('$e'));
