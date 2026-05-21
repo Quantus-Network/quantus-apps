@@ -56,6 +56,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 
   Future<void> _refresh() async {
+    final pagination = ref.read(activeAccountPaginationProvider(_filterOption));
+    if (pagination == null || pagination.isFetching) return;
+
     await activeAccountPaginationNotifier(ref, _filterOption)?.loadingRefresh();
   }
 
