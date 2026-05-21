@@ -174,6 +174,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       color: colors.textPrimary,
                       backgroundColor: colors.surface,
                       child: ListView.builder(
+                        key: ValueKey(_filterOption),
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
