@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
@@ -114,7 +115,7 @@ class _SettingsPickerScreenState<T> extends State<SettingsPickerScreen<T>> {
                                   Navigator.pop(context);
                                 }
                               } catch (e) {
-                                debugPrint('error selecting locale: $e');
+                                quantusDebugPrint('[SettingsPickerScreen] error selecting item: $e');
                                 if (context.mounted) {
                                   context.showErrorToaster(message: widget.errorMessageBuilder(e.toString()));
                                 }

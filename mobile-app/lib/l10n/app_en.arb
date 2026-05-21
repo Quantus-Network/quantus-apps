@@ -66,10 +66,6 @@
     "@createWalletCautionCheckboxLabel": {
       "description": "Checkbox label on the recovery phrase caution screen"
     },
-    "createWalletCautionContinue": "Continue",
-    "@createWalletCautionContinue": {
-      "description": "Continue button on the recovery phrase caution screen"
-    },
     "createWalletRecoveryPhraseNext": "Next",
     "@createWalletRecoveryPhraseNext": {
       "description": "Primary button on the new wallet recovery phrase screen"
@@ -1561,5 +1557,9 @@
           "type": "String"
         }
       }
+    },
+    "commonContinue": "Continue",
+    "@commonContinue": {
+      "description": "Continue button on various screens"
     }
   }

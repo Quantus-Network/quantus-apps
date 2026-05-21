@@ -46,7 +46,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
     return SettingsCautionScaffold(
       appBarTitle: l10n.settingsResetTitle,
       data: SettingsCautionScaffoldData.walletReset(l10n),
-      continueLabel: l10n.createWalletCautionContinue,
+      continueLabel: l10n.commonContinue,
       betweenBulletsStyle: SettingsDividerStyle.sectionEmphasis,
       checkboxChecked: _backedUpChecked,
       onCheckboxChanged: () => setState(() => _backedUpChecked = !_backedUpChecked),

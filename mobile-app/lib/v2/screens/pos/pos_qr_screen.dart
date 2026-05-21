@@ -12,6 +12,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/pos_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
@@ -60,7 +61,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
     final expectedPlanck = formattingService.parseAmount(widget.amount);
     if (expectedPlanck == null) {
-      context.debugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
+      quantusDebugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
 
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
@@ -71,15 +72,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    context.debugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
+    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
-        context.debugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
+        quantusDebugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (received != expectedPlanck) {
-          context.debugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
           return;
         }
 
@@ -106,7 +107,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         }
       },
       onError: (e) {
-        context.debugPrint('[PosQr] watch error: $e');
+        quantusDebugPrint('[PosQr] watch error: $e');
         _txWatch.dispose();
         _timeoutTimer?.cancel();
         if (mounted) {

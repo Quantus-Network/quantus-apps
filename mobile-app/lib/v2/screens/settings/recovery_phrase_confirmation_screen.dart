@@ -40,7 +40,7 @@ class _RecoveryPhraseConfirmationScreenState extends ConsumerState<RecoveryPhras
     return SettingsCautionScaffold(
       appBarTitle: l10n.settingsRecoveryPhraseTitle,
       data: SettingsCautionScaffoldData.recoveryPhrase(l10n),
-      continueLabel: l10n.createWalletCautionContinue,
+      continueLabel: l10n.commonContinue,
       checkboxChecked: _acknowledged,
       onCheckboxChanged: () => setState(() => _acknowledged = !_acknowledged),
       onContinue: _onContinue,

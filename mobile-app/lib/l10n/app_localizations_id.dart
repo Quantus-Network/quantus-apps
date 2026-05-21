@@ -60,9 +60,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Saya memahami bahwa siapa pun yang memiliki recovery phrase saya dapat mengakses wallet saya. Saya akan menyimpannya dengan aman.';
 
   @override
-  String get createWalletCautionContinue => 'Lanjutkan';
-
-  @override
   String get createWalletRecoveryPhraseNext => 'Berikutnya';
 
   @override
@@ -1054,4 +1051,7 @@ class AppLocalizationsId extends AppLocalizations {
   String commonAmountBalance(String balance, String symbol) {
     return '$balance $symbol';
   }
+
+  @override
+  String get commonContinue => 'Lanjutkan';
 }

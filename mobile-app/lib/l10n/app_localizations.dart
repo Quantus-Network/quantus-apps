@@ -188,12 +188,6 @@ abstract class AppLocalizations {
   /// **'I understand that anyone with my recovery phrase can access my wallet. I will store it safely.'**
   String get createWalletCautionCheckboxLabel;
 
-  /// Continue button on the recovery phrase caution screen
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get createWalletCautionContinue;
-
   /// Primary button on the new wallet recovery phrase screen
   ///
   /// In en, this message translates to:
@@ -2023,6 +2017,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{balance} {symbol}'**
   String commonAmountBalance(String balance, String symbol);
+
+  /// Continue button on various screens
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get commonContinue;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
