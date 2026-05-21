@@ -164,7 +164,7 @@ class _StatusBadgeState extends State<_StatusBadge> with TickerProviderStateMixi
                     ? (Matrix4.identity()..rotateZ(_pulseAnimation.value))
                     : Matrix4.identity(),
                 child: RotationTransition(
-                  turns: widget.config.isAnimated ? _rotationController : AlwaysStoppedAnimation(0),
+                  turns: widget.config.isAnimated ? _rotationController : const AlwaysStoppedAnimation(0),
                   child: Icon(widget.config.icon, color: Colors.white, size: 18),
                 ),
               ),

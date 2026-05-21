@@ -77,6 +77,11 @@ export 'src/models/multisig_proposal.dart';
 export 'src/models/multisig_signer.dart';
 export 'src/services/multisig_service.dart';
 
+// Blockchain-infrastructure third-party re-exports. Apps consume these via
+// the SDK rather than depending on polkadart / bip39_mnemonic directly.
+export 'package:bip39_mnemonic/bip39_mnemonic.dart' show Mnemonic, Language;
+export 'package:polkadart/scale_codec.dart' show ByteOutput, CompactCodec;
+
 class QuantusSdk {
   /// Initialise the SDK (loads Rust FFI, etc).
   static Future<void> init() async {

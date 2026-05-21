@@ -25,6 +25,6 @@ class TelemetryService {
 
   /// Tracks that a screen has been viewed.
   void trackScreenView(String screenName, {Map<String, String>? parameters}) {
-    sendEvent('screen_view', parameters: {'screen': screenName, if (parameters != null) ...parameters});
+    sendEvent('screen_view', parameters: {'screen': screenName, ...?parameters});
   }
 }

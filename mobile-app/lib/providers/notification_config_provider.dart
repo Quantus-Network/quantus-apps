@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

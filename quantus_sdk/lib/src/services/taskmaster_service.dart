@@ -576,8 +576,8 @@ class TaskmasterService {
       BigInt totalRewards = BigInt.zero;
 
       for (final stats in minerStatsList) {
-        totalMinedBlocks += stats['totalMinedBlocks'] as int;
-        totalRewards += BigInt.from(stats['totalRewards']);
+        totalMinedBlocks += int.parse(stats['totalMinedBlocks'].toString());
+        totalRewards += BigInt.parse(stats['totalRewards'].toString());
       }
 
       return MinerStats(totalMinedBlocks: totalMinedBlocks, totalRewards: totalRewards);

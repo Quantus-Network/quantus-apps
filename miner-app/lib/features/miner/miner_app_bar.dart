@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quantus_miner/features/settings/settings_screen.dart';
+import 'package:quantus_miner/main.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
+import 'package:quantus_miner/src/services/miner_wallet_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-enum _MenuValues { logout, setting }
+enum _MenuValues { walletLogout, logout, setting }
 
 class MinerAppBar extends StatefulWidget {
   const MinerAppBar({super.key});
@@ -16,6 +18,39 @@ class MinerAppBar extends StatefulWidget {
 
 class _MinerAppBarState extends State<MinerAppBar> {
   final _minerSettingsService = MinerSettingsService();
+  final _walletService = MinerWalletService();
+
+  Future<void> _performWalletLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout Wallet?'),
+          content: const Text(
+            'This will wipe your secret phrase and inner hash from this app so you can enter a different one. Your node and node identity are kept. Mining will be stopped.\n\nContinue?',
+          ),
+          actions: <Widget>[
+            TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop(false)),
+            TextButton(
+              child: const Text('Logout Wallet', style: TextStyle(color: Colors.orange)),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final orchestrator = GlobalMinerManager.getOrchestrator();
+    if (orchestrator?.isRunning == true) {
+      await orchestrator!.stop();
+    }
+    await _walletService.deleteWalletData();
+    if (mounted) {
+      context.go('/rewards_address_setup');
+    }
+  }
 
   Future<void> _performLogout() async {
     final confirmed = await showDialog<bool>(
@@ -107,6 +142,9 @@ class _MinerAppBarState extends State<MinerAppBar> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       onSelected: (_MenuValues item) async {
                         switch (item) {
+                          case _MenuValues.walletLogout:
+                            await _performWalletLogout();
+                            break;
                           case _MenuValues.logout:
                             await _performLogout();
                             break;
@@ -117,15 +155,25 @@ class _MinerAppBarState extends State<MinerAppBar> {
                       },
                       itemBuilder: (BuildContext context) => <PopupMenuEntry<_MenuValues>>[
                         PopupMenuItem<_MenuValues>(
+                          value: _MenuValues.walletLogout,
+                          child: Row(
+                            children: [
+                              Icon(Icons.key_off, color: Colors.orange.useOpacity(0.9), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Logout Wallet',
+                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<_MenuValues>(
                           value: _MenuValues.logout,
                           child: Row(
                             children: [
                               Icon(Icons.logout, color: Colors.red.useOpacity(0.8), size: 20),
                               const SizedBox(width: 12),
-                              Text(
-                                'Logout (Full Reset)',
-                                style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14),
-                              ),
+                              Text('Reset App', style: TextStyle(color: Colors.white.useOpacity(0.9), fontSize: 14)),
                             ],
                           ),
                         ),

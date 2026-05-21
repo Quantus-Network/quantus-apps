@@ -1,12 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'dart:async';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
-import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 
 final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
   return RemoteConfigService();
@@ -68,11 +67,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
 
     final fcmService = ref.read(firebaseMessagingServiceProvider);
     await fcmService.init(); // This requests notification permission.
-
-    // Ensure navigatorKey.currentState is attached before handling any initial message.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      fcmService.setupNotificationTapHandlers(navigatorKey);
-    });
+    fcmService.setupNotificationTapHandlers();
 
     _isEnablingRemoteNotifications = false;
   }

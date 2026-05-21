@@ -57,9 +57,9 @@ class _WithRewards extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final numberFmt = ref.watch(numberFormattingServiceProvider);
-    final quanEarned = numberFmt.formatBalance(data.planckRewards, addSymbol: true);
-    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, addSymbol: true);
-    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, addSymbol: true);
+    final quanEarned = numberFmt.formatBalance(data.planckRewards, maxDecimals: 2, addSymbol: true);
+    final redeemedRewards = numberFmt.formatBalance(data.redeemedRewards, maxDecimals: 2, addSymbol: true);
+    final redeemableRewards = numberFmt.formatBalance(data.redeemableRewards, maxDecimals: 2, addSymbol: true);
 
     final colors = context.colors;
     final text = context.themeText;
@@ -303,7 +303,11 @@ class _StatColumn extends StatelessWidget {
         if (isLoading)
           const Skeleton(width: 100, height: 24)
         else
-          Text(value, style: text.sendSectionLabel?.copyWith(color: valueColor)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value, maxLines: 1, softWrap: false, style: text.sendSectionLabel?.copyWith(color: valueColor)),
+          ),
       ],
     );
   }

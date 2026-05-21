@@ -22,7 +22,7 @@ class FirebaseMessagingService {
   final SenotiService _senotiService = SenotiService();
 
   bool _isInitialized = false;
-  bool __hasRegisteredHandlers = false;
+  bool _hasRegisteredHandlers = false;
   String? _cachedToken;
 
   FirebaseMessagingService(this._ref);
@@ -106,6 +106,7 @@ class FirebaseMessagingService {
     }
     try {
       await _senotiService.unregisterDevice(token, _platform);
+      _cachedToken = null;
     } catch (e) {
       debugPrint('Failed to unregister device: $e');
     }
@@ -146,33 +147,33 @@ class FirebaseMessagingService {
   }
 
   /// Handle the user tapping on an FCM notification that launched/resumed the app.
-  /// Call this after the navigator key is available.
-  void setupNotificationTapHandlers(GlobalKey<NavigatorState> navigatorKey) {
-    if (__hasRegisteredHandlers) return;
-    __hasRegisteredHandlers = true;
+  void setupNotificationTapHandlers() {
+    if (_hasRegisteredHandlers) return;
+    _hasRegisteredHandlers = true;
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('FCM notification tapped (background): ${message.messageId}');
-      _handleNotificationTap(message, navigatorKey);
+      _handleNotificationTap(message);
     });
 
-    _handleInitialMessage(navigatorKey);
+    _handleInitialMessage();
   }
 
-  Future<void> _handleInitialMessage(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> _handleInitialMessage() async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       debugPrint('FCM initial message (terminated): ${initialMessage.messageId}');
-      _handleNotificationTap(initialMessage, navigatorKey);
+      _handleNotificationTap(initialMessage);
     }
   }
 
-  void _handleNotificationTap(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) {
+  void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
+
     if (data.isEmpty) return;
 
     final txService = _ref.read(transactionServiceProvider);
-    txService.navigateToTransactionFromPayloadIfPossible(data, navigatorKey);
+    txService.navigateToTransactionFromPayloadIfPossible(data);
   }
 
   NotificationData? _remoteMessageToNotificationData(RemoteMessage message) {
