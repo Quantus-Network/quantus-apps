@@ -60,7 +60,8 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
     final expectedPlanck = formattingService.parseAmount(widget.amount);
     if (expectedPlanck == null) {
-      debugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
+      context.debugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
+
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
     }
@@ -70,15 +71,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    debugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
+    context.debugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
-        debugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
+        context.debugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
         if (received != expectedPlanck) {
-          debugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+          context.debugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
           return;
         }
 
@@ -105,7 +106,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         }
       },
       onError: (e) {
-        debugPrint('[PosQr] watch error: $e');
+        context.debugPrint('[PosQr] watch error: $e');
         _txWatch.dispose();
         _timeoutTimer?.cancel();
         if (mounted) {
