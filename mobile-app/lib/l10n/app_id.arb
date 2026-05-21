@@ -18,7 +18,6 @@
   "createWalletCautionBullet2": "Siapa pun yang mendapatkannya akan memiliki kendali penuh atas dana Anda, secara permanen",
   "createWalletCautionBullet3": "Tuliskan dan simpan di tempat yang aman. Jangan simpan secara digital",
   "createWalletCautionCheckboxLabel": "Saya memahami bahwa siapa pun yang memiliki recovery phrase saya dapat mengakses wallet saya. Saya akan menyimpannya dengan aman.",
-  "createWalletCautionContinue": "Lanjutkan",
   "createWalletRecoveryPhraseNext": "Berikutnya",
   "createWalletRecoveryPhraseFailedGenerate": "Gagal membuat: {error}",
   "createWalletRecoveryPhraseSaveError": "Gagal menyimpan wallet: {error}",
@@ -368,5 +367,6 @@
   "componentNameFieldHint": "Masukkan nama untuk akun Anda",
 
   "commonLoading": "Memuat...",
-  "commonAmountBalance": "{balance} {symbol}"
+  "commonAmountBalance": "{balance} {symbol}",
+  "commonContinue": "Lanjutkan"
 }

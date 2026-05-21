@@ -55,7 +55,7 @@ class SettingsCautionScaffold extends StatelessWidget {
     required this.onCheckboxChanged,
     required this.onContinue,
     required this.data,
-    this.continueLabel = '',
+    required this.continueLabel,
     this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
   });

@@ -30,7 +30,7 @@ class _WalletReadyScreenV2State extends ConsumerState<WalletReadyScreenV2> {
     return SettingsCautionScaffold(
       appBarTitle: l10n.createWalletAppBarTitle,
       data: data,
-      continueLabel: l10n.createWalletCautionContinue,
+      continueLabel: l10n.commonContinue,
       checkboxChecked: _acknowledged,
       onCheckboxChanged: () => setState(() => _acknowledged = !_acknowledged),
       onContinue: _continue,

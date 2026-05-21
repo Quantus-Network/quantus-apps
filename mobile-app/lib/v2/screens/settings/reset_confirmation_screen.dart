@@ -26,7 +26,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
 
     if (authed && mounted) {
       try {
-        await ref.read(logoutServiceProvider).logout(context);
+        ref.read(logoutServiceProvider).logout(context);
       } catch (e) {
         if (mounted) {
           context.showErrorToaster(message: l10n.settingsResetFailed('$e'));
@@ -46,7 +46,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
     return SettingsCautionScaffold(
       appBarTitle: l10n.settingsResetTitle,
       data: SettingsCautionScaffoldData.walletReset(l10n),
-      continueLabel: l10n.createWalletCautionContinue,
+      continueLabel: l10n.commonContinue,
       betweenBulletsStyle: SettingsDividerStyle.sectionEmphasis,
       checkboxChecked: _backedUpChecked,
       onCheckboxChanged: () => setState(() => _backedUpChecked = !_backedUpChecked),
