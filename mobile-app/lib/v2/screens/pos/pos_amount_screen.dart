@@ -54,8 +54,7 @@ class _PosAmountScreenState extends ConsumerState<PosAmountScreen> {
 
   void _onCharge() {
     if (_amount <= BigInt.zero) return;
-    final quanString = _amountInputLogic.formatQuanAmount(_amount);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amount: quanString)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PosQrScreen(amountPlanck: _amount)));
   }
 
   Future<void> _toggleFlip() async {

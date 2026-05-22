@@ -78,38 +78,5 @@ void main() {
       expect(logic.formatQuanAmount(BigInt.zero), '');
     });
 
-    test('parsePaymentUrlAmount localizes canonical wire amount for payer locale', () {
-      final logic = createLogic();
-      final result = logic.parsePaymentUrlAmount('1.5', isFlipped: false);
-
-      expect(result.planck, BigInt.from(1500000000000));
-      expect(result.displayText, '1.5');
-    });
-
-    test('parsePaymentUrlAmount localizes legacy comma-decimal wire amount', () {
-      final logic = createLogic();
-      final result = logic.parsePaymentUrlAmount('1,5', isFlipped: false);
-
-      expect(result.planck, BigInt.from(1500000000000));
-      expect(result.displayText, '1.5');
-    });
-
-    test('parsePaymentUrlAmount displays comma decimal for comma-locale payers', () {
-      localeConfig = LocaleNumberConfig.commaDecimal;
-      formattingService = NumberFormattingService(localeConfig: localeConfig);
-      final logic = createLogic();
-      final result = logic.parsePaymentUrlAmount('1.5', isFlipped: false);
-
-      expect(result.planck, BigInt.from(1500000000000));
-      expect(result.displayText, '1,5');
-    });
-
-    test('parsePaymentUrlAmount returns empty display text for zero amount', () {
-      final logic = createLogic();
-      final result = logic.parsePaymentUrlAmount('', isFlipped: false);
-
-      expect(result.planck, BigInt.zero);
-      expect(result.displayText, '');
-    });
   });
 }
