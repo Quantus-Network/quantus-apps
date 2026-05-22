@@ -221,6 +221,7 @@ void showSharedAddressActionSheet(BuildContext context, String address) {
 
   showModalBottomSheet(
     context: context,
+    routeSettings: sharedAccountSheetRouteSettings,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     constraints: BoxConstraints(
