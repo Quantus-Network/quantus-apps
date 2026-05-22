@@ -77,6 +77,5 @@ void main() {
       final logic = createLogic();
       expect(logic.formatQuanAmount(BigInt.zero), '');
     });
-
   });
 }
