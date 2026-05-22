@@ -66,9 +66,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
-      final formattingService = ref.read(numberFormattingServiceProvider);
       final planck = widget.isPayMode
-          ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
+          ? BigInt.tryParse(widget.initialAmount!) ?? BigInt.zero
           : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
       if (planck > BigInt.zero) {
         _amount = planck;
