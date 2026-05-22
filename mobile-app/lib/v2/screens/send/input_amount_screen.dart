@@ -65,12 +65,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountFocus.addListener(_onAmountFocusChanged);
-    if (widget.initialAmount != null) {
-      final isFlipped = ref.read(isCurrencyFlippedProvider);
-      final parsed = _amountInputLogic.parsePaymentUrlAmount(widget.initialAmount!, isFlipped: isFlipped);
-      if (parsed.planck > BigInt.zero) {
-        _amount = parsed.planck;
-        _amountController.text = parsed.displayText;
+    if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
+      final formattingService = ref.read(numberFormattingServiceProvider);
+      final planck = widget.isPayMode
+          ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
+          : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
+      if (planck > BigInt.zero) {
+        _amount = planck;
+        _amountController.text = _amountInputLogic.formatQuanAmount(planck);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -116,7 +118,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _onAmountChanged(String _) {
-    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
@@ -337,7 +339,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
-    final isFlipped = ref.watch(isCurrencyFlippedProvider);
+    final isPayMode = widget.isPayMode;
+    final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final localeConfig = ref.watch(localeNumberConfigProvider);
     final display = ref.watch(txAmountDisplayProvider)(
@@ -393,26 +396,28 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               children: primaryRowChildren,
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '≈ ${display.secondaryAmount}',
-                style: text.paragraph?.copyWith(
-                  color: colors.textTertiary,
-                  fontFamily: AppTextTheme.fontFamilySecondary,
+          if (!isPayMode) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '≈ ${display.secondaryAmount}',
+                  style: text.paragraph?.copyWith(
+                    color: colors.textTertiary,
+                    fontFamily: AppTextTheme.fontFamilySecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              QuantusIconButton.circular(
-                icon: Icons.swap_vert,
-                onTap: _toggleFlip,
-                isActive: display.isFlipped,
-                size: IconButtonSize.small,
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                QuantusIconButton.circular(
+                  icon: Icons.swap_vert,
+                  onTap: _toggleFlip,
+                  isActive: display.isFlipped,
+                  size: IconButtonSize.small,
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

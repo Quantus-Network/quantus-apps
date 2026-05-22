@@ -17,13 +17,6 @@ class ToggledInputResult {
   int get hashCode => text.hashCode ^ amount.hashCode;
 }
 
-class PaymentUrlAmountResult {
-  final BigInt planck;
-  final String displayText;
-
-  const PaymentUrlAmountResult({required this.planck, required this.displayText});
-}
-
 class AmountInputLogic {
   final ExchangeRateService exchangeRateService;
   final FiatCurrency selectedFiat;
@@ -54,17 +47,6 @@ class AmountInputLogic {
     if (fiatText.isEmpty) return BigInt.zero;
     final fiatDecimal = localeConfig.parseDecimal(fiatText);
     return exchangeRateService.fiatToQuanRaw(fiatDecimal, selectedFiat, AppConstants.decimals);
-  }
-
-  /// Parses a payment URL amount and formats it for the user's locale.
-  PaymentUrlAmountResult parsePaymentUrlAmount(String wireAmount, {required bool isFlipped}) {
-    final planck = formattingService.parseWireAmount(wireAmount) ?? BigInt.zero;
-    final displayText = planck == BigInt.zero
-        ? ''
-        : isFlipped
-        ? quanToFiatString(planck)
-        : formatQuanAmount(planck);
-    return PaymentUrlAmountResult(planck: planck, displayText: displayText);
   }
 
   /// Parses a QUAN amount string.
