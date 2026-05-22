@@ -67,15 +67,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountFocus.addListener(_onAmountFocusChanged);
     if (widget.initialAmount != null) {
       final isFlipped = ref.read(isCurrencyFlippedProvider);
-      if (!isFlipped) {
-        _amount = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        _amountController.text = widget.initialAmount!;
-      } else {
-        final parsed = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        if (parsed > BigInt.zero) {
-          _amount = parsed;
-          _amountController.text = _amountInputLogic.quanToFiatString(parsed);
-        }
+      final parsed = _amountInputLogic.parsePaymentUrlAmount(widget.initialAmount!, isFlipped: isFlipped);
+      if (parsed.planck > BigInt.zero) {
+        _amount = parsed.planck;
+        _amountController.text = parsed.displayText;
       }
     }
     if (widget.recipientChecksum != null) {

@@ -31,7 +31,6 @@ class PosQrScreen extends ConsumerStatefulWidget {
 }
 
 class _PosQrScreenState extends ConsumerState<PosQrScreen> {
-  final _posService = PosService();
   PosPaymentRequest? _request;
 
   final _txWatch = TxWatchService();
@@ -175,7 +174,10 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         ),
         data: (active) {
           if (active == null) return const Center(child: Text('No active account'));
-          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
+          _request ??= PosService(formattingService: formattingService).createPaymentRequest(
+            accountId: active.account.accountId,
+            amountPlanck: planck,
+          );
           if (_isPaid) return _buildPaidContent(colors, text, display.primaryAmount);
           return _buildQrContent(_request!, colors, text, display);
         },

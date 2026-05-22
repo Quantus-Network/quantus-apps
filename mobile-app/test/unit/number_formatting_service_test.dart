@@ -89,5 +89,41 @@ void main() {
         expect(service.parseAmount('--5'), isNull);
       });
     });
+
+    group('formatWireAmount / parseWireAmount', () {
+      test('formatWireAmount always uses dot decimal without grouping', () {
+        final commaService = NumberFormattingService(localeConfig: LocaleNumberConfig.commaDecimal);
+        final balance = BigInt.parse('1500000000000');
+        expect(commaService.formatWireAmount(balance), '1.5');
+      });
+
+      test('round-trips canonical wire amounts', () {
+        final balance = BigInt.parse('1500000000000');
+        final wire = service.formatWireAmount(balance);
+        expect(wire, '1.5');
+        expect(service.parseWireAmount(wire), balance);
+      });
+
+      test('parses legacy comma-decimal amounts', () {
+        expect(service.parseWireAmount('1,5'), BigInt.parse('1500000000000'));
+      });
+
+      test('parses legacy dot-decimal amounts', () {
+        expect(service.parseWireAmount('1.5'), BigInt.parse('1500000000000'));
+      });
+
+      test('parses integer amounts', () {
+        expect(service.parseWireAmount('1000'), scaleFactor * BigInt.from(1000));
+      });
+
+      test('parses mixed separators using rightmost decimal mark', () {
+        expect(service.parseWireAmount('1.000,50'), BigInt.parse('1000500000000000'));
+        expect(service.parseWireAmount('1,000.50'), BigInt.parse('1000500000000000'));
+      });
+
+      test('returns zero for empty wire amount', () {
+        expect(service.parseWireAmount(''), BigInt.zero);
+      });
+    });
   });
 }

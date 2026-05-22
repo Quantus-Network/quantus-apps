@@ -4,8 +4,10 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
@@ -130,9 +132,17 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     if (scanResult == null || !mounted) return;
     final payment = PaymentIntent.tryParseUrl(scanResult);
     if (payment != null) {
+      final amountInputLogic = AmountInputLogic(
+        exchangeRateService: ref.read(exchangeRateServiceProvider),
+        selectedFiat: ref.read(selectedFiatCurrencyProvider),
+        localeConfig: ref.read(localeNumberConfigProvider),
+        formattingService: ref.read(numberFormattingServiceProvider),
+      );
+      final isFlipped = ref.read(isCurrencyFlippedProvider);
+      final parsed = amountInputLogic.parsePaymentUrlAmount(payment.amount, isFlipped: isFlipped);
       setState(() {
         _recipientController.text = payment.to;
-        _amountController.text = payment.amount;
+        _amountController.text = parsed.displayText;
         _isPayMode = true;
       });
     } else {

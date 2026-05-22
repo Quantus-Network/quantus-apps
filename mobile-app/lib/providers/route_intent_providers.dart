@@ -11,6 +11,8 @@ class PaymentIntent {
 
   const PaymentIntent({required this.to, required this.amount, this.ref});
 
+  BigInt? amountPlanck(NumberFormattingService formatting) => formatting.parseWireAmount(amount);
+
   static PaymentIntent? tryParseUrl(String input) {
     final uri = Uri.tryParse(input);
     if (uri == null || uri.pathSegments.isEmpty || uri.pathSegments.first != 'pay') return null;
