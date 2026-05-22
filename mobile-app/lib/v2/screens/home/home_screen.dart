@@ -6,6 +6,8 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -68,23 +70,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
     ref.read(transactionIntentProvider.notifier).state = null;
+
     showTransactionDetailSheet(context, transaction, active.account.accountId);
   }
 
   void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
     if (payment == null || !mounted) return;
     ref.read(paymentIntentProvider.notifier).state = null;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
-      ),
+
+    final pageRoute = MaterialPageRoute(
+      builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+      settings: inputAmountScreenRouteSettings,
     );
+
+    if (context.peekTopRouteName == inputAmountScreenRouteSettings.name) {
+      Navigator.pushReplacement(context, pageRoute);
+    } else {
+      Navigator.push(context, pageRoute);
+    }
   }
 
   void _onSharedIntent(String? _, String? shared) {
     if (shared == null || !mounted) return;
     ref.read(sharedAccountIntentProvider.notifier).state = null;
+
     showSharedAddressActionSheet(context, shared);
   }
 

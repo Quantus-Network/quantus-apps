@@ -62,11 +62,9 @@ class NumberFormattingService {
   ///
   /// Wire amounts are locale-neutral and must be parsed with [parseWireAmount].
   String formatWireAmount(BigInt balance) {
-    return NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal).formatBalance(
-      balance,
-      maxDecimals: decimals,
-      addThousandsSeparators: false,
-    );
+    return NumberFormattingService(
+      localeConfig: LocaleNumberConfig.dotDecimal,
+    ).formatBalance(balance, maxDecimals: decimals, addThousandsSeparators: false);
   }
 
   /// Parses a payment URL amount without assuming the payer's locale.
