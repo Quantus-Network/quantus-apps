@@ -396,18 +396,18 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               children: primaryRowChildren,
             ),
           ),
-          if (!isPayMode) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '≈ ${display.secondaryAmount}',
-                  style: text.paragraph?.copyWith(
-                    color: colors.textTertiary,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                  ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '≈ ${display.secondaryAmount}',
+                style: text.paragraph?.copyWith(
+                  color: colors.textTertiary,
+                  fontFamily: AppTextTheme.fontFamilySecondary,
                 ),
+              ),
+              if (!isPayMode) ...[
                 const SizedBox(width: 8),
                 QuantusIconButton.circular(
                   icon: Icons.swap_vert,
@@ -416,8 +416,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   size: IconButtonSize.small,
                 ),
               ],
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
