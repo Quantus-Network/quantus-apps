@@ -17,7 +17,7 @@ class LogoutService {
   final Ref _ref;
   LogoutService(this._ref);
 
-  Future<void> _clearSettingsAndMemory() async {
+  Future<void> logout(BuildContext context) async {
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
       _ref.read(firebaseMessagingServiceProvider).unregisterDevice();
     }
@@ -29,12 +29,11 @@ class LogoutService {
     _ref.read(accountsProvider.notifier).reset();
     _ref.read(activeAccountProvider.notifier).reset();
     _ref.read(accountAssociationsProvider.notifier).reset();
-    _ref.read(selectedAppLocaleProvider.notifier).reset();
-    _ref.read(selectedFiatCurrencyProvider.notifier).reset();
-  }
+    await _ref.read(selectedAppLocaleProvider.notifier).reset();
+    await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
 
-  void logout(BuildContext context) {
-    _clearSettingsAndMemory();
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const WelcomeScreenV2()), (r) => false);
+    }
   }
 }

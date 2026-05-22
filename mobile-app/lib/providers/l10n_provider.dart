@@ -65,7 +65,8 @@ class SelectedAppLocaleNotifier extends StateNotifier<AppLocale> {
     state = locale;
   }
 
-  void reset() {
+  Future<void> reset() async {
+    await _settings.clearSelectedAppLocale();
     state = AppLocale.fromCode(_defaultLocaleCode);
   }
 

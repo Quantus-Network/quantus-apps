@@ -613,7 +613,7 @@ class TaskmasterService {
     return _authenticatedGet(uri, OptedInPosition.fromJson);
   }
 
-  Future<void> logout() async {
+  void logout() {
     _clearToken();
   }
 
