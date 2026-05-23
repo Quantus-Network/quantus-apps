@@ -26,15 +26,14 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class PosQrScreen extends ConsumerStatefulWidget {
-  final String amount;
-  const PosQrScreen({super.key, required this.amount});
+  final BigInt amountPlanck;
+  const PosQrScreen({super.key, required this.amountPlanck});
 
   @override
   ConsumerState<PosQrScreen> createState() => _PosQrScreenState();
 }
 
 class _PosQrScreenState extends ConsumerState<PosQrScreen> {
-  final _posService = PosService();
   PosPaymentRequest? _request;
 
   final _txWatch = TxWatchService();
@@ -55,14 +54,11 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
 
   void _startWatching() {
     final l10n = ref.read(l10nProvider);
-    final formattingService = ref.read(numberFormattingServiceProvider);
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 
-    final expectedPlanck = formattingService.parseAmount(widget.amount);
-    if (expectedPlanck == null) {
-      quantusDebugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
-
+    if (widget.amountPlanck <= BigInt.zero) {
+      quantusDebugPrint('[PosQr] ERROR: invalid amount planck ${widget.amountPlanck}');
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
     }
@@ -72,15 +68,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
+    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountPlanck} planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
         quantusDebugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
-        if (received != expectedPlanck) {
-          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+        if (received != widget.amountPlanck) {
+          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountPlanck}), ignoring');
           return;
         }
 
@@ -89,7 +85,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
           from: tx.from,
           to: active.account.accountId,
-          amount: expectedPlanck,
+          amount: widget.amountPlanck,
           timestamp: DateTime.now(),
           transactionState: TransactionState.pending,
           isReversible: false,
@@ -171,8 +167,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    final planck = formattingService.parseAmount(widget.amount) ?? BigInt.zero;
-    final display = ref.watch(txAmountDisplayProvider)(planck, withSignPrefix: false, isSend: false, quanDecimals: 4);
+    final display = ref.watch(txAmountDisplayProvider)(
+      widget.amountPlanck,
+      withSignPrefix: false,
+      isSend: false,
+      quanDecimals: 4,
+    );
 
     return ScaffoldBase(
       appBar: V2AppBar(title: _isPaid ? l10n.posQrTitlePaymentReceived : l10n.posQrTitleScanToPay),
@@ -182,13 +182,11 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           child: Text(l10n.posQrError('$e'), style: text.detail?.copyWith(color: colors.textError)),
         ),
         data: (active) {
-          if (active == null) {
-            return Center(child: Text(l10n.posQrNoActiveAccount));
-          }
-          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
-          if (_isPaid) {
-            return _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
-          }
+          if (active == null) return Center(child: Text(l10n.posQrNoActiveAccount));
+          _request ??= PosService(
+            formattingService: formattingService,
+          ).createPaymentRequest(accountId: active.account.accountId, amountPlanck: widget.amountPlanck);
+          if (_isPaid) _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
           return _buildQrContent(l10n, _request!, colors, text, display);
         },
       ),
