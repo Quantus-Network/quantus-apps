@@ -86,7 +86,10 @@ class AddressInputField extends StatelessWidget {
                           children: [
                             Text(
                               AddressFormattingService.formatAddress(controller.text.trim()),
-                              style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                              style: text.smallParagraph?.copyWith(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

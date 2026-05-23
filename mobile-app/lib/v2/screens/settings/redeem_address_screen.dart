@@ -75,9 +75,7 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
   }
 
   bool get _canRedeem =>
-      _recipientController.text.trim().isNotEmpty &&
-      !_hasAddressError &&
-      widget.redeemableRewards > BigInt.zero;
+      _recipientController.text.trim().isNotEmpty && !_hasAddressError && widget.redeemableRewards > BigInt.zero;
 
   Future<void> _redeem() async {
     if (!_canRedeem) return;
@@ -87,19 +85,14 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
 
     final confirmed = await BottomSheetContainer.show<bool>(
       context,
-      builder: (_) => _RedeemConfirmSheet(
-        formatted: formatted,
-        destination: destination,
-      ),
+      builder: (_) => _RedeemConfirmSheet(formatted: formatted, destination: destination),
     );
     if (confirmed != true || !mounted) return;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => RedeemProgressScreen(
-          redeemableRewards: widget.redeemableRewards,
-          destinationAddress: destination,
-        ),
+        builder: (_) =>
+            RedeemProgressScreen(redeemableRewards: widget.redeemableRewards, destinationAddress: destination),
       ),
     );
   }
@@ -199,10 +192,7 @@ class _RedeemConfirmSheet extends StatelessWidget {
           Divider(color: colors.separator, height: 32),
           _row('Fee', '0.1% volume fee', colors, text),
           const SizedBox(height: 32),
-          QuantusButton.simple(
-            label: 'Redeem $formatted',
-            onTap: () => Navigator.of(context).pop(true),
-          ),
+          QuantusButton.simple(label: 'Redeem $formatted', onTap: () => Navigator.of(context).pop(true)),
         ],
       ),
     );

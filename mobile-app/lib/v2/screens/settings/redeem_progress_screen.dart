@@ -110,7 +110,11 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       canPop: !_running,
       child: ScaffoldBase(
         appBar: V2AppBar(
-          title: _done ? 'Redeem Complete' : _errorMessage != null ? 'Redeem Failed' : 'Redeeming...',
+          title: _done
+              ? 'Redeem Complete'
+              : _errorMessage != null
+              ? 'Redeem Failed'
+              : 'Redeeming...',
           showBackButton: !_running,
         ),
         mainContent: Column(
@@ -120,14 +124,8 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
             _buildStatusHeader(colors, text),
             const SizedBox(height: 32),
             _buildSteps(colors, text),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 24),
-              _buildErrorBanner(colors, text),
-            ],
-            if (_done && _result != null) ...[
-              const SizedBox(height: 24),
-              _buildSuccessBanner(colors, text),
-            ],
+            if (_errorMessage != null) ...[const SizedBox(height: 24), _buildErrorBanner(colors, text)],
+            if (_done && _result != null) ...[const SizedBox(height: 24), _buildSuccessBanner(colors, text)],
           ],
         ),
         bottomContent: _buildBottomContent(colors),
@@ -164,10 +162,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.sheetBackground,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           for (int i = 0; i < steps.length; i++) ...[
@@ -235,10 +230,10 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     final titleColor = isCompleted
         ? colors.success
         : isActive
-            ? colors.textPrimary
-            : isError
-                ? colors.textError
-                : colors.textTertiary;
+        ? colors.textPrimary
+        : isError
+        ? colors.textError
+        : colors.textTertiary;
 
     String progressText = '';
     if (progress != null && progress.completed > 0) {
@@ -260,12 +255,17 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
           children: [
             icon,
             const SizedBox(width: 14),
-            Expanded(child: Text(title, style: text.smallParagraph?.copyWith(color: titleColor))),
+            Expanded(
+              child: Text(title, style: text.smallParagraph?.copyWith(color: titleColor)),
+            ),
             if (progressText.isNotEmpty)
-              Text(progressText, style: text.detail?.copyWith(
-                color: isCompleted ? colors.success : colors.textPrimary,
-                fontFamily: AppTextTheme.fontFamilySecondary,
-              )),
+              Text(
+                progressText,
+                style: text.detail?.copyWith(
+                  color: isCompleted ? colors.success : colors.textPrimary,
+                  fontFamily: AppTextTheme.fontFamilySecondary,
+                ),
+              ),
           ],
         ),
         if (progressFraction != null) ...[
@@ -317,7 +317,9 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
         children: [
           Icon(Icons.error_outline, color: colors.textError, size: 16),
           const SizedBox(width: 8),
-          Expanded(child: Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError))),
+          Expanded(
+            child: Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
+          ),
         ],
       ),
     );
@@ -352,11 +354,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
   Widget? _buildBottomContent(AppColorsV2 colors) {
     if (_running) {
       return ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(
-          label: 'Cancel',
-          variant: ButtonVariant.secondary,
-          onTap: _cancel,
-        ),
+        child: QuantusButton.simple(label: 'Cancel', variant: ButtonVariant.secondary, onTap: _cancel),
       );
     }
 
@@ -381,10 +379,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
     }
 
     return ScaffoldBaseBottomContent(
-      child: QuantusButton.simple(
-        label: 'Done',
-        onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
-      ),
+      child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.of(context).popUntil((route) => route.isFirst)),
     );
   }
 }

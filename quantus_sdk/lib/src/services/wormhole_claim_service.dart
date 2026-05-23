@@ -257,7 +257,11 @@ class WormholeClaimService {
     final rawSiblings = zkProof['siblings'] as List<dynamic>;
 
     final siblingsFlat = _flattenSiblings(rawSiblings);
-    final merkle = wormhole_ffi.computeMerklePositions(unsortedSiblingsFlat: siblingsFlat, leafHash: leafHash, depth: depth);
+    final merkle = wormhole_ffi.computeMerklePositions(
+      unsortedSiblingsFlat: siblingsFlat,
+      leafHash: leafHash,
+      depth: depth,
+    );
 
     final inputAmount = wormhole_ffi.decodeLeafAmount(leafData: leafData);
     final outputAmount = wormhole_ffi.wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: _volumeFeeBps);
@@ -322,20 +326,11 @@ class WormholeClaimService {
   // --- RPC helpers ---
 
   Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
-    final body = jsonEncode({
-      'jsonrpc': '2.0',
-      'id': 1,
-      'method': method,
-      'params': params ?? [],
-    });
+    final body = jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params ?? []});
 
     final http.Response response;
     if (_rpcUrl != null) {
-      response = await http.post(
-        Uri.parse(_rpcUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
+      response = await http.post(Uri.parse(_rpcUrl), headers: {'Content-Type': 'application/json'}, body: body);
     } else {
       response = await _rpcEndpoint.post(body: body);
     }
