@@ -12,6 +12,7 @@ class AddressInputField extends StatelessWidget {
   final bool hasValid;
   final String? recipientChecksum;
   final String hintText;
+  final bool showSearchIcon;
 
   const AddressInputField({
     super.key,
@@ -20,6 +21,7 @@ class AddressInputField extends StatelessWidget {
     required this.hasValid,
     required this.recipientChecksum,
     this.hintText = 'Search ${AppConstants.tokenSymbol} Address',
+    this.showSearchIcon = true,
   });
 
   @override
@@ -41,8 +43,10 @@ class AddressInputField extends StatelessWidget {
                   decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
-                      Icon(Icons.search, size: 14, color: colors.textLabel),
-                      const SizedBox(width: 12),
+                      if (showSearchIcon) ...[
+                        Icon(Icons.search, size: 14, color: colors.textLabel),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: TextField(
                           controller: controller,
@@ -73,18 +77,25 @@ class AddressInputField extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(color: colors.toasterBackground, borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Row(
                     children: [
-                      Text(
-                        AddressFormattingService.formatAddress(controller.text.trim()),
-                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              AddressFormattingService.formatAddress(controller.text.trim()),
+                              style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (recipientChecksum != null)
+                              Text(recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
+                          ],
+                        ),
                       ),
-                      if (recipientChecksum != null)
-                        Text(recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
+                      Icon(Icons.edit_outlined, size: 16, color: colors.textLabel),
                     ],
                   ),
                 ),

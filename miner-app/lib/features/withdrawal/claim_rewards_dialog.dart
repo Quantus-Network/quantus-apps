@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:quantus_miner/src/services/binary_manager.dart';
 import 'package:quantus_miner/src/services/miner_settings_service.dart';
 import 'package:quantus_miner/src/services/miner_wallet_service.dart';
-import 'package:quantus_miner/src/services/wormhole_claim_service.dart';
 import 'package:quantus_miner/src/utils/app_logger.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -30,7 +29,7 @@ enum _Screen { input, confirm, progress }
 
 class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   final _addressController = TextEditingController();
-  final _claimService = WormholeClaimService();
+  WormholeClaimService? _claimService;
   final _walletService = MinerWalletService();
   final _settingsService = MinerSettingsService();
 
@@ -105,14 +104,13 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
       final binsDir = '${await BinaryManager.getQuantusHomeDirectoryPath()}/generated-bins';
       await Directory(binsDir).create(recursive: true);
 
-      final rpcUrl = chainConfig.rpcUrl;
+      _claimService = WormholeClaimService(rpcUrl: chainConfig.rpcUrl);
       _log.i('Starting claim for ${keyPair.address} to ${_addressController.text.trim()}');
 
-      final result = await _claimService.claimRewards(
+      final result = await _claimService!.claimRewards(
         wormholeAddress: keyPair.address,
         secretHex: keyPair.secretHex,
         destinationAddress: _addressController.text.trim(),
-        rpcUrl: rpcUrl,
         circuitBinsDir: binsDir,
         onProgress: (progress) {
           if (!mounted) return;
@@ -147,7 +145,7 @@ class _ClaimRewardsDialogState extends State<_ClaimRewardsDialog> {
   }
 
   void _cancelClaim() {
-    _claimService.cancel();
+    _claimService?.cancel();
   }
 
   @override

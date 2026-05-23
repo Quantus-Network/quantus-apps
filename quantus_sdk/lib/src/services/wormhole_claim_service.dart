@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import 'package:quantus_miner/src/services/chain_rpc_client.dart';
-import 'package:quantus_miner/src/utils/app_logger.dart';
+import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/generated/planck/pallets/wormhole.dart' as wormhole_pallet;
-import 'package:quantus_sdk/quantus_sdk.dart';
-
-final _log = log.withTag('WormholeClaim');
+import 'package:quantus_sdk/src/rust/api/wormhole.dart' as wormhole_ffi;
+import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
+import 'package:quantus_sdk/src/services/substrate_service.dart' show getAccountId32;
+import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
+import 'package:polkadart/scale_codec.dart' show ByteOutput, CompactCodec;
 
 class ClaimProgressItem {
   final int step;
@@ -44,10 +46,6 @@ class WormholeClaimService {
   static const int _maxProofsPerBatch = 16;
   static const int _proofConcurrency = 16;
   static const int _volumeFeeBps = 10;
-
-  /// Scaled-down → planck multiplier; matches `SCALE_DOWN_FACTOR` in the Rust
-  /// wormhole API. The proof commits to amounts in scaled-down units, and the
-  /// chain dispatches `outputAmount * scaleDownFactor` planck.
   static final BigInt _scaleDownFactor = BigInt.from(10000000000);
 
   static const _stepTitles = {
@@ -60,12 +58,12 @@ class WormholeClaimService {
   };
 
   final WormholeUtxoService _utxoService = WormholeUtxoService();
+  final RpcEndpointService _rpcEndpoint = RpcEndpointService();
+  final String? _rpcUrl;
 
-  /// Completes when the user cancels. Polled by [_checkCancelled] for cheap
-  /// chain-level checks and raced against the whole flow in [claimRewards] so
-  /// cancellation is instantaneous even mid-FFI (in-flight proofs are simply
-  /// orphaned — they'll finish in the background and their results discarded).
   Completer<void>? _cancelCompleter;
+
+  WormholeClaimService({String? rpcUrl}) : _rpcUrl = rpcUrl;
 
   bool get _cancelled => _cancelCompleter?.isCompleted ?? false;
 
@@ -78,38 +76,29 @@ class WormholeClaimService {
     required String wormholeAddress,
     required String secretHex,
     required String destinationAddress,
-    required String rpcUrl,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
   }) async {
     final cancelCompleter = Completer<void>();
     _cancelCompleter = cancelCompleter;
 
-    final rpc = ChainRpcClient(rpcUrl: rpcUrl, timeout: const Duration(seconds: 30));
     try {
       final flow = _runClaimFlow(
-        rpc: rpc,
         wormholeAddress: wormholeAddress,
         secretHex: secretHex,
         destinationAddress: destinationAddress,
         circuitBinsDir: circuitBinsDir,
         onProgress: onProgress,
       );
-      // Race the flow against cancellation. Future.any returns the first to
-      // complete; the loser's later completion (success or error) is silently
-      // ignored by Future.any, so abandoned in-flight FFI work won't surface
-      // as an unhandled async error.
       final cancelGuard = cancelCompleter.future.then<ClaimResult>((_) => throw const ClaimCancelled());
       return await Future.any([flow, cancelGuard]);
     } on WormholeOperationCancelled {
       throw const ClaimCancelled();
-    } finally {
-      rpc.dispose();
     }
   }
 
   void _reportProgress(ClaimProgressCallback onProgress, int step, int completed, {int? total}) {
-    _log.i('Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}');
+    _log('Step $step: ${_stepTitles[step]} $completed${total != null ? '/$total' : ''}');
     onProgress(ClaimProgressItem(step: step, title: _stepTitles[step]!, completed: completed, total: total));
   }
 
@@ -118,7 +107,6 @@ class WormholeClaimService {
   }
 
   Future<ClaimResult> _runClaimFlow({
-    required ChainRpcClient rpc,
     required String wormholeAddress,
     required String secretHex,
     required String destinationAddress,
@@ -128,9 +116,9 @@ class WormholeClaimService {
     _checkCancelled();
 
     _reportProgress(onProgress, 1, 0);
-    _log.i('Ensuring circuit binaries at: $circuitBinsDir');
-    await ensureCircuitBinaries(binsDir: circuitBinsDir);
-    _log.i('Circuit binaries ready');
+    _log('Ensuring circuit binaries at: $circuitBinsDir');
+    await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir);
+    _log('Circuit binaries ready');
     _reportProgress(onProgress, 1, 1);
     _checkCancelled();
 
@@ -148,24 +136,19 @@ class WormholeClaimService {
       return ClaimResult(totalWithdrawn: BigInt.zero, transfersProcessed: 0, batchesSubmitted: 0, txHashes: const []);
     }
     unspent.sort((a, b) => b.amount.compareTo(a.amount));
-    _log.i('Found ${unspent.length} unspent transfers');
+    _log('Found ${unspent.length} unspent transfers');
     _checkCancelled();
 
     _reportProgress(onProgress, 5, 0, total: unspent.length);
 
-    // Use the current head (not finalized) as the proof block: the user is
-    // claiming up to the chain tip, and the merkle tree at the finalized head
-    // would not contain transfers in the last `reorgDepth` blocks. A reorg
-    // before the claim batch lands will cause on-chain verification to fail
-    // and the user can simply retry.
-    final blockHash = await rpc.getBestBlockHash();
-    final header = await rpc.getBlockHeader(blockHash: blockHash);
+    final String blockHash = await _rpcCall('chain_getBlockHash') as String;
+    final header = await _rpcCall('chain_getHeader', [blockHash]);
     final blockNumber = _hexToInt(header['number'] as String);
     final parentHash = _hexBytes(header['parentHash'] as String);
     final stateRoot = _hexBytes(header['stateRoot'] as String);
     final extrinsicsRoot = _hexBytes(header['extrinsicsRoot'] as String);
     final digest = _encodeDigest(header['digest'] as Map<String, dynamic>);
-    _log.i('Proof block: #$blockNumber ($blockHash)');
+    _log('Proof block: #$blockNumber ($blockHash)');
     _checkCancelled();
 
     final numTransfers = unspent.length;
@@ -187,7 +170,6 @@ class WormholeClaimService {
         final transfer = unspent[i];
         futures.add(
           _generateLeafProof(
-            rpc: rpc,
             transfer: transfer,
             blockHash: blockHash,
             blockNumber: blockNumber,
@@ -203,9 +185,6 @@ class WormholeClaimService {
             outputIndex: i,
             onComplete: () {
               completed++;
-              // Plain stdout print (not debugPrint) so it survives in release
-              // builds and is visible from the launching terminal.
-              // ignore: avoid_print
               print(
                 '[WormholeClaim] Proof $completed/$numTransfers '
                 'leaf=${transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
@@ -234,14 +213,14 @@ class WormholeClaimService {
     _reportProgress(onProgress, 6, 0, total: batches.length);
     for (int b = 0; b < batches.length; b++) {
       _checkCancelled();
-      _log.i('Aggregating batch ${b + 1}/${batches.length}');
-      final aggregated = await aggregateProofs(proofBytesList: batches[b], binsDir: circuitBinsDir);
-      _log.i('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
+      _log('Aggregating batch ${b + 1}/${batches.length}');
+      final aggregated = await wormhole_ffi.aggregateProofs(proofBytesList: batches[b], binsDir: circuitBinsDir);
+      _log('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
       _checkCancelled();
 
-      final txHash = await _submitExtrinsic(rpc, aggregated);
+      final txHash = await _submitExtrinsic(aggregated);
       txHashes.add(txHash);
-      _log.i('Batch ${b + 1} accepted by pool: $txHash');
+      _log('Batch ${b + 1} accepted by pool: $txHash');
       _reportProgress(onProgress, 6, b + 1, total: batches.length);
     }
 
@@ -253,11 +232,7 @@ class WormholeClaimService {
     );
   }
 
-  /// Generates a single leaf proof and writes it to [outputBuffer]. Returns the
-  /// net (post-fee) output amount this leaf contributes. [onComplete] fires
-  /// once the proof is written so callers can update progress per-leaf.
   Future<BigInt> _generateLeafProof({
-    required ChainRpcClient rpc,
     required WormholeTransfer transfer,
     required String blockHash,
     required int blockNumber,
@@ -273,7 +248,7 @@ class WormholeClaimService {
     required int outputIndex,
     void Function()? onComplete,
   }) async {
-    final zkProof = await rpc.getZkMerkleProof(transfer.leafIndex, blockHash);
+    final zkProof = await _rpcCall('zkTree_getMerkleProof', [transfer.leafIndex.toInt(), blockHash]);
 
     final leafData = _toBytes(zkProof['leaf_data']);
     final leafHash = _toBytes(zkProof['leaf_hash']);
@@ -282,14 +257,14 @@ class WormholeClaimService {
     final rawSiblings = zkProof['siblings'] as List<dynamic>;
 
     final siblingsFlat = _flattenSiblings(rawSiblings);
-    final merkle = computeMerklePositions(unsortedSiblingsFlat: siblingsFlat, leafHash: leafHash, depth: depth);
+    final merkle = wormhole_ffi.computeMerklePositions(unsortedSiblingsFlat: siblingsFlat, leafHash: leafHash, depth: depth);
 
-    final inputAmount = decodeLeafAmount(leafData: leafData);
-    final outputAmount = wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: _volumeFeeBps);
-    final wormholeAddressBytes = decodeLeafToAccount(leafData: leafData);
+    final inputAmount = wormhole_ffi.decodeLeafAmount(leafData: leafData);
+    final outputAmount = wormhole_ffi.wormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: _volumeFeeBps);
+    final wormholeAddressBytes = wormhole_ffi.decodeLeafToAccount(leafData: leafData);
 
-    final proof = await generateProof(
-      input: ProofInput(
+    final proof = await wormhole_ffi.generateProof(
+      input: wormhole_ffi.ProofInput(
         secret: secretBytes,
         transferCount: transfer.transferCount,
         wormholeAddress: wormholeAddressBytes,
@@ -313,22 +288,15 @@ class WormholeClaimService {
     );
     outputBuffer[outputIndex] = proof.proofBytes;
     onComplete?.call();
-    // On-chain dispatch transfers `outputAmount * scaleDownFactor` planck to
-    // the destination, so this is the exact net contribution per leaf.
     return BigInt.from(outputAmount) * _scaleDownFactor;
   }
 
-  /// Submits an unsigned extrinsic via `author_submitExtrinsic` and returns the
-  /// pool-accepted tx hash. We don't wait for inclusion: pool acceptance of a
-  /// well-formed unsigned extrinsic is a strong signal it will land, and any
-  /// rejection (validation, insufficient priority, etc.) surfaces here as a
-  /// JSON-RPC error from [ChainRpcClient.rpcCall].
-  Future<String> _submitExtrinsic(ChainRpcClient rpc, Uint8List aggregatedProofBytes) async {
+  Future<String> _submitExtrinsic(Uint8List aggregatedProofBytes) async {
     final fullExtrinsic = _wrapUnsignedExtrinsic(aggregatedProofBytes);
     final hexExtrinsic = '0x${hex.encode(fullExtrinsic)}';
-    _log.i('Submitting unsigned extrinsic (${fullExtrinsic.length} bytes)');
+    _log('Submitting unsigned extrinsic (${fullExtrinsic.length} bytes)');
 
-    final result = await rpc.rpcCall('author_submitExtrinsic', [hexExtrinsic]);
+    final result = await _rpcCall('author_submitExtrinsic', [hexExtrinsic]);
     if (result is! String) {
       throw StateError('author_submitExtrinsic returned ${result.runtimeType}: $result');
     }
@@ -339,7 +307,6 @@ class WormholeClaimService {
     final runtimeCall = const wormhole_pallet.Txs().verifyAggregatedProof(proofBytes: callBytes);
     final callEncoded = runtimeCall.encode();
 
-    // Unsigned extrinsic body: [version_byte=0x04][call_data]
     const versionByte = 0x04;
     final body = Uint8List(1 + callEncoded.length);
     body[0] = versionByte;
@@ -351,6 +318,41 @@ class WormholeClaimService {
     full.setAll(lengthPrefix.length, body);
     return full;
   }
+
+  // --- RPC helpers ---
+
+  Future<dynamic> _rpcCall(String method, [List<dynamic>? params]) async {
+    final body = jsonEncode({
+      'jsonrpc': '2.0',
+      'id': 1,
+      'method': method,
+      'params': params ?? [],
+    });
+
+    final http.Response response;
+    if (_rpcUrl != null) {
+      response = await http.post(
+        Uri.parse(_rpcUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+    } else {
+      response = await _rpcEndpoint.post(body: body);
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception('$method HTTP ${response.statusCode}: ${response.body}');
+    }
+    final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    if (parsed['error'] != null) {
+      throw Exception('$method RPC error: ${parsed['error']}');
+    }
+    return parsed['result'];
+  }
+
+  // --- Utilities ---
+
+  static void _log(String msg) => print('[WormholeClaim] $msg');
 
   static int _hexToInt(String hexStr) => int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
 

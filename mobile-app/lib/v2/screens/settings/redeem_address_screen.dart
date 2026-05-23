@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
+import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
-import 'package:resonance_network_wallet/v2/components/recent_addresses_list.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/redeem_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -28,7 +29,6 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
 
   bool _hasAddressError = true;
   String? _recipientChecksum;
-  bool _submitting = false;
 
   @override
   void initState() {
@@ -75,7 +75,6 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
   }
 
   bool get _canRedeem =>
-      !_submitting &&
       _recipientController.text.trim().isNotEmpty &&
       !_hasAddressError &&
       widget.redeemableRewards > BigInt.zero;
@@ -86,29 +85,24 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
     final fmt = ref.read(numberFormattingServiceProvider);
     final formatted = fmt.formatBalance(widget.redeemableRewards, maxDecimals: 2, addSymbol: true);
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Redeem Rewards?'),
-        content: Text('Send $formatted to:\n\n$destination'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(true), child: const Text('Redeem')),
-        ],
+    final confirmed = await BottomSheetContainer.show<bool>(
+      context,
+      builder: (_) => _RedeemConfirmSheet(
+        formatted: formatted,
+        destination: destination,
       ),
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _submitting = true);
-    // ignore: avoid_print
-    print('[Redeem] STUB: $formatted -> $destination');
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Redeem flow not wired yet (stub).')));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => RedeemProgressScreen(
+          redeemableRewards: widget.redeemableRewards,
+          destinationAddress: destination,
+        ),
+      ),
+    );
   }
-
-  void _onRecentTap(String address) => _recipientController.text = address;
 
   @override
   Widget build(BuildContext context) {
@@ -134,13 +128,7 @@ class _RedeemAddressScreenState extends ConsumerState<RedeemAddressScreen> {
             hasValid: hasValid,
             recipientChecksum: _recipientChecksum,
             hintText: 'Paste a ${AppConstants.tokenSymbol} Address',
-          ),
-          const SizedBox(height: 28),
-          Expanded(
-            child: CustomScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              slivers: [RecentAddressesSlivers(excludeAddresses: const <String>{}, onTap: _onRecentTap)],
-            ),
+            showSearchIcon: false,
           ),
         ],
       ),
@@ -184,6 +172,56 @@ class _AmountSummary extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RedeemConfirmSheet extends StatelessWidget {
+  final String formatted;
+  final String destination;
+
+  const _RedeemConfirmSheet({required this.formatted, required this.destination});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = context.themeText;
+
+    return BottomSheetContainer(
+      title: 'Confirm Redeem',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _row('Amount', formatted, colors, text),
+          Divider(color: colors.separator, height: 32),
+          _row('To', AddressFormattingService.formatAddress(destination), colors, text),
+          Divider(color: colors.separator, height: 32),
+          _row('Fee', '0.1% volume fee', colors, text),
+          const SizedBox(height: 32),
+          QuantusButton.simple(
+            label: 'Redeem $formatted',
+            onTap: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, AppColorsV2 colors, AppTextTheme text) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
+        Flexible(
+          child: Text(
+            value,
+            style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }
