@@ -2,74 +2,68 @@ name: resonance_network_wallet
 description: A Flutter wallet for the Quantus blockchain.
 publish_to: "none"
 
-version: 1.5.0+103
+version: 1.5.0+106
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
 
+# Convention: see dependency placement section in ../melos.yaml.
+# Shared dep versions must match the canonical list there.
 dependencies:
   flutter:
     sdk: flutter
-  url_launcher: ^6.2.1
+
   quantus_sdk:
-  video_player:
-  qr_flutter:
-  flutter_svg:
-  mobile_scanner:
-  flutter_native_splash:
-  cupertino_icons:
-  flash:
-  flutter_launcher_icons:
-  local_auth: ^2.1.6
 
-  decimal:
-  hex:
-  base32: ^2.0.0
-  ss58:
-  bip39_mnemonic:
-  intl:
-  quiver:
-  convert:
-  crypto:
-
-  shared_preferences:
-  flutter_secure_storage: ^10.1.0
-  http:
-
-  human_checksum:
-    git:
-      url: https://github.com/Quantus-Network/qp-human-checkphrase.git
-      ref: v2.2.0
-      path: dart
-  provider: ^6.1.5
-  polkadart: ^0.7.1
-  share_plus: ^12.0.1
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
-  telemetrydecksdk: ^3.0.0
-  async: ^2.13.0
-  app_links: ^6.4.1
-  flutter_dotenv: ^5.1.0
-  supabase_flutter: ^2.5.2
-  play_install_referrer: ^0.5.0
-  connectivity_plus: ^7.0.0
-  flutter_local_notifications: ^19.5.0
-  timezone: ^0.10.1
-  flutter_timezone: ^5.0.1
+  # Shared (canonical versions in melos.yaml)
+  convert: ^3.1.2
+  http: ^1.6.0
+  shared_preferences: ^2.5.5
+  decimal: ^3.2.4
+  flutter_svg: ^2.3.0
+  flash: ^3.1.1
   collection: ^1.19.1
-  firebase_core: ^4.4.0
-  firebase_messaging: ^16.1.1
-  image_picker: ^1.2.1
+  telemetrydecksdk: ^3.0.0
+
+  # State management
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+
+  # UI
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.2.0
+  image_picker: ^1.2.2
+
+  # Auth, sharing, links
+  url_launcher: ^6.3.2
+  local_auth: ^3.0.1
+  share_plus: ^13.1.0
+  app_links: ^7.0.0
+
+  # Config + backend
+  flutter_dotenv: ^6.0.1
+  supabase_flutter: ^2.12.4
+  play_install_referrer: ^0.5.0
+
+  # Notifications
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_timezone: ^5.0.1
+  firebase_core: ^4.9.0
+  firebase_messaging: ^16.2.2
+
+  # Utility
+  async: ^2.13.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints:
-  riverpod_generator: ^2.6.5
+  flutter_lints: ^6.0.0
   build_runner: ^2.5.4
-  mockito: ^5.4.6
-  custom_lint: ^0.7.6
-  riverpod_lint: ^2.6.5
+  riverpod_generator: ^4.0.3
+  mockito: ^5.6.4
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 flutter:
   uses-material-design: true

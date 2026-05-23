@@ -23,15 +23,14 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class PosQrScreen extends ConsumerStatefulWidget {
-  final String amount;
-  const PosQrScreen({super.key, required this.amount});
+  final BigInt amountPlanck;
+  const PosQrScreen({super.key, required this.amountPlanck});
 
   @override
   ConsumerState<PosQrScreen> createState() => _PosQrScreenState();
 }
 
 class _PosQrScreenState extends ConsumerState<PosQrScreen> {
-  final _posService = PosService();
   PosPaymentRequest? _request;
 
   final _txWatch = TxWatchService();
@@ -51,13 +50,11 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   void _startWatching() {
-    final formattingService = ref.watch(numberFormattingServiceProvider);
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 
-    final expectedPlanck = formattingService.parseAmount(widget.amount);
-    if (expectedPlanck == null) {
-      print('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
+    if (widget.amountPlanck <= BigInt.zero) {
+      print('[PosQr] ERROR: invalid amount planck ${widget.amountPlanck}');
       if (mounted) setState(() => _watchError = 'Invalid amount. Tap to retry.');
       return;
     }
@@ -67,15 +64,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    print('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
+    print('[PosQr] watching address=${active.account.accountId} expected=${widget.amountPlanck} planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
         print('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
-        if (received != expectedPlanck) {
-          print('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+        if (received != widget.amountPlanck) {
+          print('[PosQr] amount mismatch (received=$received expected=${widget.amountPlanck}), ignoring');
           return;
         }
 
@@ -84,7 +81,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
           from: tx.from,
           to: active.account.accountId,
-          amount: expectedPlanck,
+          amount: widget.amountPlanck,
           timestamp: DateTime.now(),
           transactionState: TransactionState.pending,
           isReversible: false,
@@ -163,8 +160,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    final planck = formattingService.parseAmount(widget.amount) ?? BigInt.zero;
-    final display = ref.watch(txAmountDisplayProvider)(planck, withSignPrefix: false, isSend: false, quanDecimals: 4);
+    final display = ref.watch(txAmountDisplayProvider)(
+      widget.amountPlanck,
+      withSignPrefix: false,
+      isSend: false,
+      quanDecimals: 4,
+    );
 
     return ScaffoldBase(
       appBar: V2AppBar(title: _isPaid ? 'Payment Received' : 'Scan to Pay'),
@@ -175,7 +176,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         ),
         data: (active) {
           if (active == null) return const Center(child: Text('No active account'));
-          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
+          _request ??= PosService(
+            formattingService: formattingService,
+          ).createPaymentRequest(accountId: active.account.accountId, amountPlanck: widget.amountPlanck);
           if (_isPaid) return _buildPaidContent(colors, text, display.primaryAmount);
           return _buildQrContent(_request!, colors, text, display);
         },

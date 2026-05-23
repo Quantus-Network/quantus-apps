@@ -205,7 +205,7 @@ class BinaryManager {
 
   static String _buildNodeDownloadUrl(String tag) {
     final target = _targetTriple();
-    final extension = Platform.isWindows ? "zip" : "tar.gz";
+    final extension = Platform.isWindows ? 'zip' : 'tar.gz';
     final asset = '$_binary-$tag-$target.$extension';
     return 'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
   }
@@ -329,7 +329,7 @@ class BinaryManager {
 
     // Pick asset name
     final target = _targetTriple();
-    final extension = Platform.isWindows ? "zip" : "tar.gz";
+    final extension = Platform.isWindows ? 'zip' : 'tar.gz';
     final asset = '$_binary-$tag-$target.$extension';
     final url = 'https://github.com/$_repoOwner/$_repoName/releases/download/$tag/$asset';
 
@@ -661,7 +661,7 @@ class BinaryManager {
     }
   }
 
-  static String _normalizeFilename(String file) => Platform.isWindows ? "$file.exe" : file;
+  static String _normalizeFilename(String file) => Platform.isWindows ? '$file.exe' : file;
 
   static Future<Directory> _getCacheDir() async =>
       Directory(p.join(await getQuantusHomeDirectoryPath(), 'bin')).create(recursive: true);

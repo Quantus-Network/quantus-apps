@@ -1,3 +1,5 @@
+import 'package:quantus_sdk/quantus_sdk.dart';
+
 class PosPaymentRequest {
   final String paymentUrl;
   final String refId;
@@ -7,6 +9,11 @@ class PosPaymentRequest {
 }
 
 class PosService {
+  final NumberFormattingService _formattingService;
+
+  PosService({NumberFormattingService? formattingService})
+    : _formattingService = formattingService ?? NumberFormattingService();
+
   String generateRefId() {
     final now = DateTime.now().millisecondsSinceEpoch;
     return now.toRadixString(36).toUpperCase();
@@ -17,9 +24,10 @@ class PosService {
     return uri.toString();
   }
 
-  PosPaymentRequest createPaymentRequest({required String accountId, required String amount}) {
+  PosPaymentRequest createPaymentRequest({required String accountId, required BigInt amountPlanck}) {
     final refId = generateRefId();
-    final url = buildPaymentUrl(accountId: accountId, amount: amount, refId: refId);
-    return PosPaymentRequest(paymentUrl: url, refId: refId, amount: amount);
+    final wireAmount = _formattingService.formatWireAmount(amountPlanck);
+    final url = buildPaymentUrl(accountId: accountId, amount: wireAmount, refId: refId);
+    return PosPaymentRequest(paymentUrl: url, refId: refId, amount: wireAmount);
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/shared/global_navigator_key.dart';
 import 'package:resonance_network_wallet/wallet_initializer.dart';
 import 'package:resonance_network_wallet/v2/screens/auth/auth_wrapper.dart';
 import 'package:resonance_network_wallet/v2/theme/app_theme.dart';
@@ -25,35 +24,22 @@ class _ResonanceWalletAppState extends ConsumerState<ResonanceWalletApp> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notificationIntegrationServiceProvider);
-      ref.read(deepLinkServiceProvider).init(navigatorKey);
-      ref.read(localNotificationsServiceProvider).setupNotificationsClickListener(navigatorKey);
-      ref.read(localNotificationsServiceProvider).handleLaunchByNotification(navigatorKey);
+    ref.read(notificationIntegrationServiceProvider);
+    ref.read(deepLinkServiceProvider).init();
+    final localNotifications = ref.read(localNotificationsServiceProvider);
+    localNotifications.setupNotificationsClickListener();
+    localNotifications.handleLaunchByNotification();
 
-      if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
-    });
-  }
-
-  @override
-  void dispose() {
-    ref.read(deepLinkServiceProvider).dispose();
-    super.dispose();
+    if (Platform.isAndroid) _referralService.checkPlayStoreReferralCode();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Quantus Wallet',
-      navigatorKey: navigatorKey,
       navigatorObservers: [TelemetryNavigatorObserver()],
       initialRoute: '/',
-      routes: {
-        '/': (context) => const WalletInitializer(),
-        // These routes are for deep linking, each will carry an intent
-        '/account': (context) => const WalletInitializer(),
-        '/transactions': (context) => const WalletInitializer(),
-      },
+      routes: {'/': (context) => const WalletInitializer()},
       theme: AppTheme.darkTheme(context),
       darkTheme: AppTheme.darkTheme(context),
       themeMode: ThemeMode.dark,

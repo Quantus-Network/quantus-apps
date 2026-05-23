@@ -1,5 +1,7 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
+import 'json_dynamic_parse.dart';
+
 // Base class for different transaction types
 abstract class TransactionEvent {
   final String id;
@@ -45,17 +47,17 @@ class TransferEvent extends TransactionEvent {
   });
 
   factory TransferEvent.fromJson(Map<String, dynamic> json) {
-    final block = json['block'] as Map<String, dynamic>?;
-    final blockHeight = block?['height'] as int? ?? 0;
-    final blockHash = block?['hash'] as String? ?? '';
+    final block = jsonMapOrNull(json['block']);
+    final blockHeight = blockHeightFromJsonMap(block);
+    final blockHash = blockHashFromJsonMap(block);
     return TransferEvent(
-      id: json['id'] as String,
-      from: json['from']?['id'] as String? ?? '',
-      to: json['to']?['id'] as String? ?? '',
-      amount: BigInt.parse(json['amount'] as String),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      fee: json['fee'] != null ? BigInt.parse(json['fee'] as String) : BigInt.zero,
-      extrinsicHash: json['extrinsic']?['id'] as String?,
+      id: stringFromJson(json['id']),
+      from: nestedAccountId(json['sender'] ?? json['from']),
+      to: nestedAccountId(json['receiver'] ?? json['to']),
+      amount: bigIntFromJson(json['amount']),
+      timestamp: dateTimeFromJson(json['timestamp']),
+      fee: json['fee'] != null ? bigIntFromJson(json['fee']) : BigInt.zero,
+      extrinsicHash: optionalExtrinsicHash(json),
       blockNumber: blockHeight,
       blockHash: blockHash,
     );
@@ -104,20 +106,20 @@ class ReversibleTransferEvent extends TransactionEvent {
 
   // Create a ReversibleTransferEvent with a known status
   factory ReversibleTransferEvent.fromJson(Map<String, dynamic> json, {required ReversibleTransferStatus status}) {
-    final block = json['block'] as Map<String, dynamic>;
-    final transfer = json['scheduledTransfer'] as Map<String, dynamic>? ?? json;
+    final block = jsonMapRequired(json['block'], 'block');
+    final transfer = jsonMapOrNull(json['scheduledTransfer']) ?? json;
     return ReversibleTransferEvent(
-      id: json['id'] as String,
-      from: transfer['from']?['id'] as String? ?? '',
-      to: transfer['to']?['id'] as String? ?? '',
-      amount: BigInt.parse(transfer['amount'] as String),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      txId: json['txId'] as String,
+      id: stringFromJson(json['id']),
+      from: nestedAccountId(transfer['sender'] ?? transfer['from']),
+      to: nestedAccountId(transfer['receiver'] ?? transfer['to']),
+      amount: bigIntFromJson(transfer['amount']),
+      timestamp: dateTimeFromJson(json['timestamp']),
+      txId: stringFromJson(json['txId']),
       status: status,
-      scheduledAt: DateTime.parse(transfer['scheduledAt'] as String),
-      extrinsicHash: json['extrinsic']?['id'] as String?,
-      blockNumber: block['height'] as int,
-      blockHash: block['hash'] as String? ?? '',
+      scheduledAt: dateTimeFromJson(transfer['scheduledAt']),
+      extrinsicHash: optionalExtrinsicHash(json),
+      blockNumber: blockHeightFromJsonMap(block),
+      blockHash: blockHashFromJsonMap(block),
     );
   }
 

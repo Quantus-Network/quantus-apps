@@ -125,12 +125,22 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
       return;
     }
 
-    // Normalize: collapse any whitespace/newlines to single spaces
     final mnemonic = words.join(' ');
+
+    final invalidWords = _walletService.findInvalidMnemonicWords(mnemonic);
+    if (invalidWords.isNotEmpty) {
+      final formatted = invalidWords.map((w) => '"${w.word}" (word ${w.position})').join(', ');
+      setState(() {
+        _importError = 'Not in the BIP-39 wordlist: $formatted. Check for typos.';
+      });
+      return;
+    }
 
     if (!_walletService.validateMnemonic(mnemonic)) {
       setState(() {
-        _importError = 'Invalid recovery phrase. Please check your words.';
+        _importError =
+            'Recovery phrase checksum is invalid. All words are valid, '
+            'but they may be in the wrong order or one word is misspelled into another valid word.';
       });
       return;
     }
@@ -466,8 +476,8 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
             const SizedBox(height: 8),
             Text(
               _importMode == _ImportMode.mnemonic
-                  ? 'Enter your 24-word recovery phrase to restore your wallet.'
-                  : 'Enter your inner hash (hex format) from the CLI or another source.',
+                  ? 'Enter your 24-word recovery phrase to restore your wallet. Required to mine AND redeem rewards.'
+                  : 'Enter your inner hash to direct mining rewards to the correct address. Redeeming is NOT possible with only the inner hash.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
@@ -540,7 +550,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Without the recovery phrase, you cannot withdraw rewards from this app. Use this option only if you plan to withdraw using the CLI.',
+                        'Mining will work and rewards will go to the correct address, but you will NOT be able to redeem them from this app — redeeming requires the secret phrase.',
                         style: TextStyle(fontSize: 13, color: Colors.amber.shade200),
                       ),
                     ),
@@ -608,7 +618,7 @@ class _RewardsAddressSetupScreenState extends State<RewardsAddressSetupScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Without your recovery phrase, you cannot withdraw rewards from this app. Make sure you have access to your secret via the CLI or another tool.',
+                    'Mining will work and rewards will go to the correct address, but you cannot redeem them from this app. Redeeming requires the secret phrase — log out the wallet and re-enter the phrase when you are ready to redeem.',
                     style: TextStyle(fontSize: 14, color: Colors.amber.shade200),
                   ),
                 ),

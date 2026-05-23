@@ -43,17 +43,17 @@ class _AppLogPrinter extends LogPrinter {
 
   static final _levelColors = {
     Level.trace: AnsiColor.fg(AnsiColor.grey(0.5)),
-    Level.debug: AnsiColor.none(),
-    Level.info: AnsiColor.fg(12), // Light blue
-    Level.warning: AnsiColor.fg(208), // Orange
-    Level.error: AnsiColor.fg(196), // Red
-    Level.fatal: AnsiColor.fg(199), // Magenta
+    Level.debug: const AnsiColor.none(),
+    Level.info: const AnsiColor.fg(12), // Light blue
+    Level.warning: const AnsiColor.fg(208), // Orange
+    Level.error: const AnsiColor.fg(196), // Red
+    Level.fatal: const AnsiColor.fg(199), // Magenta
   };
 
   @override
   List<String> log(LogEvent event) {
     final prefix = _levelPrefixes[event.level] ?? '?';
-    final color = _levelColors[event.level] ?? AnsiColor.none();
+    final color = _levelColors[event.level] ?? const AnsiColor.none();
     final time = _formatTime(event.time);
 
     final messageStr = event.message.toString();

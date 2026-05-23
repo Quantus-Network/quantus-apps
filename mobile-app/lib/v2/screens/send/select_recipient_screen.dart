@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
+import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
+import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
-import 'package:resonance_network_wallet/v2/components/recent_addresses_list.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -28,7 +30,10 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
 
+  final Map<String, String> _checksums = {};
+  List<String> _recents = [];
   bool _hasAddressError = true;
+  bool _loadingRecents = true;
   bool _isPayMode = false;
   String? _recipientChecksum;
 
@@ -36,6 +41,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   void initState() {
     super.initState();
     _recipientController.addListener(_onRecipientChanged);
+    _loadRecents();
   }
 
   @override
@@ -45,6 +51,32 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     _amountController.dispose();
     _recipientFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRecents() async {
+    final checksumService = ref.read(humanReadableChecksumServiceProvider);
+    final settingsService = ref.read(settingsServiceProvider);
+    final recentAddressesService = ref.read(recentAddressesServiceProvider);
+
+    try {
+      final all = await recentAddressesService.getAddresses();
+      final active = await settingsService.getActiveAccount();
+      final currentId = active?.account.accountId;
+      final addresses = all.where((a) => a != currentId).toList();
+      if (!mounted) return;
+      setState(() {
+        _recents = addresses;
+        _loadingRecents = false;
+      });
+      for (final addr in addresses) {
+        checksumService.getHumanReadableName(addr).then((name) {
+          if (mounted) setState(() => _checksums[addr] = name);
+        });
+      }
+    } catch (e) {
+      debugPrint('SelectRecipientScreen recents: $e');
+      if (mounted) setState(() => _loadingRecents = false);
+    }
   }
 
   void _onRecipientChanged() {
@@ -119,6 +151,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     Navigator.push<bool>(
       context,
       MaterialPageRoute(
+        settings: inputAmountScreenRouteSettings,
         builder: (_) => InputAmountScreen(
           recipientAddress: address,
           recipientChecksum: _recipientChecksum,
@@ -147,12 +180,9 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final active = ref.watch(activeAccountProvider).value;
+    ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
-
-    final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
-    final exclude = <String>{if (active != null) active.account.accountId};
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Send'),
@@ -164,12 +194,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
             children: [
               Text('Send To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 12),
-              AddressInputField(
-                controller: _recipientController,
-                focusNode: _recipientFocus,
-                hasValid: hasValid,
-                recipientChecksum: _recipientChecksum,
-              ),
+              _buildRecipientField(colors, text),
               const SizedBox(height: 28),
               _buildScanRow(colors, text),
               const SizedBox(height: 28),
@@ -185,12 +210,111 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
           Expanded(
             child: CustomScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              slivers: [RecentAddressesSlivers(excludeAddresses: exclude, onTap: _onRecentTap)],
+              slivers: [
+                if (_loadingRecents)
+                  const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
+                else if (_recents.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Text('Recents', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final isFirst = i == 0;
+                      final isLast = i == _recents.length - 1;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!isFirst) ...[const SizedBox(height: 14)],
+                          _recentRow(_recents[i], colors, text),
+                          if (!isLast) ...[
+                            const SizedBox(height: 14),
+                            Divider(height: 1, color: colors.txItemSeparator),
+                          ],
+                        ],
+                      );
+                    }, childCount: _recents.length),
+                  ),
+                ] else
+                  const SliverFillRemaining(hasScrollBody: false, child: SizedBox.shrink()),
+              ],
             ),
           ),
         ],
       ),
       bottomContent: _buildBottomButton(),
+    );
+  }
+
+  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text) {
+    final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
+
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: hasValid,
+              child: Opacity(
+                opacity: hasValid ? 0 : 1,
+                child: Container(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 14, color: colors.textLabel),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _recipientController,
+                          focusNode: _recipientFocus,
+                          keyboardType: TextInputType.text,
+                          textInputAction: TextInputAction.done,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          textCapitalization: TextCapitalization.none,
+                          scrollPadding: const EdgeInsets.only(bottom: 120),
+                          style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                          decoration: const InputDecoration(hintText: 'Search ${AppConstants.tokenSymbol} Address'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (hasValid)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  _recipientController.clear();
+                  _recipientFocus.requestFocus();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(color: colors.toasterBackground, borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AddressFormattingService.formatAddress(_recipientController.text.trim()),
+                        style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_recipientChecksum != null)
+                        Text(_recipientChecksum!, style: text.detail?.copyWith(color: colors.checksum)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -232,6 +356,21 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
             Icon(Icons.chevron_right, size: 20, color: colors.textPrimary),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _recentRow(String address, AppColorsV2 colors, AppTextTheme text) {
+    final checksum = _checksums[address];
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onRecentTap(address),
+        borderRadius: BorderRadius.circular(8),
+        child: checksum != null
+            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
+            : const Skeleton(height: 36),
       ),
     );
   }

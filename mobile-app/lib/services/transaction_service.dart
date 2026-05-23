@@ -1,9 +1,10 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/transaction_role.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   return TransactionService(ref);
@@ -89,12 +90,11 @@ class TransactionService {
     }
   }
 
-  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic>? json, GlobalKey<NavigatorState> navigatorKey) {
+  void navigateToTransactionFromPayloadIfPossible(Map<String, dynamic> json) {
     final event = deserializeTxEventFromJsonIfPossible(json);
 
     if (event != null) {
       _ref.read(transactionIntentProvider.notifier).state = event;
-      navigatorKey.currentState?.pushNamed('/transactions');
     }
   }
 
@@ -111,7 +111,12 @@ class TransactionService {
         event = PendingTransactionEvent.fromJson(json);
       }
     } catch (e) {
-      print('Failed deserializing event: $e');
+      debugPrint('Failed deserializing $txType event: $e');
+      TelemetryService().sendError(
+        'Failed deserializing $txType event',
+        error: e.runtimeType.toString(),
+        stackTrace: StackTrace.current,
+      );
     }
 
     return event;

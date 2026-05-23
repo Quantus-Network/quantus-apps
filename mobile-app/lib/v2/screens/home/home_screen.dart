@@ -6,6 +6,8 @@ import 'package:resonance_network_wallet/features/components/dotted_border.dart'
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/features/components/shared_address_action_sheet.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/routes.dart';
+import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/url_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -13,6 +15,7 @@ import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -40,6 +43,60 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual<TransactionEvent?>(transactionIntentProvider, _onTransactionIntent);
+    ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
+    ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
+    ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
+      if (async.value == null) return;
+      _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    });
+
+    Future.microtask(_drainPendingIntents);
+  }
+
+  void _drainPendingIntents() {
+    if (!mounted) return;
+    _onTransactionIntent(null, ref.read(transactionIntentProvider));
+    _onPaymentIntent(null, ref.read(paymentIntentProvider));
+    _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
+  }
+
+  void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
+    if (transaction == null || !mounted) return;
+    final active = ref.read(activeAccountProvider).value;
+    if (active == null) return;
+    ref.read(transactionIntentProvider.notifier).state = null;
+
+    showTransactionDetailSheet(context, transaction, active.account.accountId);
+  }
+
+  void _onPaymentIntent(PaymentIntent? _, PaymentIntent? payment) {
+    if (payment == null || !mounted) return;
+    ref.read(paymentIntentProvider.notifier).state = null;
+
+    final pageRoute = MaterialPageRoute(
+      builder: (_) => InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
+      settings: inputAmountScreenRouteSettings,
+    );
+
+    if (context.peekTopRouteName == inputAmountScreenRouteSettings.name) {
+      Navigator.pushReplacement(context, pageRoute);
+    } else {
+      Navigator.push(context, pageRoute);
+    }
+  }
+
+  void _onSharedIntent(String? _, String? shared) {
+    if (shared == null || !mounted) return;
+    ref.read(sharedAccountIntentProvider.notifier).state = null;
+
+    showSharedAddressActionSheet(context, shared);
+  }
+
   Future<void> _refresh() async {
     final active = ref.read(activeAccountProvider).value;
     ref.invalidate(balanceProviderFamily);
@@ -70,24 +127,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(paymentIntentProvider, (_, payment) {
-      if (payment == null) return;
-      ref.read(paymentIntentProvider.notifier).state = null;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              InputAmountScreen(recipientAddress: payment.to, initialAmount: payment.amount, isPayMode: true),
-        ),
-      );
-    });
-
-    ref.listen(sharedAccountIntentProvider, (_, shared) {
-      if (shared == null) return;
-      ref.read(sharedAccountIntentProvider.notifier).state = null;
-      showSharedAddressActionSheet(context, shared);
-    });
-
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final colors = context.colors;

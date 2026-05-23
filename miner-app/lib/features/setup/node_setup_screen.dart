@@ -18,8 +18,8 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
   bool _isLoading = true;
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
-  String _downloadProgressText = "";
-  String _currentDownloadingBinary = "";
+  String _downloadProgressText = '';
+  String _currentDownloadingBinary = '';
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       _isLoading = true;
       _isDownloading = true;
       _downloadProgress = 0.0;
-      _downloadProgressText = "Starting downloads...";
+      _downloadProgressText = 'Starting downloads...';
     });
 
     try {
@@ -69,8 +69,8 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         final nodeVersion = await BinaryManager.getLatestNodeVersion();
 
         setState(() {
-          _currentDownloadingBinary = "Node Binary $nodeVersion";
-          _downloadProgressText = "Downloading Node Binary...";
+          _currentDownloadingBinary = 'Node Binary $nodeVersion';
+          _downloadProgressText = 'Downloading Node Binary...';
         });
 
         await BinaryManager.ensureNodeBinary(
@@ -80,10 +80,10 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
                 if (progress.totalBytes > 0) {
                   _downloadProgress = progress.downloadedBytes / progress.totalBytes;
                   _downloadProgressText =
-                      "Node: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
+                      'Node: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
                 } else {
                   _downloadProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
-                  _downloadProgressText = progress.downloadedBytes > 0 ? "Node Downloaded" : "Downloading Node...";
+                  _downloadProgressText = progress.downloadedBytes > 0 ? 'Node Downloaded' : 'Downloading Node...';
                 }
               });
             }
@@ -100,9 +100,9 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         final minerVersion = await BinaryManager.getLatestMinerVersion();
 
         setState(() {
-          _currentDownloadingBinary = "External Miner $minerVersion";
+          _currentDownloadingBinary = 'External Miner $minerVersion';
           _downloadProgress = 0.0;
-          _downloadProgressText = "Downloading External Miner...";
+          _downloadProgressText = 'Downloading External Miner...';
         });
 
         await BinaryManager.ensureExternalMinerBinary(
@@ -112,10 +112,10 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
                 if (progress.totalBytes > 0) {
                   _downloadProgress = progress.downloadedBytes / progress.totalBytes;
                   _downloadProgressText =
-                      "Miner: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
+                      'Miner: ${(progress.downloadedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / ${(progress.totalBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
                 } else {
                   _downloadProgress = progress.downloadedBytes > 0 ? 1.0 : 0.0;
-                  _downloadProgressText = progress.downloadedBytes > 0 ? "Miner Downloaded" : "Downloading Miner...";
+                  _downloadProgressText = progress.downloadedBytes > 0 ? 'Miner Downloaded' : 'Downloading Miner...';
                 }
               });
             }
@@ -131,7 +131,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _downloadProgressText = "All binaries installed successfully!";
+          _downloadProgressText = 'All binaries installed successfully!';
         });
       }
 
@@ -143,7 +143,7 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         setState(() {
           _isLoading = false;
           _isDownloading = false;
-          _downloadProgressText = "Error: ${e.toString()}";
+          _downloadProgressText = 'Error: ${e.toString()}';
         });
       }
       if (mounted) {
@@ -198,23 +198,23 @@ class _NodeSetupScreenState extends State<NodeSetupScreen> {
         const SizedBox(height: 16),
         const Text('Mining Software Installed!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Column(
+        const Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.check, color: Colors.green, size: 20),
-                const SizedBox(width: 8),
-                const Text('Node Binary'),
+                SizedBox(width: 8),
+                Text('Node Binary'),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.check, color: Colors.green, size: 20),
-                const SizedBox(width: 8),
-                const Text('External Miner'),
+                SizedBox(width: 8),
+                Text('External Miner'),
               ],
             ),
           ],
