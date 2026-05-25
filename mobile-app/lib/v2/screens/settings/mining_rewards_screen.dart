@@ -8,9 +8,7 @@ import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart'
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
-import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -37,13 +35,14 @@ class MiningRewardsScreen extends ConsumerWidget {
               _ErrorState(colors: colors, text: text, l10n: l10n, onRetry: () => ref.invalidate(miningRewardsProvider)),
         ),
       ],
-      bottomContent: miningAsync.when(
-        data: (data) => data.totalBlocks > 0
-            ? ScaffoldBaseBottomContent(child: QuantusButton.simple(label: l10n.settingsMiningRedeem, onTap: null))
-            : null,
-        loading: () => null,
-        error: (err, _) => null,
-      ),
+      // TODO: Enable redeem button when it is implemented
+      // bottomContent: miningAsync.when(
+      //   data: (data) => data.totalBlocks > 0
+      //       ? ScaffoldBaseBottomContent(child: QuantusButton.simple(label: l10n.settingsMiningRedeem, onTap: null))
+      //       : null,
+      //   loading: () => null,
+      //   error: (err, _) => null,
+      // ),
     );
   }
 }
