@@ -28,10 +28,21 @@ qp-wormhole-aggregator = { version = "2.0.1", default-features = false, features
 qp-wormhole-inputs = { version = "2.0.1", default-features = false, features = ["std"] }
 qp-zk-circuits-common = { version = "2.0.1", default-features = false, features = ["std"] }
 qp-wormhole-circuit-builder = { version = "2.0.1" }
+rayon = "1.10"
 
 ## This dependency has been yanked but sp-core depends on version 0.1.1... so we add it with a patch
 [patch.crates-io]
 ark-vrf = { git = "https://github.com/davxy/ark-vrf", tag = "v0.1.1" }
+
+# Local qp-zk-circuits checkout — picks up the tighter aggregator config
+# from PR #139 (wormhole_aggregator_circuit_config: 135/60/RowBlinding).
+# Revert these lines to fall back to crates.io.
+qp-zk-circuits-common      = { path = "../../../qp-zk-circuits/common" }
+qp-wormhole-circuit        = { path = "../../../qp-zk-circuits/wormhole/circuit" }
+qp-wormhole-prover         = { path = "../../../qp-zk-circuits/wormhole/prover" }
+qp-wormhole-aggregator     = { path = "../../../qp-zk-circuits/wormhole/aggregator" }
+qp-wormhole-inputs         = { path = "../../../qp-zk-circuits/wormhole/inputs" }
+qp-wormhole-circuit-builder = { path = "../../../qp-zk-circuits/wormhole/circuit-builder" }
 
 # Circuit generation is CPU-intensive; without this it takes ~10min instead of ~30s.
 [profile.dev.build-override]

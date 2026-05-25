@@ -13,39 +13,74 @@ void setDefaultSs58Prefix({required int prefix}) =>
     RustLib.instance.api.crateApiCryptoSetDefaultSs58Prefix(prefix: prefix);
 
 /// Convert public key to accountId32 in ss58check format
-String toAccountId({required Keypair obj}) => RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
+String toAccountId({required Keypair obj}) =>
+    RustLib.instance.api.crateApiCryptoToAccountId(obj: obj);
 
 /// Convert key in ss58check format to accountId32
-Uint8List ss58ToAccountId({required String s}) => RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
+Uint8List ss58ToAccountId({required String s}) =>
+    RustLib.instance.api.crateApiCryptoSs58ToAccountId(s: s);
 
-Keypair generateKeypair({required String mnemonicStr}) =>
-    RustLib.instance.api.crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
+Keypair generateKeypair({required String mnemonicStr}) => RustLib.instance.api
+    .crateApiCryptoGenerateKeypair(mnemonicStr: mnemonicStr);
 
-Keypair generateDerivedKeypair({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(mnemonicStr: mnemonicStr, path: path);
+Keypair generateDerivedKeypair({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoGenerateDerivedKeypair(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
-WormholeResult deriveWormhole({required String mnemonicStr, required String path}) =>
-    RustLib.instance.api.crateApiCryptoDeriveWormhole(mnemonicStr: mnemonicStr, path: path);
+WormholeResult deriveWormhole({
+  required String mnemonicStr,
+  required String path,
+}) => RustLib.instance.api.crateApiCryptoDeriveWormhole(
+  mnemonicStr: mnemonicStr,
+  path: path,
+);
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
 ///
 /// Mirrors how the chain and ZK circuit derive the address from the preimage:
 /// - Convert 32 bytes → 4 Poseidon field elements (8 bytes each)
 /// - Hash once without padding
-String firstHashToAddress({required String firstHashHex}) =>
-    RustLib.instance.api.crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
+String firstHashToAddress({required String firstHashHex}) => RustLib
+    .instance
+    .api
+    .crateApiCryptoFirstHashToAddress(firstHashHex: firstHashHex);
 
 Keypair generateKeypairFromSeed({required List<int> seed}) =>
     RustLib.instance.api.crateApiCryptoGenerateKeypairFromSeed(seed: seed);
 
-Uint8List signMessage({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessage(keypair: keypair, message: message, entropy: entropy);
+Uint8List signMessage({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+}) => RustLib.instance.api.crateApiCryptoSignMessage(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+);
 
-Uint8List signMessageWithPubkey({required Keypair keypair, required List<int> message, U8Array32? entropy}) =>
-    RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(keypair: keypair, message: message, entropy: entropy);
+Uint8List signMessageWithPubkey({
+  required Keypair keypair,
+  required List<int> message,
+  U8Array32? entropy,
+}) => RustLib.instance.api.crateApiCryptoSignMessageWithPubkey(
+  keypair: keypair,
+  message: message,
+  entropy: entropy,
+);
 
-bool verifyMessage({required Keypair keypair, required List<int> message, required List<int> signature}) =>
-    RustLib.instance.api.crateApiCryptoVerifyMessage(keypair: keypair, message: message, signature: signature);
+bool verifyMessage({
+  required Keypair keypair,
+  required List<int> message,
+  required List<int> signature,
+}) => RustLib.instance.api.crateApiCryptoVerifyMessage(
+  keypair: keypair,
+  message: message,
+  signature: signature,
+);
 
 Keypair crystalAlice() => RustLib.instance.api.crateApiCryptoCrystalAlice();
 
@@ -100,7 +135,11 @@ class WormholeResult {
   final Uint8List firstHash;
   final Uint8List secret;
 
-  const WormholeResult({required this.address, required this.firstHash, required this.secret});
+  const WormholeResult({
+    required this.address,
+    required this.firstHash,
+    required this.secret,
+  });
 
   @override
   int get hashCode => address.hashCode ^ firstHash.hashCode ^ secret.hashCode;

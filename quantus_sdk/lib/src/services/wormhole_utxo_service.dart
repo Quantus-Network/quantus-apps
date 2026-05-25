@@ -82,6 +82,13 @@ class WormholeUtxoService {
 
   static void _log(String msg) => print('[WormholeUtxo] $msg');
 
+  static void _logMem(String tag) {
+    final (phys, virt) = wormhole_ffi.getProcessMemory();
+    final physMb = phys ~/ BigInt.from(1024 * 1024);
+    final virtMb = virt ~/ BigInt.from(1024 * 1024);
+    print('[UtxoMem] $tag phys=${physMb}MB virt=${virtMb}MB');
+  }
+
   static String _addressHash(Uint8List raw32) => wormhole_ffi.computeAddressHashHex(rawAddress: raw32);
 
   static void _throwIfCancelled(IsCancelledCallback? isCancelled) {
@@ -400,6 +407,7 @@ query SpentNullifiers($hashes: [String!]!) {
   }) async {
     final sw = Stopwatch()..start();
     _log('getTransfersTo START ($wormholeAddress)');
+    _logMem('getTransfersTo_start');
 
     final raw = Uint8List.fromList(getAccountId32(wormholeAddress));
     final fullHash = _addressHash(raw);
@@ -410,6 +418,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     final cache = await _loadTransferCache(fullHash);
     _log('Cache: ${cache.transfers.length} transfers up to block ${cache.cachedUpToBlock}');
+    _logMem('after_load_transfer_cache');
     if (cache.transfers.isNotEmpty) onProgress?.call(1, cache.transfers.length);
 
     _throwIfCancelled(isCancelled);
@@ -438,6 +447,7 @@ query SpentNullifiers($hashes: [String!]!) {
     final allTransfers = [...cache.transfers, ...newTransfers];
     onProgress?.call(1, allTransfers.length);
     _log('Total transfers: ${allTransfers.length} (${cache.transfers.length} cached + ${newTransfers.length} new)');
+    _logMem('after_merge_transfers');
 
     // Cache only the reorg-safe slice; the caller still sees recent (above-cutoff)
     // transfers so balances / claims include them.
@@ -445,6 +455,7 @@ query SpentNullifiers($hashes: [String!]!) {
     await _saveTransferCache(fullHash, _TransferCache(cachedUpToBlock: safeCutoff, transfers: safeTransfers));
 
     _log('getTransfersTo DONE: ${allTransfers.length} transfers (${sw.elapsedMilliseconds}ms)');
+    _logMem('getTransfersTo_done');
     return (transfers: allTransfers, safeCutoff: safeCutoff);
   }
 
@@ -455,6 +466,7 @@ query SpentNullifiers($hashes: [String!]!) {
     IsCancelledCallback? isCancelled,
   }) async {
     _log('getUnspentTransfers($wormholeAddress)');
+    _logMem('getUnspentTransfers_start');
     final fetched = await getTransfersTo(wormholeAddress, onProgress: onProgress, isCancelled: isCancelled);
     final transfers = fetched.transfers;
     final safeCutoff = fetched.safeCutoff;
@@ -467,6 +479,7 @@ query SpentNullifiers($hashes: [String!]!) {
     final fullHash = _addressHash(raw);
     final cachedSpent = await _loadSpentNullifiers(fullHash);
     _log('Nullifier cache: ${cachedSpent.length} known spent');
+    _logMem('after_load_nullifier_cache');
 
     final hdWalletService = HdWalletService();
     final uncheckedPairs = <(String, String)>[];
@@ -490,11 +503,14 @@ query SpentNullifiers($hashes: [String!]!) {
         uncheckedPairs.add((nullifierHex, nullifierHash));
       }
       onProgress?.call(2, i + 1, total: transfers.length);
+      if ((i + 1) % 500 == 0) _logMem('nullifiers_computed_${i + 1}');
     }
     _log('Computed nullifiers: $skipped cached-spent, ${uncheckedPairs.length} to check');
+    _logMem('after_compute_all_nullifiers');
 
     if (uncheckedPairs.isNotEmpty) {
       final newSpent = await _checkNullifiersSpent(uncheckedPairs, onProgress: onProgress, isCancelled: isCancelled);
+      _logMem('after_check_nullifiers_spent');
       // In-memory: every spent nullifier we've seen, including ones in
       // unfinalized blocks — must not be re-claimed in this call.
       allSpent.addAll(newSpent.keys);
@@ -512,6 +528,7 @@ query SpentNullifiers($hashes: [String!]!) {
 
     final unspent = nullifierToTransfer.entries.where((e) => !allSpent.contains(e.key)).map((e) => e.value).toList();
     _log('getUnspentTransfers: ${unspent.length} unspent out of ${transfers.length} total');
+    _logMem('getUnspentTransfers_done');
     return unspent;
   }
 

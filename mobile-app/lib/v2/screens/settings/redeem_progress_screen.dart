@@ -45,7 +45,12 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       if (keyPair.secretHex.isEmpty) throw StateError('Wormhole key pair not available');
 
       final circuitDir = await CircuitManager.getCircuitDirectory();
-      _claimService = WormholeClaimService();
+      _claimService = WormholeClaimService(
+        maxProofsPerBatch: 16,
+        proofConcurrency: 1,
+        freshBuild: true,
+        provingThreads: 8,
+      );
 
       final result = await _claimService!.claimRewards(
         wormholeAddress: keyPair.address,
@@ -157,7 +162,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       (3, 'Computing nullifiers'),
       (4, 'Checking nullifiers'),
       (5, 'Generating ZK proofs'),
-      (6, 'Submitting to chain'),
+      (6, 'Aggregating & submitting'),
     ];
 
     return Container(
@@ -236,7 +241,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
         : colors.textTertiary;
 
     String progressText = '';
-    if (progress != null && progress.completed > 0) {
+    if (progress != null && (isActive || isCompleted)) {
       if (step == 2) {
         progressText = '${progress.completed} fetched';
       } else if (progress.total != null) {

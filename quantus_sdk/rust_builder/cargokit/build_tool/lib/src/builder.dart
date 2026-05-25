@@ -148,7 +148,7 @@ class RustBuilder {
         manifestPath,
         '-p',
         environment.crateInfo.packageName,
-        if (!environment.configuration.isDebug) '--release',
+        '--release', // always build in release mode - debug is very slow
         '--target',
         target.rust,
         '--target-dir',
@@ -159,7 +159,7 @@ class RustBuilder {
     return path.join(
       environment.targetTempDir,
       target.rust,
-      environment.configuration.rustName,
+      'release',
     );
   }
 

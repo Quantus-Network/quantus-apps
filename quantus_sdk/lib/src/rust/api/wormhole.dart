@@ -6,28 +6,45 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `all_required_files_exist`, `vec_to_32`, `vec_to_digest`
+// These functions are ignored because they are not marked as `pub`: `all_required_files_exist`, `leaf_files_exist`, `log_mem`, `process_memory`, `read_task_vm_info`, `vec_to_32`, `vec_to_digest`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `TaskVmInfoRev1`
 
-String computeAddressHashHex({required List<int> rawAddress}) =>
-    RustLib.instance.api.crateApiWormholeComputeAddressHashHex(rawAddress: rawAddress);
+String computeAddressHashHex({required List<int> rawAddress}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeComputeAddressHashHex(rawAddress: rawAddress);
 
-Uint8List computeNullifier({required List<int> secret, required BigInt transferCount}) =>
-    RustLib.instance.api.crateApiWormholeComputeNullifier(secret: secret, transferCount: transferCount);
+Uint8List computeNullifier({
+  required List<int> secret,
+  required BigInt transferCount,
+}) => RustLib.instance.api.crateApiWormholeComputeNullifier(
+  secret: secret,
+  transferCount: transferCount,
+);
 
 Uint8List computeWormholeAddress({required List<int> secret}) =>
     RustLib.instance.api.crateApiWormholeComputeWormholeAddress(secret: secret);
 
-int wormholeComputeOutputAmount({required int inputAmount, required int feeBps}) =>
-    RustLib.instance.api.crateApiWormholeWormholeComputeOutputAmount(inputAmount: inputAmount, feeBps: feeBps);
+int wormholeComputeOutputAmount({
+  required int inputAmount,
+  required int feeBps,
+}) => RustLib.instance.api.crateApiWormholeWormholeComputeOutputAmount(
+  inputAmount: inputAmount,
+  feeBps: feeBps,
+);
 
 int decodeLeafAmount({required List<int> leafData}) =>
     RustLib.instance.api.crateApiWormholeDecodeLeafAmount(leafData: leafData);
 
-BigInt decodeLeafTransferCount({required List<int> leafData}) =>
-    RustLib.instance.api.crateApiWormholeDecodeLeafTransferCount(leafData: leafData);
+BigInt decodeLeafTransferCount({required List<int> leafData}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeDecodeLeafTransferCount(leafData: leafData);
 
-Uint8List decodeLeafToAccount({required List<int> leafData}) =>
-    RustLib.instance.api.crateApiWormholeDecodeLeafToAccount(leafData: leafData);
+Uint8List decodeLeafToAccount({required List<int> leafData}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeDecodeLeafToAccount(leafData: leafData);
 
 MerkleProcessed computeMerklePositions({
   required List<int> unsortedSiblingsFlat,
@@ -39,8 +56,19 @@ MerkleProcessed computeMerklePositions({
   depth: depth,
 );
 
-Future<String> ensureCircuitBinaries({required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeEnsureCircuitBinaries(binsDir: binsDir);
+Future<String> ensureCircuitBinaries({required String binsDir}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeEnsureCircuitBinaries(binsDir: binsDir);
+
+/// Lightweight variant that only generates leaf circuit binaries (prover.bin,
+/// common.bin, verifier.bin, dummy_proof.bin). Skips the heavy aggregation
+/// circuit generation entirely. Use with `aggregate_proofs_fresh` which builds
+/// the aggregation circuit in memory at proving time.
+Future<void> ensureLeafCircuitBinaries({required String binsDir}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeEnsureLeafCircuitBinaries(binsDir: binsDir);
 
 Future<ProofOutput> generateProof({
   required ProofInput input,
@@ -52,14 +80,65 @@ Future<ProofOutput> generateProof({
   commonBinPath: commonBinPath,
 );
 
-Future<Uint8List> aggregateProofs({required List<Uint8List> proofBytesList, required String binsDir}) =>
-    RustLib.instance.api.crateApiWormholeAggregateProofs(proofBytesList: proofBytesList, binsDir: binsDir);
+Future<Uint8List> aggregateProofs({
+  required List<Uint8List> proofBytesList,
+  required String binsDir,
+}) => RustLib.instance.api.crateApiWormholeAggregateProofs(
+  proofBytesList: proofBytesList,
+  binsDir: binsDir,
+);
+
+/// Dump every field of task_vm_info for deep debugging. Call sparingly.
+Future<void> logMemDetailed({required String tag}) =>
+    RustLib.instance.api.crateApiWormholeLogMemDetailed(tag: tag);
+
+/// Returns (phys_footprint_bytes, virtual_bytes). Useful for Dart-side polling.
+(BigInt, BigInt) getProcessMemory() =>
+    RustLib.instance.api.crateApiWormholeGetProcessMemory();
+
+/// Returns (phys_footprint, resident_size, compressed). Dart-side memory probe.
+(BigInt, BigInt, BigInt) getProcessMemoryDetailed() =>
+    RustLib.instance.api.crateApiWormholeGetProcessMemoryDetailed();
+
+/// Dart-side hook to dump every memory field.
+void logMemorySnapshot({required String tag}) =>
+    RustLib.instance.api.crateApiWormholeLogMemorySnapshot(tag: tag);
+
+/// Force the system allocator (Apple libmalloc) to return freed pages to the OS.
+/// On other platforms this is a no-op.
+/// Apple's malloc keeps freed memory in per-zone caches by default; after a heavy
+/// allocation phase like ZK proving this can leave 100s of MB of dirty pages.
+/// We iterate every registered zone — passing `null` only reaches the default
+/// zone, which is NOT where Rust's allocator lives, so calling on null released
+/// 0 bytes in practice.
+Future<void> releaseMemory() =>
+    RustLib.instance.api.crateApiWormholeReleaseMemory();
+
+/// Limit rayon parallelism to reduce peak memory during proving.
+/// Plonky2 multiplies its per-thread FFT buffers by the rayon pool size, so
+/// fewer threads = lower peak memory (at the cost of wall-clock time).
+/// Idempotent / safe to call repeatedly; only the first call wins.
+Future<void> setProvingThreadCount({required int numThreads}) => RustLib
+    .instance
+    .api
+    .crateApiWormholeSetProvingThreadCount(numThreads: numThreads);
+
+Future<Uint8List> aggregateProofsFresh({
+  required List<Uint8List> proofBytesList,
+  required String binsDir,
+}) => RustLib.instance.api.crateApiWormholeAggregateProofsFresh(
+  proofBytesList: proofBytesList,
+  binsDir: binsDir,
+);
 
 class MerkleProcessed {
   final Uint8List sortedSiblingsFlat;
   final Uint8List positions;
 
-  const MerkleProcessed({required this.sortedSiblingsFlat, required this.positions});
+  const MerkleProcessed({
+    required this.sortedSiblingsFlat,
+    required this.positions,
+  });
 
   @override
   int get hashCode => sortedSiblingsFlat.hashCode ^ positions.hashCode;

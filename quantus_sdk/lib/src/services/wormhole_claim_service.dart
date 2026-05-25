@@ -43,8 +43,6 @@ class ClaimCancelled implements Exception {
 }
 
 class WormholeClaimService {
-  static const int _maxProofsPerBatch = 16;
-  static const int _proofConcurrency = 16;
   static const int _volumeFeeBps = 10;
   static final BigInt _scaleDownFactor = BigInt.from(10000000000);
 
@@ -54,16 +52,26 @@ class WormholeClaimService {
     3: 'Computing nullifiers',
     4: 'Checking nullifiers',
     5: 'Generating ZK proofs',
-    6: 'Submitting to chain',
+    6: 'Aggregating & submitting',
   };
 
   final WormholeUtxoService _utxoService = WormholeUtxoService();
   final RpcEndpointService _rpcEndpoint = RpcEndpointService();
   final String? _rpcUrl;
+  final int maxProofsPerBatch;
+  final int proofConcurrency;
+  final bool freshBuild;
+  final int? provingThreads;
 
   Completer<void>? _cancelCompleter;
 
-  WormholeClaimService({String? rpcUrl}) : _rpcUrl = rpcUrl;
+  WormholeClaimService({
+    String? rpcUrl,
+    this.maxProofsPerBatch = 16,
+    this.proofConcurrency = 16,
+    this.freshBuild = false,
+    this.provingThreads,
+  }) : _rpcUrl = rpcUrl;
 
   bool get _cancelled => _cancelCompleter?.isCompleted ?? false;
 
@@ -114,11 +122,22 @@ class WormholeClaimService {
     required ClaimProgressCallback onProgress,
   }) async {
     _checkCancelled();
+    _logMem('claim_start');
+
+    if (provingThreads != null) {
+      _log('Setting proving thread count to $provingThreads');
+      await wormhole_ffi.setProvingThreadCount(numThreads: provingThreads!);
+    }
 
     _reportProgress(onProgress, 1, 0);
-    _log('Ensuring circuit binaries at: $circuitBinsDir');
-    await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir);
+    _log('Ensuring circuit binaries at: $circuitBinsDir (freshBuild=$freshBuild)');
+    if (freshBuild) {
+      await wormhole_ffi.ensureLeafCircuitBinaries(binsDir: circuitBinsDir);
+    } else {
+      await wormhole_ffi.ensureCircuitBinaries(binsDir: circuitBinsDir);
+    }
     _log('Circuit binaries ready');
+    _logMem('after_ensure_binaries');
     _reportProgress(onProgress, 1, 1);
     _checkCancelled();
 
@@ -131,15 +150,19 @@ class WormholeClaimService {
         _reportProgress(onProgress, phase + 1, completed, total: total);
       },
     );
+    _logMem('after_get_unspent_transfers');
 
     if (unspent.isEmpty) {
       return ClaimResult(totalWithdrawn: BigInt.zero, transfersProcessed: 0, batchesSubmitted: 0, txHashes: const []);
     }
     unspent.sort((a, b) => b.amount.compareTo(a.amount));
     _log('Found ${unspent.length} unspent transfers');
+    _logMem('after_sort_unspent');
     _checkCancelled();
 
-    _reportProgress(onProgress, 5, 0, total: unspent.length);
+    final numTransfers = unspent.length;
+    final totalBatches = (numTransfers / maxProofsPerBatch).ceil();
+    _reportProgress(onProgress, 5, 0, total: numTransfers);
 
     final String blockHash = await _rpcCall('chain_getBlockHash') as String;
     final header = await _rpcCall('chain_getHeader', [blockHash]);
@@ -151,83 +174,103 @@ class WormholeClaimService {
     _log('Proof block: #$blockNumber ($blockHash)');
     _checkCancelled();
 
-    final numTransfers = unspent.length;
-    final proofBytesList = List<Uint8List?>.filled(numTransfers, null);
     final secretBytes = Uint8List.fromList(hex.decode(secretHex.replaceFirst('0x', '')));
     final destinationBytes = Uint8List.fromList(getAccountId32(destinationAddress));
     final blockHashBytes = Uint8List.fromList(_hexBytes(blockHash));
 
     BigInt netTotal = BigInt.zero;
-    int completed = 0;
+    int proofsCompleted = 0;
+    int batchesCompleted = 0;
+    final txHashes = <String>[];
     final genSw = Stopwatch()..start();
 
-    for (int chunk = 0; chunk < numTransfers; chunk += _proofConcurrency) {
-      _checkCancelled();
-      final end = (chunk + _proofConcurrency).clamp(0, numTransfers);
-      final futures = <Future<BigInt>>[];
+    for (int batchStart = 0; batchStart < numTransfers; batchStart += maxProofsPerBatch) {
+      final batchEnd = (batchStart + maxProofsPerBatch).clamp(0, numTransfers);
+      final batchIndex = batchStart ~/ maxProofsPerBatch;
+      _logMem('batch_${batchIndex}_start');
+      final batchTransfers = unspent.sublist(batchStart, batchEnd);
+      final batchProofs = List<Uint8List?>.filled(batchTransfers.length, null);
 
-      for (int i = chunk; i < end; i++) {
-        final transfer = unspent[i];
-        futures.add(
-          _generateLeafProof(
-            transfer: transfer,
-            blockHash: blockHash,
-            blockNumber: blockNumber,
-            parentHash: parentHash,
-            stateRoot: stateRoot,
-            extrinsicsRoot: extrinsicsRoot,
-            digest: digest,
-            blockHashBytes: blockHashBytes,
-            secretBytes: secretBytes,
-            destinationBytes: destinationBytes,
-            circuitBinsDir: circuitBinsDir,
-            outputBuffer: proofBytesList,
-            outputIndex: i,
-            onComplete: () {
-              completed++;
-              print(
-                '[WormholeClaim] Proof $completed/$numTransfers '
-                'leaf=${transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
-              );
-              _reportProgress(onProgress, 5, completed, total: numTransfers);
-            },
-          ),
-        );
+      for (int chunk = 0; chunk < batchTransfers.length; chunk += proofConcurrency) {
+        _checkCancelled();
+        final end = (chunk + proofConcurrency).clamp(0, batchTransfers.length);
+        final futures = <Future<BigInt>>[];
+
+        for (int i = chunk; i < end; i++) {
+          final transfer = batchTransfers[i];
+          futures.add(
+            _generateLeafProof(
+              transfer: transfer,
+              blockHash: blockHash,
+              blockNumber: blockNumber,
+              parentHash: parentHash,
+              stateRoot: stateRoot,
+              extrinsicsRoot: extrinsicsRoot,
+              digest: digest,
+              blockHashBytes: blockHashBytes,
+              secretBytes: secretBytes,
+              destinationBytes: destinationBytes,
+              circuitBinsDir: circuitBinsDir,
+              outputBuffer: batchProofs,
+              outputIndex: i,
+              onComplete: () {
+                proofsCompleted++;
+                if (proofsCompleted % 16 == 0 || proofsCompleted == numTransfers) {
+                  _logMem('after_proof_$proofsCompleted');
+                }
+                print(
+                  '[WormholeClaim] Proof $proofsCompleted/$numTransfers '
+                  'leaf=${transfer.leafIndex} (${genSw.elapsedMilliseconds}ms elapsed)',
+                );
+                _reportProgress(onProgress, 5, proofsCompleted, total: numTransfers);
+              },
+            ),
+          );
+        }
+
+        final outputs = await Future.wait(futures, eagerError: true);
+        for (final out in outputs) {
+          netTotal += out;
+        }
       }
+      _logMem('batch_${batchIndex}_leaves_done');
 
-      final outputs = await Future.wait(futures, eagerError: true);
-      for (final out in outputs) {
-        netTotal += out;
+      _checkCancelled();
+      _reportProgress(onProgress, 6, batchesCompleted, total: totalBatches);
+      _log('Releasing memory before aggregation...');
+      await wormhole_ffi.releaseMemory();
+      _logMem('batch_${batchIndex}_before_aggregate');
+      if (batchIndex == 0) {
+        wormhole_ffi.logMemorySnapshot(tag: 'before_first_aggregate_detailed');
       }
-      _checkCancelled();
-    }
-
-    final finalProofs = proofBytesList.cast<Uint8List>();
-    final batches = <List<Uint8List>>[];
-    for (int i = 0; i < finalProofs.length; i += _maxProofsPerBatch) {
-      final end = (i + _maxProofsPerBatch).clamp(0, finalProofs.length);
-      batches.add(finalProofs.sublist(i, end));
-    }
-
-    final txHashes = <String>[];
-    _reportProgress(onProgress, 6, 0, total: batches.length);
-    for (int b = 0; b < batches.length; b++) {
-      _checkCancelled();
-      _log('Aggregating batch ${b + 1}/${batches.length}');
-      final aggregated = await wormhole_ffi.aggregateProofs(proofBytesList: batches[b], binsDir: circuitBinsDir);
-      _log('Batch ${b + 1} aggregated (${aggregated.length} bytes)');
+      _log('Aggregating batch ${batchesCompleted + 1}/$totalBatches (freshBuild=$freshBuild)');
+      final aggregated = freshBuild
+          ? await wormhole_ffi.aggregateProofsFresh(
+              proofBytesList: batchProofs.cast<Uint8List>(),
+              binsDir: circuitBinsDir,
+            )
+          : await wormhole_ffi.aggregateProofs(
+              proofBytesList: batchProofs.cast<Uint8List>(),
+              binsDir: circuitBinsDir,
+            );
+      _logMem('batch_${batchIndex}_after_aggregate');
+      _log('Releasing memory after aggregation...');
+      await wormhole_ffi.releaseMemory();
+      _log('Batch ${batchesCompleted + 1} aggregated (${aggregated.length} bytes)');
       _checkCancelled();
 
       final txHash = await _submitExtrinsic(aggregated);
       txHashes.add(txHash);
-      _log('Batch ${b + 1} accepted by pool: $txHash');
-      _reportProgress(onProgress, 6, b + 1, total: batches.length);
+      batchesCompleted++;
+      _logMem('batch_${batchIndex}_submitted');
+      _log('Batch $batchesCompleted accepted by pool: $txHash');
+      _reportProgress(onProgress, 6, batchesCompleted, total: totalBatches);
     }
 
     return ClaimResult(
       totalWithdrawn: netTotal,
       transfersProcessed: numTransfers,
-      batchesSubmitted: batches.length,
+      batchesSubmitted: batchesCompleted,
       txHashes: txHashes,
     );
   }
@@ -291,6 +334,7 @@ class WormholeClaimService {
       commonBinPath: '$circuitBinsDir/common.bin',
     );
     outputBuffer[outputIndex] = proof.proofBytes;
+    await wormhole_ffi.releaseMemory();
     onComplete?.call();
     return BigInt.from(outputAmount) * _scaleDownFactor;
   }
@@ -348,6 +392,13 @@ class WormholeClaimService {
   // --- Utilities ---
 
   static void _log(String msg) => print('[WormholeClaim] $msg');
+
+  static void _logMem(String tag) {
+    final (phys, virt) = wormhole_ffi.getProcessMemory();
+    final physMb = phys ~/ BigInt.from(1024 * 1024);
+    final virtMb = virt ~/ BigInt.from(1024 * 1024);
+    print('[ClaimMem] $tag phys=${physMb}MB virt=${virtMb}MB');
+  }
 
   static int _hexToInt(String hexStr) => int.parse(hexStr.replaceFirst('0x', ''), radix: 16);
 

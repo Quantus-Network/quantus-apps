@@ -8,5 +8,7 @@
 	<array>
 		<string>applinks:www.quantus.com</string>
 	</array>
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
 </dict>
 </plist>
