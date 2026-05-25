@@ -67,17 +67,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountFocus.addListener(_onAmountFocusChanged);
-    if (widget.initialAmount != null) {
-      final isFlipped = ref.read(isCurrencyFlippedProvider);
-      if (!isFlipped) {
-        _amount = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        _amountController.text = widget.initialAmount!;
-      } else {
-        final parsed = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        if (parsed > BigInt.zero) {
-          _amount = parsed;
-          _amountController.text = _amountInputLogic.quanToFiatString(parsed);
-        }
+    if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
+      final formattingService = ref.read(numberFormattingServiceProvider);
+      final planck = widget.isPayMode
+          ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
+          : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
+      if (planck > BigInt.zero) {
+        _amount = planck;
+        _amountController.text = _amountInputLogic.formatQuanAmount(planck);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -123,7 +120,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _onAmountChanged(String _) {
-    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
@@ -351,7 +348,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
-    final isFlipped = ref.watch(isCurrencyFlippedProvider);
+    final isPayMode = widget.isPayMode;
+    final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final localeConfig = ref.watch(localeNumberConfigProvider);
     final display = ref.watch(txAmountDisplayProvider)(
@@ -418,13 +416,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   fontFamily: AppTextTheme.fontFamilySecondary,
                 ),
               ),
-              const SizedBox(width: 8),
-              QuantusIconButton.circular(
-                icon: Icons.swap_vert,
-                onTap: _toggleFlip,
-                isActive: display.isFlipped,
-                size: IconButtonSize.small,
-              ),
+              if (!isPayMode) ...[
+                const SizedBox(width: 8),
+                QuantusIconButton.circular(
+                  icon: Icons.swap_vert,
+                  onTap: _toggleFlip,
+                  isActive: display.isFlipped,
+                  size: IconButtonSize.small,
+                ),
+              ],
             ],
           ),
         ],

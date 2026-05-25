@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/styles/app_colors_theme.dart';
 import 'package:resonance_network_wallet/features/styles/app_text_theme.dart';
+import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/media_query_data_extension.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
@@ -215,8 +217,11 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
 
 // Helper function to show the receive sheet
 void showSharedAddressActionSheet(BuildContext context, String address) {
+  if (context.peekTopRouteName == sharedAccountSheetRouteSettings.name) Navigator.pop(context);
+
   showModalBottomSheet(
     context: context,
+    routeSettings: sharedAccountSheetRouteSettings,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     constraints: BoxConstraints(

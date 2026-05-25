@@ -155,7 +155,8 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
     state = currency;
   }
 
-  void reset() {
+  Future<void> reset() async {
+    await _settings.clearSelectedFiatCurrency();
     state = _defaultCurrency;
   }
 
