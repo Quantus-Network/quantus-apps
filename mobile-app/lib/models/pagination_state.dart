@@ -11,6 +11,8 @@ class PaginationState {
   final Object? error;
   final StackTrace? stackTrace;
 
+  bool get hasLoadedChainData => otherTransfers.isNotEmpty || scheduledReversibleTransfers.isNotEmpty;
+
   PaginationState({
     required this.otherTransfers,
     required this.scheduledReversibleTransfers,
