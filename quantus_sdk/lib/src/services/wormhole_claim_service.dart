@@ -249,10 +249,7 @@ class WormholeClaimService {
               proofBytesList: batchProofs.cast<Uint8List>(),
               binsDir: circuitBinsDir,
             )
-          : await wormhole_ffi.aggregateProofs(
-              proofBytesList: batchProofs.cast<Uint8List>(),
-              binsDir: circuitBinsDir,
-            );
+          : await wormhole_ffi.aggregateProofs(proofBytesList: batchProofs.cast<Uint8List>(), binsDir: circuitBinsDir);
       _logMem('batch_${batchIndex}_after_aggregate');
       _log('Releasing memory after aggregation...');
       await wormhole_ffi.releaseMemory();
