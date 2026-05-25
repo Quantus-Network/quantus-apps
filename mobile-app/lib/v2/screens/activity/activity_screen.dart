@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/extensions/transaction_filter_extension.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -34,7 +35,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController()..addListener(_onScroll);
+    _scrollController = ScrollController(keepScrollOffset: false)..addListener(_onScroll);
   }
 
   @override
@@ -52,14 +53,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final pagination = ref.read(activeAccountPaginationProvider(_filterOption));
     if (pagination == null || pagination.isFetching || !pagination.hasMore) return;
 
-    activeAccountPaginationNotifier(ref, _filterOption)?.fetchMore();
+    readActiveAccountPaginationNotifier(ref, _filterOption)?.fetchMore();
   }
 
   Future<void> _refresh() async {
     final pagination = ref.read(activeAccountPaginationProvider(_filterOption));
     if (pagination == null || pagination.isFetching) return;
 
-    await activeAccountPaginationNotifier(ref, _filterOption)?.loadingRefresh();
+    await readActiveAccountPaginationNotifier(ref, _filterOption)?.loadingRefresh();
   }
 
   void _onFilterOptionChanged(TransactionFilter option) {
@@ -68,12 +69,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       _filterOption = option;
     });
   }
-
-  String _filterLabel(TransactionFilter filter, AppLocalizations l10n) => switch (filter) {
-    TransactionFilter.all => l10n.activityFilterAll,
-    TransactionFilter.send => l10n.activityFilterSend,
-    TransactionFilter.receive => l10n.activityFilterReceive,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +84,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final filterButtons = TransactionFilter.values
         .map(
           (e) => _buildFilterButton(
-            _filterLabel(e, l10n),
+            e.filterLabel(l10n),
             onTap: () => _onFilterOptionChanged(e),
             isSelected: _filterOption == e,
           ),
@@ -148,10 +143,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       otherTransfers: data.otherTransfers,
                     );
                     if (all.isEmpty) {
-                      return RefreshIndicator(
-                        onRefresh: _refresh,
-                        color: colors.textPrimary,
-                        backgroundColor: colors.surface,
+                      return _buildRefreshableContent(
                         child: LayoutBuilder(
                           builder: (context, constraints) => ListView(
                             controller: _scrollController,
@@ -174,12 +166,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
                     final showLoadMoreFooter = pagination != null && pagination.isFetching && pagination.hasMore;
 
-                    return RefreshIndicator(
-                      onRefresh: _refresh,
-                      color: colors.textPrimary,
-                      backgroundColor: colors.surface,
+                    return _buildRefreshableContent(
                       child: ListView.builder(
-                        key: ValueKey(_filterOption),
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
@@ -229,6 +217,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRefreshableContent({required Widget child}) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: context.colors.textPrimary,
+      backgroundColor: context.colors.surface,
+      child: child,
     );
   }
 
