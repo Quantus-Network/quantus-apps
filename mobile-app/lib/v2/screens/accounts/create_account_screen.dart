@@ -29,9 +29,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   List<Account> _accounts = [];
   int _walletIndex = 0;
   bool _isLoading = false;
-  String? _error;
 
-  bool get _isDisabled => _accountName.text.isEmpty || _isLoading || _error != null;
+  bool get _isDisabled => _accountName.text.trim().isEmpty || _isLoading;
 
   int _walletIndexForActiveAccount(List<Account> accounts, DisplayAccount? activeDisplayAccount) {
     if (activeDisplayAccount is RegularAccount) {
@@ -126,7 +125,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.createAccountAppBarTitle),
-      mainContent: NameField(controller: _accountName, subtitle: l10n.createAccountSubtitle, error: _error),
+      mainContent: NameField(controller: _accountName, subtitle: l10n.createAccountSubtitle),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           label: l10n.createAccountButton,
