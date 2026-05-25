@@ -9,10 +9,7 @@ void main() {
     late PaginationState stateWithError;
 
     setUp(() {
-      stateWithError = PaginationState.initial().copyWith(
-        error: baselineError,
-        stackTrace: baselineStack,
-      );
+      stateWithError = PaginationState.initial().copyWith(error: baselineError, stackTrace: baselineStack);
     });
 
     test('omitted error and stackTrace are preserved', () {
@@ -41,11 +38,7 @@ void main() {
     });
 
     test('clearError takes precedence over error and stackTrace', () {
-      final next = stateWithError.copyWith(
-        clearError: true,
-        error: Exception('ignored'),
-        stackTrace: StackTrace.empty,
-      );
+      final next = stateWithError.copyWith(clearError: true, error: Exception('ignored'), stackTrace: StackTrace.empty);
 
       expect(next.error, isNull);
       expect(next.stackTrace, isNull);

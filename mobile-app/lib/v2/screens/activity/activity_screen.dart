@@ -101,10 +101,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               ),
             ),
             error: (e, _) => Center(
-              child: Text(
-                l10n.activityError(e.toString()),
-                style: text.detail?.copyWith(color: colors.textError),
-              ),
+              child: Text(l10n.activityError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
             ),
             data: (data) {
               final txService = ref.read(transactionServiceProvider);
@@ -137,7 +134,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               }
               final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
               final showLoadMoreFooter = pagination != null && pagination.isFetching && pagination.hasMore;
-            
+
               return _buildRefreshableContent(
                 child: ListView.builder(
                   key: ValueKey(_filterOption),
@@ -152,7 +149,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         child: Center(child: Loader()),
                       );
                     }
-            
+
                     final group = grouped[i];
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,10 +165,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             colors,
                             text,
                             l10n,
-                            formattedAmount: formatTxAmount(
-                              itemData.amount,
-                              isSend: itemData.isSend,
-                            ).primaryAmount,
+                            formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
                             isLastItem: isLastItem,
                             onTap: () {
                               showTransactionDetailSheet(context, tx, active.account.accountId);
