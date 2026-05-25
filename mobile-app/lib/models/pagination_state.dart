@@ -27,6 +27,12 @@ class PaginationState {
   factory PaginationState.initial() =>
       PaginationState(otherTransfers: [], scheduledReversibleTransfers: [], hasMore: true, isFetching: false);
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// For [error] and [stackTrace]: omitted arguments keep the current values.
+  /// Pass [error] and/or [stackTrace] to set them. Pass [clearError] true to
+  /// set both to null; [clearError] takes precedence over [error] and
+  /// [stackTrace] when all are provided.
   PaginationState copyWith({
     List<TransactionEvent>? otherTransfers,
     List<ReversibleTransferEvent>? scheduledReversibleTransfers,
@@ -36,6 +42,7 @@ class PaginationState {
     bool? isFetching,
     Object? error,
     StackTrace? stackTrace,
+    bool clearError = false,
   }) {
     return PaginationState(
       otherTransfers: otherTransfers ?? this.otherTransfers,
@@ -44,8 +51,8 @@ class PaginationState {
       otherOffset: otherOffset ?? this.otherOffset,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
-      error: error,
-      stackTrace: stackTrace,
+      error: clearError ? null : (error ?? this.error),
+      stackTrace: clearError ? null : (stackTrace ?? this.stackTrace),
     );
   }
 }

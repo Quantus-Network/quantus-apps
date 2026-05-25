@@ -78,7 +78,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
   Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
-      state = state.copyWith(isFetching: true);
+      state = state.copyWith(isFetching: true, clearError: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(
@@ -99,8 +99,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
-        error: null,
-        stackTrace: null,
+        clearError: true,
       );
     } catch (e, st) {
       quantusDebugPrint('Fetch page failed: $e\n$st');
@@ -169,8 +168,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         otherOffset: newTransactions.nextOtherOffset,
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
-        error: null,
-        stackTrace: null,
+        clearError: true,
       );
     } catch (e, st) {
       quantusDebugPrint('Silent refresh failed: $e, $st');
