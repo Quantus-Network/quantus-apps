@@ -58,6 +58,43 @@ class NumberFormattingService {
     return resultString;
   }
 
+  /// Formats a balance for payment URL wire transport: dot decimal, no grouping.
+  ///
+  /// Wire amounts are locale-neutral and must be parsed with [parseWireAmount].
+  String formatWireAmount(BigInt balance) {
+    return NumberFormattingService(
+      localeConfig: LocaleNumberConfig.dotDecimal,
+    ).formatBalance(balance, maxDecimals: decimals, addThousandsSeparators: false);
+  }
+
+  /// Parses a payment URL amount without assuming the payer's locale.
+  ///
+  /// Supports canonical dot-decimal wire amounts and legacy locale-formatted
+  /// amounts from older POS QR codes.
+  BigInt? parseWireAmount(String formattedAmount) {
+    if (formattedAmount.isEmpty) {
+      return BigInt.zero;
+    }
+
+    final config = _wireLocaleConfigFor(formattedAmount);
+    return NumberFormattingService(localeConfig: config).parseAmount(formattedAmount);
+  }
+
+  static LocaleNumberConfig _wireLocaleConfigFor(String input) {
+    final hasComma = input.contains(',');
+    final hasDot = input.contains('.');
+
+    if (hasComma && hasDot) {
+      final lastComma = input.lastIndexOf(',');
+      final lastDot = input.lastIndexOf('.');
+      return lastComma > lastDot ? LocaleNumberConfig.commaDecimal : LocaleNumberConfig.dotDecimal;
+    }
+    if (hasComma) {
+      return LocaleNumberConfig.commaDecimal;
+    }
+    return LocaleNumberConfig.dotDecimal;
+  }
+
   /// Parses a user-entered formatted string amount into a raw BigInt amount
   /// scaled by the chain's decimals.
   ///

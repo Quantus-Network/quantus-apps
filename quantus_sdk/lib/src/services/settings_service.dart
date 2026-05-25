@@ -309,6 +309,10 @@ class SettingsService {
     await _prefs.setString(_selectedFiatCurrencyKey, currencyCode);
   }
 
+  Future<void> clearSelectedFiatCurrency() async {
+    await _prefs.remove(_selectedFiatCurrencyKey);
+  }
+
   /// Returns the persisted fiat currency code (e.g. "USD"), or null when no
   /// preference has been saved yet (caller should fall back to the default).
   String? getSelectedFiatCurrency() {
@@ -318,6 +322,10 @@ class SettingsService {
   // Selected App Locale Settings
   Future<void> setSelectedAppLocale(String languageCode) async {
     await _prefs.setString(_selectedAppLocaleKey, languageCode);
+  }
+
+  Future<void> clearSelectedAppLocale() async {
+    await _prefs.remove(_selectedAppLocaleKey);
   }
 
   /// Returns the persisted language code (e.g. "en", "id"), or null when no

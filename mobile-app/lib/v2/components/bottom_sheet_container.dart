@@ -83,9 +83,10 @@ class BottomSheetContainer extends StatelessWidget {
     );
   }
 
-  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder}) {
+  static Future<T?> show<T>(BuildContext context, {required WidgetBuilder builder, RouteSettings? routeSettings}) {
     return showModalBottomSheet<T>(
       context: context,
+      routeSettings: routeSettings,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),

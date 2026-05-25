@@ -26,15 +26,14 @@ import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
 class PosQrScreen extends ConsumerStatefulWidget {
-  final String amount;
-  const PosQrScreen({super.key, required this.amount});
+  final BigInt amountPlanck;
+  const PosQrScreen({super.key, required this.amountPlanck});
 
   @override
   ConsumerState<PosQrScreen> createState() => _PosQrScreenState();
 }
 
 class _PosQrScreenState extends ConsumerState<PosQrScreen> {
-  final _posService = PosService();
   PosPaymentRequest? _request;
 
   final _txWatch = TxWatchService();
@@ -59,10 +58,8 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     final active = ref.read(activeAccountProvider).value;
     if (active == null) return;
 
-    final expectedPlanck = formattingService.parseAmount(widget.amount);
-    if (expectedPlanck == null) {
-      quantusDebugPrint('[PosQr] ERROR: failed to parse amount "${widget.amount}"');
-
+    if (widget.amountPlanck <= BigInt.zero) {
+      quantusDebugPrint('[PosQr] ERROR: invalid amount planck ${widget.amountPlanck}');
       if (mounted) setState(() => _watchError = l10n.posQrInvalidAmount);
       return;
     }
@@ -72,15 +69,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       _watchError = null;
     });
 
-    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=$expectedPlanck planck');
+    quantusDebugPrint('[PosQr] watching address=${active.account.accountId} expected=${widget.amountPlanck} planck');
     _txWatch.watch(
       address: active.account.accountId,
       onTransfer: (tx) {
         quantusDebugPrint('[PosQr] onTransfer from=${tx.from} amount=${tx.amount} hash=${tx.txHash}');
         if (_isPaid) return;
         final received = BigInt.tryParse(tx.amount);
-        if (received != expectedPlanck) {
-          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=$expectedPlanck), ignoring');
+        if (received != widget.amountPlanck) {
+          quantusDebugPrint('[PosQr] amount mismatch (received=$received expected=${widget.amountPlanck}), ignoring');
           return;
         }
 
@@ -89,7 +86,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
           tempId: 'pending_recv_${DateTime.now().millisecondsSinceEpoch}',
           from: tx.from,
           to: active.account.accountId,
-          amount: expectedPlanck,
+          amount: widget.amountPlanck,
           timestamp: DateTime.now(),
           transactionState: TransactionState.pending,
           isReversible: false,
@@ -108,11 +105,13 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       },
       onError: (e) {
         quantusDebugPrint('[PosQr] watch error: $e');
+        quantusDebugPrint('[PosQr] watch error: $e');
         _txWatch.dispose();
         _timeoutTimer?.cancel();
         if (mounted) {
           setState(() {
             _watching = false;
+            _watchError = ref.read(l10nProvider).posQrConnectionLost;
             _watchError = ref.read(l10nProvider).posQrConnectionLost;
           });
         }
@@ -124,6 +123,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
       if (mounted) {
         setState(() {
           _watching = false;
+          _watchError = ref.read(l10nProvider).posQrTimedOut;
           _watchError = ref.read(l10nProvider).posQrTimedOut;
         });
       }
@@ -167,39 +167,49 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final appLocale = ref.watch(selectedAppLocaleProvider);
+    final l10n = ref.watch(l10nProvider);
+    final appLocale = ref.watch(selectedAppLocaleProvider);
     final colors = context.colors;
     final text = context.themeText;
     final accountAsync = ref.watch(activeAccountProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
-    final planck = formattingService.parseAmount(widget.amount) ?? BigInt.zero;
-    final display = ref.watch(txAmountDisplayProvider)(planck, withSignPrefix: false, isSend: false, quanDecimals: 4);
+    final display = ref.watch(txAmountDisplayProvider)(
+      widget.amountPlanck,
+      withSignPrefix: false,
+      isSend: false,
+      quanDecimals: 4,
+    );
 
     return ScaffoldBase(
+      appBar: V2AppBar(title: _isPaid ? l10n.posQrTitlePaymentReceived : l10n.posQrTitleScanToPay),
       appBar: V2AppBar(title: _isPaid ? l10n.posQrTitlePaymentReceived : l10n.posQrTitleScanToPay),
       mainContent: accountAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
           child: Text(l10n.posQrError('$e'), style: text.detail?.copyWith(color: colors.textError)),
+          child: Text(l10n.posQrError('$e'), style: text.detail?.copyWith(color: colors.textError)),
         ),
         data: (active) {
-          if (active == null) {
-            return Center(child: Text(l10n.posQrNoActiveAccount));
-          }
-          _request ??= _posService.createPaymentRequest(accountId: active.account.accountId, amount: widget.amount);
-          if (_isPaid) {
-            return _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
-          }
+          if (active == null) return Center(child: Text(l10n.posQrNoActiveAccount));
+          _request ??= PosService(
+            formattingService: formattingService,
+          ).createPaymentRequest(accountId: active.account.accountId, amountPlanck: widget.amountPlanck);
+          if (_isPaid) _buildPaidContent(l10n, appLocale.numberFormatLocale, colors, text, display.primaryAmount);
           return _buildQrContent(l10n, _request!, colors, text, display);
         },
       ),
+      bottomContent: ScaffoldBaseBottomContent(child: _isPaid ? _buildPaidButtons(l10n) : _buildQrButton(l10n)),
       bottomContent: ScaffoldBaseBottomContent(child: _isPaid ? _buildPaidButtons(l10n) : _buildQrButton(l10n)),
     );
   }
 
   Widget _buildQrButton(AppLocalizations l10n) {
     return QuantusButton.simple(label: l10n.posQrNewCharge, onTap: _newCharge, variant: ButtonVariant.primary);
+  Widget _buildQrButton(AppLocalizations l10n) {
+    return QuantusButton.simple(label: l10n.posQrNewCharge, onTap: _newCharge, variant: ButtonVariant.primary);
   }
 
+  Widget _buildPaidButtons(AppLocalizations l10n) {
   Widget _buildPaidButtons(AppLocalizations l10n) {
     final padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 20);
 
@@ -213,10 +223,17 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
             onTap: _done,
             variant: ButtonVariant.secondary,
           ),
+          child: QuantusButton.simple(
+            padding: padding,
+            label: l10n.posQrDone,
+            onTap: _done,
+            variant: ButtonVariant.secondary,
+          ),
         ),
         Expanded(
           child: QuantusButton.simple(
             padding: padding,
+            label: l10n.posQrNewCharge,
             label: l10n.posQrNewCharge,
             onTap: _newCharge,
             variant: ButtonVariant.primary,
@@ -226,6 +243,13 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     );
   }
 
+  Widget _buildPaidContent(
+    AppLocalizations l10n,
+    String localeName,
+    AppColorsV2 colors,
+    AppTextTheme text,
+    String amountDisplay,
+  ) {
   Widget _buildPaidContent(
     AppLocalizations l10n,
     String localeName,
@@ -244,6 +268,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 32),
         Text(
           l10n.posQrAmountReceived(amountDisplay),
+          l10n.posQrAmountReceived(amountDisplay),
           style: text.smallTitle?.copyWith(color: colors.textLightGray, fontSize: 32, fontWeight: FontWeight.w400),
           textAlign: TextAlign.center,
         ),
@@ -251,12 +276,15 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         if (_paidAt != null)
           Text(
             _formatPaidAt(_paidAt!, localeName, l10n),
+            _formatPaidAt(_paidAt!, localeName, l10n),
             style: text.smallParagraph?.copyWith(color: colors.textTertiary, letterSpacing: 0.7),
             textAlign: TextAlign.center,
           ),
         const SizedBox(height: 32),
         _buildFromSection(l10n, colors, text, formattedAddress),
+        _buildFromSection(l10n, colors, text, formattedAddress),
         const Spacer(),
+        _buildExplorerLink(l10n, colors, text),
         _buildExplorerLink(l10n, colors, text),
         const SizedBox(height: 16),
       ],
@@ -276,10 +304,12 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   Widget _buildFromSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, String formattedAddress) {
+  Widget _buildFromSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, String formattedAddress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
+          l10n.posQrFrom,
           l10n.posQrFrom,
           style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
           textAlign: TextAlign.center,
@@ -313,6 +343,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   Widget _buildExplorerLink(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildExplorerLink(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return GestureDetector(
       onTap: _openExplorer,
       child: Container(
@@ -321,11 +352,13 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         ),
         padding: const EdgeInsets.only(bottom: 3),
         child: Text(l10n.activityDetailViewExplorer, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+        child: Text(l10n.activityDetailViewExplorer, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
       ),
     );
   }
 
   Widget _buildQrContent(
+    AppLocalizations l10n,
     AppLocalizations l10n,
     PosPaymentRequest request,
     AppColorsV2 colors,
@@ -338,6 +371,8 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
         const SizedBox(height: 16),
         QuantusQr(accountId: request.paymentUrl),
         const Spacer(),
+        if (!_watching && _watchError != null) _buildErrorSection(l10n, colors, text),
+        if (_watching) _buildWaitingPill(l10n, colors, text),
         if (!_watching && _watchError != null) _buildErrorSection(l10n, colors, text),
         if (_watching) _buildWaitingPill(l10n, colors, text),
         const SizedBox(height: 16),
@@ -374,6 +409,7 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   Widget _buildWaitingPill(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildWaitingPill(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 9),
       decoration: BoxDecoration(
@@ -393,11 +429,14 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
   }
 
   Widget _buildErrorSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildErrorSection(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Column(
       children: [
         Text(l10n.posQrNetworkError, style: text.detail?.copyWith(color: colors.textError)),
+        Text(l10n.posQrNetworkError, style: text.detail?.copyWith(color: colors.textError)),
         const SizedBox(height: 8),
         QuantusButton.simple(
+          label: l10n.posQrTryAgain,
           label: l10n.posQrTryAgain,
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
           onTap: _startWatching,
@@ -407,6 +446,9 @@ class _PosQrScreenState extends ConsumerState<PosQrScreen> {
     );
   }
 
+  String _formatPaidAt(DateTime dt, String localeName, AppLocalizations l10n) {
+    final dateTime = DatetimeFormattingService.formatPaidAt(dt, localeName);
+    return l10n.posQrPaidAt(dateTime);
   String _formatPaidAt(DateTime dt, String localeName, AppLocalizations l10n) {
     final dateTime = DatetimeFormattingService.formatPaidAt(dt, localeName);
     return l10n.posQrPaidAt(dateTime);
