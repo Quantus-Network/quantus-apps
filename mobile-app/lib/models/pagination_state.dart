@@ -44,8 +44,8 @@ class PaginationState {
       otherOffset: otherOffset ?? this.otherOffset,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
-      error: error ?? this.error,
-      stackTrace: stackTrace ?? this.stackTrace,
+      error: error,
+      stackTrace: stackTrace,
     );
   }
 }
