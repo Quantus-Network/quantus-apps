@@ -152,20 +152,22 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onRefresh: _refresh,
                         color: colors.textPrimary,
                         backgroundColor: colors.surface,
-                        child: ListView(
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: MediaQuery.sizeOf(context).height * 0.3,
-                              child: Center(
-                                child: Text(
-                                  l10n.activityEmpty,
-                                  style: text.paragraph?.copyWith(color: colors.textSecondary),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) => ListView(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                child: Center(
+                                  child: Text(
+                                    l10n.activityEmpty,
+                                    style: text.paragraph?.copyWith(color: colors.textSecondary),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     }
