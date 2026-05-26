@@ -39,7 +39,7 @@ final filteredTransactionsProviderFamily =
       if (pagination.error != null) {
         quantusDebugPrint('FilteredTransactionsProvider: Load-more error: ${pagination.error}');
       }
-      if (pagination.isFetching && !pagination.hasLoadedChainData) {
+      if (pagination.isLoading && !pagination.hasLoadedChainData) {
         return const AsyncValue.loading();
       }
 

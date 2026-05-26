@@ -8,6 +8,7 @@ class PaginationState {
   final int otherOffset;
   final bool hasMore;
   final bool isFetching;
+  final bool isLoading;
   final Object? error;
   final StackTrace? stackTrace;
 
@@ -20,12 +21,13 @@ class PaginationState {
     this.otherOffset = 0,
     required this.hasMore,
     required this.isFetching,
+    required this.isLoading,
     this.error,
     this.stackTrace,
   });
 
   factory PaginationState.initial() =>
-      PaginationState(otherTransfers: [], scheduledReversibleTransfers: [], hasMore: true, isFetching: false);
+      PaginationState(otherTransfers: [], scheduledReversibleTransfers: [], hasMore: true, isFetching: false, isLoading: true);
 
   /// Returns a copy with the given fields replaced.
   ///
@@ -40,6 +42,7 @@ class PaginationState {
     int? otherOffset,
     bool? hasMore,
     bool? isFetching,
+    bool? isLoading,
     Object? error,
     StackTrace? stackTrace,
     bool clearError = false,
@@ -51,6 +54,7 @@ class PaginationState {
       otherOffset: otherOffset ?? this.otherOffset,
       hasMore: hasMore ?? this.hasMore,
       isFetching: isFetching ?? this.isFetching,
+      isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       stackTrace: clearError ? null : (stackTrace ?? this.stackTrace),
     );

@@ -99,11 +99,12 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
+        isLoading: false,
         clearError: true,
       );
     } catch (e, st) {
       quantusDebugPrint('Fetch page failed: $e\n$st');
-      state = state.copyWith(error: e, stackTrace: st, isFetching: false);
+      state = state.copyWith(error: e, stackTrace: st, isFetching: false, isLoading: false);
     }
   }
 
@@ -123,10 +124,11 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   Future<void> silentRefresh() async {
     quantusDebugPrint('UnifiedPaginationController: Silent refresh called');
     if (state.isFetching) return;
-    state = state.copyWith(isFetching: true);
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
+
+    state = state.copyWith(isFetching: true);
 
     try {
       await _silentFetchFirstPage(targetAccountIds);
