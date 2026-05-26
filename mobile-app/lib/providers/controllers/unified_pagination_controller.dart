@@ -123,11 +123,16 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   Future<void> silentRefresh() async {
     quantusDebugPrint('UnifiedPaginationController: Silent refresh called');
     if (state.isFetching) return;
+    state = state.copyWith(isFetching: true);
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
-    await _silentFetchFirstPage(targetAccountIds);
+    try {
+      await _silentFetchFirstPage(targetAccountIds);
+    } finally {
+      state = state.copyWith(isFetching: false);
+    }
   }
 
   /// Refresh data with loading indicators.
