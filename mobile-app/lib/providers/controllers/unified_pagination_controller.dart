@@ -44,12 +44,12 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       ids = await _getAccountIdsAsync();
     } catch (e, st) {
       quantusDebugPrint('Initialization failed: $e\n$st');
-      state = state.copyWith(error: e, stackTrace: st);
+      state = state.copyWith(error: e, stackTrace: st, isLoading: false);
       return;
     }
 
     if (ids.isEmpty) {
-      state = state.copyWith(hasMore: false, isFetching: false);
+      state = state.copyWith(hasMore: false, isFetching: false, isLoading: false);
       return;
     }
 
