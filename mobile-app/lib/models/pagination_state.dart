@@ -26,8 +26,13 @@ class PaginationState {
     this.stackTrace,
   });
 
-  factory PaginationState.initial() =>
-      PaginationState(otherTransfers: [], scheduledReversibleTransfers: [], hasMore: true, isFetching: false, isLoading: true);
+  factory PaginationState.initial() => PaginationState(
+    otherTransfers: [],
+    scheduledReversibleTransfers: [],
+    hasMore: true,
+    isFetching: false,
+    isLoading: true,
+  );
 
   /// Returns a copy with the given fields replaced.
   ///
