@@ -133,7 +133,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 );
               }
               final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
-              final showLoadMoreFooter = pagination != null && pagination.isFetching && pagination.hasMore;
+              final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
 
               return _buildRefreshableContent(
                 child: ListView.builder(
