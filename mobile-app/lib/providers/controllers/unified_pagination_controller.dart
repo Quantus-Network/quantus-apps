@@ -151,7 +151,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) {
-      state = PaginationState.initial().copyWith(hasMore: false);
+      state = PaginationState.initial().copyWith(hasMore: false, isLoading: false);
       return;
     }
 
