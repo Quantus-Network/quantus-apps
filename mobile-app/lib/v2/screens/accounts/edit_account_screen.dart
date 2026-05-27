@@ -24,6 +24,8 @@ class EditAccountScreenState extends ConsumerState<EditAccountScreen> {
   final _accountsService = AccountsService();
   bool _saving = false;
 
+  bool get _isDisabled => _controller.text.trim().isEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +84,7 @@ class EditAccountScreenState extends ConsumerState<EditAccountScreen> {
           label: l10n.editAccountDone,
           onTap: _save,
           isLoading: _saving,
+          isDisabled: _isDisabled,
         ),
       ),
     );
