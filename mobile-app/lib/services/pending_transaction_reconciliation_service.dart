@@ -96,20 +96,19 @@ class PendingTransactionReconciliationService {
         accountIds: AccountIdListCache.get([accountId]),
         filter: TransactionFilter.all,
       );
-      final transactionsAsync = _ref.read(filteredTransactionsProviderFamily(params));
+      final pagination = _ref.read(filteredPaginationControllerProviderFamily(params));
+      if (!pagination.hasLoadedChainData) continue;
 
-      transactionsAsync.whenData((transactions) {
-        final combined = txService.combineAndDeduplicateTransactions(
-          pendingCancellationIds: pendingCancellationIds,
-          pendingTransactions: [],
-          scheduledReversibleTransfers: transactions.scheduledReversibleTransfers,
-          otherTransfers: transactions.otherTransfers,
-        );
+      final combined = txService.combineAndDeduplicateTransactions(
+        pendingCancellationIds: pendingCancellationIds,
+        pendingTransactions: [],
+        scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
+        otherTransfers: pagination.otherTransfers,
+      );
 
-        for (final tx in combined) {
-          confirmedById[tx.id] = tx;
-        }
-      });
+      for (final tx in combined) {
+        confirmedById[tx.id] = tx;
+      }
     }
 
     return confirmedById.values.toList();

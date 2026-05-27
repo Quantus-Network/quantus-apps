@@ -46,14 +46,10 @@ class ReversibleTransferMonitoringService {
   }
 
   void _listenToTransactions() {
-    _txSubscription = _ref.listen(activeAccountTransactionsProvider(TransactionFilter.all), (previous, current) {
-      current.when(
-        data: (combinedData) {
-          _handleTransactionsUpdate(combinedData.scheduledReversibleTransfers);
-        },
-        loading: () {},
-        error: (_, _) {},
-      );
+    _txSubscription?.close();
+    _txSubscription = _ref.listen(activeAccountPaginationProvider(TransactionFilter.all), (previous, current) {
+      if (current == null) return;
+      _handleTransactionsUpdate(current.scheduledReversibleTransfers);
     });
   }
 
