@@ -67,7 +67,7 @@ class WormholeClaimService {
 
   WormholeClaimService({
     String? rpcUrl,
-    this.maxProofsPerBatch = 16,
+    this.maxProofsPerBatch = 7,
     this.proofConcurrency = 16,
     this.freshBuild = false,
     this.provingThreads,

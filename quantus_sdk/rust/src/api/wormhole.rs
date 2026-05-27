@@ -22,8 +22,8 @@ pub fn compute_address_hash_hex(raw_address: Vec<u8>) -> Result<String, String> 
 pub const NATIVE_ASSET_ID: u32 = 0;
 pub const VOLUME_FEE_BPS: u32 = 10;
 pub const SCALE_DOWN_FACTOR: u128 = 10_000_000_000;
-pub const MAX_PROOFS_PER_BATCH: u32 = 16;
-pub const DEFAULT_NUM_LEAF_PROOFS: usize = 16;
+pub const MAX_PROOFS_PER_BATCH: u32 = 7;
+pub const DEFAULT_NUM_LEAF_PROOFS: usize = 7;
 
 #[flutter_rust_bridge::frb(sync)]
 pub struct ProofInput {
@@ -349,6 +349,7 @@ pub fn generate_proof(
         block_hash: vec_to_digest(&input.block_hash, "block_hash")?,
         block_number: input.block_number,
     };
+    log_mem("after PublicCircuitInputs");
 
     let circuit_inputs = CircuitInputs { public, private };
 
@@ -357,7 +358,7 @@ pub fn generate_proof(
         WormholeProver::new_from_files(Path::new(&prover_bin_path), Path::new(&common_bin_path))
             .map_err(|e| format!("Failed to load prover: {}", e))?;
     eprintln!("[leaf] prover loaded in {}ms", t_load.elapsed().as_millis());
-    log_mem("leaf_post_load");
+    log_mem("prover_post_load");
 
     let t_commit = std::time::Instant::now();
     let prover_with_inputs = prover

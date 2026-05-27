@@ -48,7 +48,7 @@ class CircuitManager {
 
   static Future<String> getCircuitDirectory() async {
     final appDir = await getApplicationSupportDirectory();
-    return path.join(appDir.path, 'circuits_v3');
+    return path.join(appDir.path, 'circuits_v4');
   }
 
   Future<CircuitStatus> checkStatus() async {
