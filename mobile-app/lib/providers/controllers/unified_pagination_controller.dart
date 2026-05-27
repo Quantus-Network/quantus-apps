@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Unified pagination controller that handles both all-accounts and
 /// filtered-accounts scenarios
@@ -42,13 +43,13 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     try {
       ids = await _getAccountIdsAsync();
     } catch (e, st) {
-      print('Initialization failed: $e\n$st');
-      state = state.copyWith(error: e, stackTrace: st);
+      quantusDebugPrint('Initialization failed: $e\n$st');
+      state = state.copyWith(error: e, stackTrace: st, isLoading: false);
       return;
     }
 
     if (ids.isEmpty) {
-      state = state.copyWith(hasMore: false, isFetching: false);
+      state = state.copyWith(hasMore: false, isFetching: false, isLoading: false);
       return;
     }
 
@@ -77,7 +78,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
   Future<void> _fetchPage(List<String> targetAccountIds) async {
     try {
-      state = state.copyWith(isFetching: true);
+      state = state.copyWith(isFetching: true, isLoading: true, clearError: true);
       final newTransactions = await ref
           .read(chainHistoryServiceProvider)
           .fetchAllTransactionTypes(
@@ -98,17 +99,17 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
         isFetching: false,
-        error: null,
-        stackTrace: null,
+        isLoading: false,
+        clearError: true,
       );
     } catch (e, st) {
-      print('Fetch page failed: $e\n$st');
-      state = state.copyWith(error: e, stackTrace: st, isFetching: false);
+      quantusDebugPrint('Fetch page failed: $e\n$st');
+      state = state.copyWith(error: e, stackTrace: st, isFetching: false, isLoading: false);
     }
   }
 
   Future<void> fetchMore() async {
-    print('UnifiedPaginationController: Fetch more');
+    quantusDebugPrint('UnifiedPaginationController: Fetch more');
 
     if (state.isFetching || !state.hasMore) return;
 
@@ -121,30 +122,36 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   /// Refresh data silently without showing loading indicators.
   /// Used for automatic polling to update data in background.
   Future<void> silentRefresh() async {
-    print('UnifiedPaginationController: Silent refresh called');
+    quantusDebugPrint('UnifiedPaginationController: Silent refresh called');
     if (state.isFetching) return;
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
-    await _silentFetchFirstPage(targetAccountIds);
+    state = state.copyWith(isFetching: true);
+
+    try {
+      await _silentFetchFirstPage(targetAccountIds);
+    } finally {
+      state = state.copyWith(isFetching: false);
+    }
   }
 
   /// Refresh data with loading indicators.
   /// Used for user-initiated refreshes like pull-to-refresh.
   Future<void> loadingRefresh() async {
-    print('UnifiedPaginationController: Loading Refresh');
+    quantusDebugPrint('UnifiedPaginationController: Loading Refresh');
 
     // Check connectivity before refreshing
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping refresh - offline');
+      quantusDebugPrint('Skipping refresh - offline');
       return;
     }
 
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) {
-      state = PaginationState.initial().copyWith(hasMore: false);
+      state = PaginationState.initial().copyWith(hasMore: false, isLoading: false);
       return;
     }
 
@@ -168,11 +175,10 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         otherOffset: newTransactions.nextOtherOffset,
         scheduledOffset: newTransactions.nextScheduledOffset,
         hasMore: newTransactions.hasMore,
-        error: null,
-        stackTrace: null,
+        clearError: true,
       );
     } catch (e, st) {
-      print('Silent refresh failed: $e, $st');
+      quantusDebugPrint('Silent refresh failed: $e, $st');
     }
   }
 
@@ -180,7 +186,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
   /// refresh.
   /// Moves the transfer from reversibleTransfers to the top of items list.
   void updateReversibleTransferToExecuted(String txId, ReversibleTransferStatus newStatus) {
-    print('Updating reversible transfer to executed: $txId');
+    quantusDebugPrint('Updating reversible transfer to executed: $txId');
 
     // Find the reversible transfer with the matching hash
     final reversibleTransfer = state.scheduledReversibleTransfers
@@ -188,7 +194,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
         .firstOrNull;
 
     if (reversibleTransfer == null) {
-      print('Reversible transfer not found for txId: $txId');
+      quantusDebugPrint('Reversible transfer not found for txId: $txId');
       return;
     }
 
@@ -221,13 +227,13 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       scheduledReversibleTransfers: updatedScheduledReversibleTransfers,
     );
 
-    print('Successfully moved transfer from reversible to executed');
+    quantusDebugPrint('Successfully moved transfer from reversible to executed');
   }
 
   /// Adds a newly found transaction to the top of the history list.
   /// This is used when a broadcast transaction is found in blockchain history.
   void addTransactionToHistory(TransactionEvent transaction) {
-    print('Adding transaction to history: ${transaction.id}');
+    quantusDebugPrint('Adding transaction to history: ${transaction.id}');
 
     // Check if transaction already exists to avoid duplicates
     final existsInOtherTransfers = state.otherTransfers.any((item) => item.id == transaction.id);
@@ -236,7 +242,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     );
 
     if (existsInOtherTransfers || existsInScheduledReversibleTransfers) {
-      print('Transaction ${transaction.id} already exists in history');
+      quantusDebugPrint('Transaction ${transaction.id} already exists in history');
       return;
     }
 
@@ -250,6 +256,6 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       state = state.copyWith(otherTransfers: updatedOtherTransfers);
     }
 
-    print('Successfully added transaction ${transaction.id} to history');
+    quantusDebugPrint('Successfully added transaction ${transaction.id} to history');
   }
 }

@@ -16,7 +16,7 @@ FilteredTransactionsParams? activeAccountFilteredParams(DisplayAccount? activeAc
   );
 }
 
-UnifiedPaginationController? activeAccountPaginationNotifier(WidgetRef ref, TransactionFilter filter) {
+UnifiedPaginationController? readActiveAccountPaginationNotifier(WidgetRef ref, TransactionFilter filter) {
   final params = activeAccountFilteredParams(ref.read(activeAccountProvider).value, filter);
   if (params == null) return null;
   return ref.read(filteredPaginationControllerProviderFamily(params).notifier);
