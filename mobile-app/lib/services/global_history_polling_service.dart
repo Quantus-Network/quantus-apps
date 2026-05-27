@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -73,35 +71,19 @@ class GlobalHistoryPollingService {
     }
 
     try {
-      // Check if we have accounts available
-      final accountsState = _ref.read(accountsProvider);
-      if (accountsState.value?.isEmpty ?? true) {
+      final activeId = activeAccountId(_ref);
+      if (activeId == null) {
         _scheduleNextPoll();
         return;
       }
 
-      print('Performing global history poll...');
+      print('Performing global history poll for active account...');
 
-      // Refresh balance silently (transactions might have changed balance)
-      _ref.invalidate(balanceProviderFamily);
-
-      // Silently refresh without showing loading indicators for global
-      // and active filtered
-      _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      final targetIds = [
-        ...accountIds.map((id) => [id]),
-        accountIds,
-      ];
-
-      for (final ids in targetIds) {
-        updatePaginationFiltersFor(_ref.read, ids, (notifier, _) {
-          notifier.silentRefresh();
-        });
-      }
+      invalidateActiveAccountBalance(_ref);
+      await silentRefreshActiveAccount(_ref);
 
       // Reconcile pending transactions with confirmed transactions
-      _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
+      await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
 
       print('Global history poll completed');
     } catch (e) {
@@ -125,12 +107,14 @@ class GlobalHistoryPollingService {
       return;
     }
 
-    await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
-        notifier.loadingRefresh();
-      });
+      await refreshAccountsPagination(
+        _ref,
+        accountIds: [active.account.accountId],
+        action: (notifier) => notifier.loadingRefresh(),
+      );
+      invalidateActiveAccountBalance(_ref);
     }
 
     // Also reconcile pending transactions during manual refresh
@@ -167,6 +151,14 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
         service.stopPolling();
       },
     );
+  });
+
+  ref.listen(activeAccountProvider, (previous, next) {
+    final previousId = previous?.value?.account.accountId;
+    final nextId = next.value?.account.accountId;
+    if (nextId == null || previousId == null || previousId == nextId) return;
+
+    refreshActiveAccountOnSwitch(ref);
   });
 
   // Clean up when provider is disposed

@@ -2,10 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 class PendingTransactionPollingService {
@@ -92,7 +91,7 @@ class PendingTransactionPollingService {
         onFound?.call(result);
 
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-        _ref.invalidate(balanceProviderFamily);
+        invalidateAccountBalances(_ref, {pendingTx.from, pendingTx.to});
       } else {
         print('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
       }
@@ -117,18 +116,10 @@ final pendingTransactionPollingServiceProvider = Provider<PendingTransactionPoll
 
 void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountIds, TransactionEvent? newTransaction}) {
   try {
-    final mainController = ref.read(paginationControllerProvider.notifier);
-    if (newTransaction != null) mainController.addTransactionToHistory(newTransaction);
-    mainController.silentRefresh();
-
-    final targets = affectedAccountIds.map((id) => [id]).toList();
-    final active = ref.read(activeAccountProvider).value;
-    if (active != null) targets.add([active.account.accountId]);
-
-    final accountIds = ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-    if (accountIds.isNotEmpty) {
-      targets.add(accountIds);
-    }
+    final targets = accountRefreshTargets(
+      affectedAccountIds: affectedAccountIds,
+      activeId: activeAccountId(ref),
+    );
 
     for (final targetIds in targets) {
       if (newTransaction != null) {

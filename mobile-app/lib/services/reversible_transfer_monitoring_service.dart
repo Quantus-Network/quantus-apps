@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 /// Service that monitors reversible transfers approaching execution time
@@ -18,6 +18,7 @@ class ReversibleTransferMonitoringService {
   final Ref _ref;
   final Map<String, Timer> _timers = {};
   final Map<String, Timer> _executionPollers = {};
+  ProviderSubscription? _txSubscription;
 
   static const Duration _pollInterval = Duration(seconds: 5); // Aggressive polling
 
@@ -26,6 +27,8 @@ class ReversibleTransferMonitoringService {
       if (next == AppLifecycleState.resumed) {
         _listenToTransactions();
       } else {
+        _txSubscription?.close();
+        _txSubscription = null;
         dispose();
       }
     });
@@ -43,7 +46,7 @@ class ReversibleTransferMonitoringService {
   }
 
   void _listenToTransactions() {
-    _ref.listen(allTransactionsProvider, (previous, current) {
+    _txSubscription = _ref.listen(activeAccountTransactionsProvider(TransactionFilter.all), (previous, current) {
       current.when(
         data: (combinedData) {
           _handleTransactionsUpdate(combinedData.scheduledReversibleTransfers);
@@ -144,14 +147,7 @@ class ReversibleTransferMonitoringService {
         // Stop polling for this transfer
         _stopExecutionPolling(transfer.id);
 
-        // Update the transfer status inline - move from reversible
-        // to executed list for both global and filtered controllers
-        _ref
-            .read(paginationControllerProvider.notifier)
-            .updateReversibleTransferToExecuted(transfer.txId, transaction.status);
-        _ref.read(pendingCancellationsProvider.notifier).removePendingCancellation(transfer.id);
-
-        // Also update filtered controllers for affected accounts so
+        // Update filtered controllers for affected accounts so
         // active-account views reflect the change immediately
         final affectedAccounts = <String>{transfer.from, transfer.to};
         for (final accountId in affectedAccounts) {
@@ -160,15 +156,9 @@ class ReversibleTransferMonitoringService {
           });
         }
 
-        // Also update filtered controllers for all accounts so
-        // tx screen views for all accounts reflect the change immediately
-        final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-        updatePaginationFiltersFor(_ref.read, accountIds, (notifier, _) {
-          notifier.updateReversibleTransferToExecuted(transfer.txId, transaction.status);
-        });
+        invalidateAccountBalances(_ref, affectedAccounts);
 
-        // Refresh balance since transfer execution changes balance
-        _ref.invalidate(balanceProviderFamily);
+        _ref.read(pendingCancellationsProvider.notifier).removePendingCancellation(transfer.id);
 
         print('Updated transfer status inline - moved to done list');
       }
@@ -194,13 +184,7 @@ class ReversibleTransferMonitoringService {
   /// Manually trigger a check for all monitored transfers (useful for testing)
   Future<void> forceCheckAllMonitoredTransfers() async {
     if (_executionPollers.isNotEmpty) {
-      await _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      final active = _ref.read(activeAccountProvider).value;
-      if (active != null) {
-        updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
-          notifier.silentRefresh();
-        });
-      }
+      await silentRefreshActiveAccount(_ref);
     }
   }
 

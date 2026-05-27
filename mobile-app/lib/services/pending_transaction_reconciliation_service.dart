@@ -4,10 +4,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 
 /// Service that reconciles pending transactions with confirmed transactions
 /// from blockchain history. This handles cases where the inBlock status
@@ -42,20 +45,19 @@ class PendingTransactionReconciliationService {
         'PendingReconciliation: Checking ${pendingTxs.length} '
         'pending transactions',
       );
+      final activeId = activeAccountId(_ref);
+      final accountIds = reconciliationAccountIds(activeId: activeId, pendingTxs: pendingTxs);
 
-      // Get recent history to match against
-      final allTransactionsAsync = _ref.read(allTransactionsProvider);
+      for (final accountId in accountIds) {
+        await refreshAccountsPagination(
+          _ref,
+          accountIds: [accountId],
+          action: (notifier) => notifier.silentRefresh(),
+          onlyIfAlive: accountId == activeId,
+        );
+      }
 
-      final confirmedTransactions = allTransactionsAsync.when(
-        data: (transactions) => txService.combineAndDeduplicateTransactions(
-          pendingCancellationIds: transactions.pendingCancellationIds,
-          pendingTransactions: [], // Don't include pending here as we're comparing against them
-          scheduledReversibleTransfers: transactions.scheduledReversibleTransfers,
-          otherTransfers: transactions.otherTransfers,
-        ),
-        loading: () => <TransactionEvent>[],
-        error: (_, _) => <TransactionEvent>[],
-      );
+      final confirmedTransactions = _loadConfirmedTransactions(txService, accountIds);
 
       if (confirmedTransactions.isEmpty) {
         print('PendingReconciliation: No confirmed transactions to match against');
@@ -83,6 +85,34 @@ class PendingTransactionReconciliationService {
       print('PendingReconciliation: Error during reconciliation: $e');
       print('Stack trace: $stackTrace');
     }
+  }
+
+  List<TransactionEvent> _loadConfirmedTransactions(TransactionService txService, Set<String> accountIds) {
+    final pendingCancellationIds = _ref.read(pendingCancellationsProvider);
+    final confirmedById = <String, TransactionEvent>{};
+
+    for (final accountId in accountIds) {
+      final params = FilteredTransactionsParams(
+        accountIds: AccountIdListCache.get([accountId]),
+        filter: TransactionFilter.all,
+      );
+      final transactionsAsync = _ref.read(filteredTransactionsProviderFamily(params));
+
+      transactionsAsync.whenData((transactions) {
+        final combined = txService.combineAndDeduplicateTransactions(
+          pendingCancellationIds: pendingCancellationIds,
+          pendingTransactions: [],
+          scheduledReversibleTransfers: transactions.scheduledReversibleTransfers,
+          otherTransfers: transactions.otherTransfers,
+        );
+
+        for (final tx in combined) {
+          confirmedById[tx.id] = tx;
+        }
+      });
+    }
+
+    return confirmedById.values.toList();
   }
 
   /// Determines if a pending transaction is stale and should be checked for
@@ -157,8 +187,7 @@ class PendingTransactionReconciliationService {
 
         await _removePendingTransaction(pendingTx, 'Found matching confirmed transaction in history');
 
-        // Refresh balance since transaction was actually completed
-        _ref.invalidate(balanceProviderFamily);
+        invalidateAccountBalances(_ref, {pendingTx.from, pendingTx.to});
       } else {
         print('PendingReconciliation: No matching confirmed transaction found for ${pendingTx.id}');
 

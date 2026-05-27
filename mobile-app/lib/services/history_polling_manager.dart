@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 
 /// Manager that coordinates all polling services: global history, transaction
 /// tracking,
@@ -59,28 +58,18 @@ class HistoryPollingManager {
   Future<void> triggerSilentRefresh() async {
     print('History polling manager: Silent Refresh!');
 
-    // Refresh balance silently (no loading indicators)
     _refreshBalance(showLoading: false);
-
-    // Use silent refresh for background updates
-    await _ref.read(paginationControllerProvider.notifier).silentRefresh();
+    await silentRefreshActiveAccount(_ref);
     await _reversibleMonitor.forceCheckAllMonitoredTransfers();
   }
 
   /// Helper method to refresh balance with or without loading indicators
   void _refreshBalance({required bool showLoading}) {
     if (showLoading) {
-      // For manual refresh - invalidate balance providers to show loading
-      final activeDisplayAccount = _ref.read(activeAccountProvider).value;
-      if (activeDisplayAccount != null) {
-        _ref.invalidate(balanceProviderFamily);
-      }
-      _ref.invalidate(balanceProviderRaw); // Invalidate raw balance for loading state
-      // displayBalanceProvider (effective) will auto-update when raw balance changes
+      invalidateActiveAccountBalance(_ref);
+      _ref.invalidate(balanceProviderRaw);
     } else {
-      // For silent refresh - just invalidate family to refresh data silently
-      _ref.invalidate(balanceProviderFamily);
-      // displayBalanceProvider (effective) will auto-update when raw balance changes
+      invalidateActiveAccountBalance(_ref);
     }
   }
 

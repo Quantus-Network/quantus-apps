@@ -10,11 +10,12 @@ typedef Reader = T Function<T>(ProviderListenable<T> provider);
 void updatePaginationFiltersFor(
   Reader read,
   List<String> targetIds,
-  void Function(UnifiedPaginationController notifier, TransactionFilter filter) action,
-) {
+  void Function(UnifiedPaginationController notifier, TransactionFilter filter) action, {
+  Iterable<TransactionFilter> filters = TransactionFilter.values,
+}) {
   final cachedIds = AccountIdListCache.get(targetIds);
 
-  for (final filter in TransactionFilter.values) {
+  for (final filter in filters) {
     final notifier = read(
       filteredPaginationControllerProviderFamily(
         FilteredTransactionsParams(accountIds: cachedIds, filter: filter),
