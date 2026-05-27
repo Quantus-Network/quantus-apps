@@ -26,14 +26,14 @@ class ActivityScreen extends ConsumerStatefulWidget {
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   static const _loadMoreThreshold = 200.0;
+  static const _filterOption = TransactionFilter.all;
 
-  final TransactionFilter _filterOption = TransactionFilter.all;
   late final ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController(keepScrollOffset: false)..addListener(_onScroll);
+    _scrollController = ScrollController()..addListener(_onScroll);
   }
 
   @override
@@ -137,7 +137,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
               return _buildRefreshableContent(
                 child: ListView.builder(
-                  key: ValueKey(_filterOption),
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.zero,
