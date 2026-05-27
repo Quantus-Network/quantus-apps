@@ -5,20 +5,14 @@ import 'package:test/test.dart';
 void main() {
   group('accountRefreshTargets', () {
     test('includes affected and active accounts without wallet-wide fan-out', () {
-      final targets = accountRefreshTargets(
-        affectedAccountIds: {'account-a', 'account-b'},
-        activeId: 'account-c',
-      );
+      final targets = accountRefreshTargets(affectedAccountIds: {'account-a', 'account-b'}, activeId: 'account-c');
 
       expect(targets, hasLength(3));
       expect(targets.map((ids) => ids.single).toSet(), {'account-a', 'account-b', 'account-c'});
     });
 
     test('deduplicates active account when already affected', () {
-      final targets = accountRefreshTargets(
-        affectedAccountIds: {'account-a'},
-        activeId: 'account-a',
-      );
+      final targets = accountRefreshTargets(affectedAccountIds: {'account-a'}, activeId: 'account-a');
 
       expect(targets, hasLength(1));
       expect(targets.single, ['account-a']);
@@ -38,10 +32,7 @@ void main() {
         fee: BigInt.zero,
       );
 
-      final ids = reconciliationAccountIds(
-        activeId: 'active',
-        pendingTxs: [pendingTx],
-      );
+      final ids = reconciliationAccountIds(activeId: 'active', pendingTxs: [pendingTx]);
 
       expect(ids, {'active', 'sender', 'receiver'});
     });
@@ -58,10 +49,7 @@ void main() {
         fee: BigInt.zero,
       );
 
-      final ids = reconciliationAccountIds(
-        activeId: 'active',
-        pendingTxs: [pendingTx],
-      );
+      final ids = reconciliationAccountIds(activeId: 'active', pendingTxs: [pendingTx]);
 
       expect(ids.contains('unrelated-account'), isFalse);
     });

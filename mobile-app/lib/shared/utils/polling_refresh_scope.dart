@@ -13,10 +13,7 @@ const _backgroundPollFilters = [TransactionFilter.all];
 String? activeAccountId(Ref ref) => ref.read(activeAccountProvider).value?.account.accountId;
 
 /// Builds deduplicated single-account refresh targets for event-driven updates.
-List<List<String>> accountRefreshTargets({
-  required Set<String> affectedAccountIds,
-  String? activeId,
-}) {
+List<List<String>> accountRefreshTargets({required Set<String> affectedAccountIds, String? activeId}) {
   final targets = <String>{...affectedAccountIds};
   if (activeId != null) {
     targets.add(activeId);
