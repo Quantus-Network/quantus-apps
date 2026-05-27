@@ -47,7 +47,7 @@ class _RedeemProgressScreenState extends ConsumerState<RedeemProgressScreen> {
       final circuitDir = await CircuitManager.getCircuitDirectory();
       _claimService = WormholeClaimService(
         maxProofsPerBatch: 7,
-        proofConcurrency: 1,
+        proofConcurrency: 7,
         freshBuild: true,
         provingThreads: 8,
       );
