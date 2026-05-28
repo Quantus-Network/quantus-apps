@@ -54,6 +54,8 @@ class GlobalHistoryPollingService {
   }
 
   void _scheduleNextPoll() {
+    _pollingTimer?.cancel();
+    
     _pollingTimer = Timer(const Duration(minutes: 1), () {
       _performPoll();
     });
@@ -71,12 +73,6 @@ class GlobalHistoryPollingService {
     }
 
     try {
-      final activeId = activeAccountId(_ref);
-      if (activeId == null) {
-        _scheduleNextPoll();
-        return;
-      }
-
       print('Performing global history poll for active account...');
 
       invalidateActiveAccountBalance(_ref);
