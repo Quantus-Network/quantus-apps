@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -73,7 +74,7 @@ class GlobalHistoryPollingService {
     }
 
     try {
-      print('Performing global history poll for active account...');
+      quantusDebugPrint('Performing global history poll for active account...');
 
       invalidateActiveAccountBalance(_ref);
       await silentRefreshActiveAccount(_ref);
