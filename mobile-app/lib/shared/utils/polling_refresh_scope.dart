@@ -60,7 +60,7 @@ Future<void> refreshAccountsPagination(
   required List<String> accountIds,
   required Future<void> Function(UnifiedPaginationController notifier) action,
   Iterable<TransactionFilter> filters = _backgroundPollFilters,
-  bool onlyIfAlive = false,
+  bool isAccountInactive = false,
 }) async {
   if (accountIds.isEmpty) return;
 
@@ -68,7 +68,7 @@ Future<void> refreshAccountsPagination(
 
   for (final filter in filters) {
     final params = FilteredTransactionsParams(accountIds: cachedIds, filter: filter);
-    if (onlyIfAlive && !ref.exists(filteredPaginationControllerProviderFamily(params))) {
+    if (isAccountInactive && !ref.exists(filteredPaginationControllerProviderFamily(params))) {
       continue;
     }
 
@@ -86,7 +86,6 @@ Future<void> silentRefreshActiveAccount(Ref ref) async {
     ref,
     accountIds: [accountId],
     action: (notifier) => notifier.silentRefresh(),
-    onlyIfAlive: true,
   );
 }
 

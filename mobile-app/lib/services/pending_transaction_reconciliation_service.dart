@@ -53,7 +53,7 @@ class PendingTransactionReconciliationService {
           _ref,
           accountIds: [accountId],
           action: (notifier) => notifier.silentRefresh(),
-          onlyIfAlive: accountId == activeId,
+          isAccountInactive: accountId != activeId,
         );
       }
 
