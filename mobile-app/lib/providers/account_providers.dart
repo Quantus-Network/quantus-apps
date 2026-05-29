@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   final AccountsService _accountsService;
@@ -25,7 +26,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
         await _accountsService.addAccount(account);
         state = AsyncValue.data([...accounts, account]);
       } catch (e, st) {
-        print('error adding account $e $st');
+        quantusDebugPrint('error adding account $e $st');
         // Handle error, maybe revert state or show a message
       }
     });
@@ -38,7 +39,7 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
         final newAccounts = accounts.where((a) => a.accountId != account.accountId).toList();
         state = AsyncValue.data(newAccounts);
       } catch (e, st) {
-        print('remove account error $e $st');
+        quantusDebugPrint('remove account error $e $st');
       }
     });
   }
@@ -67,10 +68,10 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
   Future<void> _loadActiveAccount() async {
     try {
       final account = await _settingsService.getActiveAccount();
-      print('loaded active account: ${account?.account.name}');
+      quantusDebugPrint('loaded active account: ${account?.account.name}');
       state = AsyncValue.data(account);
     } catch (e, st) {
-      print('error loading active account: $e $st');
+      quantusDebugPrint('error loading active account: $e $st');
       state = AsyncValue.error(e, st);
     }
   }
@@ -80,7 +81,7 @@ class ActiveAccountNotifier extends StateNotifier<AsyncValue<DisplayAccount?>> {
       await _settingsService.setActiveAccount(account);
       state = AsyncValue.data(account);
     } catch (e, st) {
-      print('setActiveAccount error $e $st');
+      quantusDebugPrint('setActiveAccount error $e $st');
     }
   }
 

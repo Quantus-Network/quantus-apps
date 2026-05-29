@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:play_install_referrer/play_install_referrer.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/referral_data.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReferralService {
@@ -31,7 +32,7 @@ class ReferralService {
       ReferrerDetails referrerDetails = await PlayInstallReferrer.installReferrer;
       String? referrerString = referrerDetails.installReferrer;
 
-      print('Raw Install Referrer: $referrerString');
+      quantusDebugPrint('Raw Install Referrer: $referrerString');
 
       if (referrerString != null && referrerString.isNotEmpty) {
         Map<String, String> params = _parseReferrer(referrerString);
@@ -41,13 +42,13 @@ class ReferralService {
         if (referralCode != null && referralCode.isNotEmpty) {
           SettingsService().setReferralCode(referralCode);
           SettingsService().setReferralCheckCompleted();
-          print('Referral Code Found: $referralCode');
+          quantusDebugPrint('Referral Code Found: $referralCode');
         }
       }
 
-      print('No referral code found');
+      quantusDebugPrint('No referral code found');
     } catch (e) {
-      print('Error checking install referrer: $e');
+      quantusDebugPrint('Error checking install referrer: $e');
     }
   }
 
@@ -79,7 +80,7 @@ class ReferralService {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('getReferralData response: ${response.body}');
+      quantusDebugPrint('getReferralData response: ${response.body}');
 
       // If account doesn't have referrer, it will return 404 code.
       // Therefore we can confidently say it has been checked successfully.

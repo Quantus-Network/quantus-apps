@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
 import 'package:resonance_network_wallet/services/remote_config_service.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final remoteConfigServiceProvider = Provider<RemoteConfigService>((ref) {
   return RemoteConfigService();
@@ -39,7 +40,7 @@ class RemoteConfigNotifier extends StateNotifier<RemoteConfigModel> {
           state = remote;
         }
       } catch (e) {
-        print('Remote config remote refresh failed: $e');
+        quantusDebugPrint('Remote config remote refresh failed: $e');
       } finally {
         _isRefreshingRemote = false;
       }

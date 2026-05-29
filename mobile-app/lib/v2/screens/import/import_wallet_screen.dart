@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -116,7 +117,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
     } catch (e, st) {
-      print('error discovering accounts: $e');
+      quantusDebugPrint('error discovering accounts: $e');
       TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
     }
   }

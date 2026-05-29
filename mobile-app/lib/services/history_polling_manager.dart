@@ -3,6 +3,7 @@ import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
 import 'package:resonance_network_wallet/services/reversible_transfer_monitoring_service.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Manager that coordinates all polling services: global history, transaction
 /// tracking,
@@ -22,11 +23,11 @@ class HistoryPollingManager {
   /// Initialize all polling services.
   /// This should be called early in the app lifecycle.
   void initialize() {
-    print('Initializing history polling manager...');
+    quantusDebugPrint('Initializing history polling manager...');
     if (_initialized) return;
     _globalPoller;
     _reversibleMonitor;
-    print('History polling manager initialized');
+    quantusDebugPrint('History polling manager initialized');
     _initialized = true;
   }
 
@@ -45,7 +46,7 @@ class HistoryPollingManager {
 
   /// Trigger a manual refresh of all data // This is not called from anywhere!
   Future<void> triggerManualRefresh() async {
-    print('History polling manager: Manual Refresh!');
+    quantusDebugPrint('History polling manager: Manual Refresh!');
 
     // Refresh balance (with loading indicators)
     _refreshBalance(showLoading: true);
@@ -55,7 +56,7 @@ class HistoryPollingManager {
 
   /// Trigger a silent refresh of all data (no loading indicators)
   Future<void> triggerSilentRefresh() async {
-    print('History polling manager: Silent Refresh!');
+    quantusDebugPrint('History polling manager: Silent Refresh!');
 
     _refreshBalance(showLoading: false);
     await silentRefreshActiveAccount(_ref);

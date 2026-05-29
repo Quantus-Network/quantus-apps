@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/migration_dialog.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -55,7 +56,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         final migrationData = await _migrationService.getMigrationData();
 
         for (final data in migrationData) {
-          print(
+          quantusDebugPrint(
             'MIGRATION: \nold index: ${data.oldAccount.index} \nold name: ${data.oldAccount.name} \nold accountId: ${data.oldAccount.accountId} \nnew accountId: ${data.newAccountId}',
           );
         }
@@ -136,7 +137,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
         _loading = false;
       });
     } catch (e) {
-      print('migration error: $e');
+      quantusDebugPrint('migration error: $e');
       rethrow;
     }
   }
@@ -151,8 +152,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       try {
         await _migrationService.performMigration(_migrationData!);
       } catch (e, stackTrace) {
-        print('error in tryLater: $e');
-        print('stack trace: $stackTrace');
+        quantusDebugPrint('error in tryLater: $e');
+        quantusDebugPrint('stack trace: $stackTrace');
         TelemetryService().sendError('Error-Migration-TryLater', error: e, stackTrace: stackTrace);
         rethrow;
       }
@@ -169,7 +170,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   Future<void> _uploadMigrationDataToSupabase(List<MigrationAccountData> migrationData) async {
-    print('_uploadMigrationDataToSupabase');
+    quantusDebugPrint('_uploadMigrationDataToSupabase');
     final supabase = EnvUtils.supabaseClient;
 
     try {
@@ -184,14 +185,14 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
           )
           .toList();
 
-      print('uploading data to supabase: $dataToInsert');
+      quantusDebugPrint('uploading data to supabase: $dataToInsert');
 
       // Insert all records at once
       await supabase.from('account_id_mappings').insert(dataToInsert);
 
-      print('Successfully uploaded ${migrationData.length} migration records to Supabase');
+      quantusDebugPrint('Successfully uploaded ${migrationData.length} migration records to Supabase');
     } catch (e) {
-      print('Failed to upload migration data to Supabase: $e');
+      quantusDebugPrint('Failed to upload migration data to Supabase: $e');
       // Re-throw the error so it gets caught by the caller
       rethrow;
     }

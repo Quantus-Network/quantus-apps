@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Provider that holds the current app lifecycle state
 final appLifecycleStateProvider = StateProvider<AppLifecycleState>((ref) => AppLifecycleState.resumed);
@@ -55,17 +56,17 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           final appState = ref.read(appLifecycleStateProvider);
 
           if (status == NetworkStatus.online && appState == AppLifecycleState.resumed) {
-            print('Back online - resuming polling');
+            quantusDebugPrint('Back online - resuming polling');
             pollingManager.resumePolling();
             pollingManager.triggerSilentRefresh();
           } else if (status == NetworkStatus.offline) {
-            print('Gone offline - pausing polling');
+            quantusDebugPrint('Gone offline - pausing polling');
             pollingManager.pausePolling();
           }
         },
         loading: () {},
         error: (e, _) {
-          print('Error listening to network status: $e');
+          quantusDebugPrint('Error listening to network status: $e');
         },
       );
     });
@@ -87,7 +88,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
     if (state == AppLifecycleState.resumed) {
       // Only resume if we were previously backgrounded
       if (_isBackgrounded) {
-        print('AppLifecycleState.resumed - resuming from background');
+        quantusDebugPrint('AppLifecycleState.resumed - resuming from background');
         _isBackgrounded = false;
 
         // Only resume polling if online
@@ -95,7 +96,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
           pollingManager.resumePolling();
           pollingManager.triggerSilentRefresh();
         } else {
-          print('App resumed but offline - polling paused');
+          quantusDebugPrint('App resumed but offline - polling paused');
         }
 
         // Check authentication ONLY on resume from background.
@@ -114,13 +115,13 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       // Skip if the biometric dialog caused this lifecycle change — on some
       // Android devices the prompt triggers inactive→resumed oscillation.
       if (!_isBackgrounded && !ref.read(localAuthProvider).isAuthenticating) {
-        print('AppLifecycleState.$state - pausing (update pause time only)');
+        quantusDebugPrint('AppLifecycleState.$state - pausing (update pause time only)');
         _isBackgrounded = true;
 
         pollingManager.pausePolling();
         localAuthNotifier.recordBackgroundTime();
       } else {
-        print('AppLifecycleState.$state - already backgrounded, skipping actions');
+        quantusDebugPrint('AppLifecycleState.$state - already backgrounded, skipping actions');
       }
     }
   }
@@ -134,10 +135,10 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
       if (hasWallet) {
         final taskmasterService = TaskmasterService();
         await taskmasterService.ensureIsLoggedIn();
-        print('Taskmaster login initialized');
+        quantusDebugPrint('Taskmaster login initialized');
       }
     } catch (e) {
-      print('Failed to initialize taskmaster login: $e');
+      quantusDebugPrint('Failed to initialize taskmaster login: $e');
     }
   }
 

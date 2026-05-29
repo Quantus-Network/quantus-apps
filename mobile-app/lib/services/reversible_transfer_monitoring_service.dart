@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/providers/pending_cancellations_provide
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 /// Service that monitors reversible transfers approaching execution time
@@ -58,7 +59,7 @@ class ReversibleTransferMonitoringService {
         .toList();
 
     if (scheduledReversibleTransfers.isNotEmpty) {
-      print(
+      quantusDebugPrint(
         // ignore: lines_longer_than_80_chars
         'monitoring setvice: watching ${scheduledReversibleTransfers.length} reversible transfers!',
       );
@@ -84,7 +85,7 @@ class ReversibleTransferMonitoringService {
   void _scheduleExecutionPolling(ReversibleTransferEvent transfer) {
     final remainingTime = transfer.remainingTime;
 
-    print(
+    quantusDebugPrint(
       'Scheduling execution poll for ${transfer.id} '
       'in $remainingTime',
     );
@@ -106,7 +107,7 @@ class ReversibleTransferMonitoringService {
     if (_executionPollers.containsKey(transfer.id)) {
       return; // Already polling
     }
-    print('Starting execution polling for: ${transfer.id}');
+    quantusDebugPrint('Starting execution polling for: ${transfer.id}');
 
     // Create aggressive polling timer
     final poller = Timer.periodic(_pollInterval, (_) {
@@ -123,12 +124,12 @@ class ReversibleTransferMonitoringService {
     // Check connectivity before polling
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping execution check - offline');
+      quantusDebugPrint('Skipping execution check - offline');
       return;
     }
 
     try {
-      print('polling execution on ${transfer.txId}');
+      quantusDebugPrint('polling execution on ${transfer.txId}');
       final historyService = _ref.read(chainHistoryServiceProvider);
 
       // Check if this specific transaction was executed using its txId
@@ -136,7 +137,7 @@ class ReversibleTransferMonitoringService {
       final transaction = await historyService.fetchExecutedTransactionByTxId(txId: transfer.txId);
 
       if (transaction != null) {
-        print('Reversible transfer finished: ${transfer.id} ${transaction.status}');
+        quantusDebugPrint('Reversible transfer finished: ${transfer.id} ${transaction.status}');
 
         // Stop polling for this transfer
         _stopExecutionPolling(transfer.id);
@@ -154,10 +155,10 @@ class ReversibleTransferMonitoringService {
 
         _ref.read(pendingCancellationsProvider.notifier).removePendingCancellation(transfer.id);
 
-        print('Updated transfer status inline - moved to done list');
+        quantusDebugPrint('Updated transfer status inline - moved to done list');
       }
     } catch (e) {
-      print('Error checking for transfer execution: $e');
+      quantusDebugPrint('Error checking for transfer execution: $e');
       // Continue polling despite errors
     }
   }
@@ -165,14 +166,14 @@ class ReversibleTransferMonitoringService {
   void _stopExecutionPolling(String transferId) {
     final poller = _executionPollers.remove(transferId);
     poller?.cancel();
-    print('Stopped execution polling for: $transferId');
+    quantusDebugPrint('Stopped execution polling for: $transferId');
   }
 
   void _stopMonitoringTransfer(String transferId) {
     final timer = _timers.remove(transferId);
     timer?.cancel();
     _stopExecutionPolling(transferId);
-    print('Stopped monitoring transfer: $transferId');
+    quantusDebugPrint('Stopped monitoring transfer: $transferId');
   }
 
   /// Manually trigger a check for all monitored transfers (useful for testing)

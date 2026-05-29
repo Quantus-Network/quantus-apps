@@ -24,7 +24,7 @@ class GlobalHistoryPollingService {
 
     _isPolling = true;
     _scheduleNextPoll();
-    print('Global history polling started');
+    quantusDebugPrint('Global history polling started');
   }
 
   /// Stops the global history polling.
@@ -36,21 +36,21 @@ class GlobalHistoryPollingService {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _isPolling = false;
-    print('Global history polling stopped');
+    quantusDebugPrint('Global history polling stopped');
   }
 
   /// Pauses polling temporarily (e.g., when app goes to background)
   void pausePolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    print('Global history polling paused');
+    quantusDebugPrint('Global history polling paused');
   }
 
   /// Resumes polling if it was previously started
   void resumePolling() {
     if (_isPolling && _pollingTimer == null) {
       _scheduleNextPoll();
-      print('Global history polling resumed');
+      quantusDebugPrint('Global history polling resumed');
     }
   }
 
@@ -68,7 +68,7 @@ class GlobalHistoryPollingService {
     // Check connectivity before polling
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping poll - offline');
+      quantusDebugPrint('Skipping poll - offline');
       _scheduleNextPoll();
       return;
     }
@@ -82,9 +82,9 @@ class GlobalHistoryPollingService {
       // Reconcile pending transactions with confirmed transactions
       await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
 
-      print('Global history poll completed');
+      quantusDebugPrint('Global history poll completed');
     } catch (e) {
-      print('Error during global history poll: $e');
+      quantusDebugPrint('Error during global history poll: $e');
     } finally {
       // Schedule the next poll regardless of success/failure
       if (_isPolling) {
@@ -95,12 +95,12 @@ class GlobalHistoryPollingService {
 
   /// Manually trigger a history refresh (useful for pull-to-refresh)
   Future<void> triggerManualRefresh() async {
-    print('Global polling manager: Manual Refresh!');
+    quantusDebugPrint('Global polling manager: Manual Refresh!');
 
     // Check connectivity before refreshing
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping manual refresh - offline');
+      quantusDebugPrint('Skipping manual refresh - offline');
       return;
     }
 
@@ -109,7 +109,7 @@ class GlobalHistoryPollingService {
       await refreshAccountsPagination(
         _ref,
         accountIds: [active.account.accountId],
-        action: (notifier) => notifier.silentRefresh(),
+        action: (notifier) => notifier.loadingRefresh(),
       );
       invalidateActiveAccountBalance(_ref);
     }
@@ -139,7 +139,7 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
       },
       loading: () {},
       error: (e, st) {
-        print('Error in account stats polling service: stopping polling');
+        quantusDebugPrint('Error in account stats polling service: stopping polling');
         TelemetryService().sendError(
           'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
           error: e,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 const String remoteConfigCacheKey = 'remote_config_cache_v1';
 
@@ -13,7 +14,7 @@ class RemoteConfigService {
       final remoteData = await _taskmasterService.getRemoteConfig();
       return remoteData;
     } catch (error) {
-      print('Remote config remote read failed: $error');
+      quantusDebugPrint('Remote config remote read failed: $error');
       return null;
     }
   }
@@ -34,7 +35,7 @@ class RemoteConfigService {
     try {
       await _settingsService.setString(remoteConfigCacheKey, jsonEncode(json));
     } catch (error) {
-      print('Remote config local save failed: $error');
+      quantusDebugPrint('Remote config local save failed: $error');
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   return SettingsService();
@@ -67,7 +68,7 @@ final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, accoun
 
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
-  print('query balance for $accountId');
+  quantusDebugPrint('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
 });
 
