@@ -27,8 +27,6 @@ class ReversibleTransferMonitoringService {
       if (next == AppLifecycleState.resumed) {
         _listenToTransactions();
       } else {
-        _txSubscription?.close();
-        _txSubscription = null;
         dispose();
       }
     });
@@ -192,6 +190,10 @@ class ReversibleTransferMonitoringService {
     for (final poller in _executionPollers.values) {
       poller.cancel();
     }
+
+    _txSubscription?.close();
+    _txSubscription = null;
+
     _timers.clear();
     _executionPollers.clear();
   }
