@@ -56,7 +56,7 @@ class GlobalHistoryPollingService {
 
   void _scheduleNextPoll() {
     _pollingTimer?.cancel();
-    
+
     _pollingTimer = Timer(const Duration(minutes: 1), () {
       _performPoll();
     });

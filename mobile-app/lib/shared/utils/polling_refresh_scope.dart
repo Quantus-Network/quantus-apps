@@ -82,11 +82,7 @@ Future<void> silentRefreshActiveAccount(Ref ref) async {
   final accountId = activeAccountId(ref);
   if (accountId == null) return;
 
-  await refreshAccountsPagination(
-    ref,
-    accountIds: [accountId],
-    action: (notifier) => notifier.silentRefresh(),
-  );
+  await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
 }
 
 /// Refreshes the active account when the user switches accounts.
