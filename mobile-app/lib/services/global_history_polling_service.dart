@@ -109,7 +109,7 @@ class GlobalHistoryPollingService {
       await refreshAccountsPagination(
         _ref,
         accountIds: [active.account.accountId],
-        action: (notifier) => notifier.loadingRefresh(),
+        action: (notifier) => notifier.silentRefresh(),
       );
       invalidateActiveAccountBalance(_ref);
     }

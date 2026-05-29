@@ -51,7 +51,6 @@ class HistoryPollingManager {
     _refreshBalance(showLoading: true);
 
     await _globalPoller.triggerManualRefresh();
-    await _reversibleMonitor.forceCheckAllMonitoredTransfers();
   }
 
   /// Trigger a silent refresh of all data (no loading indicators)
@@ -60,7 +59,6 @@ class HistoryPollingManager {
 
     _refreshBalance(showLoading: false);
     await silentRefreshActiveAccount(_ref);
-    await _reversibleMonitor.forceCheckAllMonitoredTransfers();
   }
 
   /// Helper method to refresh balance with or without loading indicators
