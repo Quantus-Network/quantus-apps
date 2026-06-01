@@ -54,6 +54,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
   bool _isFetchingFee = true;
+  bool _isFeeStale = true;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -122,7 +123,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   void _onAmountChanged(String _) {
     final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
-      setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
+      setState(() {
+        _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped);
+        _isFeeStale = true;
+      });
     } on InvalidNumberInputException catch (e, stack) {
       debugPrint('Amount parse failed: $e\n$stack');
       final l10n = ref.read(l10nProvider);
@@ -152,7 +156,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     } catch (e) {
       debugPrint('Estimated fee fetch error: $e');
     } finally {
-      if (mounted) setState(() => _isFetchingFee = false);
+      if (mounted) {
+        setState(() {
+          _isFetchingFee = false;
+          _isFeeStale = false;
+        });
+      }
     }
   }
 
@@ -176,7 +185,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     } catch (e) {
       debugPrint('Fee fetch error: $e');
     } finally {
-      if (mounted) setState(() => _isFetchingFee = false);
+      if (mounted) {
+        setState(() {
+          _isFetchingFee = false;
+          _isFeeStale = false;
+        });
+      }
     }
   }
 
@@ -189,7 +203,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _amountController.text = isFlipped
         ? _amountInputLogic.quanToFiatString(max)
         : _amountInputLogic.formatQuanAmount(max);
-    setState(() => _amount = max);
+    setState(() {
+      _amount = max;
+      _isFeeStale = true;
+    });
     if (max > BigInt.zero) _fetchFee();
   }
 
@@ -242,6 +259,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
     final btnDisabled =
         _isFetchingFee ||
+        _isFeeStale ||
         _recipientChecksum == null ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
@@ -483,7 +501,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                           style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                         ),
                         const SizedBox(height: 4),
-                        if (!_isFetchingFee)
+                        if (!_isFetchingFee && !_isFeeStale)
                           Text(
                             l10n.commonAmountBalance(
                               formattingService.formatBalance(_networkFee, maxDecimals: 5),
