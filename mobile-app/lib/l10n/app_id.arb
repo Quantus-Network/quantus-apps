@@ -102,7 +102,7 @@
   "sendEnterAddress": "Masukkan Alamat",
 
   "sendSelectRecipientSendTo": "Kirim Ke",
-  "sendSelectRecipientSearchHint": "Cari Alamat {symbol}",
+  "sendSelectRecipientSearchHint": "Masukkan Alamat {symbol}",
   "sendSelectRecipientScanTitle": "Pindai kode QR",
   "sendSelectRecipientScanSubtitle": "Ketuk untuk memindai Alamat {symbol}",
   "sendSelectRecipientRecents": "Terbaru",

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
@@ -180,6 +181,15 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     _recipientController.text = address;
   }
 
+  Future<void> _pasteRecipient() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (text.isEmpty) return;
+    _amountController.clear();
+    setState(() => _isPayMode = false);
+    _recipientController.text = text;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -270,7 +280,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                   decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     children: [
-                      Icon(Icons.search, size: 14, color: colors.textLabel),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -287,6 +296,15 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                             hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
                           ),
                         ),
+                      ),
+                      IconButton(
+                        onPressed: _pasteRecipient,
+                        icon: const Icon(Icons.paste),
+                        iconSize: 20,
+                        color: colors.textPrimary,
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                       ),
                     ],
                   ),
@@ -309,7 +327,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        AddressFormattingService.formatAddress(_recipientController.text.trim()),
+                        AddressFormattingService.formatAddress(prefix: 16, postFix: 16, _recipientController.text.trim()),
                         style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

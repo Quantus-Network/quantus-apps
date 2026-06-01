@@ -388,7 +388,7 @@
     "@sendSelectRecipientSendTo": {
       "description": "Section label on select recipient screen"
     },
-    "sendSelectRecipientSearchHint": "Search {symbol} Address",
+    "sendSelectRecipientSearchHint": "Enter {symbol} Address",
     "@sendSelectRecipientSearchHint": {
       "description": "Hint for recipient search field",
       "placeholders": {

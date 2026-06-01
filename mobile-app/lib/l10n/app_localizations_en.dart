@@ -281,7 +281,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String sendSelectRecipientSearchHint(String symbol) {
-    return 'Search $symbol Address';
+    return 'Enter $symbol Address';
   }
 
   @override

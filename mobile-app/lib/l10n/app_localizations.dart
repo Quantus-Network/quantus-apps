@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// Hint for recipient search field
   ///
   /// In en, this message translates to:
-  /// **'Search {symbol} Address'**
+  /// **'Enter {symbol} Address'**
   String sendSelectRecipientSearchHint(String symbol);
 
   /// Scan QR row title

@@ -282,7 +282,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String sendSelectRecipientSearchHint(String symbol) {
-    return 'Cari Alamat $symbol';
+    return 'Masukkan Alamat $symbol';
   }
 
   @override
