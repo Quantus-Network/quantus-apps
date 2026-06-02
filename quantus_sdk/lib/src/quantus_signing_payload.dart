@@ -24,6 +24,14 @@ class QuantusSigningPayload extends SigningPayload {
     super.customSignedExtensions,
   }) : super();
 
+  /// Substrate rule (unchecked_extrinsic.rs): a signing payload longer than 256
+  /// bytes is signed as its Blake2b-256 hash, otherwise it is signed as-is. The
+  /// hot wallet, the air-gapped signer, and the chain must all apply this same
+  /// rule for a signature to verify, so it lives here as the single source of
+  /// truth.
+  static Uint8List signablePayload(Uint8List payloadEncoded) =>
+      payloadEncoded.length > 256 ? const Blake2bHasher(32).hash(payloadEncoded) : payloadEncoded;
+
   // This code is 1:1 the same as the original SigningPayload.encode, but we don't hash the result so the HW wallet can parse and display the call correctly.
   // Based on Polkadart v0.7.3 SigningPayload.encode()
   Uint8List encodeRaw(dynamic registry) {
