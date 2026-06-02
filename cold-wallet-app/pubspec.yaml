@@ -82,8 +82,11 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/quantus_icon_1024.png
-  # Cold steel-blue adaptive background distinguishes the air-gapped signer from
-  # the hot wallet's dark icon on the home screen.
-  adaptive_icon_background: "#0E3A5C"
-  adaptive_icon_foreground: assets/quantus_icon_512.png
+  remove_alpha_ios: true
+  # Frozen "deep freeze" Quantus Q marks this as the cold (air-gapped) wallet.
+  # iOS / legacy Android use the full square; Android adaptive layers the frosted
+  # Q glow (transparent foreground) over a glacial navy gradient so the inset
+  # foreground blends seamlessly with no visible card seam.
+  image_path: assets/cold_icon_1024.png
+  adaptive_icon_background: assets/cold_icon_bg.png
+  adaptive_icon_foreground: assets/cold_icon_fg.png
