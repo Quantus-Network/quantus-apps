@@ -327,7 +327,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        AddressFormattingService.formatAddress(prefix: 16, postFix: 16, _recipientController.text.trim()),
+                        AddressFormattingService.formatAddress(
+                          prefix: 16,
+                          postFix: 16,
+                          _recipientController.text.trim(),
+                        ),
                         style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

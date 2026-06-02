@@ -155,11 +155,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     _isFetchingFee = true;
     try {
       final balancesService = ref.read(balancesServiceProvider);
-      final feeData = await balancesService.getBalanceTransferFee(
-        displayAccount.account,
-        toAddress,
-        amount,
-      );
+      final feeData = await balancesService.getBalanceTransferFee(displayAccount.account, toAddress, amount);
       if (!mounted) return;
       setState(() {
         _networkFee = feeData.fee;
