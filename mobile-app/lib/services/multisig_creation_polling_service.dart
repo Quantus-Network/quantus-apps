@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 class MultisigCreationPollingService {
   final Ref _ref;
   final Map<String, Timer> _timers = {};
+  final Set<String> _inFlight = {};
   static const _searchInterval = Duration(seconds: 5);
   static const _timeout = Duration(minutes: 5);
 
@@ -42,6 +43,8 @@ class MultisigCreationPollingService {
   }
 
   Future<void> _search(MultisigAccount draft, String key) async {
+    if (!_inFlight.add(key)) return;
+
     try {
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigOnChain(draft.accountId);
@@ -69,6 +72,8 @@ class MultisigCreationPollingService {
       );
     } catch (e) {
       quantusDebugPrint('[MultisigCreationPoller] search error for ${draft.accountId}: $e');
+    } finally {
+      _inFlight.remove(key);
     }
   }
 

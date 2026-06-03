@@ -7,6 +7,7 @@ import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
+import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/substrate_service.dart';
 
@@ -17,29 +18,6 @@ class MultisigService {
 
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
   final SubstrateService _substrateService = SubstrateService();
-
-  static const String _multisigByPkQuery = r'''
-    query MultisigByPk($id: String!) {
-      multisig_by_pk(id: $id) {
-        id
-        timestamp
-        threshold
-        nonce
-        signers
-        creator {
-          id
-        }
-        block {
-          height
-        }
-        extrinsic {
-          id
-          pallet
-          call
-        }
-      }
-    }
-  ''';
 
   static const int _avgBlockTimeSeconds = 12;
   static const int _dummyCurrentBlock = 1500000;
@@ -112,7 +90,7 @@ class MultisigService {
   /// Fetches multisig metadata from the indexer by primary key ([address]).
   Future<Map<String, dynamic>?> fetchMultisigFromIndexer(String address) async {
     final requestBody = {
-      'query': _multisigByPkQuery,
+      'query': MultisigGraphql.byPkQuery,
       'variables': {'id': address},
     };
 

@@ -61,11 +61,14 @@ class MultisigCreatedEvent extends TransactionEvent {
         ? signersRaw.map((e) => e.toString()).toList()
         : <String>[];
 
+    final rawThreshold = multisig['threshold'] as int?;
+    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+
     return MultisigCreatedEvent(
       id: accountEventId ?? 'ae-multisig-$address',
       creatorId: creator,
       multisigAddress: address,
-      threshold: multisig['threshold'] as int? ?? 0,
+      threshold: threshold,
       nonce: bigIntFromJson(multisig['nonce']),
       signers: signers,
       creationFee: _feeFromGraphql(multisig),

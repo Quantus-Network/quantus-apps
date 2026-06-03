@@ -41,7 +41,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   String? _signerFieldError;
   int _predictSeq = 0;
 
-  String? _creatorAccountId;
+  Account? _creator;
   String? _creatorChecksum;
 
   @override
@@ -53,10 +53,9 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     _accountName.addListener(() => setState(() {}));
     _signerAddressController.addListener(_onSignerFieldChanged);
 
-    final creator = _resolveCreatorAccount();
-    if (creator != null) {
-      _creatorAccountId = creator.accountId;
-      _loadCreatorChecksum(creator.accountId);
+    _creator = _resolveCreatorAccount();
+    if (_creator != null) {
+      _loadCreatorChecksum(_creator!.accountId);
     }
     _threshold = MultisigService.defaultThreshold(_allSigners.length);
     if (_hasMinimumSigners) {
@@ -85,15 +84,15 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   }
 
   List<String> get _allSigners {
-    final creator = _creatorAccountId;
-    if (creator == null) return List<String>.from(_additionalSigners);
-    return [creator, ..._additionalSigners];
+    final creatorId = _creator?.accountId;
+    if (creatorId == null) return List<String>.from(_additionalSigners);
+    return [creatorId, ..._additionalSigners];
   }
 
   bool get _hasMinimumSigners => _allSigners.length >= 2;
 
   bool get _isDisabled =>
-      _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creatorAccountId == null || _isLoading;
+      _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creator == null || _isLoading;
 
   void _onSignerFieldChanged() {
     setState(() {
@@ -112,7 +111,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       setState(() => _signerFieldError = l10n.multisigCreateInvalidSigner);
       return;
     }
-    if (address == _creatorAccountId || _additionalSigners.contains(address)) {
+    if (address == _creator?.accountId || _additionalSigners.contains(address)) {
       setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
       return;
     }
@@ -177,7 +176,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   }
 
   Future<void> _createMultisig() async {
-    final creator = _resolveCreatorAccount();
+    final creator = _creator;
     if (creator == null || !_hasMinimumSigners) return;
 
     final l10n = ref.read(l10nProvider);
@@ -224,6 +223,8 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
+    final displayThreshold =
+        _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.multisigAddTitle),
@@ -238,7 +239,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               l10n: l10n,
               colors: colors,
               text: text,
-              creatorAccountId: _creatorAccountId,
+              creatorAccountId: _creator?.accountId,
               creatorChecksum: _creatorChecksum,
               additionalSigners: _additionalSigners,
               signerAddressController: _signerAddressController,
@@ -248,11 +249,11 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             ),
             const SizedBox(height: 28),
             MultisigThresholdSlider(
-              threshold: _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length),
+              threshold: displayThreshold,
               signerCount: _allSigners.length,
               label: l10n.multisigCreateThresholdLabel,
               valueLabel: l10n.multisigCreateThresholdValue(
-                _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length),
+                displayThreshold,
                 _allSigners.length,
               ),
               onChanged: _onThresholdChanged,

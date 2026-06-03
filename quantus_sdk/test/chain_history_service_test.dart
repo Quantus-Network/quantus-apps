@@ -56,6 +56,24 @@ void main() {
     });
   });
 
+  group('MultisigCreatedEvent.fromMultisigGraphql', () {
+    test('defaults threshold to 1 when missing or invalid', () {
+      final base = Map<String, dynamic>.from(
+        accountEventFixture['multisig'] as Map<String, dynamic>,
+      );
+
+      final missing = MultisigCreatedEvent.fromMultisigGraphql(
+        multisig: Map<String, dynamic>.from(base)..remove('threshold'),
+      );
+      expect(missing.threshold, 1);
+
+      final zero = MultisigCreatedEvent.fromMultisigGraphql(
+        multisig: Map<String, dynamic>.from(base)..['threshold'] = 0,
+      );
+      expect(zero.threshold, 1);
+    });
+  });
+
   group('ChainHistoryService.mergeMultisigCreations', () {
     test('dedupes supplemental when account_event already parsed', () {
       final fromEvent = service.tryParseOtherTransferEvent(accountEventFixture)!;

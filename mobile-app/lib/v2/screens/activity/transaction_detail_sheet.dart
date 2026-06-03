@@ -151,7 +151,7 @@ class _DetailsSection extends ConsumerWidget {
     }
 
     final counterparty = isSend ? tx.to : tx.from;
-    final address = AddressFormattingService.formatAddress(counterparty, prefix: 7, ellipses: '.......', postFix: 6);
+    final address = AddressFormattingService.formatActivityDetailAddress(counterparty);
     final dateTime = DatetimeFormattingService.formatTxDateTime(tx.timestamp);
 
     BigInt? fee;
@@ -165,7 +165,7 @@ class _DetailsSection extends ConsumerWidget {
         : null;
 
     final txHash = tx.extrinsicHash != null
-        ? AddressFormattingService.formatAddress(tx.extrinsicHash!, prefix: 6, ellipses: '...', postFix: 4)
+        ? AddressFormattingService.formatActivityDetailExtrinsicHash(tx.extrinsicHash!)
         : null;
 
     return Column(
@@ -184,25 +184,15 @@ class _DetailsSection extends ConsumerWidget {
     NumberFormattingService formattingService,
   ) {
     final isCreator = event.isCreator(activeAccountId);
-    final multisigAddress = AddressFormattingService.formatAddress(
-      event.multisigAddress,
-      prefix: 7,
-      ellipses: '.......',
-      postFix: 6,
-    );
-    final creatorAddress = AddressFormattingService.formatAddress(
-      event.creatorId,
-      prefix: 7,
-      ellipses: '.......',
-      postFix: 6,
-    );
+    final multisigAddress = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
+    final creatorAddress = AddressFormattingService.formatActivityDetailAddress(event.creatorId);
     final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
     final feeValue = isCreator
         ? _formatBalance(l10n, formattingService, event.creationFee)
         : l10n.activityDetailMultisigFeePaidByCreator;
     final depositValue = _formatBalance(l10n, formattingService, event.deposit);
     final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatAddress(event.extrinsicHash!, prefix: 6, ellipses: '...', postFix: 4)
+        ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
         : null;
 
     return Column(

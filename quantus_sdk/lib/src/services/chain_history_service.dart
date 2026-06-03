@@ -2,6 +2,7 @@ import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 
 class OtherTransfersResult {
   final List<TransactionEvent> transfers;
@@ -111,24 +112,7 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     }'''
         : '';
 
-    const String multisigField = '''
-    multisig {
-      id
-      timestamp
-      threshold
-      nonce
-      signers
-      creator {
-        id
-      }
-      block {
-        height
-        hash
-      }
-      extrinsic {
-        id
-      }
-    }''';
+    final String multisigField = MultisigGraphql.accountEventSelection;
 
     const String multisigSendClause = ', {multisig_id: {_is_null: false}, multisig: {creator_id: {_in: \$accounts}}}';
 
@@ -253,28 +237,6 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
     }
   }
 
-  static const String _multisigCreationsQuery = r'''
-query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!) {
-  multisig(where: $where, order_by: {timestamp: desc}, limit: $limit, offset: $offset) {
-    id
-    timestamp
-    threshold
-    nonce
-    signers
-    creator {
-      id
-    }
-    block {
-      height
-      hash
-    }
-    extrinsic {
-      id
-    }
-  }
-}
-''';
-
   /// Merges [supplemental] multisig creations into [events], deduping by address.
   /// Prefer rows already present from [account_event] parsing.
   static List<TransactionEvent> mergeMultisigCreations({
@@ -300,7 +262,7 @@ query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!)
     if (accountIds.isEmpty) return [];
 
     final requestBody = {
-      'query': _multisigCreationsQuery,
+      'query': MultisigGraphql.creationsQuery,
       'variables': {
         'where': _buildMultisigCreationsWhereMap(filter, accountIds),
         'limit': _lookaheadLimit(limit),
