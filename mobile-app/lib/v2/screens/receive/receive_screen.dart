@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/address_details_card.dart';
@@ -53,7 +55,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       debugPrint('Error loading account data: $e');
 
       if (mounted) {
-        context.showErrorToaster(message: 'Error loading account data: $e');
+        final l10n = ref.read(l10nProvider);
+        context.showErrorToaster(message: l10n.receiveErrorLoadingAccount('$e'));
       }
     }
   }
@@ -65,23 +68,25 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
   }
 
   void _copyAccountDetails(BuildContext context) {
+    final l10n = ref.read(l10nProvider);
     context.copyTextWithToaster(
-      'Account Id:\n$_accountId\n\nCheckphrase:\n$_checksum',
-      message: 'Account details copied to clipboard',
+      l10n.receiveClipboardContent(_accountId!, _checksum!),
+      message: l10n.receiveCopiedMessage,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final tabs = [
-      const SegmentedControlItem(label: 'QR Code', value: ReceiveTab.qrCode),
-      const SegmentedControlItem(label: 'Address', value: ReceiveTab.address),
+      SegmentedControlItem(label: l10n.receiveTabQrCode, value: ReceiveTab.qrCode),
+      SegmentedControlItem(label: l10n.receiveTabAddress, value: ReceiveTab.address),
     ];
 
     final isLoading = _accountId == null || _checksum == null;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Receive'),
+      appBar: V2AppBar(title: l10n.receiveTitle),
       mainContent: Column(
         children: [
           SegmentedControls<ReceiveTab>(
@@ -102,11 +107,11 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
             AddressTab(accountId: _accountId!, checksum: _checksum!),
         ],
       ),
-      bottomContent: _buildBottomContent(isLoading, _selectedTab),
+      bottomContent: _buildBottomContent(l10n, isLoading, _selectedTab),
     );
   }
 
-  Widget? _buildBottomContent(bool isLoading, ReceiveTab selectedTab) {
+  Widget? _buildBottomContent(AppLocalizations l10n, bool isLoading, ReceiveTab selectedTab) {
     Widget content;
 
     if (isLoading) {
@@ -120,7 +125,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         children: [
           Expanded(
             child: QuantusButton.simple(
-              label: 'Copy',
+              label: l10n.receiveCopy,
               onTap: () => _copyAccountDetails(context),
               isDisabled: isLoading,
               icon: Icon(Icons.copy, size: 20, color: context.colors.textPrimary),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/deposit_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 void showReviewQuoteSheet(BuildContext context, SwapQuote quote, String refundAddress) {
   BottomSheetContainer.show(
@@ -14,13 +17,14 @@ void showReviewQuoteSheet(BuildContext context, SwapQuote quote, String refundAd
   );
 }
 
-class _ReviewQuoteContent extends StatelessWidget {
+class _ReviewQuoteContent extends ConsumerWidget {
   final SwapQuote quote;
   final String refundAddress;
   const _ReviewQuoteContent({required this.quote, required this.refundAddress});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final swapService = SwapService();
@@ -28,7 +32,7 @@ class _ReviewQuoteContent extends StatelessWidget {
     final toUsd = quote.toAmount * swapService.getUsdPrice(quote.toToken);
 
     return BottomSheetContainer(
-      title: 'Review Quote',
+      title: l10n.swapReviewTitle,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,14 +40,14 @@ class _ReviewQuoteContent extends StatelessWidget {
           _swapVisual(context, colors, text, fromUsd, toUsd),
           const SizedBox(height: 48),
           _feeRow(
-            'Total fees',
+            l10n.swapReviewTotalFees,
             '${SwapService.formatTokenAmount(quote.networkFee, quote.fromToken)} ${quote.fromToken.symbol}',
             colors,
             text,
           ),
           Divider(color: colors.separator, height: 32),
           _feeRow(
-            'Total Amount',
+            l10n.swapReviewTotalAmount,
             '${SwapService.formatTokenAmount(quote.totalAmount, quote.fromToken)} ${quote.fromToken.symbol}',
             colors,
             text,
@@ -51,11 +55,14 @@ class _ReviewQuoteContent extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'You could receive up to \$${(quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2)} less based on the ${(quote.slippageTolerance * 100).toStringAsFixed(0)}% slippage you set',
+            l10n.swapReviewSlippageWarning(
+              (quote.fromAmount * quote.slippageTolerance).toStringAsFixed(2),
+              (quote.slippageTolerance * 100).toStringAsFixed(0),
+            ),
             style: text.tiny?.copyWith(color: colors.textSecondary, height: 1.35),
           ),
           const SizedBox(height: 24),
-          _confirmButton(context, colors, text),
+          _confirmButton(context, l10n, colors, text),
         ],
       ),
     );
@@ -130,10 +137,9 @@ class _ReviewQuoteContent extends StatelessWidget {
     );
   }
 
-  Widget _confirmButton(BuildContext context, AppColorsV2 colors, AppTextTheme text) {
+  Widget _confirmButton(BuildContext context, AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return QuantusButton.simple(
-      label: 'Confirm',
-
+      label: l10n.swapReviewConfirm,
       onTap: () async {
         final swapService = SwapService();
         final order = await swapService.createSwap(quote);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -18,6 +19,7 @@ class AccountMenuScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
@@ -25,7 +27,7 @@ class AccountMenuScreen extends ConsumerWidget {
     final account = accounts.value?.firstWhere((a) => a.accountId == initialAccount.accountId);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Accounts'),
+      appBar: V2AppBar(title: l10n.accountMenuTitle),
       mainContent: account != null
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -34,17 +36,17 @@ class AccountMenuScreen extends ConsumerWidget {
                 _ProfileHeader(account: account, colors: colors, text: text),
                 const SizedBox(height: 80),
                 _MenuRow(
-                  label: 'Account Name',
+                  label: l10n.accountMenuAccountName,
                   value: account.name,
                   onTap: () => _openNameEditor(context, ref, account),
                 ),
                 Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: 'Address Details', onTap: () => _openAddressDetails(context, account)),
+                _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
                 Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: 'Show Recovery Phrase', onTap: () => _openRecoveryPhrase(context, account)),
+                _MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
               ],
             )
-          : const Center(child: Text('Account not found')),
+          : Center(child: Text(l10n.accountMenuNotFound)),
     );
   }
 

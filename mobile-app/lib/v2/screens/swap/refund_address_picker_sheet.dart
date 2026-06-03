@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -8,15 +10,15 @@ Future<String?> showRefundAddressPickerSheet(BuildContext context, String networ
   return BottomSheetContainer.show<String>(context, builder: (_) => _RefundAddressPickerContent(network: network));
 }
 
-class _RefundAddressPickerContent extends StatefulWidget {
+class _RefundAddressPickerContent extends ConsumerStatefulWidget {
   final String network;
   const _RefundAddressPickerContent({required this.network});
 
   @override
-  State<_RefundAddressPickerContent> createState() => _RefundAddressPickerContentState();
+  ConsumerState<_RefundAddressPickerContent> createState() => _RefundAddressPickerContentState();
 }
 
-class _RefundAddressPickerContentState extends State<_RefundAddressPickerContent> {
+class _RefundAddressPickerContentState extends ConsumerState<_RefundAddressPickerContent> {
   List<String> _addresses = [];
 
   @override
@@ -32,11 +34,12 @@ class _RefundAddressPickerContentState extends State<_RefundAddressPickerContent
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return BottomSheetContainer(
-      title: 'Refund Addresses',
+      title: l10n.swapRefundPickerTitle,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -49,7 +52,7 @@ class _RefundAddressPickerContentState extends State<_RefundAddressPickerContent
           if (_addresses.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text('No recent refund addresses', style: text.detail?.copyWith(color: colors.textTertiary)),
+              child: Text(l10n.swapRefundPickerEmpty, style: text.detail?.copyWith(color: colors.textTertiary)),
             )
           else
             ConstrainedBox(

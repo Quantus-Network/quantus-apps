@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:resonance_network_wallet/models/pending_cancellation.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final pendingCancellationsProvider = StateNotifierProvider<PendingCancellationsNotifier, Set<String>>((ref) {
@@ -37,7 +38,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
         if (isNotExpired) {
           validCancellations.add(cancellation);
         } else {
-          print('Removing expired pending cancellation: ${cancellation.transactionId}');
+          quantusDebugPrint('Removing expired pending cancellation: ${cancellation.transactionId}');
         }
       } catch (e) {
         throw FormatException('Error parsing pending cancellation: $e');
@@ -76,7 +77,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
           existingCancellations.add(cancellation);
         }
       } catch (e) {
-        print('Error parsing existing cancellation: $e');
+        quantusDebugPrint('Error parsing existing cancellation: $e');
       }
     }
 
@@ -107,7 +108,7 @@ class PendingCancellationsNotifier extends StateNotifier<Set<String>> {
           remainingCancellations.add(cancellation);
         }
       } catch (e) {
-        print('Error parsing cancellation during removal: $e');
+        quantusDebugPrint('Error parsing cancellation during removal: $e');
       }
     }
 

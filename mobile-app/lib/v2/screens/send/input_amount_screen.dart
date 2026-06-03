@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/fiat_currency.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -47,11 +49,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   final _feeDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
 
+  static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
+
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
   BigInt _networkFee = BigInt.zero;
   int _blockHeight = 0;
-  bool _isFetchingFee = true;
+  bool _isFetchingFee = false;
+  bool _hasFee = false;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -65,17 +70,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     super.initState();
     assert(widget.recipientAddress.trim().isNotEmpty, 'InputAmountScreen requires a recipient');
     _amountFocus.addListener(_onAmountFocusChanged);
-    if (widget.initialAmount != null) {
-      final isFlipped = ref.read(isCurrencyFlippedProvider);
-      if (!isFlipped) {
-        _amount = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        _amountController.text = widget.initialAmount!;
-      } else {
-        final parsed = _amountInputLogic.parseQuanAmount(widget.initialAmount!);
-        if (parsed > BigInt.zero) {
-          _amount = parsed;
-          _amountController.text = _amountInputLogic.quanToFiatString(parsed);
-        }
+    if (widget.initialAmount != null && widget.initialAmount!.isNotEmpty) {
+      final formattingService = ref.read(numberFormattingServiceProvider);
+      final planck = widget.isPayMode
+          ? formattingService.parseWireAmount(widget.initialAmount!) ?? BigInt.zero
+          : _amountInputLogic.parseQuanAmount(widget.initialAmount!);
+      if (planck > BigInt.zero) {
+        _amount = planck;
+        _amountController.text = _amountInputLogic.formatQuanAmount(planck);
       }
     }
     if (widget.recipientChecksum != null) {
@@ -86,9 +88,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       });
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchEstimatedFee();
-    });
+    _refreshFee();
   }
 
   @override
@@ -121,57 +121,46 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   void _onAmountChanged(String _) {
-    final isFlipped = ref.read(isCurrencyFlippedProvider);
+    final isFlipped = widget.isPayMode ? false : ref.read(isCurrencyFlippedProvider);
     try {
       setState(() => _amount = _amountInputLogic.onAmountChanged(value: _amountController.text, isFlipped: isFlipped));
     } on InvalidNumberInputException catch (e, stack) {
       debugPrint('Amount parse failed: $e\n$stack');
-      context.showErrorToaster(message: 'Please enter a valid amount');
+      final l10n = ref.read(l10nProvider);
+      context.showErrorToaster(message: l10n.sendInputAmountInvalidAmount);
       return;
     }
-    if (_amount > BigInt.zero) _feeDebouncer.run(_fetchFee);
+    _feeDebouncer.run(_refreshFee);
+  }
+
+  void _refreshFee() {
+    final recipient = widget.recipientAddress.trim();
+    if (_amount > BigInt.zero && ref.read(substrateServiceProvider).isValidSS58Address(recipient)) {
+      _fetchFee(_amount, recipient);
+    } else {
+      _fetchEstimatedFee();
+    }
   }
 
   Future<void> _fetchEstimatedFee() async {
     final displayAccount = ref.read(activeAccountProvider).value;
     if (displayAccount is! RegularAccount) return;
-    final account = displayAccount.account;
-    try {
-      final balancesService = ref.read(balancesServiceProvider);
-      final formattingService = ref.read(numberFormattingServiceProvider);
-      final feeData = await balancesService.getBalanceTransferFee(
-        account,
-        account.accountId,
-        formattingService.parseAmount('1000') ?? BigInt.zero,
-      );
-      if (!mounted) return;
-      setState(() {
-        _networkFee = feeData.fee;
-        _blockHeight = feeData.blockNumber;
-      });
-    } catch (e) {
-      debugPrint('Estimated fee fetch error: $e');
-    } finally {
-      if (mounted) setState(() => _isFetchingFee = false);
-    }
+    _fetchFee(_estimateFeeAmount, displayAccount.account.accountId);
   }
 
-  Future<void> _fetchFee() async {
+  Future<void> _fetchFee(BigInt amount, String toAddress) async {
     if (_isFetchingFee) return;
-    setState(() => _isFetchingFee = true);
+    final displayAccount = ref.read(activeAccountProvider).value;
+    if (displayAccount is! RegularAccount) return;
+    _isFetchingFee = true;
     try {
-      final displayAccount = ref.read(activeAccountProvider).value;
-      if (displayAccount is! RegularAccount) return;
       final balancesService = ref.read(balancesServiceProvider);
-      final feeData = await balancesService.getBalanceTransferFee(
-        displayAccount.account,
-        widget.recipientAddress.trim(),
-        _amount,
-      );
+      final feeData = await balancesService.getBalanceTransferFee(displayAccount.account, toAddress, amount);
       if (!mounted) return;
       setState(() {
         _networkFee = feeData.fee;
         _blockHeight = feeData.blockNumber;
+        _hasFee = true;
       });
     } catch (e) {
       debugPrint('Fee fetch error: $e');
@@ -190,7 +179,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         ? _amountInputLogic.quanToFiatString(max)
         : _amountInputLogic.formatQuanAmount(max);
     setState(() => _amount = max);
-    if (max > BigInt.zero) _fetchFee();
+    _refreshFee();
   }
 
   Future<void> _toggleFlip() async {
@@ -207,7 +196,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   Future<void> _openReview() async {
     if (_recipientChecksum == null) {
-      context.showErrorToaster(message: 'Recipient checksum is required');
+      final l10n = ref.read(l10nProvider);
+      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
       return;
     }
 
@@ -229,6 +219,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -239,7 +230,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _networkFee);
     final btnDisabled =
-        _isFetchingFee ||
+        !_hasFee ||
         _recipientChecksum == null ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
@@ -248,6 +239,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           activeAccountId: activeId,
         );
     final btnText = SendScreenLogic.getButtonText(
+      l10n: l10n,
       hasAddressError: false,
       amountStatus: amountStatus,
       recipientText: recipient,
@@ -257,7 +249,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     );
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
+      appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           controller: _scrollController,
@@ -267,7 +259,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _recipientCard(colors, text),
+                _recipientCard(colors, text, l10n),
                 const SizedBox(height: 32),
                 _amountCenter(colors, text),
                 const SizedBox(height: 32),
@@ -277,11 +269,11 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, btnText, balance, btnDisabled),
+      bottomContent: _bottomSection(colors, text, l10n, btnText, balance, btnDisabled),
     );
   }
 
-  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text) {
+  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n) {
     final addr = widget.recipientAddress.trim();
     final shortAddr = AddressFormattingService.formatAddress(addr);
 
@@ -295,7 +287,10 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SEND TO', style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel)),
+                Text(
+                  l10n.sendInputAmountSendTo,
+                  style: context.themeText.receiveLabel?.copyWith(color: colors.textLabel),
+                ),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -342,7 +337,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   }
 
   Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
-    final isFlipped = ref.watch(isCurrencyFlippedProvider);
+    final isPayMode = widget.isPayMode;
+    final isFlipped = isPayMode ? false : ref.watch(isCurrencyFlippedProvider);
     final selectedFiat = ref.watch(selectedFiatCurrencyProvider);
     final localeConfig = ref.watch(localeNumberConfigProvider);
     final display = ref.watch(txAmountDisplayProvider)(
@@ -409,13 +405,15 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                   fontFamily: AppTextTheme.fontFamilySecondary,
                 ),
               ),
-              const SizedBox(width: 8),
-              QuantusIconButton.circular(
-                icon: Icons.swap_vert,
-                onTap: _toggleFlip,
-                isActive: display.isFlipped,
-                size: IconButtonSize.small,
-              ),
+              if (!isPayMode) ...[
+                const SizedBox(width: 8),
+                QuantusIconButton.circular(
+                  icon: Icons.swap_vert,
+                  onTap: _toggleFlip,
+                  isActive: display.isFlipped,
+                  size: IconButtonSize.small,
+                ),
+              ],
             ],
           ),
         ],
@@ -426,6 +424,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   Widget _bottomSection(
     AppColorsV2 colors,
     AppTextTheme text,
+    AppLocalizations l10n,
     String btnText,
     AsyncValue<BigInt> balance,
     bool btnDisabled,
@@ -448,11 +447,14 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Available Balance:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(
+                          l10n.sendInputAmountAvailableBalance,
+                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                        ),
                         const SizedBox(height: 4),
                         balance.when(
                           data: (b) => Text(
-                            '${formattingService.formatBalance(b)} ${AppConstants.tokenSymbol}',
+                            l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           ),
                           loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
@@ -465,11 +467,17 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('Network Fee:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                        Text(
+                          l10n.sendInputAmountNetworkFee,
+                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                        ),
                         const SizedBox(height: 4),
-                        if (!_isFetchingFee)
+                        if (_hasFee)
                           Text(
-                            '${formattingService.formatBalance(_networkFee, maxDecimals: 5)} ${AppConstants.tokenSymbol}',
+                            l10n.commonAmountBalance(
+                              formattingService.formatBalance(_networkFee, maxDecimals: 5),
+                              AppConstants.tokenSymbol,
+                            ),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           )
                         else
@@ -482,7 +490,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               const SizedBox(height: 4),
               IntrinsicWidth(
                 child: QuantusButton.simple(
-                  label: 'Max',
+                  label: l10n.sendInputAmountMax,
                   onTap: _setMax,
                   padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
                   variant: ButtonVariant.transparent,

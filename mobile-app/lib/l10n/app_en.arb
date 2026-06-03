@@ -1,0 +1,1565 @@
+{
+    "walletInitErrorTitle": "Wallet Error",
+    "@walletInitErrorTitle": {
+      "description": "Title for the error dialog when the wallet is not found"
+    },
+    "walletInitErrorMessage": "Unable to find secret phrase. Please restore your wallet.",
+    "@walletInitErrorMessage": {
+      "description": "Message for the error dialog when the wallet is not found"
+    },
+    "walletInitErrorButtonLabel": "OK",
+    "@walletInitErrorButtonLabel": {
+      "description": "Label for the button on the error dialog when the wallet is not found"
+    },
+
+    "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
+    "@authUseDeviceBiometricsToUnlock": {
+      "description": "Text for the text on the lock screen when using device biometrics to unlock"
+    },
+    "authAuthenticating": "Authenticating...",
+    "@authAuthenticating": {
+      "description": "Text for the text on the lock screen when authenticating"
+    },
+    "authUnlockWallet": "Unlock Wallet",
+    "@authUnlockWallet": {
+      "description": "Text for the button on the lock screen to unlock the wallet"
+    },
+    "authAuthorizationRequired": "Authorization \n Required",
+    "@authAuthorizationRequired": {
+      "description": "Text for displayed on the lock screen when authorization is required"
+    },
+
+    "welcomeTagline": "Quantum Secure Encrypted Money",
+    "@welcomeTagline": {
+      "description": "Tagline on the welcome screen"
+    },
+    "welcomeCreateNewWallet": "Create New Wallet",
+    "@welcomeCreateNewWallet": {
+      "description": "Button to start creating a new wallet on the welcome screen"
+    },
+    "welcomeImportWallet": "Import Wallet",
+    "@welcomeImportWallet": {
+      "description": "Button to import an existing wallet on the welcome screen"
+    },
+
+    "createWalletAppBarTitle": "Create Wallet",
+    "@createWalletAppBarTitle": {
+      "description": "App bar title for the create wallet flow"
+    },
+    "createWalletCautionHeadline": "Keep your Recovery Phrase Secret",
+    "@createWalletCautionHeadline": {
+      "description": "Headline on the recovery phrase caution screen during wallet creation"
+    },
+    "createWalletCautionBullet1": "If you lose this device, your recovery phrase is the only way back",
+    "@createWalletCautionBullet1": {
+      "description": "First bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet2": "Anyone who gets hold of it has complete control over your funds, permanently",
+    "@createWalletCautionBullet2": {
+      "description": "Second bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet3": "Write it down and keep it somewhere safe. Do not save it digitally",
+    "@createWalletCautionBullet3": {
+      "description": "Third bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionCheckboxLabel": "I understand that anyone with my recovery phrase can access my wallet. I will store it safely.",
+    "@createWalletCautionCheckboxLabel": {
+      "description": "Checkbox label on the recovery phrase caution screen"
+    },
+    "createWalletRecoveryPhraseNext": "Next",
+    "@createWalletRecoveryPhraseNext": {
+      "description": "Primary button on the new wallet recovery phrase screen"
+    },
+    "createWalletRecoveryPhraseFailedGenerate": "Failed to generate: {error}",
+    "@createWalletRecoveryPhraseFailedGenerate": {
+      "description": "Error when mnemonic generation fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "createWalletRecoveryPhraseSaveError": "Error saving wallet: {error}",
+    "@createWalletRecoveryPhraseSaveError": {
+      "description": "Error when saving a new wallet fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "recoveryPhraseBodyInstructions": "Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.",
+    "@recoveryPhraseBodyInstructions": {
+      "description": "Instructions above the recovery phrase word grid"
+    },
+    "recoveryPhraseBodyCopy": "Copy",
+    "@recoveryPhraseBodyCopy": {
+      "description": "Copy button on the recovery phrase screen"
+    },
+    "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied to clipboard",
+    "@recoveryPhraseBodyCopiedMessage": {
+      "description": "Toast when recovery phrase is copied"
+    },
+
+    "accountReadyAccountCreated": "Account Created",
+    "@accountReadyAccountCreated": {
+      "description": "Title when a new account is created"
+    },
+    "accountReadyWalletCreated": "Wallet Created",
+    "@accountReadyWalletCreated": {
+      "description": "Title when a new wallet is created"
+    },
+    "accountReadyWalletImported": "Wallet Imported",
+    "@accountReadyWalletImported": {
+      "description": "Title when a wallet is imported"
+    },
+    "accountReadyDone": "Done",
+    "@accountReadyDone": {
+      "description": "Done button on the account ready screen"
+    },
+
+    "importWalletAppBarTitle": "Import Wallet",
+    "@importWalletAppBarTitle": {
+      "description": "App bar title on the import wallet screen"
+    },
+    "importWalletDescription": "Restore an existing wallet with your 12 or 24 words recovery phrase",
+    "@importWalletDescription": {
+      "description": "Description on the import wallet screen"
+    },
+    "importWalletHint": "Type in or paste your recovery phrase. Separate words with spaces.",
+    "@importWalletHint": {
+      "description": "Hint for the recovery phrase text field"
+    },
+    "importWalletButton": "Import",
+    "@importWalletButton": {
+      "description": "Import button on the import wallet screen"
+    },
+    "importWalletValidationError": "Recovery phrase must be 12 or 24 words",
+    "@importWalletValidationError": {
+      "description": "Validation error when recovery phrase word count is invalid"
+    },
+
+    "homeError": "Error: {error}",
+    "@homeError": {
+      "description": "Error message on the home screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "homeNoActiveAccount": "No active account",
+    "@homeNoActiveAccount": {
+      "description": "Shown when no account is active on the home screen"
+    },
+    "homeCharge": "Charge",
+    "@homeCharge": {
+      "description": "POS charge button on the home screen bottom bar"
+    },
+    "homeGetTestnetTokens": "Get Testnet Tokens ↗",
+    "@homeGetTestnetTokens": {
+      "description": "Faucet button when balance is zero on the home screen"
+    },
+    "homeErrorLoadingBalance": "Error loading balance",
+    "@homeErrorLoadingBalance": {
+      "description": "Error when balance fails to load on the home screen"
+    },
+    "homeReceive": "Receive",
+    "@homeReceive": {
+      "description": "Receive action button on the home screen"
+    },
+    "homeSend": "Send",
+    "@homeSend": {
+      "description": "Send action button on the home screen"
+    },
+    "homeSwap": "Swap",
+    "@homeSwap": {
+      "description": "Swap action button on the home screen"
+    },
+
+    "homeActivityTitle": "Activity",
+    "@homeActivityTitle": {
+      "description": "Section title for recent activity on the home screen"
+    },
+    "homeActivityViewAll": "View All",
+    "@homeActivityViewAll": {
+      "description": "Link to full activity screen from home"
+    },
+    "homeActivityErrorLoading": "Error loading transactions",
+    "@homeActivityErrorLoading": {
+      "description": "Error when transactions fail to load in home activity section"
+    },
+    "homeActivityRetry": "Retry",
+    "@homeActivityRetry": {
+      "description": "Retry link in home activity section error state"
+    },
+    "homeActivityEmptyTitle": "No Transactions Yet",
+    "@homeActivityEmptyTitle": {
+      "description": "Empty state title in home activity section"
+    },
+    "homeActivityEmptyMessage": "Your activity will appear here once you send or receive QUAN.",
+    "@homeActivityEmptyMessage": {
+      "description": "Empty state message in home activity section"
+    },
+
+    "accountsSheetTitle": "Accounts",
+    "@accountsSheetTitle": {
+      "description": "Title of the accounts bottom sheet"
+    },
+    "accountsSheetFailedLoadAccounts": "Failed to load accounts.",
+    "@accountsSheetFailedLoadAccounts": {
+      "description": "Error when accounts list fails to load"
+    },
+    "accountsSheetFailedLoadActiveAccount": "Failed to load active account.",
+    "@accountsSheetFailedLoadActiveAccount": {
+      "description": "Error when active account fails to load"
+    },
+    "accountsSheetNoAccountsFound": "No accounts found.",
+    "@accountsSheetNoAccountsFound": {
+      "description": "Empty state in accounts sheet"
+    },
+    "accountsSheetAddAccount": "Add Account",
+    "@accountsSheetAddAccount": {
+      "description": "Button to add a new account"
+    },
+    "accountsSheetBalanceUnavailable": "Balance unavailable",
+    "@accountsSheetBalanceUnavailable": {
+      "description": "When account balance fails to load"
+    },
+    "accountsSheetBalance": "{balance} {symbol}",
+    "@accountsSheetBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "addAccountMenuTitle": "Add Account",
+    "@addAccountMenuTitle": {
+      "description": "App bar title on add account menu"
+    },
+    "addAccountMenuCreateTitle": "Create New Account",
+    "@addAccountMenuCreateTitle": {
+      "description": "Create new account menu row title"
+    },
+    "addAccountMenuCreateSubtitle": "Generate a fresh wallet address",
+    "@addAccountMenuCreateSubtitle": {
+      "description": "Create new account menu row subtitle"
+    },
+    "addAccountMenuImportTitle": "Import Wallet",
+    "@addAccountMenuImportTitle": {
+      "description": "Import wallet menu row title"
+    },
+    "addAccountMenuImportSubtitle": "Use a recovery phrase to import",
+    "@addAccountMenuImportSubtitle": {
+      "description": "Import wallet menu row subtitle"
+    },
+
+    "createAccountAppBarTitle": "Account Name",
+    "@createAccountAppBarTitle": {
+      "description": "App bar title when creating an account"
+    },
+    "createAccountSubtitle": "Give this account a name you'll recognize. You can change it anytime.",
+    "@createAccountSubtitle": {
+      "description": "Subtitle on create account name field"
+    },
+    "createAccountButton": "Create",
+    "@createAccountButton": {
+      "description": "Create account button"
+    },
+    "createAccountErrorCouldNotAdd": "Could not add account.",
+    "@createAccountErrorCouldNotAdd": {
+      "description": "Error when account creation fails"
+    },
+    "createAccountDefaultName": "Account {number}",
+    "@createAccountDefaultName": {
+      "description": "Default name for a new account",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+
+    "editAccountAppBarTitle": "Account Name",
+    "@editAccountAppBarTitle": {
+      "description": "App bar title when editing account name"
+    },
+    "editAccountDone": "Done",
+    "@editAccountDone": {
+      "description": "Done button on edit account screen"
+    },
+    "editAccountNameEmpty": "Account name can't be empty",
+    "@editAccountNameEmpty": {
+      "description": "Validation error when account name is empty"
+    },
+    "editAccountRenameFailed": "Failed to rename account.",
+    "@editAccountRenameFailed": {
+      "description": "Error when renaming account fails"
+    },
+
+    "accountMenuTitle": "Accounts",
+    "@accountMenuTitle": {
+      "description": "App bar title on account menu screen"
+    },
+    "accountMenuAccountName": "Account Name",
+    "@accountMenuAccountName": {
+      "description": "Account name menu row label"
+    },
+    "accountMenuAddressDetails": "Address Details",
+    "@accountMenuAddressDetails": {
+      "description": "Address details menu row label"
+    },
+    "accountMenuShowRecoveryPhrase": "Show Recovery Phrase",
+    "@accountMenuShowRecoveryPhrase": {
+      "description": "Show recovery phrase menu row label"
+    },
+    "accountMenuNotFound": "Account not found",
+    "@accountMenuNotFound": {
+      "description": "When account is not found on menu screen"
+    },
+
+    "accountDetailsTitle": "Address Details",
+    "@accountDetailsTitle": {
+      "description": "App bar title on account details screen"
+    },
+
+    "addHardwareAccountAddWallet": "Add Hardware Wallet",
+    "@addHardwareAccountAddWallet": {
+      "description": "Title when adding a new hardware wallet"
+    },
+    "addHardwareAccountAddAccount": "Add Hardware Account",
+    "@addHardwareAccountAddAccount": {
+      "description": "Title when adding a hardware account to existing wallet"
+    },
+    "addHardwareAccountNameLabel": "NAME",
+    "@addHardwareAccountNameLabel": {
+      "description": "Name field label"
+    },
+    "addHardwareAccountNameHintWallet": "Hardware Wallet",
+    "@addHardwareAccountNameHintWallet": {
+      "description": "Name field hint for new hardware wallet"
+    },
+    "addHardwareAccountNameHintAccount": "Account",
+    "@addHardwareAccountNameHintAccount": {
+      "description": "Name field hint for hardware account"
+    },
+    "addHardwareAccountAddressLabel": "ADDRESS",
+    "@addHardwareAccountAddressLabel": {
+      "description": "Address field label"
+    },
+    "addHardwareAccountAddressHint": "SS58 address",
+    "@addHardwareAccountAddressHint": {
+      "description": "Address field hint"
+    },
+    "addHardwareAccountDebugFill": "Debug Fill",
+    "@addHardwareAccountDebugFill": {
+      "description": "Debug fill button"
+    },
+    "addHardwareAccountNameRequired": "Name is required",
+    "@addHardwareAccountNameRequired": {
+      "description": "Validation when name is empty"
+    },
+    "addHardwareAccountInvalidAddress": "Invalid address",
+    "@addHardwareAccountInvalidAddress": {
+      "description": "Validation when address is invalid"
+    },
+
+    "sendTitle": "Send",
+    "@sendTitle": {
+      "description": "Send flow app bar title"
+    },
+    "sendPayTitle": "Pay",
+    "@sendPayTitle": {
+      "description": "Pay flow app bar title"
+    },
+    "sendEnterAddress": "Enter Address",
+    "@sendEnterAddress": {
+      "description": "Button label when recipient address is missing"
+    },
+
+    "sendSelectRecipientSendTo": "Send To",
+    "@sendSelectRecipientSendTo": {
+      "description": "Section label on select recipient screen"
+    },
+    "sendSelectRecipientSearchHint": "Enter {symbol} Address",
+    "@sendSelectRecipientSearchHint": {
+      "description": "Hint for recipient search field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientScanTitle": "Scan QR code",
+    "@sendSelectRecipientScanTitle": {
+      "description": "Scan QR row title"
+    },
+    "sendSelectRecipientScanSubtitle": "Tap to scan a {symbol} Address",
+    "@sendSelectRecipientScanSubtitle": {
+      "description": "Scan QR row subtitle",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientRecents": "Recents",
+    "@sendSelectRecipientRecents": {
+      "description": "Recents section title"
+    },
+    "sendSelectRecipientContinue": "Continue",
+    "@sendSelectRecipientContinue": {
+      "description": "Continue button on select recipient screen"
+    },
+
+    "sendInputAmountSendTo": "SEND TO",
+    "@sendInputAmountSendTo": {
+      "description": "Recipient card label on input amount screen"
+    },
+    "sendInputAmountAvailableBalance": "Available Balance:",
+    "@sendInputAmountAvailableBalance": {
+      "description": "Available balance label"
+    },
+    "sendInputAmountNetworkFee": "Network Fee:",
+    "@sendInputAmountNetworkFee": {
+      "description": "Network fee label"
+    },
+    "sendInputAmountMax": "Max",
+    "@sendInputAmountMax": {
+      "description": "Max amount button"
+    },
+    "sendInputAmountInvalidAmount": "Please enter a valid amount",
+    "@sendInputAmountInvalidAmount": {
+      "description": "Error when amount input is invalid"
+    },
+    "sendInputAmountChecksumRequired": "Recipient checksum is required",
+    "@sendInputAmountChecksumRequired": {
+      "description": "Error when recipient checksum is missing"
+    },
+
+    "sendReviewSending": "SENDING",
+    "@sendReviewSending": {
+      "description": "Sending section label on review screen"
+    },
+    "sendReviewTo": "TO",
+    "@sendReviewTo": {
+      "description": "To section label on review screen"
+    },
+    "sendReviewAmount": "AMOUNT",
+    "@sendReviewAmount": {
+      "description": "Amount row label on review screen"
+    },
+    "sendReviewNetworkFee": "NETWORK FEE",
+    "@sendReviewNetworkFee": {
+      "description": "Network fee row label on review screen"
+    },
+    "sendReviewYouPay": "YOU PAY",
+    "@sendReviewYouPay": {
+      "description": "Total you pay row label on review screen"
+    },
+    "sendReviewConfirm": "Confirm",
+    "@sendReviewConfirm": {
+      "description": "Confirm button on review screen"
+    },
+    "sendReviewAuthReason": "Authenticate to confirm transaction",
+    "@sendReviewAuthReason": {
+      "description": "Biometric auth prompt on review screen"
+    },
+    "sendReviewAuthRequired": "Authentication required to send",
+    "@sendReviewAuthRequired": {
+      "description": "Error when auth fails on review screen"
+    },
+    "sendReviewSubmitFailed": "Failed submitting transaction",
+    "@sendReviewSubmitFailed": {
+      "description": "Error when transaction submission fails"
+    },
+
+    "sendTxSubmittedHeadlinePaid": "{amount} {symbol} paid",
+    "@sendTxSubmittedHeadlinePaid": {
+      "description": "Success headline when payment completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedHeadlineSent": "{amount} {symbol} sent",
+    "@sendTxSubmittedHeadlineSent": {
+      "description": "Success headline when send completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedOnItsWay": "On its way",
+    "@sendTxSubmittedOnItsWay": {
+      "description": "Subtitle on transaction submitted screen"
+    },
+    "sendTxSubmittedToLabel": "To",
+    "@sendTxSubmittedToLabel": {
+      "description": "Recipient label on transaction submitted screen"
+    },
+    "sendTxSubmittedDone": "Done",
+    "@sendTxSubmittedDone": {
+      "description": "Done button on transaction submitted screen"
+    },
+
+    "sendLogicCantSelfTransfer": "Can't Self Transfer",
+    "@sendLogicCantSelfTransfer": {
+      "description": "Button label when sending to own address"
+    },
+    "sendLogicEnterAmount": "Enter Amount",
+    "@sendLogicEnterAmount": {
+      "description": "Button label when amount is zero"
+    },
+    "sendLogicInvalidAmount": "Invalid Amount",
+    "@sendLogicInvalidAmount": {
+      "description": "Button label when amount is negative"
+    },
+    "sendLogicBelowExistentialDeposit": "Below Existential Deposit",
+    "@sendLogicBelowExistentialDeposit": {
+      "description": "Button label when amount is below existential deposit"
+    },
+    "sendLogicInsufficientBalance": "Insufficient Balance",
+    "@sendLogicInsufficientBalance": {
+      "description": "Button label when balance is insufficient"
+    },
+    "sendLogicReviewSend": "Review Send",
+    "@sendLogicReviewSend": {
+      "description": "Button label to proceed to review"
+    },
+
+    "activityTitle": "Activity",
+    "@activityTitle": {
+      "description": "App bar title on activity screen"
+    },
+    "activityError": "Error: {error}",
+    "@activityError": {
+      "description": "Error message on activity screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "activityNoAccount": "No account",
+    "@activityNoAccount": {
+      "description": "Shown when no account is active on activity screen"
+    },
+    "activityEmpty": "No transactions yet",
+    "@activityEmpty": {
+      "description": "Empty state on activity screen"
+    },
+    "activityFilterAll": "All",
+    "@activityFilterAll": {
+      "description": "Filter button for all transactions"
+    },
+    "activityFilterSend": "Send",
+    "@activityFilterSend": {
+      "description": "Filter button for sent transactions"
+    },
+    "activityFilterReceive": "Receive",
+    "@activityFilterReceive": {
+      "description": "Filter button for received transactions"
+    },
+    "activityDateToday": "Today",
+    "@activityDateToday": {
+      "description": "Date group label for today"
+    },
+    "activityDateYesterday": "Yesterday",
+    "@activityDateYesterday": {
+      "description": "Date group label for yesterday"
+    },
+
+    "activityTxSending": "Sending",
+    "@activityTxSending": {
+      "description": "Transaction row label for pending send"
+    },
+    "activityTxReceiving": "Receiving",
+    "@activityTxReceiving": {
+      "description": "Transaction row label for pending or scheduled receive"
+    },
+    "activityTxPending": "Pending",
+    "@activityTxPending": {
+      "description": "Transaction row label for scheduled send"
+    },
+    "activityTxSent": "Sent",
+    "@activityTxSent": {
+      "description": "Transaction row label for completed send"
+    },
+    "activityTxReceived": "Received",
+    "@activityTxReceived": {
+      "description": "Transaction row label for completed receive"
+    },
+    "activityTxTo": "To",
+    "@activityTxTo": {
+      "description": "Counterparty direction label for send"
+    },
+    "activityTxFrom": "From",
+    "@activityTxFrom": {
+      "description": "Counterparty direction label for receive"
+    },
+    "activityTxTimeNow": "now",
+    "@activityTxTimeNow": {
+      "description": "Time label for just now"
+    },
+    "activityTxTimeMinutesAgo": "{minutes}m ago",
+    "@activityTxTimeMinutesAgo": {
+      "description": "Time label for minutes ago",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeHoursAgo": "{hours}h ago",
+    "@activityTxTimeHoursAgo": {
+      "description": "Time label for hours ago",
+      "placeholders": {
+        "hours": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeDaysAgo": "{days}d ago",
+    "@activityTxTimeDaysAgo": {
+      "description": "Time label for days ago",
+      "placeholders": {
+        "days": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeRemaining": "{days}d:{hours}h:{minutes}m",
+    "@activityTxTimeRemaining": {
+      "description": "Time remaining for scheduled transaction",
+      "placeholders": {
+        "days": {
+          "type": "String"
+        },
+        "hours": {
+          "type": "String"
+        },
+        "minutes": {
+          "type": "String"
+        }
+      }
+    },
+
+    "activityDetailTitleSending": "Sending",
+    "@activityDetailTitleSending": {
+      "description": "Detail sheet title for pending send"
+    },
+    "activityDetailTitleScheduled": "Scheduled",
+    "@activityDetailTitleScheduled": {
+      "description": "Detail sheet title for scheduled send"
+    },
+    "activityDetailTitleReceiving": "Receiving",
+    "@activityDetailTitleReceiving": {
+      "description": "Detail sheet title for receiving"
+    },
+    "activityDetailTitleSent": "Sent",
+    "@activityDetailTitleSent": {
+      "description": "Detail sheet title for completed send"
+    },
+    "activityDetailTitleReceived": "Received",
+    "@activityDetailTitleReceived": {
+      "description": "Detail sheet title for completed receive"
+    },
+    "activityDetailStatusInProcess": "In Process",
+    "@activityDetailStatusInProcess": {
+      "description": "Status label for in-process transaction"
+    },
+    "activityDetailStatusScheduled": "Scheduled",
+    "@activityDetailStatusScheduled": {
+      "description": "Status label for scheduled transaction"
+    },
+    "activityDetailStatusCompleted": "Completed",
+    "@activityDetailStatusCompleted": {
+      "description": "Status label for completed transaction"
+    },
+    "activityDetailStatus": "STATUS",
+    "@activityDetailStatus": {
+      "description": "Status row label on detail sheet"
+    },
+    "activityDetailTo": "TO",
+    "@activityDetailTo": {
+      "description": "To row label on detail sheet"
+    },
+    "activityDetailFrom": "FROM",
+    "@activityDetailFrom": {
+      "description": "From row label on detail sheet"
+    },
+    "activityDetailDate": "DATE",
+    "@activityDetailDate": {
+      "description": "Date row label on detail sheet"
+    },
+    "activityDetailNetworkFee": "NETWORK FEE",
+    "@activityDetailNetworkFee": {
+      "description": "Network fee row label on detail sheet"
+    },
+    "activityDetailTxHash": "TX HASH",
+    "@activityDetailTxHash": {
+      "description": "Transaction hash row label on detail sheet"
+    },
+    "activityDetailViewExplorer": "View in Explorer ↗",
+    "@activityDetailViewExplorer": {
+      "description": "Link to view transaction in explorer"
+    },
+
+    "receiveTitle": "Receive",
+    "@receiveTitle": {
+      "description": "App bar title on receive screen"
+    },
+    "receiveTabQrCode": "QR Code",
+    "@receiveTabQrCode": {
+      "description": "QR Code tab on receive screen"
+    },
+    "receiveTabAddress": "Address",
+    "@receiveTabAddress": {
+      "description": "Address tab on receive screen"
+    },
+    "receiveCopy": "Copy",
+    "@receiveCopy": {
+      "description": "Copy button on receive screen"
+    },
+    "receiveErrorLoadingAccount": "Error loading account data: {error}",
+    "@receiveErrorLoadingAccount": {
+      "description": "Error when account data fails to load on receive screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "receiveClipboardContent": "Account Id:\n{accountId}\n\nCheckphrase:\n{checksum}",
+    "@receiveClipboardContent": {
+      "description": "Clipboard content when copying account details",
+      "placeholders": {
+        "accountId": {
+          "type": "String"
+        },
+        "checksum": {
+          "type": "String"
+        }
+      }
+    },
+    "receiveCopiedMessage": "Account details copied to clipboard",
+    "@receiveCopiedMessage": {
+      "description": "Toast when account details are copied"
+    },
+
+    "posAmountTitle": "New Charge",
+    "@posAmountTitle": {
+      "description": "App bar title on POS amount screen"
+    },
+    "posAmountCharge": "Charge {amount}",
+    "@posAmountCharge": {
+      "description": "Charge button with formatted amount",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "posAmountEnterAmount": "Enter Amount",
+    "@posAmountEnterAmount": {
+      "description": "Charge button when amount is empty"
+    },
+
+    "posQrTitleScanToPay": "Scan to Pay",
+    "@posQrTitleScanToPay": {
+      "description": "App bar title while waiting for payment"
+    },
+    "posQrTitlePaymentReceived": "Payment Received",
+    "@posQrTitlePaymentReceived": {
+      "description": "App bar title when payment is received"
+    },
+    "posQrError": "Error: {error}",
+    "@posQrError": {
+      "description": "Error message on POS QR screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "posQrNoActiveAccount": "No active account",
+    "@posQrNoActiveAccount": {
+      "description": "Shown when no active account on POS QR screen"
+    },
+    "posQrInvalidAmount": "Invalid amount. Tap to retry.",
+    "@posQrInvalidAmount": {
+      "description": "Error when amount cannot be parsed"
+    },
+    "posQrConnectionLost": "Connection lost. Tap to retry.",
+    "@posQrConnectionLost": {
+      "description": "Error when payment watch connection is lost"
+    },
+    "posQrTimedOut": "Timed out. Tap to retry.",
+    "@posQrTimedOut": {
+      "description": "Error when payment watch times out"
+    },
+    "posQrNewCharge": "New Charge",
+    "@posQrNewCharge": {
+      "description": "New charge button on POS QR screen"
+    },
+    "posQrDone": "Done",
+    "@posQrDone": {
+      "description": "Done button after payment received"
+    },
+    "posQrAmountReceived": "{amount} received",
+    "@posQrAmountReceived": {
+      "description": "Headline when payment is received",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "posQrFrom": "From:",
+    "@posQrFrom": {
+      "description": "Sender label on payment received screen"
+    },
+    "posQrWaitingForPayment": "Waiting for payment",
+    "@posQrWaitingForPayment": {
+      "description": "Status while waiting for payment"
+    },
+    "posQrNetworkError": "Network Error",
+    "@posQrNetworkError": {
+      "description": "Network error title on POS QR screen"
+    },
+    "posQrTryAgain": "Try Again",
+    "@posQrTryAgain": {
+      "description": "Retry button on POS QR screen"
+    },
+    "posQrPaidAt": "At {time}",
+    "@posQrPaidAt": {
+      "description": "Paid at timestamp on payment received screen",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsTitle": "Settings",
+    "@settingsTitle": {
+      "description": "App bar title on settings hub"
+    },
+    "settingsWalletTitle": "Wallet",
+    "@settingsWalletTitle": {
+      "description": "Wallet row title on settings hub"
+    },
+    "settingsWalletSubtitle": "Recovery Phrase, Reset Wallet",
+    "@settingsWalletSubtitle": {
+      "description": "Wallet row subtitle on settings hub"
+    },
+    "settingsPreferencesTitle": "Preferences",
+    "@settingsPreferencesTitle": {
+      "description": "Preferences row title on settings hub"
+    },
+    "settingsPreferencesSubtitle": "Language, currency, POS mode, notifications",
+    "@settingsPreferencesSubtitle": {
+      "description": "Preferences row subtitle on settings hub"
+    },
+    "settingsMiningRewards": "Mining Rewards",
+    "@settingsMiningRewards": {
+      "description": "Mining rewards row title on settings hub"
+    },
+    "settingsMiningRewardsSubtitle": "{count} blocks mined",
+    "@settingsMiningRewardsSubtitle": {
+      "description": "Mining rewards row subtitle when data loaded",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "settingsMiningRewardsError": "Error getting mining rewards",
+    "@settingsMiningRewardsError": {
+      "description": "Mining rewards row subtitle on error"
+    },
+    "settingsAccountTypeTitle": "Account Type",
+    "@settingsAccountTypeTitle": {
+      "description": "Account type row title on settings hub"
+    },
+    "settingsAccountTypeSubtitle": "Advanced Account Features",
+    "@settingsAccountTypeSubtitle": {
+      "description": "Account type row subtitle on settings hub"
+    },
+    "settingsHelpTitle": "Help & Support",
+    "@settingsHelpTitle": {
+      "description": "Help row title on settings hub"
+    },
+    "settingsHelpSubtitle": "FAQs, Contact the team",
+    "@settingsHelpSubtitle": {
+      "description": "Help row subtitle on settings hub"
+    },
+    "settingsAboutTitle": "About Quantus",
+    "@settingsAboutTitle": {
+      "description": "About row title on settings hub"
+    },
+    "settingsAboutHubSubtitle": "Version {version} ({build})",
+    "@settingsAboutHubSubtitle": {
+      "description": "About row subtitle on settings hub",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        },
+        "build": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsWalletRecoveryPhrase": "Recovery Phrase",
+    "@settingsWalletRecoveryPhrase": {
+      "description": "Recovery phrase row on wallet settings"
+    },
+    "settingsWalletRecoveryPhraseSubtitle": "View your 24-word Backup Password",
+    "@settingsWalletRecoveryPhraseSubtitle": {
+      "description": "Recovery phrase row subtitle"
+    },
+    "settingsWalletReset": "Reset Wallet",
+    "@settingsWalletReset": {
+      "description": "Reset wallet row title"
+    },
+    "settingsWalletResetSubtitle": "Removes all data from this device",
+    "@settingsWalletResetSubtitle": {
+      "description": "Reset wallet row subtitle"
+    },
+    "settingsWalletNoWalletsFound": "No wallets found",
+    "@settingsWalletNoWalletsFound": {
+      "description": "Error when no wallets exist"
+    },
+    "settingsWalletFailedToLoad": "Failed to load wallets",
+    "@settingsWalletFailedToLoad": {
+      "description": "Error when wallet list fails to load"
+    },
+
+    "settingsSelectWalletTitle": "Select Wallet",
+    "@settingsSelectWalletTitle": {
+      "description": "App bar on select wallet screen"
+    },
+    "settingsSelectWalletNoWallets": "No wallets found",
+    "@settingsSelectWalletNoWallets": {
+      "description": "Empty state on select wallet screen"
+    },
+    "settingsSelectWalletItem": "Wallet {number}",
+    "@settingsSelectWalletItem": {
+      "description": "Wallet list item label on select wallet screen",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+
+    "settingsRecoveryConfirmAuthReason": "Authenticate to see recovery phrase",
+    "@settingsRecoveryConfirmAuthReason": {
+      "description": "Biometric prompt when viewing recovery phrase"
+    },
+    "settingsRecoveryConfirmAuthRequired": "Authentication required to see recovery phrase",
+    "@settingsRecoveryConfirmAuthRequired": {
+      "description": "Toaster when auth fails for recovery phrase"
+    },
+
+    "settingsRecoveryPhraseTitle": "Recovery Phrase",
+    "@settingsRecoveryPhraseTitle": {
+      "description": "App bar on recovery phrase screen"
+    },
+    "settingsRecoveryPhraseDone": "Done",
+    "@settingsRecoveryPhraseDone": {
+      "description": "Done button on recovery phrase screen"
+    },
+
+    "settingsResetTitle": "Reset Wallet",
+    "@settingsResetTitle": {
+      "description": "App bar on reset wallet caution screen"
+    },
+    "settingsResetAuthReason": "Authenticate to reset wallet",
+    "@settingsResetAuthReason": {
+      "description": "Biometric prompt when resetting wallet"
+    },
+    "settingsResetFailed": "Failed to reset wallet: {error}",
+    "@settingsResetFailed": {
+      "description": "Toaster when wallet reset fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "settingsResetAuthRequired": "Authentication required to reset wallet",
+    "@settingsResetAuthRequired": {
+      "description": "Toaster when auth fails for wallet reset"
+    },
+    "settingsResetCautionHeadline": "This will erase\nyour wallet",
+    "@settingsResetCautionHeadline": {
+      "description": "Headline on wallet reset caution screen"
+    },
+    "settingsResetCautionBullet1": "All wallet data will be permanently removed from this device",
+    "@settingsResetCautionBullet1": {
+      "description": "First bullet on wallet reset caution"
+    },
+    "settingsResetCautionBullet2": "Your funds stay on the blockchain but only your recovery phrase can restore access",
+    "@settingsResetCautionBullet2": {
+      "description": "Second bullet on wallet reset caution"
+    },
+    "settingsResetCautionBullet3": "Without it, your funds are gone forever",
+    "@settingsResetCautionBullet3": {
+      "description": "Third bullet on wallet reset caution"
+    },
+    "settingsResetCautionCheckbox": "I've backed up my recovery phrase",
+    "@settingsResetCautionCheckbox": {
+      "description": "Checkbox label on wallet reset caution"
+    },
+
+    "settingsPreferencesCurrency": "Currency",
+    "@settingsPreferencesCurrency": {
+      "description": "Currency row on preferences screen"
+    },
+    "settingsPreferencesCurrencySubtitle": "Fiat display preference",
+    "@settingsPreferencesCurrencySubtitle": {
+      "description": "Currency row subtitle"
+    },
+    "settingsPreferencesLanguage": "Language",
+    "@settingsPreferencesLanguage": {
+      "description": "Language row on preferences screen"
+    },
+    "settingsPreferencesLanguageSubtitle": "App display language",
+    "@settingsPreferencesLanguageSubtitle": {
+      "description": "Language row subtitle"
+    },
+    "settingsPreferencesPosMode": "POS Mode",
+    "@settingsPreferencesPosMode": {
+      "description": "POS mode row on preferences"
+    },
+    "settingsPreferencesPosModeSubtitle": "Point of sale features",
+    "@settingsPreferencesPosModeSubtitle": {
+      "description": "POS mode row subtitle"
+    },
+    "settingsPreferencesNotifications": "Notifications",
+    "@settingsPreferencesNotifications": {
+      "description": "Notifications row on preferences"
+    },
+    "settingsPreferencesNotificationsSubtitle": "Transaction and wallet alerts",
+    "@settingsPreferencesNotificationsSubtitle": {
+      "description": "Notifications row subtitle"
+    },
+
+    "settingsCurrencyTitle": "Currency",
+    "@settingsCurrencyTitle": {
+      "description": "App bar on currency picker"
+    },
+    "settingsCurrencySearchHint": "Search",
+    "@settingsCurrencySearchHint": {
+      "description": "Search field hint on currency picker"
+    },
+    "settingsCurrencyNoMatch": "No currencies match your search",
+    "@settingsCurrencyNoMatch": {
+      "description": "Empty state when search has no results"
+    },
+    "settingsCurrencyError": "Error selecting currency: {error}",
+    "@settingsCurrencyError": {
+      "description": "Error when currency selection fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsLanguageTitle": "Language",
+    "@settingsLanguageTitle": {
+      "description": "App bar on language picker"
+    },
+    "settingsLanguageSearchHint": "Search",
+    "@settingsLanguageSearchHint": {
+      "description": "Search field hint on language picker"
+    },
+    "settingsLanguageNoMatch": "No languages match your search",
+    "@settingsLanguageNoMatch": {
+      "description": "Empty state when language search has no results"
+    },
+    "settingsLanguageError": "Error selecting language: {error}",
+    "@settingsLanguageError": {
+      "description": "Error when language selection fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsMiningTitle": "Mining Rewards",
+    "@settingsMiningTitle": {
+      "description": "App bar on mining rewards screen"
+    },
+    "settingsMiningRedeem": "Redeem",
+    "@settingsMiningRedeem": {
+      "description": "Redeem button on mining rewards"
+    },
+    "settingsMiningStatusMining": "Mining",
+    "@settingsMiningStatusMining": {
+      "description": "Active mining status label"
+    },
+    "settingsMiningStatusPending": "Pending",
+    "@settingsMiningStatusPending": {
+      "description": "Pending mining status label"
+    },
+    "settingsMiningBlocksMined": "BLOCKS MINED",
+    "@settingsMiningBlocksMined": {
+      "description": "Blocks mined stat label"
+    },
+    "settingsMiningBlocksAcrossTestnets": "blocks across all testnets",
+    "@settingsMiningBlocksAcrossTestnets": {
+      "description": "Subtitle under blocks mined count"
+    },
+    "settingsMiningStatTestnetBlocks": "TESTNET BLOCKS",
+    "@settingsMiningStatTestnetBlocks": {
+      "description": "Testnet blocks stat label"
+    },
+    "settingsMiningStatTestnetRewards": "TESTNET REWARDS",
+    "@settingsMiningStatTestnetRewards": {
+      "description": "Testnet rewards stat label"
+    },
+    "settingsMiningStatRedeemed": "REDEEMED",
+    "@settingsMiningStatRedeemed": {
+      "description": "Redeemed rewards stat label"
+    },
+    "settingsMiningStatRedeemable": "REDEEMABLE",
+    "@settingsMiningStatRedeemable": {
+      "description": "Redeemable rewards stat label"
+    },
+    "settingsMiningQuanEarned": "QUAN EARNED",
+    "@settingsMiningQuanEarned": {
+      "description": "QUAN earned stat label"
+    },
+    "settingsMiningViewTelemetry": "View Telemetry ↗",
+    "@settingsMiningViewTelemetry": {
+      "description": "Link to mining telemetry"
+    },
+    "settingsMiningNoDataTitle": "No mining data yet",
+    "@settingsMiningNoDataTitle": {
+      "description": "Empty state title on mining rewards"
+    },
+    "settingsMiningNoDataBody": "Set up a Quantus mining node to start earning rewards.",
+    "@settingsMiningNoDataBody": {
+      "description": "Empty state body on mining rewards"
+    },
+    "settingsMiningSetupGuide": "Mining Setup Guide ↗",
+    "@settingsMiningSetupGuide": {
+      "description": "Link to mining setup guide"
+    },
+    "settingsMiningLoadError": "Failed to load mining rewards",
+    "@settingsMiningLoadError": {
+      "description": "Error title on mining rewards screen"
+    },
+    "settingsMiningCheckConnection": "Please check your connection",
+    "@settingsMiningCheckConnection": {
+      "description": "Error subtitle when connection fails"
+    },
+    "settingsMiningTestnetBlocks": "blocks",
+    "@settingsMiningTestnetBlocks": {
+      "description": "Blocks label on testnet row"
+    },
+    "settingsMiningDiracSince": "Nov 2025",
+    "@settingsMiningDiracSince": {
+      "description": "Dirac testnet active since date"
+    },
+    "settingsMiningSchrodingerSince": "Oct 2025",
+    "@settingsMiningSchrodingerSince": {
+      "description": "Schrödinger testnet active since date"
+    },
+    "settingsMiningResonanceSince": "Jul 2025",
+    "@settingsMiningResonanceSince": {
+      "description": "Resonance testnet active since date"
+    },
+
+    "settingsTestnetTitle": "Testnet Rewards",
+    "@settingsTestnetTitle": {
+      "description": "App bar on testnet rewards screen"
+    },
+    "settingsTestnetLoadError": "Failed to load testnet rewards",
+    "@settingsTestnetLoadError": {
+      "description": "Error title on testnet rewards"
+    },
+    "settingsTestnetTotalBlocks": "{count} blocks",
+    "@settingsTestnetTotalBlocks": {
+      "description": "Total blocks headline on testnet rewards",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "settingsTestnetTotalDescription": "Total blocks mined across all testnets",
+    "@settingsTestnetTotalDescription": {
+      "description": "Description under total blocks"
+    },
+    "settingsTestnetBreakdown": "Breakdown",
+    "@settingsTestnetBreakdown": {
+      "description": "Breakdown section header"
+    },
+    "settingsTestnetRowBlocks": "{count} blocks",
+    "@settingsTestnetRowBlocks": {
+      "description": "Blocks count in testnet breakdown row",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+
+    "settingsHelpScreenTitle": "Help & Support",
+    "@settingsHelpScreenTitle": {
+      "description": "App bar on help and support screen"
+    },
+    "settingsHelpEmail": "Email Support",
+    "@settingsHelpEmail": {
+      "description": "Email support row title"
+    },
+    "settingsHelpTelegram": "Telegram",
+    "@settingsHelpTelegram": {
+      "description": "Telegram row title"
+    },
+
+    "settingsAboutScreenTitle": "About",
+    "@settingsAboutScreenTitle": {
+      "description": "App bar on about screen"
+    },
+    "settingsAboutIntro": "Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.",
+    "@settingsAboutIntro": {
+      "description": "Intro paragraph on about screen"
+    },
+    "settingsAboutTerms": "Terms of Service",
+    "@settingsAboutTerms": {
+      "description": "Terms of service link title"
+    },
+    "settingsAboutTermsSubtitle": "quantus.com/terms/",
+    "@settingsAboutTermsSubtitle": {
+      "description": "Terms of service link subtitle"
+    },
+    "settingsAboutPrivacy": "Privacy policy",
+    "@settingsAboutPrivacy": {
+      "description": "Privacy policy link title"
+    },
+    "settingsAboutPrivacySubtitle": "quantus.com/privacy-policy/",
+    "@settingsAboutPrivacySubtitle": {
+      "description": "Privacy policy link subtitle"
+    },
+    "settingsAboutWebsite": "Visit Website",
+    "@settingsAboutWebsite": {
+      "description": "Website link title"
+    },
+    "settingsAboutWebsiteSubtitle": "quantus.com",
+    "@settingsAboutWebsiteSubtitle": {
+      "description": "Website link subtitle"
+    },
+    "settingsAboutVersion": "Version {version} ({build})",
+    "@settingsAboutVersion": {
+      "description": "Version label on about screen",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        },
+        "build": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsAccountTypeScreenTitle": "Account Type",
+    "@settingsAccountTypeScreenTitle": {
+      "description": "App bar on account type settings"
+    },
+    "settingsAccountTypeIntro": "Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.",
+    "@settingsAccountTypeIntro": {
+      "description": "Intro on account type settings"
+    },
+    "settingsAccountTypeReversibleTitle": "Reversible Transactions",
+    "@settingsAccountTypeReversibleTitle": {
+      "description": "Reversible transactions feature title"
+    },
+    "settingsAccountTypeReversibleSubtitle": "Reverse your sends within a time window",
+    "@settingsAccountTypeReversibleSubtitle": {
+      "description": "Reversible transactions feature subtitle"
+    },
+    "settingsAccountTypeHighSecurityTitle": "High Security Account",
+    "@settingsAccountTypeHighSecurityTitle": {
+      "description": "High security account feature title"
+    },
+    "settingsAccountTypeHighSecuritySubtitle": "Guardian approval required",
+    "@settingsAccountTypeHighSecuritySubtitle": {
+      "description": "High security account feature subtitle"
+    },
+    "settingsAccountTypeMultiSigTitle": "Multi-Signature",
+    "@settingsAccountTypeMultiSigTitle": {
+      "description": "Multi-signature feature title"
+    },
+    "settingsAccountTypeMultiSigSubtitle": "Multiple approvals required",
+    "@settingsAccountTypeMultiSigSubtitle": {
+      "description": "Multi-signature feature subtitle"
+    },
+    "settingsAccountTypeHardwareTitle": "Hardware Wallet",
+    "@settingsAccountTypeHardwareTitle": {
+      "description": "Hardware wallet feature title"
+    },
+    "settingsAccountTypeHardwareSubtitle": "Pair a hardware device",
+    "@settingsAccountTypeHardwareSubtitle": {
+      "description": "Hardware wallet feature subtitle"
+    },
+    "settingsAccountTypeComingSoon": "Coming Soon",
+    "@settingsAccountTypeComingSoon": {
+      "description": "Coming soon badge on account type features"
+    },
+
+    "swapTitle": "Swap",
+    "@swapTitle": {
+      "description": "App bar title on swap screens"
+    },
+    "swapFrom": "From",
+    "@swapFrom": {
+      "description": "From token section label on swap screen"
+    },
+    "swapTo": "To",
+    "@swapTo": {
+      "description": "To token section label on swap screen"
+    },
+    "swapRefundAddress": "Refund Address",
+    "@swapRefundAddress": {
+      "description": "Refund address field label on swap screen"
+    },
+    "swapRefundAddressHint": "{network} Address",
+    "@swapRefundAddressHint": {
+      "description": "Refund address field hint",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapSlippageTolerance": "Slippage Tolerance",
+    "@swapSlippageTolerance": {
+      "description": "Slippage tolerance label on swap screen"
+    },
+    "swapRate": "Rate",
+    "@swapRate": {
+      "description": "Exchange rate label on swap screen"
+    },
+    "swapGetQuote": "Get a Quote",
+    "@swapGetQuote": {
+      "description": "Get quote button on swap screen"
+    },
+    "swapRateLabel": "1 QUAN = {amount} {symbol}",
+    "@swapRateLabel": {
+      "description": "Exchange rate display",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRateZero": "1 QUAN = 0 {symbol}",
+    "@swapRateZero": {
+      "description": "Exchange rate when amount is zero",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "swapTokenPickerTitle": "Select Token",
+    "@swapTokenPickerTitle": {
+      "description": "Title on token picker sheet"
+    },
+    "swapTokenPickerLoadError": "Failed to load tokens",
+    "@swapTokenPickerLoadError": {
+      "description": "Error when token list fails to load"
+    },
+
+    "swapReviewTitle": "Review Quote",
+    "@swapReviewTitle": {
+      "description": "Title on review quote sheet"
+    },
+    "swapReviewTotalFees": "Total fees",
+    "@swapReviewTotalFees": {
+      "description": "Total fees row on review quote sheet"
+    },
+    "swapReviewTotalAmount": "Total Amount",
+    "@swapReviewTotalAmount": {
+      "description": "Total amount row on review quote sheet"
+    },
+    "swapReviewSlippageWarning": "You could receive up to ${amount} less based on the {percent}% slippage you set",
+    "@swapReviewSlippageWarning": {
+      "description": "Slippage warning on review quote sheet",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapReviewConfirm": "Confirm",
+    "@swapReviewConfirm": {
+      "description": "Confirm button on review quote sheet"
+    },
+
+    "swapDepositAmount": "Deposit Amount",
+    "@swapDepositAmount": {
+      "description": "Deposit amount label on deposit screen"
+    },
+    "swapDepositAmountCopied": "Deposit amount copied to clipboard",
+    "@swapDepositAmountCopied": {
+      "description": "Toast when deposit amount is copied"
+    },
+    "swapDepositDemoWarning": "For demo purposes only - do not send funds!",
+    "@swapDepositDemoWarning": {
+      "description": "Demo warning on deposit screen"
+    },
+    "swapDepositShareQr": "Share QR",
+    "@swapDepositShareQr": {
+      "description": "Share QR button on deposit screen"
+    },
+    "swapDepositShareContent": "Network: {network}\nToken: {token}\nAddress: {address}",
+    "@swapDepositShareContent": {
+      "description": "Share text for deposit details",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        },
+        "token": {
+          "type": "String"
+        },
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositNotice": "Use your {symbol} or {network} wallet to deposit funds. Depositing other assets may result in loss of funds.",
+    "@swapDepositNotice": {
+      "description": "Deposit wallet notice on deposit screen",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositProcessingTitle": "Processing Swap",
+    "@swapDepositProcessingTitle": {
+      "description": "Title while swap is processing"
+    },
+    "swapDepositProcessingBody": "This may take a few minutes...",
+    "@swapDepositProcessingBody": {
+      "description": "Body while swap is processing"
+    },
+    "swapDepositCompleteTitle": "Swap Complete",
+    "@swapDepositCompleteTitle": {
+      "description": "Title when swap is complete"
+    },
+    "swapDepositCompleteBody": "Your swap for {amount} QUAN is complete.",
+    "@swapDepositCompleteBody": {
+      "description": "Body when swap is complete",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositTestnetBanner": "DEMO ONLY - WE ARE STILL ON TESTNET",
+    "@swapDepositTestnetBanner": {
+      "description": "Testnet demo banner on deposit screen"
+    },
+    "swapDepositSentFunds": "I've sent the funds",
+    "@swapDepositSentFunds": {
+      "description": "Button to confirm funds sent"
+    },
+    "swapDepositDone": "Done",
+    "@swapDepositDone": {
+      "description": "Done button after swap completes"
+    },
+
+    "swapRefundPickerTitle": "Refund Addresses",
+    "@swapRefundPickerTitle": {
+      "description": "Title on refund address picker sheet"
+    },
+    "swapRefundPickerEmpty": "No recent refund addresses",
+    "@swapRefundPickerEmpty": {
+      "description": "Empty state on refund address picker"
+    },
+
+    "componentQrScannerTitle": "Scan QR Code",
+    "@componentQrScannerTitle": {
+      "description": "Text for app bar or button label on QR scanner component"
+    },
+    "componentQrScannerNoCode": "No QR code found in image",
+    "@componentQrScannerNoCode": {
+      "description": "Snackbar when gallery image has no QR code"
+    },
+    "componentShare": "Share",
+    "@componentShare": {
+      "description": "Share button label on account screens"
+    },
+    "componentAddressLabel": "ADDRESS",
+    "@componentAddressLabel": {
+      "description": "Address field label on address details card"
+    },
+    "componentCheckphraseLabel": "CHECKPHRASE",
+    "@componentCheckphraseLabel": {
+      "description": "Checkphrase field label on address details card"
+    },
+    "componentCheckphraseCopied": "Checkphrase copied",
+    "@componentCheckphraseCopied": {
+      "description": "Toast when checkphrase is copied"
+    },
+    "componentNameFieldHint": "Enter a name for your account",
+    "@componentNameFieldHint": {
+      "description": "Hint text on account name field"
+    },
+
+    "commonLoading": "Loading...",
+    "@commonLoading": {
+      "description": "Text for generic loading state"
+    },
+    "commonAmountBalance": "{balance} {symbol}",
+    "@commonAmountBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "commonContinue": "Continue",
+    "@commonContinue": {
+      "description": "Continue button on various screens"
+    }
+  }

@@ -145,6 +145,8 @@ final selectedFiatCurrencyProvider = StateNotifierProvider<SelectedFiatCurrencyN
 class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
   final SettingsService _settings;
 
+  static final FiatCurrency _defaultCurrency = FiatCurrency.usd;
+
   SelectedFiatCurrencyNotifier(this._settings) : super(_load(_settings));
 
   /// Persists and applies [currency] as the active fiat currency.
@@ -153,9 +155,14 @@ class SelectedFiatCurrencyNotifier extends StateNotifier<FiatCurrency> {
     state = currency;
   }
 
+  Future<void> reset() async {
+    await _settings.clearSelectedFiatCurrency();
+    state = _defaultCurrency;
+  }
+
   static FiatCurrency _load(SettingsService settings) {
     final code = settings.getSelectedFiatCurrency();
-    if (code == null) return FiatCurrency.usd;
+    if (code == null) return _defaultCurrency;
     return FiatCurrency.fromCode(code);
   }
 }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -64,7 +67,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       if (!mnemonic.startsWith('//')) {
         final words = mnemonic.split(' ').where((w) => w.isNotEmpty).toList();
         if (words.length != 12 && words.length != 24) {
-          throw Exception('Recovery phrase must be 12 or 24 words');
+          throw Exception(ref.read(l10nProvider).importWalletValidationError);
         }
       }
 
@@ -113,27 +116,28 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       }
       ref.invalidate(accountsProvider);
       ref.invalidate(activeAccountProvider);
-    } catch (_) {}
+    } catch (e, st) {
+      quantusDebugPrint('error discovering accounts: $e');
+      TelemetryService().sendError('Error discovering accounts', error: e, stackTrace: st);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fieldTextStyle = text.smallTitle?.copyWith(color: colors.checksum, fontWeight: FontWeight.w400);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Import Wallet'),
+      appBar: V2AppBar(title: l10n.importWalletAppBarTitle),
       mainContent: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Text(
-                'Restore an existing wallet with your 12 or 24 words recovery phrase',
-                style: text.smallParagraph?.copyWith(color: colors.textSecondary),
-              ),
+              Text(l10n.importWalletDescription, style: text.smallParagraph?.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 16),
               Container(
                 height: 202,
@@ -149,7 +153,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
                   onChanged: (_) => setState(() {}),
                   style: fieldTextStyle,
                   decoration: InputDecoration.collapsed(
-                    hintText: 'Type in or paste your recovery phrase. Separate words with spaces.',
+                    hintText: l10n.importWalletHint,
                     hintStyle: fieldTextStyle?.copyWith(color: colors.textSecondary),
                   ),
                   maxLines: null,
@@ -172,7 +176,7 @@ class _ImportWalletScreenV2State extends ConsumerState<ImportWalletScreenV2> {
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           key: _buttonKey,
-          label: 'Import',
+          label: l10n.importWalletButton,
           onTap: _import,
           isLoading: _isLoading,
           isDisabled: !_hasInput,

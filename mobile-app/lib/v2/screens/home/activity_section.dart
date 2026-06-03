@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/activity_screen.dart';
@@ -27,6 +29,7 @@ class ActivitySection extends ConsumerStatefulWidget {
 class _ActivitySectionState extends ConsumerState<ActivitySection> {
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -44,18 +47,22 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
 
         if (all.isEmpty) {
           return Column(
-            children: [const SizedBox(height: 40), _header(colors, text, context), _emptyState(text, colors)],
+            children: [
+              const SizedBox(height: 40),
+              _header(colors, text, context, l10n),
+              _emptyState(text, colors, l10n),
+            ],
           );
         }
 
         return Column(
           children: [
             const SizedBox(height: 40),
-            _header(colors, text, context),
+            _header(colors, text, context, l10n),
             const SizedBox(height: 28),
 
             ...recentTransactions.mapIndexed((index, tx) {
-              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors);
+              final data = TxItemData.from(tx, widget.activeAccount.accountId, colors, l10n);
               final isLastItem = index == recentTransactions.length - 1;
 
               return buildTxItem(
@@ -63,6 +70,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 data,
                 colors,
                 text,
+                l10n,
                 formattedAmount: formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {
@@ -78,7 +86,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _header(colors, text, context),
+            _header(colors, text, context, l10n),
             const SizedBox(height: 24),
             for (var i = 0; i < 3; i++) ...[
               const TxItemSkeleton(),
@@ -91,7 +99,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
-            Text('Error loading transactions', style: text.detail?.copyWith(color: colors.textError)),
+            Text(l10n.homeActivityErrorLoading, style: text.detail?.copyWith(color: colors.textError)),
             const SizedBox(height: 12),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -102,7 +110,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Text(
-                  'Retry',
+                  l10n.homeActivityRetry,
                   style: text.smallParagraph?.copyWith(color: colors.textPrimary, decoration: TextDecoration.underline),
                 ),
               ),
@@ -113,21 +121,21 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     );
   }
 
-  Widget _emptyState(AppTextTheme text, AppColorsV2 colors) {
+  Widget _emptyState(AppTextTheme text, AppColorsV2 colors, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
           Text(
-            'No Transactions Yet',
+            l10n.homeActivityEmptyTitle,
             style: text.mediumTitle?.copyWith(color: colors.textMuted, fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 240),
             child: Text(
-              'Your activity will appear here once you send or receive QUAN.',
+              l10n.homeActivityEmptyMessage,
               textAlign: TextAlign.center,
               style: text.smallParagraph?.copyWith(color: colors.txItemIconDefault),
             ),
@@ -137,15 +145,15 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
     );
   }
 
-  Widget _header(AppColorsV2 colors, AppTextTheme text, BuildContext context) {
+  Widget _header(AppColorsV2 colors, AppTextTheme text, BuildContext context, AppLocalizations l10n) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Activity', style: text.smallTitle),
+        Text(l10n.homeActivityTitle, style: text.smallTitle),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivityScreen())),
           child: Text(
-            'View All',
+            l10n.homeActivityViewAll,
             style: text.smallTitle?.copyWith(
               color: colors.textMuted,
               decoration: TextDecoration.underline,

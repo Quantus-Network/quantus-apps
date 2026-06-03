@@ -8,6 +8,7 @@ import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Family provider for filtered pagination controllers.
 ///
@@ -31,11 +32,14 @@ final filteredTransactionsProviderFamily =
       final pending = ref.watch(pendingTransactionsProvider);
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
-      if (pagination.error != null) {
-        print('FilteredTransactionsProvider: Error: ${pagination.error}');
+      if (pagination.error != null && !pagination.hasLoadedChainData) {
+        quantusDebugPrint('FilteredTransactionsProvider: Error: ${pagination.error}');
         return AsyncValue.error(pagination.error!, pagination.stackTrace!);
       }
-      if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
+      if (pagination.error != null) {
+        quantusDebugPrint('FilteredTransactionsProvider: Load-more error: ${pagination.error}');
+      }
+      if (pagination.isLoading && !pagination.hasLoadedChainData) {
         return const AsyncValue.loading();
       }
 

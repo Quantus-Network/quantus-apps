@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-class QrScannerPage extends StatefulWidget {
+class QrScannerPage extends ConsumerStatefulWidget {
   final bool Function(String)? validator;
   const QrScannerPage({super.key, this.validator});
 
   @override
-  State<QrScannerPage> createState() => _QrScannerPageState();
+  ConsumerState<QrScannerPage> createState() => _QrScannerPageState();
 }
 
-class _QrScannerPageState extends State<QrScannerPage> {
+class _QrScannerPageState extends ConsumerState<QrScannerPage> {
   final _controller = MobileScannerController();
   bool _scanned = false;
 
@@ -40,12 +42,14 @@ class _QrScannerPageState extends State<QrScannerPage> {
     if (capture != null) {
       _onDetect(capture);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No QR code found in image')));
+      final l10n = ref.read(l10nProvider);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.componentQrScannerNoCode)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final screen = MediaQuery.of(context).size;
     final frameSize = (screen.width - 112).clamp(220.0, 280.0);
@@ -83,7 +87,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
               ],
             ),
           ),
-          const Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: 'Scan QR Code')),
+          Positioned(top: 20, left: 24, right: 24, child: V2AppBar(title: l10n.componentQrScannerTitle)),
         ],
       ),
     );

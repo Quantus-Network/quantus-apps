@@ -11,6 +11,7 @@ import 'package:resonance_network_wallet/providers/notification_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
@@ -174,30 +175,30 @@ class TransactionSubmissionService {
     int attempt = 1,
   }) async {
     try {
-      print('Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}');
+      quantusDebugPrint('Submitting transaction attempt $attempt/$maxRetries: ${pendingTx.id}');
 
       final extrinsicHashBytes = await submissionBuilder();
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
-      print('submission hash: $extrinsicHash');
+      quantusDebugPrint('submission hash: $extrinsicHash');
 
       final newState = TransactionState.pending;
-      print('updating tx ${pendingTx.amount} to $newState');
+      quantusDebugPrint('updating tx ${pendingTx.amount} to $newState');
       _ref
           .read(pendingTransactionsProvider.notifier)
           .updateState(pendingTx.id, newState, error: pendingTx.error, extrinsicHash: extrinsicHash);
 
       _startPollingForTransaction(pendingTx.copyWith(extrinsicHash: extrinsicHash));
     } catch (e, stackTrace) {
-      print('Failed submitting transaction attempt $attempt: $e');
+      quantusDebugPrint('Failed submitting transaction attempt $attempt: $e');
 
       if (attempt < maxRetries) {
-        print('Retrying due to submission error, attempt ${attempt + 1}/$maxRetries');
+        quantusDebugPrint('Retrying due to submission error, attempt ${attempt + 1}/$maxRetries');
         // Brief delay before retry
         await Future.delayed(const Duration(seconds: 2));
         await _submitAndTrackBackground(submissionBuilder, pendingTx, maxRetries: maxRetries, attempt: attempt + 1);
       } else {
-        print('Failed to submit transaction after $maxRetries attempts: $e');
-        print('Stack trace: $stackTrace');
+        quantusDebugPrint('Failed to submit transaction after $maxRetries attempts: $e');
+        quantusDebugPrint('Stack trace: $stackTrace');
 
         // Mark as permanently failed
         _ref

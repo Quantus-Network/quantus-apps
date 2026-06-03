@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -15,8 +17,6 @@ import 'package:resonance_network_wallet/v2/screens/settings/mining_rewards_scre
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 
-const _miningRewardsTitle = 'Mining Rewards';
-
 class SettingsScreenV2 extends ConsumerStatefulWidget {
   const SettingsScreenV2({super.key});
 
@@ -27,27 +27,31 @@ class SettingsScreenV2 extends ConsumerStatefulWidget {
 class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final miningAsync = ref.watch(miningRewardsProvider);
 
     final colors = context.colors;
     final trailing = SettingsTappableRowUtils.chevron(colors);
-    final entries = _settingsHubItems(colors);
+    final entries = _settingsHubItems(colors, l10n);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Settings'),
+      appBar: V2AppBar(title: l10n.settingsTitle),
       mainContent: ListView(
         children: [
           for (final e in entries.asMap().entries) ...[
-            if (e.value.title == _miningRewardsTitle)
+            if (e.value.isMiningRewards)
               miningAsync.when(
-                data: (data) =>
-                    _buildTappableRow(e.value, subtitle: '${data.totalBlocks} blocks mined', trailing: trailing),
-                loading: () => _buildTappableRow(e.value, subtitle: 'Loading...', trailing: trailing),
+                data: (data) => _buildTappableRow(
+                  e.value,
+                  subtitle: l10n.settingsMiningRewardsSubtitle(data.totalBlocks),
+                  trailing: trailing,
+                ),
+                loading: () => _buildTappableRow(e.value, subtitle: l10n.commonLoading, trailing: trailing),
                 error: (err, st) {
                   debugPrint('Error getting mining rewards: ${err.toString()}');
                   debugPrint('Stack trace: ${st.toString()}');
 
-                  return _buildTappableRow(e.value, subtitle: 'Error getting mining rewards', trailing: trailing);
+                  return _buildTappableRow(e.value, subtitle: l10n.settingsMiningRewardsError, trailing: trailing);
                 },
               )
             else
@@ -69,50 +73,58 @@ class _SettingsScreenV2State extends ConsumerState<SettingsScreenV2> {
 }
 
 class _SettingsHubItem {
-  const _SettingsHubItem({required this.leading, required this.title, required this.subtitle, required this.page});
+  const _SettingsHubItem({
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.page,
+    this.isMiningRewards = false,
+  });
 
   final Widget leading;
   final String title;
   final String subtitle;
   final Widget page;
+  final bool isMiningRewards;
 }
 
-List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors) {
+List<_SettingsHubItem> _settingsHubItems(AppColorsV2 colors, AppLocalizations l10n) {
   return [
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.account_balance_wallet_outlined),
-      title: 'Wallet',
-      subtitle: 'Recovery Phrase, Reset Wallet',
+      title: l10n.settingsWalletTitle,
+      subtitle: l10n.settingsWalletSubtitle,
       page: const WalletSettingsScreenV2(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.tune),
-      title: 'Preferences',
-      subtitle: 'Currency, POS mode, notifications',
+      title: l10n.settingsPreferencesTitle,
+      subtitle: l10n.settingsPreferencesSubtitle,
       page: const PreferencesSettingsScreenV2(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/axe.svg', width: 18, height: 18)),
-      title: _miningRewardsTitle,
-      subtitle: 'Loading...',
+      title: l10n.settingsMiningRewards,
+      subtitle: l10n.commonLoading,
       page: const MiningRewardsScreen(),
+      isMiningRewards: true,
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.shield_outlined),
-      title: 'Account Type',
-      subtitle: 'Advanced Account Features',
+      title: l10n.settingsAccountTypeTitle,
+      subtitle: l10n.settingsAccountTypeSubtitle,
       page: const AccountTypeSettingsScreenV2(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, icon: Icons.help_outline),
-      title: 'Help & Support',
-      subtitle: 'FAQs, Contact the team',
+      title: l10n.settingsHelpTitle,
+      subtitle: l10n.settingsHelpSubtitle,
       page: const HelpAndSupportScreenV2(),
     ),
     _SettingsHubItem(
       leading: _settingsHubIcon(colors, svg: SvgPicture.asset('assets/v2/uppercase_q.svg', width: 18, height: 18)),
-      title: 'About Quantus',
-      subtitle: 'Version $appVersion ($appBuildNumber)',
+      title: l10n.settingsAboutTitle,
+      subtitle: l10n.settingsAboutHubSubtitle(appVersion, appBuildNumber),
       page: const AboutQuantusScreenV2(),
     ),
   ];

@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final paginationControllerProvider = StateNotifierProvider<UnifiedPaginationController, PaginationState>(
   (ref) => UnifiedPaginationController(ref),
@@ -16,10 +17,14 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
   final pending = ref.watch(pendingTransactionsProvider);
   final pagination = ref.watch(paginationControllerProvider);
 
-  if (pagination.error != null) {
+  if (pagination.error != null && !pagination.hasLoadedChainData) {
+    quantusDebugPrint('AllTransactionsProvider: Error: ${pagination.error}');
     return AsyncValue.error(pagination.error!, pagination.stackTrace!);
   }
-  if (pagination.isFetching && pagination.otherTransfers.isEmpty) {
+  if (pagination.error != null) {
+    quantusDebugPrint('AllTransactionsProvider: Load-more error: ${pagination.error}');
+  }
+  if (pagination.isLoading && !pagination.hasLoadedChainData) {
     return const AsyncValue.loading();
   }
 

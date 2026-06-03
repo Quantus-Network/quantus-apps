@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class TxWatchTransfer {
   final String txHash;
@@ -39,7 +40,7 @@ class TxWatchService {
     try {
       _ws = await WebSocket.connect(wsUrl);
     } catch (e) {
-      print('[TxWatch] WebSocket connect failed: $e');
+      quantusDebugPrint('[TxWatch] WebSocket connect failed: $e');
       onError(e);
       return;
     }
@@ -64,7 +65,7 @@ class TxWatchService {
       }
       if (data.containsKey('error')) {
         final msg = (data['error'] as Map<String, dynamic>)['message'];
-        print('[TxWatch] RPC error: $msg');
+        quantusDebugPrint('[TxWatch] RPC error: $msg');
         onError(Exception(msg));
       }
     }, onError: (e) => onError(e as Object));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -24,9 +25,10 @@ class WalletSettingsScreenV2 extends ConsumerStatefulWidget {
 
 class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2> {
   void _navigateToRecoveryPhrase(List<Account> accounts) {
+    final l10n = ref.read(l10nProvider);
     final walletIndices = getNonHardwareWalletIndices(accounts);
     if (walletIndices.isEmpty) {
-      context.showErrorToaster(message: 'No wallets found');
+      context.showErrorToaster(message: l10n.settingsWalletNoWalletsFound);
       return;
     }
 
@@ -46,6 +48,7 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final titleColor = colors.textError;
@@ -54,25 +57,25 @@ class _WalletSettingsScreenV2State extends ConsumerState<WalletSettingsScreenV2>
     final accountsAsync = ref.watch(accountsProvider);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Wallet'),
+      appBar: V2AppBar(title: l10n.settingsWalletTitle),
       mainContent: accountsAsync.when(
         loading: () => const Center(child: Loader()),
         error: (e, _) => Center(
-          child: Text('Failed to load wallets', style: text.paragraph?.copyWith(color: colors.textSecondary)),
+          child: Text(l10n.settingsWalletFailedToLoad, style: text.paragraph?.copyWith(color: colors.textSecondary)),
         ),
         data: (accounts) => ListView(
           children: [
             SettingsTappableRow(
-              title: 'Recovery Phrase',
-              subtitle: 'View your 24-word Backup Password',
+              title: l10n.settingsWalletRecoveryPhrase,
+              subtitle: l10n.settingsWalletRecoveryPhraseSubtitle,
               onTap: () => _navigateToRecoveryPhrase(accounts),
               trailing: SettingsTappableRowUtils.chevron(colors),
             ),
             const SettingsDivider(style: SettingsDividerStyle.walletSection),
             SettingsTappableRow(
-              title: 'Reset Wallet',
+              title: l10n.settingsWalletReset,
               titleColor: titleColor,
-              subtitle: 'Removes all data from this device',
+              subtitle: l10n.settingsWalletResetSubtitle,
               subtitleColor: subtitleColor,
               onTap: _showResetConfirmation,
               trailing: SettingsTappableRowUtils.chevron(colors, color: titleColor),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -29,15 +31,17 @@ class TxSubmittedScreen extends ConsumerWidget {
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
   }
 
-  String _headline(WidgetRef ref) {
+  String _headline(WidgetRef ref, AppLocalizations l10n) {
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final n = formattingService.formatBalance(amount, maxDecimals: 4);
-    final action = isPayMode ? 'paid' : 'sent';
-    return '$n ${AppConstants.tokenSymbol} $action';
+    return isPayMode
+        ? l10n.sendTxSubmittedHeadlinePaid(n, AppConstants.tokenSymbol)
+        : l10n.sendTxSubmittedHeadlineSent(n, AppConstants.tokenSymbol);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final addr = recipientAddress.trim();
@@ -51,7 +55,7 @@ class TxSubmittedScreen extends ConsumerWidget {
       },
       child: ScaffoldBase(
         appBar: V2AppBar(
-          title: isPayMode ? 'Pay' : 'Send',
+          title: isPayMode ? l10n.sendPayTitle : l10n.sendTitle,
           leading: AppBackButton(onTap: () => _popToHome(context)),
         ),
         mainContent: Column(
@@ -64,13 +68,13 @@ class TxSubmittedScreen extends ConsumerWidget {
                   _successMark(colors),
                   const SizedBox(height: 32),
                   Text(
-                    _headline(ref),
+                    _headline(ref, l10n),
                     textAlign: TextAlign.center,
                     style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'On its way',
+                    l10n.sendTxSubmittedOnItsWay,
                     textAlign: TextAlign.center,
                     style: text.smallParagraph?.copyWith(color: colors.textTertiary, letterSpacing: 0.74),
                   ),
@@ -81,7 +85,7 @@ class TxSubmittedScreen extends ConsumerWidget {
                       style: text.paragraph?.copyWith(color: colors.textPrimary),
                       children: [
                         TextSpan(
-                          text: 'To',
+                          text: l10n.sendTxSubmittedToLabel,
                           style: text.paragraph?.copyWith(fontWeight: FontWeight.w500),
                         ),
                         TextSpan(
@@ -116,7 +120,11 @@ class TxSubmittedScreen extends ConsumerWidget {
           ],
         ),
         bottomContent: ScaffoldBaseBottomContent(
-          child: QuantusButton.simple(label: 'Done', variant: ButtonVariant.primary, onTap: () => _popToHome(context)),
+          child: QuantusButton.simple(
+            label: l10n.sendTxSubmittedDone,
+            variant: ButtonVariant.primary,
+            onTap: () => _popToHome(context),
+          ),
         ),
       ),
     );

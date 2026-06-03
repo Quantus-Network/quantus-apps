@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 typedef SwapTokenLoader = Future<List<SwapToken>> Function({bool forceRefresh});
 
@@ -19,16 +22,16 @@ Future<SwapToken?> showTokenPickerSheet(
   );
 }
 
-class _TokenPickerContent extends StatefulWidget {
+class _TokenPickerContent extends ConsumerStatefulWidget {
   final SwapTokenLoader loadTokens;
   final SwapToken current;
   const _TokenPickerContent({required this.loadTokens, required this.current});
 
   @override
-  State<_TokenPickerContent> createState() => _TokenPickerContentState();
+  ConsumerState<_TokenPickerContent> createState() => _TokenPickerContentState();
 }
 
-class _TokenPickerContentState extends State<_TokenPickerContent> {
+class _TokenPickerContentState extends ConsumerState<_TokenPickerContent> {
   final _scrollController = ScrollController();
   List<SwapToken> _tokens = const [];
   bool _loading = true;
@@ -58,17 +61,19 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
         _tokens = tokens;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Token picker load failed: $e');
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Failed to load tokens';
+        _error = ref.read(l10nProvider).swapTokenPickerLoadError;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final size = MediaQuery.of(context).size;
@@ -76,16 +81,16 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
     final cardHeight = (height - 120).clamp(360.0, 506.0);
 
     return BottomSheetContainer(
-      title: 'Select Token',
+      title: l10n.swapTokenPickerTitle,
       height: cardHeight,
       child: DefaultTextStyle(
         style: const TextStyle(decoration: TextDecoration.none),
-        child: _content(colors, text),
+        child: _content(l10n, colors, text),
       ),
     );
   }
 
-  Widget _content(AppColorsV2 colors, AppTextTheme text) {
+  Widget _content(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     if (_loading && _tokens.isEmpty) {
       return const Center(child: Loader());
     }
@@ -102,7 +107,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
             GestureDetector(
               onTap: () => _loadTokens(forceRefresh: true),
               child: Text(
-                'Retry',
+                l10n.posQrTryAgain,
                 style: text.paragraph?.copyWith(
                   color: colors.textPrimary,
                   fontWeight: FontWeight.w600,
@@ -128,7 +133,7 @@ class _TokenPickerContentState extends State<_TokenPickerContent> {
               GestureDetector(
                 onTap: () => _loadTokens(forceRefresh: true),
                 child: Text(
-                  'Retry',
+                  l10n.posQrTryAgain,
                   style: text.detail?.copyWith(
                     color: colors.textPrimary,
                     fontWeight: FontWeight.w600,

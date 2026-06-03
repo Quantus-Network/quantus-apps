@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_reconciliation_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Service that handles global history polling - refreshes transaction history
 /// every minute to keep the UI up to date with the latest blockchain state.
@@ -25,7 +24,7 @@ class GlobalHistoryPollingService {
 
     _isPolling = true;
     _scheduleNextPoll();
-    print('Global history polling started');
+    quantusDebugPrint('Global history polling started');
   }
 
   /// Stops the global history polling.
@@ -37,25 +36,27 @@ class GlobalHistoryPollingService {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _isPolling = false;
-    print('Global history polling stopped');
+    quantusDebugPrint('Global history polling stopped');
   }
 
   /// Pauses polling temporarily (e.g., when app goes to background)
   void pausePolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    print('Global history polling paused');
+    quantusDebugPrint('Global history polling paused');
   }
 
   /// Resumes polling if it was previously started
   void resumePolling() {
     if (_isPolling && _pollingTimer == null) {
       _scheduleNextPoll();
-      print('Global history polling resumed');
+      quantusDebugPrint('Global history polling resumed');
     }
   }
 
   void _scheduleNextPoll() {
+    _pollingTimer?.cancel();
+
     _pollingTimer = Timer(const Duration(minutes: 1), () {
       _performPoll();
     });
@@ -67,45 +68,23 @@ class GlobalHistoryPollingService {
     // Check connectivity before polling
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping poll - offline');
+      quantusDebugPrint('Skipping poll - offline');
       _scheduleNextPoll();
       return;
     }
 
     try {
-      // Check if we have accounts available
-      final accountsState = _ref.read(accountsProvider);
-      if (accountsState.value?.isEmpty ?? true) {
-        _scheduleNextPoll();
-        return;
-      }
+      quantusDebugPrint('Performing global history poll for active account...');
 
-      print('Performing global history poll...');
-
-      // Refresh balance silently (transactions might have changed balance)
-      _ref.invalidate(balanceProviderFamily);
-
-      // Silently refresh without showing loading indicators for global
-      // and active filtered
-      _ref.read(paginationControllerProvider.notifier).silentRefresh();
-      final accountIds = _ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-      final targetIds = [
-        ...accountIds.map((id) => [id]),
-        accountIds,
-      ];
-
-      for (final ids in targetIds) {
-        updatePaginationFiltersFor(_ref.read, ids, (notifier, _) {
-          notifier.silentRefresh();
-        });
-      }
+      invalidateActiveAccountBalance(_ref);
+      await silentRefreshActiveAccount(_ref);
 
       // Reconcile pending transactions with confirmed transactions
-      _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
+      await _ref.read(pendingTransactionReconciliationServiceProvider).reconcilePendingTransactions();
 
-      print('Global history poll completed');
+      quantusDebugPrint('Global history poll completed');
     } catch (e) {
-      print('Error during global history poll: $e');
+      quantusDebugPrint('Error during global history poll: $e');
     } finally {
       // Schedule the next poll regardless of success/failure
       if (_isPolling) {
@@ -116,21 +95,23 @@ class GlobalHistoryPollingService {
 
   /// Manually trigger a history refresh (useful for pull-to-refresh)
   Future<void> triggerManualRefresh() async {
-    print('Global polling manager: Manual Refresh!');
+    quantusDebugPrint('Global polling manager: Manual Refresh!');
 
     // Check connectivity before refreshing
     final isOnline = _ref.read(isOnlineProvider);
     if (!isOnline) {
-      print('Skipping manual refresh - offline');
+      quantusDebugPrint('Skipping manual refresh - offline');
       return;
     }
 
-    await _ref.read(paginationControllerProvider.notifier).loadingRefresh();
     final active = _ref.read(activeAccountProvider).value;
     if (active != null) {
-      updatePaginationFiltersFor(_ref.read, [active.account.accountId], (notifier, _) {
-        notifier.loadingRefresh();
-      });
+      await refreshAccountsPagination(
+        _ref,
+        accountIds: [active.account.accountId],
+        action: (notifier) => notifier.loadingRefresh(),
+      );
+      invalidateActiveAccountBalance(_ref);
     }
 
     // Also reconcile pending transactions during manual refresh
@@ -158,7 +139,7 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
       },
       loading: () {},
       error: (e, st) {
-        print('Error in account stats polling service: stopping polling');
+        quantusDebugPrint('Error in account stats polling service: stopping polling');
         TelemetryService().sendError(
           'GlobalHistoryPollingService Error in accountsProvider: stopping polling',
           error: e,
@@ -167,6 +148,14 @@ final globalHistoryPollingServiceProvider = Provider<GlobalHistoryPollingService
         service.stopPolling();
       },
     );
+  });
+
+  ref.listen(activeAccountProvider, (previous, next) {
+    final previousId = previous?.value?.account.accountId;
+    final nextId = next.value?.account.accountId;
+    if (nextId == null || previousId == null || previousId == nextId) return;
+
+    refreshActiveAccountOnSwitch(ref);
   });
 
   // Clean up when provider is disposed

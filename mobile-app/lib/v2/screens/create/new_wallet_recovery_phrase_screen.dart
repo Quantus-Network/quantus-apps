@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
 import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
@@ -51,7 +52,8 @@ class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecover
           _errorOccurred = true;
         });
 
-        context.showErrorToaster(message: 'Failed to generate: $e');
+        final l10n = ref.read(l10nProvider);
+        context.showErrorToaster(message: l10n.createWalletRecoveryPhraseFailedGenerate(e.toString()));
       }
     }
   }
@@ -91,7 +93,10 @@ class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecover
         (route) => false,
       );
     } catch (e) {
-      if (mounted) context.showErrorToaster(message: 'Error saving wallet: $e');
+      if (mounted) {
+        final l10n = ref.read(l10nProvider);
+        context.showErrorToaster(message: l10n.createWalletRecoveryPhraseSaveError(e.toString()));
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -105,10 +110,12 @@ class _NewWalletRecoveryPhraseScreenState extends ConsumerState<NewWalletRecover
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+
     return RecoveryPhraseBody(
-      appBarTitle: 'Create Wallet',
+      appBarTitle: l10n.createWalletAppBarTitle,
       words: _words,
-      primaryButtonLabel: 'Next',
+      primaryButtonLabel: l10n.createWalletRecoveryPhraseNext,
       onPrimary: _continue,
       isGridLoading: _isLoading,
       isPrimaryButtonDisabled: _errorOccurred,

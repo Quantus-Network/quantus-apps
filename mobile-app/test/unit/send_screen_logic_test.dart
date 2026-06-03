@@ -1,14 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
 import 'package:quantus_sdk/generated/planck/pallets/balances.dart' as balances;
 
 void main() {
   group('SendScreenLogic', () {
     late NumberFormattingService formattingService;
+    late AppLocalizations l10n;
 
     setUp(() {
       formattingService = NumberFormattingService(localeConfig: LocaleNumberConfig.dotDecimal);
+      l10n = lookupAppLocalizations(const Locale('en'));
     });
 
     group('getAmountStatus', () {
@@ -116,6 +120,7 @@ void main() {
     group('getButtonText', () {
       test('returns "Enter Address" when address is empty', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.valid, // Status doesn't matter if address is empty
           recipientText: '',
@@ -123,11 +128,12 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals('Enter Address'));
+        expect(result, equals(l10n.sendEnterAddress));
       });
 
       test('returns "Enter Amount" when status is zeroOrNegative', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.zero,
           recipientText: 'valid_address',
@@ -135,11 +141,12 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals('Enter Amount'));
+        expect(result, equals(l10n.sendLogicEnterAmount));
       });
 
       test('returns "Insufficient Balance" when status is insufficient', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.insufficientBalance,
           recipientText: 'valid_address',
@@ -147,11 +154,12 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals('Insufficient Balance'));
+        expect(result, equals(l10n.sendLogicInsufficientBalance));
       });
 
       test('returns "Can\'t Self Transfer" for same address', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.valid,
           recipientText: 'same_address',
@@ -159,11 +167,12 @@ void main() {
           activeAccountId: 'same_address',
           formattingService: formattingService,
         );
-        expect(result, equals("Can't Self Transfer"));
+        expect(result, equals(l10n.sendLogicCantSelfTransfer));
       });
 
       test('returns "Below Existential Deposit" when status matches', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.belowExistential,
           recipientText: 'valid_address',
@@ -171,11 +180,12 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals('Below Existential Deposit'));
+        expect(result, equals(l10n.sendLogicBelowExistentialDeposit));
       });
 
       test('returns Review Send for valid status', () {
         final result = SendScreenLogic.getButtonText(
+          l10n: l10n,
           hasAddressError: false,
           amountStatus: AmountStatus.valid,
           recipientText: 'valid_address',
@@ -183,7 +193,7 @@ void main() {
           activeAccountId: 'sender_address',
           formattingService: formattingService,
         );
-        expect(result, equals('Review Send'));
+        expect(result, equals(l10n.sendLogicReviewSend));
       });
     });
 

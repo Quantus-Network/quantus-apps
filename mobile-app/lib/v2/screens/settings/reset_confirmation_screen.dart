@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/logout_service.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
@@ -18,31 +19,34 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
   bool _isResetting = false;
 
   Future<void> _resetAndClearData() async {
+    final l10n = ref.read(l10nProvider);
     setState(() => _isResetting = true);
 
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to reset wallet');
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.settingsResetAuthReason);
 
     if (authed && mounted) {
       try {
-        await ref.read(logoutServiceProvider).logout(context);
+        ref.read(logoutServiceProvider).logout(context);
       } catch (e) {
         if (mounted) {
-          context.showErrorToaster(message: 'Failed to reset wallet: $e');
+          context.showErrorToaster(message: l10n.settingsResetFailed('$e'));
         }
         setState(() => _isResetting = false);
       }
     } else if (mounted) {
-      context.showErrorToaster(message: 'Authentication required to reset wallet');
-
+      context.showErrorToaster(message: l10n.settingsResetAuthRequired);
       setState(() => _isResetting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+
     return SettingsCautionScaffold(
-      appBarTitle: 'Reset Wallet',
-      data: const SettingsCautionScaffoldData.walletReset(),
+      appBarTitle: l10n.settingsResetTitle,
+      data: SettingsCautionScaffoldData.walletReset(l10n),
+      continueLabel: l10n.commonContinue,
       betweenBulletsStyle: SettingsDividerStyle.sectionEmphasis,
       checkboxChecked: _backedUpChecked,
       onCheckboxChanged: () => setState(() => _backedUpChecked = !_backedUpChecked),

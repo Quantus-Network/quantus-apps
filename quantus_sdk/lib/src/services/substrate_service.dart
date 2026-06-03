@@ -374,7 +374,7 @@ class SubstrateService {
   Future<void> logout() async {
     print('Log out!');
     await _settingsService.clearAll();
-    await TaskmasterService().logout();
+    TaskmasterService().logout();
   }
 
   Future<String> generateMnemonic() async {

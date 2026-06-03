@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
 import 'package:resonance_network_wallet/services/mining_rewards_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -8,37 +9,39 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 class TestnetRewardsScreen extends ConsumerWidget {
   const TestnetRewardsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final miningAsync = ref.watch(miningRewardsProvider);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Testnet Rewards'),
+      appBar: V2AppBar(title: l10n.settingsTestnetTitle),
       mainContent: miningAsync.when(
         skipLoadingOnRefresh: false,
         data: (data) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(miningRewardsProvider),
-          child: _buildContent(data, colors, text),
+          child: _buildContent(l10n, data, colors, text),
         ),
         loading: () => const Center(child: Loader()),
         error: (_, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Failed to load testnet rewards', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+              Text(l10n.settingsTestnetLoadError, style: text.paragraph?.copyWith(color: colors.textPrimary)),
               const SizedBox(height: 8),
-              Text('Please check your connection', style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(l10n.settingsMiningCheckConnection, style: text.detail?.copyWith(color: colors.textTertiary)),
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => ref.invalidate(miningRewardsProvider),
                 child: Text(
-                  'Try Again',
+                  l10n.posQrTryAgain,
                   style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -49,7 +52,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildContent(AppLocalizations l10n, MiningRewardsData data, AppColorsV2 colors, AppTextTheme text) {
     final testnets = [
       ('Planck', data.planckBlocks),
       ('Dirac', data.diracBlocks),
@@ -69,11 +72,11 @@ class TestnetRewardsScreen extends ConsumerWidget {
               const Text('💰', style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
               Text(
-                '${data.totalBlocks} blocks',
+                l10n.settingsTestnetTotalBlocks(data.totalBlocks),
                 style: text.largeTitle?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
-              Text('Total blocks mined across all testnets', style: text.detail?.copyWith(color: colors.textTertiary)),
+              Text(l10n.settingsTestnetTotalDescription, style: text.detail?.copyWith(color: colors.textTertiary)),
             ],
           ),
         ),
@@ -81,7 +84,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
-            'Breakdown',
+            l10n.settingsTestnetBreakdown,
             style: text.paragraph?.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
           ),
         ),
@@ -92,7 +95,6 @@ class TestnetRewardsScreen extends ConsumerWidget {
             children: [
               for (var i = 0; i < testnets.length; i++) ...[
                 if (i > 0) const SettingsDivider(style: SettingsDividerStyle.cardInterior),
-
                 Row(
                   children: [
                     Expanded(
@@ -100,7 +102,7 @@ class TestnetRewardsScreen extends ConsumerWidget {
                     ),
                     const Text('💰 ', style: TextStyle(fontSize: 14)),
                     Text(
-                      '${testnets[i].$2} blocks',
+                      l10n.settingsTestnetRowBlocks(testnets[i].$2),
                       style: text.smallParagraph?.copyWith(color: colors.accentGreen, fontWeight: FontWeight.w600),
                     ),
                   ],

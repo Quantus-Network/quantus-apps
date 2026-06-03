@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssociations>> {
   final TaskmasterService _taskmasterService = TaskmasterService();
@@ -22,8 +23,8 @@ class AccountAssociationsNotifier extends StateNotifier<AsyncValue<AccountAssoci
         state = AsyncValue.data(associations);
       }
     } catch (e, st) {
-      print('Error fetching account associations: $e');
-      print('Stack trace: $st');
+      quantusDebugPrint('Error fetching account associations: $e');
+      quantusDebugPrint('Stack trace: $st');
 
       if (mounted) {
         state = AsyncValue.error(e, st);

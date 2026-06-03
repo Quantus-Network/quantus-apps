@@ -3,6 +3,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/account_associations_providers.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
   final service = DeepLinkService(ref);
@@ -21,14 +22,14 @@ class DeepLinkService {
   Future<void> init() async {
     // Handle links when the app is already open (warm state)
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      print('Received link while app is open: $uri');
+      quantusDebugPrint('Received link while app is open: $uri');
       _handleLink(uri);
     });
 
     // Handle the link that opened the app (cold state)
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
-      print('Received initial link: $initialUri');
+      quantusDebugPrint('Received initial link: $initialUri');
       _handleLink(initialUri);
     }
   }
@@ -49,7 +50,7 @@ class DeepLinkService {
       if (accountId != null && accountId.isNotEmpty) {
         _ref.read(sharedAccountIntentProvider.notifier).state = accountId;
       } else {
-        print('Missing or empty account id');
+        quantusDebugPrint('Missing or empty account id');
       }
     }
 
@@ -58,7 +59,7 @@ class DeepLinkService {
       if (payment != null) {
         _ref.read(paymentIntentProvider.notifier).state = payment;
       } else {
-        print('Missing payment parameters');
+        quantusDebugPrint('Missing payment parameters');
       }
     }
 

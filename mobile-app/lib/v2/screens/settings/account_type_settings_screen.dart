@@ -1,41 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class AccountTypeSettingsScreenV2 extends StatelessWidget {
+class AccountTypeSettingsScreenV2 extends ConsumerWidget {
   const AccountTypeSettingsScreenV2({super.key});
 
-  static const _intro =
-      'Advanced account features are coming soon. These will give you greater control over how transactions are authorised and secured.';
-
-  static const _upcomingFeatures = <({String title, String subtitle})>[
-    (title: 'Reversible Transactions', subtitle: 'Reverse your sends within a time window'),
-    (title: 'High Security Account', subtitle: 'Guardian approval required'),
-    (title: 'Multi-Signature', subtitle: 'Multiple approvals required'),
-    (title: 'Hardware Wallet', subtitle: 'Pair a hardware device'),
-  ];
+  static List<({String title, String subtitle})> _upcomingFeatures(AppLocalizations l10n) {
+    return [
+      (title: l10n.settingsAccountTypeReversibleTitle, subtitle: l10n.settingsAccountTypeReversibleSubtitle),
+      (title: l10n.settingsAccountTypeHighSecurityTitle, subtitle: l10n.settingsAccountTypeHighSecuritySubtitle),
+      (title: l10n.settingsAccountTypeMultiSigTitle, subtitle: l10n.settingsAccountTypeMultiSigSubtitle),
+      (title: l10n.settingsAccountTypeHardwareTitle, subtitle: l10n.settingsAccountTypeHardwareSubtitle),
+    ];
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
+    final upcomingFeatures = _upcomingFeatures(l10n);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Account Type'),
+      appBar: V2AppBar(title: l10n.settingsAccountTypeScreenTitle),
       mainContent: ListView(
         children: [
-          Text(_intro, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
+          Text(l10n.settingsAccountTypeIntro, style: text.smallParagraph?.copyWith(color: colors.textMuted)),
           const SizedBox(height: 40),
-          for (var i = 0; i < _upcomingFeatures.length; i++)
+          for (var i = 0; i < upcomingFeatures.length; i++)
             _AccountFeatureBlock(
               colors: colors,
               text: text,
-              title: _upcomingFeatures[i].title,
-              subtitle: _upcomingFeatures[i].subtitle,
-              showDividerBelow: i < _upcomingFeatures.length - 1,
+              comingSoonLabel: l10n.settingsAccountTypeComingSoon,
+              title: upcomingFeatures[i].title,
+              subtitle: upcomingFeatures[i].subtitle,
+              showDividerBelow: i < upcomingFeatures.length - 1,
             ),
         ],
       ),
@@ -47,6 +52,7 @@ class _AccountFeatureBlock extends StatelessWidget {
   const _AccountFeatureBlock({
     required this.colors,
     required this.text,
+    required this.comingSoonLabel,
     required this.title,
     required this.subtitle,
     required this.showDividerBelow,
@@ -54,6 +60,7 @@ class _AccountFeatureBlock extends StatelessWidget {
 
   final AppColorsV2 colors;
   final AppTextTheme text;
+  final String comingSoonLabel;
   final String title;
   final String subtitle;
   final bool showDividerBelow;
@@ -80,7 +87,7 @@ class _AccountFeatureBlock extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 24),
-              _ComingSoonBadge(colors: colors, text: text),
+              _ComingSoonBadge(colors: colors, text: text, label: comingSoonLabel),
             ],
           ),
         ),
@@ -91,10 +98,11 @@ class _AccountFeatureBlock extends StatelessWidget {
 }
 
 class _ComingSoonBadge extends StatelessWidget {
-  const _ComingSoonBadge({required this.colors, required this.text});
+  const _ComingSoonBadge({required this.colors, required this.text, required this.label});
 
   final AppColorsV2 colors;
   final AppTextTheme text;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +114,7 @@ class _ComingSoonBadge extends StatelessWidget {
         border: Border.all(color: colors.borderButton),
       ),
       alignment: Alignment.center,
-      child: Text('Coming Soon', style: text.detail?.copyWith(color: colors.textMuted)),
+      child: Text(label, style: text.detail?.copyWith(color: colors.textMuted)),
     );
   }
 }

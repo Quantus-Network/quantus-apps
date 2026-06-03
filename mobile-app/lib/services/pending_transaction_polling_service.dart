@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 class PendingTransactionPollingService {
@@ -22,14 +22,14 @@ class PendingTransactionPollingService {
   /// blockNumber) matching. Fails early if neither is usable.
   void startPolling(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) {
     if (pendingTx.extrinsicHash == null && pendingTx.blockNumber == 0) {
-      print(
+      quantusDebugPrint(
         '[PendingTxPoller] ERROR: cannot poll ${pendingTx.id} — no extrinsicHash and blockNumber is 0. '
         'This would search all historical blocks and risk false positives.',
       );
       return;
     }
 
-    print(
+    quantusDebugPrint(
       '[PendingTxPoller] startPolling id=${pendingTx.id} '
       'hash=${pendingTx.extrinsicHash} block=${pendingTx.blockNumber} '
       'reversible=${pendingTx.isReversible} from=${pendingTx.from} '
@@ -41,7 +41,7 @@ class PendingTransactionPollingService {
 
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > _timeout) {
-        print('[PendingTxPoller] Timeout for ${pendingTx.id}, deferring to reconciliation');
+        quantusDebugPrint('[PendingTxPoller] Timeout for ${pendingTx.id}, deferring to reconciliation');
         stopPolling(pendingTx.id);
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
         return;
@@ -63,10 +63,10 @@ class PendingTransactionPollingService {
       final hash = pendingTx.extrinsicHash;
       final TransactionEvent? result;
       if (hash != null) {
-        print('[PendingTxPoller] searching by extrinsic hash $hash for ${pendingTx.id}');
+        quantusDebugPrint('[PendingTxPoller] searching by extrinsic hash $hash for ${pendingTx.id}');
         result = await historyService.searchByExtrinsicHash(extrinsicHash: hash, isReversible: pendingTx.isReversible);
       } else {
-        print(
+        quantusDebugPrint(
           '[PendingTxPoller] searching fallback (from, to, amount, block>${pendingTx.blockNumber}) '
           'for ${pendingTx.id}',
         );
@@ -80,7 +80,7 @@ class PendingTransactionPollingService {
       }
 
       if (result != null) {
-        print('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
+        quantusDebugPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
         stopPolling(pendingTx.id);
 
         triggerSilentHistoryRefresh(_ref, affectedAccountIds: {pendingTx.from, pendingTx.to}, newTransaction: result);
@@ -92,12 +92,12 @@ class PendingTransactionPollingService {
         onFound?.call(result);
 
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
-        _ref.invalidate(balanceProviderFamily);
+        invalidateAccountBalances(_ref, {pendingTx.from, pendingTx.to});
       } else {
-        print('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
+        quantusDebugPrint('[PendingTxPoller] no match yet for ${pendingTx.id}, will retry');
       }
     } catch (e) {
-      print('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
+      quantusDebugPrint('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
     }
   }
 
@@ -117,18 +117,7 @@ final pendingTransactionPollingServiceProvider = Provider<PendingTransactionPoll
 
 void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountIds, TransactionEvent? newTransaction}) {
   try {
-    final mainController = ref.read(paginationControllerProvider.notifier);
-    if (newTransaction != null) mainController.addTransactionToHistory(newTransaction);
-    mainController.silentRefresh();
-
-    final targets = affectedAccountIds.map((id) => [id]).toList();
-    final active = ref.read(activeAccountProvider).value;
-    if (active != null) targets.add([active.account.accountId]);
-
-    final accountIds = ref.read(accountsProvider).value?.map((a) => a.accountId).toList() ?? [];
-    if (accountIds.isNotEmpty) {
-      targets.add(accountIds);
-    }
+    final targets = accountRefreshTargets(affectedAccountIds: affectedAccountIds, activeId: activeAccountId(ref));
 
     for (final targetIds in targets) {
       if (newTransaction != null) {
@@ -144,6 +133,6 @@ void triggerSilentHistoryRefresh(Ref ref, {required Set<String> affectedAccountI
       });
     }
   } catch (e) {
-    print('[SilentHistoryRefresh] Error: $e');
+    quantusDebugPrint('[SilentHistoryRefresh] Error: $e');
   }
 }

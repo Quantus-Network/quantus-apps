@@ -1,22 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class AddressDetailsCard extends StatefulWidget {
+class AddressDetailsCard extends ConsumerStatefulWidget {
   final String accountId;
   final String? checksum;
 
   const AddressDetailsCard({super.key, required this.accountId, this.checksum});
 
   @override
-  State<AddressDetailsCard> createState() => _AddressDetailsCardState();
+  ConsumerState<AddressDetailsCard> createState() => _AddressDetailsCardState();
 }
 
-class _AddressDetailsCardState extends State<AddressDetailsCard> {
+class _AddressDetailsCardState extends ConsumerState<AddressDetailsCard> {
   bool _addressCopied = false;
   bool _checksumCopied = false;
   Timer? _resetTimer;
@@ -26,10 +29,10 @@ class _AddressDetailsCardState extends State<AddressDetailsCard> {
     _triggerCopied(isAddress: true);
   }
 
-  void _copyChecksum(BuildContext context) {
+  void _copyChecksum(BuildContext context, AppLocalizations l10n) {
     if (widget.checksum == null) return;
 
-    context.copyTextWithToaster(widget.checksum!, message: 'Checkphrase copied');
+    context.copyTextWithToaster(widget.checksum!, message: l10n.componentCheckphraseCopied);
     _triggerCopied(isAddress: false);
   }
 
@@ -67,17 +70,19 @@ class _AddressDetailsCardState extends State<AddressDetailsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+
     return SplitCard(
       topChild: InkWell(
         onTap: () => _copyAddress(context),
-        child: _buildItem(context, 'ADDRESS', widget.accountId, isCopied: _addressCopied),
+        child: _buildItem(context, l10n.componentAddressLabel, widget.accountId, isCopied: _addressCopied),
       ),
       bottomChild: InkWell(
-        onTap: () => _copyChecksum(context),
+        onTap: () => _copyChecksum(context, l10n),
         child: _buildItem(
           context,
-          'CHECKPHRASE',
-          widget.checksum ?? 'Loading...',
+          l10n.componentCheckphraseLabel,
+          widget.checksum ?? l10n.commonLoading,
           isCheckphrase: true,
           isCopied: _checksumCopied,
         ),
@@ -109,9 +114,7 @@ class _AddressDetailsCardState extends State<AddressDetailsCard> {
             ],
           ),
         ),
-
         const SizedBox(width: 32),
-
         _copyButton(isCopied: isCopied),
       ],
     );

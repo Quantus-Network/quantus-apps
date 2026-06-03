@@ -9,7 +9,9 @@ import 'package:resonance_network_wallet/v2/components/multisig_badge.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
@@ -58,6 +60,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final accountsAsync = ref.watch(accountsProvider);
     final multisigAsync = ref.watch(multisigAccountsProvider);
     final activeDisplayAccountAsync = ref.watch(activeAccountProvider);
@@ -70,9 +73,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final sheetHeight = math.min(610.0, maxHeight);
 
     return BottomSheetContainer(
-      title: 'Accounts',
+      title: l10n.accountsSheetTitle,
       height: sheetHeight,
       child: _buildContent(
+        l10n: l10n,
         accountsAsync: accountsAsync,
         multisigAsync: multisigAsync,
         activeDisplayAccountAsync: activeDisplayAccountAsync,
@@ -82,6 +86,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   Widget _buildContent({
+    required AppLocalizations l10n,
     required AsyncValue<List<Account>> accountsAsync,
     required AsyncValue<List<MultisigAccount>> multisigAsync,
     required AsyncValue<DisplayAccount?> activeDisplayAccountAsync,
@@ -94,7 +99,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (accountsAsync.hasError || multisigAsync.hasError) {
       return Center(
         child: Text(
-          'Failed to load accounts.',
+          l10n.accountsSheetFailedLoadAccounts,
           style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
@@ -103,7 +108,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     if (activeDisplayAccountAsync.hasError) {
       return Center(
         child: Text(
-          'Failed to load active account.',
+          l10n.accountsSheetFailedLoadActiveAccount,
           style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
         ),
       );
@@ -113,10 +118,10 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final multisigs = multisigAsync.value ?? [];
     final items = <BaseAccount>[...regulars, ...multisigs];
 
-    return _buildAccountsListView(items, activeAccountId);
+    return _buildAccountsListView(l10n, items, activeAccountId);
   }
 
-  Widget _buildAccountsListView(List<BaseAccount> items, String? activeAccountId) {
+  Widget _buildAccountsListView(AppLocalizations l10n, List<BaseAccount> items, String? activeAccountId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -124,7 +129,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
           child: items.isEmpty
               ? Center(
                   child: Text(
-                    'No accounts found.',
+                    l10n.accountsSheetNoAccountsFound,
                     style: context.themeText.smallParagraph?.copyWith(color: context.colors.textSecondary),
                   ),
                 )
@@ -134,25 +139,29 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                   itemBuilder: (_, index) {
                     final item = items[index];
                     final isActive = item.accountId == activeAccountId;
-                    if (item is Account) return _buildRegularRow(item, isActive);
+                    if (item is Account) return _buildRegularRow(l10n, item, isActive);
                     if (item is MultisigAccount) return _buildMultisigRow(item, isActive);
                     return const SizedBox.shrink();
                   },
                 ),
         ),
         const SizedBox(height: 24),
-        QuantusButton.simple(label: 'Add Account', onTap: _openAddAccountMenu, variant: ButtonVariant.primary),
+        QuantusButton.simple(
+          label: l10n.accountsSheetAddAccount,
+          onTap: _openAddAccountMenu,
+          variant: ButtonVariant.primary,
+        ),
       ],
     );
   }
 
-  Widget _buildRegularRow(Account account, bool isActive) {
+  Widget _buildRegularRow(AppLocalizations l10n, Account account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
-      loading: () => 'Loading...',
-      error: (_, _) => 'Balance unavailable',
-      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      loading: () => l10n.commonLoading,
+      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
+      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
 
     return _AccountRowShell(

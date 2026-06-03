@@ -1,10 +1,10 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 final settingsServiceProvider = Provider<SettingsService>((ref) {
   return SettingsService();
@@ -26,10 +26,9 @@ final recentAddressesServiceProvider = Provider<RecentAddressesService>((ref) {
   return RecentAddressesService();
 });
 
-/// Caveat: snapshots [Platform.localeName] at provider creation time.
-/// A mid-session locale change (rare) won't be picked up until app restart.
 final localeNumberConfigProvider = Provider<LocaleNumberConfig>((ref) {
-  return LocaleNumberConfig.fromLocale(Platform.localeName);
+  final appLocale = ref.watch(selectedAppLocaleProvider);
+  return LocaleNumberConfig.fromLocale(appLocale.numberFormatLocale);
 });
 
 final numberFormattingServiceProvider = Provider<NumberFormattingService>((ref) {
@@ -69,7 +68,7 @@ final isHighSecurityProvider = FutureProvider.family<bool, Account>((ref, accoun
 
 final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accountId) async {
   final substrateService = ref.watch(substrateServiceProvider);
-  print('query balance for $accountId');
+  quantusDebugPrint('query balance for $accountId');
   return await substrateService.queryBalance(accountId);
 });
 

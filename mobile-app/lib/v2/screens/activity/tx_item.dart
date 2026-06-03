@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/shared/extensions/transaction_event_extension.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -29,7 +30,7 @@ class TxItemData {
     required this.counterpartyAddr,
   });
 
-  factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors) {
+  factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
@@ -37,32 +38,32 @@ class TxItemData {
 
     String getLabel() {
       if (isPending && isSend) {
-        return 'Sending';
+        return l10n.activityTxSending;
       }
       if (isPending && !isSend) {
-        return 'Receiving';
+        return l10n.activityTxReceiving;
       }
       if (isScheduled && isSend) {
-        return 'Pending';
+        return l10n.activityTxPending;
       }
       if (isScheduled && !isSend) {
-        return 'Receiving';
+        return l10n.activityTxReceiving;
       }
       if (isSend && !isScheduled) {
-        return 'Sent';
+        return l10n.activityTxSent;
       }
 
-      return 'Received';
+      return l10n.activityTxReceived;
     }
 
     String getTimeLabel() {
       if (isPending) {
-        return 'now';
+        return l10n.activityTxTimeNow;
       }
       if (isScheduled) {
-        return _formatDuration(tx.timeRemaining);
+        return _formatDuration(tx.timeRemaining, l10n);
       }
-      return _timeAgo(tx.timestamp);
+      return _timeAgo(tx.timestamp, l10n);
     }
 
     Color getIconBg() {
@@ -137,11 +138,14 @@ Widget buildTxItem(
   TransactionEvent tx,
   TxItemData data,
   AppColorsV2 colors,
-  AppTextTheme text, {
+  AppTextTheme text,
+  AppLocalizations l10n, {
   required String formattedAmount,
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
+  final directionLabel = data.isSend ? l10n.activityTxTo : l10n.activityTxFrom;
+
   return GestureDetector(
     onTap: onTap,
     behavior: HitTestBehavior.opaque,
@@ -175,7 +179,6 @@ Widget buildTxItem(
                   ],
                 ),
               ),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -188,7 +191,7 @@ Widget buildTxItem(
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${data.isSend ? "To" : "From"}: ${data.counterpartyAddr}',
+                    '$directionLabel: ${data.counterpartyAddr}',
                     style: text.detail?.copyWith(color: colors.textTertiary),
                   ),
                 ],
@@ -202,28 +205,27 @@ Widget buildTxItem(
   );
 }
 
-String _formatDuration(Duration d) {
-  final days = d.inDays;
-  final hours = d.inHours % 24;
-  final mins = d.inMinutes % 60;
-  return '${days.toString().padLeft(2, '0')}d:${hours.toString().padLeft(2, '0')}h:${mins.toString().padLeft(2, '0')}m';
+String _formatDuration(Duration d, AppLocalizations l10n) {
+  final days = d.inDays.toString().padLeft(2, '0');
+  final hours = (d.inHours % 24).toString().padLeft(2, '0');
+  final mins = (d.inMinutes % 60).toString().padLeft(2, '0');
+  return l10n.activityTxTimeRemaining(days, hours, mins);
 }
 
-String _timeAgo(DateTime timestamp) {
+String _timeAgo(DateTime timestamp, AppLocalizations l10n) {
   final diff = DateTime.now().difference(timestamp);
-  if (diff.inMinutes < 1) return 'now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
+  if (diff.inMinutes < 1) return l10n.activityTxTimeNow;
+  if (diff.inMinutes < 60) return l10n.activityTxTimeMinutesAgo(diff.inMinutes);
+  if (diff.inHours < 24) return l10n.activityTxTimeHoursAgo(diff.inHours);
+  return l10n.activityTxTimeDaysAgo(diff.inDays);
 }
 
-String dateGroupLabel(DateTime date) {
+String dateGroupLabel(DateTime date, AppLocalizations l10n, String localeName) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final txDay = DateTime(date.year, date.month, date.day);
   final diff = today.difference(txDay).inDays;
-  if (diff == 0) return 'Today';
-  if (diff == 1) return 'Yesterday';
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  if (diff == 0) return l10n.activityDateToday;
+  if (diff == 1) return l10n.activityDateYesterday;
+  return DatetimeFormattingService.formatDateGroupLabel(date, localeName);
 }

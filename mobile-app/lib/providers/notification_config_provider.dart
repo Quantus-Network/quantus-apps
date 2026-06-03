@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:resonance_network_wallet/models/notification_models.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String notificationConfigKey = 'notification_config';
@@ -37,7 +38,7 @@ class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
         state = NotificationConfig.fromJson(Map<String, dynamic>.from(jsonDecode(configJson)));
       }
     } catch (e) {
-      print('Error loading notification config: $e');
+      quantusDebugPrint('Error loading notification config: $e');
     }
   }
 
@@ -46,7 +47,7 @@ class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(notificationConfigKey, jsonEncode(state.toJson()));
     } catch (e) {
-      print('Error saving notification config: $e');
+      quantusDebugPrint('Error saving notification config: $e');
     }
   }
 

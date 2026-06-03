@@ -142,4 +142,15 @@ class DatetimeFormattingService {
       return '$hours hr${hours != 1 ? 's' : ''}';
     }
   }
+
+  static String formatPaidAt(DateTime dt, String localeName) {
+    final date = DateFormat.yMMMd(localeName).format(dt);
+    final time = DateFormat.jm(localeName).format(dt);
+
+    return '$date, $time';
+  }
+
+  static String formatDateGroupLabel(DateTime dt, String localeName) {
+    return DateFormat.yMMMd(localeName).format(dt);
+  }
 }

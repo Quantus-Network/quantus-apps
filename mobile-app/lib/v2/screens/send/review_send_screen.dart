@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -55,11 +57,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       _errorMessage = null;
     });
 
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to confirm transaction');
+    final l10n = ref.read(l10nProvider);
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.sendReviewAuthReason);
     if (!authed || !mounted) {
       setState(() {
         _submitting = false;
-        _errorMessage = 'Authentication required to send';
+        _errorMessage = l10n.sendReviewAuthRequired;
       });
       return;
     }
@@ -104,7 +107,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _errorMessage = 'Failed submitting transaction';
+          _errorMessage = ref.read(l10nProvider).sendReviewSubmitFailed;
         });
       }
     }
@@ -112,6 +115,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     ref.watch(activeAccountProvider);
     final colors = context.colors;
     final text = context.themeText;
@@ -126,16 +130,16 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final totalRaw = widget.amount + widget.networkFee;
 
     return ScaffoldBase(
-      appBar: V2AppBar(title: widget.isPayMode ? 'Pay' : 'Send'),
+      appBar: V2AppBar(title: widget.isPayMode ? l10n.sendPayTitle : l10n.sendTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _heroCard(colors, text, approxDisplay),
+              _heroCard(colors, text, l10n, approxDisplay),
               const SizedBox(height: 28),
-              _summarySection(addr, totalRaw),
+              _summarySection(l10n, addr, totalRaw),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 16),
                 Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
@@ -146,7 +150,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: 'Confirm',
+          label: l10n.sendReviewConfirm,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
           isDisabled: _submitting,
@@ -156,14 +160,14 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
-  Widget _heroCard(AppColorsV2 colors, AppTextTheme text, CurrencyDisplayState approxDisplay) {
+  Widget _heroCard(AppColorsV2 colors, AppTextTheme text, AppLocalizations l10n, CurrencyDisplayState approxDisplay) {
     final sectionLabelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
     return SplitCard(
       topChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SENDING', style: sectionLabelStyle),
+          Text(l10n.sendReviewSending, style: sectionLabelStyle),
           const SizedBox(height: 16),
           AmountDisplayWithConversion(
             amountDisplay: approxDisplay,
@@ -175,7 +179,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       bottomChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TO', style: sectionLabelStyle),
+          Text(l10n.sendReviewTo, style: sectionLabelStyle),
           const SizedBox(height: 16),
           AddressCheckphraseWithInitial(
             recipientChecksum: widget.recipientChecksum,
@@ -186,7 +190,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     );
   }
 
-  Widget _summarySection(String addr, BigInt totalRaw) {
+  Widget _summarySection(AppLocalizations l10n, String addr, BigInt totalRaw) {
     final shownDecimals = AppConstants.decimals;
     final shortAddr = AddressFormattingService.formatAddress(addr);
     final formattingService = ref.watch(numberFormattingServiceProvider);
@@ -195,23 +199,30 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SizedBox(height: 7),
-        _summaryRow(label: 'TO', value: shortAddr),
+        _summaryRow(label: l10n.sendReviewTo, value: shortAddr),
         const SizedBox(height: 7),
         _summaryRow(
-          label: 'AMOUNT',
-          value:
-              '${formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          label: l10n.sendReviewAmount,
+          value: l10n.commonAmountBalance(
+            formattingService.formatBalance(widget.amount, maxDecimals: shownDecimals),
+            AppConstants.tokenSymbol,
+          ),
         ),
         const SizedBox(height: 7),
         _summaryRow(
-          label: 'NETWORK FEE',
-          value:
-              '${formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          label: l10n.sendReviewNetworkFee,
+          value: l10n.commonAmountBalance(
+            formattingService.formatBalance(widget.networkFee, maxDecimals: shownDecimals),
+            AppConstants.tokenSymbol,
+          ),
         ),
         const SizedBox(height: 7),
         _summaryRow(
-          label: 'YOU PAY',
-          value: '${formattingService.formatBalance(totalRaw, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+          label: l10n.sendReviewYouPay,
+          value: l10n.commonAmountBalance(
+            formattingService.formatBalance(totalRaw, maxDecimals: shownDecimals),
+            AppConstants.tokenSymbol,
+          ),
         ),
         const SizedBox(height: 7),
       ],

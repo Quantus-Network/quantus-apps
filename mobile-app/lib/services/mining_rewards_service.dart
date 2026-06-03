@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/utils/env_utils.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class MiningRewardsData {
   final int resonanceBlocks;
@@ -42,14 +43,14 @@ class MiningRewardsService {
   }
 
   Future<MiningRewardsData> getMiningRewards(Ref ref, WormholeKeyPair keyPair, List<String> currentAccountIds) async {
-    print('[MiningRewards] Current account IDs: $currentAccountIds');
+    quantusDebugPrint('[MiningRewards] Current account IDs: $currentAccountIds');
     final wormholeUtxoService = ref.read(wormholeUtxoServiceProvider);
 
     final miners = <String, List<_MinerEntry>>{};
     for (final entry in _assets.entries) {
       final jsonStr = await rootBundle.loadString(entry.value);
       miners[entry.key] = _parseMiners(jsonStr);
-      print('[MiningRewards] ${entry.key}: loaded ${miners[entry.key]!.length} miners');
+      quantusDebugPrint('[MiningRewards] ${entry.key}: loaded ${miners[entry.key]!.length} miners');
     }
 
     _cachedAccountIds ??= await _resolveAllAccountIds(currentAccountIds);
@@ -98,19 +99,19 @@ class MiningRewardsService {
       for (final id in toCheck) {
         final oldId = newToOld[id];
         if (oldId != null && allIds.add(oldId)) {
-          print('[MiningRewards] Chain depth $depth: $id -> $oldId');
+          quantusDebugPrint('[MiningRewards] Chain depth $depth: $id -> $oldId');
           next.add(oldId);
         }
       }
       toCheck = next;
     }
 
-    print('[MiningRewards] Final account ID set (${allIds.length}): $allIds');
+    quantusDebugPrint('[MiningRewards] Final account ID set (${allIds.length}): $allIds');
     return allIds;
   }
 
   Future<List<Map<String, dynamic>>> _fetchAccountMappings() async {
-    print('[MiningRewards] Fetching account_id_mappings from Supabase...');
+    quantusDebugPrint('[MiningRewards] Fetching account_id_mappings from Supabase...');
     final data = await EnvUtils.supabaseClient.from('account_id_mappings').select();
     return List<Map<String, dynamic>>.from(data);
   }

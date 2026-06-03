@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
@@ -16,31 +17,30 @@ class SettingsCautionScaffoldData {
 
   const SettingsCautionScaffoldData({required this.headline, required this.bulletItems, required this.checkboxLabel});
 
-  const SettingsCautionScaffoldData.recoveryPhrase()
-    : this(
-        headline: 'Keep your Recovery Phrase Secret',
-        bulletItems: const [
-          'If you lose this device, your recovery phrase is the only way back',
-          'Anyone who gets hold of it has complete control over your funds, permanently',
-          'Write it down and keep it somewhere safe. Do not save it digitally',
-        ],
-        checkboxLabel: 'I understand that anyone with my recovery phrase can access my wallet. I will store it safely.',
-      );
+  factory SettingsCautionScaffoldData.recoveryPhrase(AppLocalizations l10n) {
+    return SettingsCautionScaffoldData(
+      headline: l10n.createWalletCautionHeadline,
+      bulletItems: [l10n.createWalletCautionBullet1, l10n.createWalletCautionBullet2, l10n.createWalletCautionBullet3],
+      checkboxLabel: l10n.createWalletCautionCheckboxLabel,
+    );
+  }
 
-  const SettingsCautionScaffoldData.walletReset()
-    : this(
-        headline: 'This will erase\nyour wallet',
-        bulletItems: const [
-          'All wallet data will be permanently removed from this device',
-          'Your funds stay on the blockchain but only your recovery phrase can restore access',
-          'Without it, your funds are gone forever',
-        ],
-        checkboxLabel: "I've backed up my recovery phrase",
-      );
+  factory SettingsCautionScaffoldData.walletReset(AppLocalizations l10n) {
+    return SettingsCautionScaffoldData(
+      headline: l10n.settingsResetCautionHeadline,
+      bulletItems: [
+        l10n.settingsResetCautionBullet1,
+        l10n.settingsResetCautionBullet2,
+        l10n.settingsResetCautionBullet3,
+      ],
+      checkboxLabel: l10n.settingsResetCautionCheckbox,
+    );
+  }
 }
 
 class SettingsCautionScaffold extends StatelessWidget {
   final String appBarTitle;
+  final String continueLabel;
   final bool checkboxChecked;
   final VoidCallback onCheckboxChanged;
   final VoidCallback onContinue;
@@ -55,6 +55,7 @@ class SettingsCautionScaffold extends StatelessWidget {
     required this.onCheckboxChanged,
     required this.onContinue,
     required this.data,
+    required this.continueLabel,
     this.betweenBulletsStyle = SettingsDividerStyle.list,
     this.continueButtonLoading = false,
   });
@@ -85,6 +86,7 @@ class SettingsCautionScaffold extends StatelessWidget {
       ),
       bottomContent: _SettingsCautionBottom(
         checkboxLabel: data.checkboxLabel,
+        continueLabel: continueLabel,
         checked: checkboxChecked,
         onCheckboxChanged: onCheckboxChanged,
         onContinue: onContinue,
@@ -97,6 +99,7 @@ class SettingsCautionScaffold extends StatelessWidget {
 class _SettingsCautionBottom extends StatelessWidget {
   const _SettingsCautionBottom({
     required this.checkboxLabel,
+    required this.continueLabel,
     required this.checked,
     required this.onCheckboxChanged,
     required this.onContinue,
@@ -104,6 +107,7 @@ class _SettingsCautionBottom extends StatelessWidget {
   });
 
   final String checkboxLabel;
+  final String continueLabel;
   final bool checked;
   final VoidCallback onCheckboxChanged;
   final VoidCallback onContinue;
@@ -118,7 +122,7 @@ class _SettingsCautionBottom extends StatelessWidget {
           SettingsCheckbox(checked: checked, label: checkboxLabel, onTap: onCheckboxChanged),
           const SizedBox(height: 32),
           QuantusButton.simple(
-            label: 'Continue',
+            label: continueLabel,
             onTap: onContinue,
             variant: ButtonVariant.primary,
             isDisabled: !checked,
