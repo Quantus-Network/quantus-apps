@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/services/multisig_creation_reconciliation.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class MultisigCreationPollingService {
@@ -26,6 +28,7 @@ class MultisigCreationPollingService {
       if (DateTime.now().difference(startTime) > _timeout) {
         quantusDebugPrint('[MultisigCreationPoller] timeout for ${draft.accountId}');
         stopPolling(key);
+        removePendingMultisigCreation(_ref, key);
         _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
           MultisigCreationToastKind.timeout,
         );
@@ -55,17 +58,15 @@ class MultisigCreationPollingService {
 
       quantusDebugPrint('[MultisigCreationPoller] confirmed ${draft.accountId}');
       stopPolling(key);
+      removePendingMultisigCreation(_ref, key);
 
       final existing = _ref.read(multisigAccountsProvider).value ?? [];
-      if (existing.any((a) => a.accountId == draft.accountId)) {
-        _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-          MultisigCreationToastKind.ready,
-        );
-        return;
+      if (!existing.any((a) => a.accountId == draft.accountId)) {
+        await _ref.read(multisigAccountsProvider.notifier).add(draft);
+        _ref.invalidate(discoveredMultisigsProvider);
       }
 
-      await _ref.read(multisigAccountsProvider.notifier).add(draft);
-      _ref.invalidate(discoveredMultisigsProvider);
+      await reconcileConfirmedMultisigCreation(_ref, draft);
 
       _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
         MultisigCreationToastKind.ready,

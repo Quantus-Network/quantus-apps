@@ -6,8 +6,10 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_threshold_slider.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
@@ -91,8 +93,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 
   bool get _hasMinimumSigners => _allSigners.length >= 2;
 
-  bool get _isDisabled =>
-      _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creator == null || _isLoading;
+  bool get _isDisabled => _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creator == null || _isLoading;
 
   void _onSignerFieldChanged() {
     setState(() {
@@ -199,7 +200,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           );
 
       if (!mounted) return;
-      context.showInfoToaster(message: l10n.multisigCreateSubmittedToast);
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
@@ -209,7 +209,9 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
       }
-    } catch (_) {
+    } catch (e) {
+      quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
+
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
       }
@@ -221,10 +223,12 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    final pendingCreations = ref.watch(pendingMultisigCreationsProvider);
+    final isCreatingInFlight =
+        _predictedAddress != null && pendingCreations.any((e) => e.multisigAddress == _predictedAddress);
     final colors = context.colors;
     final text = context.themeText;
-    final displayThreshold =
-        _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length);
+    final displayThreshold = _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.multisigAddTitle),
@@ -252,10 +256,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               threshold: displayThreshold,
               signerCount: _allSigners.length,
               label: l10n.multisigCreateThresholdLabel,
-              valueLabel: l10n.multisigCreateThresholdValue(
-                displayThreshold,
-                _allSigners.length,
-              ),
+              valueLabel: l10n.multisigCreateThresholdValue(displayThreshold, _allSigners.length),
               onChanged: _onThresholdChanged,
             ),
             const SizedBox(height: 28),
@@ -271,10 +272,10 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: l10n.multisigCreateButton,
+          label: isCreatingInFlight ? l10n.multisigCreateCreatingButton : l10n.multisigCreateButton,
           onTap: _createMultisig,
-          isLoading: _isLoading,
-          isDisabled: _isDisabled,
+          isLoading: _isLoading || isCreatingInFlight,
+          isDisabled: _isDisabled || isCreatingInFlight,
         ),
       ),
     );

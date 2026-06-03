@@ -111,12 +111,7 @@ class _SignersSection extends StatelessWidget {
 }
 
 class _ThresholdSection extends StatelessWidget {
-  const _ThresholdSection({
-    required this.account,
-    required this.colors,
-    required this.text,
-    required this.l10n,
-  });
+  const _ThresholdSection({required this.account, required this.colors, required this.text, required this.l10n});
 
   final MultisigAccount account;
   final AppColorsV2 colors;
@@ -135,16 +130,10 @@ class _ThresholdSection extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             l10n.multisigThresholdOf(account.threshold, account.signers.length),
-            style: text.mediumTitle?.copyWith(
-              color: colors.accentOrange,
-              fontFamily: AppTextTheme.fontFamilySecondary,
-            ),
+            style: text.mediumTitle?.copyWith(color: colors.accentOrange, fontFamily: AppTextTheme.fontFamilySecondary),
           ),
           const SizedBox(height: 8),
-          Text(
-            l10n.multisigAccountMenuDetailsThresholdHint,
-            style: text.detail?.copyWith(color: colors.textTertiary),
-          ),
+          Text(l10n.multisigAccountMenuDetailsThresholdHint, style: text.detail?.copyWith(color: colors.textTertiary)),
         ],
       ),
     );

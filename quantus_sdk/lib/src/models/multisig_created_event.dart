@@ -28,13 +28,34 @@ class MultisigCreatedEvent extends TransactionEvent {
     required super.blockNumber,
     required super.blockHash,
     super.extrinsicHash,
-  }) : super(
-         from: creatorId,
-         to: multisigAddress,
-         amount: creationFee,
-       );
+  }) : super(from: creatorId, to: multisigAddress, amount: creationFee);
 
   bool isCreator(String accountId) => creatorId == accountId;
+
+  /// Builds a history row from a local draft when the indexer row is not yet
+  /// available.
+  factory MultisigCreatedEvent.fromDraft(
+    MultisigAccount draft, {
+    DateTime? timestamp,
+    String? extrinsicHash,
+    String? blockHash,
+  }) {
+    final creator = draft.creator ?? draft.myMemberAccountId;
+    return MultisigCreatedEvent(
+      id: 'ae-multisig-${draft.accountId}',
+      creatorId: creator,
+      multisigAddress: draft.accountId,
+      threshold: draft.threshold,
+      nonce: draft.nonce,
+      signers: List<String>.from(draft.signers),
+      creationFee: _palletConstants.multisigFee,
+      deposit: _palletConstants.multisigDeposit,
+      blockHash: blockHash,
+      timestamp: timestamp ?? DateTime.now(),
+      blockNumber: 0,
+      extrinsicHash: extrinsicHash,
+    );
+  }
 
   factory MultisigCreatedEvent.fromAccountEvent(Map<String, dynamic> event) {
     final multisig = jsonMapRequired(event['multisig'], 'multisig');
@@ -42,9 +63,7 @@ class MultisigCreatedEvent extends TransactionEvent {
     return MultisigCreatedEvent.fromMultisigGraphql(
       multisig: multisig,
       accountEventId: stringFromJson(event['id']),
-      accountEventTimestamp: eventTimestamp != null
-          ? dateTimeFromJson(eventTimestamp)
-          : null,
+      accountEventTimestamp: eventTimestamp != null ? dateTimeFromJson(eventTimestamp) : null,
     );
   }
 
@@ -57,9 +76,7 @@ class MultisigCreatedEvent extends TransactionEvent {
     final creator = nestedAccountId(multisig['creator']);
     final block = jsonMapOrNull(multisig['block']);
     final signersRaw = multisig['signers'];
-    final signers = signersRaw is List
-        ? signersRaw.map((e) => e.toString()).toList()
-        : <String>[];
+    final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
 
     final rawThreshold = multisig['threshold'] as int?;
     final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;

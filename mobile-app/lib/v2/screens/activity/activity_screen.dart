@@ -108,6 +108,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               final all = txService.combineAndDeduplicateTransactions(
                 pendingCancellationIds: data.pendingCancellationIds,
                 pendingTransactions: data.pendingTransactions,
+                pendingMultisigCreations: data.pendingMultisigCreations,
                 scheduledReversibleTransfers: data.scheduledReversibleTransfers,
                 otherTransfers: data.otherTransfers,
               );

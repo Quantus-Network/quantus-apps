@@ -32,11 +32,19 @@ class TransactionService {
   List<TransactionEvent> combineAndDeduplicateTransactions({
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
+    required List<PendingMultisigCreationEvent> pendingMultisigCreations,
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
+    final seenMultisigAddresses = <String>{};
     final List<TransactionEvent> result = [];
+
+    for (final creation in pendingMultisigCreations) {
+      if (seenMultisigAddresses.add(creation.multisigAddress) && seenIds.add(creation.id)) {
+        result.add(creation);
+      }
+    }
 
     // Add pending transactions that haven't not failed first (highest priority)
     for (final transaction in pendingTransactions) {
@@ -67,6 +75,9 @@ class TransactionService {
     // Add other transfers (lowest priority)
     otherTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     for (final transaction in otherTransfers) {
+      if (transaction is MultisigCreatedEvent) {
+        seenMultisigAddresses.add(transaction.multisigAddress);
+      }
       if (seenIds.add(transaction.id)) {
         result.add(transaction);
       }

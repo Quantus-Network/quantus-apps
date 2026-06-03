@@ -41,10 +41,7 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
                   onTap: () => _openNameEditor(context, ref, account),
                 ),
                 Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(
-                  label: l10n.accountMenuAddressDetails,
-                  onTap: () => _openAddressDetails(context, account),
-                ),
+                _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
                 Divider(color: colors.toasterBackground, height: 1),
                 _MenuRow(
                   label: l10n.multisigAccountMenuDetails,
@@ -58,23 +55,21 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
   }
 
   Future<void> _openNameEditor(BuildContext context, WidgetRef ref, MultisigAccount current) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => EditAccountScreen.multisig(initialMultisig: current)),
-    );
+    await Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => EditAccountScreen.multisig(initialMultisig: current)));
     if (!context.mounted) return;
     ref.invalidate(multisigAccountsProvider);
   }
 
   void _openAddressDetails(BuildContext context, MultisigAccount account) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)),
-    );
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
 
   void _openMultisigDetails(BuildContext context, MultisigAccount account) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => MultisigDetailsScreen(account: account)),
-    );
+    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => MultisigDetailsScreen(account: account)));
   }
 }
 

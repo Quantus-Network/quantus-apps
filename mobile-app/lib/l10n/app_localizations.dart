@@ -476,6 +476,12 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get multisigCreateButton;
 
+  /// Create button label while multisig creation is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Creating'**
+  String get multisigCreateCreatingButton;
+
   /// Default name for a new multisig
   ///
   /// In en, this message translates to:
@@ -487,12 +493,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not create multisig.'**
   String get multisigCreateErrorCouldNotCreate;
-
-  /// Toast after create-multisig extrinsic is queued
-  ///
-  /// In en, this message translates to:
-  /// **'Multisig creation submitted. Confirming on-chain…'**
-  String get multisigCreateSubmittedToast;
 
   /// Toast when multisig creation is confirmed on-chain
   ///
@@ -1484,6 +1484,12 @@ abstract class AppLocalizations {
   /// **'Multisig created'**
   String get activityTxMultisigCreated;
 
+  /// Activity row label while multisig creation is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Creating multisig'**
+  String get activityTxMultisigCreating;
+
   /// Counterparty label for multisig creation row
   ///
   /// In en, this message translates to:
@@ -1567,6 +1573,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisig created'**
   String get activityDetailTitleMultisigCreated;
+
+  /// Detail sheet title while multisig creation is in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Creating multisig'**
+  String get activityDetailTitleMultisigCreating;
 
   /// Status label for in-process transaction
   ///

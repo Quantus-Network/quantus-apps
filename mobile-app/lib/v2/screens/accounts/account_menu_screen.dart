@@ -65,9 +65,9 @@ class AccountMenuScreen extends ConsumerWidget {
   }
 
   void _openAddressDetails(BuildContext context, Account account) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)),
-    );
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
 }
 

@@ -82,11 +82,7 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
                     ),
                     if (showCreator) ...[
                       const SizedBox(width: 8),
-                      _SignerBadge(
-                        label: widget.creatorLabel!,
-                        colors: widget.colors,
-                        text: widget.text,
-                      ),
+                      _SignerBadge(label: widget.creatorLabel!, colors: widget.colors, text: widget.text),
                     ],
                     if (showYou) ...[
                       const SizedBox(width: 8),
@@ -128,10 +124,7 @@ class _SignerBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: colors.accentOrange.useOpacity(0.18),
-        borderRadius: BorderRadius.circular(4),
-      ),
+      decoration: BoxDecoration(color: colors.accentOrange.useOpacity(0.18), borderRadius: BorderRadius.circular(4)),
       child: Text(
         label,
         style: text.detail?.copyWith(

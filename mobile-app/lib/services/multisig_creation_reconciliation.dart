@@ -1,0 +1,73 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/filtered_transactions_params.dart';
+import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
+import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
+
+/// Appends a confirmed multisig creation to cached activity history.
+Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft) async {
+  final created = await _loadCreatedEvent(ref, draft);
+  final creatorId = draft.creator ?? draft.myMemberAccountId;
+  final affectedIds = {...draft.signers, creatorId};
+
+  try {
+    for (final accountId in affectedIds) {
+      await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
+
+      updatePaginationFiltersFor(ref.read, [accountId], (notifier, filter) {
+        if (!_showsMultisigCreationForFilter(
+          filter: filter,
+          accountId: accountId,
+          creatorId: creatorId,
+          signers: draft.signers,
+        )) {
+          return;
+        }
+
+        final params = FilteredTransactionsParams(accountIds: AccountIdListCache.get([accountId]), filter: filter);
+        final pagination = ref.read(filteredPaginationControllerProviderFamily(params));
+        final alreadyInHistory = pagination.otherTransfers.any(
+          (tx) => tx is MultisigCreatedEvent && tx.multisigAddress == created.multisigAddress,
+        );
+        if (!alreadyInHistory) {
+          notifier.addTransactionToHistory(created);
+        }
+      });
+    }
+
+    invalidateAccountBalances(ref, affectedIds);
+  } catch (e, stackTrace) {
+    quantusDebugPrint('[MultisigCreationReconcile] Error: $e');
+    quantusDebugPrint('Stack trace: $stackTrace');
+  }
+}
+
+Future<MultisigCreatedEvent> _loadCreatedEvent(Ref ref, MultisigAccount draft) async {
+  try {
+    final record = await ref.read(multisigServiceProvider).fetchMultisigFromIndexer(draft.accountId);
+    if (record != null) {
+      return MultisigCreatedEvent.fromMultisigGraphql(multisig: record);
+    }
+  } catch (e) {
+    quantusDebugPrint('[MultisigCreationReconcile] Indexer fetch failed: $e');
+  }
+
+  return MultisigCreatedEvent.fromDraft(draft);
+}
+
+bool _showsMultisigCreationForFilter({
+  required TransactionFilter filter,
+  required String accountId,
+  required String creatorId,
+  required List<String> signers,
+}) {
+  return switch (filter) {
+    TransactionFilter.all => signers.contains(accountId),
+    TransactionFilter.send => accountId == creatorId,
+    TransactionFilter.receive => signers.contains(accountId) && accountId != creatorId,
+  };
+}

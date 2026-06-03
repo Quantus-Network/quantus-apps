@@ -17,14 +17,16 @@ class MultisigGraphql {
       }''';
 
   /// Core multisig fields used by [MultisigCreatedEvent.fromMultisigGraphql].
-  static const String indexerFields = '''
+  static const String indexerFields =
+      '''
 $_coreFields
       extrinsic {
         id
       }''';
 
   /// Fields for `multisig_by_pk` including extrinsic metadata.
-  static const String byPkFields = '''
+  static const String byPkFields =
+      '''
 $_coreFields
       extrinsic {
         id
@@ -33,12 +35,14 @@ $_coreFields
       }''';
 
   /// Nested selection for `account_event.multisig`.
-  static const String accountEventSelection = '''
+  static const String accountEventSelection =
+      '''
     multisig {
 $indexerFields
     }''';
 
-  static const String creationsQuery = r'''
+  static const String creationsQuery =
+      r'''
 query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!) {
   multisig(where: $where, order_by: {timestamp: desc}, limit: $limit, offset: $offset) {
 ''' +
@@ -48,7 +52,8 @@ query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!)
 }
 ''';
 
-  static const String byPkQuery = r'''
+  static const String byPkQuery =
+      r'''
     query MultisigByPk($id: String!) {
       multisig_by_pk(id: $id) {
 ''' +

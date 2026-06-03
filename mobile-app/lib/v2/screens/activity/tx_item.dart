@@ -37,13 +37,27 @@ class TxItemData {
   });
 
   factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
+    if (tx is PendingMultisigCreationEvent) {
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
+      return TxItemData(
+        label: l10n.activityTxMultisigCreating,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: tx.creationFee,
+        counterpartyAddr: address,
+        customIcon: Icons.groups_outlined,
+        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
+      );
+    }
+
     if (tx is MultisigCreatedEvent) {
       final isCreator = tx.isCreator(accountId);
-      final address = AddressFormattingService.formatAddress(
-        tx.multisigAddress,
-        prefix: 5,
-        postFix: 3,
-      );
+      final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
       return TxItemData(
         label: l10n.activityTxMultisigCreated,
         timeLabel: _timeAgo(tx.timestamp, l10n),
@@ -174,8 +188,7 @@ Widget buildTxItem(
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
-  final directionLabel =
-      data.counterpartyDirectionLabel ?? (data.isSend ? l10n.activityTxTo : l10n.activityTxFrom);
+  final directionLabel = data.counterpartyDirectionLabel ?? (data.isSend ? l10n.activityTxTo : l10n.activityTxFrom);
 
   return GestureDetector(
     onTap: onTap,

@@ -48,11 +48,7 @@ void main() {
 
     test('throws when fewer than two signers', () {
       expect(
-        () => MultisigService().buildCreateMultisigCall(
-          signers: [signerA],
-          threshold: 1,
-          nonce: BigInt.zero,
-        ),
+        () => MultisigService().buildCreateMultisigCall(signers: [signerA], threshold: 1, nonce: BigInt.zero),
         throwsA(isA<ArgumentError>()),
       );
     });

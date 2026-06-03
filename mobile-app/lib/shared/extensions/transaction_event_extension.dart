@@ -22,4 +22,8 @@ extension TransactionEventExtension on TransactionEvent {
   bool get isMinerReward => this is MinerRewardEvent;
 
   bool get isMultisigCreated => this is MultisigCreatedEvent;
+
+  bool get isPendingMultisigCreation => this is PendingMultisigCreationEvent;
+
+  bool get isMultisigCreation => this is MultisigCreatedEvent || this is PendingMultisigCreationEvent;
 }

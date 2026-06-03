@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/mining_rewards_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
@@ -24,6 +25,7 @@ class LogoutService {
 
     await SubstrateService().logout();
     _ref.read(pendingTransactionsProvider.notifier).clear();
+    _ref.read(pendingMultisigCreationsProvider.notifier).clear();
     _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
     _ref.invalidate(miningRewardsProvider);
     _ref.read(accountsProvider.notifier).reset();

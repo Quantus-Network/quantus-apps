@@ -38,9 +38,7 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     final updated = account.copyWith(name: name);
     await _settingsService.updateMultisigAccount(updated);
     state.whenData((current) {
-      state = AsyncValue.data(
-        current.map((a) => a.accountId == updated.accountId ? updated : a).toList(),
-      );
+      state = AsyncValue.data(current.map((a) => a.accountId == updated.accountId ? updated : a).toList());
     });
   }
 

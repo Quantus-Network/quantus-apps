@@ -40,6 +40,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
         final all = txService.combineAndDeduplicateTransactions(
           pendingCancellationIds: data.pendingCancellationIds,
           pendingTransactions: data.pendingTransactions,
+          pendingMultisigCreations: data.pendingMultisigCreations,
           scheduledReversibleTransfers: data.scheduledReversibleTransfers,
           otherTransfers: data.otherTransfers,
         );
@@ -71,9 +72,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
                 colors,
                 text,
                 l10n,
-                formattedAmount: data.hideAmount
-                    ? '—'
-                    : formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
+                formattedAmount: data.hideAmount ? '—' : formatTxAmount(data.amount, isSend: data.isSend).primaryAmount,
                 isLastItem: isLastItem,
                 onTap: () {
                   showTransactionDetailSheet(context, tx, widget.activeAccount.accountId);

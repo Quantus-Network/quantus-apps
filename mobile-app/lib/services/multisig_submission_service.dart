@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -50,6 +51,7 @@ class MultisigSubmissionService {
     );
 
     TelemetryService().sendEvent('multisig_create_started');
+    addPendingMultisigCreation(_ref, PendingMultisigCreationEvent.fromDraft(draft));
 
     unawaited(
       _submitAndTrackBackground(
@@ -74,9 +76,7 @@ class MultisigSubmissionService {
   }) async {
     final service = _ref.read(multisigServiceProvider);
     try {
-      quantusDebugPrint(
-        '[MultisigSubmission] submit attempt $attempt/$maxRetries for ${draft.accountId}',
-      );
+      quantusDebugPrint('[MultisigSubmission] submit attempt $attempt/$maxRetries for ${draft.accountId}');
 
       final hashBytes = await service.submitCreateMultisigExtrinsic(
         creator: creator,
@@ -107,6 +107,7 @@ class MultisigSubmissionService {
 
       quantusDebugPrint('[MultisigSubmission] failed after $maxRetries attempts: $e');
       quantusDebugPrint('Stack trace: $stackTrace');
+      removePendingMultisigCreation(_ref, draft.accountId);
       _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
         MultisigCreationToastKind.submitFailed,
       );

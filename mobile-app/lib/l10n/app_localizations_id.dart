@@ -214,15 +214,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigCreateButton => 'Buat';
 
   @override
+  String get multisigCreateCreatingButton => 'Membuat';
+
+  @override
   String multisigCreateDefaultName(int number) {
     return 'Multisig $number';
   }
 
   @override
   String get multisigCreateErrorCouldNotCreate => 'Gagal membuat multisig.';
-
-  @override
-  String get multisigCreateSubmittedToast => 'Pembuatan multisig dikirim. Menunggu konfirmasi on-chain…';
 
   @override
   String get multisigCreateReadyToast => 'Multisig ditambahkan ke akun Anda.';
@@ -761,6 +761,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxMultisigCreated => 'Multisig dibuat';
 
   @override
+  String get activityTxMultisigCreating => 'Membuat multisig';
+
+  @override
   String get activityTxMultisigLabel => 'Multisig';
 
   @override
@@ -809,6 +812,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
+
+  @override
+  String get activityDetailTitleMultisigCreating => 'Membuat multisig';
 
   @override
   String get activityDetailStatusInProcess => 'Diproses';

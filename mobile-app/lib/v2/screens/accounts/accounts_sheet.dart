@@ -60,9 +60,9 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
   }
 
   void _openMultisigAccountMenu(MultisigAccount account) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (_) => MultisigAccountMenuScreen(initialAccount: account)),
-    );
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => MultisigAccountMenuScreen(initialAccount: account)));
   }
 
   @override

@@ -289,6 +289,10 @@
     "@multisigCreateButton": {
       "description": "Primary button to create multisig"
     },
+    "multisigCreateCreatingButton": "Creating",
+    "@multisigCreateCreatingButton": {
+      "description": "Create button label while multisig creation is confirming on-chain"
+    },
     "multisigCreateDefaultName": "Multisig {number}",
     "@multisigCreateDefaultName": {
       "description": "Default name for a new multisig",
@@ -301,10 +305,6 @@
     "multisigCreateErrorCouldNotCreate": "Could not create multisig.",
     "@multisigCreateErrorCouldNotCreate": {
       "description": "Error toast when multisig creation fails"
-    },
-    "multisigCreateSubmittedToast": "Multisig creation submitted. Confirming on-chain…",
-    "@multisigCreateSubmittedToast": {
-      "description": "Toast after create-multisig extrinsic is queued"
     },
     "multisigCreateReadyToast": "Multisig added to your accounts.",
     "@multisigCreateReadyToast": {
@@ -1092,6 +1092,10 @@
     "@activityTxMultisigCreated": {
       "description": "Transaction row label for multisig account creation"
     },
+    "activityTxMultisigCreating": "Creating multisig",
+    "@activityTxMultisigCreating": {
+      "description": "Activity row label while multisig creation is confirming on-chain"
+    },
     "activityTxMultisigLabel": "Multisig",
     "@activityTxMultisigLabel": {
       "description": "Counterparty label for multisig creation row"
@@ -1174,6 +1178,10 @@
     "activityDetailTitleMultisigCreated": "Multisig created",
     "@activityDetailTitleMultisigCreated": {
       "description": "Detail sheet title for multisig creation"
+    },
+    "activityDetailTitleMultisigCreating": "Creating multisig",
+    "@activityDetailTitleMultisigCreating": {
+      "description": "Detail sheet title while multisig creation is in progress"
     },
     "activityDetailStatusInProcess": "In Process",
     "@activityDetailStatusInProcess": {
