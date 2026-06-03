@@ -260,11 +260,11 @@
     "@addAccountMenuImportSubtitle": {
       "description": "Import wallet menu row subtitle"
     },
-    "addAccountMenuMultisigTitle": "Add Multisig",
+    "addAccountMenuMultisigTitle": "Create Multisig",
     "@addAccountMenuMultisigTitle": {
       "description": "Add multisig menu row title"
     },
-    "addAccountMenuMultisigSubtitle": "Discover or paste a multisig address",
+    "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
     "@addAccountMenuMultisigSubtitle": {
       "description": "Add multisig menu row subtitle"
     },
@@ -277,9 +277,98 @@
     "@multisigProposeTitle": {
       "description": "Propose flow app bar title and home CTA"
     },
-    "multisigAddTitle": "Add Multisig",
+    "multisigAddTitle": "Create Multisig",
     "@multisigAddTitle": {
-      "description": "Add multisig screen app bar title"
+      "description": "Create multisig screen app bar title"
+    },
+    "multisigCreateSubtitle": "Give this multisig a name you'll recognize. You can change it anytime.",
+    "@multisigCreateSubtitle": {
+      "description": "Subtitle under multisig name field"
+    },
+    "multisigCreateButton": "Create",
+    "@multisigCreateButton": {
+      "description": "Primary button to create multisig"
+    },
+    "multisigCreateDefaultName": "Multisig {number}",
+    "@multisigCreateDefaultName": {
+      "description": "Default name for a new multisig",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreateErrorCouldNotCreate": "Could not create multisig.",
+    "@multisigCreateErrorCouldNotCreate": {
+      "description": "Error toast when multisig creation fails"
+    },
+    "multisigCreateSubmittedToast": "Multisig creation submitted. Confirming on-chain…",
+    "@multisigCreateSubmittedToast": {
+      "description": "Toast after create-multisig extrinsic is queued"
+    },
+    "multisigCreateReadyToast": "Multisig added to your accounts.",
+    "@multisigCreateReadyToast": {
+      "description": "Toast when multisig creation is confirmed on-chain"
+    },
+    "multisigCreateAlreadyExists": "A multisig with this address already exists on-chain.",
+    "@multisigCreateAlreadyExists": {
+      "description": "Toast when predicted multisig address is already registered"
+    },
+    "multisigCreateTimeoutToast": "Multisig creation is taking longer than expected. Check the chain or try again.",
+    "@multisigCreateTimeoutToast": {
+      "description": "Toast when on-chain confirmation polling times out"
+    },
+    "multisigCreateAuthReason": "Authenticate to create this multisig",
+    "@multisigCreateAuthReason": {
+      "description": "Local auth prompt when submitting create multisig"
+    },
+    "multisigCreateSignersLabel": "SIGNERS",
+    "@multisigCreateSignersLabel": {
+      "description": "Section label for signer list on create multisig"
+    },
+    "multisigCreateSignersSubtitle": "Add at least one other signer besides yourself.",
+    "@multisigCreateSignersSubtitle": {
+      "description": "Helper text under signers section on create multisig"
+    },
+    "multisigCreateAddSignerHint": "Signer SS58 address",
+    "@multisigCreateAddSignerHint": {
+      "description": "Hint for adding a signer address"
+    },
+    "multisigCreateAddSignerButton": "Add Signer",
+    "@multisigCreateAddSignerButton": {
+      "description": "Button to add a signer from address field"
+    },
+    "multisigCreateDuplicateSigner": "This signer is already in the list.",
+    "@multisigCreateDuplicateSigner": {
+      "description": "Error when signer address is duplicate"
+    },
+    "multisigCreateInvalidSigner": "Enter a valid SS58 address.",
+    "@multisigCreateInvalidSigner": {
+      "description": "Error when signer address is invalid"
+    },
+    "multisigCreateThresholdLabel": "THRESHOLD",
+    "@multisigCreateThresholdLabel": {
+      "description": "Threshold slider section label on create multisig"
+    },
+    "multisigCreateThresholdValue": "{count} of {total}",
+    "@multisigCreateThresholdValue": {
+      "description": "Threshold slider value label",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreatePredictedAddressLabel": "MULTISIG ADDRESS",
+    "@multisigCreatePredictedAddressLabel": {
+      "description": "Label for predicted multisig address preview"
+    },
+    "multisigCreatePredictedAddressPlaceholder": "Add signers to preview address",
+    "@multisigCreatePredictedAddressPlaceholder": {
+      "description": "Placeholder when predicted address is not yet available"
     },
     "multisigDone": "Done",
     "@multisigDone": {
@@ -532,6 +621,22 @@
     "multisigYouLabel": "YOU",
     "@multisigYouLabel": {
       "description": "Badge on current user in signers list"
+    },
+    "multisigSignerCreatorLabel": "CREATOR",
+    "@multisigSignerCreatorLabel": {
+      "description": "Badge on multisig creator in signers list"
+    },
+    "multisigAccountMenuDetails": "Multisig details",
+    "@multisigAccountMenuDetails": {
+      "description": "Menu row to view multisig threshold and signers"
+    },
+    "multisigAccountMenuDetailsTitle": "Multisig details",
+    "@multisigAccountMenuDetailsTitle": {
+      "description": "App bar title on multisig details screen"
+    },
+    "multisigAccountMenuDetailsThresholdHint": "This many signer approvals are required to execute a proposal.",
+    "@multisigAccountMenuDetailsThresholdHint": {
+      "description": "Helper text under threshold on multisig details screen"
     },
     "multisigThresholdOf": "{count} of {total}",
     "@multisigThresholdOf": {
@@ -983,6 +1088,14 @@
     "@activityTxReceived": {
       "description": "Transaction row label for completed receive"
     },
+    "activityTxMultisigCreated": "Multisig created",
+    "@activityTxMultisigCreated": {
+      "description": "Transaction row label for multisig account creation"
+    },
+    "activityTxMultisigLabel": "Multisig",
+    "@activityTxMultisigLabel": {
+      "description": "Counterparty label for multisig creation row"
+    },
     "activityTxTo": "To",
     "@activityTxTo": {
       "description": "Counterparty direction label for send"
@@ -1058,6 +1171,10 @@
     "@activityDetailTitleReceived": {
       "description": "Detail sheet title for completed receive"
     },
+    "activityDetailTitleMultisigCreated": "Multisig created",
+    "@activityDetailTitleMultisigCreated": {
+      "description": "Detail sheet title for multisig creation"
+    },
     "activityDetailStatusInProcess": "In Process",
     "@activityDetailStatusInProcess": {
       "description": "Status label for in-process transaction"
@@ -1097,6 +1214,46 @@
     "activityDetailViewExplorer": "View in Explorer ↗",
     "@activityDetailViewExplorer": {
       "description": "Link to view transaction in explorer"
+    },
+    "activityDetailMultisigAddress": "MULTISIG ADDRESS",
+    "@activityDetailMultisigAddress": {
+      "description": "Multisig address row label on detail sheet"
+    },
+    "activityDetailMultisigThreshold": "THRESHOLD",
+    "@activityDetailMultisigThreshold": {
+      "description": "Approval threshold row label on multisig detail sheet"
+    },
+    "activityDetailMultisigThresholdValue": "{threshold} of {total}",
+    "@activityDetailMultisigThresholdValue": {
+      "description": "Approval threshold value on multisig detail sheet",
+      "placeholders": {
+        "threshold": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "activityDetailMultisigSignerCount": "SIGNERS",
+    "@activityDetailMultisigSignerCount": {
+      "description": "Signer count row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreator": "CREATOR",
+    "@activityDetailMultisigCreator": {
+      "description": "Creator account row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreationFee": "CREATION FEE",
+    "@activityDetailMultisigCreationFee": {
+      "description": "Multisig creation fee row label on detail sheet"
+    },
+    "activityDetailMultisigDeposit": "RESERVED DEPOSIT",
+    "@activityDetailMultisigDeposit": {
+      "description": "Multisig reserved deposit row label on detail sheet"
+    },
+    "activityDetailMultisigFeePaidByCreator": "Paid by creator",
+    "@activityDetailMultisigFeePaidByCreator": {
+      "description": "Note when creation fee was paid by another account"
     },
 
     "receiveTitle": "Receive",

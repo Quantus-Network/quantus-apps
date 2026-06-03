@@ -10,9 +10,9 @@ import 'package:resonance_network_wallet/v2/components/share_account_button.dart
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 
 class AccountDetailsScreen extends ConsumerStatefulWidget {
-  final Account account;
+  const AccountDetailsScreen({super.key, required this.accountId});
 
-  const AccountDetailsScreen({super.key, required this.account});
+  final String accountId;
 
   @override
   ConsumerState<AccountDetailsScreen> createState() => _AccountDetailsScreenState();
@@ -30,7 +30,7 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   }
 
   Future<void> _load() async {
-    final c = await _checksumService.getHumanReadableName(widget.account.accountId);
+    final c = await _checksumService.getHumanReadableName(widget.accountId);
     if (mounted) {
       setState(() {
         _checksum = c;
@@ -42,17 +42,15 @@ class _AccountDetailsScreenState extends ConsumerState<AccountDetailsScreen> {
   void _share() {
     if (_isLoading || _checksum == null) return;
 
-    shareAccountDetails(context, widget.account.accountId, checksum: _checksum!);
+    shareAccountDetails(context, widget.accountId, checksum: _checksum!);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final account = widget.account;
-
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.accountDetailsTitle),
-      mainContent: AddressDetailsCard(accountId: account.accountId, checksum: _checksum),
+      mainContent: AddressDetailsCard(accountId: widget.accountId, checksum: _checksum),
       bottomContent: ScaffoldBaseBottomContent(
         child: ShareAccountButton(onTap: _share, isDisabled: _isLoading),
       ),

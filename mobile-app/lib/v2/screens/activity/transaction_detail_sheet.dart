@@ -33,8 +33,10 @@ class _TransactionDetailSheet extends ConsumerWidget {
 
   bool get _isSend => tx.from == activeAccountId;
   bool get _isPending => tx is PendingTransactionEvent;
+  bool get _isMultisigCreated => tx.isMultisigCreated;
 
   String _title(AppLocalizations l10n) {
+    if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
     if (_isPending) return l10n.activityDetailTitleSending;
     if (tx.isReversibleScheduled) {
       return _isSend ? l10n.activityDetailTitleScheduled : l10n.activityDetailTitleReceiving;
@@ -66,7 +68,12 @@ class _TransactionDetailSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 16),
-          _AmountSection(tx: tx, isSend: _isSend, colors: colors),
+          _AmountSection(
+            tx: tx,
+            isSend: _isSend,
+            activeAccountId: activeAccountId,
+            colors: colors,
+          ),
           const SizedBox(height: 20),
           _DetailRow(
             label: l10n.activityDetailStatus,
@@ -82,7 +89,12 @@ class _TransactionDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _DetailsSection(tx: tx, isSend: _isSend, colors: colors),
+          _DetailsSection(
+            tx: tx,
+            isSend: _isSend,
+            activeAccountId: activeAccountId,
+            colors: colors,
+          ),
           const SizedBox(height: 24),
           Center(
             child: _ExplorerLink(tx: tx, colors: colors, text: text),
@@ -97,12 +109,30 @@ class _TransactionDetailSheet extends ConsumerWidget {
 class _AmountSection extends ConsumerWidget {
   final TransactionEvent tx;
   final bool isSend;
+  final String activeAccountId;
   final AppColorsV2 colors;
 
-  const _AmountSection({required this.tx, required this.isSend, required this.colors});
+  const _AmountSection({
+    required this.tx,
+    required this.isSend,
+    required this.activeAccountId,
+    required this.colors,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final text = context.themeText;
+
+    if (tx is MultisigCreatedEvent) {
+      final event = tx as MultisigCreatedEvent;
+      if (!event.isCreator(activeAccountId)) {
+        return Text(
+          '—',
+          style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
+        );
+      }
+    }
+
     final amount = ref.watch(txAmountDisplayProvider)(
       tx.amount,
       isSend: isSend,
@@ -117,14 +147,35 @@ class _AmountSection extends ConsumerWidget {
 class _DetailsSection extends ConsumerWidget {
   final TransactionEvent tx;
   final bool isSend;
+  final String activeAccountId;
   final AppColorsV2 colors;
 
-  const _DetailsSection({required this.tx, required this.isSend, required this.colors});
+  const _DetailsSection({
+    required this.tx,
+    required this.isSend,
+    required this.activeAccountId,
+    required this.colors,
+  });
+
+  String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
+    return l10n.commonAmountBalance(
+      formattingService.formatBalance(value, maxDecimals: AppConstants.decimals),
+      AppConstants.tokenSymbol,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final formattingService = ref.watch(numberFormattingServiceProvider);
+
+    if (tx is MultisigCreatedEvent) {
+      return _multisigDetails(
+        tx as MultisigCreatedEvent,
+        l10n,
+        formattingService,
+      );
+    }
 
     final counterparty = isSend ? tx.to : tx.from;
     final address = AddressFormattingService.formatAddress(counterparty, prefix: 7, ellipses: '.......', postFix: 6);
@@ -149,6 +200,60 @@ class _DetailsSection extends ConsumerWidget {
         _DetailRow(label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom, value: address, colors: colors),
         _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr, colors: colors),
+        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+      ],
+    );
+  }
+
+  Widget _multisigDetails(
+    MultisigCreatedEvent event,
+    AppLocalizations l10n,
+    NumberFormattingService formattingService,
+  ) {
+    final isCreator = event.isCreator(activeAccountId);
+    final multisigAddress = AddressFormattingService.formatAddress(
+      event.multisigAddress,
+      prefix: 7,
+      ellipses: '.......',
+      postFix: 6,
+    );
+    final creatorAddress = AddressFormattingService.formatAddress(
+      event.creatorId,
+      prefix: 7,
+      ellipses: '.......',
+      postFix: 6,
+    );
+    final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
+    final feeValue = isCreator
+        ? _formatBalance(l10n, formattingService, event.creationFee)
+        : l10n.activityDetailMultisigFeePaidByCreator;
+    final depositValue = _formatBalance(l10n, formattingService, event.deposit);
+    final txHash = event.extrinsicHash != null
+        ? AddressFormattingService.formatAddress(
+            event.extrinsicHash!,
+            prefix: 6,
+            ellipses: '...',
+            postFix: 4,
+          )
+        : null;
+
+    return Column(
+      children: [
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisigAddress, colors: colors),
+        _DetailRow(
+          label: l10n.activityDetailMultisigThreshold,
+          value: l10n.activityDetailMultisigThresholdValue(event.threshold, event.signers.length),
+          colors: colors,
+        ),
+        _DetailRow(
+          label: l10n.activityDetailMultisigSignerCount,
+          value: '${event.signers.length}',
+          colors: colors,
+        ),
+        _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: feeValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigDeposit, value: depositValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
       ],
     );
@@ -213,8 +318,12 @@ class _ExplorerLink extends ConsumerWidget {
 
   void _openExplorer() {
     final isMinerReward = tx.isMinerReward;
+    final isMultisigCreated = tx.isMultisigCreated;
+    
     String transactionType;
-    if (isMinerReward) {
+    if (isMultisigCreated) {
+      transactionType = 'multisig-created';
+    } else if (isMinerReward) {
       transactionType = 'miner-rewards';
     } else if (tx.isReversibleScheduled) {
       transactionType = 'scheduled-reversible-transactions';

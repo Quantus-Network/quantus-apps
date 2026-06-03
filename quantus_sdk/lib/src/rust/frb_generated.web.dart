@@ -7,6 +7,7 @@
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/crypto.dart';
+import 'api/multisig.dart';
 import 'api/ur.dart';
 import 'api/wormhole.dart';
 import 'dart:async';

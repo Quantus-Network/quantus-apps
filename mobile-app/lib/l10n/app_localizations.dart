@@ -437,13 +437,13 @@ abstract class AppLocalizations {
   /// Add multisig menu row title
   ///
   /// In en, this message translates to:
-  /// **'Add Multisig'**
+  /// **'Create Multisig'**
   String get addAccountMenuMultisigTitle;
 
   /// Add multisig menu row subtitle
   ///
   /// In en, this message translates to:
-  /// **'Discover or paste a multisig address'**
+  /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
   /// Badge label for multisig accounts
@@ -458,11 +458,125 @@ abstract class AppLocalizations {
   /// **'Propose'**
   String get multisigProposeTitle;
 
-  /// Add multisig screen app bar title
+  /// Create multisig screen app bar title
   ///
   /// In en, this message translates to:
-  /// **'Add Multisig'**
+  /// **'Create Multisig'**
   String get multisigAddTitle;
+
+  /// Subtitle under multisig name field
+  ///
+  /// In en, this message translates to:
+  /// **'Give this multisig a name you\'ll recognize. You can change it anytime.'**
+  String get multisigCreateSubtitle;
+
+  /// Primary button to create multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get multisigCreateButton;
+
+  /// Default name for a new multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig {number}'**
+  String multisigCreateDefaultName(int number);
+
+  /// Error toast when multisig creation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create multisig.'**
+  String get multisigCreateErrorCouldNotCreate;
+
+  /// Toast after create-multisig extrinsic is queued
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig creation submitted. Confirming on-chain…'**
+  String get multisigCreateSubmittedToast;
+
+  /// Toast when multisig creation is confirmed on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig added to your accounts.'**
+  String get multisigCreateReadyToast;
+
+  /// Toast when predicted multisig address is already registered
+  ///
+  /// In en, this message translates to:
+  /// **'A multisig with this address already exists on-chain.'**
+  String get multisigCreateAlreadyExists;
+
+  /// Toast when on-chain confirmation polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig creation is taking longer than expected. Check the chain or try again.'**
+  String get multisigCreateTimeoutToast;
+
+  /// Local auth prompt when submitting create multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to create this multisig'**
+  String get multisigCreateAuthReason;
+
+  /// Section label for signer list on create multisig
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNERS'**
+  String get multisigCreateSignersLabel;
+
+  /// Helper text under signers section on create multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one other signer besides yourself.'**
+  String get multisigCreateSignersSubtitle;
+
+  /// Hint for adding a signer address
+  ///
+  /// In en, this message translates to:
+  /// **'Signer SS58 address'**
+  String get multisigCreateAddSignerHint;
+
+  /// Button to add a signer from address field
+  ///
+  /// In en, this message translates to:
+  /// **'Add Signer'**
+  String get multisigCreateAddSignerButton;
+
+  /// Error when signer address is duplicate
+  ///
+  /// In en, this message translates to:
+  /// **'This signer is already in the list.'**
+  String get multisigCreateDuplicateSigner;
+
+  /// Error when signer address is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid SS58 address.'**
+  String get multisigCreateInvalidSigner;
+
+  /// Threshold slider section label on create multisig
+  ///
+  /// In en, this message translates to:
+  /// **'THRESHOLD'**
+  String get multisigCreateThresholdLabel;
+
+  /// Threshold slider value label
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total}'**
+  String multisigCreateThresholdValue(int count, int total);
+
+  /// Label for predicted multisig address preview
+  ///
+  /// In en, this message translates to:
+  /// **'MULTISIG ADDRESS'**
+  String get multisigCreatePredictedAddressLabel;
+
+  /// Placeholder when predicted address is not yet available
+  ///
+  /// In en, this message translates to:
+  /// **'Add signers to preview address'**
+  String get multisigCreatePredictedAddressPlaceholder;
 
   /// Done button on multisig flow completion screens
   ///
@@ -769,6 +883,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'YOU'**
   String get multisigYouLabel;
+
+  /// Badge on multisig creator in signers list
+  ///
+  /// In en, this message translates to:
+  /// **'CREATOR'**
+  String get multisigSignerCreatorLabel;
+
+  /// Menu row to view multisig threshold and signers
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig details'**
+  String get multisigAccountMenuDetails;
+
+  /// App bar title on multisig details screen
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig details'**
+  String get multisigAccountMenuDetailsTitle;
+
+  /// Helper text under threshold on multisig details screen
+  ///
+  /// In en, this message translates to:
+  /// **'This many signer approvals are required to execute a proposal.'**
+  String get multisigAccountMenuDetailsThresholdHint;
 
   /// Threshold value on proposal detail
   ///
@@ -1340,6 +1478,18 @@ abstract class AppLocalizations {
   /// **'Received'**
   String get activityTxReceived;
 
+  /// Transaction row label for multisig account creation
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig created'**
+  String get activityTxMultisigCreated;
+
+  /// Counterparty label for multisig creation row
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig'**
+  String get activityTxMultisigLabel;
+
   /// Counterparty direction label for send
   ///
   /// In en, this message translates to:
@@ -1412,6 +1562,12 @@ abstract class AppLocalizations {
   /// **'Received'**
   String get activityDetailTitleReceived;
 
+  /// Detail sheet title for multisig creation
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig created'**
+  String get activityDetailTitleMultisigCreated;
+
   /// Status label for in-process transaction
   ///
   /// In en, this message translates to:
@@ -1471,6 +1627,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View in Explorer ↗'**
   String get activityDetailViewExplorer;
+
+  /// Multisig address row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'MULTISIG ADDRESS'**
+  String get activityDetailMultisigAddress;
+
+  /// Approval threshold row label on multisig detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'THRESHOLD'**
+  String get activityDetailMultisigThreshold;
+
+  /// Approval threshold value on multisig detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'{threshold} of {total}'**
+  String activityDetailMultisigThresholdValue(int threshold, int total);
+
+  /// Signer count row label on multisig detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNERS'**
+  String get activityDetailMultisigSignerCount;
+
+  /// Creator account row label on multisig detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'CREATOR'**
+  String get activityDetailMultisigCreator;
+
+  /// Multisig creation fee row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'CREATION FEE'**
+  String get activityDetailMultisigCreationFee;
+
+  /// Multisig reserved deposit row label on detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'RESERVED DEPOSIT'**
+  String get activityDetailMultisigDeposit;
+
+  /// Note when creation fee was paid by another account
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by creator'**
+  String get activityDetailMultisigFeePaidByCreator;
 
   /// App bar title on receive screen
   ///

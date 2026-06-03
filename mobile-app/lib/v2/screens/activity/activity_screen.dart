@@ -164,7 +164,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             colors,
                             text,
                             l10n,
-                            formattedAmount: formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                            formattedAmount: itemData.hideAmount
+                                ? '—'
+                                : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
                             isLastItem: isLastItem,
                             onTap: () {
                               showTransactionDetailSheet(context, tx, active.account.accountId);

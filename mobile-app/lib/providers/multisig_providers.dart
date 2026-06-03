@@ -31,6 +31,19 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     });
   }
 
+  Future<void> updateName(MultisigAccount account, String name) async {
+    if (name.isEmpty) {
+      throw Exception("Multisig name can't be empty");
+    }
+    final updated = account.copyWith(name: name);
+    await _settingsService.updateMultisigAccount(updated);
+    state.whenData((current) {
+      state = AsyncValue.data(
+        current.map((a) => a.accountId == updated.accountId ? updated : a).toList(),
+      );
+    });
+  }
+
   Future<void> remove(String accountId) async {
     await _settingsService.removeMultisigAccount(accountId);
     state.whenData((current) {

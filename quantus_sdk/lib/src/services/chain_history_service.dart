@@ -111,13 +111,35 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     }'''
         : '';
 
+    const String multisigField = '''
+    multisig {
+      id
+      timestamp
+      threshold
+      nonce
+      signers
+      creator {
+        id
+      }
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+      }
+    }''';
+
+    const String multisigSendClause =
+        ', {multisig_id: {_is_null: false}, multisig: {creator_id: {_in: \$accounts}}}';
+
     final String whereClause;
 
     switch (filter) {
       case TransactionFilter.send:
         // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}]}]}';
+            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}$multisigSendClause]}]}';
         break;
       case TransactionFilter.receive:
         // Properly formatted Hasura boolean expression with colons and balanced brackets
@@ -133,6 +155,7 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
   accountEvents: account_event(limit: \$limit, offset: \$offset, where: $whereClause, order_by: {timestamp: desc}) {
     id
+    timestamp
     transfer {
       id
       amount
@@ -195,10 +218,107 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField
+    }$minerRewardField$multisigField
   }
 }
 ''';
+  }
+
+  Map<String, dynamic> _buildMultisigCreationsWhereMap(
+    TransactionFilter filter,
+    List<String> accountIds,
+  ) {
+    final signersOr = accountIds
+        .map((id) => <String, dynamic>{'signers': {'_contains': [id]}})
+        .toList();
+
+    switch (filter) {
+      case TransactionFilter.send:
+        return {'creator_id': {'_in': accountIds}};
+      case TransactionFilter.receive:
+        return {
+          '_and': [
+            {'creator_id': {'_nin': accountIds}},
+            {'_or': signersOr},
+          ],
+        };
+      case TransactionFilter.all:
+        return {'_or': signersOr};
+    }
+  }
+
+  static const String _multisigCreationsQuery = r'''
+query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!) {
+  multisig(where: $where, order_by: {timestamp: desc}, limit: $limit, offset: $offset) {
+    id
+    timestamp
+    threshold
+    nonce
+    signers
+    creator {
+      id
+    }
+    block {
+      height
+      hash
+    }
+    extrinsic {
+      id
+    }
+  }
+}
+''';
+
+  /// Merges [supplemental] multisig creations into [events], deduping by address.
+  /// Prefer rows already present from [account_event] parsing.
+  static List<TransactionEvent> mergeMultisigCreations({
+    required List<TransactionEvent> events,
+    required Iterable<MultisigCreatedEvent> supplemental,
+  }) {
+    final seen = events.whereType<MultisigCreatedEvent>().map((e) => e.multisigAddress).toSet();
+    final merged = List<TransactionEvent>.from(events);
+    for (final event in supplemental) {
+      if (seen.add(event.multisigAddress)) {
+        merged.add(event);
+      }
+    }
+    return merged;
+  }
+
+  Future<List<MultisigCreatedEvent>> fetchMultisigCreationsForAccounts({
+    required List<String> accountIds,
+    int limit = 10,
+    int offset = 0,
+    required TransactionFilter filter,
+  }) async {
+    if (accountIds.isEmpty) return [];
+
+    final requestBody = {
+      'query': _multisigCreationsQuery,
+      'variables': {
+        'where': _buildMultisigCreationsWhereMap(filter, accountIds),
+        'limit': _lookaheadLimit(limit),
+        'offset': offset,
+      },
+    };
+
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    final rows = responseBody['data']?['multisig'] as List<dynamic>?;
+    if (rows == null || rows.isEmpty) return [];
+
+    return rows
+        .take(limit)
+        .map((row) => MultisigCreatedEvent.fromMultisigGraphql(multisig: row as Map<String, dynamic>))
+        .toList();
   }
 
   // GraphQL query to fetch transactions by their hash
@@ -378,12 +498,23 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
   int _lookaheadLimit(int limit) => limit + 1;
 
-  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T Function(dynamic event) parseEvent) {
+  _Page<T> _pageFromEvents<T>(
+    List<dynamic>? events,
+    int limit,
+    T? Function(dynamic event) parseEvent,
+  ) {
     if (events == null || events.isEmpty) {
       return _Page(items: <T>[], hasMore: false);
     }
 
-    return _Page(items: events.take(limit).map(parseEvent).toList(), hasMore: events.length > limit);
+    final hasMore = events.length > limit;
+    final items = <T>[];
+    for (final event in events) {
+      if (items.length >= limit) break;
+      final parsed = parseEvent(event);
+      if (parsed != null) items.add(parsed);
+    }
+    return _Page(items: items, hasMore: hasMore);
   }
 
   ReversibleTransferEvent _parseScheduledTransferEvent(dynamic event) {
@@ -395,7 +526,9 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     return ReversibleTransferEvent.fromJson(scheduledTransfer, status: ReversibleTransferStatus.SCHEDULED);
   }
 
-  TransactionEvent _parseOtherTransferEvent(dynamic event) {
+  /// Parses a transfer-style [account_event]. Returns null for unsupported payloads
+  /// (e.g. multisig creation) so history fetching can continue.
+  TransactionEvent? tryParseOtherTransferEvent(dynamic event) {
     final eventMap = event as Map<String, dynamic>;
     if (eventMap['cancelledReversibleTransfer'] != null) {
       return ReversibleTransferEvent.fromJson(
@@ -415,7 +548,21 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     if (eventMap['minerReward'] != null) {
       return MinerRewardEvent.fromJson(eventMap['minerReward']);
     }
-    throw Exception('Account event is missing a supported transaction payload: ${eventMap['id']}');
+    if (eventMap['multisig'] != null) {
+      return MultisigCreatedEvent.fromAccountEvent(eventMap);
+    }
+    final id = eventMap['id'] as String?;
+    if (id != null && _isSkippedMultisigAccountEventId(id)) {
+      return null;
+    }
+    print('[ChainHistoryService] skipping unsupported account event: $id');
+    return null;
+  }
+
+  /// Other multisig-related indexer rows (proposals, deposits, etc.) are not
+  /// shown in activity yet.
+  static bool _isSkippedMultisigAccountEventId(String id) {
+    return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
 
   // Make a graphQL query for specific transaction hashes, get the results back
@@ -536,9 +683,18 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       }
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      print('events: $events');
-      final page = _pageFromEvents(events, limit, _parseOtherTransferEvent);
-      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
+      final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
+      final supplemental = await fetchMultisigCreationsForAccounts(
+        accountIds: accountIds,
+        limit: limit,
+        offset: offset,
+        filter: filter,
+      );
+      final merged = mergeMultisigCreations(
+        events: page.items,
+        supplemental: supplemental,
+      );
+      return OtherTransfersResult(transfers: merged, hasMore: page.hasMore);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);

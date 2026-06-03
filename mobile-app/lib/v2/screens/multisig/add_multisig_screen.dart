@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_badge.dart';
+import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_threshold_slider.dart';
+import 'package:resonance_network_wallet/v2/components/name_field.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_content.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/services/local_auth_service.dart';
+import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
+import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -24,65 +29,188 @@ class AddMultisigScreen extends ConsumerStatefulWidget {
 }
 
 class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
-  final _addressController = TextEditingController();
-  final _addressFocus = FocusNode();
-  bool _isAddingFromManual = false;
-  String? _error;
+  final _accountName = TextEditingController();
+  final _signerAddressController = TextEditingController();
+  final _checksumService = HumanReadableChecksumService();
+
+  List<String> _additionalSigners = [];
+  late int _threshold;
+  bool _isLoading = false;
+  bool _isPredictingAddress = false;
+  String? _predictedAddress;
+  String? _signerFieldError;
+
+  String? _creatorAccountId;
+  String? _creatorChecksum;
+
+  @override
+  void initState() {
+    super.initState();
+    final multisigCount = ref.read(multisigAccountsProvider).value?.length ?? 0;
+    final l10n = ref.read(l10nProvider);
+    _accountName.text = l10n.multisigCreateDefaultName(multisigCount + 1);
+    _accountName.addListener(() => setState(() {}));
+    _signerAddressController.addListener(_onSignerFieldChanged);
+
+    final creator = _resolveCreatorAccount();
+    if (creator != null) {
+      _creatorAccountId = creator.accountId;
+      _loadCreatorChecksum(creator.accountId);
+    }
+    _threshold = MultisigService.defaultThreshold(_allSigners.length);
+    if (_hasMinimumSigners) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPredictedAddress());
+    }
+  }
 
   @override
   void dispose() {
-    _addressController.dispose();
-    _addressFocus.dispose();
+    _accountName.dispose();
+    _signerAddressController.removeListener(_onSignerFieldChanged);
+    _signerAddressController.dispose();
     super.dispose();
   }
 
-  bool get _isManualValid {
-    final text = _addressController.text.trim();
-    if (text.isEmpty) return false;
-    final substrate = ref.read(substrateServiceProvider);
-    return substrate.isValidSS58Address(text);
+  Account? _resolveCreatorAccount() {
+    final active = ref.read(activeAccountProvider).value;
+    if (active is RegularAccount) return active.account;
+    final accounts = ref.read(accountsProvider).value ?? [];
+    return accounts.isNotEmpty ? accounts.first : null;
   }
 
-  Future<void> _addFromManualEntry() async {
-    final l10n = ref.read(l10nProvider);
-    final address = _addressController.text.trim();
-    if (!_isManualValid) return;
+  Future<void> _loadCreatorChecksum(String accountId) async {
+    final checksum = await _checksumService.getHumanReadableName(accountId);
+    if (mounted) setState(() => _creatorChecksum = checksum);
+  }
+
+  List<String> get _allSigners {
+    final creator = _creatorAccountId;
+    if (creator == null) return List<String>.from(_additionalSigners);
+    return [creator, ..._additionalSigners];
+  }
+
+  bool get _hasMinimumSigners => _allSigners.length >= 2;
+
+  bool get _isDisabled =>
+      _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creatorAccountId == null || _isLoading;
+
+  void _onSignerFieldChanged() {
     setState(() {
-      _isAddingFromManual = true;
-      _error = null;
-    });
-    try {
-      final ids = (ref.read(accountsProvider).value ?? const <Account>[]).map((a) => a.accountId).toList();
-      final msig = await ref.read(multisigServiceProvider).lookupByAddress(address, ids);
-      if (msig == null) {
-        throw Exception('No multisig found at this address');
+      if (_signerFieldError != null) {
+        _signerFieldError = null;
       }
-      await ref.read(multisigAccountsProvider.notifier).add(msig);
-      await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(msig));
-      if (!mounted) return;
-      Navigator.of(context).popUntil((r) => r.isFirst);
-    } catch (e, st) {
-      debugPrint('add multisig from manual error: $e $st');
+    });
+  }
+
+  void _addSigner() {
+    final l10n = ref.read(l10nProvider);
+    final substrate = ref.read(substrateServiceProvider);
+    final address = _signerAddressController.text.trim();
+
+    if (!substrate.isValidSS58Address(address)) {
+      setState(() => _signerFieldError = l10n.multisigCreateInvalidSigner);
+      return;
+    }
+    if (address == _creatorAccountId || _additionalSigners.contains(address)) {
+      setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
+      return;
+    }
+
+    setState(() {
+      _additionalSigners = [..._additionalSigners, address];
+      _signerAddressController.clear();
+      _signerFieldError = null;
+      _threshold = MultisigService.defaultThreshold(_allSigners.length);
+    });
+    _refreshPredictedAddress();
+  }
+
+  void _removeSigner(String address) {
+    setState(() {
+      _additionalSigners = _additionalSigners.where((s) => s != address).toList();
+      _threshold = MultisigService.defaultThreshold(_allSigners.length);
+      if (_allSigners.length < 2) {
+        _predictedAddress = null;
+      }
+    });
+    _refreshPredictedAddress();
+  }
+
+  void _onThresholdChanged(int value) {
+    setState(() => _threshold = value);
+    _refreshPredictedAddress();
+  }
+
+  Future<void> _refreshPredictedAddress() async {
+    if (!_hasMinimumSigners) {
+      setState(() {
+        _predictedAddress = null;
+        _isPredictingAddress = false;
+      });
+      return;
+    }
+
+    setState(() => _isPredictingAddress = true);
+    try {
+      final address = await ref
+          .read(multisigServiceProvider)
+          .predictMultisigAddress(
+            signers: _allSigners,
+            threshold: _threshold,
+            nonce: MultisigService.defaultMultisigNonce,
+          );
       if (!mounted) return;
       setState(() {
-        _error = l10n.multisigAddFailed(e.toString());
-        _isAddingFromManual = false;
+        _predictedAddress = address;
+        _isPredictingAddress = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _predictedAddress = null;
+        _isPredictingAddress = false;
       });
     }
   }
 
-  Future<void> _addDiscovered(MultisigAccount msig) async {
+  Future<void> _createMultisig() async {
+    final creator = _resolveCreatorAccount();
+    if (creator == null || !_hasMinimumSigners) return;
+
     final l10n = ref.read(l10nProvider);
-    setState(() => _error = null);
+    setState(() => _isLoading = true);
+
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigCreateAuthReason);
+    if (!authed) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
     try {
-      await ref.read(multisigAccountsProvider.notifier).add(msig);
-      await ref.read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(msig));
+      await ref.read(multisigSubmissionServiceProvider).startMultisigCreation(
+        name: _accountName.text.trim(),
+        signers: _allSigners,
+        threshold: _threshold,
+        creator: creator,
+      );
+
       if (!mounted) return;
-      Navigator.of(context).popUntil((r) => r.isFirst);
-    } catch (e, st) {
-      debugPrint('add discovered multisig error: $e $st');
-      if (!mounted) return;
-      setState(() => _error = l10n.multisigAddFailed(e.toString()));
+      context.showInfoToaster(message: l10n.multisigCreateSubmittedToast);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+    } on MultisigAlreadyExistsException {
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
+      }
+    } catch (_) {
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -91,167 +219,210 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final discoveredAsync = ref.watch(discoveredMultisigsProvider);
-    final alreadyAdded = (ref.watch(multisigAccountsProvider).value ?? const <MultisigAccount>[])
-        .map((m) => m.accountId)
-        .toSet();
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.multisigAddTitle),
-      mainContent: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.multisigAddPasteAddressSection, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 12),
-          _buildAddressField(l10n, colors, text),
-          const SizedBox(height: 28),
-          DottedBorder(
-            dashLength: 3,
-            gapLength: 5,
-            color: colors.borderButton.useOpacity(0.5),
-            child: const SizedBox(width: double.infinity, height: 1),
-          ),
-          const SizedBox(height: 28),
-          Text(l10n.multisigAddDiscoveredTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 8),
-          Text(l10n.multisigAddDiscoveredSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-          const SizedBox(height: 20),
-          Expanded(child: _buildDiscoveredList(l10n, discoveredAsync, alreadyAdded, colors, text)),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!, style: text.detail?.copyWith(color: colors.textError)),
+      mainContent: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            NameField(controller: _accountName, subtitle: l10n.multisigCreateSubtitle),
+            const SizedBox(height: 28),
+            _SignersSection(
+              l10n: l10n,
+              colors: colors,
+              text: text,
+              creatorAccountId: _creatorAccountId,
+              creatorChecksum: _creatorChecksum,
+              additionalSigners: _additionalSigners,
+              signerAddressController: _signerAddressController,
+              signerFieldError: _signerFieldError,
+              onAddSigner: _addSigner,
+              onRemoveSigner: _removeSigner,
+            ),
+            const SizedBox(height: 28),
+            MultisigThresholdSlider(
+              threshold: _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length),
+              signerCount: _allSigners.length,
+              label: l10n.multisigCreateThresholdLabel,
+              valueLabel: l10n.multisigCreateThresholdValue(
+                _allSigners.isEmpty ? 1 : _threshold.clamp(1, _allSigners.length),
+                _allSigners.length,
+              ),
+              onChanged: _onThresholdChanged,
+            ),
+            const SizedBox(height: 28),
+            _PredictedAddressSection(
+              l10n: l10n,
+              colors: colors,
+              text: text,
+              isLoading: _isPredictingAddress,
+              address: _predictedAddress,
+              hasMinimumSigners: _hasMinimumSigners,
+            ),
           ],
-        ],
+        ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: l10n.multisigAddFromAddressButton,
-          variant: ButtonVariant.primary,
-          isDisabled: !_isManualValid || _isAddingFromManual,
-          isLoading: _isAddingFromManual,
-          onTap: _addFromManualEntry,
+          label: l10n.multisigCreateButton,
+          onTap: _createMultisig,
+          isLoading: _isLoading,
+          isDisabled: _isDisabled,
         ),
       ),
-    );
-  }
-
-  Widget _buildAddressField(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      height: 48,
-      decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          Icon(Icons.account_tree_outlined, size: 16, color: colors.textLabel),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _addressController,
-              focusNode: _addressFocus,
-              autocorrect: false,
-              enableSuggestions: false,
-              style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(hintText: l10n.multisigAddAddressHint),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiscoveredList(
-    AppLocalizations l10n,
-    AsyncValue<List<MultisigAccount>> discoveredAsync,
-    Set<String> alreadyAdded,
-    AppColorsV2 colors,
-    AppTextTheme text,
-  ) {
-    return discoveredAsync.when(
-      loading: () => const Center(child: Loader()),
-      error: (e, _) => Center(
-        child: Text(
-          l10n.multisigAddDiscoverFailed(e.toString()),
-          style: text.detail?.copyWith(color: colors.textError),
-        ),
-      ),
-      data: (items) {
-        if (items.isEmpty) {
-          return Center(
-            child: Text(l10n.multisigAddNoneFound, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-          );
-        }
-        return ListView.separated(
-          itemCount: items.length,
-          separatorBuilder: (_, _) => Divider(height: 1, color: colors.txItemSeparator),
-          itemBuilder: (_, i) {
-            final msig = items[i];
-            final added = alreadyAdded.contains(msig.accountId);
-            return _DiscoveredRow(l10n: l10n, msig: msig, added: added, onAdd: () => _addDiscovered(msig));
-          },
-        );
-      },
     );
   }
 }
 
-class _DiscoveredRow extends StatelessWidget {
-  final AppLocalizations l10n;
-  final MultisigAccount msig;
-  final bool added;
-  final VoidCallback onAdd;
+class _SignersSection extends StatelessWidget {
+  const _SignersSection({
+    required this.l10n,
+    required this.colors,
+    required this.text,
+    required this.creatorAccountId,
+    required this.creatorChecksum,
+    required this.additionalSigners,
+    required this.signerAddressController,
+    required this.signerFieldError,
+    required this.onAddSigner,
+    required this.onRemoveSigner,
+  });
 
-  const _DiscoveredRow({required this.l10n, required this.msig, required this.added, required this.onAdd});
+  final AppLocalizations l10n;
+  final AppColorsV2 colors;
+  final AppTextTheme text;
+  final String? creatorAccountId;
+  final String? creatorChecksum;
+  final List<String> additionalSigners;
+  final TextEditingController signerAddressController;
+  final String? signerFieldError;
+  final VoidCallback onAddSigner;
+  final ValueChanged<String> onRemoveSigner;
+
+  bool get _canAddSigner {
+    final address = signerAddressController.text.trim();
+    return address.isNotEmpty;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final text = context.themeText;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          MultisigBadge(account: msig),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Text(l10n.multisigCreateSignersLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          const SizedBox(height: 8),
+          Text(l10n.multisigCreateSignersSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
+          const SizedBox(height: 16),
+          if (creatorAccountId != null)
+            MultisigSignerListTile(
+              accountId: creatorAccountId!,
+              checksum: creatorChecksum,
+              isYou: true,
+              youLabel: l10n.multisigYouLabel,
+              colors: colors,
+              text: text,
+            ),
+          ...additionalSigners.map(
+            (address) => MultisigSignerListTile(
+              accountId: address,
+              onRemove: () => onRemoveSigner(address),
+              colors: colors,
+              text: text,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            height: 48,
+            decoration: BoxDecoration(color: colors.sheetBackground, borderRadius: BorderRadius.circular(8)),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        msig.name,
-                        style: text.paragraph?.copyWith(color: colors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    MultisigTag(label: l10n.multisigTag),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AddressFormattingService.formatAddress(msig.accountId),
-                  style: text.detail?.copyWith(
-                    color: colors.textTertiary,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
+                Icon(Icons.person_add_outlined, size: 16, color: colors.textLabel),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: signerAddressController,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    style: text.smallParagraph?.copyWith(color: colors.textPrimary),
+                    decoration: InputDecoration(hintText: l10n.multisigCreateAddSignerHint, border: InputBorder.none),
+                    onSubmitted: (_) => onAddSigner(),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          QuantusButton.simple(
-            label: added ? l10n.multisigAddedButton : l10n.multisigAddButton,
-            variant: added ? ButtonVariant.outline : ButtonVariant.secondary,
-            isDisabled: added,
-            onTap: added ? null : onAdd,
-            width: null,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          if (signerFieldError != null) ...[
+            const SizedBox(height: 8),
+            Text(signerFieldError!, style: text.detail?.copyWith(color: colors.textError)),
+          ],
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: QuantusButton.simple(
+              label: l10n.multisigCreateAddSignerButton,
+              variant: ButtonVariant.secondary,
+              isDisabled: !_canAddSigner,
+              onTap: onAddSigner,
+              width: null,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PredictedAddressSection extends StatelessWidget {
+  const _PredictedAddressSection({
+    required this.l10n,
+    required this.colors,
+    required this.text,
+    required this.isLoading,
+    required this.address,
+    required this.hasMinimumSigners,
+  });
+
+  final AppLocalizations l10n;
+  final AppColorsV2 colors;
+  final AppTextTheme text;
+  final bool isLoading;
+  final String? address;
+  final bool hasMinimumSigners;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.multisigCreatePredictedAddressLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          const SizedBox(height: 12),
+          if (isLoading)
+            const Skeleton(height: 20)
+          else if (address != null)
+            Text(
+              address!,
+              style: text.smallParagraph?.copyWith(
+                color: colors.textPrimary,
+                fontFamily: AppTextTheme.fontFamilySecondary,
+              ),
+            )
+          else
+            Text(
+              hasMinimumSigners
+                  ? l10n.multisigCreatePredictedAddressPlaceholder
+                  : l10n.multisigCreatePredictedAddressPlaceholder,
+              style: text.detail?.copyWith(color: colors.textTertiary),
+            ),
         ],
       ),
     );

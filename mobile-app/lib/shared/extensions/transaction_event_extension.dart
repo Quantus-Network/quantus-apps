@@ -20,4 +20,6 @@ extension TransactionEventExtension on TransactionEvent {
       this is ReversibleTransferEvent ? (this as ReversibleTransferEvent).remainingTime : Duration.zero;
 
   bool get isMinerReward => this is MinerRewardEvent;
+
+  bool get isMultisigCreated => this is MultisigCreatedEvent;
 }

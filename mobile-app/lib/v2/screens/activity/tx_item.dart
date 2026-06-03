@@ -16,6 +16,9 @@ class TxItemData {
   final bool isSend;
   final BigInt amount;
   final String counterpartyAddr;
+  final bool hideAmount;
+  final IconData? customIcon;
+  final String? counterpartyDirectionLabel;
 
   const TxItemData({
     required this.label,
@@ -28,9 +31,36 @@ class TxItemData {
     required this.isSend,
     required this.amount,
     required this.counterpartyAddr,
+    this.hideAmount = false,
+    this.customIcon,
+    this.counterpartyDirectionLabel,
   });
 
   factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
+    if (tx is MultisigCreatedEvent) {
+      final isCreator = tx.isCreator(accountId);
+      final address = AddressFormattingService.formatAddress(
+        tx.multisigAddress,
+        prefix: 5,
+        postFix: 3,
+      );
+      return TxItemData(
+        label: l10n.activityTxMultisigCreated,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: isCreator ? colors.textPrimary : colors.textTertiary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: isCreator,
+        amount: isCreator ? tx.creationFee : BigInt.zero,
+        counterpartyAddr: address,
+        hideAmount: !isCreator,
+        customIcon: Icons.groups_outlined,
+        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
+      );
+    }
+
     final isSend = tx.from == accountId;
     final isPending = tx is PendingTransactionEvent;
     final isScheduled = tx.isReversibleScheduled;
@@ -144,7 +174,8 @@ Widget buildTxItem(
   required bool isLastItem,
   VoidCallback? onTap,
 }) {
-  final directionLabel = data.isSend ? l10n.activityTxTo : l10n.activityTxFrom;
+  final directionLabel =
+      data.counterpartyDirectionLabel ?? (data.isSend ? l10n.activityTxTo : l10n.activityTxFrom);
 
   return GestureDetector(
     onTap: onTap,
@@ -163,10 +194,12 @@ Widget buildTxItem(
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: data.borderColor, width: 1.5),
                 ),
-                child: Transform.rotate(
-                  angle: data.isSend ? 3.14159 : 0,
-                  child: Icon(Icons.arrow_downward_rounded, size: 16, color: data.iconColor),
-                ),
+                child: data.customIcon != null
+                    ? Icon(data.customIcon, size: 16, color: data.iconColor)
+                    : Transform.rotate(
+                        angle: data.isSend ? 3.14159 : 0,
+                        child: Icon(Icons.arrow_downward_rounded, size: 16, color: data.iconColor),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

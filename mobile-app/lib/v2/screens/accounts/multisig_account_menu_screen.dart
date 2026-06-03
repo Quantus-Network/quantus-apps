@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/multisig_details_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-class AccountMenuScreen extends ConsumerWidget {
-  final Account initialAccount;
+class MultisigAccountMenuScreen extends ConsumerWidget {
+  final MultisigAccount initialAccount;
 
-  const AccountMenuScreen({super.key, required this.initialAccount});
+  const MultisigAccountMenuScreen({super.key, required this.initialAccount});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,8 +23,8 @@ class AccountMenuScreen extends ConsumerWidget {
     final colors = context.colors;
     final text = context.themeText;
 
-    final accounts = ref.watch(accountsProvider);
-    final account = accounts.value?.firstWhere((a) => a.accountId == initialAccount.accountId);
+    final accounts = ref.watch(multisigAccountsProvider);
+    final account = accounts.value?.where((a) => a.accountId == initialAccount.accountId).firstOrNull;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.accountMenuTitle),
@@ -41,49 +41,56 @@ class AccountMenuScreen extends ConsumerWidget {
                   onTap: () => _openNameEditor(context, ref, account),
                 ),
                 Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+                _MenuRow(
+                  label: l10n.accountMenuAddressDetails,
+                  onTap: () => _openAddressDetails(context, account),
+                ),
                 Divider(color: colors.toasterBackground, height: 1),
-                _MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
+                _MenuRow(
+                  label: l10n.multisigAccountMenuDetails,
+                  value: l10n.multisigThresholdOf(account.threshold, account.signers.length),
+                  onTap: () => _openMultisigDetails(context, account),
+                ),
               ],
             )
           : Center(child: Text(l10n.accountMenuNotFound)),
     );
   }
 
-  Future<void> _openNameEditor(BuildContext context, WidgetRef ref, Account current) async {
-    await Navigator.of(
-      context,
-    ).push<void>(MaterialPageRoute(builder: (_) => EditAccountScreen(initialAccount: current)));
+  Future<void> _openNameEditor(BuildContext context, WidgetRef ref, MultisigAccount current) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => EditAccountScreen.multisig(initialMultisig: current)),
+    );
     if (!context.mounted) return;
-    ref.invalidate(accountsProvider);
+    ref.invalidate(multisigAccountsProvider);
   }
 
-  void _openRecoveryPhrase(BuildContext context, Account account) {
-    Navigator.of(
-      context,
-    ).push<void>(MaterialPageRoute(builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: account.walletIndex)));
-  }
-
-  void _openAddressDetails(BuildContext context, Account account) {
+  void _openAddressDetails(BuildContext context, MultisigAccount account) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)),
+    );
+  }
+
+  void _openMultisigDetails(BuildContext context, MultisigAccount account) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => MultisigDetailsScreen(account: account)),
     );
   }
 }
 
 class _ProfileHeader extends StatelessWidget {
-  final Account account;
+  const _ProfileHeader({required this.account, required this.colors, required this.text});
+
+  final MultisigAccount account;
   final AppColorsV2 colors;
   final AppTextTheme text;
-
-  const _ProfileHeader({required this.account, required this.colors, required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AccountBadge.account(
-          account: account,
+        AccountBadge(
+          name: account.name,
           isActive: true,
           size: 96,
           textStyle: text.largeTitle?.copyWith(
@@ -105,11 +112,11 @@ class _ProfileHeader extends StatelessWidget {
 }
 
 class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.label, this.value, required this.onTap});
+
   final String label;
   final String? value;
   final VoidCallback onTap;
-
-  const _MenuRow({required this.label, this.value, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +133,6 @@ class _MenuRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(child: Text(label, style: text.paragraph?.copyWith(fontSize: 18))),
-
               Row(
                 children: [
                   if (value != null) ...[

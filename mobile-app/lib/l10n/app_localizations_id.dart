@@ -192,10 +192,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Tambah Multisig';
+  String get addAccountMenuMultisigTitle => 'Buat Multisig';
 
   @override
-  String get addAccountMenuMultisigSubtitle => 'Temukan atau tempel alamat multisig';
+  String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
   String get multisigTag => 'MULTISIG';
@@ -204,7 +204,70 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeTitle => 'Ajukan';
 
   @override
-  String get multisigAddTitle => 'Tambah Multisig';
+  String get multisigAddTitle => 'Buat Multisig';
+
+  @override
+  String get multisigCreateSubtitle =>
+      'Berikan nama multisig yang mudah Anda kenali. Anda bisa mengubahnya kapan saja.';
+
+  @override
+  String get multisigCreateButton => 'Buat';
+
+  @override
+  String multisigCreateDefaultName(int number) {
+    return 'Multisig $number';
+  }
+
+  @override
+  String get multisigCreateErrorCouldNotCreate => 'Gagal membuat multisig.';
+
+  @override
+  String get multisigCreateSubmittedToast => 'Pembuatan multisig dikirim. Menunggu konfirmasi on-chain…';
+
+  @override
+  String get multisigCreateReadyToast => 'Multisig ditambahkan ke akun Anda.';
+
+  @override
+  String get multisigCreateAlreadyExists => 'Multisig dengan alamat ini sudah ada on-chain.';
+
+  @override
+  String get multisigCreateTimeoutToast =>
+      'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
+  String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
+
+  @override
+  String get multisigCreateSignersLabel => 'PENANDATANGAN';
+
+  @override
+  String get multisigCreateSignersSubtitle => 'Tambahkan setidaknya satu penandatangan selain diri Anda.';
+
+  @override
+  String get multisigCreateAddSignerHint => 'Alamat SS58 penandatangan';
+
+  @override
+  String get multisigCreateAddSignerButton => 'Tambah Penandatangan';
+
+  @override
+  String get multisigCreateDuplicateSigner => 'Penandatangan ini sudah ada dalam daftar.';
+
+  @override
+  String get multisigCreateInvalidSigner => 'Masukkan alamat SS58 yang valid.';
+
+  @override
+  String get multisigCreateThresholdLabel => 'AMBANG BATAS';
+
+  @override
+  String multisigCreateThresholdValue(int count, int total) {
+    return '$count dari $total';
+  }
+
+  @override
+  String get multisigCreatePredictedAddressLabel => 'ALAMAT MULTISIG';
+
+  @override
+  String get multisigCreatePredictedAddressPlaceholder => 'Tambahkan penandatangan untuk melihat alamat';
 
   @override
   String get multisigDone => 'Selesai';
@@ -376,6 +439,19 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigYouLabel => 'ANDA';
+
+  @override
+  String get multisigSignerCreatorLabel => 'PEMBUAT';
+
+  @override
+  String get multisigAccountMenuDetails => 'Detail multisig';
+
+  @override
+  String get multisigAccountMenuDetailsTitle => 'Detail multisig';
+
+  @override
+  String get multisigAccountMenuDetailsThresholdHint =>
+      'Jumlah persetujuan penandatangan yang diperlukan untuk mengeksekusi proposal.';
 
   @override
   String multisigThresholdOf(int count, int total) {
@@ -682,6 +758,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxReceived => 'Diterima';
 
   @override
+  String get activityTxMultisigCreated => 'Multisig dibuat';
+
+  @override
+  String get activityTxMultisigLabel => 'Multisig';
+
+  @override
   String get activityTxTo => 'Ke';
 
   @override
@@ -726,6 +808,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailTitleReceived => 'Diterima';
 
   @override
+  String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
+
+  @override
   String get activityDetailStatusInProcess => 'Diproses';
 
   @override
@@ -754,6 +839,32 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'Lihat di Explorer ↗';
+
+  @override
+  String get activityDetailMultisigAddress => 'ALAMAT MULTISIG';
+
+  @override
+  String get activityDetailMultisigThreshold => 'AMBANG';
+
+  @override
+  String activityDetailMultisigThresholdValue(int threshold, int total) {
+    return '$threshold dari $total';
+  }
+
+  @override
+  String get activityDetailMultisigSignerCount => 'PENANDATANGAN';
+
+  @override
+  String get activityDetailMultisigCreator => 'PEMBUAT';
+
+  @override
+  String get activityDetailMultisigCreationFee => 'BIAYA PEMBUATAN';
+
+  @override
+  String get activityDetailMultisigDeposit => 'DEPOSIT TERSIMPAN';
+
+  @override
+  String get activityDetailMultisigFeePaidByCreator => 'Dibayar oleh pembuat';
 
   @override
   String get receiveTitle => 'Terima';

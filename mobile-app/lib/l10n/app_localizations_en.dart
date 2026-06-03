@@ -191,10 +191,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
 
   @override
-  String get addAccountMenuMultisigTitle => 'Add Multisig';
+  String get addAccountMenuMultisigTitle => 'Create Multisig';
 
   @override
-  String get addAccountMenuMultisigSubtitle => 'Discover or paste a multisig address';
+  String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
   String get multisigTag => 'MULTISIG';
@@ -203,7 +203,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeTitle => 'Propose';
 
   @override
-  String get multisigAddTitle => 'Add Multisig';
+  String get multisigAddTitle => 'Create Multisig';
+
+  @override
+  String get multisigCreateSubtitle => 'Give this multisig a name you\'ll recognize. You can change it anytime.';
+
+  @override
+  String get multisigCreateButton => 'Create';
+
+  @override
+  String multisigCreateDefaultName(int number) {
+    return 'Multisig $number';
+  }
+
+  @override
+  String get multisigCreateErrorCouldNotCreate => 'Could not create multisig.';
+
+  @override
+  String get multisigCreateSubmittedToast => 'Multisig creation submitted. Confirming on-chain…';
+
+  @override
+  String get multisigCreateReadyToast => 'Multisig added to your accounts.';
+
+  @override
+  String get multisigCreateAlreadyExists => 'A multisig with this address already exists on-chain.';
+
+  @override
+  String get multisigCreateTimeoutToast =>
+      'Multisig creation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigCreateAuthReason => 'Authenticate to create this multisig';
+
+  @override
+  String get multisigCreateSignersLabel => 'SIGNERS';
+
+  @override
+  String get multisigCreateSignersSubtitle => 'Add at least one other signer besides yourself.';
+
+  @override
+  String get multisigCreateAddSignerHint => 'Signer SS58 address';
+
+  @override
+  String get multisigCreateAddSignerButton => 'Add Signer';
+
+  @override
+  String get multisigCreateDuplicateSigner => 'This signer is already in the list.';
+
+  @override
+  String get multisigCreateInvalidSigner => 'Enter a valid SS58 address.';
+
+  @override
+  String get multisigCreateThresholdLabel => 'THRESHOLD';
+
+  @override
+  String multisigCreateThresholdValue(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String get multisigCreatePredictedAddressLabel => 'MULTISIG ADDRESS';
+
+  @override
+  String get multisigCreatePredictedAddressPlaceholder => 'Add signers to preview address';
 
   @override
   String get multisigDone => 'Done';
@@ -375,6 +437,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigYouLabel => 'YOU';
+
+  @override
+  String get multisigSignerCreatorLabel => 'CREATOR';
+
+  @override
+  String get multisigAccountMenuDetails => 'Multisig details';
+
+  @override
+  String get multisigAccountMenuDetailsTitle => 'Multisig details';
+
+  @override
+  String get multisigAccountMenuDetailsThresholdHint =>
+      'This many signer approvals are required to execute a proposal.';
 
   @override
   String multisigThresholdOf(int count, int total) {
@@ -681,6 +756,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxReceived => 'Received';
 
   @override
+  String get activityTxMultisigCreated => 'Multisig created';
+
+  @override
+  String get activityTxMultisigLabel => 'Multisig';
+
+  @override
   String get activityTxTo => 'To';
 
   @override
@@ -725,6 +806,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailTitleReceived => 'Received';
 
   @override
+  String get activityDetailTitleMultisigCreated => 'Multisig created';
+
+  @override
   String get activityDetailStatusInProcess => 'In Process';
 
   @override
@@ -753,6 +837,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'View in Explorer ↗';
+
+  @override
+  String get activityDetailMultisigAddress => 'MULTISIG ADDRESS';
+
+  @override
+  String get activityDetailMultisigThreshold => 'THRESHOLD';
+
+  @override
+  String activityDetailMultisigThresholdValue(int threshold, int total) {
+    return '$threshold of $total';
+  }
+
+  @override
+  String get activityDetailMultisigSignerCount => 'SIGNERS';
+
+  @override
+  String get activityDetailMultisigCreator => 'CREATOR';
+
+  @override
+  String get activityDetailMultisigCreationFee => 'CREATION FEE';
+
+  @override
+  String get activityDetailMultisigDeposit => 'RESERVED DEPOSIT';
+
+  @override
+  String get activityDetailMultisigFeePaidByCreator => 'Paid by creator';
 
   @override
   String get receiveTitle => 'Receive';
