@@ -17,7 +17,9 @@ class MultisigProposalsSection extends ConsumerWidget {
   void _openProposal(BuildContext context, MultisigProposal proposal) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ApproveProposalScreen(msig: msig, proposalId: proposal.id)),
+      MaterialPageRoute(
+        builder: (_) => ApproveProposalScreen(msig: msig, proposalId: proposal.id),
+      ),
     );
   }
 
@@ -53,11 +55,11 @@ class MultisigProposalsSection extends ConsumerWidget {
     final colors = context.colors;
     final text = context.themeText;
     return async_.when(
-      loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: Loader())),
-      error: (e, _) => Text(
-        l10n.multisigLoadFailed(e.toString()),
-        style: text.detail?.copyWith(color: colors.textError),
+      loading: () => const Center(
+        child: Padding(padding: EdgeInsets.all(24), child: Loader()),
       ),
+      error: (e, _) =>
+          Text(l10n.multisigLoadFailed(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
       data: (items) {
         if (items.isEmpty) {
           return Text(emptyText, style: text.smallParagraph?.copyWith(color: colors.textTertiary));

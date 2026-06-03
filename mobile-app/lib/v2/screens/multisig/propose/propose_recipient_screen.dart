@@ -314,10 +314,7 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.sendSelectRecipientScanTitle,
-                    style: text.paragraph?.copyWith(color: colors.textPrimary),
-                  ),
+                  Text(l10n.sendSelectRecipientScanTitle, style: text.paragraph?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 4),
                   Text(
                     l10n.sendSelectRecipientScanSubtitle(AppConstants.tokenSymbol),

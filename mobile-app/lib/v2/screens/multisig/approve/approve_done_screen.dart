@@ -55,7 +55,11 @@ class ApproveDoneScreen extends ConsumerWidget {
                   const SizedBox(height: 70),
                   _successMark(colors),
                   const SizedBox(height: 32),
-                  Text(headline, textAlign: TextAlign.center, style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400)),
+                  Text(
+                    headline,
+                    textAlign: TextAlign.center,
+                    style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     subline,
@@ -113,7 +117,10 @@ class ApproveDoneScreen extends ConsumerWidget {
     return Container(
       width: 78,
       height: 78,
-      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: colors.success, width: 2)),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: colors.success, width: 2),
+      ),
       alignment: Alignment.center,
       child: Icon(Icons.check, size: 32, color: colors.success),
     );

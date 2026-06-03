@@ -51,17 +51,16 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
       return;
     }
     try {
-      final signer = ref.read(accountsProvider).value?.firstWhere(
+      final signer = ref
+          .read(accountsProvider)
+          .value
+          ?.firstWhere(
             (a) => a.accountId == widget.msig.myMemberAccountId,
             orElse: () => throw Exception('Member account not found in local wallet'),
           );
       if (signer == null) throw Exception('No signer account available');
 
-      await ref.read(multisigServiceProvider).cancel(
-            msig: widget.msig,
-            signer: signer,
-            proposalId: widget.proposal.id,
-          );
+      await ref.read(multisigServiceProvider).cancel(msig: widget.msig, signer: signer, proposalId: widget.proposal.id);
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
       ref.invalidate(multisigPastProposalsProvider(widget.msig));
       if (!mounted) return;
@@ -87,10 +86,7 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.multisigCancelConfirmBody,
-            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-          ),
+          Text(l10n.multisigCancelConfirmBody, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
           if (_error != null) ...[
             const SizedBox(height: 16),
             Text(_error!, style: text.detail?.copyWith(color: colors.textError)),

@@ -29,7 +29,11 @@ class MultisigService {
     return MultisigAccount(
       name: 'Multisig',
       accountId: address,
-      signers: [me, _dummySigner('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'), _dummySigner('5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty')],
+      signers: [
+        me,
+        _dummySigner('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'),
+        _dummySigner('5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'),
+      ],
       threshold: 2,
       nonce: BigInt.from(42),
       myMemberAccountId: me,
@@ -90,20 +94,12 @@ class MultisigService {
     return 99;
   }
 
-  Future<void> approve({
-    required MultisigAccount msig,
-    required Account signer,
-    required int proposalId,
-  }) async {
+  Future<void> approve({required MultisigAccount msig, required Account signer, required int proposalId}) async {
     debugPrint('[MultisigService] approve stub: ${msig.accountId} #$proposalId');
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
 
-  Future<void> cancel({
-    required MultisigAccount msig,
-    required Account signer,
-    required int proposalId,
-  }) async {
+  Future<void> cancel({required MultisigAccount msig, required Account signer, required int proposalId}) async {
     debugPrint('[MultisigService] cancel stub: ${msig.accountId} #$proposalId');
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
@@ -140,7 +136,11 @@ class MultisigService {
       MultisigAccount(
         name: 'Ops 2-of-3',
         accountId: '5MultisigOpsTeam0000000000000000000000000000000000',
-        signers: [me, '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'],
+        signers: [
+          me,
+          '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+          '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+        ],
         threshold: 2,
         nonce: BigInt.from(2),
         myMemberAccountId: me,

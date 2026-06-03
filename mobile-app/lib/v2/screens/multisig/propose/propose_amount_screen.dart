@@ -22,12 +22,7 @@ class ProposeAmountScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
   final String? recipientChecksum;
 
-  const ProposeAmountScreen({
-    super.key,
-    required this.msig,
-    required this.recipientAddress,
-    this.recipientChecksum,
-  });
+  const ProposeAmountScreen({super.key, required this.msig, required this.recipientAddress, this.recipientChecksum});
 
   @override
   ConsumerState<ProposeAmountScreen> createState() => _ProposeAmountScreenState();
@@ -42,11 +37,11 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
   bool _isFetchingFee = true;
 
   AmountInputLogic get _inputLogic => AmountInputLogic(
-        exchangeRateService: ref.read(exchangeRateServiceProvider),
-        selectedFiat: ref.read(selectedFiatCurrencyProvider),
-        localeConfig: ref.read(localeNumberConfigProvider),
-        formattingService: ref.read(numberFormattingServiceProvider),
-      );
+    exchangeRateService: ref.read(exchangeRateServiceProvider),
+    selectedFiat: ref.read(selectedFiatCurrencyProvider),
+    localeConfig: ref.read(localeNumberConfigProvider),
+    formattingService: ref.read(numberFormattingServiceProvider),
+  );
 
   @override
   void initState() {
@@ -163,10 +158,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.multisigProposeAmountToLabel,
-                  style: text.receiveLabel?.copyWith(color: colors.textLabel),
-                ),
+                Text(l10n.multisigProposeAmountToLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -199,7 +191,10 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                 width: 36,
                 height: 36,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: colors.borderButton)),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.borderButton),
+                ),
                 child: Icon(Icons.edit_outlined, size: 18, color: colors.textPrimary),
               ),
             ),

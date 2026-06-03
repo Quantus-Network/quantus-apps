@@ -52,24 +52,27 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
       return;
     }
     try {
-      final signer = ref.read(accountsProvider).value?.firstWhere(
+      final signer = ref
+          .read(accountsProvider)
+          .value
+          ?.firstWhere(
             (a) => a.accountId == widget.msig.myMemberAccountId,
             orElse: () => throw Exception('Member account not found in local wallet'),
           );
       if (signer == null) throw Exception('No signer account available');
 
-      await ref.read(multisigServiceProvider).approve(
-            msig: widget.msig,
-            signer: signer,
-            proposalId: widget.proposal.id,
-          );
+      await ref
+          .read(multisigServiceProvider)
+          .approve(msig: widget.msig, signer: signer, proposalId: widget.proposal.id);
       ref.invalidate(multisigProposalProvider(ProposalKey(widget.msig, widget.proposal.id)));
       ref.invalidate(multisigOpenProposalsProvider(widget.msig));
       if (!mounted) return;
       Navigator.pop(context);
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ApproveDoneScreen(msig: widget.msig, proposal: widget.proposal)),
+        MaterialPageRoute(
+          builder: (_) => ApproveDoneScreen(msig: widget.msig, proposal: widget.proposal),
+        ),
       );
     } catch (e, st) {
       debugPrint('Approve submit error: $e $st');
@@ -95,10 +98,7 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.multisigApproveConfirmBody,
-            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-          ),
+          Text(l10n.multisigApproveConfirmBody, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
           const SizedBox(height: 12),
           Text(amountText, style: text.largeTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 12),

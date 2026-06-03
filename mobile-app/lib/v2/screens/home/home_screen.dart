@@ -313,10 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return QuantusButton.simple(
       label: l10n.multisigProposeTitle,
       variant: ButtonVariant.primary,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig)),
-      ),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig))),
     );
   }
 

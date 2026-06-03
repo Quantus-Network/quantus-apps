@@ -46,7 +46,9 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
   }
 }
 
-final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier, AsyncValue<List<MultisigAccount>>>((ref) {
+final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier, AsyncValue<List<MultisigAccount>>>((
+  ref,
+) {
   final settings = ref.watch(settingsServiceProvider);
   return MultisigAccountsNotifier(settings);
 });
@@ -66,14 +68,18 @@ final multisigLookupProvider = FutureProvider.autoDispose.family<MultisigAccount
   return service.lookupByAddress(address, ids);
 });
 
-final multisigOpenProposalsProvider =
-    FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((ref, msig) async {
+final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
+  ref,
+  msig,
+) async {
   final service = ref.watch(multisigServiceProvider);
   return service.getOpenProposals(msig);
 });
 
-final multisigPastProposalsProvider =
-    FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((ref, msig) async {
+final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
+  ref,
+  msig,
+) async {
   final service = ref.watch(multisigServiceProvider);
   return service.getPastProposals(msig);
 });

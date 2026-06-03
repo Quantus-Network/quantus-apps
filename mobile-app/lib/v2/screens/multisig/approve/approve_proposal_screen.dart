@@ -153,7 +153,10 @@ class _ApproveScreenLoaded extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             AddressFormattingService.formatAddress(proposal.recipient),
-            style: text.smallParagraph?.copyWith(color: colors.textPrimary, fontFamily: AppTextTheme.fontFamilySecondary),
+            style: text.smallParagraph?.copyWith(
+              color: colors.textPrimary,
+              fontFamily: AppTextTheme.fontFamilySecondary,
+            ),
           ),
         ],
       ),
@@ -195,7 +198,9 @@ class _ApproveScreenLoaded extends ConsumerWidget {
       children: [
         Expanded(child: Text(label, style: labelStyle)),
         const SizedBox(width: 8),
-        Flexible(child: Text(value, style: valueStyle, textAlign: TextAlign.right)),
+        Flexible(
+          child: Text(value, style: valueStyle, textAlign: TextAlign.right),
+        ),
       ],
     );
   }
@@ -209,20 +214,12 @@ class _ApproveScreenLoaded extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.multisigProposalSignersLabel,
-            style: text.receiveLabel?.copyWith(color: colors.textLabel),
-          ),
+          Text(l10n.multisigProposalSignersLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
           const SizedBox(height: 16),
           ...msig.signers.map((s) {
             final approved = proposal.approvals.contains(s);
             final isYou = s == msig.myMemberAccountId;
-            return _SignerRow(
-              accountId: s,
-              approved: approved,
-              isYou: isYou,
-              youLabel: l10n.multisigYouLabel,
-            );
+            return _SignerRow(accountId: s, approved: approved, isYou: isYou, youLabel: l10n.multisigYouLabel);
           }),
         ],
       ),
@@ -235,12 +232,7 @@ class _SignerRow extends ConsumerStatefulWidget {
   final bool approved;
   final bool isYou;
   final String youLabel;
-  const _SignerRow({
-    required this.accountId,
-    required this.approved,
-    required this.isYou,
-    required this.youLabel,
-  });
+  const _SignerRow({required this.accountId, required this.approved, required this.isYou, required this.youLabel});
 
   @override
   ConsumerState<_SignerRow> createState() => _SignerRowState();
@@ -256,11 +248,12 @@ class _SignerRowState extends ConsumerState<_SignerRow> {
         .read(humanReadableChecksumServiceProvider)
         .getHumanReadableName(widget.accountId)
         .then((name) {
-      if (mounted) setState(() => _checksum = name);
-    }).catchError((Object e) {
-      debugPrint('checksum lookup error: $e');
-      return null;
-    });
+          if (mounted) setState(() => _checksum = name);
+        })
+        .catchError((Object e) {
+          debugPrint('checksum lookup error: $e');
+          return null;
+        });
   }
 
   @override

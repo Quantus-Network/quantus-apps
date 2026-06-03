@@ -184,10 +184,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     final balanceText = balanceAsync.when(
       loading: () => l10n.commonLoading,
       error: (_, _) => l10n.accountsSheetBalanceUnavailable,
-      data: (balance) => l10n.accountsSheetBalance(
-        formattingService.formatBalance(balance),
-        AppConstants.tokenSymbol,
-      ),
+      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
 
     return _AccountRowShell(

@@ -85,7 +85,10 @@ class ProposeDoneScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     AddressFormattingService.formatAddress(recipientAddress),
-                    style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+                    style: text.detail?.copyWith(
+                      color: colors.textTertiary,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Container(
@@ -127,7 +130,10 @@ class ProposeDoneScreen extends ConsumerWidget {
     return Container(
       width: 78,
       height: 78,
-      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: colors.success, width: 2)),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: colors.success, width: 2),
+      ),
       alignment: Alignment.center,
       child: Icon(Icons.check, size: 32, color: colors.success),
     );

@@ -101,10 +101,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.multisigAddPasteAddressSection,
-            style: text.sendSectionLabel?.copyWith(color: colors.textPrimary),
-          ),
+          Text(l10n.multisigAddPasteAddressSection, style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 12),
           _buildAddressField(l10n, colors, text),
           const SizedBox(height: 28),
@@ -117,10 +114,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           const SizedBox(height: 28),
           Text(l10n.multisigAddDiscoveredTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
-          Text(
-            l10n.multisigAddDiscoveredSubtitle,
-            style: text.detail?.copyWith(color: colors.textTertiary),
-          ),
+          Text(l10n.multisigAddDiscoveredSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
           const SizedBox(height: 20),
           Expanded(child: _buildDiscoveredList(l10n, discoveredAsync, alreadyAdded, colors, text)),
           if (_error != null) ...[
@@ -184,10 +178,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       data: (items) {
         if (items.isEmpty) {
           return Center(
-            child: Text(
-              l10n.multisigAddNoneFound,
-              style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-            ),
+            child: Text(l10n.multisigAddNoneFound, style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
           );
         }
         return ListView.separated(
@@ -196,12 +187,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           itemBuilder: (_, i) {
             final msig = items[i];
             final added = alreadyAdded.contains(msig.accountId);
-            return _DiscoveredRow(
-              l10n: l10n,
-              msig: msig,
-              added: added,
-              onAdd: () => _addDiscovered(msig),
-            );
+            return _DiscoveredRow(l10n: l10n, msig: msig, added: added, onAdd: () => _addDiscovered(msig));
           },
         );
       },
@@ -215,12 +201,7 @@ class _DiscoveredRow extends StatelessWidget {
   final bool added;
   final VoidCallback onAdd;
 
-  const _DiscoveredRow({
-    required this.l10n,
-    required this.msig,
-    required this.added,
-    required this.onAdd,
-  });
+  const _DiscoveredRow({required this.l10n, required this.msig, required this.added, required this.onAdd});
 
   @override
   Widget build(BuildContext context) {

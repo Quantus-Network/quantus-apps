@@ -58,7 +58,10 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       return;
     }
     try {
-      final signer = ref.read(accountsProvider).value?.firstWhere(
+      final signer = ref
+          .read(accountsProvider)
+          .value
+          ?.firstWhere(
             (a) => a.accountId == widget.msig.myMemberAccountId,
             orElse: () => throw Exception('Member account not found in local wallet'),
           );
@@ -225,7 +228,9 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       children: [
         Expanded(child: Text(label, style: labelStyle)),
         const SizedBox(width: 8),
-        Flexible(child: Text(value, style: valueStyle, textAlign: TextAlign.right)),
+        Flexible(
+          child: Text(value, style: valueStyle, textAlign: TextAlign.right),
+        ),
       ],
     );
   }
