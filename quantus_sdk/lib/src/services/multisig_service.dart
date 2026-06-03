@@ -1,14 +1,10 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Txs;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/models/account.dart';
-import 'package:quantus_sdk/src/models/extrinsic_fee_data.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
-import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
 import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
@@ -91,12 +87,7 @@ class MultisigService {
   ///
   /// Uses [nonce] for address uniqueness; defaults to [defaultMultisigNonce].
   Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async {
-    if (signers.isEmpty) {
-      throw ArgumentError.value(signers, 'signers', 'At least one signer is required');
-    }
-    if (threshold < 1 || threshold > signers.length) {
-      throw ArgumentError.value(threshold, 'threshold', 'Must be between 1 and ${signers.length}');
-    }
+    _validateSignersAndThreshold(signers, threshold, minSigners: 1);
 
     return multisig_rust.predictMultisigAddress(
       signers: signers,
@@ -106,12 +97,8 @@ class MultisigService {
   }
 
   /// Builds the runtime call for `multisig.create_multisig`.
-  Multisig buildCreateMultisigCall({
-    required List<String> signers,
-    required int threshold,
-    required BigInt nonce,
-  }) {
-    _validateSignersAndThreshold(signers, threshold);
+  Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
+    _validateSignersAndThreshold(signers, threshold, minSigners: 2);
     final signerIds = signers.map(getAccountId32).toList();
     return Txs().createMultisig(signers: signerIds, threshold: threshold, nonce: nonce);
   }
@@ -132,9 +119,7 @@ class MultisigService {
     final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}',
-      );
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
     }
 
     final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
@@ -154,76 +139,8 @@ class MultisigService {
     BigInt? nonce,
   }) async {
     final effectiveNonce = nonce ?? defaultMultisigNonce;
-    final call = buildCreateMultisigCall(
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-    );
+    final call = buildCreateMultisigCall(signers: signers, threshold: threshold, nonce: effectiveNonce);
     return _substrateService.submitExtrinsic(creator, call);
-  }
-
-  /// Estimates the transaction fee for creating a multisig.
-  Future<ExtrinsicFeeData> getCreateMultisigFee({
-    required Account creator,
-    required List<String> signers,
-    required int threshold,
-    BigInt? nonce,
-  }) async {
-    final effectiveNonce = nonce ?? defaultMultisigNonce;
-    final call = buildCreateMultisigCall(
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-    );
-    return _substrateService.getFeeForCall(creator, call);
-  }
-
-  /// Preflight, submits create-multisig, and returns submission metadata.
-  ///
-  /// Throws [MultisigAlreadyExistsException] if the predicted address is
-  /// already registered on-chain.
-  Future<MultisigCreateSubmission> createMultisig({
-    required String name,
-    required List<String> signers,
-    required int threshold,
-    required Account creator,
-    BigInt? nonce,
-  }) async {
-    _validateSignersAndThreshold(signers, threshold);
-    final effectiveNonce = nonce ?? defaultMultisigNonce;
-
-    final predictedAddress = await predictMultisigAddress(
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-    );
-
-    if (await isMultisigOnChain(predictedAddress)) {
-      throw MultisigAlreadyExistsException(predictedAddress);
-    }
-
-    final hashBytes = await submitCreateMultisigExtrinsic(
-      creator: creator,
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-    );
-
-    final draft = MultisigAccount(
-      name: name,
-      accountId: predictedAddress,
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-      myMemberAccountId: creator.accountId,
-      creator: creator.accountId,
-    );
-
-    return MultisigCreateSubmission(
-      extrinsicHash: '0x${hex.encode(hashBytes)}',
-      predictedAddress: predictedAddress,
-      draft: draft,
-    );
   }
 
   /// Parses `multisig_by_pk` from a GraphQL `data` payload. Exported for tests.
@@ -233,9 +150,14 @@ class MultisigService {
     return record;
   }
 
-  void _validateSignersAndThreshold(List<String> signers, int threshold) {
-    if (signers.length < 2) {
-      throw ArgumentError.value(signers, 'signers', 'At least two signers are required');
+  /// Validates [signers] and [threshold] for multisig operations.
+  ///
+  /// [minSigners] is the minimum signer count for the operation: prediction
+  /// allows a single signer, while on-chain creation requires at least two.
+  /// The threshold must be between 1 and the number of signers.
+  void _validateSignersAndThreshold(List<String> signers, int threshold, {required int minSigners}) {
+    if (signers.length < minSigners) {
+      throw ArgumentError.value(signers, 'signers', 'At least $minSigners signer(s) are required');
     }
     if (threshold < 1 || threshold > signers.length) {
       throw ArgumentError.value(threshold, 'threshold', 'Must be between 1 and ${signers.length}');

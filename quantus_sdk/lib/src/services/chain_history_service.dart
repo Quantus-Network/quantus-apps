@@ -130,8 +130,7 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
       }
     }''';
 
-    const String multisigSendClause =
-        ', {multisig_id: {_is_null: false}, multisig: {creator_id: {_in: \$accounts}}}';
+    const String multisigSendClause = ', {multisig_id: {_is_null: false}, multisig: {creator_id: {_in: \$accounts}}}';
 
     final String whereClause;
 
@@ -224,21 +223,28 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
 ''';
   }
 
-  Map<String, dynamic> _buildMultisigCreationsWhereMap(
-    TransactionFilter filter,
-    List<String> accountIds,
-  ) {
+  Map<String, dynamic> _buildMultisigCreationsWhereMap(TransactionFilter filter, List<String> accountIds) {
     final signersOr = accountIds
-        .map((id) => <String, dynamic>{'signers': {'_contains': [id]}})
+        .map(
+          (id) => <String, dynamic>{
+            'signers': {
+              '_contains': [id],
+            },
+          },
+        )
         .toList();
 
     switch (filter) {
       case TransactionFilter.send:
-        return {'creator_id': {'_in': accountIds}};
+        return {
+          'creator_id': {'_in': accountIds},
+        };
       case TransactionFilter.receive:
         return {
           '_and': [
-            {'creator_id': {'_nin': accountIds}},
+            {
+              'creator_id': {'_nin': accountIds},
+            },
             {'_or': signersOr},
           ],
         };
@@ -498,11 +504,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
   int _lookaheadLimit(int limit) => limit + 1;
 
-  _Page<T> _pageFromEvents<T>(
-    List<dynamic>? events,
-    int limit,
-    T? Function(dynamic event) parseEvent,
-  ) {
+  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T? Function(dynamic event) parseEvent) {
     if (events == null || events.isEmpty) {
       return _Page(items: <T>[], hasMore: false);
     }
@@ -553,9 +555,12 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     }
     final id = eventMap['id'] as String?;
     if (id != null && _isSkippedMultisigAccountEventId(id)) {
+      // Known multisig-related rows we don't render in activity yet.
       return null;
     }
-    print('[ChainHistoryService] skipping unsupported account event: $id');
+    // An unexpected payload likely signals an indexer/schema regression, so
+    // flag it loudly rather than dropping it silently.
+    print('[ChainHistoryService] WARNING: unsupported account event payload, id: $id');
     return null;
   }
 
@@ -684,16 +689,23 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
       final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
+
+      // Supplemental multisig creations are paged independently from
+      // account_event rows, so only fetch them on the first page to avoid
+      // re-surfacing the same rows (or skipping them) as the account_event
+      // offset advances. Account-event-derived creations still paginate
+      // normally on later pages.
+      if (offset != 0) {
+        return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
+      }
+
       final supplemental = await fetchMultisigCreationsForAccounts(
         accountIds: accountIds,
         limit: limit,
         offset: offset,
         filter: filter,
       );
-      final merged = mergeMultisigCreations(
-        events: page.items,
-        supplemental: supplemental,
-      );
+      final merged = mergeMultisigCreations(events: page.items, supplemental: supplemental);
       return OtherTransfersResult(transfers: merged, hasMore: page.hasMore);
     } catch (e, stackTrace) {
       sw.stop();

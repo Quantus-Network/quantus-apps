@@ -24,7 +24,7 @@ class MultisigThresholdSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final text = context.themeText;
-    final maxThreshold = signerCount.clamp(1, signerCount);
+    final maxThreshold = signerCount < 1 ? 1 : signerCount;
 
     return Container(
       padding: const EdgeInsets.all(16),

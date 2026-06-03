@@ -39,6 +39,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   bool _isPredictingAddress = false;
   String? _predictedAddress;
   String? _signerFieldError;
+  int _predictSeq = 0;
 
   String? _creatorAccountId;
   String? _creatorChecksum;
@@ -143,6 +144,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 
   Future<void> _refreshPredictedAddress() async {
     if (!_hasMinimumSigners) {
+      _predictSeq++;
       setState(() {
         _predictedAddress = null;
         _isPredictingAddress = false;
@@ -150,6 +152,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       return;
     }
 
+    final seq = ++_predictSeq;
     setState(() => _isPredictingAddress = true);
     try {
       final address = await ref
@@ -159,13 +162,13 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             threshold: _threshold,
             nonce: MultisigService.defaultMultisigNonce,
           );
-      if (!mounted) return;
+      if (!mounted || seq != _predictSeq) return;
       setState(() {
         _predictedAddress = address;
         _isPredictingAddress = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || seq != _predictSeq) return;
       setState(() {
         _predictedAddress = null;
         _isPredictingAddress = false;
@@ -187,12 +190,14 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     }
 
     try {
-      await ref.read(multisigSubmissionServiceProvider).startMultisigCreation(
-        name: _accountName.text.trim(),
-        signers: _allSigners,
-        threshold: _threshold,
-        creator: creator,
-      );
+      await ref
+          .read(multisigSubmissionServiceProvider)
+          .startMultisigCreation(
+            name: _accountName.text.trim(),
+            signers: _allSigners,
+            threshold: _threshold,
+            creator: creator,
+          );
 
       if (!mounted) return;
       context.showInfoToaster(message: l10n.multisigCreateSubmittedToast);
@@ -259,7 +264,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               text: text,
               isLoading: _isPredictingAddress,
               address: _predictedAddress,
-              hasMinimumSigners: _hasMinimumSigners,
             ),
           ],
         ),
@@ -386,7 +390,6 @@ class _PredictedAddressSection extends StatelessWidget {
     required this.text,
     required this.isLoading,
     required this.address,
-    required this.hasMinimumSigners,
   });
 
   final AppLocalizations l10n;
@@ -394,7 +397,6 @@ class _PredictedAddressSection extends StatelessWidget {
   final AppTextTheme text;
   final bool isLoading;
   final String? address;
-  final bool hasMinimumSigners;
 
   @override
   Widget build(BuildContext context) {
@@ -418,9 +420,7 @@ class _PredictedAddressSection extends StatelessWidget {
             )
           else
             Text(
-              hasMinimumSigners
-                  ? l10n.multisigCreatePredictedAddressPlaceholder
-                  : l10n.multisigCreatePredictedAddressPlaceholder,
+              l10n.multisigCreatePredictedAddressPlaceholder,
               style: text.detail?.copyWith(color: colors.textTertiary),
             ),
         ],

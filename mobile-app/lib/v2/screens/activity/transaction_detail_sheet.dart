@@ -68,12 +68,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 16),
-          _AmountSection(
-            tx: tx,
-            isSend: _isSend,
-            activeAccountId: activeAccountId,
-            colors: colors,
-          ),
+          _AmountSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
           const SizedBox(height: 20),
           _DetailRow(
             label: l10n.activityDetailStatus,
@@ -89,12 +84,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _DetailsSection(
-            tx: tx,
-            isSend: _isSend,
-            activeAccountId: activeAccountId,
-            colors: colors,
-          ),
+          _DetailsSection(tx: tx, isSend: _isSend, activeAccountId: activeAccountId, colors: colors),
           const SizedBox(height: 24),
           Center(
             child: _ExplorerLink(tx: tx, colors: colors, text: text),
@@ -112,12 +102,7 @@ class _AmountSection extends ConsumerWidget {
   final String activeAccountId;
   final AppColorsV2 colors;
 
-  const _AmountSection({
-    required this.tx,
-    required this.isSend,
-    required this.activeAccountId,
-    required this.colors,
-  });
+  const _AmountSection({required this.tx, required this.isSend, required this.activeAccountId, required this.colors});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -126,10 +111,7 @@ class _AmountSection extends ConsumerWidget {
     if (tx is MultisigCreatedEvent) {
       final event = tx as MultisigCreatedEvent;
       if (!event.isCreator(activeAccountId)) {
-        return Text(
-          '—',
-          style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary),
-        );
+        return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
       }
     }
 
@@ -150,12 +132,7 @@ class _DetailsSection extends ConsumerWidget {
   final String activeAccountId;
   final AppColorsV2 colors;
 
-  const _DetailsSection({
-    required this.tx,
-    required this.isSend,
-    required this.activeAccountId,
-    required this.colors,
-  });
+  const _DetailsSection({required this.tx, required this.isSend, required this.activeAccountId, required this.colors});
 
   String _formatBalance(AppLocalizations l10n, NumberFormattingService formattingService, BigInt value) {
     return l10n.commonAmountBalance(
@@ -170,11 +147,7 @@ class _DetailsSection extends ConsumerWidget {
     final formattingService = ref.watch(numberFormattingServiceProvider);
 
     if (tx is MultisigCreatedEvent) {
-      return _multisigDetails(
-        tx as MultisigCreatedEvent,
-        l10n,
-        formattingService,
-      );
+      return _multisigDetails(tx as MultisigCreatedEvent, l10n, formattingService);
     }
 
     final counterparty = isSend ? tx.to : tx.from;
@@ -229,12 +202,7 @@ class _DetailsSection extends ConsumerWidget {
         : l10n.activityDetailMultisigFeePaidByCreator;
     final depositValue = _formatBalance(l10n, formattingService, event.deposit);
     final txHash = event.extrinsicHash != null
-        ? AddressFormattingService.formatAddress(
-            event.extrinsicHash!,
-            prefix: 6,
-            ellipses: '...',
-            postFix: 4,
-          )
+        ? AddressFormattingService.formatAddress(event.extrinsicHash!, prefix: 6, ellipses: '...', postFix: 4)
         : null;
 
     return Column(
@@ -245,11 +213,7 @@ class _DetailsSection extends ConsumerWidget {
           value: l10n.activityDetailMultisigThresholdValue(event.threshold, event.signers.length),
           colors: colors,
         ),
-        _DetailRow(
-          label: l10n.activityDetailMultisigSignerCount,
-          value: '${event.signers.length}',
-          colors: colors,
-        ),
+        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${event.signers.length}', colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: feeValue, colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigDeposit, value: depositValue, colors: colors),
@@ -319,7 +283,7 @@ class _ExplorerLink extends ConsumerWidget {
   void _openExplorer() {
     final isMinerReward = tx.isMinerReward;
     final isMultisigCreated = tx.isMultisigCreated;
-    
+
     String transactionType;
     if (isMultisigCreated) {
       transactionType = 'multisig-created';
