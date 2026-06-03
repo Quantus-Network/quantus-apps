@@ -191,6 +191,262 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuImportSubtitle => 'Use a recovery phrase to import';
 
   @override
+  String get addAccountMenuMultisigTitle => 'Add Multisig';
+
+  @override
+  String get addAccountMenuMultisigSubtitle => 'Discover or paste a multisig address';
+
+  @override
+  String get multisigTag => 'MULTISIG';
+
+  @override
+  String get multisigProposeTitle => 'Propose';
+
+  @override
+  String get multisigAddTitle => 'Add Multisig';
+
+  @override
+  String get multisigDone => 'Done';
+
+  @override
+  String get multisigAddPasteAddressSection => 'Paste Multisig Address';
+
+  @override
+  String get multisigAddDiscoveredTitle => 'Discovered for you';
+
+  @override
+  String get multisigAddDiscoveredSubtitle => 'Multisigs on chain where one of your accounts is a signer';
+
+  @override
+  String get multisigAddAddressHint => 'Multisig SS58 address';
+
+  @override
+  String get multisigAddFromAddressButton => 'Add From Address';
+
+  @override
+  String get multisigAddButton => 'Add';
+
+  @override
+  String get multisigAddedButton => 'Added';
+
+  @override
+  String get multisigAddNoneFound => 'No multisigs found.';
+
+  @override
+  String multisigAddDiscoverFailed(String error) {
+    return 'Could not discover multisigs: $error';
+  }
+
+  @override
+  String multisigAddFailed(String error) {
+    return 'Could not add multisig: $error';
+  }
+
+  @override
+  String get multisigOpenProposals => 'Open Proposals';
+
+  @override
+  String get multisigPastProposals => 'Past Proposals';
+
+  @override
+  String get multisigNoOpenProposals => 'No open proposals.';
+
+  @override
+  String get multisigNoPastProposals => 'No past proposals.';
+
+  @override
+  String multisigLoadFailed(String error) {
+    return 'Failed to load: $error';
+  }
+
+  @override
+  String multisigProposalToAddress(String address) {
+    return 'to $address';
+  }
+
+  @override
+  String get multisigStatusApproved => 'APPROVED';
+
+  @override
+  String get multisigStatusExpired => 'EXPIRED';
+
+  @override
+  String get multisigStatusCancelled => 'CANCELLED';
+
+  @override
+  String get multisigProposeSelectRecipientTo => 'Propose To';
+
+  @override
+  String multisigProposeSearchHint(String symbol) {
+    return 'Search $symbol Address';
+  }
+
+  @override
+  String get multisigProposeAmountToLabel => 'PROPOSE TO';
+
+  @override
+  String get multisigProposeBalanceLabel => 'Multisig Balance:';
+
+  @override
+  String get multisigProposeFeeLabel => 'Proposal Fee:';
+
+  @override
+  String get multisigProposeReviewButton => 'Review Proposal';
+
+  @override
+  String get multisigProposeReviewProposing => 'PROPOSING';
+
+  @override
+  String multisigProposeReviewFromName(String name) {
+    return 'from $name';
+  }
+
+  @override
+  String get multisigProposeThresholdLabel => 'THRESHOLD';
+
+  @override
+  String get multisigProposeExpiresLabel => 'EXPIRES';
+
+  @override
+  String get multisigProposeFeeRowLabel => 'PROPOSAL FEE';
+
+  @override
+  String get multisigProposeCreateButton => 'Create Proposal';
+
+  @override
+  String get multisigProposeAuthReason => 'Authenticate to propose transaction';
+
+  @override
+  String get multisigProposeAuthRequired => 'Authentication required';
+
+  @override
+  String get multisigProposeSubmitFailed => 'Failed to create proposal';
+
+  @override
+  String get multisigProposeDoneHeadline => 'Proposal created';
+
+  @override
+  String get multisigProposeDoneSubline => 'Awaiting approvals from your co-signers.';
+
+  @override
+  String multisigProposeDoneToChecksum(String checksum) {
+    return 'to $checksum';
+  }
+
+  @override
+  String multisigSignaturesCount(int current, int threshold) {
+    return 'Signatures: $current/$threshold';
+  }
+
+  @override
+  String get multisigProposalTitle => 'Proposal';
+
+  @override
+  String multisigProposalLoadFailed(String error) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get multisigProposalNotFound => 'Proposal not found.';
+
+  @override
+  String get multisigApproveButton => 'Approve';
+
+  @override
+  String get multisigAlreadyApproved => 'Already Approved';
+
+  @override
+  String get multisigCancelProposalButton => 'Cancel Proposal';
+
+  @override
+  String get multisigProposalExpiresLabel => 'EXPIRES';
+
+  @override
+  String get multisigProposalThresholdLabel => 'THRESHOLD';
+
+  @override
+  String get multisigProposalApprovalsLabel => 'APPROVALS';
+
+  @override
+  String get multisigProposalFeeRowLabel => 'PROPOSAL FEE';
+
+  @override
+  String get multisigProposalSignersLabel => 'SIGNERS';
+
+  @override
+  String get multisigYouLabel => 'YOU';
+
+  @override
+  String multisigThresholdOf(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String multisigApprovalsOf(int count, int threshold) {
+    return '$count of $threshold';
+  }
+
+  @override
+  String get multisigApproveConfirmTitle => 'Are you sure?';
+
+  @override
+  String get multisigApproveConfirmBody => 'You are about to approve a transfer of';
+
+  @override
+  String multisigApproveConfirmTo(String address) {
+    return 'to $address';
+  }
+
+  @override
+  String get multisigApproveConfirmYes => 'Yes, Approve';
+
+  @override
+  String get multisigApproveConfirmNo => 'No, Go Back';
+
+  @override
+  String get multisigApproveAuthReason => 'Authenticate to approve';
+
+  @override
+  String get multisigApproveAuthRequired => 'Authentication required';
+
+  @override
+  String get multisigApproveFailed => 'Failed to approve';
+
+  @override
+  String get multisigCancelConfirmTitle => 'Cancel Proposal?';
+
+  @override
+  String get multisigCancelConfirmBody =>
+      'Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.';
+
+  @override
+  String get multisigCancelConfirmYes => 'Yes, Cancel Proposal';
+
+  @override
+  String get multisigCancelConfirmKeep => 'Keep Proposal';
+
+  @override
+  String get multisigCancelAuthReason => 'Authenticate to cancel';
+
+  @override
+  String get multisigCancelFailed => 'Failed to cancel';
+
+  @override
+  String get multisigApproveTitle => 'Approve';
+
+  @override
+  String get multisigApproveDoneExecuted => 'Proposal executed';
+
+  @override
+  String get multisigApproveDoneRecorded => 'Approval recorded';
+
+  @override
+  String get multisigApproveDoneExecutedSubline => 'Threshold reached — transfer dispatched.';
+
+  @override
+  String get multisigApproveDoneRecordedSubline => 'Awaiting more co-signers.';
+
+  @override
   String get createAccountAppBarTitle => 'Account Name';
 
   @override

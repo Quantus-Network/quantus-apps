@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -23,15 +24,16 @@ class ApproveDoneScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountText = '${fmt.formatBalance(proposal.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
     final newCount = proposal.approvalCount + 1;
-    final headline = newCount >= proposal.threshold ? 'Proposal executed' : 'Approval recorded';
-    final subline = newCount >= proposal.threshold
-        ? 'Threshold reached — transfer dispatched.'
-        : 'Awaiting more co-signers.';
+    final executed = newCount >= proposal.threshold;
+    final headline = executed ? l10n.multisigApproveDoneExecuted : l10n.multisigApproveDoneRecorded;
+    final subline = executed ? l10n.multisigApproveDoneExecutedSubline : l10n.multisigApproveDoneRecordedSubline;
+    final recipient = AddressFormattingService.formatAddress(proposal.recipient);
 
     return PopScope(
       canPop: false,
@@ -40,7 +42,10 @@ class ApproveDoneScreen extends ConsumerWidget {
         _popToHome(context);
       },
       child: ScaffoldBase(
-        appBar: V2AppBar(title: 'Approve', leading: AppBackButton(onTap: () => _popToHome(context))),
+        appBar: V2AppBar(
+          title: l10n.multisigApproveTitle,
+          leading: AppBackButton(onTap: () => _popToHome(context)),
+        ),
         mainContent: Column(
           children: [
             Center(
@@ -61,9 +66,12 @@ class ApproveDoneScreen extends ConsumerWidget {
                   Text(amountText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 8),
                   Text(
-                    'to ${AddressFormattingService.formatAddress(proposal.recipient)}',
+                    l10n.multisigApproveConfirmTo(recipient),
                     textAlign: TextAlign.center,
-                    style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+                    style: text.detail?.copyWith(
+                      color: colors.textTertiary,
+                      fontFamily: AppTextTheme.fontFamilySecondary,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Container(
@@ -79,7 +87,7 @@ class ApproveDoneScreen extends ConsumerWidget {
                         Icon(Icons.fingerprint, size: 18, color: colors.checksum),
                         const SizedBox(width: 8),
                         Text(
-                          'Signatures: $newCount/${proposal.threshold}',
+                          l10n.multisigSignaturesCount(newCount, proposal.threshold),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                         ),
                       ],
@@ -91,7 +99,11 @@ class ApproveDoneScreen extends ConsumerWidget {
           ],
         ),
         bottomContent: ScaffoldBaseBottomContent(
-          child: QuantusButton.simple(label: 'Done', variant: ButtonVariant.primary, onTap: () => _popToHome(context)),
+          child: QuantusButton.simple(
+            label: l10n.multisigDone,
+            variant: ButtonVariant.primary,
+            onTap: () => _popToHome(context),
+          ),
         ),
       ),
     );

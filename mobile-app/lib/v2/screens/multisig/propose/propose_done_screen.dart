@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/back_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
@@ -37,6 +38,7 @@ class ProposeDoneScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
@@ -49,7 +51,10 @@ class ProposeDoneScreen extends ConsumerWidget {
         _popToHome(context);
       },
       child: ScaffoldBase(
-        appBar: V2AppBar(title: 'Propose', leading: AppBackButton(onTap: () => _popToHome(context))),
+        appBar: V2AppBar(
+          title: l10n.multisigProposeTitle,
+          leading: AppBackButton(onTap: () => _popToHome(context)),
+        ),
         mainContent: Column(
           children: [
             Center(
@@ -60,20 +65,23 @@ class ProposeDoneScreen extends ConsumerWidget {
                   _successMark(colors),
                   const SizedBox(height: 32),
                   Text(
-                    'Proposal created',
+                    l10n.multisigProposeDoneHeadline,
                     textAlign: TextAlign.center,
                     style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Awaiting approvals from your co-signers.',
+                    l10n.multisigProposeDoneSubline,
                     textAlign: TextAlign.center,
                     style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                   ),
                   const SizedBox(height: 32),
                   Text(amountText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
                   const SizedBox(height: 8),
-                  Text('to $recipientChecksum', style: text.detail?.copyWith(color: colors.checksum)),
+                  Text(
+                    l10n.multisigProposeDoneToChecksum(recipientChecksum),
+                    style: text.detail?.copyWith(color: colors.checksum),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     AddressFormattingService.formatAddress(recipientAddress),
@@ -93,7 +101,7 @@ class ProposeDoneScreen extends ConsumerWidget {
                         Icon(Icons.fingerprint, size: 18, color: colors.checksum),
                         const SizedBox(width: 8),
                         Text(
-                          'Signatures: $myApprovalCount/${msig.threshold}',
+                          l10n.multisigSignaturesCount(myApprovalCount, msig.threshold),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                         ),
                       ],
@@ -105,7 +113,11 @@ class ProposeDoneScreen extends ConsumerWidget {
           ],
         ),
         bottomContent: ScaffoldBaseBottomContent(
-          child: QuantusButton.simple(label: 'Done', variant: ButtonVariant.primary, onTap: () => _popToHome(context)),
+          child: QuantusButton.simple(
+            label: l10n.multisigDone,
+            variant: ButtonVariant.primary,
+            onTap: () => _popToHome(context),
+          ),
         ),
       ),
     );

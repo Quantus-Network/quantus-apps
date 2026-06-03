@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -136,19 +138,23 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Propose'),
+      appBar: V2AppBar(title: l10n.multisigProposeTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Propose To', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+          Text(
+            l10n.multisigProposeSelectRecipientTo,
+            style: text.sendSectionLabel?.copyWith(color: colors.textPrimary),
+          ),
           const SizedBox(height: 12),
-          _buildRecipientField(colors, text),
+          _buildRecipientField(l10n, colors, text),
           const SizedBox(height: 28),
-          _buildScanRow(colors, text),
+          _buildScanRow(l10n, colors, text),
           const SizedBox(height: 28),
           DottedBorder(
             dashLength: 3,
@@ -165,7 +171,10 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
                   const SliverFillRemaining(hasScrollBody: false, child: Center(child: Loader()))
                 else if (_recents.isNotEmpty) ...[
                   SliverToBoxAdapter(
-                    child: Text('Recents', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+                    child: Text(
+                      l10n.sendSelectRecipientRecents,
+                      style: text.smallTitle?.copyWith(color: colors.textPrimary),
+                    ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   SliverList(
@@ -205,7 +214,7 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: _canContinue ? 'Continue' : 'Enter Address',
+          label: _canContinue ? l10n.sendSelectRecipientContinue : l10n.sendEnterAddress,
           variant: ButtonVariant.primary,
           isDisabled: !_canContinue,
           onTap: _continue,
@@ -214,7 +223,7 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
     );
   }
 
-  Widget _buildRecipientField(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildRecipientField(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     final hasValid = _recipientController.text.trim().isNotEmpty && !_hasAddressError;
     return SizedBox(
       height: 48,
@@ -239,7 +248,9 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
                           autocorrect: false,
                           enableSuggestions: false,
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
-                          decoration: const InputDecoration(hintText: 'Search ${AppConstants.tokenSymbol} Address'),
+                          decoration: InputDecoration(
+                            hintText: l10n.multisigProposeSearchHint(AppConstants.tokenSymbol),
+                          ),
                         ),
                       ),
                     ],
@@ -280,7 +291,7 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
     );
   }
 
-  Widget _buildScanRow(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildScanRow(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -303,10 +314,13 @@ class _ProposeRecipientScreenState extends ConsumerState<ProposeRecipientScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Scan QR code', style: text.paragraph?.copyWith(color: colors.textPrimary)),
+                  Text(
+                    l10n.sendSelectRecipientScanTitle,
+                    style: text.paragraph?.copyWith(color: colors.textPrimary),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    'Tap to scan a ${AppConstants.tokenSymbol} Address',
+                    l10n.sendSelectRecipientScanSubtitle(AppConstants.tokenSymbol),
                     style: text.detail?.copyWith(color: colors.textTertiary),
                   ),
                 ],

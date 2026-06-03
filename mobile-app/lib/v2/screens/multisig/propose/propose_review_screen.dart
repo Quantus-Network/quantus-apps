@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -46,11 +48,12 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       _submitting = true;
       _errorMessage = null;
     });
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to propose transaction');
+    final l10n = ref.read(l10nProvider);
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigProposeAuthReason);
     if (!authed || !mounted) {
       setState(() {
         _submitting = false;
-        _errorMessage = 'Authentication required';
+        _errorMessage = l10n.multisigProposeAuthRequired;
       });
       return;
     }
@@ -94,13 +97,14 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _errorMessage = 'Failed to create proposal';
+        _errorMessage = ref.read(l10nProvider).multisigProposeSubmitFailed;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
@@ -108,13 +112,13 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress);
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Propose'),
+      appBar: V2AppBar(title: l10n.multisigProposeTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _heroCard(colors, text, fmt),
+          _heroCard(l10n, colors, text, fmt),
           const SizedBox(height: 28),
-          _summary(colors, text, shortAddr, totalRaw, fmt),
+          _summary(l10n, colors, text, shortAddr, totalRaw, fmt),
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
             Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
@@ -123,7 +127,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: 'Create Proposal',
+          label: l10n.multisigProposeCreateButton,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
           isDisabled: _submitting,
@@ -133,14 +137,14 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     );
   }
 
-  Widget _heroCard(AppColorsV2 colors, AppTextTheme text, NumberFormattingService fmt) {
+  Widget _heroCard(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, NumberFormattingService fmt) {
     final labelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
     return SplitCard(
       topChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PROPOSING', style: labelStyle),
+          Text(l10n.multisigProposeReviewProposing, style: labelStyle),
           const SizedBox(height: 16),
           Text(
             '${fmt.formatBalance(widget.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
@@ -151,13 +155,16 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text('from ${widget.msig.name}', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+          Text(
+            l10n.multisigProposeReviewFromName(widget.msig.name),
+            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+          ),
         ],
       ),
       bottomChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TO', style: labelStyle),
+          Text(l10n.sendReviewTo, style: labelStyle),
           const SizedBox(height: 16),
           AddressCheckphraseWithInitial(
             recipientChecksum: widget.recipientChecksum,
@@ -169,6 +176,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
   }
 
   Widget _summary(
+    AppLocalizations l10n,
     AppColorsV2 colors,
     AppTextTheme text,
     String shortAddr,
@@ -182,20 +190,26 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SizedBox(height: 7),
-        _row('TO', shortAddr),
-        const SizedBox(height: 7),
-        _row('AMOUNT', '${fmt.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}'),
-        const SizedBox(height: 7),
-        _row('THRESHOLD', '${widget.msig.threshold}/${widget.msig.signers.length}'),
-        const SizedBox(height: 7),
-        _row('EXPIRES', DatetimeFormattingService.formatTxDateTime(expiry)),
+        _row(l10n.sendReviewTo, shortAddr),
         const SizedBox(height: 7),
         _row(
-          'PROPOSAL FEE',
+          l10n.sendReviewAmount,
+          '${fmt.formatBalance(widget.amount, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+        ),
+        const SizedBox(height: 7),
+        _row(l10n.multisigProposeThresholdLabel, '${widget.msig.threshold}/${widget.msig.signers.length}'),
+        const SizedBox(height: 7),
+        _row(l10n.multisigProposeExpiresLabel, DatetimeFormattingService.formatTxDateTime(expiry)),
+        const SizedBox(height: 7),
+        _row(
+          l10n.multisigProposeFeeRowLabel,
           '${fmt.formatBalance(widget.proposalFee, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
         ),
         const SizedBox(height: 7),
-        _row('YOU PAY', '${fmt.formatBalance(totalRaw, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}'),
+        _row(
+          l10n.sendReviewYouPay,
+          '${fmt.formatBalance(totalRaw, maxDecimals: shownDecimals)} ${AppConstants.tokenSymbol}',
+        ),
         const SizedBox(height: 7),
       ],
     );

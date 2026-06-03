@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -14,6 +16,7 @@ class ProposalRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
@@ -49,7 +52,7 @@ class ProposalRow extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'to $shortAddr',
+                      l10n.multisigProposalToAddress(shortAddr),
                       style: text.detail?.copyWith(
                         color: colors.textTertiary,
                         fontFamily: AppTextTheme.fontFamilySecondary,
@@ -62,9 +65,9 @@ class ProposalRow extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _statusChip(colors, text),
+                  _statusChip(l10n, colors, text),
                   const SizedBox(height: 6),
-                  if (proposal.isOpen && didApprove) _approvedPill(colors, text),
+                  if (proposal.isOpen && didApprove) _approvedPill(l10n, colors, text),
                 ],
               ),
             ],
@@ -74,7 +77,7 @@ class ProposalRow extends ConsumerWidget {
     );
   }
 
-  Widget _statusChip(AppColorsV2 colors, AppTextTheme text) {
+  Widget _statusChip(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     if (proposal.isOpen) {
       return Text(
         '${proposal.approvalCount}/${proposal.threshold}',
@@ -86,9 +89,9 @@ class ProposalRow extends ConsumerWidget {
       );
     }
     final label = switch (proposal.status) {
-      MultisigProposalStatus.executed => 'APPROVED',
-      MultisigProposalStatus.expired => 'EXPIRED',
-      MultisigProposalStatus.cancelled => 'CANCELLED',
+      MultisigProposalStatus.executed => l10n.multisigStatusApproved,
+      MultisigProposalStatus.expired => l10n.multisigStatusExpired,
+      MultisigProposalStatus.cancelled => l10n.multisigStatusCancelled,
       _ => proposal.status.name.toUpperCase(),
     };
     final color = switch (proposal.status) {
@@ -110,12 +113,12 @@ class ProposalRow extends ConsumerWidget {
     );
   }
 
-  Widget _approvedPill(AppColorsV2 colors, AppTextTheme text) {
+  Widget _approvedPill(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: colors.success, borderRadius: BorderRadius.circular(4)),
       child: Text(
-        'APPROVED',
+        l10n.multisigStatusApproved,
         style: text.detail?.copyWith(
           color: colors.background,
           fontSize: 10,

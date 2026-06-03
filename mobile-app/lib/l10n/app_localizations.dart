@@ -434,6 +434,468 @@ abstract class AppLocalizations {
   /// **'Use a recovery phrase to import'**
   String get addAccountMenuImportSubtitle;
 
+  /// Add multisig menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Add Multisig'**
+  String get addAccountMenuMultisigTitle;
+
+  /// Add multisig menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Discover or paste a multisig address'**
+  String get addAccountMenuMultisigSubtitle;
+
+  /// Badge label for multisig accounts
+  ///
+  /// In en, this message translates to:
+  /// **'MULTISIG'**
+  String get multisigTag;
+
+  /// Propose flow app bar title and home CTA
+  ///
+  /// In en, this message translates to:
+  /// **'Propose'**
+  String get multisigProposeTitle;
+
+  /// Add multisig screen app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Add Multisig'**
+  String get multisigAddTitle;
+
+  /// Done button on multisig flow completion screens
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get multisigDone;
+
+  /// Section label for manual multisig address entry
+  ///
+  /// In en, this message translates to:
+  /// **'Paste Multisig Address'**
+  String get multisigAddPasteAddressSection;
+
+  /// Section title for on-chain discovered multisigs
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered for you'**
+  String get multisigAddDiscoveredTitle;
+
+  /// Helper text under discovered multisigs section
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs on chain where one of your accounts is a signer'**
+  String get multisigAddDiscoveredSubtitle;
+
+  /// Hint for multisig address text field
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig SS58 address'**
+  String get multisigAddAddressHint;
+
+  /// Primary button to add multisig from pasted address
+  ///
+  /// In en, this message translates to:
+  /// **'Add From Address'**
+  String get multisigAddFromAddressButton;
+
+  /// Add button on discovered multisig row
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get multisigAddButton;
+
+  /// Disabled state when multisig is already added
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get multisigAddedButton;
+
+  /// Empty state when no multisigs are discovered
+  ///
+  /// In en, this message translates to:
+  /// **'No multisigs found.'**
+  String get multisigAddNoneFound;
+
+  /// Error when multisig discovery fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not discover multisigs: {error}'**
+  String multisigAddDiscoverFailed(String error);
+
+  /// Error when adding a multisig fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add multisig: {error}'**
+  String multisigAddFailed(String error);
+
+  /// Section title for open multisig proposals
+  ///
+  /// In en, this message translates to:
+  /// **'Open Proposals'**
+  String get multisigOpenProposals;
+
+  /// Section title for past multisig proposals
+  ///
+  /// In en, this message translates to:
+  /// **'Past Proposals'**
+  String get multisigPastProposals;
+
+  /// Empty state for open proposals list
+  ///
+  /// In en, this message translates to:
+  /// **'No open proposals.'**
+  String get multisigNoOpenProposals;
+
+  /// Empty state for past proposals list
+  ///
+  /// In en, this message translates to:
+  /// **'No past proposals.'**
+  String get multisigNoPastProposals;
+
+  /// Error when proposal list fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load: {error}'**
+  String multisigLoadFailed(String error);
+
+  /// Proposal row recipient line
+  ///
+  /// In en, this message translates to:
+  /// **'to {address}'**
+  String multisigProposalToAddress(String address);
+
+  /// Proposal status chip when approved or executed
+  ///
+  /// In en, this message translates to:
+  /// **'APPROVED'**
+  String get multisigStatusApproved;
+
+  /// Proposal status chip when expired
+  ///
+  /// In en, this message translates to:
+  /// **'EXPIRED'**
+  String get multisigStatusExpired;
+
+  /// Proposal status chip when cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'CANCELLED'**
+  String get multisigStatusCancelled;
+
+  /// Section label on propose recipient screen
+  ///
+  /// In en, this message translates to:
+  /// **'Propose To'**
+  String get multisigProposeSelectRecipientTo;
+
+  /// Hint for recipient search field on propose flow
+  ///
+  /// In en, this message translates to:
+  /// **'Search {symbol} Address'**
+  String multisigProposeSearchHint(String symbol);
+
+  /// Recipient card label on propose amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSE TO'**
+  String get multisigProposeAmountToLabel;
+
+  /// Multisig balance label on propose amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig Balance:'**
+  String get multisigProposeBalanceLabel;
+
+  /// Proposal fee label on propose amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal Fee:'**
+  String get multisigProposeFeeLabel;
+
+  /// Button to open propose review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review Proposal'**
+  String get multisigProposeReviewButton;
+
+  /// Hero label on propose review screen
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSING'**
+  String get multisigProposeReviewProposing;
+
+  /// Multisig name on propose review hero card
+  ///
+  /// In en, this message translates to:
+  /// **'from {name}'**
+  String multisigProposeReviewFromName(String name);
+
+  /// Threshold row label on propose review
+  ///
+  /// In en, this message translates to:
+  /// **'THRESHOLD'**
+  String get multisigProposeThresholdLabel;
+
+  /// Expiry row label on propose review
+  ///
+  /// In en, this message translates to:
+  /// **'EXPIRES'**
+  String get multisigProposeExpiresLabel;
+
+  /// Proposal fee row label on propose review
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSAL FEE'**
+  String get multisigProposeFeeRowLabel;
+
+  /// Submit button on propose review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Create Proposal'**
+  String get multisigProposeCreateButton;
+
+  /// Biometric auth prompt when creating a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to propose transaction'**
+  String get multisigProposeAuthReason;
+
+  /// Error when auth fails on propose review
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required'**
+  String get multisigProposeAuthRequired;
+
+  /// Error when proposal creation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create proposal'**
+  String get multisigProposeSubmitFailed;
+
+  /// Success headline on propose done screen
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get multisigProposeDoneHeadline;
+
+  /// Success subline on propose done screen
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting approvals from your co-signers.'**
+  String get multisigProposeDoneSubline;
+
+  /// Recipient checksum line on propose done screen
+  ///
+  /// In en, this message translates to:
+  /// **'to {checksum}'**
+  String multisigProposeDoneToChecksum(String checksum);
+
+  /// Approval count on propose or approve done screen
+  ///
+  /// In en, this message translates to:
+  /// **'Signatures: {current}/{threshold}'**
+  String multisigSignaturesCount(int current, int threshold);
+
+  /// App bar title on proposal detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal'**
+  String get multisigProposalTitle;
+
+  /// Error when proposal detail fails to load
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String multisigProposalLoadFailed(String error);
+
+  /// Empty state when proposal id is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal not found.'**
+  String get multisigProposalNotFound;
+
+  /// Approve button on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get multisigApproveButton;
+
+  /// Disabled approve button when user already approved
+  ///
+  /// In en, this message translates to:
+  /// **'Already Approved'**
+  String get multisigAlreadyApproved;
+
+  /// Cancel proposal button on detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Proposal'**
+  String get multisigCancelProposalButton;
+
+  /// Expires row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'EXPIRES'**
+  String get multisigProposalExpiresLabel;
+
+  /// Threshold row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'THRESHOLD'**
+  String get multisigProposalThresholdLabel;
+
+  /// Approvals row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'APPROVALS'**
+  String get multisigProposalApprovalsLabel;
+
+  /// Proposal fee row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSAL FEE'**
+  String get multisigProposalFeeRowLabel;
+
+  /// Signers section label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNERS'**
+  String get multisigProposalSignersLabel;
+
+  /// Badge on current user in signers list
+  ///
+  /// In en, this message translates to:
+  /// **'YOU'**
+  String get multisigYouLabel;
+
+  /// Threshold value on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total}'**
+  String multisigThresholdOf(int count, int total);
+
+  /// Approvals value on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {threshold}'**
+  String multisigApprovalsOf(int count, int threshold);
+
+  /// Title on approve confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get multisigApproveConfirmTitle;
+
+  /// Body text on approve confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to approve a transfer of'**
+  String get multisigApproveConfirmBody;
+
+  /// Recipient line on approve confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'to {address}'**
+  String multisigApproveConfirmTo(String address);
+
+  /// Confirm button on approve sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Approve'**
+  String get multisigApproveConfirmYes;
+
+  /// Dismiss button on approve sheet
+  ///
+  /// In en, this message translates to:
+  /// **'No, Go Back'**
+  String get multisigApproveConfirmNo;
+
+  /// Biometric auth prompt when approving
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to approve'**
+  String get multisigApproveAuthReason;
+
+  /// Error when auth fails on approve
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required'**
+  String get multisigApproveAuthRequired;
+
+  /// Error when approve submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to approve'**
+  String get multisigApproveFailed;
+
+  /// Title on cancel confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Proposal?'**
+  String get multisigCancelConfirmTitle;
+
+  /// Explanation on cancel confirmation sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.'**
+  String get multisigCancelConfirmBody;
+
+  /// Confirm cancel button
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, Cancel Proposal'**
+  String get multisigCancelConfirmYes;
+
+  /// Dismiss cancel button
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Proposal'**
+  String get multisigCancelConfirmKeep;
+
+  /// Biometric auth prompt when cancelling
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate to cancel'**
+  String get multisigCancelAuthReason;
+
+  /// Error when cancel submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to cancel'**
+  String get multisigCancelFailed;
+
+  /// App bar title on approve done screen
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get multisigApproveTitle;
+
+  /// Headline when threshold reached after approve
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get multisigApproveDoneExecuted;
+
+  /// Headline when approval recorded but threshold not met
+  ///
+  /// In en, this message translates to:
+  /// **'Approval recorded'**
+  String get multisigApproveDoneRecorded;
+
+  /// Subline when proposal executed
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold reached — transfer dispatched.'**
+  String get multisigApproveDoneExecutedSubline;
+
+  /// Subline when awaiting more approvals
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting more co-signers.'**
+  String get multisigApproveDoneRecordedSubline;
+
   /// App bar title when creating an account
   ///
   /// In en, this message translates to:

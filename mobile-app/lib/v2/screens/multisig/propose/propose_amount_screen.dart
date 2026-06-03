@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
@@ -87,7 +89,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
       setState(() => _amount = _inputLogic.onAmountChanged(value: _amountController.text, isFlipped: false));
     } on InvalidNumberInputException catch (e, st) {
       debugPrint('Amount parse failed: $e $st');
-      context.showErrorToaster(message: 'Please enter a valid amount');
+      context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountInvalidAmount);
     }
   }
 
@@ -98,7 +100,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
   void _openReview() {
     if (_recipientChecksum == null) {
-      context.showErrorToaster(message: 'Recipient checksum is required');
+      context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountChecksumRequired);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -118,6 +120,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final balanceAsync = ref.watch(balanceProviderFamily(widget.msig.accountId));
@@ -125,7 +128,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     final canSubmit = _amount > BigInt.zero && _amount <= balance && !_isFetchingFee && _recipientChecksum != null;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Propose'),
+      appBar: V2AppBar(title: l10n.multisigProposeTitle),
       mainContent: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           child: ConstrainedBox(
@@ -134,9 +137,9 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _recipientCard(colors, text),
+                _recipientCard(l10n, colors, text),
                 const SizedBox(height: 32),
-                _amountCenter(colors, text),
+                _amountCenter(l10n, colors, text),
                 const SizedBox(height: 32),
                 const SizedBox.shrink(),
               ],
@@ -144,11 +147,11 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           ),
         ),
       ),
-      bottomContent: _bottomSection(colors, text, balanceAsync, canSubmit),
+      bottomContent: _bottomSection(l10n, colors, text, balanceAsync, canSubmit),
     );
   }
 
-  Widget _recipientCard(AppColorsV2 colors, AppTextTheme text) {
+  Widget _recipientCard(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
@@ -160,7 +163,10 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('PROPOSE TO', style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+                Text(
+                  l10n.multisigProposeAmountToLabel,
+                  style: text.receiveLabel?.copyWith(color: colors.textLabel),
+                ),
                 const SizedBox(height: 16),
                 if (_recipientChecksum != null) ...[
                   Text(
@@ -203,7 +209,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     );
   }
 
-  Widget _amountCenter(AppColorsV2 colors, AppTextTheme text) {
+  Widget _amountCenter(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     final localeConfig = ref.watch(localeNumberConfigProvider);
 
     return Center(
@@ -243,7 +249,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'from ${widget.msig.name}',
+            l10n.multisigProposeReviewFromName(widget.msig.name),
             style: text.paragraph?.copyWith(color: colors.textTertiary),
           ),
         ],
@@ -251,7 +257,13 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     );
   }
 
-  Widget _bottomSection(AppColorsV2 colors, AppTextTheme text, AsyncValue<BigInt> balanceAsync, bool canSubmit) {
+  Widget _bottomSection(
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text,
+    AsyncValue<BigInt> balanceAsync,
+    bool canSubmit,
+  ) {
     final formattingService = ref.read(numberFormattingServiceProvider);
 
     return ScaffoldBaseBottomContent(
@@ -267,7 +279,10 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Multisig Balance:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                    Text(
+                      l10n.multisigProposeBalanceLabel,
+                      style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                    ),
                     const SizedBox(height: 4),
                     balanceAsync.when(
                       data: (b) => Text(
@@ -284,7 +299,10 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Proposal Fee:', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                    Text(
+                      l10n.multisigProposeFeeLabel,
+                      style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                    ),
                     const SizedBox(height: 4),
                     if (!_isFetchingFee)
                       Text(
@@ -301,7 +319,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           const SizedBox(height: 4),
           IntrinsicWidth(
             child: QuantusButton.simple(
-              label: 'Max',
+              label: l10n.sendInputAmountMax,
               onTap: () => _setMax(balanceAsync.value ?? BigInt.zero),
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
               variant: ButtonVariant.transparent,
@@ -314,7 +332,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           ),
           const SizedBox(height: 32),
           QuantusButton.simple(
-            label: 'Review Proposal',
+            label: l10n.multisigProposeReviewButton,
             variant: ButtonVariant.primary,
             isDisabled: !canSubmit,
             onTap: _openReview,

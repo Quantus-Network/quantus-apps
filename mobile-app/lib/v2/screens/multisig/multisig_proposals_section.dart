@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/approve/approve_proposal_screen.dart';
@@ -21,6 +23,7 @@ class MultisigProposalsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final openAsync = ref.watch(multisigOpenProposalsProvider(msig));
@@ -30,23 +33,31 @@ class MultisigProposalsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        Text('Open Proposals', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 16),
-        _buildList(context, openAsync, emptyText: 'No open proposals.'),
+        _buildList(context, l10n, openAsync, emptyText: l10n.multisigNoOpenProposals),
         const SizedBox(height: 32),
-        Text('Past Proposals', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        Text(l10n.multisigPastProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 16),
-        _buildList(context, pastAsync, emptyText: 'No past proposals.'),
+        _buildList(context, l10n, pastAsync, emptyText: l10n.multisigNoPastProposals),
       ],
     );
   }
 
-  Widget _buildList(BuildContext context, AsyncValue<List<MultisigProposal>> async_, {required String emptyText}) {
+  Widget _buildList(
+    BuildContext context,
+    AppLocalizations l10n,
+    AsyncValue<List<MultisigProposal>> async_, {
+    required String emptyText,
+  }) {
     final colors = context.colors;
     final text = context.themeText;
     return async_.when(
       loading: () => const Center(child: Padding(padding: EdgeInsets.all(24), child: Loader())),
-      error: (e, _) => Text('Failed to load: $e', style: text.detail?.copyWith(color: colors.textError)),
+      error: (e, _) => Text(
+        l10n.multisigLoadFailed(e.toString()),
+        style: text.detail?.copyWith(color: colors.textError),
+      ),
       data: (items) {
         if (items.isEmpty) {
           return Text(emptyText, style: text.smallParagraph?.copyWith(color: colors.textTertiary));

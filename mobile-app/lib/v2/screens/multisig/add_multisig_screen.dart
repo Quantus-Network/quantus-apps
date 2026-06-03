@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/dotted_border.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -42,6 +44,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   }
 
   Future<void> _addFromManualEntry() async {
+    final l10n = ref.read(l10nProvider);
     final address = _addressController.text.trim();
     if (!_isManualValid) return;
     setState(() {
@@ -62,13 +65,14 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       debugPrint('add multisig from manual error: $e $st');
       if (!mounted) return;
       setState(() {
-        _error = 'Could not add multisig: $e';
+        _error = l10n.multisigAddFailed(e.toString());
         _isAddingFromManual = false;
       });
     }
   }
 
   Future<void> _addDiscovered(MultisigAccount msig) async {
+    final l10n = ref.read(l10nProvider);
     setState(() => _error = null);
     try {
       await ref.read(multisigAccountsProvider.notifier).add(msig);
@@ -78,12 +82,13 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     } catch (e, st) {
       debugPrint('add discovered multisig error: $e $st');
       if (!mounted) return;
-      setState(() => _error = 'Could not add multisig: $e');
+      setState(() => _error = l10n.multisigAddFailed(e.toString()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final discoveredAsync = ref.watch(discoveredMultisigsProvider);
@@ -92,13 +97,16 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         .toSet();
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Add Multisig'),
+      appBar: V2AppBar(title: l10n.multisigAddTitle),
       mainContent: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Paste Multisig Address', style: text.sendSectionLabel?.copyWith(color: colors.textPrimary)),
+          Text(
+            l10n.multisigAddPasteAddressSection,
+            style: text.sendSectionLabel?.copyWith(color: colors.textPrimary),
+          ),
           const SizedBox(height: 12),
-          _buildAddressField(colors, text),
+          _buildAddressField(l10n, colors, text),
           const SizedBox(height: 28),
           DottedBorder(
             dashLength: 3,
@@ -107,14 +115,14 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 28),
-          Text('Discovered for you', style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+          Text(l10n.multisigAddDiscoveredTitle, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 8),
           Text(
-            'Multisigs on chain where one of your accounts is a signer',
+            l10n.multisigAddDiscoveredSubtitle,
             style: text.detail?.copyWith(color: colors.textTertiary),
           ),
           const SizedBox(height: 20),
-          Expanded(child: _buildDiscoveredList(discoveredAsync, alreadyAdded, colors, text)),
+          Expanded(child: _buildDiscoveredList(l10n, discoveredAsync, alreadyAdded, colors, text)),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(_error!, style: text.detail?.copyWith(color: colors.textError)),
@@ -123,7 +131,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       ),
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
-          label: 'Add From Address',
+          label: l10n.multisigAddFromAddressButton,
           variant: ButtonVariant.primary,
           isDisabled: !_isManualValid || _isAddingFromManual,
           isLoading: _isAddingFromManual,
@@ -133,7 +141,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     );
   }
 
-  Widget _buildAddressField(AppColorsV2 colors, AppTextTheme text) {
+  Widget _buildAddressField(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       height: 48,
@@ -150,7 +158,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
               enableSuggestions: false,
               style: text.smallParagraph?.copyWith(color: colors.textPrimary),
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(hintText: 'Multisig SS58 address'),
+              decoration: InputDecoration(hintText: l10n.multisigAddAddressHint),
             ),
           ),
         ],
@@ -159,6 +167,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   }
 
   Widget _buildDiscoveredList(
+    AppLocalizations l10n,
     AsyncValue<List<MultisigAccount>> discoveredAsync,
     Set<String> alreadyAdded,
     AppColorsV2 colors,
@@ -167,12 +176,18 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     return discoveredAsync.when(
       loading: () => const Center(child: Loader()),
       error: (e, _) => Center(
-        child: Text('Could not discover multisigs: $e', style: text.detail?.copyWith(color: colors.textError)),
+        child: Text(
+          l10n.multisigAddDiscoverFailed(e.toString()),
+          style: text.detail?.copyWith(color: colors.textError),
+        ),
       ),
       data: (items) {
         if (items.isEmpty) {
           return Center(
-            child: Text('No multisigs found.', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+            child: Text(
+              l10n.multisigAddNoneFound,
+              style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+            ),
           );
         }
         return ListView.separated(
@@ -181,7 +196,12 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
           itemBuilder: (_, i) {
             final msig = items[i];
             final added = alreadyAdded.contains(msig.accountId);
-            return _DiscoveredRow(msig: msig, added: added, onAdd: () => _addDiscovered(msig));
+            return _DiscoveredRow(
+              l10n: l10n,
+              msig: msig,
+              added: added,
+              onAdd: () => _addDiscovered(msig),
+            );
           },
         );
       },
@@ -190,11 +210,17 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 }
 
 class _DiscoveredRow extends StatelessWidget {
+  final AppLocalizations l10n;
   final MultisigAccount msig;
   final bool added;
   final VoidCallback onAdd;
 
-  const _DiscoveredRow({required this.msig, required this.added, required this.onAdd});
+  const _DiscoveredRow({
+    required this.l10n,
+    required this.msig,
+    required this.added,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -222,20 +248,23 @@ class _DiscoveredRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const MultisigTag(),
+                    MultisigTag(label: l10n.multisigTag),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   AddressFormattingService.formatAddress(msig.accountId),
-                  style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
+                  style: text.detail?.copyWith(
+                    color: colors.textTertiary,
+                    fontFamily: AppTextTheme.fontFamilySecondary,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
           QuantusButton.simple(
-            label: added ? 'Added' : 'Add',
+            label: added ? l10n.multisigAddedButton : l10n.multisigAddButton,
             variant: added ? ButtonVariant.outline : ButtonVariant.secondary,
             isDisabled: added,
             onTap: added ? null : onAdd,

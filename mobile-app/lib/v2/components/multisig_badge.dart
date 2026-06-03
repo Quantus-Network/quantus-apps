@@ -38,7 +38,9 @@ class MultisigBadge extends StatelessWidget {
 }
 
 class MultisigTag extends StatelessWidget {
-  const MultisigTag({super.key});
+  final String label;
+
+  const MultisigTag({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +53,7 @@ class MultisigTag extends StatelessWidget {
         border: Border.all(color: colors.borderButton.useOpacity(0.5)),
       ),
       child: Text(
-        'MULTISIG',
+        label,
         style: context.themeText.detail?.copyWith(
           color: colors.checksum,
           fontSize: 10,

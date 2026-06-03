@@ -69,8 +69,8 @@ class _AddAccountMenuScreenState extends ConsumerState<AddAccountMenuScreen> {
           const SizedBox(height: 24),
           _AddMenuRow(
             icon: Icons.group_outlined,
-            title: 'Add Multisig',
-            subtitle: 'Discover or paste a multisig address',
+            title: l10n.addAccountMenuMultisigTitle,
+            subtitle: l10n.addAccountMenuMultisigSubtitle,
             onTap: _onAddMultisig,
             colors: colors,
             text: context.themeText,

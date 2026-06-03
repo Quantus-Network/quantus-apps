@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
@@ -40,11 +41,12 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
       _submitting = true;
       _error = null;
     });
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to cancel');
+    final l10n = ref.read(l10nProvider);
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigCancelAuthReason);
     if (!authed || !mounted) {
       setState(() {
         _submitting = false;
-        _error = 'Authentication required';
+        _error = l10n.multisigApproveAuthRequired;
       });
       return;
     }
@@ -69,23 +71,24 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'Failed to cancel';
+        _error = ref.read(l10nProvider).multisigCancelFailed;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
 
     return BottomSheetContainer(
-      title: 'Cancel Proposal?',
+      title: l10n.multisigCancelConfirmTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.',
+            l10n.multisigCancelConfirmBody,
             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
           ),
           if (_error != null) ...[
@@ -94,7 +97,7 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
           ],
           const SizedBox(height: 24),
           QuantusButton.simple(
-            label: 'Yes, Cancel Proposal',
+            label: l10n.multisigCancelConfirmYes,
             variant: ButtonVariant.danger,
             isLoading: _submitting,
             isDisabled: _submitting,
@@ -102,7 +105,7 @@ class _CancelConfirmSheetState extends ConsumerState<_CancelConfirmSheet> {
           ),
           const SizedBox(height: 12),
           QuantusButton.simple(
-            label: 'Keep Proposal',
+            label: l10n.multisigCancelConfirmKeep,
             variant: ButtonVariant.outline,
             onTap: _submitting ? null : () => Navigator.pop(context),
           ),

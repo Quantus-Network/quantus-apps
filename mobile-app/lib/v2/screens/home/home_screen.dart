@@ -173,7 +173,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 40),
         _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
-        if (active is MultisigDisplayAccount) ...[_buildProposeButton(active.account), const SizedBox(height: 40)],
+        if (active is MultisigDisplayAccount) ...[
+          _buildProposeButton(l10n, active.account),
+          const SizedBox(height: 40),
+        ],
         if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
         DottedBorder(
           dashLength: 3,
@@ -306,9 +309,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(children: children);
   }
 
-  Widget _buildProposeButton(MultisigAccount msig) {
+  Widget _buildProposeButton(AppLocalizations l10n, MultisigAccount msig) {
     return QuantusButton.simple(
-      label: 'Propose',
+      label: l10n.multisigProposeTitle,
       variant: ButtonVariant.primary,
       onTap: () => Navigator.push(
         context,

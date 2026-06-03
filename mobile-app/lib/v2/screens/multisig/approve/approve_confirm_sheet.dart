@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
@@ -41,11 +42,12 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
       _submitting = true;
       _error = null;
     });
-    final authed = await LocalAuthService().authenticate(localizedReason: 'Authenticate to approve');
+    final l10n = ref.read(l10nProvider);
+    final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigApproveAuthReason);
     if (!authed || !mounted) {
       setState(() {
         _submitting = false;
-        _error = 'Authentication required';
+        _error = l10n.multisigApproveAuthRequired;
       });
       return;
     }
@@ -74,32 +76,34 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'Failed to approve';
+        _error = ref.read(l10nProvider).multisigApproveFailed;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.read(numberFormattingServiceProvider);
     final amountText = '${fmt.formatBalance(widget.proposal.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
+    final recipient = AddressFormattingService.formatAddress(widget.proposal.recipient);
 
     return BottomSheetContainer(
-      title: 'Are you sure?',
+      title: l10n.multisigApproveConfirmTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'You are about to approve a transfer of',
+            l10n.multisigApproveConfirmBody,
             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
           ),
           const SizedBox(height: 12),
           Text(amountText, style: text.largeTitle?.copyWith(color: colors.textPrimary)),
           const SizedBox(height: 12),
           Text(
-            'to ${AddressFormattingService.formatAddress(widget.proposal.recipient)}',
+            l10n.multisigApproveConfirmTo(recipient),
             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
           ),
           if (_error != null) ...[
@@ -108,7 +112,7 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
           ],
           const SizedBox(height: 24),
           QuantusButton.simple(
-            label: 'Yes, Approve',
+            label: l10n.multisigApproveConfirmYes,
             variant: ButtonVariant.success,
             isLoading: _submitting,
             isDisabled: _submitting,
@@ -116,7 +120,7 @@ class _ApproveConfirmSheetState extends ConsumerState<_ApproveConfirmSheet> {
           ),
           const SizedBox(height: 12),
           QuantusButton.simple(
-            label: 'No, Go Back',
+            label: l10n.multisigApproveConfirmNo,
             variant: ButtonVariant.outline,
             onTap: _submitting ? null : () => Navigator.pop(context),
           ),

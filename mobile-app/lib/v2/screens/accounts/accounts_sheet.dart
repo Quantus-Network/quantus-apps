@@ -140,7 +140,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                     final item = items[index];
                     final isActive = item.accountId == activeAccountId;
                     if (item is Account) return _buildRegularRow(l10n, item, isActive);
-                    if (item is MultisigAccount) return _buildMultisigRow(item, isActive);
+                    if (item is MultisigAccount) return _buildMultisigRow(l10n, item, isActive);
                     return const SizedBox.shrink();
                   },
                 ),
@@ -178,13 +178,16 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildMultisigRow(MultisigAccount account, bool isActive) {
+  Widget _buildMultisigRow(AppLocalizations l10n, MultisigAccount account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
-      loading: () => 'Loading...',
-      error: (_, _) => '— ${AppConstants.tokenSymbol}',
-      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      loading: () => l10n.commonLoading,
+      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
+      data: (balance) => l10n.accountsSheetBalance(
+        formattingService.formatBalance(balance),
+        AppConstants.tokenSymbol,
+      ),
     );
 
     return _AccountRowShell(
@@ -193,7 +196,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
       leading: MultisigBadge(account: account, isActive: isActive),
       title: account.name,
       subtitle: balanceText,
-      tag: const MultisigTag(),
+      tag: MultisigTag(label: l10n.multisigTag),
     );
   }
 }

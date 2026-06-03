@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -22,22 +24,34 @@ class ApproveProposalScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final async_ = ref.watch(multisigProposalProvider(ProposalKey(msig, proposalId)));
 
     return async_.when(
-      loading: () => const ScaffoldBase(appBar: V2AppBar(title: 'Proposal'), mainContent: Center(child: Loader())),
+      loading: () => ScaffoldBase(
+        appBar: V2AppBar(title: l10n.multisigProposalTitle),
+        mainContent: const Center(child: Loader()),
+      ),
       error: (e, _) => ScaffoldBase(
-        appBar: const V2AppBar(title: 'Proposal'),
-        mainContent: Center(child: Text('Failed: $e', style: text.detail?.copyWith(color: colors.textError))),
+        appBar: V2AppBar(title: l10n.multisigProposalTitle),
+        mainContent: Center(
+          child: Text(
+            l10n.multisigProposalLoadFailed(e.toString()),
+            style: text.detail?.copyWith(color: colors.textError),
+          ),
+        ),
       ),
       data: (proposal) {
         if (proposal == null) {
           return ScaffoldBase(
-            appBar: const V2AppBar(title: 'Proposal'),
+            appBar: V2AppBar(title: l10n.multisigProposalTitle),
             mainContent: Center(
-              child: Text('Proposal not found.', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+              child: Text(
+                l10n.multisigProposalNotFound,
+                style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+              ),
             ),
           );
         }
@@ -63,22 +77,23 @@ class _ApproveScreenLoaded extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     final fmt = ref.watch(numberFormattingServiceProvider);
     final didApprove = proposal.didApprove(msig.myMemberAccountId);
     final isProposer = proposal.proposer == msig.myMemberAccountId;
     final canCancel = isProposer && proposal.isOpen;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Proposal'),
+      appBar: V2AppBar(title: l10n.multisigProposalTitle),
       mainContent: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _hero(context, fmt),
+            _hero(context, l10n, fmt),
             const SizedBox(height: 28),
-            _summary(context, fmt),
+            _summary(context, l10n, fmt),
             const SizedBox(height: 24),
-            _signersSection(context),
+            _signersSection(context, l10n),
             const SizedBox(height: 16),
           ],
         ),
@@ -90,7 +105,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   QuantusButton.simple(
-                    label: didApprove ? 'Already Approved' : 'Approve',
+                    label: didApprove ? l10n.multisigAlreadyApproved : l10n.multisigApproveButton,
                     variant: ButtonVariant.success,
                     isDisabled: didApprove,
                     onTap: didApprove ? null : () => _openApprove(context),
@@ -98,7 +113,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
                   if (canCancel) ...[
                     const SizedBox(height: 12),
                     QuantusButton.simple(
-                      label: 'Cancel Proposal',
+                      label: l10n.multisigCancelProposalButton,
                       variant: ButtonVariant.danger,
                       onTap: () => _openCancel(context),
                     ),
@@ -110,7 +125,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
     );
   }
 
-  Widget _hero(BuildContext context, NumberFormattingService fmt) {
+  Widget _hero(BuildContext context, AppLocalizations l10n, NumberFormattingService fmt) {
     final colors = context.colors;
     final text = context.themeText;
     final labelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
@@ -119,7 +134,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
       topChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('AMOUNT', style: labelStyle),
+          Text(l10n.sendReviewAmount, style: labelStyle),
           const SizedBox(height: 16),
           Text(
             '${fmt.formatBalance(proposal.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}',
@@ -134,7 +149,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
       bottomChild: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TO', style: labelStyle),
+          Text(l10n.sendReviewTo, style: labelStyle),
           const SizedBox(height: 12),
           Text(
             AddressFormattingService.formatAddress(proposal.recipient),
@@ -145,18 +160,26 @@ class _ApproveScreenLoaded extends ConsumerWidget {
     );
   }
 
-  Widget _summary(BuildContext context, NumberFormattingService fmt) {
+  Widget _summary(BuildContext context, AppLocalizations l10n, NumberFormattingService fmt) {
     return Column(
       children: [
-        _row(context, 'EXPIRES', DatetimeFormattingService.formatTxDateTime(proposal.expiryAt)),
-        const SizedBox(height: 7),
-        _row(context, 'THRESHOLD', '${proposal.threshold} of ${proposal.signerCount}'),
-        const SizedBox(height: 7),
-        _row(context, 'APPROVALS', '${proposal.approvalCount} of ${proposal.threshold}'),
+        _row(context, l10n.multisigProposalExpiresLabel, DatetimeFormattingService.formatTxDateTime(proposal.expiryAt)),
         const SizedBox(height: 7),
         _row(
           context,
-          'PROPOSAL FEE',
+          l10n.multisigProposalThresholdLabel,
+          l10n.multisigThresholdOf(proposal.threshold, proposal.signerCount),
+        ),
+        const SizedBox(height: 7),
+        _row(
+          context,
+          l10n.multisigProposalApprovalsLabel,
+          l10n.multisigApprovalsOf(proposal.approvalCount, proposal.threshold),
+        ),
+        const SizedBox(height: 7),
+        _row(
+          context,
+          l10n.multisigProposalFeeRowLabel,
           '${fmt.formatBalance(proposal.fee, maxDecimals: AppConstants.decimals)} ${AppConstants.tokenSymbol}',
         ),
       ],
@@ -177,7 +200,7 @@ class _ApproveScreenLoaded extends ConsumerWidget {
     );
   }
 
-  Widget _signersSection(BuildContext context) {
+  Widget _signersSection(BuildContext context, AppLocalizations l10n) {
     final colors = context.colors;
     final text = context.themeText;
     return Container(
@@ -186,12 +209,20 @@ class _ApproveScreenLoaded extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SIGNERS', style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(
+            l10n.multisigProposalSignersLabel,
+            style: text.receiveLabel?.copyWith(color: colors.textLabel),
+          ),
           const SizedBox(height: 16),
           ...msig.signers.map((s) {
             final approved = proposal.approvals.contains(s);
             final isYou = s == msig.myMemberAccountId;
-            return _SignerRow(accountId: s, approved: approved, isYou: isYou);
+            return _SignerRow(
+              accountId: s,
+              approved: approved,
+              isYou: isYou,
+              youLabel: l10n.multisigYouLabel,
+            );
           }),
         ],
       ),
@@ -203,7 +234,13 @@ class _SignerRow extends ConsumerStatefulWidget {
   final String accountId;
   final bool approved;
   final bool isYou;
-  const _SignerRow({required this.accountId, required this.approved, required this.isYou});
+  final String youLabel;
+  const _SignerRow({
+    required this.accountId,
+    required this.approved,
+    required this.isYou,
+    required this.youLabel,
+  });
 
   @override
   ConsumerState<_SignerRow> createState() => _SignerRowState();
@@ -263,7 +300,7 @@ class _SignerRowState extends ConsumerState<_SignerRow> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'YOU',
+                          widget.youLabel,
                           style: text.detail?.copyWith(
                             color: colors.accentOrange,
                             fontSize: 10,
