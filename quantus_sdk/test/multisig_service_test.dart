@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
+import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 void main() {
@@ -147,9 +148,79 @@ void main() {
   });
 
   group('MultisigService discover mapping', () {
+    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+    const multisigAddress = '5TestMultisig';
+
+    const indexerRecord = {
+      'id': multisigAddress,
+      'threshold': 2,
+      'nonce': '3',
+      'signers': [signerA, signerB],
+      'creator': {'id': signerA},
+    };
+
     test('discoverForUser returns empty list for no accounts', () async {
       final result = await MultisigService().discoverForUser([]);
       expect(result, isEmpty);
+    });
+
+    test('parseMultisigDiscoverData returns empty list when data is null', () {
+      expect(MultisigService.parseMultisigDiscoverData(null), isEmpty);
+    });
+
+    test('parseMultisigDiscoverData parses multisig list', () {
+      final parsed = MultisigService.parseMultisigDiscoverData({
+        'multisig': [indexerRecord],
+      });
+      expect(parsed, hasLength(1));
+      expect(parsed.first['id'], multisigAddress);
+    });
+
+    test('multisigAccountFromIndexerRecord maps fields', () {
+      final account = MultisigService.multisigAccountFromIndexerRecord(
+        indexerRecord,
+        myMemberAccountId: signerB,
+        name: 'Team Multisig',
+      );
+
+      expect(account.name, 'Team Multisig');
+      expect(account.accountId, multisigAddress);
+      expect(account.signers, [signerA, signerB]);
+      expect(account.threshold, 2);
+      expect(account.nonce, BigInt.from(3));
+      expect(account.myMemberAccountId, signerB);
+      expect(account.creator, signerA);
+    });
+
+    test('resolveMyMemberAccountId prefers first matching local account', () {
+      expect(MultisigService.resolveMyMemberAccountId(indexerRecord, [signerB, signerA]), signerB);
+    });
+
+    test('resolveMyMemberAccountId returns null when user is not a signer', () {
+      expect(MultisigService.resolveMyMemberAccountId(indexerRecord, ['5ExternalSigner']), isNull);
+    });
+  });
+
+  group('MultisigGraphql.buildDiscoverQuery', () {
+    const addrA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const addrB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+
+    test('throws when accountIds is empty', () {
+      expect(() => MultisigGraphql.buildDiscoverQuery([]), throwsArgumentError);
+    });
+
+    test('uses single _contains clause for one account', () {
+      final query = MultisigGraphql.buildDiscoverQuery([addrA]);
+      expect(query, contains('{signers: {_contains: ["$addrA"]}}'));
+      expect(query, isNot(contains('_or')));
+    });
+
+    test('uses _or of _contains clauses for multiple accounts', () {
+      final query = MultisigGraphql.buildDiscoverQuery([addrA, addrB]);
+      expect(query, contains('_or'));
+      expect(query, contains('{signers: {_contains: ["$addrA"]}}'));
+      expect(query, contains('{signers: {_contains: ["$addrB"]}}'));
     });
   });
 

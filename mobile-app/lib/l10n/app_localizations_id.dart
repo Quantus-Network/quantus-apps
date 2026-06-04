@@ -198,6 +198,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
 
   @override
+  String get addAccountMenuDiscoverMultisigTitle => 'Temukan Multisig';
+
+  @override
+  String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';
+
+  @override
   String get multisigTag => 'MULTISIG';
 
   @override
@@ -205,6 +211,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigAddTitle => 'Buat Multisig';
+
+  @override
+  String get multisigDiscoverTitle => 'Temukan Multisig';
 
   @override
   String get multisigCreateSubtitle =>
@@ -273,19 +282,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigDone => 'Selesai';
 
   @override
-  String get multisigAddPasteAddressSection => 'Tempel Alamat Multisig';
-
-  @override
   String get multisigAddDiscoveredTitle => 'Ditemukan untuk Anda';
 
   @override
   String get multisigAddDiscoveredSubtitle => 'Multisig di chain di mana salah satu akun Anda adalah penandatangan';
-
-  @override
-  String get multisigAddAddressHint => 'Alamat SS58 multisig';
-
-  @override
-  String get multisigAddFromAddressButton => 'Tambah Dari Alamat';
 
   @override
   String get multisigAddButton => 'Tambah';

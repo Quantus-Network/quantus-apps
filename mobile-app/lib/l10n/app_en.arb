@@ -268,6 +268,14 @@
     "@addAccountMenuMultisigSubtitle": {
       "description": "Add multisig menu row subtitle"
     },
+    "addAccountMenuDiscoverMultisigTitle": "Discover Multisig",
+    "@addAccountMenuDiscoverMultisigTitle": {
+      "description": "Discover multisig menu row title"
+    },
+    "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
+    "@addAccountMenuDiscoverMultisigSubtitle": {
+      "description": "Discover multisig menu row subtitle"
+    },
 
     "multisigTag": "MULTISIG",
     "@multisigTag": {
@@ -280,6 +288,10 @@
     "multisigAddTitle": "Create Multisig",
     "@multisigAddTitle": {
       "description": "Create multisig screen app bar title"
+    },
+    "multisigDiscoverTitle": "Discover Multisig",
+    "@multisigDiscoverTitle": {
+      "description": "Discover multisig screen app bar title"
     },
     "multisigCreateSubtitle": "Give this multisig a name you'll recognize. You can change it anytime.",
     "@multisigCreateSubtitle": {
@@ -374,10 +386,6 @@
     "@multisigDone": {
       "description": "Done button on multisig flow completion screens"
     },
-    "multisigAddPasteAddressSection": "Paste Multisig Address",
-    "@multisigAddPasteAddressSection": {
-      "description": "Section label for manual multisig address entry"
-    },
     "multisigAddDiscoveredTitle": "Discovered for you",
     "@multisigAddDiscoveredTitle": {
       "description": "Section title for on-chain discovered multisigs"
@@ -385,14 +393,6 @@
     "multisigAddDiscoveredSubtitle": "Multisigs on chain where one of your accounts is a signer",
     "@multisigAddDiscoveredSubtitle": {
       "description": "Helper text under discovered multisigs section"
-    },
-    "multisigAddAddressHint": "Multisig SS58 address",
-    "@multisigAddAddressHint": {
-      "description": "Hint for multisig address text field"
-    },
-    "multisigAddFromAddressButton": "Add From Address",
-    "@multisigAddFromAddressButton": {
-      "description": "Primary button to add multisig from pasted address"
     },
     "multisigAddButton": "Add",
     "@multisigAddButton": {

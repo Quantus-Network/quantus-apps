@@ -446,6 +446,18 @@ abstract class AppLocalizations {
   /// **'Set up a shared address with multiple signers'**
   String get addAccountMenuMultisigSubtitle;
 
+  /// Discover multisig menu row title
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Multisig'**
+  String get addAccountMenuDiscoverMultisigTitle;
+
+  /// Discover multisig menu row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Find multisigs where your accounts are signers'**
+  String get addAccountMenuDiscoverMultisigSubtitle;
+
   /// Badge label for multisig accounts
   ///
   /// In en, this message translates to:
@@ -463,6 +475,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create Multisig'**
   String get multisigAddTitle;
+
+  /// Discover multisig screen app bar title
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Multisig'**
+  String get multisigDiscoverTitle;
 
   /// Subtitle under multisig name field
   ///
@@ -584,12 +602,6 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get multisigDone;
 
-  /// Section label for manual multisig address entry
-  ///
-  /// In en, this message translates to:
-  /// **'Paste Multisig Address'**
-  String get multisigAddPasteAddressSection;
-
   /// Section title for on-chain discovered multisigs
   ///
   /// In en, this message translates to:
@@ -601,18 +613,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisigs on chain where one of your accounts is a signer'**
   String get multisigAddDiscoveredSubtitle;
-
-  /// Hint for multisig address text field
-  ///
-  /// In en, this message translates to:
-  /// **'Multisig SS58 address'**
-  String get multisigAddAddressHint;
-
-  /// Primary button to add multisig from pasted address
-  ///
-  /// In en, this message translates to:
-  /// **'Add From Address'**
-  String get multisigAddFromAddressButton;
 
   /// Add button on discovered multisig row
   ///

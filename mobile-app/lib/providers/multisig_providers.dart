@@ -55,6 +55,10 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
       orElse: () => throw Exception('Multisig $accountId not found'),
     );
   }
+
+  void reset() {
+    state = const AsyncValue.data([]);
+  }
 }
 
 final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier, AsyncValue<List<MultisigAccount>>>((
@@ -70,13 +74,6 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   final accounts = accountsAsync.value ?? [];
   final ids = accounts.map((a) => a.accountId).toList();
   return service.discoverForUser(ids);
-});
-
-final multisigLookupProvider = FutureProvider.autoDispose.family<MultisigAccount?, String>((ref, address) async {
-  final service = ref.watch(multisigServiceProvider);
-  final accountsAsync = ref.watch(accountsProvider);
-  final ids = (accountsAsync.value ?? []).map((a) => a.accountId).toList();
-  return service.lookupByAddress(address, ids);
 });
 
 final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((

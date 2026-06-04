@@ -197,6 +197,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addAccountMenuMultisigSubtitle => 'Set up a shared address with multiple signers';
 
   @override
+  String get addAccountMenuDiscoverMultisigTitle => 'Discover Multisig';
+
+  @override
+  String get addAccountMenuDiscoverMultisigSubtitle => 'Find multisigs where your accounts are signers';
+
+  @override
   String get multisigTag => 'MULTISIG';
 
   @override
@@ -204,6 +210,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigAddTitle => 'Create Multisig';
+
+  @override
+  String get multisigDiscoverTitle => 'Discover Multisig';
 
   @override
   String get multisigCreateSubtitle => 'Give this multisig a name you\'ll recognize. You can change it anytime.';
@@ -271,19 +280,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigDone => 'Done';
 
   @override
-  String get multisigAddPasteAddressSection => 'Paste Multisig Address';
-
-  @override
   String get multisigAddDiscoveredTitle => 'Discovered for you';
 
   @override
   String get multisigAddDiscoveredSubtitle => 'Multisigs on chain where one of your accounts is a signer';
-
-  @override
-  String get multisigAddAddressHint => 'Multisig SS58 address';
-
-  @override
-  String get multisigAddFromAddressButton => 'Add From Address';
 
   @override
   String get multisigAddButton => 'Add';

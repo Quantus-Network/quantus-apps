@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Txs;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/models/account.dart';
+import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
@@ -33,33 +34,51 @@ class MultisigService {
   }
 
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {
-    debugPrint('[MultisigService] discoverForUser stub, my accounts: ${myAccountIds.length}');
-    await Future<void>.delayed(const Duration(milliseconds: 600));
     if (myAccountIds.isEmpty) return [];
-    final me = myAccountIds.first;
-    return _dummyMultisigs(me);
+
+    final requestBody = {'query': MultisigGraphql.buildDiscoverQuery(myAccountIds)};
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    final records = parseMultisigDiscoverData(responseBody['data'] as Map<String, dynamic>?);
+    final seen = <String>{};
+    final results = <MultisigAccount>[];
+    var index = 0;
+
+    for (final record in records) {
+      final address = stringFromJson(record['id']);
+      if (!seen.add(address)) continue;
+
+      final myMember = resolveMyMemberAccountId(record, myAccountIds);
+      if (myMember == null) continue;
+
+      index++;
+      results.add(multisigAccountFromIndexerRecord(record, myMemberAccountId: myMember, name: 'Multisig $index'));
+    }
+
+    return results;
   }
 
   Future<MultisigAccount?> lookupByAddress(String address, List<String> myAccountIds) async {
-    debugPrint('[MultisigService] lookupByAddress stub: $address');
-    await Future<void>.delayed(const Duration(milliseconds: 400));
     if (myAccountIds.isEmpty) {
       throw Exception('No local accounts; cannot determine member account');
     }
-    final me = myAccountIds.first;
-    return MultisigAccount(
-      name: 'Multisig',
-      accountId: address,
-      signers: [
-        me,
-        _dummySigner('5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'),
-        _dummySigner('5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'),
-      ],
-      threshold: 2,
-      nonce: BigInt.from(42),
-      myMemberAccountId: me,
-      creator: me,
-    );
+
+    final record = await fetchMultisigFromIndexer(address);
+    if (record == null) return null;
+
+    final myMember = resolveMyMemberAccountId(record, myAccountIds);
+    if (myMember == null) return null;
+
+    return multisigAccountFromIndexerRecord(record, myMemberAccountId: myMember, name: 'Multisig');
   }
 
   /// Predicts the on-chain multisig address for the given signers and threshold.
@@ -161,6 +180,49 @@ class MultisigService {
     return record;
   }
 
+  /// Parses `multisig` list from a discover-query `data` payload.
+  static List<Map<String, dynamic>> parseMultisigDiscoverData(Map<String, dynamic>? data) {
+    final raw = data?['multisig'];
+    if (raw is! List) return [];
+    return raw.whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// Maps an indexer multisig record to a local [MultisigAccount].
+  static MultisigAccount multisigAccountFromIndexerRecord(
+    Map<String, dynamic> record, {
+    required String myMemberAccountId,
+    required String name,
+  }) {
+    final address = stringFromJson(record['id']);
+    final creator = nestedAccountId(record['creator']);
+    final signersRaw = record['signers'];
+    final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
+
+    final rawThreshold = record['threshold'] as int?;
+    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+
+    return MultisigAccount(
+      name: name,
+      accountId: address,
+      signers: signers,
+      threshold: threshold,
+      nonce: bigIntFromJson(record['nonce']),
+      myMemberAccountId: myMemberAccountId,
+      creator: creator.isEmpty ? null : creator,
+    );
+  }
+
+  /// First [myAccountIds] entry that appears in indexer [record] signers.
+  static String? resolveMyMemberAccountId(Map<String, dynamic> record, List<String> myAccountIds) {
+    final signersRaw = record['signers'];
+    if (signersRaw is! List) return null;
+    final signers = signersRaw.map((e) => e.toString()).toSet();
+    for (final id in myAccountIds) {
+      if (signers.contains(id)) return id;
+    }
+    return null;
+  }
+
   /// Validates [signers] and [threshold] for multisig operations.
   ///
   /// [minSigners] is the minimum signer count for the operation: prediction
@@ -246,41 +308,6 @@ class MultisigService {
   int timeToBlock(DateTime when) {
     final deltaSeconds = when.difference(DateTime.now()).inSeconds;
     return _dummyCurrentBlock + (deltaSeconds ~/ _avgBlockTimeSeconds);
-  }
-
-  String _dummySigner(String fallback) => fallback;
-
-  List<MultisigAccount> _dummyMultisigs(String me) {
-    return [
-      MultisigAccount(
-        name: 'Treasury Multisig',
-        accountId: '5MultisigTreasury000000000000000000000000000000000',
-        signers: [
-          me,
-          '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-          '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy',
-          '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw',
-        ],
-        threshold: 3,
-        nonce: BigInt.from(1),
-        myMemberAccountId: me,
-        creator: me,
-      ),
-      MultisigAccount(
-        name: 'Ops 2-of-3',
-        accountId: '5MultisigOpsTeam0000000000000000000000000000000000',
-        signers: [
-          me,
-          '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-          '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-        ],
-        threshold: 2,
-        nonce: BigInt.from(2),
-        myMemberAccountId: me,
-        creator: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-      ),
-    ];
   }
 
   List<MultisigProposal> _dummyOpenProposals(MultisigAccount msig) {
