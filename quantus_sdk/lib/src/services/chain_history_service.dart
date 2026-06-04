@@ -114,18 +114,16 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 
     final String multisigField = MultisigGraphql.accountEventSelection;
 
-    const String multisigSendClause = ', {multisig_id: {_is_null: false}, multisig: {creator_id: {_in: \$accounts}}}';
+    const String multisigSendClause = ', {multisig_id: {_is_null: false}}';
 
     final String whereClause;
 
     switch (filter) {
       case TransactionFilter.send:
-        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
             '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}$multisigSendClause]}]}';
         break;
       case TransactionFilter.receive:
-        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
             '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {to_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {miner_reward_id: {_is_null: false}}]}]}';
         break;
@@ -205,88 +203,6 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
   }
 }
 ''';
-  }
-
-  Map<String, dynamic> _buildMultisigCreationsWhereMap(TransactionFilter filter, List<String> accountIds) {
-    final signersOr = accountIds
-        .map(
-          (id) => <String, dynamic>{
-            'signers': {
-              '_contains': [id],
-            },
-          },
-        )
-        .toList();
-
-    switch (filter) {
-      case TransactionFilter.send:
-        return {
-          'creator_id': {'_in': accountIds},
-        };
-      case TransactionFilter.receive:
-        return {
-          '_and': [
-            {
-              'creator_id': {'_nin': accountIds},
-            },
-            {'_or': signersOr},
-          ],
-        };
-      case TransactionFilter.all:
-        return {'_or': signersOr};
-    }
-  }
-
-  /// Merges [supplemental] multisig creations into [events], deduping by address.
-  /// Prefer rows already present from [account_event] parsing.
-  static List<TransactionEvent> mergeMultisigCreations({
-    required List<TransactionEvent> events,
-    required Iterable<MultisigCreatedEvent> supplemental,
-  }) {
-    final seen = events.whereType<MultisigCreatedEvent>().map((e) => e.multisigAddress).toSet();
-    final merged = List<TransactionEvent>.from(events);
-    for (final event in supplemental) {
-      if (seen.add(event.multisigAddress)) {
-        merged.add(event);
-      }
-    }
-    return merged;
-  }
-
-  Future<List<MultisigCreatedEvent>> fetchMultisigCreationsForAccounts({
-    required List<String> accountIds,
-    int limit = 10,
-    int offset = 0,
-    required TransactionFilter filter,
-  }) async {
-    if (accountIds.isEmpty) return [];
-
-    final requestBody = {
-      'query': MultisigGraphql.creationsQuery,
-      'variables': {
-        'where': _buildMultisigCreationsWhereMap(filter, accountIds),
-        'limit': _lookaheadLimit(limit),
-        'offset': offset,
-      },
-    };
-
-    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-    if (response.statusCode != 200) {
-      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
-
-    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-    if (responseBody['errors'] != null) {
-      throw Exception('GraphQL errors: ${responseBody['errors']}');
-    }
-
-    final rows = responseBody['data']?['multisig'] as List<dynamic>?;
-    if (rows == null || rows.isEmpty) return [];
-
-    return rows
-        .take(limit)
-        .map((row) => MultisigCreatedEvent.fromMultisigGraphql(multisig: row as Map<String, dynamic>))
-        .toList();
   }
 
   // GraphQL query to fetch transactions by their hash
@@ -651,24 +567,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
       final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
-
-      // Supplemental multisig creations are paged independently from
-      // account_event rows, so only fetch them on the first page to avoid
-      // re-surfacing the same rows (or skipping them) as the account_event
-      // offset advances. Account-event-derived creations still paginate
-      // normally on later pages.
-      if (offset != 0) {
-        return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
-      }
-
-      final supplemental = await fetchMultisigCreationsForAccounts(
-        accountIds: accountIds,
-        limit: limit,
-        offset: offset,
-        filter: filter,
-      );
-      final merged = mergeMultisigCreations(events: page.items, supplemental: supplemental);
-      return OtherTransfersResult(transfers: merged, hasMore: page.hasMore);
+      return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);

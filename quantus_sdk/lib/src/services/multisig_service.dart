@@ -5,6 +5,7 @@ import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' show Txs;
 import 'package:quantus_sdk/generated/planck/types/quantus_runtime/runtime_call.dart';
 import 'package:quantus_sdk/src/models/account.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
@@ -74,11 +75,43 @@ class MultisigService {
     );
   }
 
+  /// Finds the lowest [nonce] whose predicted address is not taken.
+  ///
+  /// An address is taken when it appears in [reservedAddresses] or
+  /// [isAddressTaken] returns true (defaults to [isMultisigOnChain]).
+  Future<MultisigCreationParams> resolveMultisigCreationParams({
+    required List<String> signers,
+    required int threshold,
+    Set<String> reservedAddresses = const {},
+    BigInt? startNonce,
+    Future<bool> Function(String address)? isAddressTaken,
+    Future<String> Function({required List<String> signers, required int threshold, required BigInt nonce})?
+    predictAddress,
+    int maxAttempts = 64,
+  }) async {
+    final predict =
+        predictAddress ??
+        (({required signers, required threshold, required nonce}) =>
+            predictMultisigAddress(signers: signers, threshold: threshold, nonce: nonce));
+    final taken = isAddressTaken ?? isMultisigOnChain;
+    var nonce = startNonce ?? defaultMultisigNonce;
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final address = await predict(signers: signers, threshold: threshold, nonce: nonce);
+      if (!reservedAddresses.contains(address) && !await taken(address)) {
+        return MultisigCreationParams(nonce: nonce, address: address);
+      }
+      nonce += BigInt.one;
+    }
+
+    throw MultisigNonceExhaustedException(maxAttempts: maxAttempts);
+  }
+
   /// Builds the runtime call for `multisig.create_multisig`.
   Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
     _validateSignersAndThreshold(signers, threshold, minSigners: 2);
     final signerIds = signers.map(getAccountId32).toList();
-    return Txs().createMultisig(signers: signerIds, threshold: threshold, nonce: nonce);
+    return const Txs().createMultisig(signers: signerIds, threshold: threshold, nonce: nonce);
   }
 
   /// Returns whether a multisig at [address] is present in the GraphQL indexer.

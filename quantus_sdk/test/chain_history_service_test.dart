@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_sdk/src/services/chain_history_service.dart';
 
 void main() {
   final service = ChainHistoryService();
@@ -59,35 +58,6 @@ void main() {
         multisig: Map<String, dynamic>.from(base)..['threshold'] = 0,
       );
       expect(zero.threshold, 1);
-    });
-  });
-
-  group('ChainHistoryService.mergeMultisigCreations', () {
-    test('dedupes supplemental when account_event already parsed', () {
-      final fromEvent = service.tryParseOtherTransferEvent(accountEventFixture)!;
-
-      final supplemental = MultisigCreatedEvent.fromMultisigGraphql(
-        multisig: accountEventFixture['multisig'] as Map<String, dynamic>,
-      );
-
-      final merged = ChainHistoryService.mergeMultisigCreations(events: [fromEvent], supplemental: [supplemental]);
-
-      expect(merged, hasLength(1));
-      expect(merged.single, isA<MultisigCreatedEvent>());
-    });
-
-    test('adds supplemental when missing from account events', () {
-      final supplemental = MultisigCreatedEvent.fromMultisigGraphql(
-        multisig: accountEventFixture['multisig'] as Map<String, dynamic>,
-      );
-
-      final merged = ChainHistoryService.mergeMultisigCreations(events: [], supplemental: [supplemental]);
-
-      expect(merged, hasLength(1));
-      expect(
-        (merged.single as MultisigCreatedEvent).multisigAddress,
-        'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH',
-      );
     });
   });
 }

@@ -79,6 +79,65 @@ void main() {
     });
   });
 
+  group('MultisigService.resolveMultisigCreationParams', () {
+    const signerA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const signerB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+
+    Future<String> stubPredict({required List<String> signers, required int threshold, required BigInt nonce}) async {
+      return 'addr_${signers.length}_${threshold}_$nonce';
+    }
+
+    test('returns lowest nonce when lower nonces are taken on-chain', () async {
+      final service = MultisigService();
+      final nonce0 = await stubPredict(signers: [signerA, signerB], threshold: 2, nonce: BigInt.zero);
+      final nonce1 = await stubPredict(signers: [signerA, signerB], threshold: 2, nonce: BigInt.one);
+
+      final resolved = await service.resolveMultisigCreationParams(
+        signers: [signerA, signerB],
+        threshold: 2,
+        predictAddress: stubPredict,
+        isAddressTaken: (address) async => address == nonce0 || address == nonce1,
+      );
+
+      expect(resolved.nonce, BigInt.from(2));
+      expect(resolved.address, await stubPredict(signers: [signerA, signerB], threshold: 2, nonce: BigInt.from(2)));
+    });
+
+    test('does not consult isAddressTaken for reserved addresses', () async {
+      final service = MultisigService();
+      final reserved = await stubPredict(signers: [signerA, signerB], threshold: 2, nonce: BigInt.zero);
+
+      final resolved = await service.resolveMultisigCreationParams(
+        signers: [signerA, signerB],
+        threshold: 2,
+        reservedAddresses: {reserved},
+        predictAddress: stubPredict,
+        isAddressTaken: (address) async {
+          if (address == reserved) {
+            fail('should not check reserved address');
+          }
+          return false;
+        },
+      );
+
+      expect(resolved.nonce, BigInt.one);
+    });
+
+    test('throws MultisigNonceExhaustedException when all attempts are taken', () async {
+      final service = MultisigService();
+      await expectLater(
+        service.resolveMultisigCreationParams(
+          signers: [signerA, signerB],
+          threshold: 2,
+          predictAddress: stubPredict,
+          isAddressTaken: (_) async => true,
+          maxAttempts: 3,
+        ),
+        throwsA(isA<MultisigNonceExhaustedException>()),
+      );
+    });
+  });
+
   group('MultisigAlreadyExistsException', () {
     test('toString includes address', () {
       const address = '5TestAddress';

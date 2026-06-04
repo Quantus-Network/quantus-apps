@@ -56,7 +56,6 @@ class TxItemData {
     }
 
     if (tx is MultisigCreatedEvent) {
-      final isCreator = tx.isCreator(accountId);
       final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
       return TxItemData(
         label: l10n.activityTxMultisigCreated,
@@ -64,12 +63,11 @@ class TxItemData {
         iconBg: Colors.transparent,
         iconColor: colors.txItemIconDefault,
         labelColor: colors.textPrimary,
-        amountColor: isCreator ? colors.textPrimary : colors.textTertiary,
+        amountColor: colors.textPrimary,
         borderColor: colors.txItemBorderDefault,
-        isSend: isCreator,
-        amount: isCreator ? tx.creationFee : BigInt.zero,
+        isSend: true,
+        amount: tx.creationFee,
         counterpartyAddr: address,
-        hideAmount: !isCreator,
         customIcon: Icons.groups_outlined,
         counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
       );

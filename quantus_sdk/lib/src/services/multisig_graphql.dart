@@ -41,17 +41,6 @@ $_coreFields
 $indexerFields
     }''';
 
-  static const String creationsQuery =
-      r'''
-query MultisigCreations($where: multisig_bool_exp!, $limit: Int!, $offset: Int!) {
-  multisig(where: $where, order_by: {timestamp: desc}, limit: $limit, offset: $offset) {
-''' +
-      indexerFields +
-      r'''
-  }
-}
-''';
-
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {

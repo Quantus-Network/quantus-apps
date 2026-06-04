@@ -112,12 +112,6 @@ class _AmountSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = context.themeText;
 
-    if (tx is MultisigCreatedEvent) {
-      final event = tx as MultisigCreatedEvent;
-      if (!event.isCreator(activeAccountId)) {
-        return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
-      }
-    }
     final pendingMultisig = tx;
     if (pendingMultisig is PendingMultisigCreationEvent && !pendingMultisig.isCreator(activeAccountId)) {
       return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
@@ -224,13 +218,10 @@ class _DetailsSection extends ConsumerWidget {
     AppLocalizations l10n,
     NumberFormattingService formattingService,
   ) {
-    final isCreator = event.isCreator(activeAccountId);
     final multisigAddress = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
     final creatorAddress = AddressFormattingService.formatActivityDetailAddress(event.creatorId);
     final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final feeValue = isCreator
-        ? _formatBalance(l10n, formattingService, event.creationFee)
-        : l10n.activityDetailMultisigFeePaidByCreator;
+    final feeValue = _formatBalance(l10n, formattingService, event.creationFee);
     final depositValue = _formatBalance(l10n, formattingService, event.deposit);
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)

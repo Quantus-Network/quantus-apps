@@ -52,7 +52,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
         if (mounted) setState(() => _recipientChecksum = c);
       });
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchFee());
+    _fetchFee();
   }
 
   @override

@@ -40,6 +40,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   bool _isLoading = false;
   bool _isPredictingAddress = false;
   String? _predictedAddress;
+  BigInt? _resolvedNonce;
   String? _signerFieldError;
   int _predictSeq = 0;
 
@@ -60,9 +61,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       _loadCreatorChecksum(_creator!.accountId);
     }
     _threshold = MultisigService.defaultThreshold(_allSigners.length);
-    if (_hasMinimumSigners) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPredictedAddress());
-    }
   }
 
   @override
@@ -93,7 +91,12 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 
   bool get _hasMinimumSigners => _allSigners.length >= 2;
 
-  bool get _isDisabled => _accountName.text.trim().isEmpty || !_hasMinimumSigners || _creator == null || _isLoading;
+  bool get _isDisabled =>
+      _accountName.text.trim().isEmpty ||
+      !_hasMinimumSigners ||
+      _creator == null ||
+      _isLoading ||
+      (_hasMinimumSigners && (_isPredictingAddress || _resolvedNonce == null));
 
   void _onSignerFieldChanged() {
     setState(() {
@@ -132,6 +135,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       _threshold = MultisigService.defaultThreshold(_allSigners.length);
       if (_allSigners.length < 2) {
         _predictedAddress = null;
+        _resolvedNonce = null;
       }
     });
     _refreshPredictedAddress();
@@ -142,11 +146,18 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     _refreshPredictedAddress();
   }
 
+  Set<String> _reservedAddresses() {
+    final saved = ref.read(multisigAccountsProvider).value?.map((a) => a.accountId) ?? const [];
+    final pending = ref.read(pendingMultisigCreationsProvider).map((e) => e.multisigAddress);
+    return {...saved, ...pending};
+  }
+
   Future<void> _refreshPredictedAddress() async {
     if (!_hasMinimumSigners) {
       _predictSeq++;
       setState(() {
         _predictedAddress = null;
+        _resolvedNonce = null;
         _isPredictingAddress = false;
       });
       return;
@@ -155,22 +166,31 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final seq = ++_predictSeq;
     setState(() => _isPredictingAddress = true);
     try {
-      final address = await ref
+      final resolved = await ref
           .read(multisigServiceProvider)
-          .predictMultisigAddress(
+          .resolveMultisigCreationParams(
             signers: _allSigners,
             threshold: _threshold,
-            nonce: MultisigService.defaultMultisigNonce,
+            reservedAddresses: _reservedAddresses(),
           );
       if (!mounted || seq != _predictSeq) return;
       setState(() {
-        _predictedAddress = address;
+        _predictedAddress = resolved.address;
+        _resolvedNonce = resolved.nonce;
+        _isPredictingAddress = false;
+      });
+    } on MultisigNonceExhaustedException {
+      if (!mounted || seq != _predictSeq) return;
+      setState(() {
+        _predictedAddress = null;
+        _resolvedNonce = null;
         _isPredictingAddress = false;
       });
     } catch (_) {
       if (!mounted || seq != _predictSeq) return;
       setState(() {
         _predictedAddress = null;
+        _resolvedNonce = null;
         _isPredictingAddress = false;
       });
     }
@@ -178,7 +198,8 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
 
   Future<void> _createMultisig() async {
     final creator = _creator;
-    if (creator == null || !_hasMinimumSigners) return;
+    final nonce = _resolvedNonce;
+    if (creator == null || !_hasMinimumSigners || nonce == null) return;
 
     final l10n = ref.read(l10nProvider);
     setState(() => _isLoading = true);
@@ -197,6 +218,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             signers: _allSigners,
             threshold: _threshold,
             creator: creator,
+            nonce: nonce,
           );
 
       if (!mounted) return;
