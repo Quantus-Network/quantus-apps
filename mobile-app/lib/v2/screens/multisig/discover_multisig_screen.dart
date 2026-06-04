@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -161,7 +162,7 @@ class _DiscoverError extends StatelessWidget {
   }
 }
 
-class _DiscoverMultisigRow extends StatelessWidget {
+class _DiscoverMultisigRow extends ConsumerStatefulWidget {
   const _DiscoverMultisigRow({
     required this.account,
     required this.isAdded,
@@ -185,12 +186,29 @@ class _DiscoverMultisigRow extends StatelessWidget {
   final VoidCallback onAdd;
 
   @override
+  ConsumerState<_DiscoverMultisigRow> createState() => _DiscoverMultisigRowState();
+}
+
+class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
+  String? _checksum;
+
+  @override
+  void initState() {
+    super.initState();
+
+    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.account.accountId).then((name) {
+      if (mounted) setState(() => _checksum = name);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final address = AddressFormattingService.formatAddress(account.accountId);
+    final l10n = ref.watch(l10nProvider);
+    final address = AddressFormattingService.formatAddress(widget.account.accountId);
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: widget.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -199,24 +217,29 @@ class _DiscoverMultisigRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
+                  _checksum ?? l10n.commonLoading,
+                  style: widget.text.detail?.copyWith(color: context.colors.checksum),
+                ),
+                const SizedBox(height: 4),
+                Text(
                   address,
-                  style: text.smallParagraph?.copyWith(
-                    color: colors.textPrimary,
+                  style: widget.text.smallParagraph?.copyWith(
+                    color: widget.colors.textPrimary,
                     fontFamily: AppTextTheme.fontFamilySecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(thresholdLabel, style: text.detail?.copyWith(color: colors.textTertiary)),
+                Text(widget.thresholdLabel, style: widget.text.detail?.copyWith(color: widget.colors.textTertiary)),
               ],
             ),
           ),
           const SizedBox(width: 12),
           QuantusButton.simple(
-            label: isAdded ? addedLabel : addLabel,
-            variant: isAdded ? ButtonVariant.secondary : ButtonVariant.primary,
-            isDisabled: isAdded,
-            isLoading: isAdding,
-            onTap: isAdded ? null : onAdd,
+            label: widget.isAdded ? widget.addedLabel : widget.addLabel,
+            variant: widget.isAdded ? ButtonVariant.secondary : ButtonVariant.primary,
+            isDisabled: widget.isAdded,
+            isLoading: widget.isAdding,
+            onTap: widget.isAdded ? null : widget.onAdd,
             width: null,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
