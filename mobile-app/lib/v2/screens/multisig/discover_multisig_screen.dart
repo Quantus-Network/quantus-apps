@@ -96,36 +96,35 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
             );
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          return ListView(
             children: [
-              Text(l10n.multisigAddDiscoveredTitle, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
-              const SizedBox(height: 8),
-              Text(l10n.multisigAddDiscoveredSubtitle, style: text.detail?.copyWith(color: colors.textTertiary)),
-              const SizedBox(height: 24),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sorted.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final account = sorted[index];
-                  final isAdded = savedIds.contains(account.accountId);
-                  final isAdding = _addingIds.contains(account.accountId);
-
-                  return _DiscoverMultisigRow(
-                    account: account,
-                    isAdded: isAdded,
-                    isAdding: isAdding,
-                    addLabel: l10n.multisigAddButton,
-                    addedLabel: l10n.multisigAddedButton,
-                    thresholdLabel: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-                    colors: colors,
-                    text: text,
-                    onAdd: () => _addMultisig(account),
-                  );
-                },
+              Text(
+                l10n.multisigAddDiscoveredTitle,
+                style: text.receiveLabel?.copyWith(color: colors.textLabel),
               ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.multisigAddDiscoveredSubtitle,
+                style: text.detail?.copyWith(color: colors.textTertiary),
+              ),
+              const SizedBox(height: 24),
+              for (var i = 0; i < sorted.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                _DiscoverMultisigRow(
+                  account: sorted[i],
+                  isAdded: savedIds.contains(sorted[i].accountId),
+                  isAdding: _addingIds.contains(sorted[i].accountId),
+                  addLabel: l10n.multisigAddButton,
+                  addedLabel: l10n.multisigAddedButton,
+                  thresholdLabel: l10n.multisigThresholdOf(
+                    sorted[i].threshold,
+                    sorted[i].signers.length,
+                  ),
+                  colors: colors,
+                  text: text,
+                  onAdd: () => _addMultisig(sorted[i]),
+                ),
+              ],
             ],
           );
         },

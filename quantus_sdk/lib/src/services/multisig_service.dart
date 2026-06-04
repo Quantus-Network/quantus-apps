@@ -67,20 +67,6 @@ class MultisigService {
     return results;
   }
 
-  Future<MultisigAccount?> lookupByAddress(String address, List<String> myAccountIds) async {
-    if (myAccountIds.isEmpty) {
-      throw Exception('No local accounts; cannot determine member account');
-    }
-
-    final record = await fetchMultisigFromIndexer(address);
-    if (record == null) return null;
-
-    final myMember = resolveMyMemberAccountId(record, myAccountIds);
-    if (myMember == null) return null;
-
-    return multisigAccountFromIndexerRecord(record, myMemberAccountId: myMember, name: 'Multisig');
-  }
-
   /// Predicts the on-chain multisig address for the given signers and threshold.
   ///
   /// Uses [nonce] for address uniqueness; defaults to [defaultMultisigNonce].
