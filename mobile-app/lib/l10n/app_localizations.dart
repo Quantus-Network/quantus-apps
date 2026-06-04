@@ -698,22 +698,22 @@ abstract class AppLocalizations {
   /// **'CANCELLED'**
   String get multisigStatusCancelled;
 
-  /// Section label on propose recipient screen
+  /// Section label on propose recipient screen — transfer destination
   ///
   /// In en, this message translates to:
-  /// **'Propose To'**
+  /// **'Transfer to'**
   String get multisigProposeSelectRecipientTo;
 
   /// Hint for recipient search field on propose flow
   ///
   /// In en, this message translates to:
-  /// **'Search {symbol} Address'**
+  /// **'Enter {symbol} Address'**
   String multisigProposeSearchHint(String symbol);
 
   /// Recipient card label on propose amount screen
   ///
   /// In en, this message translates to:
-  /// **'PROPOSE TO'**
+  /// **'TRANSFER TO'**
   String get multisigProposeAmountToLabel;
 
   /// Multisig balance label on propose amount screen
@@ -731,13 +731,13 @@ abstract class AppLocalizations {
   /// Button to open propose review screen
   ///
   /// In en, this message translates to:
-  /// **'Review Proposal'**
+  /// **'Review transfer'**
   String get multisigProposeReviewButton;
 
   /// Hero label on propose review screen
   ///
   /// In en, this message translates to:
-  /// **'PROPOSING'**
+  /// **'PROPOSED TRANSFER'**
   String get multisigProposeReviewProposing;
 
   /// Multisig name on propose review hero card
@@ -767,7 +767,7 @@ abstract class AppLocalizations {
   /// Submit button on propose review screen
   ///
   /// In en, this message translates to:
-  /// **'Create Proposal'**
+  /// **'Submit proposal'**
   String get multisigProposeCreateButton;
 
   /// Biometric auth prompt when creating a proposal
@@ -791,13 +791,13 @@ abstract class AppLocalizations {
   /// Success headline on propose done screen
   ///
   /// In en, this message translates to:
-  /// **'Proposal created'**
+  /// **'Transfer proposal submitted'**
   String get multisigProposeDoneHeadline;
 
   /// Success subline on propose done screen
   ///
   /// In en, this message translates to:
-  /// **'Awaiting approvals from your co-signers.'**
+  /// **'Co-signers must approve before the transfer can execute.'**
   String get multisigProposeDoneSubline;
 
   /// Recipient checksum line on propose done screen
@@ -829,6 +829,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposal not found.'**
   String get multisigProposalNotFound;
+
+  /// Sign button on the read-only proposal detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Sign'**
+  String get multisigProposalSignButton;
+
+  /// Note shown under the disabled sign button
+  ///
+  /// In en, this message translates to:
+  /// **'Signing will be available soon.'**
+  String get multisigProposalSigningSoonNote;
+
+  /// Note shown when the current member already approved
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already signed this proposal.'**
+  String get multisigProposalAlreadySignedNote;
+
+  /// Proposer row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'PROPOSER'**
+  String get multisigProposalProposerLabel;
+
+  /// Status row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'STATUS'**
+  String get multisigProposalStatusLabel;
+
+  /// Deposit row label on proposal detail
+  ///
+  /// In en, this message translates to:
+  /// **'DEPOSIT'**
+  String get multisigProposalDepositLabel;
+
+  /// Active proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
+  String get multisigStatusActive;
+
+  /// Executed proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'EXECUTED'**
+  String get multisigStatusExecuted;
+
+  /// Removed proposal status label
+  ///
+  /// In en, this message translates to:
+  /// **'REMOVED'**
+  String get multisigStatusRemoved;
+
+  /// Activity row label for an indexed multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal'**
+  String get activityTxProposal;
+
+  /// Activity row label for a pending multisig proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing'**
+  String get activityTxProposing;
 
   /// Approve button on proposal detail
   ///

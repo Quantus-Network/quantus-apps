@@ -338,15 +338,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigStatusCancelled => 'DIBATALKAN';
 
   @override
-  String get multisigProposeSelectRecipientTo => 'Ajukan Ke';
+  String get multisigProposeSelectRecipientTo => 'Transfer ke';
 
   @override
   String multisigProposeSearchHint(String symbol) {
-    return 'Cari Alamat $symbol';
+    return 'Masukkan Alamat $symbol';
   }
 
   @override
-  String get multisigProposeAmountToLabel => 'AJUKAN KE';
+  String get multisigProposeAmountToLabel => 'TRANSFER KE';
 
   @override
   String get multisigProposeBalanceLabel => 'Saldo Multisig:';
@@ -355,10 +355,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeFeeLabel => 'Biaya Proposal:';
 
   @override
-  String get multisigProposeReviewButton => 'Tinjau Proposal';
+  String get multisigProposeReviewButton => 'Tinjau transfer';
 
   @override
-  String get multisigProposeReviewProposing => 'MENGAJUKAN';
+  String get multisigProposeReviewProposing => 'TRANSFER YANG DIAJUKAN';
 
   @override
   String multisigProposeReviewFromName(String name) {
@@ -375,7 +375,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeFeeRowLabel => 'BIAYA PROPOSAL';
 
   @override
-  String get multisigProposeCreateButton => 'Buat Proposal';
+  String get multisigProposeCreateButton => 'Kirim proposal';
 
   @override
   String get multisigProposeAuthReason => 'Autentikasi untuk mengajukan transaksi';
@@ -387,10 +387,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeSubmitFailed => 'Gagal membuat proposal';
 
   @override
-  String get multisigProposeDoneHeadline => 'Proposal dibuat';
+  String get multisigProposeDoneHeadline => 'Proposal transfer terkirim';
 
   @override
-  String get multisigProposeDoneSubline => 'Menunggu persetujuan dari co-signer Anda.';
+  String get multisigProposeDoneSubline => 'Co-signer harus menyetujui sebelum transfer dapat dieksekusi.';
 
   @override
   String multisigProposeDoneToChecksum(String checksum) {
@@ -412,6 +412,39 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposalNotFound => 'Proposal tidak ditemukan.';
+
+  @override
+  String get multisigProposalSignButton => 'Tanda Tangan';
+
+  @override
+  String get multisigProposalSigningSoonNote => 'Penandatanganan akan segera tersedia.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
+
+  @override
+  String get multisigProposalProposerLabel => 'PENGAJU';
+
+  @override
+  String get multisigProposalStatusLabel => 'STATUS';
+
+  @override
+  String get multisigProposalDepositLabel => 'DEPOSIT';
+
+  @override
+  String get multisigStatusActive => 'AKTIF';
+
+  @override
+  String get multisigStatusExecuted => 'DIEKSEKUSI';
+
+  @override
+  String get multisigStatusRemoved => 'DIHAPUS';
+
+  @override
+  String get activityTxProposal => 'Proposal';
+
+  @override
+  String get activityTxProposing => 'Mengajukan';
 
   @override
   String get multisigApproveButton => 'Setujui';

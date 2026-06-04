@@ -470,11 +470,11 @@
     "@multisigStatusCancelled": {
       "description": "Proposal status chip when cancelled"
     },
-    "multisigProposeSelectRecipientTo": "Propose To",
+    "multisigProposeSelectRecipientTo": "Transfer to",
     "@multisigProposeSelectRecipientTo": {
-      "description": "Section label on propose recipient screen"
+      "description": "Section label on propose recipient screen — transfer destination"
     },
-    "multisigProposeSearchHint": "Search {symbol} Address",
+    "multisigProposeSearchHint": "Enter {symbol} Address",
     "@multisigProposeSearchHint": {
       "description": "Hint for recipient search field on propose flow",
       "placeholders": {
@@ -483,7 +483,7 @@
         }
       }
     },
-    "multisigProposeAmountToLabel": "PROPOSE TO",
+    "multisigProposeAmountToLabel": "TRANSFER TO",
     "@multisigProposeAmountToLabel": {
       "description": "Recipient card label on propose amount screen"
     },
@@ -495,11 +495,11 @@
     "@multisigProposeFeeLabel": {
       "description": "Proposal fee label on propose amount screen"
     },
-    "multisigProposeReviewButton": "Review Proposal",
+    "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
       "description": "Button to open propose review screen"
     },
-    "multisigProposeReviewProposing": "PROPOSING",
+    "multisigProposeReviewProposing": "PROPOSED TRANSFER",
     "@multisigProposeReviewProposing": {
       "description": "Hero label on propose review screen"
     },
@@ -524,7 +524,7 @@
     "@multisigProposeFeeRowLabel": {
       "description": "Proposal fee row label on propose review"
     },
-    "multisigProposeCreateButton": "Create Proposal",
+    "multisigProposeCreateButton": "Submit proposal",
     "@multisigProposeCreateButton": {
       "description": "Submit button on propose review screen"
     },
@@ -540,11 +540,11 @@
     "@multisigProposeSubmitFailed": {
       "description": "Error when proposal creation fails"
     },
-    "multisigProposeDoneHeadline": "Proposal created",
+    "multisigProposeDoneHeadline": "Transfer proposal submitted",
     "@multisigProposeDoneHeadline": {
       "description": "Success headline on propose done screen"
     },
-    "multisigProposeDoneSubline": "Awaiting approvals from your co-signers.",
+    "multisigProposeDoneSubline": "Co-signers must approve before the transfer can execute.",
     "@multisigProposeDoneSubline": {
       "description": "Success subline on propose done screen"
     },
@@ -585,6 +585,50 @@
     "multisigProposalNotFound": "Proposal not found.",
     "@multisigProposalNotFound": {
       "description": "Empty state when proposal id is missing"
+    },
+    "multisigProposalSignButton": "Sign",
+    "@multisigProposalSignButton": {
+      "description": "Sign button on the read-only proposal detail sheet"
+    },
+    "multisigProposalSigningSoonNote": "Signing will be available soon.",
+    "@multisigProposalSigningSoonNote": {
+      "description": "Note shown under the disabled sign button"
+    },
+    "multisigProposalAlreadySignedNote": "You've already signed this proposal.",
+    "@multisigProposalAlreadySignedNote": {
+      "description": "Note shown when the current member already approved"
+    },
+    "multisigProposalProposerLabel": "PROPOSER",
+    "@multisigProposalProposerLabel": {
+      "description": "Proposer row label on proposal detail"
+    },
+    "multisigProposalStatusLabel": "STATUS",
+    "@multisigProposalStatusLabel": {
+      "description": "Status row label on proposal detail"
+    },
+    "multisigProposalDepositLabel": "DEPOSIT",
+    "@multisigProposalDepositLabel": {
+      "description": "Deposit row label on proposal detail"
+    },
+    "multisigStatusActive": "ACTIVE",
+    "@multisigStatusActive": {
+      "description": "Active proposal status label"
+    },
+    "multisigStatusExecuted": "EXECUTED",
+    "@multisigStatusExecuted": {
+      "description": "Executed proposal status label"
+    },
+    "multisigStatusRemoved": "REMOVED",
+    "@multisigStatusRemoved": {
+      "description": "Removed proposal status label"
+    },
+    "activityTxProposal": "Proposal",
+    "@activityTxProposal": {
+      "description": "Activity row label for an indexed multisig proposal"
+    },
+    "activityTxProposing": "Proposing",
+    "@activityTxProposing": {
+      "description": "Activity row label for a pending multisig proposal"
     },
     "multisigApproveButton": "Approve",
     "@multisigApproveButton": {

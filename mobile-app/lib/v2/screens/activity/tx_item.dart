@@ -37,6 +37,38 @@ class TxItemData {
   });
 
   factory TxItemData.from(TransactionEvent tx, String accountId, AppColorsV2 colors, AppLocalizations l10n) {
+    if (tx is PendingMultisigProposalEvent) {
+      return TxItemData(
+        label: l10n.activityTxProposing,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: tx.amount,
+        counterpartyAddr: AddressFormattingService.formatAddress(tx.to, prefix: 5, postFix: 3),
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalEvent) {
+      return TxItemData(
+        label: l10n.activityTxProposal,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: tx.amount,
+        counterpartyAddr: AddressFormattingService.formatAddress(tx.to, prefix: 5, postFix: 3),
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
     if (tx is PendingMultisigCreationEvent) {
       final address = AddressFormattingService.formatAddress(tx.multisigAddress, prefix: 5, postFix: 3);
       return TxItemData(

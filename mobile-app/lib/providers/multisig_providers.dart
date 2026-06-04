@@ -86,35 +86,20 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   return service.discoverForUser(ids);
 });
 
-final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
+/// All proposals for a multisig (one indexer query), newest first.
+///
+/// Open and past proposals are derived from this single source so status
+/// reconciliation only needs one refetch.
+final multisigProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
 ) async {
   final service = ref.watch(multisigServiceProvider);
-  return service.getOpenProposals(msig);
+  return service.getProposalsForMultisig(msig);
 });
 
-final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
-  ref,
-  msig,
-) async {
+/// Current best block number, used to derive proposal expiry.
+final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {
   final service = ref.watch(multisigServiceProvider);
-  return service.getPastProposals(msig);
-});
-
-class ProposalKey {
-  final MultisigAccount msig;
-  final int id;
-  const ProposalKey(this.msig, this.id);
-
-  @override
-  bool operator ==(Object other) => other is ProposalKey && other.msig.accountId == msig.accountId && other.id == id;
-
-  @override
-  int get hashCode => Object.hash(msig.accountId, id);
-}
-
-final multisigProposalProvider = FutureProvider.autoDispose.family<MultisigProposal?, ProposalKey>((ref, key) async {
-  final service = ref.watch(multisigServiceProvider);
-  return service.getProposal(key.msig, key.id);
+  return service.currentBlockNumber();
 });

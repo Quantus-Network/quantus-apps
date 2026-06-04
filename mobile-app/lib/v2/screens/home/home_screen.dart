@@ -17,7 +17,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base_bottom_cont
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposals_section.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/propose/propose_recipient_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
@@ -155,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             slivers: [
               _buildContent(active, colors, text, l10n),
               if (active is MultisigDisplayAccount)
-                MultisigProposalsSection(msig: active.account)
+                MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
               else
                 ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
               const SizedBox(height: 58),
@@ -177,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _buildBalance(colors, text, l10n),
         const SizedBox(height: 40),
         if (active is MultisigDisplayAccount) ...[
-          _buildProposeButton(l10n, active.account),
+          _buildMultisigActionButtons(l10n, active.account),
           const SizedBox(height: 40),
         ],
         if (active is RegularAccount) ...[_buildActionButtons(l10n), const SizedBox(height: 40)],
@@ -312,11 +312,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(children: children);
   }
 
-  Widget _buildProposeButton(AppLocalizations l10n, MultisigAccount msig) {
-    return QuantusButton.simple(
-      label: l10n.multisigProposeTitle,
-      variant: ButtonVariant.primary,
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig))),
+  Widget _buildMultisigActionButtons(AppLocalizations l10n, MultisigAccount msig) {
+    return Row(
+      children: [
+        _actionCard(
+          iconAsset: 'assets/v2/action_receive.svg',
+          label: l10n.homeReceive,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
+        ),
+        const SizedBox(width: 15),
+        _actionCard(
+          iconAsset: 'assets/v2/action_send.svg',
+          label: l10n.multisigProposeTitle,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProposeRecipientScreen(msig: msig))),
+        ),
+      ],
     );
   }
 

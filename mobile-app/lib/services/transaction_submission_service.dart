@@ -8,7 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
+import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
 import 'package:resonance_network_wallet/services/pending_transaction_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -125,6 +127,77 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('send_high_security_reversible');
 
     await submitAndTrackTransaction(submissionBuilder, pendingTx);
+  }
+
+  /// Submits a multisig transfer proposal, tracks it optimistically, and polls
+  /// the indexer until the proposal is visible.
+  Future<void> proposeTransfer({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required BigInt fee,
+  }) async {
+    final pending = PendingMultisigProposalEvent.create(
+      msig: msig,
+      proposerId: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
+      fee: fee,
+    );
+
+    addPendingMultisigProposal(_ref, pending);
+
+    TelemetryService().sendEvent('multisig_propose');
+
+    unawaited(
+      _submitProposalBackground(msig: msig, signer: signer, recipient: recipient, amount: amount, expiryBlock: expiryBlock, pending: pending),
+    );
+  }
+
+  Future<void> _submitProposalBackground({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required PendingMultisigProposalEvent pending,
+    int maxRetries = 3,
+    int attempt = 1,
+  }) async {
+    try {
+      final hashBytes = await MultisigService().propose(
+        msig: msig,
+        signer: signer,
+        recipient: recipient,
+        amount: amount,
+        expiryBlock: expiryBlock,
+      );
+      final extrinsicHash = '0x${hex.encode(hashBytes)}';
+      quantusDebugPrint('[Propose] submitted: $extrinsicHash');
+
+      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, pending);
+    } catch (e, stackTrace) {
+      quantusDebugPrint('[Propose] submit attempt $attempt failed: $e');
+      if (attempt < maxRetries) {
+        await Future.delayed(const Duration(seconds: 2));
+        await _submitProposalBackground(
+          msig: msig,
+          signer: signer,
+          recipient: recipient,
+          amount: amount,
+          expiryBlock: expiryBlock,
+          pending: pending,
+          maxRetries: maxRetries,
+          attempt: attempt + 1,
+        );
+      } else {
+        quantusDebugPrint('[Propose] failed after $maxRetries attempts: $e\n$stackTrace');
+        removePendingMultisigProposal(_ref, pending.id);
+      }
+    }
   }
 
   PendingTransactionEvent createPendingTransaction({

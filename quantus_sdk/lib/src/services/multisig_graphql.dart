@@ -80,3 +80,76 @@ $discoverFields
     return value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
   }
 }
+
+/// Shared GraphQL field selections for multisig proposal indexer queries.
+///
+/// Scalar columns use snake_case (matching Hasura/Postgres). Object relations
+/// use camelCase (e.g. [transferTo], [createdAtBlock]) as exposed by Hasura.
+class MultisigProposalGraphql {
+  MultisigProposalGraphql._();
+
+  /// Fields selected for a `multisig_proposal` row.
+  static const String fields = '''
+      id
+      proposal_id
+      created_at
+      pallet
+      call
+      call_raw
+      transfer_amount
+      status
+      expiry_block
+      deposit
+      approvals
+      decode_error
+      proposer {
+        id
+      }
+      transferTo {
+        id
+      }
+      multisig {
+        id
+      }
+      createdAtBlock {
+        height
+        hash
+      }
+      createdExtrinsic {
+        id
+      }''';
+
+  /// Lists all proposals for [multisigAddress], newest first.
+  ///
+  /// A multisig holds at most `Constants.maxTotalProposalsInStorage` (200)
+  /// proposals on-chain, so a single unpaginated query is sufficient and lets
+  /// status reconciliation happen by simply re-running this query.
+  static String buildProposalsForMultisigQuery(String multisigAddress) {
+    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
+    return '''
+    query MultisigProposals {
+      multisig_proposal(
+        where: {multisig_id: {_eq: "$escaped"}},
+        order_by: {created_at: desc}
+      ) {
+$fields
+      }
+    }
+  ''';
+  }
+
+  /// Fetches a single proposal by `(multisig_address, proposal_id)`.
+  static String buildProposalQuery(String multisigAddress, int proposalId) {
+    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
+    return '''
+    query MultisigProposal {
+      multisig_proposal(
+        where: {_and: [{multisig_id: {_eq: "$escaped"}}, {proposal_id: {_eq: $proposalId}}]},
+        limit: 1
+      ) {
+$fields
+      }
+    }
+  ''';
+  }
+}

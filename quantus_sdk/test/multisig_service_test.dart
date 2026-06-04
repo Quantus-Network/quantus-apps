@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
+import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
 
@@ -221,6 +222,75 @@ void main() {
       expect(query, contains('_or'));
       expect(query, contains('{signers: {_contains: ["$addrA"]}}'));
       expect(query, contains('{signers: {_contains: ["$addrB"]}}'));
+    });
+  });
+
+  group('MultisigProposalGraphql', () {
+    const multisigAddress = '5TestMultisig';
+
+    test('buildProposalsForMultisigQuery uses snake_case scalars and filters', () {
+      final query = MultisigProposalGraphql.buildProposalsForMultisigQuery(multisigAddress);
+      expect(query, contains('multisig_id: {_eq: "$multisigAddress"}'));
+      expect(query, contains('order_by: {created_at: desc}'));
+      expect(query, contains('proposal_id'));
+      expect(query, contains('created_at'));
+      expect(query, contains('call_raw'));
+      expect(query, contains('transfer_amount'));
+      expect(query, contains('expiry_block'));
+      expect(query, contains('decode_error'));
+      expect(query, contains('transferTo {'));
+      expect(query, contains('createdAtBlock {'));
+      expect(query, contains('createdExtrinsic {'));
+      expect(query, isNot(contains('proposalId')));
+      expect(query, isNot(contains('callRaw')));
+      expect(query, isNot(contains('transferAmount')));
+    });
+
+    test('buildProposalQuery filters by multisig_id and proposal_id', () {
+      final query = MultisigProposalGraphql.buildProposalQuery(multisigAddress, 7);
+      expect(query, contains('multisig_id: {_eq: "$multisigAddress"}'));
+      expect(query, contains('proposal_id: {_eq: 7}'));
+    });
+  });
+
+  group('MultisigProposal.fromIndexerJson', () {
+    final msig = MultisigAccount(
+      name: 'Team',
+      accountId: '5Multisig',
+      signers: ['5Proposer', '5Other'],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: '5Proposer',
+    );
+
+    test('maps snake_case indexer fields', () {
+      final proposal = MultisigProposal.fromIndexerJson(
+        {
+          'id': '5Multisig-1',
+          'proposal_id': 1,
+          'created_at': '2026-06-04T10:00:00.000Z',
+          'pallet': 'Balances',
+          'call': 'transfer_allow_death',
+          'call_raw': '0x0500',
+          'transfer_amount': '1000000000000',
+          'status': 'ACTIVE',
+          'expiry_block': 12345,
+          'deposit': '500000000000',
+          'approvals': ['5Proposer'],
+          'decode_error': null,
+          'proposer': {'id': '5Proposer'},
+          'transferTo': {'id': '5Recipient'},
+        },
+        msig: msig,
+      );
+
+      expect(proposal.entityId, '5Multisig-1');
+      expect(proposal.explorerProposalId, '5Multisig-1');
+      expect(proposal.id, 1);
+      expect(proposal.recipient, '5Recipient');
+      expect(proposal.amount, BigInt.parse('1000000000000'));
+      expect(proposal.status, MultisigProposalStatus.active);
+      expect(proposal.approvalCount, 1);
     });
   });
 

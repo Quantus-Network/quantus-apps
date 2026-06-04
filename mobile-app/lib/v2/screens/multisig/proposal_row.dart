@@ -89,15 +89,15 @@ class ProposalRow extends ConsumerWidget {
       );
     }
     final label = switch (proposal.status) {
-      MultisigProposalStatus.executed => l10n.multisigStatusApproved,
-      MultisigProposalStatus.expired => l10n.multisigStatusExpired,
+      MultisigProposalStatus.executed => l10n.multisigStatusExecuted,
       MultisigProposalStatus.cancelled => l10n.multisigStatusCancelled,
-      _ => proposal.status.name.toUpperCase(),
+      MultisigProposalStatus.removed => l10n.multisigStatusRemoved,
+      _ => l10n.multisigStatusActive,
     };
     final color = switch (proposal.status) {
       MultisigProposalStatus.executed => colors.success,
-      MultisigProposalStatus.expired => colors.textTertiary,
       MultisigProposalStatus.cancelled => colors.textError,
+      MultisigProposalStatus.removed => colors.textError,
       _ => colors.textPrimary,
     };
     return Container(
