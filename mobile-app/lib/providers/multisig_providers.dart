@@ -37,16 +37,16 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     }
     final updated = account.copyWith(name: name);
     await _settingsService.updateMultisigAccount(updated);
-    state.whenData((current) {
-      state = AsyncValue.data(current.map((a) => a.accountId == updated.accountId ? updated : a).toList());
-    });
+
+    final current = state.value ?? [];
+    state = AsyncValue.data(current.map((a) => a.accountId == updated.accountId ? updated : a).toList());
   }
 
   Future<void> remove(String accountId) async {
     await _settingsService.removeMultisigAccount(accountId);
-    state.whenData((current) {
-      state = AsyncValue.data(current.where((a) => a.accountId != accountId).toList());
-    });
+
+    final current = state.value ?? [];
+    state = AsyncValue.data(current.where((a) => a.accountId != accountId).toList());
   }
 
   MultisigAccount? byAccountId(String accountId) {
@@ -68,8 +68,7 @@ final multisigAccountsProvider = StateNotifierProvider<MultisigAccountsNotifier,
   return MultisigAccountsNotifier(settings);
 });
 
-final discoveredMultisigsProvider =
-    FutureProvider.autoDispose<List<MultisigAccount>>((ref) async {
+final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAccount>>((ref) async {
   final service = ref.watch(multisigServiceProvider);
   final accountsAsync = ref.watch(accountsProvider);
 
