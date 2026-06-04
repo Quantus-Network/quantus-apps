@@ -407,7 +407,7 @@ class _SignersSection extends StatelessWidget {
   }
 }
 
-class _PredictedAddressSection extends StatelessWidget {
+class _PredictedAddressSection extends ConsumerStatefulWidget {
   const _PredictedAddressSection({
     required this.l10n,
     required this.colors,
@@ -423,29 +423,57 @@ class _PredictedAddressSection extends StatelessWidget {
   final String? address;
 
   @override
+  ConsumerState<_PredictedAddressSection> createState() => _PredictedAddressSectionState();
+}
+
+class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSection> {
+  String? _checksum;
+
+  @override
+  void didUpdateWidget(covariant _PredictedAddressSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final isAddressChanged = widget.address != oldWidget.address;
+    final hasAddress = widget.address != null;
+
+    if (isAddressChanged && hasAddress) {
+      ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.address!).then((name) {
+        if (mounted) setState(() => _checksum = name);
+      });
+    } else {
+      setState(() => _checksum = null);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: widget.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.multisigCreatePredictedAddressLabel, style: text.receiveLabel?.copyWith(color: colors.textLabel)),
+          Text(
+            widget.l10n.multisigCreatePredictedAddressLabel,
+            style: widget.text.receiveLabel?.copyWith(color: widget.colors.textLabel),
+          ),
           const SizedBox(height: 12),
-          if (isLoading)
+          if (widget.isLoading)
             const Skeleton(height: 20)
-          else if (address != null)
+          else if (widget.address != null && _checksum != null) ...[
+            Text(_checksum!, style: widget.text.smallParagraph?.copyWith(color: widget.colors.checksum)),
+            const SizedBox(height: 4),
             Text(
-              address!,
-              style: text.smallParagraph?.copyWith(
-                color: colors.textPrimary,
+              widget.address!,
+              style: widget.text.smallParagraph?.copyWith(
+                color: widget.colors.textPrimary,
                 fontFamily: AppTextTheme.fontFamilySecondary,
               ),
-            )
-          else
+            ),
+          ] else
             Text(
-              l10n.multisigCreatePredictedAddressPlaceholder,
-              style: text.detail?.copyWith(color: colors.textTertiary),
+              widget.l10n.multisigCreatePredictedAddressPlaceholder,
+              style: widget.text.detail?.copyWith(color: widget.colors.textTertiary),
             ),
         ],
       ),
