@@ -43,8 +43,7 @@ $indexerFields
 
   /// Nested selection for `account_event.multisigProposalCreated`.
   static const String proposalCreatedAccountEventSelection =
-      '''
-    multisigProposalCreated {
+      '''    multisigProposalCreated {
       id
       fee
       deposit
@@ -58,10 +57,7 @@ $indexerFields
         id
       }
       proposal {
-''' +
-      MultisigProposalGraphql.fields +
-      '''
-      }
+${MultisigProposalGraphql.fields}      }
     }''';
 
   static const String byPkQuery =
