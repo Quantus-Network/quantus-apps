@@ -450,6 +450,43 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     );
   }
 
+  Widget _feeRow(
+    AppLocalizations l10n,
+    AppTextTheme text,
+    AppColorsV2 colors,
+    NumberFormattingService formattingService,
+    String label,
+    BigInt amount, {
+    String? note,
+    bool isTotal = false,
+  }) {
+    final value = l10n.commonAmountBalance(
+      formattingService.formatBalance(amount, maxDecimals: 5),
+      AppConstants.tokenSymbol,
+    );
+    final labelStyle = text.smallParagraph?.copyWith(
+      color: colors.textTertiary,
+      fontWeight: isTotal ? FontWeight.w600 : null,
+    );
+    final valueStyle = text.smallParagraph?.copyWith(
+      color: colors.textTertiary,
+      fontWeight: isTotal ? FontWeight.w600 : null,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            note != null ? '$label $note' : label,
+            style: labelStyle,
+          ),
+        ),
+        Text(value, style: valueStyle),
+      ],
+    );
+  }
+
   Widget _bottomSection(
     AppColorsV2 colors,
     AppTextTheme text,
@@ -468,57 +505,65 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.multisigProposeBalanceLabel,
-                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
-                        const SizedBox(height: 4),
-                        balance.when(
-                          data: (b) => Text(
-                            l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
-                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                          ),
-                          loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                          error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          l10n.multisigProposeFeeLabel,
-                          style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                        ),
-                        const SizedBox(height: 4),
-                        if (_hasFee && _feeBreakdown != null)
-                          Text(
-                            l10n.commonAmountBalance(
-                              formattingService.formatBalance(_feeBreakdown!.memberCost, maxDecimals: 5),
-                              AppConstants.tokenSymbol,
-                            ),
-                            style: text.smallParagraph?.copyWith(color: colors.textTertiary),
-                          )
-                        else
-                          const Align(
-                            alignment: Alignment.centerRight,
-                            child: Loader(),
-                          ),
-                      ],
-                    ),
+              Text(
+                l10n.multisigProposeBalanceLabel,
+                style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+              ),
+              const SizedBox(height: 4),
+              balance.when(
+                data: (b) => Text(
+                  l10n.commonAmountBalance(formattingService.formatBalance(b), AppConstants.tokenSymbol),
+                  style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                ),
+                loading: () => Text('...', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+                error: (_, _) => Text('—', style: text.smallParagraph?.copyWith(color: colors.textTertiary)),
+              ),
+              const SizedBox(height: 12),
+              if (_hasFee && _feeBreakdown != null) ...[
+                _feeRow(
+                  l10n,
+                  text,
+                  colors,
+                  formattingService,
+                  l10n.multisigProposeDepositLabel,
+                  _feeBreakdown!.deposit,
+                  note: l10n.multisigProposeDepositRefundableNote,
+                ),
+                const SizedBox(height: 4),
+                _feeRow(
+                  l10n,
+                  text,
+                  colors,
+                  formattingService,
+                  l10n.multisigProposeCreationFeeLabel,
+                  _feeBreakdown!.creationFee,
+                ),
+                if (_feeBreakdown!.networkFee > BigInt.zero) ...[
+                  const SizedBox(height: 4),
+                  _feeRow(
+                    l10n,
+                    text,
+                    colors,
+                    formattingService,
+                    l10n.sendReviewNetworkFee,
+                    _feeBreakdown!.networkFee,
                   ),
                 ],
-              ),
+                const SizedBox(height: 4),
+                _feeRow(
+                  l10n,
+                  text,
+                  colors,
+                  formattingService,
+                  l10n.multisigProposeMemberTotalLabel,
+                  _feeBreakdown!.memberCost,
+                  isTotal: true,
+                ),
+              ] else
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Loader(),
+                ),
               const SizedBox(height: 4),
               IntrinsicWidth(
                 child: QuantusButton.simple(

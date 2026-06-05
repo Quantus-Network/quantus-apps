@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/notification_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_polling_service.dart';
@@ -170,7 +172,8 @@ class TransactionSubmissionService {
     int attempt = 1,
   }) async {
     try {
-      final hashBytes = await MultisigService().propose(
+      final service = _ref.read(multisigServiceProvider);
+      final hashBytes = await service.propose(
         msig: msig,
         signer: signer,
         recipient: recipient,
@@ -180,7 +183,9 @@ class TransactionSubmissionService {
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusDebugPrint('[Propose] submitted: $extrinsicHash');
 
-      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, pending);
+      updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
+      final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
+      _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, updated);
     } catch (e, stackTrace) {
       quantusDebugPrint('[Propose] submit attempt $attempt failed: $e');
       if (attempt < maxRetries) {
@@ -198,6 +203,9 @@ class TransactionSubmissionService {
       } else {
         quantusDebugPrint('[Propose] failed after $maxRetries attempts: $e\n$stackTrace');
         removePendingMultisigProposal(_ref, pending.id);
+        _ref.read(multisigProposalToastProvider.notifier).state = const MultisigProposalToastEvent(
+          MultisigProposalToastKind.submitFailed,
+        );
       }
     }
   }

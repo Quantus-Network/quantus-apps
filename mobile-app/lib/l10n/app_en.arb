@@ -556,6 +556,10 @@
     "@multisigProposeSubmitFailed": {
       "description": "Error when proposal creation fails"
     },
+    "multisigProposeTimeoutToast": "Proposal confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigProposeTimeoutToast": {
+      "description": "Toast when proposal indexing polling times out"
+    },
     "multisigProposeDoneHeadline": "Transfer proposal submitted",
     "@multisigProposeDoneHeadline": {
       "description": "Success headline on propose done screen"

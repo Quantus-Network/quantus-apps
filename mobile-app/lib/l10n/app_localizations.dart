@@ -812,6 +812,12 @@ abstract class AppLocalizations {
   /// **'Failed to create proposal'**
   String get multisigProposeSubmitFailed;
 
+  /// Toast when proposal indexing polling times out
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal confirmation is taking longer than expected. Check the chain or try again.'**
+  String get multisigProposeTimeoutToast;
+
   /// Success headline on propose done screen
   ///
   /// In en, this message translates to:

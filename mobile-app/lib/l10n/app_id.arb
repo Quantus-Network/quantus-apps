@@ -130,6 +130,7 @@
   "multisigProposeAuthReason": "Autentikasi untuk mengajukan transaksi",
   "multisigProposeAuthRequired": "Autentikasi diperlukan",
   "multisigProposeSubmitFailed": "Gagal membuat proposal",
+  "multisigProposeTimeoutToast": "Konfirmasi proposal membutuhkan waktu lebih lama. Periksa chain atau coba lagi.",
   "multisigProposeDoneHeadline": "Proposal transfer terkirim",
   "multisigProposeDoneSubline": "Co-signer harus menyetujui sebelum transfer dapat dieksekusi.",
   "multisigProposeDoneToChecksum": "ke {checksum}",

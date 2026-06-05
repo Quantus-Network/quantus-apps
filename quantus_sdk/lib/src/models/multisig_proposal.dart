@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
@@ -14,8 +13,6 @@ enum MultisigProposalStatus { active, approved, executed, cancelled, removed }
 /// A multisig proposal as exposed by the indexer.
 @immutable
 class MultisigProposal {
-  static final multisig_pallet.Constants _palletConstants = multisig_pallet.Constants();
-
   /// Indexer row id (stable, unique). Used for activity de-duplication.
   final String entityId;
 
@@ -43,8 +40,8 @@ class MultisigProposal {
   final List<String> approvals;
   final BigInt deposit;
 
-  /// Non-refundable proposal fee (from pallet constants; not stored per row).
-  final BigInt fee;
+  /// Non-refundable burned pallet fee from the indexer, when indexed.
+  final BigInt? burnedPalletFee;
 
   /// Extrinsic network fee paid when this proposal was created, when indexed.
   final BigInt? networkFee;
@@ -71,7 +68,7 @@ class MultisigProposal {
     required this.expiryBlock,
     required this.approvals,
     required this.deposit,
-    required this.fee,
+    this.burnedPalletFee,
     this.networkFee,
     required this.status,
     required this.threshold,
@@ -82,9 +79,15 @@ class MultisigProposal {
   /// Maps an indexer `multisig_proposal` record to a [MultisigProposal].
   ///
   /// [msig] supplies threshold and signer count, which the proposal row does
-  /// not carry.
-  factory MultisigProposal.fromIndexerJson(Map<String, dynamic> record, {required MultisigAccount msig}) {
+  /// not carry. [burnedPalletFeeOverride] fills in when the nested row lacks
+  /// `burned_pallet_fee` but the parent account event carries it.
+  factory MultisigProposal.fromIndexerJson(
+    Map<String, dynamic> record, {
+    required MultisigAccount msig,
+    BigInt? burnedPalletFeeOverride,
+  }) {
     final transferAmountRaw = record['transfer_amount'] ?? record['transferAmount'];
+    final burnedRaw = record['burned_pallet_fee'] ?? record['burnedPalletFee'];
     return MultisigProposal(
       entityId: stringFromJson(record['id']),
       id: _intFromJson(record['proposal_id'] ?? record['proposalId']),
@@ -99,7 +102,9 @@ class MultisigProposal {
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
       approvals: _stringList(record['approvals']),
       deposit: bigIntFromJson(record['deposit']),
-      fee: _palletConstants.proposalFee,
+      burnedPalletFee: burnedRaw != null
+          ? bigIntFromJson(burnedRaw)
+          : burnedPalletFeeOverride,
       networkFee: _optionalBigInt(record['creation_network_fee'] ?? record['creationNetworkFee']),
       status: parseStatus(record['status']),
       threshold: msig.threshold,
@@ -124,8 +129,9 @@ class MultisigProposal {
   int get approvalCount => approvals.length;
   bool didApprove(String accountId) => approvals.contains(accountId);
 
-  /// Non-refundable burned pallet fee for creating this proposal.
-  BigInt get palletFee => MultisigService().proposalCreationFee(signerCount);
+  /// Non-refundable burned pallet fee; prefers indexer data, else local estimate.
+  BigInt get palletFee =>
+      burnedPalletFee ?? MultisigService().proposalCreationFee(signerCount);
 
   /// Explorer route segment for `/multisig-proposals/:id`.
   ///
@@ -145,7 +151,11 @@ class MultisigProposal {
   /// Whether this proposal should appear in the pinned "open" section.
   bool isActionable(int currentBlock) => isOpen && !expired(currentBlock);
 
-  MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals}) {
+  MultisigProposal copyWith({
+    MultisigProposalStatus? status,
+    List<String>? approvals,
+    BigInt? burnedPalletFee,
+  }) {
     return MultisigProposal(
       entityId: entityId,
       id: id,
@@ -160,7 +170,7 @@ class MultisigProposal {
       expiryBlock: expiryBlock,
       approvals: approvals ?? this.approvals,
       deposit: deposit,
-      fee: fee,
+      burnedPalletFee: burnedPalletFee ?? this.burnedPalletFee,
       networkFee: networkFee,
       status: status ?? this.status,
       threshold: threshold,

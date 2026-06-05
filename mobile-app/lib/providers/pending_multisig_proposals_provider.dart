@@ -10,6 +10,13 @@ class PendingMultisigProposalsNotifier extends StateNotifier<List<PendingMultisi
     state = [...state, event];
   }
 
+  void update(String id, {String? extrinsicHash}) {
+    state = [
+      for (final event in state)
+        if (event.id == id) event.copyWith(extrinsicHash: extrinsicHash) else event,
+    ];
+  }
+
   void remove(String id) {
     state = state.where((e) => e.id != id).toList();
   }
@@ -28,10 +35,21 @@ void addPendingMultisigProposal(Ref ref, PendingMultisigProposalEvent event) {
   ref.read(pendingMultisigProposalsProvider.notifier).add(event);
 }
 
+void updatePendingMultisigProposal(Ref ref, String id, {String? extrinsicHash}) {
+  ref.read(pendingMultisigProposalsProvider.notifier).update(id, extrinsicHash: extrinsicHash);
+}
+
 void removePendingMultisigProposal(Ref ref, String id) {
   ref.read(pendingMultisigProposalsProvider.notifier).remove(id);
 }
 
 void clearPendingMultisigProposals(Ref ref) {
   ref.read(pendingMultisigProposalsProvider.notifier).clear();
+}
+
+PendingMultisigProposalEvent? findPendingMultisigProposal(Ref ref, String id) {
+  for (final event in ref.read(pendingMultisigProposalsProvider)) {
+    if (event.id == id) return event;
+  }
+  return null;
 }

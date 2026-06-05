@@ -3,6 +3,7 @@ import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal_event.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
+import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 /// On-chain multisig proposal creation shown in the proposer's activity history.
 ///
@@ -58,18 +59,28 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
     String recipient = '';
     BigInt amount = BigInt.zero;
 
+    final burnedPalletFeeRaw = created['burned_pallet_fee'] ?? created['burnedPalletFee'];
+    final burnedPalletFeeOverride = burnedPalletFeeRaw != null ? bigIntFromJson(burnedPalletFeeRaw) : null;
+
     if (proposalJson != null) {
       final msig = _minimalMultisigFromProposalJson(proposalJson);
       multisigAddress = msig.accountId;
-      proposal = MultisigProposal.fromIndexerJson(proposalJson, msig: msig);
+      proposal = MultisigProposal.fromIndexerJson(
+        proposalJson,
+        msig: msig,
+        burnedPalletFeeOverride: burnedPalletFeeOverride,
+      );
       proposerId = proposal.proposer;
       recipient = proposal.recipient;
       amount = proposal.amount;
     }
 
     final block = jsonMapOrNull(created['block']);
-    final burnedPalletFee = created['burned_pallet_fee'] ?? created['burnedPalletFee'];
     final feeRaw = created['fee'] ?? proposalJson?['creation_network_fee'] ?? proposalJson?['creationNetworkFee'];
+    final signerCount = proposal?.signerCount ?? _signerCountFromProposalJson(proposalJson);
+    final palletFee = burnedPalletFeeOverride ??
+        proposal?.burnedPalletFee ??
+        (signerCount > 0 ? MultisigService().proposalCreationFee(signerCount) : BigInt.zero);
 
     return MultisigProposalCreatedEvent(
       id: accountEventId ?? stringFromJson(created['id']),
@@ -77,7 +88,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
       multisigAddress: multisigAddress,
       recipient: recipient,
       amount: amount,
-      palletFee: burnedPalletFee != null ? bigIntFromJson(burnedPalletFee) : BigInt.zero,
+      palletFee: palletFee,
       deposit: bigIntFromJson(created['deposit']),
       fee: feeRaw != null ? bigIntFromJson(feeRaw) : null,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(created['timestamp']),
@@ -114,6 +125,14 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
       extrinsicHash: extrinsicHash ?? pending.extrinsicHash,
       proposal: proposal,
     );
+  }
+
+  static int _signerCountFromProposalJson(Map<String, dynamic>? proposalJson) {
+    if (proposalJson == null) return 0;
+    final multisigJson = jsonMapOrNull(proposalJson['multisig']);
+    final signersRaw = multisigJson?['signers'];
+    if (signersRaw is List) return signersRaw.length;
+    return 0;
   }
 
   static MultisigAccount _minimalMultisigFromProposalJson(Map<String, dynamic> proposalJson) {

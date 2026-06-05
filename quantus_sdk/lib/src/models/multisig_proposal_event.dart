@@ -63,6 +63,28 @@ class PendingMultisigProposalEvent extends TransactionEvent {
   /// Total out-of-pocket cost for the proposing member at submit time.
   BigInt get memberCost => (fee ?? BigInt.zero) + deposit + palletFee;
 
+  PendingMultisigProposalEvent copyWith({
+    String? extrinsicHash,
+    BigInt? fee,
+    BigInt? deposit,
+    BigInt? palletFee,
+    DateTime? timestamp,
+  }) {
+    return PendingMultisigProposalEvent(
+      tempId: id,
+      multisigAddress: multisigAddress,
+      proposerId: proposerId,
+      recipient: recipient,
+      amount: amount,
+      deposit: deposit ?? this.deposit,
+      expiryBlock: expiryBlock,
+      palletFee: palletFee ?? this.palletFee,
+      fee: fee ?? this.fee,
+      extrinsicHash: extrinsicHash ?? this.extrinsicHash,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
+
   factory PendingMultisigProposalEvent.create({
     required MultisigAccount msig,
     required String proposerId,

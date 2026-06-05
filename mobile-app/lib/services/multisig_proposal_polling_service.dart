@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/multisig_proposal_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/multisig_proposal_reconciliation.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 /// Polls the indexer until a freshly submitted proposal becomes visible, then
@@ -20,7 +22,17 @@ class MultisigProposalPollingService {
 
   void startPolling(MultisigAccount msig, PendingMultisigProposalEvent pending) {
     final key = pending.id;
-    quantusDebugPrint('[MultisigProposalPoller] startPolling $key');
+    if (pending.extrinsicHash == null) {
+      quantusDebugPrint(
+        '[MultisigProposalPoller] ERROR: cannot poll $key — no extrinsicHash. '
+        'Waiting for submission to complete.',
+      );
+      return;
+    }
+
+    quantusDebugPrint(
+      '[MultisigProposalPoller] startPolling $key hash=${pending.extrinsicHash}',
+    );
 
     stopPolling(key);
     final startTime = DateTime.now();
@@ -30,6 +42,9 @@ class MultisigProposalPollingService {
         quantusDebugPrint('[MultisigProposalPoller] timeout for $key');
         stopPolling(key);
         removePendingMultisigProposal(_ref, key);
+        _ref.read(multisigProposalToastProvider.notifier).state = const MultisigProposalToastEvent(
+          MultisigProposalToastKind.timeout,
+        );
         return;
       }
       unawaited(_search(msig, pending));
@@ -45,29 +60,24 @@ class MultisigProposalPollingService {
 
   Future<void> _search(MultisigAccount msig, PendingMultisigProposalEvent pending) async {
     final key = pending.id;
+    final hash = pending.extrinsicHash;
+    if (hash == null) return;
     if (!_inFlight.add(key)) return;
 
     try {
-      final service = _ref.read(multisigServiceProvider);
-      final proposals = await service.getProposalsForMultisig(msig);
-      final match = proposals.firstWhere(
-        (p) =>
-            p.proposer == pending.proposerId &&
-            p.recipient == pending.recipient &&
-            p.amount == pending.amount &&
-            !p.createdAt.isBefore(pending.timestamp.subtract(const Duration(minutes: 2))),
-        orElse: () => _noMatch,
-      );
+      final historyService = _ref.read(chainHistoryServiceProvider);
+      final indexed = await historyService.searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
 
-      if (identical(match, _noMatch)) {
+      if (indexed == null) {
         quantusDebugPrint('[MultisigProposalPoller] not indexed yet: $key');
         return;
       }
 
-      quantusDebugPrint('[MultisigProposalPoller] confirmed $key (proposal #${match.id})');
+      quantusDebugPrint('[MultisigProposalPoller] confirmed $key at block ${indexed.blockNumber}');
       stopPolling(key);
       removePendingMultisigProposal(_ref, key);
-      await reconcileConfirmedProposal(_ref, msig, pending: pending, proposal: match);
+      await reconcileIndexedProposalCreation(_ref, msig, indexed);
+      invalidateAccountBalances(_ref, {pending.proposerId});
     } catch (e) {
       quantusDebugPrint('[MultisigProposalPoller] search error for $key: $e');
     } finally {
@@ -82,26 +92,6 @@ class MultisigProposalPollingService {
     _timers.clear();
   }
 }
-
-final _noMatch = MultisigProposal(
-  entityId: '',
-  id: -1,
-  multisigAddress: '',
-  proposer: '',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  pallet: '',
-  call: '',
-  callRaw: '',
-  recipient: '',
-  amount: BigInt.zero,
-  expiryBlock: 0,
-  approvals: const [],
-  deposit: BigInt.zero,
-  fee: BigInt.zero,
-  status: MultisigProposalStatus.active,
-  threshold: 0,
-  signerCount: 0,
-);
 
 final multisigProposalPollingServiceProvider = Provider<MultisigProposalPollingService>((ref) {
   final service = MultisigProposalPollingService(ref);

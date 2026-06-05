@@ -12,10 +12,6 @@ Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft) 
   final affectedIds = {...draft.signers, creatorId};
 
   try {
-    for (final accountId in affectedIds) {
-      await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
-    }
-
     await appendConfirmedEventToHistory(
       ref: ref,
       accountId: creatorId,

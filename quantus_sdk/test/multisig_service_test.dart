@@ -238,6 +238,7 @@ void main() {
       expect(query, contains('call_raw'));
       expect(query, contains('transfer_amount'));
       expect(query, contains('expiry_block'));
+      expect(query, contains('burned_pallet_fee'));
       expect(query, contains('creation_network_fee'));
       expect(query, contains('decode_error'));
       expect(query, contains('transferTo {'));
@@ -294,6 +295,30 @@ void main() {
       expect(proposal.status, MultisigProposalStatus.active);
       expect(proposal.approvalCount, 1);
       expect(proposal.palletFee, MultisigService().proposalCreationFee(msig.signers.length));
+    });
+
+    test('reads burned_pallet_fee from indexer when present', () {
+      final proposal = MultisigProposal.fromIndexerJson(
+        {
+          'id': '5Multisig-3',
+          'proposal_id': 3,
+          'created_at': '2026-06-04T10:00:00.000Z',
+          'pallet': 'Balances',
+          'call': 'transfer_allow_death',
+          'call_raw': '0x0500',
+          'transfer_amount': '1000000000000',
+          'status': 'ACTIVE',
+          'expiry_block': 12345,
+          'deposit': '500000000000',
+          'burned_pallet_fee': '1020000000000',
+          'approvals': [],
+          'proposer': {'id': '5Proposer'},
+          'transferTo': {'id': '5Recipient'},
+        },
+        msig: msig,
+      );
+
+      expect(proposal.palletFee, BigInt.parse('1020000000000'));
     });
 
     test('maps creation network fee when present', () {

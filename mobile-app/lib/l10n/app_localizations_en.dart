@@ -397,6 +397,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeSubmitFailed => 'Failed to create proposal';
 
   @override
+  String get multisigProposeTimeoutToast =>
+      'Proposal confirmation is taking longer than expected. Check the chain or try again.';
+
+  @override
   String get multisigProposeDoneHeadline => 'Transfer proposal submitted';
 
   @override

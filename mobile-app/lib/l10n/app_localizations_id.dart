@@ -399,6 +399,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeSubmitFailed => 'Gagal membuat proposal';
 
   @override
+  String get multisigProposeTimeoutToast =>
+      'Konfirmasi proposal membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
   String get multisigProposeDoneHeadline => 'Proposal transfer terkirim';
 
   @override

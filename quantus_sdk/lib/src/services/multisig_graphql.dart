@@ -123,6 +123,7 @@ class MultisigProposalGraphql {
       status
       expiry_block
       deposit
+      burned_pallet_fee
       creation_network_fee
       approvals
       decode_error
