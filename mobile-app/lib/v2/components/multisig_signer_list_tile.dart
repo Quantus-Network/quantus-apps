@@ -76,8 +76,6 @@ class _MultisigSignerListTileState extends ConsumerState<MultisigSignerListTile>
                       child: Text(
                         _primaryLabel,
                         style: widget.text.smallParagraph?.copyWith(color: widget.colors.checksum),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (showCreator) ...[
