@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -19,8 +19,8 @@ class ProposalRow extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountText = '${fmt.formatBalance(proposal.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
+    final amountText = formatTxAmount(proposal.amount, isSend: true).primaryAmount;
     final shortAddr = AddressFormattingService.formatAddress(proposal.recipient);
     final didApprove = proposal.didApprove(myAccountId);
 

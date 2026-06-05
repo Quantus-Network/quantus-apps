@@ -35,8 +35,12 @@ class _TransactionDetailSheet extends ConsumerWidget {
   bool get _isPending => tx is PendingTransactionEvent;
   bool get _isMultisigCreated => tx.isMultisigCreated;
   bool get _isPendingMultisigCreation => tx.isPendingMultisigCreation;
+  bool get _isMultisigProposalCreated => tx.isMultisigProposalCreated;
+  bool get _isPendingMultisigProposal => tx.isPendingMultisigProposal;
 
   String _title(AppLocalizations l10n) {
+    if (_isPendingMultisigProposal) return l10n.activityDetailTitleProposing;
+    if (_isMultisigProposalCreated) return l10n.activityDetailTitleProposalCreated;
     if (_isPendingMultisigCreation) return l10n.activityDetailTitleMultisigCreating;
     if (_isMultisigCreated) return l10n.activityDetailTitleMultisigCreated;
     if (_isPending) return l10n.activityDetailTitleSending;
@@ -47,13 +51,15 @@ class _TransactionDetailSheet extends ConsumerWidget {
   }
 
   String _statusLabel(AppLocalizations l10n) {
-    if (_isPending || _isPendingMultisigCreation) return l10n.activityDetailStatusInProcess;
+    if (_isPending || _isPendingMultisigCreation || _isPendingMultisigProposal) {
+      return l10n.activityDetailStatusInProcess;
+    }
     if (tx.isReversibleScheduled) return l10n.activityDetailStatusScheduled;
     return l10n.activityDetailStatusCompleted;
   }
 
   Color _statusColor(AppColorsV2 colors) {
-    if (_isPending || _isPendingMultisigCreation || tx.isReversibleScheduled) {
+    if (_isPending || _isPendingMultisigCreation || _isPendingMultisigProposal || tx.isReversibleScheduled) {
       return colors.checksum;
     }
     return colors.success;
@@ -149,6 +155,14 @@ class _DetailsSection extends ConsumerWidget {
     final formattingService = ref.watch(numberFormattingServiceProvider);
 
     final pendingMultisig = tx;
+    if (pendingMultisig is PendingMultisigProposalEvent) {
+      return _pendingProposalDetails(pendingMultisig, l10n, formattingService);
+    }
+
+    if (tx is MultisigProposalCreatedEvent) {
+      return _proposalCreatedDetails(tx as MultisigProposalCreatedEvent, l10n, formattingService);
+    }
+
     if (pendingMultisig is PendingMultisigCreationEvent) {
       return _pendingMultisigDetails(pendingMultisig, l10n, formattingService);
     }
@@ -180,6 +194,79 @@ class _DetailsSection extends ConsumerWidget {
         _DetailRow(label: isSend ? l10n.activityDetailTo : l10n.activityDetailFrom, value: address, colors: colors),
         _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (feeStr != null) _DetailRow(label: l10n.activityDetailNetworkFee, value: feeStr, colors: colors),
+        if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
+      ],
+    );
+  }
+
+  Widget _pendingProposalDetails(
+    PendingMultisigProposalEvent event,
+    AppLocalizations l10n,
+    NumberFormattingService formattingService,
+  ) {
+    return _proposalCreationDetails(
+      multisigAddress: event.multisigAddress,
+      recipient: event.recipient,
+      palletFee: event.palletFee,
+      deposit: event.deposit,
+      fee: event.fee,
+      timestamp: event.timestamp,
+      extrinsicHash: event.extrinsicHash,
+      l10n: l10n,
+      formattingService: formattingService,
+    );
+  }
+
+  Widget _proposalCreatedDetails(
+    MultisigProposalCreatedEvent event,
+    AppLocalizations l10n,
+    NumberFormattingService formattingService,
+  ) {
+    return _proposalCreationDetails(
+      multisigAddress: event.multisigAddress,
+      recipient: event.recipient,
+      palletFee: event.palletFee,
+      deposit: event.deposit,
+      fee: event.fee,
+      timestamp: event.timestamp,
+      extrinsicHash: event.extrinsicHash,
+      l10n: l10n,
+      formattingService: formattingService,
+    );
+  }
+
+  Widget _proposalCreationDetails({
+    required String multisigAddress,
+    required String recipient,
+    required BigInt palletFee,
+    required BigInt deposit,
+    required DateTime timestamp,
+    required AppLocalizations l10n,
+    required NumberFormattingService formattingService,
+    BigInt? fee,
+    String? extrinsicHash,
+  }) {
+    final multisig = AddressFormattingService.formatActivityDetailAddress(multisigAddress);
+    final recipientAddress = AddressFormattingService.formatActivityDetailAddress(recipient);
+    final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
+    final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
+    final depositValue = _formatBalance(l10n, formattingService, deposit);
+    final networkFeeValue = fee != null && fee != BigInt.zero
+        ? _formatBalance(l10n, formattingService, fee)
+        : null;
+    final txHash = extrinsicHash != null
+        ? AddressFormattingService.formatActivityDetailExtrinsicHash(extrinsicHash)
+        : null;
+
+    return Column(
+      children: [
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisig, colors: colors),
+        _DetailRow(label: l10n.activityDetailTo, value: recipientAddress, colors: colors),
+        _DetailRow(label: l10n.multisigProposalFeeRowLabel, value: palletFeeValue, colors: colors),
+        _DetailRow(label: l10n.multisigProposalDepositLabel, value: depositValue, colors: colors),
+        if (networkFeeValue != null)
+          _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),
       ],
     );
@@ -284,7 +371,10 @@ class _ExplorerLink extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final isPending = tx is PendingTransactionEvent || tx is PendingMultisigCreationEvent;
+    final isPending =
+        tx is PendingTransactionEvent ||
+        tx is PendingMultisigCreationEvent ||
+        (tx is PendingMultisigProposalEvent && tx.extrinsicHash == null);
     final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
     return GestureDetector(
@@ -305,9 +395,12 @@ class _ExplorerLink extends ConsumerWidget {
   void _openExplorer() {
     final isMinerReward = tx.isMinerReward;
     final isMultisigCreated = tx.isMultisigCreated;
+    final isProposalCreated = tx.isProposalCreation;
 
     String transactionType;
-    if (isMultisigCreated) {
+    if (isProposalCreated) {
+      transactionType = 'multisig-proposal-created';
+    } else if (isMultisigCreated) {
       transactionType = 'multisig-created';
     } else if (isMinerReward) {
       transactionType = 'miner-rewards';

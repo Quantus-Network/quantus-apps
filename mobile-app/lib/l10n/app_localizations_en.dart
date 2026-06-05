@@ -457,6 +457,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityTxProposing => 'Proposing';
 
   @override
+  String get activityTxProposalCreated => 'Proposal created';
+
+  @override
   String get multisigApproveButton => 'Approve';
 
   @override
@@ -858,6 +861,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleMultisigCreating => 'Creating multisig';
+
+  @override
+  String get activityDetailTitleProposalCreated => 'Proposal created';
+
+  @override
+  String get activityDetailTitleProposing => 'Proposing';
+
+  @override
+  String get activityDetailProposalTransferAmount => 'TRANSFER AMOUNT';
 
   @override
   String get activityDetailStatusInProcess => 'In Process';

@@ -35,8 +35,9 @@ class PendingMultisigProposalEvent extends TransactionEvent {
   final String multisigAddress;
   final String proposerId;
   final String recipient;
-  final BigInt fee;
+  final BigInt? fee;
   final BigInt deposit;
+  final BigInt palletFee;
   final int expiryBlock;
 
   PendingMultisigProposalEvent({
@@ -45,18 +46,22 @@ class PendingMultisigProposalEvent extends TransactionEvent {
     required this.proposerId,
     required this.recipient,
     required super.amount,
-    required this.fee,
     required this.deposit,
     required this.expiryBlock,
+    required this.palletFee,
+    this.fee,
     super.extrinsicHash,
     DateTime? timestamp,
   }) : super(
          id: tempId,
-         from: multisigAddress,
+         from: proposerId,
          to: recipient,
          timestamp: timestamp ?? DateTime.now(),
          blockNumber: 0,
        );
+
+  /// Total out-of-pocket cost for the proposing member at submit time.
+  BigInt get memberCost => (fee ?? BigInt.zero) + deposit + palletFee;
 
   factory PendingMultisigProposalEvent.create({
     required MultisigAccount msig,
@@ -66,6 +71,7 @@ class PendingMultisigProposalEvent extends TransactionEvent {
     required int expiryBlock,
     BigInt? fee,
     BigInt? deposit,
+    BigInt? palletFee,
   }) {
     return PendingMultisigProposalEvent(
       tempId: 'pending_proposal_${DateTime.now().millisecondsSinceEpoch}',
@@ -73,8 +79,9 @@ class PendingMultisigProposalEvent extends TransactionEvent {
       proposerId: proposerId,
       recipient: recipient,
       amount: amount,
-      fee: fee ?? MultisigService().proposalCreationFee(msig.signers.length),
+      fee: fee,
       deposit: deposit ?? _palletConstants.proposalDeposit,
+      palletFee: palletFee ?? MultisigService().proposalCreationFee(msig.signers.length),
       expiryBlock: expiryBlock,
     );
   }

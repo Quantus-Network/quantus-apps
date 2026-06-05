@@ -5,6 +5,7 @@ import 'package:resonance_network_wallet/models/pagination_state.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/pending_cancellations_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
@@ -17,6 +18,7 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
   final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
   final pending = ref.watch(pendingTransactionsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
+  final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
   final pagination = ref.watch(paginationControllerProvider);
 
   if (pagination.error != null && !pagination.hasLoadedChainData) {
@@ -35,6 +37,7 @@ final allTransactionsProvider = Provider<AsyncValue<CombinedTransactionsList>>((
       pendingCancellationIds: pendingCancellationIds,
       pendingTransactions: pending,
       pendingMultisigCreations: pendingMultisigCreations,
+      pendingMultisigProposals: pendingMultisigProposals,
       scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
       otherTransfers: pagination.otherTransfers,
     ),

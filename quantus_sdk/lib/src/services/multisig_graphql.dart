@@ -41,6 +41,29 @@ $_coreFields
 $indexerFields
     }''';
 
+  /// Nested selection for `account_event.multisigProposalCreated`.
+  static const String proposalCreatedAccountEventSelection =
+      '''
+    multisigProposalCreated {
+      id
+      fee
+      deposit
+      burned_pallet_fee
+      timestamp
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+      }
+      proposal {
+''' +
+      MultisigProposalGraphql.fields +
+      '''
+      }
+    }''';
+
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {
@@ -100,6 +123,7 @@ class MultisigProposalGraphql {
       status
       expiry_block
       deposit
+      creation_network_fee
       approvals
       decode_error
       proposer {

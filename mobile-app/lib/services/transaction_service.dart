@@ -33,16 +33,30 @@ class TransactionService {
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
     required List<PendingMultisigCreationEvent> pendingMultisigCreations,
+    required List<PendingMultisigProposalEvent> pendingMultisigProposals,
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
     final seenMultisigAddresses = <String>{};
+    final seenProposalKeys = <String>{};
     final List<TransactionEvent> result = [];
 
     for (final creation in pendingMultisigCreations) {
       if (seenMultisigAddresses.add(creation.multisigAddress) && seenIds.add(creation.id)) {
         result.add(creation);
+      }
+    }
+
+    for (final proposal in pendingMultisigProposals) {
+      final key = _proposalActivityKey(
+        proposerId: proposal.proposerId,
+        multisigAddress: proposal.multisigAddress,
+        recipient: proposal.recipient,
+        amount: proposal.amount,
+      );
+      if (seenProposalKeys.add(key) && seenIds.add(proposal.id)) {
+        result.add(proposal);
       }
     }
 
@@ -78,12 +92,44 @@ class TransactionService {
       if (transaction is MultisigCreatedEvent) {
         seenMultisigAddresses.add(transaction.multisigAddress);
       }
+      if (transaction is MultisigProposalCreatedEvent) {
+        final key = _proposalActivityKey(
+          proposerId: transaction.proposerId,
+          multisigAddress: transaction.multisigAddress,
+          recipient: transaction.recipient,
+          amount: transaction.amount,
+        );
+        if (seenProposalKeys.contains(key)) {
+          result.removeWhere(
+            (e) => e is PendingMultisigProposalEvent && _pendingProposalKey(e) == key,
+          );
+        }
+        seenProposalKeys.add(key);
+      }
       if (seenIds.add(transaction.id)) {
         result.add(transaction);
       }
     }
 
     return result;
+  }
+
+  static String _proposalActivityKey({
+    required String proposerId,
+    required String multisigAddress,
+    required String recipient,
+    required BigInt amount,
+  }) {
+    return '$proposerId|$multisigAddress|$recipient|$amount';
+  }
+
+  static String _pendingProposalKey(PendingMultisigProposalEvent proposal) {
+    return _proposalActivityKey(
+      proposerId: proposal.proposerId,
+      multisigAddress: proposal.multisigAddress,
+      recipient: proposal.recipient,
+      amount: proposal.amount,
+    );
   }
 
   TransactionRole getTransactionRole(TransactionEvent transaction, {List<String>? accountIds}) {

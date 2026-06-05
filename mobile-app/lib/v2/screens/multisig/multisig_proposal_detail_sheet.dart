@@ -88,6 +88,13 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     );
   }
 
+  String _formatBalance(AppLocalizations l10n, NumberFormattingService fmt, BigInt value) {
+    return l10n.commonAmountBalance(
+      fmt.formatBalance(value, maxDecimals: AppConstants.decimals),
+      AppConstants.tokenSymbol,
+    );
+  }
+
   Widget _summary(
     AppLocalizations l10n,
     AppColorsV2 colors,
@@ -122,19 +129,19 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         _ProposalDetailRow(
           colors: colors,
           label: l10n.multisigProposalFeeRowLabel,
-          value: l10n.commonAmountBalance(
-            fmt.formatBalance(proposal.fee, maxDecimals: AppConstants.decimals),
-            AppConstants.tokenSymbol,
-          ),
+          value: _formatBalance(l10n, fmt, proposal.palletFee),
         ),
         _ProposalDetailRow(
           colors: colors,
           label: l10n.multisigProposalDepositLabel,
-          value: l10n.commonAmountBalance(
-            fmt.formatBalance(proposal.deposit, maxDecimals: AppConstants.decimals),
-            AppConstants.tokenSymbol,
-          ),
+          value: _formatBalance(l10n, fmt, proposal.deposit),
         ),
+        if (proposal.networkFee != null && proposal.networkFee != BigInt.zero)
+          _ProposalDetailRow(
+            colors: colors,
+            label: l10n.activityDetailNetworkFee,
+            value: _formatBalance(l10n, fmt, proposal.networkFee!),
+          ),
       ],
     );
   }

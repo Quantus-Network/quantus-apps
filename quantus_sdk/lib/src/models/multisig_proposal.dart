@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 /// On-chain lifecycle status of a multisig proposal.
 ///
@@ -44,6 +45,9 @@ class MultisigProposal {
 
   /// Non-refundable proposal fee (from pallet constants; not stored per row).
   final BigInt fee;
+
+  /// Extrinsic network fee paid when this proposal was created, when indexed.
+  final BigInt? networkFee;
   final MultisigProposalStatus status;
   final String? decodeError;
 
@@ -68,6 +72,7 @@ class MultisigProposal {
     required this.approvals,
     required this.deposit,
     required this.fee,
+    this.networkFee,
     required this.status,
     required this.threshold,
     required this.signerCount,
@@ -95,6 +100,7 @@ class MultisigProposal {
       approvals: _stringList(record['approvals']),
       deposit: bigIntFromJson(record['deposit']),
       fee: _palletConstants.proposalFee,
+      networkFee: _optionalBigInt(record['creation_network_fee'] ?? record['creationNetworkFee']),
       status: parseStatus(record['status']),
       threshold: msig.threshold,
       signerCount: msig.signers.length,
@@ -117,6 +123,9 @@ class MultisigProposal {
 
   int get approvalCount => approvals.length;
   bool didApprove(String accountId) => approvals.contains(accountId);
+
+  /// Non-refundable burned pallet fee for creating this proposal.
+  BigInt get palletFee => MultisigService().proposalCreationFee(signerCount);
 
   /// Explorer route segment for `/multisig-proposals/:id`.
   ///
@@ -152,6 +161,7 @@ class MultisigProposal {
       approvals: approvals ?? this.approvals,
       deposit: deposit,
       fee: fee,
+      networkFee: networkFee,
       status: status ?? this.status,
       threshold: threshold,
       signerCount: signerCount,
@@ -171,5 +181,10 @@ class MultisigProposal {
   static List<String> _stringList(dynamic value) {
     if (value is List) return value.map((e) => e.toString()).toList();
     return <String>[];
+  }
+
+  static BigInt? _optionalBigInt(dynamic value) {
+    if (value == null) return null;
+    return bigIntFromJson(value);
   }
 }

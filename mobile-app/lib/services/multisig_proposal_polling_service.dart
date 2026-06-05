@@ -67,7 +67,7 @@ class MultisigProposalPollingService {
       quantusDebugPrint('[MultisigProposalPoller] confirmed $key (proposal #${match.id})');
       stopPolling(key);
       removePendingMultisigProposal(_ref, key);
-      reconcileConfirmedProposal(_ref, msig);
+      await reconcileConfirmedProposal(_ref, msig, pending: pending, proposal: match);
     } catch (e) {
       quantusDebugPrint('[MultisigProposalPoller] search error for $key: $e');
     } finally {

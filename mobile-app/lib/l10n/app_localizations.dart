@@ -920,6 +920,12 @@ abstract class AppLocalizations {
   /// **'Proposing'**
   String get activityTxProposing;
 
+  /// Activity row label for a confirmed multisig proposal creation on the proposer account
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get activityTxProposalCreated;
+
   /// Approve button on proposal detail
   ///
   /// In en, this message translates to:
@@ -1669,6 +1675,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creating multisig'**
   String get activityDetailTitleMultisigCreating;
+
+  /// Detail sheet title for a confirmed multisig proposal creation
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get activityDetailTitleProposalCreated;
+
+  /// Detail sheet title while a multisig proposal is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposing'**
+  String get activityDetailTitleProposing;
+
+  /// Proposed transfer amount row label on proposal creation detail sheet
+  ///
+  /// In en, this message translates to:
+  /// **'TRANSFER AMOUNT'**
+  String get activityDetailProposalTransferAmount;
 
   /// Status label for in-process transaction
   ///

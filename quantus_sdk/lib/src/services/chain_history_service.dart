@@ -113,8 +113,10 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
         : '';
 
     final String multisigField = MultisigGraphql.accountEventSelection;
+    final String proposalCreatedField = MultisigGraphql.proposalCreatedAccountEventSelection;
 
-    const String multisigSendClause = ', {multisig_id: {_is_null: false}}';
+    const String multisigSendClause =
+        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}';
 
     final String whereClause;
 
@@ -199,7 +201,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField$multisigField
+    }$minerRewardField$multisigField$proposalCreatedField
   }
 }
 ''';
@@ -431,6 +433,16 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     if (eventMap['multisig'] != null) {
       return MultisigCreatedEvent.fromAccountEvent(eventMap);
     }
+    if (eventMap['multisigProposalCreated'] != null) {
+      try {
+        return MultisigProposalCreatedEvent.fromAccountEvent(eventMap);
+      } catch (e, stackTrace) {
+        print('[ChainHistoryService] WARNING: failed to parse multisigProposalCreated, '
+            'id: ${eventMap['id']}, error: $e');
+        print(stackTrace);
+        return null;
+      }
+    }
     final id = eventMap['id'] as String?;
     if (id != null && _isSkippedMultisigAccountEventId(id)) {
       // Known multisig-related rows we don't render in activity yet.
@@ -442,9 +454,10 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     return null;
   }
 
-  /// Other multisig-related indexer rows (proposals, deposits, etc.) are not
-  /// shown in activity yet.
+  /// Other multisig-related indexer rows (approvals, deposits claimed, etc.)
+  /// are not shown in activity yet.
   static bool _isSkippedMultisigAccountEventId(String id) {
+    if (id.startsWith('ae-ms-proposal-created-')) return false;
     return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
 

@@ -8,7 +8,6 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
@@ -193,6 +192,7 @@ class MultisigActivitySection extends ConsumerWidget {
       pendingCancellationIds: data.pendingCancellationIds,
       pendingTransactions: data.pendingTransactions,
       pendingMultisigCreations: data.pendingMultisigCreations,
+      pendingMultisigProposals: const [],
       scheduledReversibleTransfers: data.scheduledReversibleTransfers,
       otherTransfers: data.otherTransfers,
     );
@@ -237,8 +237,8 @@ class _PendingProposalRow extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountText = '${fmt.formatBalance(pending.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
+    final formatTxAmount = ref.watch(txAmountDisplayProvider);
+    final amountText = formatTxAmount(pending.amount, isSend: true).primaryAmount;
     final shortAddr = AddressFormattingService.formatAddress(pending.recipient);
 
     return Container(

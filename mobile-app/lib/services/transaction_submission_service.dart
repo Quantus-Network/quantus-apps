@@ -145,8 +145,9 @@ class TransactionSubmissionService {
       recipient: recipient,
       amount: amount,
       expiryBlock: expiryBlock,
-      fee: feeBreakdown.creationFee,
+      fee: feeBreakdown.networkFee,
       deposit: feeBreakdown.deposit,
+      palletFee: feeBreakdown.creationFee,
     );
 
     addPendingMultisigProposal(_ref, pending);
