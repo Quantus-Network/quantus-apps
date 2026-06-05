@@ -9,8 +9,7 @@ Future<void> reconcileIndexedProposalCreation(
   MultisigAccount msig,
   MultisigProposalCreatedEvent indexed,
 ) async {
-  ref.invalidate(multisigProposalsProvider(msig));
-  ref.invalidate(multisigCurrentBlockProvider);
+  invalidateMultisigProposals(ref, msig);
 
   await appendConfirmedEventToHistory(
     ref: ref,
@@ -18,10 +17,6 @@ Future<void> reconcileIndexedProposalCreation(
     event: indexed,
     includeForFilter: (filter) => filter != TransactionFilter.receive,
     isDuplicate: (tx) =>
-        tx is MultisigProposalCreatedEvent &&
-        tx.proposerId == indexed.proposerId &&
-        tx.multisigAddress == indexed.multisigAddress &&
-        tx.recipient == indexed.recipient &&
-        tx.amount == indexed.amount,
+        tx is MultisigProposalCreatedEvent && tx.isSameCreationAs(indexed),
   );
 }

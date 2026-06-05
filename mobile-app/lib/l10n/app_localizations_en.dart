@@ -347,9 +347,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeAmountToLabel => 'TRANSFER TO';
 
   @override
-  String get multisigProposeBalanceLabel => 'Multisig Balance:';
-
-  @override
   String get multisigProposeDepositLabel => 'Deposit:';
 
   @override
@@ -380,6 +377,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigProposeExpiresLabel => 'EXPIRES';
+
+  @override
+  String multisigExpiresBlockOnly(int block) {
+    return 'Block $block';
+  }
 
   @override
   String get multisigProposeFeeRowLabel => 'PROPOSAL FEE';
@@ -453,6 +455,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigStatusRemoved => 'REMOVED';
+
+  @override
+  String get multisigStatusUnknown => 'UNKNOWN';
 
   @override
   String get activityTxProposal => 'Proposal';

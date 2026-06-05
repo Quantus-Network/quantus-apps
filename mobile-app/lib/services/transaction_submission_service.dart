@@ -203,9 +203,7 @@ class TransactionSubmissionService {
       } else {
         quantusDebugPrint('[Propose] failed after $maxRetries attempts: $e\n$stackTrace');
         removePendingMultisigProposal(_ref, pending.id);
-        _ref.read(multisigProposalToastProvider.notifier).state = const MultisigProposalToastEvent(
-          MultisigProposalToastKind.submitFailed,
-        );
+        _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
       }
     }
   }

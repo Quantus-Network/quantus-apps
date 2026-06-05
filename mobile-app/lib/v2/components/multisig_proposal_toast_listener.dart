@@ -20,7 +20,7 @@ class MultisigProposalToastListener extends ConsumerWidget {
         MultisigProposalToastKind.submitFailed => l10n.multisigProposeSubmitFailed,
       };
       context.showErrorToaster(message: message);
-      ref.read(multisigProposalToastProvider.notifier).state = null;
+      ref.read(multisigProposalToastProvider.notifier).clear();
     });
 
     return child;

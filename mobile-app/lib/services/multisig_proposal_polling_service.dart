@@ -42,9 +42,7 @@ class MultisigProposalPollingService {
         quantusDebugPrint('[MultisigProposalPoller] timeout for $key');
         stopPolling(key);
         removePendingMultisigProposal(_ref, key);
-        _ref.read(multisigProposalToastProvider.notifier).state = const MultisigProposalToastEvent(
-          MultisigProposalToastKind.timeout,
-        );
+        _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.timeout);
         return;
       }
       unawaited(_search(msig, pending));

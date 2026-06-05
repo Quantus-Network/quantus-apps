@@ -86,17 +86,30 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   return service.discoverForUser(ids);
 });
 
-/// All proposals for a multisig (one indexer query), newest first.
-///
-/// Open and past proposals are derived from this single source so status
-/// reconciliation only needs one refetch.
-final multisigProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
+/// Open proposals for a multisig, filtered server-side by status.
+final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
 ) async {
   final service = ref.watch(multisigServiceProvider);
-  return service.getProposalsForMultisig(msig);
+  return service.getOpenProposals(msig);
 });
+
+/// Past proposals for a multisig activity feed, filtered server-side by status.
+final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
+  ref,
+  msig,
+) async {
+  final service = ref.watch(multisigServiceProvider);
+  return service.getPastProposals(msig);
+});
+
+/// Invalidates open, past, and block providers after a proposal state change.
+void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
+  ref.invalidate(multisigOpenProposalsProvider(msig));
+  ref.invalidate(multisigPastProposalsProvider(msig));
+  ref.invalidate(multisigCurrentBlockProvider);
+}
 
 /// Current best block number, used to derive proposal expiry.
 final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {

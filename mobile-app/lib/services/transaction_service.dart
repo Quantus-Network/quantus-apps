@@ -49,12 +49,7 @@ class TransactionService {
     }
 
     for (final proposal in pendingMultisigProposals) {
-      final key = _proposalActivityKey(
-        proposerId: proposal.proposerId,
-        multisigAddress: proposal.multisigAddress,
-        recipient: proposal.recipient,
-        amount: proposal.amount,
-      );
+      final key = proposal.activityDedupKey;
       if (seenProposalKeys.add(key) && seenIds.add(proposal.id)) {
         result.add(proposal);
       }
@@ -93,15 +88,10 @@ class TransactionService {
         seenMultisigAddresses.add(transaction.multisigAddress);
       }
       if (transaction is MultisigProposalCreatedEvent) {
-        final key = _proposalActivityKey(
-          proposerId: transaction.proposerId,
-          multisigAddress: transaction.multisigAddress,
-          recipient: transaction.recipient,
-          amount: transaction.amount,
-        );
+        final key = transaction.activityDedupKey;
         if (seenProposalKeys.contains(key)) {
           result.removeWhere(
-            (e) => e is PendingMultisigProposalEvent && _pendingProposalKey(e) == key,
+            (e) => e is PendingMultisigProposalEvent && e.activityDedupKey == key,
           );
         }
         seenProposalKeys.add(key);
@@ -112,24 +102,6 @@ class TransactionService {
     }
 
     return result;
-  }
-
-  static String _proposalActivityKey({
-    required String proposerId,
-    required String multisigAddress,
-    required String recipient,
-    required BigInt amount,
-  }) {
-    return '$proposerId|$multisigAddress|$recipient|$amount';
-  }
-
-  static String _pendingProposalKey(PendingMultisigProposalEvent proposal) {
-    return _proposalActivityKey(
-      proposerId: proposal.proposerId,
-      multisigAddress: proposal.multisigAddress,
-      recipient: proposal.recipient,
-      amount: proposal.amount,
-    );
   }
 
   TransactionRole getTransactionRole(TransactionEvent transaction, {List<String>? accountIds}) {

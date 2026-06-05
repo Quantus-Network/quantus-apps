@@ -45,13 +45,12 @@ class TxItemData {
         iconBg: colors.txItemOutgoingHighlightBg,
         iconColor: colors.checksum,
         labelColor: colors.checksum,
-        amountColor: colors.textPrimary,
+        amountColor: colors.checksum,
         borderColor: colors.txItemOutgoingHighlightBorder,
         isSend: true,
         amount: tx.amount,
         counterpartyAddr: recipient,
         customIcon: Icons.how_to_vote_outlined,
-        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
       );
     }
 
@@ -69,7 +68,6 @@ class TxItemData {
         amount: tx.amount,
         counterpartyAddr: recipient,
         customIcon: Icons.how_to_vote_outlined,
-        counterpartyDirectionLabel: l10n.activityTxMultisigLabel,
       );
     }
 

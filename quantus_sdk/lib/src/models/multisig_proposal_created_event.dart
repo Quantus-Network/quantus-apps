@@ -37,6 +37,26 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
 
   bool isProposer(String accountId) => proposerId == accountId;
 
+  /// Stable key for swapping a pending proposal row with this indexed event.
+  String get activityDedupKey {
+    if (extrinsicHash != null) return 'hash:$extrinsicHash';
+    final indexed = proposal;
+    if (indexed != null) {
+      return 'proposal:${indexed.multisigAddress}|${indexed.id}';
+    }
+    return 'event:$id';
+  }
+
+  /// Whether [other] describes the same proposal creation as this event.
+  bool isSameCreationAs(MultisigProposalCreatedEvent other) {
+    if (extrinsicHash != null &&
+        other.extrinsicHash != null &&
+        extrinsicHash == other.extrinsicHash) {
+      return true;
+    }
+    return id == other.id;
+  }
+
   factory MultisigProposalCreatedEvent.fromAccountEvent(Map<String, dynamic> event) {
     final created = jsonMapRequired(event['multisigProposalCreated'], 'multisigProposalCreated');
     final eventTimestamp = event['timestamp'];
@@ -80,7 +100,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
     final signerCount = proposal?.signerCount ?? _signerCountFromProposalJson(proposalJson);
     final palletFee = burnedPalletFeeOverride ??
         proposal?.burnedPalletFee ??
-        (signerCount > 0 ? MultisigService().proposalCreationFee(signerCount) : BigInt.zero);
+        (signerCount > 0 ? MultisigService.proposalCreationFeeFor(signerCount) : BigInt.zero);
 
     return MultisigProposalCreatedEvent(
       id: accountEventId ?? stringFromJson(created['id']),

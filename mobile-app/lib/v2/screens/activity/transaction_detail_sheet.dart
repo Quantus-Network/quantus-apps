@@ -31,7 +31,12 @@ class _TransactionDetailSheet extends ConsumerWidget {
 
   const _TransactionDetailSheet({required this.tx, required this.activeAccountId});
 
-  bool get _isSend => tx.from == activeAccountId;
+  bool get _isSend {
+    if (_isPendingMultisigProposal || _isMultisigProposalCreated || tx is MultisigProposalEvent) {
+      return true;
+    }
+    return tx.from == activeAccountId;
+  }
   bool get _isPending => tx is PendingTransactionEvent;
   bool get _isMultisigCreated => tx.isMultisigCreated;
   bool get _isPendingMultisigCreation => tx.isPendingMultisigCreation;
@@ -374,7 +379,7 @@ class _ExplorerLink extends ConsumerWidget {
     final isPending =
         tx is PendingTransactionEvent ||
         tx is PendingMultisigCreationEvent ||
-        (tx is PendingMultisigProposalEvent && tx.extrinsicHash == null);
+        tx is PendingMultisigProposalEvent;
     final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
     return GestureDetector(

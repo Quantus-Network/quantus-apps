@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
+import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
@@ -32,17 +33,12 @@ class MultisigActivitySection extends ConsumerWidget {
     final colors = context.colors;
     final text = context.themeText;
 
-    final proposalsAsync = ref.watch(multisigProposalsProvider(msig));
-    final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
-    final pending = ref
-        .watch(pendingMultisigProposalsProvider)
-        .where((p) => p.multisigAddress == msig.accountId)
-        .toList();
-
-    final proposals = proposalsAsync.value ?? const <MultisigProposal>[];
-    final openProposals = currentBlock == null
-        ? proposals.where((p) => p.isOpen).toList()
-        : proposals.where((p) => p.isActionable(currentBlock)).toList();
+    final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
+    final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
+    final pending = pendingProposalsForMultisig(
+      ref.watch(pendingMultisigProposalsProvider),
+      msig.accountId,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -50,34 +46,41 @@ class MultisigActivitySection extends ConsumerWidget {
         const SizedBox(height: 24),
         Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 16),
-        _openProposals(context, ref, l10n, colors, text, proposalsAsync, pending, openProposals),
+        _openProposals(
+          context,
+          l10n,
+          colors,
+          text,
+          openProposalsAsync,
+          pending,
+        ),
         const SizedBox(height: 8),
-        _activity(context, ref, l10n, colors, text, proposals, currentBlock),
+        _activity(context, ref, l10n, colors, text, pastProposalsAsync),
       ],
     );
   }
 
   Widget _openProposals(
     BuildContext context,
-    WidgetRef ref,
     AppLocalizations l10n,
     AppColorsV2 colors,
     AppTextTheme text,
-    AsyncValue<List<MultisigProposal>> proposalsAsync,
+    AsyncValue<List<MultisigProposal>> openProposalsAsync,
     List<PendingMultisigProposalEvent> pending,
-    List<MultisigProposal> openProposals,
   ) {
-    if (proposalsAsync.isLoading && pending.isEmpty) {
+    if (openProposalsAsync.isLoading) {
       return const Center(
         child: Padding(padding: EdgeInsets.all(24), child: Loader()),
       );
     }
-    if (proposalsAsync.hasError && pending.isEmpty) {
+    if (openProposalsAsync.hasError && pending.isEmpty) {
       return Text(
-        l10n.multisigLoadFailed(proposalsAsync.error.toString()),
+        l10n.multisigLoadFailed(openProposalsAsync.error.toString()),
         style: text.detail?.copyWith(color: colors.textError),
       );
     }
+
+    final openProposals = openProposalsAsync.value ?? const <MultisigProposal>[];
     if (pending.isEmpty && openProposals.isEmpty) {
       return Text(l10n.multisigNoOpenProposals, style: text.smallParagraph?.copyWith(color: colors.textTertiary));
     }
@@ -87,7 +90,10 @@ class MultisigActivitySection extends ConsumerWidget {
         ...pending.mapIndexed(
           (i, p) => Padding(
             padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
-            child: _PendingProposalRow(pending: p),
+            child: PendingProposalRow(
+              pending: p,
+              onTap: () => showTransactionDetailSheet(context, p, msig.accountId),
+            ),
           ),
         ),
         ...openProposals.mapIndexed(
@@ -110,8 +116,7 @@ class MultisigActivitySection extends ConsumerWidget {
     AppLocalizations l10n,
     AppColorsV2 colors,
     AppTextTheme text,
-    List<MultisigProposal> proposals,
-    int? currentBlock,
+    AsyncValue<List<MultisigProposal>> pastProposalsAsync,
   ) {
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
@@ -138,7 +143,7 @@ class MultisigActivitySection extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        final merged = _mergedActivity(ref, data, proposals, currentBlock);
+        final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
         final recent = merged.take(5).toList();
 
         return Column(
@@ -178,40 +183,29 @@ class MultisigActivitySection extends ConsumerWidget {
     );
   }
 
-  /// Merges terminal proposals with transfers, newest first. Transfers that are
-  /// the on-chain result of an executed proposal are dropped to avoid showing
-  /// the same payment twice.
+  /// Merges past proposals with transfers, newest first. Outgoing multisig
+  /// transfers are omitted because executed proposals already represent them.
   List<TransactionEvent> _mergedActivity(
     WidgetRef ref,
     CombinedTransactionsList data,
-    List<MultisigProposal> proposals,
-    int? currentBlock,
+    List<MultisigProposal> pastProposals,
   ) {
     final txService = ref.read(transactionServiceProvider);
     final transfers = txService.combineAndDeduplicateTransactions(
       pendingCancellationIds: data.pendingCancellationIds,
       pendingTransactions: data.pendingTransactions,
       pendingMultisigCreations: data.pendingMultisigCreations,
-      pendingMultisigProposals: const [],
+      pendingMultisigProposals: pendingProposalsExcludingMultisig(
+        data.pendingMultisigProposals,
+        msig.accountId,
+      ),
       scheduledReversibleTransfers: data.scheduledReversibleTransfers,
       otherTransfers: data.otherTransfers,
     );
 
-    final terminalProposals = proposals
-        .where((p) => currentBlock == null ? !p.isOpen : !p.isActionable(currentBlock))
-        .map((p) => MultisigProposalEvent(proposal: p))
-        .toList();
-
-    final executedKeys = terminalProposals
-        .where((e) => e.status == MultisigProposalStatus.executed)
-        .map((e) => '${e.proposal.recipient}-${e.proposal.amount}')
-        .toSet();
-
+    final terminalProposals = pastProposals.map((p) => MultisigProposalEvent(proposal: p)).toList();
     final filteredTransfers = transfers.where((t) {
-      if (t is TransferEvent && t.from == msig.accountId) {
-        return !executedKeys.contains('${t.to}-${t.amount}');
-      }
-      return true;
+      return t is! TransferEvent || t.from != msig.accountId;
     });
 
     final merged = <TransactionEvent>[...terminalProposals, ...filteredTransfers]
@@ -225,58 +219,5 @@ class MultisigActivitySection extends ConsumerWidget {
     } else {
       showTransactionDetailSheet(context, tx, msig.accountId);
     }
-  }
-}
-
-class _PendingProposalRow extends ConsumerWidget {
-  final PendingMultisigProposalEvent pending;
-  const _PendingProposalRow({required this.pending});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
-    final colors = context.colors;
-    final text = context.themeText;
-    final formatTxAmount = ref.watch(txAmountDisplayProvider);
-    final amountText = formatTxAmount(pending.amount, isSend: true).primaryAmount;
-    final shortAddr = AddressFormattingService.formatAddress(pending.recipient);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.surfaceDeep,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.txItemOutgoingHighlightBorder),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  amountText,
-                  style: text.paragraph?.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: AppTextTheme.fontFamilySecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.multisigProposalToAddress(shortAddr),
-                  style: text.detail?.copyWith(color: colors.textTertiary, fontFamily: AppTextTheme.fontFamilySecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            l10n.activityTxProposing,
-            style: text.detail?.copyWith(color: colors.checksum, fontWeight: FontWeight.w600, letterSpacing: 0.4),
-          ),
-        ],
-      ),
-    );
   }
 }

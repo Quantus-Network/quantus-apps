@@ -7,11 +7,13 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -49,6 +51,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
+    final multisigService = ref.watch(multisigServiceProvider);
     final didApprove = proposal.didApprove(msig.myMemberAccountId);
 
     return BottomSheetContainer(
@@ -60,8 +63,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 16),
           _AmountSection(proposal: proposal),
           const SizedBox(height: 20),
-          _ProposalDetailRow(
-            colors: colors,
+          DetailSummaryRow(
             label: l10n.multisigProposalStatusLabel,
             valueWidget: _statusChip(l10n, colors, text, currentBlock),
           ),
@@ -73,7 +75,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: const SizedBox(width: double.infinity, height: 1),
           ),
           const SizedBox(height: 8),
-          _summary(l10n, colors, text, fmt, currentBlock),
+          _summary(l10n, colors, text, fmt, multisigService, currentBlock),
           const SizedBox(height: 24),
           _signers(l10n, colors, text),
           const SizedBox(height: 24),
@@ -100,45 +102,50 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     AppColorsV2 colors,
     AppTextTheme text,
     NumberFormattingService fmt,
+    MultisigService multisigService,
     int? currentBlock,
   ) {
     final recipient = AddressFormattingService.formatActivityDetailAddress(proposal.recipient);
-    final expiryText = currentBlock != null
-        ? DatetimeFormattingService.formatTxDateTime(MultisigService().blockToTime(proposal.expiryBlock, currentBlock))
-        : l10n.multisigProposalToAddress('#${proposal.expiryBlock}');
+    final expiryParts = resolveMultisigExpiryParts(
+      l10n: l10n,
+      expiryBlock: proposal.expiryBlock,
+      multisigService: multisigService,
+      currentBlock: currentBlock,
+    );
 
     return Column(
       children: [
-        _ProposalDetailRow(colors: colors, label: l10n.activityDetailTo, value: recipient),
-        _ProposalDetailRow(colors: colors, label: l10n.multisigProposalExpiresLabel, value: expiryText, valueFlex: 4),
-        _ProposalDetailRow(
-          colors: colors,
+        DetailSummaryRow(label: l10n.activityDetailTo, value: recipient),
+        DetailSummaryRow(
+          label: l10n.multisigProposalExpiresLabel,
+          valueWidget: MultisigExpiryValue(
+            parts: expiryParts,
+            style: text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+          ),
+          valueFlex: 4,
+        ),
+        DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: AddressFormattingService.formatActivityDetailAddress(proposal.proposer),
         ),
-        _ProposalDetailRow(
-          colors: colors,
+        DetailSummaryRow(
           label: l10n.multisigProposalThresholdLabel,
           value: l10n.multisigThresholdOf(proposal.threshold, proposal.signerCount),
         ),
-        _ProposalDetailRow(
-          colors: colors,
+        DetailSummaryRow(
           label: l10n.multisigProposalApprovalsLabel,
           value: l10n.multisigApprovalsOf(proposal.approvalCount, proposal.threshold),
         ),
-        _ProposalDetailRow(
-          colors: colors,
+        DetailSummaryRow(
           label: l10n.multisigProposalFeeRowLabel,
           value: _formatBalance(l10n, fmt, proposal.palletFee),
         ),
-        _ProposalDetailRow(
-          colors: colors,
+        DetailSummaryRow(
           label: l10n.multisigProposalDepositLabel,
           value: _formatBalance(l10n, fmt, proposal.deposit),
         ),
         if (proposal.networkFee != null && proposal.networkFee != BigInt.zero)
-          _ProposalDetailRow(
-            colors: colors,
+          DetailSummaryRow(
             label: l10n.activityDetailNetworkFee,
             value: _formatBalance(l10n, fmt, proposal.networkFee!),
           ),
@@ -236,6 +243,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       MultisigProposalStatus.executed => (l10n.multisigStatusExecuted, colors.success),
       MultisigProposalStatus.cancelled => (l10n.multisigStatusCancelled, colors.textError),
       MultisigProposalStatus.removed => (l10n.multisigStatusRemoved, colors.textError),
+      MultisigProposalStatus.unknown => (l10n.multisigStatusUnknown, colors.textTertiary),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -283,47 +291,6 @@ class _ExplorerLink extends ConsumerWidget {
           l10n.activityDetailViewExplorer,
           style: text.smallParagraph?.copyWith(color: colors.accentOrange, fontWeight: FontWeight.w400),
         ),
-      ),
-    );
-  }
-}
-
-class _ProposalDetailRow extends StatelessWidget {
-  final AppColorsV2 colors;
-  final String label;
-  final String? value;
-  final Widget? valueWidget;
-  final int valueFlex;
-
-  const _ProposalDetailRow({
-    required this.colors,
-    required this.label,
-    this.value,
-    this.valueWidget,
-    this.valueFlex = 3,
-  }) : assert(value != null || valueWidget != null);
-
-  @override
-  Widget build(BuildContext context) {
-    final text = context.themeText;
-    final labelStyle = text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
-    final valueStyle = text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8));
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 2, child: Text(label, style: labelStyle)),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: valueFlex,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: valueWidget ?? Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true),
-            ),
-          ),
-        ],
       ),
     );
   }

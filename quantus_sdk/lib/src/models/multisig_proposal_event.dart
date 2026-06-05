@@ -63,6 +63,10 @@ class PendingMultisigProposalEvent extends TransactionEvent {
   /// Total out-of-pocket cost for the proposing member at submit time.
   BigInt get memberCost => (fee ?? BigInt.zero) + deposit + palletFee;
 
+  /// Stable key for swapping this pending row with an indexed creation event.
+  String get activityDedupKey =>
+      extrinsicHash != null ? 'hash:$extrinsicHash' : 'pending:$id';
+
   PendingMultisigProposalEvent copyWith({
     String? extrinsicHash,
     BigInt? fee,
@@ -103,7 +107,7 @@ class PendingMultisigProposalEvent extends TransactionEvent {
       amount: amount,
       fee: fee,
       deposit: deposit ?? _palletConstants.proposalDeposit,
-      palletFee: palletFee ?? MultisigService().proposalCreationFee(msig.signers.length),
+      palletFee: palletFee ?? MultisigService.proposalCreationFeeFor(msig.signers.length),
       expiryBlock: expiryBlock,
     );
   }

@@ -9,6 +9,8 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
@@ -74,11 +76,6 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
           );
       if (signer == null) throw Exception('No signer account available');
 
-      final service = ref.read(multisigServiceProvider);
-      final currentBlock = await service.currentBlockNumber();
-      final expiryBlock =
-          currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry);
-
       await ref
           .read(transactionSubmissionServiceProvider)
           .proposeTransfer(
@@ -86,7 +83,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
             signer: signer,
             recipient: widget.recipientAddress,
             amount: widget.amount,
-            expiryBlock: expiryBlock,
+            expiryBlock: widget.feeBreakdown.expiryBlock,
             feeBreakdown: widget.feeBreakdown,
           );
 
@@ -97,7 +94,9 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       );
 
       if (!mounted) return;
-      ref.invalidate(multisigProposalsProvider(widget.msig));
+      ref.invalidate(multisigOpenProposalsProvider(widget.msig));
+      ref.invalidate(multisigPastProposalsProvider(widget.msig));
+      ref.invalidate(multisigCurrentBlockProvider);
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -133,6 +132,8 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       quanDecimals: 4,
     );
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress);
+    final multisigService = ref.watch(multisigServiceProvider);
+    final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.multisigProposeTitle),
@@ -143,7 +144,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
           const SizedBox(height: 28),
           Expanded(
             child: SingleChildScrollView(
-              child: _summary(l10n, shortAddr, fmt),
+              child: _summary(l10n, shortAddr, fmt, multisigService, currentBlock),
             ),
           ),
           if (_errorMessage != null) ...[
@@ -199,11 +200,17 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     );
   }
 
-  Widget _summary(AppLocalizations l10n, String shortAddr, NumberFormattingService fmt) {
+  Widget _summary(
+    AppLocalizations l10n,
+    String shortAddr,
+    NumberFormattingService fmt,
+    MultisigService multisigService,
+    int? currentBlock,
+  ) {
     final shownDecimals = AppConstants.decimals;
-    final expiry = DateTime.now().add(MultisigService.defaultProposalExpiry);
     final rowSpacing = 4.0;
     final fees = widget.feeBreakdown;
+    final valueStyle = context.themeText.transactionDetailRowLabel;
 
     String formatAmount(BigInt value) => l10n.commonAmountBalance(
       fmt.formatBalance(value, maxDecimals: shownDecimals),
@@ -214,47 +221,59 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         SizedBox(height: rowSpacing),
-        _row(l10n.sendReviewTo, shortAddr),
+        DetailSummaryRow.review(label: l10n.sendReviewTo, value: shortAddr, valueStyle: valueStyle),
         SizedBox(height: rowSpacing),
-        _row(l10n.sendReviewAmount, formatAmount(widget.amount)),
-        SizedBox(height: rowSpacing),
-        _row(l10n.multisigProposeThresholdLabel, '${widget.msig.threshold}/${widget.msig.signers.length}'),
-        SizedBox(height: rowSpacing),
-        _row(l10n.multisigProposeExpiresLabel, DatetimeFormattingService.formatTxDateTime(expiry), valueFlex: 4),
-        SizedBox(height: rowSpacing),
-        _row(l10n.sendReviewNetworkFee, formatAmount(fees.networkFee)),
-        SizedBox(height: rowSpacing),
-        _row(l10n.multisigProposalDepositLabel, formatAmount(fees.deposit)),
-        SizedBox(height: rowSpacing),
-        _row(l10n.multisigProposeFeeRowLabel, formatAmount(fees.creationFee)),
-        SizedBox(height: rowSpacing),
-        _row(l10n.multisigProposeMemberTotalLabel, formatAmount(fees.memberCost)),
-        SizedBox(height: rowSpacing),
-      ],
-    );
-  }
-
-  Widget _row(String label, String value, {int valueFlex = 3}) {
-    final labelStyle = context.themeText.transactionDetailRowLabel?.copyWith(color: context.colors.textTertiary);
-    final valueStyle = context.themeText.transactionDetailRowLabel;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(label, style: labelStyle),
+        DetailSummaryRow.review(
+          label: l10n.sendReviewAmount,
+          value: formatAmount(widget.amount),
+          valueStyle: valueStyle,
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: valueFlex,
-          child: Text(
-            value,
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.multisigProposeThresholdLabel,
+          value: '${widget.msig.threshold}/${widget.msig.signers.length}',
+          valueStyle: valueStyle,
+        ),
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.multisigProposeExpiresLabel,
+          valueWidget: MultisigExpiryValue(
+            parts: resolveMultisigExpiryParts(
+              l10n: l10n,
+              expiryBlock: fees.expiryBlock,
+              multisigService: multisigService,
+              currentBlock: currentBlock,
+            ),
             style: valueStyle,
-            textAlign: TextAlign.right,
-            softWrap: true,
           ),
+          valueFlex: 4,
+          valueStyle: valueStyle,
         ),
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.sendReviewNetworkFee,
+          value: formatAmount(fees.networkFee),
+          valueStyle: valueStyle,
+        ),
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.multisigProposalDepositLabel,
+          value: formatAmount(fees.deposit),
+          valueStyle: valueStyle,
+        ),
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.multisigProposeFeeRowLabel,
+          value: formatAmount(fees.creationFee),
+          valueStyle: valueStyle,
+        ),
+        SizedBox(height: rowSpacing),
+        DetailSummaryRow.review(
+          label: l10n.multisigProposeMemberTotalLabel,
+          value: formatAmount(fees.memberCost),
+          valueStyle: valueStyle,
+        ),
+        SizedBox(height: rowSpacing),
       ],
     );
   }

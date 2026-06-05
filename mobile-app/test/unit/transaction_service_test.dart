@@ -104,6 +104,7 @@ void main() {
       String multisigAddress = 'multisig',
       String recipient = 'recipient',
       BigInt? amount,
+      String? extrinsicHash,
     }) {
       final transferAmount = amount ?? BigInt.from(2000);
       return MultisigProposalCreatedEvent(
@@ -118,6 +119,7 @@ void main() {
         timestamp: DateTime.utc(2026, 6, 3),
         blockNumber: 1,
         blockHash: '0xabc',
+        extrinsicHash: extrinsicHash,
       );
     }
 
@@ -140,8 +142,9 @@ void main() {
 
     test('replaces pending proposal with indexed event for same activity key', () {
       final service = container.read(transactionServiceProvider);
-      final pending = pendingProposal();
-      final indexed = indexedProposal();
+      const hash = '0xshared-hash';
+      final pending = pendingProposal().copyWith(extrinsicHash: hash);
+      final indexed = indexedProposal(extrinsicHash: hash);
 
       final result = service.combineAndDeduplicateTransactions(
         pendingCancellationIds: {},
@@ -154,6 +157,38 @@ void main() {
 
       expect(result, hasLength(1));
       expect(result.first, isA<MultisigProposalCreatedEvent>());
+    });
+
+    test('replaces pending proposal when extrinsic hash matches indexed event', () {
+      final service = container.read(transactionServiceProvider);
+      const hash = '0xabc123';
+      final pending = pendingProposal().copyWith(extrinsicHash: hash);
+      final indexedWithHash = MultisigProposalCreatedEvent(
+        id: 'ae-ms-proposal-created-2',
+        proposerId: 'proposer',
+        multisigAddress: 'multisig',
+        recipient: 'other-recipient',
+        amount: BigInt.from(9999),
+        palletFee: BigInt.from(50),
+        deposit: BigInt.from(100),
+        fee: BigInt.from(5),
+        timestamp: DateTime.utc(2026, 6, 4),
+        blockNumber: 2,
+        blockHash: '0xdef',
+        extrinsicHash: hash,
+      );
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [indexedWithHash],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, same(indexedWithHash));
     });
   });
 }

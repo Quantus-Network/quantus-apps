@@ -487,10 +487,6 @@
     "@multisigProposeAmountToLabel": {
       "description": "Recipient card label on propose amount screen"
     },
-    "multisigProposeBalanceLabel": "Multisig Balance:",
-    "@multisigProposeBalanceLabel": {
-      "description": "Multisig balance label on propose amount screen"
-    },
     "multisigProposeDepositLabel": "Deposit:",
     "@multisigProposeDepositLabel": {
       "description": "Refundable proposal deposit label on propose amount screen"
@@ -535,6 +531,15 @@
     "multisigProposeExpiresLabel": "EXPIRES",
     "@multisigProposeExpiresLabel": {
       "description": "Expiry row label on propose review"
+    },
+    "multisigExpiresBlockOnly": "Block {block}",
+    "@multisigExpiresBlockOnly": {
+      "description": "On-chain expiry block when current block is unavailable",
+      "placeholders": {
+        "block": {
+          "type": "int"
+        }
+      }
     },
     "multisigProposeFeeRowLabel": "PROPOSAL FEE",
     "@multisigProposeFeeRowLabel": {
@@ -641,6 +646,10 @@
     "multisigStatusRemoved": "REMOVED",
     "@multisigStatusRemoved": {
       "description": "Removed proposal status label"
+    },
+    "multisigStatusUnknown": "UNKNOWN",
+    "@multisigStatusUnknown": {
+      "description": "Unknown proposal status label when indexer returns an unrecognized value"
     },
     "activityTxProposal": "Proposal",
     "@activityTxProposal": {

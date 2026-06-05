@@ -144,17 +144,34 @@ class MultisigProposalGraphql {
         id
       }''';
 
-  /// Lists all proposals for [multisigAddress], newest first.
-  ///
-  /// A multisig holds at most `Constants.maxTotalProposalsInStorage` (200)
-  /// proposals on-chain, so a single unpaginated query is sufficient and lets
-  /// status reconciliation happen by simply re-running this query.
-  static String buildProposalsForMultisigQuery(String multisigAddress) {
+  /// Open proposals: active or approved status only.
+  static String buildOpenProposalsQuery(String multisigAddress) {
     final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
     return '''
-    query MultisigProposals {
+    query MultisigOpenProposals {
       multisig_proposal(
-        where: {multisig_id: {_eq: "$escaped"}},
+        where: {_and: [
+          {multisig_id: {_eq: "$escaped"}},
+          {status: {_in: [ACTIVE, APPROVED]}}
+        ]},
+        order_by: {created_at: desc}
+      ) {
+$fields
+      }
+    }
+  ''';
+  }
+
+  /// Past proposals: executed, cancelled, or removed status only.
+  static String buildPastProposalsQuery(String multisigAddress) {
+    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
+    return '''
+    query MultisigPastProposals {
+      multisig_proposal(
+        where: {_and: [
+          {multisig_id: {_eq: "$escaped"}},
+          {status: {_in: [EXECUTED, CANCELLED, REMOVED]}}
+        ]},
         order_by: {created_at: desc}
       ) {
 $fields

@@ -73,6 +73,28 @@ final balanceProviderFamily = FutureProvider.family<BigInt, String>((ref, accoun
   return await substrateService.queryBalance(accountId);
 });
 
+/// Chain balance minus pending outgoing for any [accountId].
+final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, String>((ref, accountId) {
+  final balanceAsync = ref.watch(balanceProviderFamily(accountId));
+  final pendingTransactions = ref.watch(pendingTransactionsProvider);
+  final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+
+  return balanceAsync.when(
+    data: (blockchainBalance) {
+      final pendingOutgoing = _calculatePendingOutgoing(
+        pendingTransactions,
+        pendingMultisigProposals,
+        accountId,
+      );
+      final effectiveBalance = blockchainBalance - pendingOutgoing;
+      final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
+      return AsyncValue.data(result);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+  );
+});
+
 // Raw blockchain balance (without pending transaction adjustments)
 final balanceProviderRaw = Provider<AsyncValue<BigInt>>((ref) {
   final activeAccountAsyncValue = ref.watch(activeAccountProvider);

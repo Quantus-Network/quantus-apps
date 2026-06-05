@@ -25,6 +25,7 @@ class MultisigService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
   final SubstrateService _substrateService = SubstrateService();
   final Constants _palletConstants = Constants();
+  static final Constants _feeConstants = Constants();
 
   static const int _avgBlockTimeSeconds = 12;
   static const Duration defaultProposalExpiry = Duration(days: 2);
@@ -234,13 +235,18 @@ class MultisigService {
     }
   }
 
-  /// Fetches all proposals for [msig] from the indexer, newest first.
-  ///
-  /// A single unpaginated query is optimal: a multisig holds at most
-  /// `Constants.maxTotalProposalsInStorage` proposals on-chain, and status
-  /// reconciliation is achieved by simply re-running this query.
-  Future<List<MultisigProposal>> getProposalsForMultisig(MultisigAccount msig) async {
-    final requestBody = {'query': MultisigProposalGraphql.buildProposalsForMultisigQuery(msig.accountId)};
+  /// Proposals with active or approved status.
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
+    return _fetchProposals(msig, MultisigProposalGraphql.buildOpenProposalsQuery(msig.accountId));
+  }
+
+  /// Proposals with executed, cancelled, or removed status.
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) {
+    return _fetchProposals(msig, MultisigProposalGraphql.buildPastProposalsQuery(msig.accountId));
+  }
+
+  Future<List<MultisigProposal>> _fetchProposals(MultisigAccount msig, String query) async {
+    final requestBody = {'query': query};
     final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
     if (response.statusCode != 200) {
@@ -258,20 +264,6 @@ class MultisigService {
         .whereType<Map<String, dynamic>>()
         .map((row) => MultisigProposal.fromIndexerJson(row, msig: msig))
         .toList();
-  }
-
-  /// Proposals that still require action (open and not yet expired).
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
-    final all = await getProposalsForMultisig(msig);
-    final currentBlock = await currentBlockNumber();
-    return all.where((p) => p.isActionable(currentBlock)).toList();
-  }
-
-  /// Proposals in a terminal state or past their expiry block.
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
-    final all = await getProposalsForMultisig(msig);
-    final currentBlock = await currentBlockNumber();
-    return all.where((p) => !p.isActionable(currentBlock)).toList();
   }
 
   Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async {
@@ -299,12 +291,14 @@ class MultisigService {
   /// Non-refundable burned fee for creating a proposal, scaled by [signerCount].
   ///
   /// Formula: `proposalFee + (proposalFee * signerCount * signerStepFactor / 1_000_000)`.
-  BigInt proposalCreationFee(int signerCount) {
-    final base = _palletConstants.proposalFee;
-    final step = _palletConstants.signerStepFactor;
+  static BigInt proposalCreationFeeFor(int signerCount) {
+    final base = _feeConstants.proposalFee;
+    final step = _feeConstants.signerStepFactor;
     final extra = base * BigInt.from(signerCount) * BigInt.from(step) ~/ BigInt.from(1000000);
     return base + extra;
   }
+
+  BigInt proposalCreationFee(int signerCount) => proposalCreationFeeFor(signerCount);
 
   /// Estimates all fee components for creating a transfer proposal.
   Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
@@ -326,6 +320,7 @@ class MultisigService {
       networkFee: feeData.fee,
       deposit: proposalDeposit,
       creationFee: proposalCreationFee(msig.signers.length),
+      expiryBlock: expiryBlock,
     );
   }
 

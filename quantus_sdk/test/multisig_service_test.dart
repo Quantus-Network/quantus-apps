@@ -229,24 +229,18 @@ void main() {
   group('MultisigProposalGraphql', () {
     const multisigAddress = '5TestMultisig';
 
-    test('buildProposalsForMultisigQuery uses snake_case scalars and filters', () {
-      final query = MultisigProposalGraphql.buildProposalsForMultisigQuery(multisigAddress);
+    test('buildOpenProposalsQuery filters by open status and multisig', () {
+      final query = MultisigProposalGraphql.buildOpenProposalsQuery(multisigAddress);
       expect(query, contains('multisig_id: {_eq: "$multisigAddress"}'));
+      expect(query, contains('status: {_in: [ACTIVE, APPROVED]}'));
       expect(query, contains('order_by: {created_at: desc}'));
-      expect(query, contains('proposal_id'));
-      expect(query, contains('created_at'));
-      expect(query, contains('call_raw'));
-      expect(query, contains('transfer_amount'));
-      expect(query, contains('expiry_block'));
-      expect(query, contains('burned_pallet_fee'));
-      expect(query, contains('creation_network_fee'));
-      expect(query, contains('decode_error'));
-      expect(query, contains('transferTo {'));
-      expect(query, contains('createdAtBlock {'));
-      expect(query, contains('createdExtrinsic {'));
-      expect(query, isNot(contains('proposalId')));
-      expect(query, isNot(contains('callRaw')));
-      expect(query, isNot(contains('transferAmount')));
+    });
+
+    test('buildPastProposalsQuery filters by terminal status', () {
+      final query = MultisigProposalGraphql.buildPastProposalsQuery(multisigAddress);
+      expect(query, contains('multisig_id: {_eq: "$multisigAddress"}'));
+      expect(query, contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'));
+      expect(query, contains('order_by: {created_at: desc}'));
     });
 
     test('buildProposalQuery filters by multisig_id and proposal_id', () {
@@ -294,7 +288,31 @@ void main() {
       expect(proposal.amount, BigInt.parse('1000000000000'));
       expect(proposal.status, MultisigProposalStatus.active);
       expect(proposal.approvalCount, 1);
-      expect(proposal.palletFee, MultisigService().proposalCreationFee(msig.signers.length));
+      expect(proposal.palletFee, MultisigService.proposalCreationFeeFor(msig.signers.length));
+    });
+
+    test('maps unrecognized indexer status to unknown', () {
+      final proposal = MultisigProposal.fromIndexerJson(
+        {
+          'id': '5Multisig-9',
+          'proposal_id': 9,
+          'created_at': '2026-06-04T10:00:00.000Z',
+          'pallet': 'Balances',
+          'call': 'transfer_allow_death',
+          'call_raw': '0x0500',
+          'transfer_amount': '1000000000000',
+          'status': 'MYSTERY',
+          'expiry_block': 12345,
+          'deposit': '500000000000',
+          'approvals': [],
+          'proposer': {'id': '5Proposer'},
+          'transferTo': {'id': '5Recipient'},
+        },
+        msig: msig,
+      );
+
+      expect(proposal.status, MultisigProposalStatus.unknown);
+      expect(proposal.isOpen, isFalse);
     });
 
     test('reads burned_pallet_fee from indexer when present', () {
@@ -374,6 +392,7 @@ void main() {
         networkFee: BigInt.from(100),
         deposit: BigInt.from(200),
         creationFee: BigInt.from(300),
+        expiryBlock: 14400,
       );
       expect(breakdown.memberCost, BigInt.from(600));
     });

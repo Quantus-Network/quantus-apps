@@ -716,12 +716,6 @@ abstract class AppLocalizations {
   /// **'TRANSFER TO'**
   String get multisigProposeAmountToLabel;
 
-  /// Multisig balance label on propose amount screen
-  ///
-  /// In en, this message translates to:
-  /// **'Multisig Balance:'**
-  String get multisigProposeBalanceLabel;
-
   /// Refundable proposal deposit label on propose amount screen
   ///
   /// In en, this message translates to:
@@ -781,6 +775,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'EXPIRES'**
   String get multisigProposeExpiresLabel;
+
+  /// On-chain expiry block when current block is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Block {block}'**
+  String multisigExpiresBlockOnly(int block);
 
   /// Non-refundable burned proposal fee row on propose review
   ///
@@ -913,6 +913,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'REMOVED'**
   String get multisigStatusRemoved;
+
+  /// Unknown proposal status label when indexer returns an unrecognized value
+  ///
+  /// In en, this message translates to:
+  /// **'UNKNOWN'**
+  String get multisigStatusUnknown;
 
   /// Activity row label for an indexed multisig proposal
   ///

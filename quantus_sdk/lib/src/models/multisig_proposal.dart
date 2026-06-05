@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
@@ -8,7 +10,7 @@ import 'package:quantus_sdk/src/services/multisig_service.dart';
 /// Mirrors the indexer `MultisigProposalStatus` enum. Expiry is derived from
 /// [MultisigProposal.expiryBlock] versus the current block and is therefore not
 /// a stored status.
-enum MultisigProposalStatus { active, approved, executed, cancelled, removed }
+enum MultisigProposalStatus { active, approved, executed, cancelled, removed, unknown }
 
 /// A multisig proposal as exposed by the indexer.
 @immutable
@@ -122,8 +124,16 @@ class MultisigProposal {
       'executed' => MultisigProposalStatus.executed,
       'cancelled' => MultisigProposalStatus.cancelled,
       'removed' => MultisigProposalStatus.removed,
-      _ => MultisigProposalStatus.active,
+      _ => _unknownStatus(raw),
     };
+  }
+
+  static MultisigProposalStatus _unknownStatus(dynamic raw) {
+    developer.log(
+      'Unknown multisig proposal status: $raw',
+      name: 'MultisigProposal',
+    );
+    return MultisigProposalStatus.unknown;
   }
 
   int get approvalCount => approvals.length;
@@ -131,7 +141,7 @@ class MultisigProposal {
 
   /// Non-refundable burned pallet fee; prefers indexer data, else local estimate.
   BigInt get palletFee =>
-      burnedPalletFee ?? MultisigService().proposalCreationFee(signerCount);
+      burnedPalletFee ?? MultisigService.proposalCreationFeeFor(signerCount);
 
   /// Explorer route segment for `/multisig-proposals/:id`.
   ///
