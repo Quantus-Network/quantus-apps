@@ -12,8 +12,8 @@ class AppConstants {
   // static const List<String> graphQlEndpoints = ['http://127.0.0.1:4350']; // local testing
 
   static const stillOnTestnet = true;
-  static const List<String> rpcEndpoints = ['https://dcaa-60-51-184-252.ngrok-free.app'];
-  static const List<String> graphQlEndpoints = ['https://804a-60-51-184-252.ngrok-free.app/v1/graphql'];
+  static const List<String> rpcEndpoints = ['https://d17a-49-124-204-200.ngrok-free.app'];
+  static const List<String> graphQlEndpoints = ['https://8e42-49-124-204-200.ngrok-free.app/v1/graphql'];
 
   // local test android use special ip
   // static const String taskMasterEndpoint = 'http://10.0.2.2:3000/api';

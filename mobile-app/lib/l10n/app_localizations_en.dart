@@ -350,6 +350,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposeBalanceLabel => 'Multisig Balance:';
 
   @override
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Proposal Fee:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'refundable';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL FROM YOUR ACCOUNT';
+
+  @override
   String get multisigProposeFeeLabel => 'Proposal Fee:';
 
   @override

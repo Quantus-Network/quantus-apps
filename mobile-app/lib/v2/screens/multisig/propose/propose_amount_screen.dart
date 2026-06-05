@@ -53,7 +53,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
   String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
-  BigInt _proposalFee = BigInt.zero;
+  ProposeFeeBreakdown? _feeBreakdown;
   bool _isFetchingFee = false;
   bool _hasFee = false;
 
@@ -141,6 +141,14 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     _fetchFee(_estimateFeeAmount, widget.recipientAddress.trim());
   }
 
+  ProposeFeeBreakdown _staticFeeBreakdown(MultisigService service) {
+    return ProposeFeeBreakdown(
+      networkFee: BigInt.zero,
+      deposit: service.proposalDeposit,
+      creationFee: service.proposalCreationFee(widget.msig.signers.length),
+    );
+  }
+
   Future<void> _fetchFee(BigInt amount, String recipient) async {
     if (_isFetchingFee) return;
     final service = ref.read(multisigServiceProvider);
@@ -156,17 +164,17 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     }
     setState(() => _isFetchingFee = true);
     try {
-      final fee = signer != null
-          ? await service.estimateProposeFee(
+      final breakdown = signer != null
+          ? await service.estimateProposeFeeBreakdown(
               msig: widget.msig,
               signer: signer,
               recipient: recipient,
               amount: amount,
             )
-          : service.proposalFee;
+          : _staticFeeBreakdown(service);
       if (!mounted) return;
       setState(() {
-        _proposalFee = fee;
+        _feeBreakdown = breakdown;
         _hasFee = true;
         _isFetchingFee = false;
       });
@@ -174,7 +182,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
       debugPrint('Propose fee fetch error: $e');
       if (!mounted) return;
       setState(() {
-        _proposalFee = service.proposalFee;
+        _feeBreakdown = _staticFeeBreakdown(service);
         _hasFee = true;
         _isFetchingFee = false;
       });
@@ -183,12 +191,11 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
   void _setMax() {
     final balance = ref.read(balanceProviderFamily(widget.msig.accountId)).value ?? BigInt.zero;
-    final max = SendScreenLogic.calculateMaxSendableAmount(balance: balance, networkFee: _proposalFee);
     final isFlipped = ref.read(isCurrencyFlippedProvider);
     _amountController.text = isFlipped
-        ? _amountInputLogic.quanToFiatString(max)
-        : _amountInputLogic.formatQuanAmount(max);
-    setState(() => _amount = max);
+        ? _amountInputLogic.quanToFiatString(balance)
+        : _amountInputLogic.formatQuanAmount(balance);
+    setState(() => _amount = balance);
     _refreshFee();
   }
 
@@ -205,7 +212,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
   }
 
   void _openReview() {
-    if (_recipientChecksum == null) {
+    if (_recipientChecksum == null || _feeBreakdown == null) {
       context.showErrorToaster(message: ref.read(l10nProvider).sendInputAmountChecksumRequired);
       return;
     }
@@ -219,7 +226,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
           recipientAddress: widget.recipientAddress,
           recipientChecksum: _recipientChecksum!,
           amount: _amount,
-          proposalFee: _proposalFee,
+          feeBreakdown: _feeBreakdown!,
         ),
       ),
     );
@@ -231,20 +238,36 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(balanceProviderFamily(widget.msig.accountId));
+    final memberBalance = ref.watch(balanceProviderFamily(widget.msig.myMemberAccountId));
     final formattingService = ref.read(numberFormattingServiceProvider);
     final recipient = widget.recipientAddress.trim();
 
-    final amountStatus = SendScreenLogic.getAmountStatus(_amount, balance.value ?? BigInt.zero, _proposalFee);
+    final multisigBalance = balance.value;
+    final memberBal = memberBalance.value;
+    final proposalFee = _feeBreakdown?.memberCost;
+
+    final amountStatus = SendScreenLogic.getAmountStatus(_amount, multisigBalance ?? BigInt.zero, BigInt.zero);
+    final multisigInsufficient = amountStatus == AmountStatus.insufficientBalance;
+    final memberInsufficient =
+        proposalFee != null && memberBal != null && memberBal < proposalFee;
+    final balancesLoading = balance.isLoading || memberBalance.isLoading;
+
     final btnDisabled =
         !_hasFee ||
         _recipientChecksum == null ||
+        balancesLoading ||
+        memberInsufficient ||
         SendScreenLogic.isButtonDisabled(
           hasAddressError: false,
           amountStatus: amountStatus,
           recipientText: recipient,
           activeAccountId: widget.msig.accountId,
         );
-    final btnText = amountStatus == AmountStatus.valid
+    final btnText = memberInsufficient
+        ? l10n.sendLogicInsufficientBalance
+        : multisigInsufficient
+        ? l10n.sendLogicInsufficientBalance
+        : amountStatus == AmountStatus.valid
         ? l10n.multisigProposeReviewButton
         : SendScreenLogic.getButtonText(
             l10n: l10n,
@@ -478,16 +501,19 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                           style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                         ),
                         const SizedBox(height: 4),
-                        if (_hasFee)
+                        if (_hasFee && _feeBreakdown != null)
                           Text(
                             l10n.commonAmountBalance(
-                              formattingService.formatBalance(_proposalFee, maxDecimals: 5),
+                              formattingService.formatBalance(_feeBreakdown!.memberCost, maxDecimals: 5),
                               AppConstants.tokenSymbol,
                             ),
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           )
                         else
-                          const Loader(),
+                          const Align(
+                            alignment: Alignment.centerRight,
+                            child: Loader(),
+                          ),
                       ],
                     ),
                   ),

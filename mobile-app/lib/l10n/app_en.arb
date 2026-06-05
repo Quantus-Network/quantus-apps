@@ -491,9 +491,25 @@
     "@multisigProposeBalanceLabel": {
       "description": "Multisig balance label on propose amount screen"
     },
+    "multisigProposeDepositLabel": "Deposit:",
+    "@multisigProposeDepositLabel": {
+      "description": "Refundable proposal deposit label on propose amount screen"
+    },
+    "multisigProposeCreationFeeLabel": "Proposal Fee:",
+    "@multisigProposeCreationFeeLabel": {
+      "description": "Non-refundable burned proposal fee label (scales with signers)"
+    },
+    "multisigProposeDepositRefundableNote": "refundable",
+    "@multisigProposeDepositRefundableNote": {
+      "description": "Short note that proposal deposit is returned on execute/cancel"
+    },
+    "multisigProposeMemberTotalLabel": "TOTAL FROM YOUR ACCOUNT",
+    "@multisigProposeMemberTotalLabel": {
+      "description": "Review row for total member cost at proposal submit"
+    },
     "multisigProposeFeeLabel": "Proposal Fee:",
     "@multisigProposeFeeLabel": {
-      "description": "Proposal fee label on propose amount screen"
+      "description": "Deprecated single fee label; prefer fee breakdown labels"
     },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
@@ -522,7 +538,7 @@
     },
     "multisigProposeFeeRowLabel": "PROPOSAL FEE",
     "@multisigProposeFeeRowLabel": {
-      "description": "Proposal fee row label on propose review"
+      "description": "Non-refundable burned proposal fee row on propose review"
     },
     "multisigProposeCreateButton": "Submit proposal",
     "@multisigProposeCreateButton": {

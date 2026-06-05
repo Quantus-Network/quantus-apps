@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 import 'package:quantus_sdk/src/services/multisig_service.dart';
 
@@ -291,6 +292,39 @@ void main() {
       expect(proposal.amount, BigInt.parse('1000000000000'));
       expect(proposal.status, MultisigProposalStatus.active);
       expect(proposal.approvalCount, 1);
+    });
+  });
+
+  group('MultisigService.proposalCreationFee', () {
+    final service = MultisigService();
+    final base = service.proposalFee;
+
+    test('scales with signer count per pallet formula', () {
+      BigInt expected(int signerCount) {
+        final extra = base * BigInt.from(signerCount) * BigInt.from(10000) ~/ BigInt.from(1000000);
+        return base + extra;
+      }
+
+      expect(service.proposalCreationFee(1), expected(1));
+      expect(service.proposalCreationFee(5), expected(5));
+      expect(service.proposalCreationFee(10), expected(10));
+    });
+
+    test('matches pallet example: 5 signers adds 5% to base', () {
+      final extra = base * BigInt.from(5) * BigInt.from(10000) ~/ BigInt.from(1000000);
+      expect(extra, base ~/ BigInt.from(20));
+      expect(service.proposalCreationFee(5), base + extra);
+    });
+  });
+
+  group('ProposeFeeBreakdown', () {
+    test('memberCost sums network, deposit, and creation fees', () {
+      final breakdown = ProposeFeeBreakdown(
+        networkFee: BigInt.from(100),
+        deposit: BigInt.from(200),
+        creationFee: BigInt.from(300),
+      );
+      expect(breakdown.memberCost, BigInt.from(600));
     });
   });
 

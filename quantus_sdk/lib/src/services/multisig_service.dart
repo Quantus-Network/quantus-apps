@@ -10,6 +10,7 @@ import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
 import 'package:quantus_sdk/src/services/balances_service.dart';
 import 'package:quantus_sdk/src/services/multisig_graphql.dart';
@@ -295,18 +296,25 @@ class MultisigService {
 
   Future<int> currentBlockNumber() => _substrateService.getCurrentBlockNumber();
 
-  /// Estimates the total cost of creating a transfer proposal: the extrinsic
-  /// fee plus the non-refundable proposal fee. The refundable [proposalDeposit]
-  /// is reserved separately.
-  Future<BigInt> estimateProposeFee({
+  /// Non-refundable burned fee for creating a proposal, scaled by [signerCount].
+  ///
+  /// Formula: `proposalFee + (proposalFee * signerCount * signerStepFactor / 1_000_000)`.
+  BigInt proposalCreationFee(int signerCount) {
+    final base = _palletConstants.proposalFee;
+    final step = _palletConstants.signerStepFactor;
+    final extra = base * BigInt.from(signerCount) * BigInt.from(step) ~/ BigInt.from(1000000);
+    return base + extra;
+  }
+
+  /// Estimates all fee components for creating a transfer proposal.
+  Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
     required MultisigAccount msig,
     required Account signer,
     required String recipient,
     required BigInt amount,
   }) async {
     final currentBlock = await currentBlockNumber();
-    final expiryBlock =
-        currentBlock + blocksForDuration(defaultProposalExpiry);
+    final expiryBlock = currentBlock + blocksForDuration(defaultProposalExpiry);
     final call = buildProposeTransferCall(
       msig: msig,
       recipient: recipient,
@@ -314,7 +322,27 @@ class MultisigService {
       expiryBlock: expiryBlock,
     );
     final feeData = await _substrateService.getFeeForCall(signer, call);
-    return feeData.fee + proposalFee;
+    return ProposeFeeBreakdown(
+      networkFee: feeData.fee,
+      deposit: proposalDeposit,
+      creationFee: proposalCreationFee(msig.signers.length),
+    );
+  }
+
+  /// Estimates the total member cost of creating a transfer proposal.
+  Future<BigInt> estimateProposeFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+  }) async {
+    final breakdown = await estimateProposeFeeBreakdown(
+      msig: msig,
+      signer: signer,
+      recipient: recipient,
+      amount: amount,
+    );
+    return breakdown.memberCost;
   }
 
   /// Builds the `multisig.propose` runtime call wrapping a

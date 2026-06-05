@@ -352,6 +352,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeBalanceLabel => 'Saldo Multisig:';
 
   @override
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Biaya Proposal:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'dapat dikembalikan';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL DARI AKUN ANDA';
+
+  @override
   String get multisigProposeFeeLabel => 'Biaya Proposal:';
 
   @override

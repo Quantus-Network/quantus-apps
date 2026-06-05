@@ -27,7 +27,7 @@ class ProposeReviewScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
   final String recipientChecksum;
   final BigInt amount;
-  final BigInt proposalFee;
+  final ProposeFeeBreakdown feeBreakdown;
 
   const ProposeReviewScreen({
     super.key,
@@ -35,7 +35,7 @@ class ProposeReviewScreen extends ConsumerStatefulWidget {
     required this.recipientAddress,
     required this.recipientChecksum,
     required this.amount,
-    required this.proposalFee,
+    required this.feeBreakdown,
   });
 
   @override
@@ -87,7 +87,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
             recipient: widget.recipientAddress,
             amount: widget.amount,
             expiryBlock: expiryBlock,
-            fee: widget.proposalFee,
+            feeBreakdown: widget.feeBreakdown,
           );
 
       unawaited(
@@ -132,7 +132,6 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       withQuanSymbol: false,
       quanDecimals: 4,
     );
-    final totalRaw = widget.amount + widget.proposalFee;
     final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress);
 
     return ScaffoldBase(
@@ -144,7 +143,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
           const SizedBox(height: 28),
           Expanded(
             child: SingleChildScrollView(
-              child: _summary(l10n, shortAddr, totalRaw, fmt),
+              child: _summary(l10n, shortAddr, fmt),
             ),
           ),
           if (_errorMessage != null) ...[
@@ -200,10 +199,16 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     );
   }
 
-  Widget _summary(AppLocalizations l10n, String shortAddr, BigInt totalRaw, NumberFormattingService fmt) {
+  Widget _summary(AppLocalizations l10n, String shortAddr, NumberFormattingService fmt) {
     final shownDecimals = AppConstants.decimals;
     final expiry = DateTime.now().add(MultisigService.defaultProposalExpiry);
     final rowSpacing = 4.0;
+    final fees = widget.feeBreakdown;
+
+    String formatAmount(BigInt value) => l10n.commonAmountBalance(
+      fmt.formatBalance(value, maxDecimals: shownDecimals),
+      AppConstants.tokenSymbol,
+    );
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -211,33 +216,19 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
         SizedBox(height: rowSpacing),
         _row(l10n.sendReviewTo, shortAddr),
         SizedBox(height: rowSpacing),
-        _row(
-          l10n.sendReviewAmount,
-          l10n.commonAmountBalance(
-            fmt.formatBalance(widget.amount, maxDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
+        _row(l10n.sendReviewAmount, formatAmount(widget.amount)),
         SizedBox(height: rowSpacing),
         _row(l10n.multisigProposeThresholdLabel, '${widget.msig.threshold}/${widget.msig.signers.length}'),
         SizedBox(height: rowSpacing),
         _row(l10n.multisigProposeExpiresLabel, DatetimeFormattingService.formatTxDateTime(expiry), valueFlex: 4),
         SizedBox(height: rowSpacing),
-        _row(
-          l10n.multisigProposeFeeRowLabel,
-          l10n.commonAmountBalance(
-            fmt.formatBalance(widget.proposalFee, maxDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
+        _row(l10n.sendReviewNetworkFee, formatAmount(fees.networkFee)),
         SizedBox(height: rowSpacing),
-        _row(
-          l10n.sendReviewYouPay,
-          l10n.commonAmountBalance(
-            fmt.formatBalance(totalRaw, maxDecimals: shownDecimals),
-            AppConstants.tokenSymbol,
-          ),
-        ),
+        _row(l10n.multisigProposalDepositLabel, formatAmount(fees.deposit)),
+        SizedBox(height: rowSpacing),
+        _row(l10n.multisigProposeFeeRowLabel, formatAmount(fees.creationFee)),
+        SizedBox(height: rowSpacing),
+        _row(l10n.multisigProposeMemberTotalLabel, formatAmount(fees.memberCost)),
         SizedBox(height: rowSpacing),
       ],
     );

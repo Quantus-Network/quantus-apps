@@ -722,7 +722,31 @@ abstract class AppLocalizations {
   /// **'Multisig Balance:'**
   String get multisigProposeBalanceLabel;
 
-  /// Proposal fee label on propose amount screen
+  /// Refundable proposal deposit label on propose amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit:'**
+  String get multisigProposeDepositLabel;
+
+  /// Non-refundable burned proposal fee label (scales with signers)
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal Fee:'**
+  String get multisigProposeCreationFeeLabel;
+
+  /// Short note that proposal deposit is returned on execute/cancel
+  ///
+  /// In en, this message translates to:
+  /// **'refundable'**
+  String get multisigProposeDepositRefundableNote;
+
+  /// Review row for total member cost at proposal submit
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL FROM YOUR ACCOUNT'**
+  String get multisigProposeMemberTotalLabel;
+
+  /// Deprecated single fee label; prefer fee breakdown labels
   ///
   /// In en, this message translates to:
   /// **'Proposal Fee:'**
@@ -758,7 +782,7 @@ abstract class AppLocalizations {
   /// **'EXPIRES'**
   String get multisigProposeExpiresLabel;
 
-  /// Proposal fee row label on propose review
+  /// Non-refundable burned proposal fee row on propose review
   ///
   /// In en, this message translates to:
   /// **'PROPOSAL FEE'**

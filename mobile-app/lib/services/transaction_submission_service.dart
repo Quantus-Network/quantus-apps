@@ -137,7 +137,7 @@ class TransactionSubmissionService {
     required String recipient,
     required BigInt amount,
     required int expiryBlock,
-    required BigInt fee,
+    required ProposeFeeBreakdown feeBreakdown,
   }) async {
     final pending = PendingMultisigProposalEvent.create(
       msig: msig,
@@ -145,7 +145,8 @@ class TransactionSubmissionService {
       recipient: recipient,
       amount: amount,
       expiryBlock: expiryBlock,
-      fee: fee,
+      fee: feeBreakdown.creationFee,
+      deposit: feeBreakdown.deposit,
     );
 
     addPendingMultisigProposal(_ref, pending);

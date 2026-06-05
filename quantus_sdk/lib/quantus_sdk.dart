@@ -78,6 +78,7 @@ export 'src/models/multisig_account.dart';
 export 'src/models/multisig_create_submission.dart';
 export 'src/models/multisig_proposal.dart';
 export 'src/models/multisig_proposal_event.dart';
+export 'src/models/propose_fee_breakdown.dart';
 export 'src/models/multisig_signer.dart';
 export 'src/services/multisig_service.dart';
 
