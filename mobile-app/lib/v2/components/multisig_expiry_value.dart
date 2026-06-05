@@ -4,10 +4,7 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 
 /// Block height and optional estimated wall-clock expiry for display.
 class MultisigExpiryParts {
-  const MultisigExpiryParts({
-    required this.blockLabel,
-    this.estimatedDateTime,
-  });
+  const MultisigExpiryParts({required this.blockLabel, this.estimatedDateTime});
 
   final String blockLabel;
   final String? estimatedDateTime;
@@ -34,11 +31,7 @@ MultisigExpiryParts resolveMultisigExpiryParts({
 
 /// Two-line expiry: block height, then estimated datetime on its own line.
 class MultisigExpiryValue extends StatelessWidget {
-  const MultisigExpiryValue({
-    super.key,
-    required this.parts,
-    required this.style,
-  });
+  const MultisigExpiryValue({super.key, required this.parts, required this.style});
 
   final MultisigExpiryParts parts;
   final TextStyle? style;
@@ -49,19 +42,10 @@ class MultisigExpiryValue extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          parts.blockLabel,
-          style: style,
-          textAlign: TextAlign.right,
-        ),
+        Text(parts.blockLabel, style: style, textAlign: TextAlign.right),
         if (parts.estimatedDateTime != null) ...[
           const SizedBox(height: 2),
-          Text(
-            parts.estimatedDateTime!,
-            style: style,
-            textAlign: TextAlign.right,
-            softWrap: true,
-          ),
+          Text(parts.estimatedDateTime!, style: style, textAlign: TextAlign.right, softWrap: true),
         ],
       ],
     );

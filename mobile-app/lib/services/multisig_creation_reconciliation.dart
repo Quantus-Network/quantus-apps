@@ -16,11 +16,8 @@ Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft) 
       ref: ref,
       accountId: creatorId,
       event: created,
-      includeForFilter: (filter) => _showsMultisigCreationForFilter(
-        filter: filter,
-        accountId: creatorId,
-        creatorId: creatorId,
-      ),
+      includeForFilter: (filter) =>
+          _showsMultisigCreationForFilter(filter: filter, accountId: creatorId, creatorId: creatorId),
       isDuplicate: (tx) => tx is MultisigCreatedEvent && tx.multisigAddress == created.multisigAddress,
     );
 

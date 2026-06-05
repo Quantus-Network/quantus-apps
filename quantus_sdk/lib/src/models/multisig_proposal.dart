@@ -104,9 +104,7 @@ class MultisigProposal {
       expiryBlock: _intFromJson(record['expiry_block'] ?? record['expiryBlock']),
       approvals: _stringList(record['approvals']),
       deposit: bigIntFromJson(record['deposit']),
-      burnedPalletFee: burnedRaw != null
-          ? bigIntFromJson(burnedRaw)
-          : burnedPalletFeeOverride,
+      burnedPalletFee: burnedRaw != null ? bigIntFromJson(burnedRaw) : burnedPalletFeeOverride,
       networkFee: _optionalBigInt(record['creation_network_fee'] ?? record['creationNetworkFee']),
       status: parseStatus(record['status']),
       threshold: msig.threshold,
@@ -129,10 +127,7 @@ class MultisigProposal {
   }
 
   static MultisigProposalStatus _unknownStatus(dynamic raw) {
-    developer.log(
-      'Unknown multisig proposal status: $raw',
-      name: 'MultisigProposal',
-    );
+    developer.log('Unknown multisig proposal status: $raw', name: 'MultisigProposal');
     return MultisigProposalStatus.unknown;
   }
 
@@ -140,14 +135,12 @@ class MultisigProposal {
   bool didApprove(String accountId) => approvals.contains(accountId);
 
   /// Non-refundable burned pallet fee; prefers indexer data, else local estimate.
-  BigInt get palletFee =>
-      burnedPalletFee ?? MultisigService.proposalCreationFeeFor(signerCount);
+  BigInt get palletFee => burnedPalletFee ?? MultisigService.proposalCreationFeeFor(signerCount);
 
   /// Explorer route segment for `/multisig-proposals/:id`.
   ///
   /// Uses the indexer row id when present; otherwise `{multisigAddress}-{id}`.
-  String get explorerProposalId =>
-      entityId.isNotEmpty ? entityId : '$multisigAddress-$id';
+  String get explorerProposalId => entityId.isNotEmpty ? entityId : '$multisigAddress-$id';
 
   /// Whether the proposal is still awaiting action on-chain.
   bool get isOpen => status == MultisigProposalStatus.active || status == MultisigProposalStatus.approved;
@@ -161,11 +154,7 @@ class MultisigProposal {
   /// Whether this proposal should appear in the pinned "open" section.
   bool isActionable(int currentBlock) => isOpen && !expired(currentBlock);
 
-  MultisigProposal copyWith({
-    MultisigProposalStatus? status,
-    List<String>? approvals,
-    BigInt? burnedPalletFee,
-  }) {
+  MultisigProposal copyWith({MultisigProposalStatus? status, List<String>? approvals, BigInt? burnedPalletFee}) {
     return MultisigProposal(
       entityId: entityId,
       id: id,

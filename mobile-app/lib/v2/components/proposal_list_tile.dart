@@ -75,11 +75,7 @@ class ProposalListTile extends ConsumerWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: content,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: content),
     );
   }
 }

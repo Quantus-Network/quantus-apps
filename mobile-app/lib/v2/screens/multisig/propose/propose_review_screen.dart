@@ -142,11 +142,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
         children: [
           _heroCard(l10n, colors, text, approxDisplay),
           const SizedBox(height: 28),
-          Expanded(
-            child: SingleChildScrollView(
-              child: _summary(l10n, shortAddr, fmt, multisigService, currentBlock),
-            ),
-          ),
+          Expanded(child: SingleChildScrollView(child: _summary(l10n, shortAddr, fmt, multisigService, currentBlock))),
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
             Text(_errorMessage!, style: text.detail?.copyWith(color: colors.textError)),
@@ -165,12 +161,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     );
   }
 
-  Widget _heroCard(
-    AppLocalizations l10n,
-    AppColorsV2 colors,
-    AppTextTheme text,
-    CurrencyDisplayState approxDisplay,
-  ) {
+  Widget _heroCard(AppLocalizations l10n, AppColorsV2 colors, AppTextTheme text, CurrencyDisplayState approxDisplay) {
     final labelStyle = text.receiveLabel?.copyWith(color: colors.textLabel);
 
     return SplitCard(
@@ -212,10 +203,8 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
     final fees = widget.feeBreakdown;
     final valueStyle = context.themeText.transactionDetailRowLabel;
 
-    String formatAmount(BigInt value) => l10n.commonAmountBalance(
-      fmt.formatBalance(value, maxDecimals: shownDecimals),
-      AppConstants.tokenSymbol,
-    );
+    String formatAmount(BigInt value) =>
+        l10n.commonAmountBalance(fmt.formatBalance(value, maxDecimals: shownDecimals), AppConstants.tokenSymbol);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

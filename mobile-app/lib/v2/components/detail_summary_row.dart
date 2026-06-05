@@ -48,29 +48,26 @@ class DetailSummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = context.themeText;
     final colors = context.colors;
-    final effectiveLabelStyle =
-        labelStyle ?? text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
-    final effectiveValueStyle = valueStyle ??
-        text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8));
+    final effectiveLabelStyle = labelStyle ?? text.transactionDetailRowLabel?.copyWith(color: colors.textTertiary);
+    final effectiveValueStyle =
+        valueStyle ?? text.transactionDetailRowValue?.copyWith(color: Colors.white.withValues(alpha: 0.8));
 
     return Container(
       padding: padding,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: labelFlex, child: Text(label, style: effectiveLabelStyle)),
+          Expanded(
+            flex: labelFlex,
+            child: Text(label, style: effectiveLabelStyle),
+          ),
           const SizedBox(width: 8),
           Expanded(
             flex: valueFlex,
             child: Align(
               alignment: Alignment.centerRight,
-              child: valueWidget ??
-                  Text(
-                    value!,
-                    style: effectiveValueStyle,
-                    textAlign: TextAlign.right,
-                    softWrap: true,
-                  ),
+              child:
+                  valueWidget ?? Text(value!, style: effectiveValueStyle, textAlign: TextAlign.right, softWrap: true),
             ),
           ),
         ],

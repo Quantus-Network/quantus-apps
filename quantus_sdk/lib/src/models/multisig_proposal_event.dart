@@ -52,20 +52,13 @@ class PendingMultisigProposalEvent extends TransactionEvent {
     this.fee,
     super.extrinsicHash,
     DateTime? timestamp,
-  }) : super(
-         id: tempId,
-         from: proposerId,
-         to: recipient,
-         timestamp: timestamp ?? DateTime.now(),
-         blockNumber: 0,
-       );
+  }) : super(id: tempId, from: proposerId, to: recipient, timestamp: timestamp ?? DateTime.now(), blockNumber: 0);
 
   /// Total out-of-pocket cost for the proposing member at submit time.
   BigInt get memberCost => (fee ?? BigInt.zero) + deposit + palletFee;
 
   /// Stable key for swapping this pending row with an indexed creation event.
-  String get activityDedupKey =>
-      extrinsicHash != null ? 'hash:$extrinsicHash' : 'pending:$id';
+  String get activityDedupKey => extrinsicHash != null ? 'hash:$extrinsicHash' : 'pending:$id';
 
   PendingMultisigProposalEvent copyWith({
     String? extrinsicHash,

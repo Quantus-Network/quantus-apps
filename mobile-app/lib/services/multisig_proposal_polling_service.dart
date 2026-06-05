@@ -30,9 +30,7 @@ class MultisigProposalPollingService {
       return;
     }
 
-    quantusDebugPrint(
-      '[MultisigProposalPoller] startPolling $key hash=${pending.extrinsicHash}',
-    );
+    quantusDebugPrint('[MultisigProposalPoller] startPolling $key hash=${pending.extrinsicHash}');
 
     stopPolling(key);
     final startTime = DateTime.now();

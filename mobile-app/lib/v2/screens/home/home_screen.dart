@@ -142,29 +142,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return MultisigCreationToastListener(
       child: MultisigProposalToastListener(
         child: accountAsync.when(
-        loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
-        error: (e, _) => ScaffoldBase(
-          mainContent: Center(
-            child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+          loading: () => const ScaffoldBase(mainContent: Center(child: Loader())),
+          error: (e, _) => ScaffoldBase(
+            mainContent: Center(
+              child: Text(l10n.homeError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
+            ),
           ),
-        ),
-        data: (active) {
-          if (active == null) {
-            return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
-          }
-          return ScaffoldBase.refreshable(
-            onRefresh: _refresh,
-            slivers: [
-              _buildContent(active, colors, text, l10n),
-              if (active is MultisigDisplayAccount)
-                MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
-              else
-                ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
-              const SizedBox(height: 58),
-            ],
-            bottomContent: _buildBottomContent(l10n),
-          );
-        },
+          data: (active) {
+            if (active == null) {
+              return ScaffoldBase(mainContent: Center(child: Text(l10n.homeNoActiveAccount)));
+            }
+            return ScaffoldBase.refreshable(
+              onRefresh: _refresh,
+              slivers: [
+                _buildContent(active, colors, text, l10n),
+                if (active is MultisigDisplayAccount)
+                  MultisigActivitySection(msig: active.account, txAsync: txAsync, onRetry: _refresh)
+                else
+                  ActivitySection(txAsync: txAsync, activeAccount: active.account, onRetry: _refresh),
+                const SizedBox(height: 58),
+              ],
+              bottomContent: _buildBottomContent(l10n),
+            );
+          },
         ),
       ),
     );

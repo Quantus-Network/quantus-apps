@@ -136,14 +136,8 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           label: l10n.multisigProposalApprovalsLabel,
           value: l10n.multisigApprovalsOf(proposal.approvalCount, proposal.threshold),
         ),
-        DetailSummaryRow(
-          label: l10n.multisigProposalFeeRowLabel,
-          value: _formatBalance(l10n, fmt, proposal.palletFee),
-        ),
-        DetailSummaryRow(
-          label: l10n.multisigProposalDepositLabel,
-          value: _formatBalance(l10n, fmt, proposal.deposit),
-        ),
+        DetailSummaryRow(label: l10n.multisigProposalFeeRowLabel, value: _formatBalance(l10n, fmt, proposal.palletFee)),
+        DetailSummaryRow(label: l10n.multisigProposalDepositLabel, value: _formatBalance(l10n, fmt, proposal.deposit)),
         if (proposal.networkFee != null && proposal.networkFee != BigInt.zero)
           DetailSummaryRow(
             label: l10n.activityDetailNetworkFee,

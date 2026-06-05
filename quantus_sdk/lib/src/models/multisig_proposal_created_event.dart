@@ -49,9 +49,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
 
   /// Whether [other] describes the same proposal creation as this event.
   bool isSameCreationAs(MultisigProposalCreatedEvent other) {
-    if (extrinsicHash != null &&
-        other.extrinsicHash != null &&
-        extrinsicHash == other.extrinsicHash) {
+    if (extrinsicHash != null && other.extrinsicHash != null && extrinsicHash == other.extrinsicHash) {
       return true;
     }
     return id == other.id;
@@ -98,7 +96,8 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
     final block = jsonMapOrNull(created['block']);
     final feeRaw = created['fee'] ?? proposalJson?['creation_network_fee'] ?? proposalJson?['creationNetworkFee'];
     final signerCount = proposal?.signerCount ?? _signerCountFromProposalJson(proposalJson);
-    final palletFee = burnedPalletFeeOverride ??
+    final palletFee =
+        burnedPalletFeeOverride ??
         proposal?.burnedPalletFee ??
         (signerCount > 0 ? MultisigService.proposalCreationFeeFor(signerCount) : BigInt.zero);
 

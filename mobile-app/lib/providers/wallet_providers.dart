@@ -81,11 +81,7 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
 
   return balanceAsync.when(
     data: (blockchainBalance) {
-      final pendingOutgoing = _calculatePendingOutgoing(
-        pendingTransactions,
-        pendingMultisigProposals,
-        accountId,
-      );
+      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, pendingMultisigProposals, accountId);
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       return AsyncValue.data(result);

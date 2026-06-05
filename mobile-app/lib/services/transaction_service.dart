@@ -90,9 +90,7 @@ class TransactionService {
       if (transaction is MultisigProposalCreatedEvent) {
         final key = transaction.activityDedupKey;
         if (seenProposalKeys.contains(key)) {
-          result.removeWhere(
-            (e) => e is PendingMultisigProposalEvent && e.activityDedupKey == key,
-          );
+          result.removeWhere((e) => e is PendingMultisigProposalEvent && e.activityDedupKey == key);
         }
         seenProposalKeys.add(key);
       }

@@ -37,6 +37,7 @@ class _TransactionDetailSheet extends ConsumerWidget {
     }
     return tx.from == activeAccountId;
   }
+
   bool get _isPending => tx is PendingTransactionEvent;
   bool get _isMultisigCreated => tx.isMultisigCreated;
   bool get _isPendingMultisigCreation => tx.isPendingMultisigCreation;
@@ -256,9 +257,7 @@ class _DetailsSection extends ConsumerWidget {
     final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
     final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
     final depositValue = _formatBalance(l10n, formattingService, deposit);
-    final networkFeeValue = fee != null && fee != BigInt.zero
-        ? _formatBalance(l10n, formattingService, fee)
-        : null;
+    final networkFeeValue = fee != null && fee != BigInt.zero ? _formatBalance(l10n, formattingService, fee) : null;
     final txHash = extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(extrinsicHash)
         : null;
@@ -377,9 +376,7 @@ class _ExplorerLink extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final isPending =
-        tx is PendingTransactionEvent ||
-        tx is PendingMultisigCreationEvent ||
-        tx is PendingMultisigProposalEvent;
+        tx is PendingTransactionEvent || tx is PendingMultisigCreationEvent || tx is PendingMultisigProposalEvent;
     final color = isPending ? colors.accentOrange.withValues(alpha: 0.3) : colors.accentOrange;
 
     return GestureDetector(

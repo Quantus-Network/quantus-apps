@@ -157,7 +157,14 @@ class TransactionSubmissionService {
     TelemetryService().sendEvent('multisig_propose');
 
     unawaited(
-      _submitProposalBackground(msig: msig, signer: signer, recipient: recipient, amount: amount, expiryBlock: expiryBlock, pending: pending),
+      _submitProposalBackground(
+        msig: msig,
+        signer: signer,
+        recipient: recipient,
+        amount: amount,
+        expiryBlock: expiryBlock,
+        pending: pending,
+      ),
     );
   }
 

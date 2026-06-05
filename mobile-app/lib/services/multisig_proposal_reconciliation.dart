@@ -16,7 +16,6 @@ Future<void> reconcileIndexedProposalCreation(
     accountId: indexed.proposerId,
     event: indexed,
     includeForFilter: (filter) => filter != TransactionFilter.receive,
-    isDuplicate: (tx) =>
-        tx is MultisigProposalCreatedEvent && tx.isSameCreationAs(indexed),
+    isDuplicate: (tx) => tx is MultisigProposalCreatedEvent && tx.isSameCreationAs(indexed),
   );
 }

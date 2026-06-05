@@ -35,10 +35,7 @@ class MultisigActivitySection extends ConsumerWidget {
 
     final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
-    final pending = pendingProposalsForMultisig(
-      ref.watch(pendingMultisigProposalsProvider),
-      msig.accountId,
-    );
+    final pending = pendingProposalsForMultisig(ref.watch(pendingMultisigProposalsProvider), msig.accountId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -46,14 +43,7 @@ class MultisigActivitySection extends ConsumerWidget {
         const SizedBox(height: 24),
         Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
         const SizedBox(height: 16),
-        _openProposals(
-          context,
-          l10n,
-          colors,
-          text,
-          openProposalsAsync,
-          pending,
-        ),
+        _openProposals(context, l10n, colors, text, openProposalsAsync, pending),
         const SizedBox(height: 8),
         _activity(context, ref, l10n, colors, text, pastProposalsAsync),
       ],
@@ -90,10 +80,7 @@ class MultisigActivitySection extends ConsumerWidget {
         ...pending.mapIndexed(
           (i, p) => Padding(
             padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
-            child: PendingProposalRow(
-              pending: p,
-              onTap: () => showTransactionDetailSheet(context, p, msig.accountId),
-            ),
+            child: PendingProposalRow(pending: p, onTap: () => showTransactionDetailSheet(context, p, msig.accountId)),
           ),
         ),
         ...openProposals.mapIndexed(
@@ -195,10 +182,7 @@ class MultisigActivitySection extends ConsumerWidget {
       pendingCancellationIds: data.pendingCancellationIds,
       pendingTransactions: data.pendingTransactions,
       pendingMultisigCreations: data.pendingMultisigCreations,
-      pendingMultisigProposals: pendingProposalsExcludingMultisig(
-        data.pendingMultisigProposals,
-        msig.accountId,
-      ),
+      pendingMultisigProposals: pendingProposalsExcludingMultisig(data.pendingMultisigProposals, msig.accountId),
       scheduledReversibleTransfers: data.scheduledReversibleTransfers,
       otherTransfers: data.otherTransfers,
     );

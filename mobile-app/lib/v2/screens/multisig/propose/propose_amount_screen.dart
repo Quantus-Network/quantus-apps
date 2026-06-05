@@ -249,9 +249,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     final colors = context.colors;
     final text = context.themeText;
     final balance = ref.watch(balanceProviderFamily(widget.msig.accountId));
-    final memberBalance = ref.watch(
-      effectiveBalanceProviderFamily(widget.msig.myMemberAccountId),
-    );
+    final memberBalance = ref.watch(effectiveBalanceProviderFamily(widget.msig.myMemberAccountId));
     final formattingService = ref.read(numberFormattingServiceProvider);
     final recipient = widget.recipientAddress.trim();
 
@@ -261,8 +259,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
     final amountStatus = SendScreenLogic.getAmountStatus(_amount, multisigBalance ?? BigInt.zero, BigInt.zero);
     final multisigInsufficient = amountStatus == AmountStatus.insufficientBalance;
-    final memberInsufficient =
-        proposalFee != null && memberBal != null && memberBal < proposalFee;
+    final memberInsufficient = proposalFee != null && memberBal != null && memberBal < proposalFee;
     final balancesLoading = balance.isLoading || memberBalance.isLoading;
 
     final btnDisabled =
@@ -523,10 +520,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                           )
                         else
-                          const Align(
-                            alignment: Alignment.centerRight,
-                            child: Loader(),
-                          ),
+                          const Align(alignment: Alignment.centerRight, child: Loader()),
                       ],
                     ),
                   ),

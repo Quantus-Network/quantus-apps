@@ -309,12 +309,7 @@ class MultisigService {
   }) async {
     final currentBlock = await currentBlockNumber();
     final expiryBlock = currentBlock + blocksForDuration(defaultProposalExpiry);
-    final call = buildProposeTransferCall(
-      msig: msig,
-      recipient: recipient,
-      amount: amount,
-      expiryBlock: expiryBlock,
-    );
+    final call = buildProposeTransferCall(msig: msig, recipient: recipient, amount: amount, expiryBlock: expiryBlock);
     final feeData = await _substrateService.getFeeForCall(signer, call);
     return ProposeFeeBreakdown(
       networkFee: feeData.fee,
@@ -350,11 +345,7 @@ class MultisigService {
   }) {
     final innerCall = BalancesService().getBalanceTransferCall(recipient, amount);
     final callBytes = innerCall.encode();
-    return const Txs().propose(
-      multisigAddress: getAccountId32(msig.accountId),
-      call: callBytes,
-      expiry: expiryBlock,
-    );
+    return const Txs().propose(multisigAddress: getAccountId32(msig.accountId), call: callBytes, expiry: expiryBlock);
   }
 
   /// Submits a transfer proposal signed by [signer] (a member of [msig]).
@@ -368,12 +359,7 @@ class MultisigService {
     required BigInt amount,
     required int expiryBlock,
   }) async {
-    final call = buildProposeTransferCall(
-      msig: msig,
-      recipient: recipient,
-      amount: amount,
-      expiryBlock: expiryBlock,
-    );
+    final call = buildProposeTransferCall(msig: msig, recipient: recipient, amount: amount, expiryBlock: expiryBlock);
     return _substrateService.submitExtrinsic(signer, call);
   }
 

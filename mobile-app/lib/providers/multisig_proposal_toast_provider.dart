@@ -21,7 +21,6 @@ class MultisigProposalToastNotifier extends Notifier<MultisigProposalToastEvent?
   }
 }
 
-final multisigProposalToastProvider =
-    NotifierProvider<MultisigProposalToastNotifier, MultisigProposalToastEvent?>(
-      MultisigProposalToastNotifier.new,
-    );
+final multisigProposalToastProvider = NotifierProvider<MultisigProposalToastNotifier, MultisigProposalToastEvent?>(
+  MultisigProposalToastNotifier.new,
+);

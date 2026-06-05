@@ -29,10 +29,7 @@ class ProposalRow extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _statusChip(l10n, colors, text),
-          if (proposal.isOpen && didApprove) ...[
-            const SizedBox(height: 6),
-            _approvedPill(l10n, colors, text),
-          ],
+          if (proposal.isOpen && didApprove) ...[const SizedBox(height: 6), _approvedPill(l10n, colors, text)],
         ],
       ),
     );

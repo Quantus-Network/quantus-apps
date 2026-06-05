@@ -684,9 +684,7 @@ ${MultisigGraphql.proposalCreatedAccountEventSelection}
   }
 
   /// Searches for a confirmed multisig proposal creation by extrinsic hash.
-  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({
-    required String extrinsicHash,
-  }) async {
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
     _log('Searching proposal created by extrinsic hash: $extrinsicHash');
     final Map<String, dynamic> requestBody = {
       'query': _searchProposalCreatedByExtrinsicHashQuery,

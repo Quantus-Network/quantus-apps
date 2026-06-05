@@ -261,25 +261,22 @@ void main() {
     );
 
     test('maps snake_case indexer fields', () {
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': '5Multisig-1',
-          'proposal_id': 1,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'Balances',
-          'call': 'transfer_allow_death',
-          'call_raw': '0x0500',
-          'transfer_amount': '1000000000000',
-          'status': 'ACTIVE',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'approvals': ['5Proposer'],
-          'decode_error': null,
-          'proposer': {'id': '5Proposer'},
-          'transferTo': {'id': '5Recipient'},
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-1',
+        'proposal_id': 1,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': ['5Proposer'],
+        'decode_error': null,
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
 
       expect(proposal.entityId, '5Multisig-1');
       expect(proposal.explorerProposalId, '5Multisig-1');
@@ -292,73 +289,64 @@ void main() {
     });
 
     test('maps unrecognized indexer status to unknown', () {
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': '5Multisig-9',
-          'proposal_id': 9,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'Balances',
-          'call': 'transfer_allow_death',
-          'call_raw': '0x0500',
-          'transfer_amount': '1000000000000',
-          'status': 'MYSTERY',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'approvals': [],
-          'proposer': {'id': '5Proposer'},
-          'transferTo': {'id': '5Recipient'},
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-9',
+        'proposal_id': 9,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'MYSTERY',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
 
       expect(proposal.status, MultisigProposalStatus.unknown);
       expect(proposal.isOpen, isFalse);
     });
 
     test('reads burned_pallet_fee from indexer when present', () {
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': '5Multisig-3',
-          'proposal_id': 3,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'Balances',
-          'call': 'transfer_allow_death',
-          'call_raw': '0x0500',
-          'transfer_amount': '1000000000000',
-          'status': 'ACTIVE',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'burned_pallet_fee': '1020000000000',
-          'approvals': [],
-          'proposer': {'id': '5Proposer'},
-          'transferTo': {'id': '5Recipient'},
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-3',
+        'proposal_id': 3,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'burned_pallet_fee': '1020000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
 
       expect(proposal.palletFee, BigInt.parse('1020000000000'));
     });
 
     test('maps creation network fee when present', () {
-      final proposal = MultisigProposal.fromIndexerJson(
-        {
-          'id': '5Multisig-2',
-          'proposal_id': 2,
-          'created_at': '2026-06-04T10:00:00.000Z',
-          'pallet': 'Balances',
-          'call': 'transfer_allow_death',
-          'call_raw': '0x0500',
-          'transfer_amount': '1000000000000',
-          'status': 'ACTIVE',
-          'expiry_block': 12345,
-          'deposit': '500000000000',
-          'creation_network_fee': '25000000000',
-          'approvals': [],
-          'proposer': {'id': '5Proposer'},
-          'transferTo': {'id': '5Recipient'},
-        },
-        msig: msig,
-      );
+      final proposal = MultisigProposal.fromIndexerJson({
+        'id': '5Multisig-2',
+        'proposal_id': 2,
+        'created_at': '2026-06-04T10:00:00.000Z',
+        'pallet': 'Balances',
+        'call': 'transfer_allow_death',
+        'call_raw': '0x0500',
+        'transfer_amount': '1000000000000',
+        'status': 'ACTIVE',
+        'expiry_block': 12345,
+        'deposit': '500000000000',
+        'creation_network_fee': '25000000000',
+        'approvals': [],
+        'proposer': {'id': '5Proposer'},
+        'transferTo': {'id': '5Recipient'},
+      }, msig: msig);
 
       expect(proposal.networkFee, BigInt.parse('25000000000'));
     });
