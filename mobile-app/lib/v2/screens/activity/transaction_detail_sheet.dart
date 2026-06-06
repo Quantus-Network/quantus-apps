@@ -112,19 +112,33 @@ class _AmountSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = context.themeText;
 
-    final pendingMultisig = tx;
-    if (pendingMultisig is PendingMultisigCreationEvent && !pendingMultisig.isCreator(activeAccountId)) {
+    final (displayAmount, amountColor) = switch (tx) {
+      PendingMultisigCreationEvent(:final totalCost, :final creatorId) when creatorId != activeAccountId => (
+        null,
+        null,
+      ),
+      PendingMultisigCreationEvent(:final totalCost) => (totalCost, colors.checksum),
+      MultisigCreatedEvent(:final totalCost, :final creatorId) when creatorId != activeAccountId => (null, null),
+      MultisigCreatedEvent(:final totalCost) => (totalCost, colors.textPrimary),
+      _ => (tx.amount, isSend ? colors.textPrimary : colors.success),
+    };
+
+    if (displayAmount == null) {
       return Text('—', style: text.transactionDetailAmountPrimary?.copyWith(color: colors.textTertiary));
     }
 
     final amount = ref.watch(txAmountDisplayProvider)(
-      tx.amount,
-      isSend: isSend,
+      displayAmount,
+      isSend: true,
       withQuanSymbol: false,
       customHiddenText: '-----',
     );
 
-    return AmountDisplayWithConversion(amountDisplay: amount, colorizeAmount: !isSend);
+    return AmountDisplayWithConversion(
+      amountDisplay: amount,
+      colorizeAmount: amountColor == colors.success,
+      amountColor: amountColor == colors.success ? null : amountColor,
+    );
   }
 }
 
@@ -190,26 +204,17 @@ class _DetailsSection extends ConsumerWidget {
     AppLocalizations l10n,
     NumberFormattingService formattingService,
   ) {
-    final multisigAddress = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
-    final creatorAddress = AddressFormattingService.formatActivityDetailAddress(event.creatorId);
-    final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final feeValue = _formatBalance(l10n, formattingService, event.creationFee);
-    final depositValue = _formatBalance(l10n, formattingService, event.deposit);
-
-    return Column(
-      children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisigAddress, colors: colors),
-        _DetailRow(
-          label: l10n.activityDetailMultisigThreshold,
-          value: l10n.activityDetailMultisigThresholdValue(event.threshold, event.signers.length),
-          colors: colors,
-        ),
-        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${event.signers.length}', colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: feeValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigDeposit, value: depositValue, colors: colors),
-        _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
-      ],
+    return _multisigFeeDetails(
+      l10n: l10n,
+      formattingService: formattingService,
+      multisigAddress: event.multisigAddress,
+      creatorId: event.creatorId,
+      threshold: event.threshold,
+      signers: event.signers,
+      palletFee: event.palletFee,
+      networkFee: event.networkFee,
+      deposit: event.deposit,
+      timestamp: event.timestamp,
     );
   }
 
@@ -218,26 +223,57 @@ class _DetailsSection extends ConsumerWidget {
     AppLocalizations l10n,
     NumberFormattingService formattingService,
   ) {
-    final multisigAddress = AddressFormattingService.formatActivityDetailAddress(event.multisigAddress);
-    final creatorAddress = AddressFormattingService.formatActivityDetailAddress(event.creatorId);
-    final dateTime = DatetimeFormattingService.formatTxDateTime(event.timestamp);
-    final feeValue = _formatBalance(l10n, formattingService, event.creationFee);
-    final depositValue = _formatBalance(l10n, formattingService, event.deposit);
     final txHash = event.extrinsicHash != null
         ? AddressFormattingService.formatActivityDetailExtrinsicHash(event.extrinsicHash!)
         : null;
 
+    return _multisigFeeDetails(
+      l10n: l10n,
+      formattingService: formattingService,
+      multisigAddress: event.multisigAddress,
+      creatorId: event.creatorId,
+      threshold: event.threshold,
+      signers: event.signers,
+      palletFee: event.palletFee,
+      networkFee: event.networkFee,
+      deposit: event.deposit,
+      timestamp: event.timestamp,
+      txHash: txHash,
+    );
+  }
+
+  Widget _multisigFeeDetails({
+    required AppLocalizations l10n,
+    required NumberFormattingService formattingService,
+    required String multisigAddress,
+    required String creatorId,
+    required int threshold,
+    required List<String> signers,
+    required BigInt palletFee,
+    required BigInt networkFee,
+    required BigInt deposit,
+    required DateTime timestamp,
+    String? txHash,
+  }) {
+    final formattedMultisigAddress = AddressFormattingService.formatActivityDetailAddress(multisigAddress);
+    final creatorAddress = AddressFormattingService.formatActivityDetailAddress(creatorId);
+    final dateTime = DatetimeFormattingService.formatTxDateTime(timestamp);
+    final palletFeeValue = _formatBalance(l10n, formattingService, palletFee);
+    final networkFeeValue = _formatBalance(l10n, formattingService, networkFee);
+    final depositValue = _formatBalance(l10n, formattingService, deposit);
+
     return Column(
       children: [
-        _DetailRow(label: l10n.activityDetailMultisigAddress, value: multisigAddress, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigAddress, value: formattedMultisigAddress, colors: colors),
         _DetailRow(
           label: l10n.activityDetailMultisigThreshold,
-          value: l10n.activityDetailMultisigThresholdValue(event.threshold, event.signers.length),
+          value: l10n.activityDetailMultisigThresholdValue(threshold, signers.length),
           colors: colors,
         ),
-        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${event.signers.length}', colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigSignerCount, value: '${signers.length}', colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigCreator, value: creatorAddress, colors: colors),
-        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: feeValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailMultisigCreationFee, value: palletFeeValue, colors: colors),
+        _DetailRow(label: l10n.activityDetailNetworkFee, value: networkFeeValue, colors: colors),
         _DetailRow(label: l10n.activityDetailMultisigDeposit, value: depositValue, colors: colors),
         _DetailRow(label: l10n.activityDetailDate, value: dateTime, colors: colors),
         if (txHash != null) _DetailRow(label: l10n.activityDetailTxHash, value: txHash, colors: colors),

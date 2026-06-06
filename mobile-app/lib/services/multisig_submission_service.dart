@@ -6,6 +6,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -50,8 +51,16 @@ class MultisigSubmissionService {
       creator: creator.accountId,
     );
 
+    final networkFee = await _ref
+        .read(substrateServiceProvider)
+        .getFeeForCall(
+          creator,
+          service.buildCreateMultisigCall(signers: signers, threshold: threshold, nonce: effectiveNonce),
+        )
+        .then((data) => data.fee);
+
     TelemetryService().sendEvent('multisig_create_started');
-    addPendingMultisigCreation(_ref, PendingMultisigCreationEvent.fromDraft(draft));
+    addPendingMultisigCreation(_ref, PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee));
 
     unawaited(
       _submitAndTrackBackground(
