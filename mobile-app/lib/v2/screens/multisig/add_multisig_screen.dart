@@ -180,13 +180,17 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
         _isPredictingAddress = false;
       });
     } on MultisigNonceExhaustedException {
+      quantusDebugPrint('[AddMultisigScreen] refreshPredictedAddress: MultisigNonceExhaustedException');
+
       if (!mounted || seq != _predictSeq) return;
       setState(() {
         _predictedAddress = null;
         _resolvedNonce = null;
         _isPredictingAddress = false;
       });
-    } catch (_) {
+    } catch (e) {
+      quantusDebugPrint('[AddMultisigScreen] refreshPredictedAddress: unknown error: $e');
+
       if (!mounted || seq != _predictSeq) return;
       setState(() {
         _predictedAddress = null;
