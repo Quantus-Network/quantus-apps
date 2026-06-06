@@ -428,25 +428,32 @@ class _PredictedAddressSection extends ConsumerStatefulWidget {
 
 class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSection> {
   String? _checksum;
+  String? _prevAddress;
 
-  @override
-  void didUpdateWidget(covariant _PredictedAddressSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  Future<void> _loadChecksum() async {
+    final checksumService = ref.read(humanReadableChecksumServiceProvider);
 
-    final isAddressChanged = widget.address != oldWidget.address;
     final hasAddress = widget.address != null;
+    final isNewAddress = widget.address != _prevAddress;
 
-    if (isAddressChanged && hasAddress) {
-      ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.address!).then((name) {
-        if (mounted) setState(() => _checksum = name);
+    if (hasAddress && isNewAddress) {
+      final name = await checksumService.getHumanReadableName(widget.address!);
+      setState(() {
+        _checksum = name;
+        _prevAddress = widget.address;
       });
-    } else {
-      setState(() => _checksum = null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _loadChecksum();
+    final isReady = widget.address != null && _checksum != null;
+
+    quantusDebugPrint('[PredictedAddressSection] address: ${widget.address}');
+    quantusDebugPrint('[PredictedAddressSection] checksum: $_checksum');
+    quantusDebugPrint('[PredictedAddressSection] isReady: $isReady');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: widget.colors.surfaceDeep, borderRadius: BorderRadius.circular(14)),
@@ -460,7 +467,7 @@ class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSecti
           const SizedBox(height: 12),
           if (widget.isLoading)
             const Skeleton(height: 20)
-          else if (widget.address != null && _checksum != null) ...[
+          else if (isReady) ...[
             Text(_checksum!, style: widget.text.smallParagraph?.copyWith(color: widget.colors.checksum)),
             const SizedBox(height: 4),
             Text(
