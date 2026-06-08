@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/models/pending_multisig_creation_record.dart';
 import 'package:resonance_network_wallet/providers/multisig_creation_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
@@ -13,16 +14,36 @@ class MultisigCreationPollingService {
   final Map<String, Timer> _timers = {};
   final Set<String> _inFlight = {};
   static const _searchInterval = Duration(seconds: 5);
-  static const _timeout = Duration(minutes: 5);
+  static const _timeout = PendingMultisigCreationsNotifier.expireDuration;
 
   MultisigCreationPollingService(this._ref);
 
-  void startPolling(MultisigAccount draft) {
+  Future<void> resumePendingCreations() async {
+    final notifier = _ref.read(pendingMultisigCreationsProvider.notifier);
+    await notifier.ready;
+
+    for (final record in notifier.records) {
+      final key = record.draft.accountId;
+      if (_timers.containsKey(key)) continue;
+
+      final elapsed = DateTime.now().difference(record.submittedAt);
+      if (elapsed > _timeout) {
+        quantusDebugPrint('[MultisigCreationPoller] expired pending creation, attempting recovery for $key');
+        unawaited(_recoverExpired(record));
+        continue;
+      }
+
+      quantusDebugPrint('[MultisigCreationPoller] resuming polling for $key');
+      startPolling(record.draft, submittedAt: record.submittedAt);
+    }
+  }
+
+  void startPolling(MultisigAccount draft, {DateTime? submittedAt}) {
     final key = draft.accountId;
     quantusDebugPrint('[MultisigCreationPoller] startPolling ${draft.accountId}');
 
     stopPolling(key);
-    final startTime = DateTime.now();
+    final startTime = submittedAt ?? DateTime.now();
 
     final timer = Timer.periodic(_searchInterval, (_) {
       if (DateTime.now().difference(startTime) > _timeout) {
@@ -39,6 +60,25 @@ class MultisigCreationPollingService {
 
     _timers[key] = timer;
     unawaited(_search(draft, key));
+  }
+
+  Future<void> _recoverExpired(PendingMultisigCreationRecord record) async {
+    final key = record.draft.accountId;
+    if (!_inFlight.add(key)) return;
+
+    try {
+      final service = _ref.read(multisigServiceProvider);
+      final exists = await service.isMultisigOnChain(key);
+      if (exists) {
+        await _confirmCreation(record.draft, key, record.networkFee);
+      } else {
+        removePendingMultisigCreation(_ref, key);
+      }
+    } catch (e) {
+      quantusDebugPrint('[MultisigCreationPoller] recovery error for $key: $e');
+    } finally {
+      _inFlight.remove(key);
+    }
   }
 
   void stopPolling(String accountId) {
@@ -58,11 +98,8 @@ class MultisigCreationPollingService {
 
       quantusDebugPrint('[MultisigCreationPoller] confirmed ${draft.accountId}');
 
-      final pending = _ref
-          .read(pendingMultisigCreationsProvider)
-          .where((event) => event.multisigAddress == draft.accountId)
-          .firstOrNull;
-      if (pending == null) {
+      final record = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId);
+      if (record == null) {
         quantusDebugPrint(
           '[MultisigCreationPoller] missing pending creation for ${draft.accountId}; skipping history reconcile',
         );
@@ -70,25 +107,29 @@ class MultisigCreationPollingService {
         return;
       }
 
-      stopPolling(key);
-      removePendingMultisigCreation(_ref, key);
-
-      final existing = _ref.read(multisigAccountsProvider).value ?? [];
-      if (!existing.any((a) => a.accountId == draft.accountId)) {
-        await _ref.read(multisigAccountsProvider.notifier).add(draft);
-        _ref.invalidate(discoveredMultisigsProvider);
-      }
-
-      await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: pending.networkFee);
-
-      _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
-        MultisigCreationToastKind.ready,
-      );
+      await _confirmCreation(draft, key, record.networkFee);
     } catch (e) {
       quantusDebugPrint('[MultisigCreationPoller] search error for ${draft.accountId}: $e');
     } finally {
       _inFlight.remove(key);
     }
+  }
+
+  Future<void> _confirmCreation(MultisigAccount draft, String key, BigInt networkFee) async {
+    stopPolling(key);
+    removePendingMultisigCreation(_ref, key);
+
+    final existing = _ref.read(multisigAccountsProvider).value ?? [];
+    if (!existing.any((a) => a.accountId == draft.accountId)) {
+      await _ref.read(multisigAccountsProvider.notifier).add(draft);
+      _ref.invalidate(discoveredMultisigsProvider);
+    }
+
+    await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: networkFee);
+
+    _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
+      MultisigCreationToastKind.ready,
+    );
   }
 
   void dispose() {
@@ -101,6 +142,7 @@ class MultisigCreationPollingService {
 
 final multisigCreationPollingServiceProvider = Provider<MultisigCreationPollingService>((ref) {
   final service = MultisigCreationPollingService(ref);
+  unawaited(service.resumePendingCreations());
   ref.onDispose(service.dispose);
   return service;
 });

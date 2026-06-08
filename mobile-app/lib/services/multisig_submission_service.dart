@@ -62,7 +62,10 @@ class MultisigSubmissionService {
     final networkFee = preflight.networkFee;
 
     TelemetryService().sendEvent('multisig_create_started');
-    addPendingMultisigCreation(_ref, PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee));
+    await _ref.read(pendingMultisigCreationsProvider.notifier).add(
+      PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee),
+      draft,
+    );
 
     unawaited(
       _submitAndTrackBackground(
@@ -98,7 +101,12 @@ class MultisigSubmissionService {
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusDebugPrint('[MultisigSubmission] submitted $extrinsicHash');
 
-      _ref.read(multisigCreationPollingServiceProvider).startPolling(draft);
+      unawaited(
+        _ref.read(pendingMultisigCreationsProvider.notifier).updateExtrinsicHash(draft.accountId, extrinsicHash),
+      );
+
+      final submittedAt = _ref.read(pendingMultisigCreationsProvider.notifier).recordFor(draft.accountId)?.submittedAt;
+      _ref.read(multisigCreationPollingServiceProvider).startPolling(draft, submittedAt: submittedAt);
     } catch (e, stackTrace) {
       quantusDebugPrint('[MultisigSubmission] submit failed attempt $attempt: $e');
 

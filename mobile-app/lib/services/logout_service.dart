@@ -25,7 +25,7 @@ class LogoutService {
 
     await SubstrateService().logout();
     _ref.read(pendingTransactionsProvider.notifier).clear();
-    _ref.read(pendingMultisigCreationsProvider.notifier).clear();
+    await _ref.read(pendingMultisigCreationsProvider.notifier).clear();
     _ref.read(miningRewardsServiceProvider).clearCachedRewardsData();
     _ref.invalidate(miningRewardsProvider);
     _ref.read(accountsProvider.notifier).reset();
