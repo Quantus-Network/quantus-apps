@@ -260,7 +260,9 @@ void main() {
     test('uses single _contains clause for one account', () {
       final variables = MultisigGraphql.buildDiscoverVariables([addrA]);
       expect(variables['where'], {
-        'signers': {'_contains': [addrA]},
+        'signers': {
+          '_contains': [addrA],
+        },
       });
     });
 
@@ -268,8 +270,16 @@ void main() {
       final variables = MultisigGraphql.buildDiscoverVariables([addrA, addrB]);
       expect(variables['where'], {
         '_or': [
-          {'signers': {'_contains': [addrA]}},
-          {'signers': {'_contains': [addrB]}},
+          {
+            'signers': {
+              '_contains': [addrA],
+            },
+          },
+          {
+            'signers': {
+              '_contains': [addrB],
+            },
+          },
         ],
       });
     });
@@ -283,24 +293,15 @@ void main() {
       expect(MultisigProposalGraphql.openProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains('status: {_in: [ACTIVE, APPROVED]}'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains('order_by: {created_at: desc}'));
-      expect(
-        MultisigProposalGraphql.buildOpenProposalsVariables(multisigAddress),
-        {'multisigId': multisigAddress},
-      );
+      expect(MultisigProposalGraphql.buildOpenProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
     });
 
     test('pastProposalsQuery uses multisigId variable and terminal statuses', () {
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$multisigId: String!'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
-      expect(
-        MultisigProposalGraphql.pastProposalsQuery,
-        contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'),
-      );
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains('order_by: {created_at: desc}'));
-      expect(
-        MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress),
-        {'multisigId': multisigAddress},
-      );
+      expect(MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
     });
 
     test('proposalQuery uses multisigId and proposalId variables', () {
@@ -308,10 +309,10 @@ void main() {
       expect(MultisigProposalGraphql.proposalQuery, contains(r'$proposalId: Int!'));
       expect(MultisigProposalGraphql.proposalQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.proposalQuery, contains(r'proposal_id: {_eq: $proposalId}'));
-      expect(
-        MultisigProposalGraphql.buildProposalVariables(multisigAddress, 7),
-        {'multisigId': multisigAddress, 'proposalId': 7},
-      );
+      expect(MultisigProposalGraphql.buildProposalVariables(multisigAddress, 7), {
+        'multisigId': multisigAddress,
+        'proposalId': 7,
+      });
     });
   });
 

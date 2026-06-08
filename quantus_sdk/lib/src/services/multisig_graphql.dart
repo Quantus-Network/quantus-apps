@@ -98,14 +98,20 @@ ${MultisigProposalGraphql.fields}      }
     final Map<String, dynamic> where;
     if (accountIds.length == 1) {
       where = {
-        'signers': {'_contains': [accountIds.first]},
+        'signers': {
+          '_contains': [accountIds.first],
+        },
       };
     } else {
       where = {
         '_or': accountIds
-            .map((id) => {
-                  'signers': {'_contains': [id]},
-                })
+            .map(
+              (id) => {
+                'signers': {
+                  '_contains': [id],
+                },
+              },
+            )
             .toList(),
       };
     }
