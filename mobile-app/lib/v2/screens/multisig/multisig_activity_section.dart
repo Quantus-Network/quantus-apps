@@ -143,8 +143,8 @@ class MultisigActivitySection extends ConsumerWidget {
   ) {
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
-    return txAsync.when(
-      loading: () => Padding(
+    if (txAsync.isLoading || pastProposalsAsync.isLoading) {
+      return Padding(
         padding: const EdgeInsets.only(top: 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -161,8 +161,11 @@ class MultisigActivitySection extends ConsumerWidget {
             const Center(child: Loader()),
           ],
         ),
-      ),
-      error: (e, _) => Padding(
+      );
+    }
+
+    if (txAsync.hasError) {
+      return Padding(
         padding: const EdgeInsets.only(top: 40),
         child: Column(
           children: [
@@ -178,20 +181,15 @@ class MultisigActivitySection extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-      data: (data) {
-        final merged = mergeMultisigActivity(
-          txService: ref.read(transactionServiceProvider),
-          data: data,
-          pastProposals: pastProposalsAsync.value ?? const [],
-          multisigAccountId: msig.accountId,
-        );
-        final recent = merged.take(_kHomeSectionItemLimit).toList();
+      );
+    }
 
-        return Column(
+    if (pastProposalsAsync.hasError) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 32),
             _sectionHeader(
               context,
               l10n,
@@ -201,34 +199,62 @@ class MultisigActivitySection extends ConsumerWidget {
               initialTab: MultisigActivityTab.activity,
             ),
             const SizedBox(height: 12),
-            if (recent.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  l10n.homeActivityEmptyTitle,
-                  textAlign: TextAlign.center,
-                  style: text.smallParagraph?.copyWith(color: colors.textMuted),
-                ),
-              )
-            else
-              ...recent.mapIndexed((index, tx) {
-                final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
-                return buildTxItem(
-                  tx,
-                  itemData,
-                  colors,
-                  text,
-                  l10n,
-                  formattedAmount: itemData.hideAmount
-                      ? '—'
-                      : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
-                  isLastItem: index == recent.length - 1,
-                  onTap: () => _onTap(context, tx),
-                );
-              }),
+            Text(
+              l10n.multisigLoadFailed(pastProposalsAsync.error.toString()),
+              style: text.detail?.copyWith(color: colors.textError),
+            ),
           ],
-        );
-      },
+        ),
+      );
+    }
+
+    final merged = mergeMultisigActivity(
+      txService: ref.read(transactionServiceProvider),
+      data: txAsync.requireValue,
+      pastProposals: pastProposalsAsync.requireValue,
+      multisigAccountId: msig.accountId,
+    );
+    final recent = merged.take(_kHomeSectionItemLimit).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 32),
+        _sectionHeader(
+          context,
+          l10n,
+          colors,
+          text,
+          title: l10n.homeActivityTitle,
+          initialTab: MultisigActivityTab.activity,
+        ),
+        const SizedBox(height: 12),
+        if (recent.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              l10n.homeActivityEmptyTitle,
+              textAlign: TextAlign.center,
+              style: text.smallParagraph?.copyWith(color: colors.textMuted),
+            ),
+          )
+        else
+          ...recent.mapIndexed((index, tx) {
+            final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
+            return buildTxItem(
+              tx,
+              itemData,
+              colors,
+              text,
+              l10n,
+              formattedAmount: itemData.hideAmount
+                  ? '—'
+                  : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+              isLastItem: index == recent.length - 1,
+              onTap: () => _onTap(context, tx),
+            );
+          }),
+      ],
     );
   }
 

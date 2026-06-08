@@ -7,7 +7,6 @@ import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
@@ -95,9 +94,7 @@ class _ProposeReviewScreenState extends ConsumerState<ProposeReviewScreen> {
       );
 
       if (!mounted) return;
-      ref.invalidate(multisigOpenProposalsPaginationProvider(widget.msig));
-      ref.invalidate(multisigPastProposalsProvider(widget.msig));
-      ref.invalidate(multisigCurrentBlockProvider);
+      invalidateMultisigProposalsFromWidget(ref, widget.msig);
       Navigator.push(
         context,
         MaterialPageRoute(

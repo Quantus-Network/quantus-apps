@@ -104,6 +104,13 @@ void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
   ref.invalidate(multisigCurrentBlockProvider);
 }
 
+/// Widget-layer entry point for [invalidateMultisigProposals].
+void invalidateMultisigProposalsFromWidget(WidgetRef ref, MultisigAccount msig) {
+  ref.invalidate(multisigOpenProposalsPaginationProvider(msig));
+  ref.invalidate(multisigPastProposalsProvider(msig));
+  ref.invalidate(multisigCurrentBlockProvider);
+}
+
 /// Current best block number, used to derive proposal expiry.
 final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {
   final service = ref.watch(multisigServiceProvider);

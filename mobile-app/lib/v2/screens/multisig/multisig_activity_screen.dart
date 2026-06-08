@@ -188,42 +188,55 @@ class _ActivityTab extends ConsumerWidget {
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
     final pagination = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
 
-    return txAsync.when(
-      loading: () => const Center(child: Loader()),
-      error: (e, _) => Center(
-        child: Text(l10n.activityError(e.toString()), style: text.detail?.copyWith(color: colors.textError)),
-      ),
-      data: (data) {
-        final pastProposals = pastProposalsAsync.value ?? const <MultisigProposal>[];
-        final merged = mergeMultisigActivity(
-          txService: ref.read(transactionServiceProvider),
-          data: data,
-          pastProposals: pastProposals,
-          multisigAccountId: msig.accountId,
-        );
-        final grouped = groupTransactionsByDate(merged, l10n, appLocale.numberFormatLocale);
+    if (txAsync.isLoading || pastProposalsAsync.isLoading) {
+      return const Center(child: Loader());
+    }
+    if (txAsync.hasError) {
+      return Center(
+        child: Text(
+          l10n.activityError(txAsync.error.toString()),
+          style: text.detail?.copyWith(color: colors.textError),
+        ),
+      );
+    }
+    if (pastProposalsAsync.hasError) {
+      return Center(
+        child: Text(
+          l10n.multisigLoadFailed(pastProposalsAsync.error.toString()),
+          style: text.detail?.copyWith(color: colors.textError),
+        ),
+      );
+    }
 
-        return DateGroupedRefreshableList<TransactionEvent>(
-          scrollController: scrollController,
-          onRefresh: onRefresh,
-          groups: grouped,
-          showLoadMoreFooter: pagination != null && pagination.isLoading && pagination.hasMore,
-          emptyMessage: merged.isEmpty ? l10n.activityEmpty : null,
-          itemBuilder: (context, tx, {required isLastInGroup}) {
-            final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
-            return buildTxItem(
-              tx,
-              itemData,
-              colors,
-              text,
-              l10n,
-              formattedAmount: itemData.hideAmount
-                  ? '—'
-                  : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
-              isLastItem: isLastInGroup,
-              onTap: () => _onActivityTap(context, tx),
-            );
-          },
+    final data = txAsync.requireValue;
+    final pastProposals = pastProposalsAsync.requireValue;
+    final merged = mergeMultisigActivity(
+      txService: ref.read(transactionServiceProvider),
+      data: data,
+      pastProposals: pastProposals,
+      multisigAccountId: msig.accountId,
+    );
+    final grouped = groupTransactionsByDate(merged, l10n, appLocale.numberFormatLocale);
+
+    return DateGroupedRefreshableList<TransactionEvent>(
+      scrollController: scrollController,
+      onRefresh: onRefresh,
+      groups: grouped,
+      showLoadMoreFooter: pagination != null && pagination.isLoading && pagination.hasMore,
+      emptyMessage: merged.isEmpty ? l10n.activityEmpty : null,
+      itemBuilder: (context, tx, {required isLastInGroup}) {
+        final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
+        return buildTxItem(
+          tx,
+          itemData,
+          colors,
+          text,
+          l10n,
+          formattedAmount: itemData.hideAmount
+              ? '—'
+              : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+          isLastItem: isLastInGroup,
+          onTap: () => _onActivityTap(context, tx),
         );
       },
     );
