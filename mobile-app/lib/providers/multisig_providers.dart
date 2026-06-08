@@ -99,13 +99,15 @@ final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<Mul
 
 /// Invalidates open, past, and block providers after a proposal state change.
 void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
-  ref.invalidate(multisigOpenProposalsPaginationProvider(msig));
-  ref.invalidate(multisigPastProposalsProvider(msig));
-  ref.invalidate(multisigCurrentBlockProvider);
+  _invalidateMultisigProposals(ref, msig);
 }
 
 /// Widget-layer entry point for [invalidateMultisigProposals].
 void invalidateMultisigProposalsFromWidget(WidgetRef ref, MultisigAccount msig) {
+  _invalidateMultisigProposals(ref, msig);
+}
+
+void _invalidateMultisigProposals(dynamic ref, MultisigAccount msig) {
   ref.invalidate(multisigOpenProposalsPaginationProvider(msig));
   ref.invalidate(multisigPastProposalsProvider(msig));
   ref.invalidate(multisigCurrentBlockProvider);
