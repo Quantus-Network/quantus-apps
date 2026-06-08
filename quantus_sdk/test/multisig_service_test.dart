@@ -350,7 +350,7 @@ void main() {
       expect(proposal.amount, BigInt.parse('1000000000000'));
       expect(proposal.status, MultisigProposalStatus.active);
       expect(proposal.approvalCount, 1);
-      expect(proposal.palletFee, MultisigService.proposalCreationFeeFor(msig.signers.length));
+      expect(proposal.palletFee, MultisigProposal.proposalCreationFeeFor(msig.signers.length));
     });
 
     test('maps unrecognized indexer status to unknown', () {

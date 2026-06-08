@@ -1,9 +1,9 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
+import 'package:quantus_sdk/generated/planck/pallets/multisig.dart';
 import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
-import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 /// On-chain lifecycle status of a multisig proposal.
 ///
@@ -131,11 +131,23 @@ class MultisigProposal {
     return MultisigProposalStatus.unknown;
   }
 
+  /// Non-refundable burned fee for creating a proposal, scaled by [signerCount].
+  ///
+  /// Formula: `proposalFee + (proposalFee * signerCount * signerStepFactor / 1_000_000)`.
+  static BigInt proposalCreationFeeFor(int signerCount) {
+    final palletConstants = Constants();
+
+    final base = palletConstants.proposalFee;
+    final step = palletConstants.signerStepFactor;
+    final extra = base * BigInt.from(signerCount) * BigInt.from(step) ~/ BigInt.from(1000000);
+    return base + extra;
+  }
+
   int get approvalCount => approvals.length;
   bool didApprove(String accountId) => approvals.contains(accountId);
 
   /// Non-refundable burned pallet fee; prefers indexer data, else local estimate.
-  BigInt get palletFee => burnedPalletFee ?? MultisigService.proposalCreationFeeFor(signerCount);
+  BigInt get palletFee => burnedPalletFee ?? proposalCreationFeeFor(signerCount);
 
   /// Explorer route segment for `/multisig-proposals/:id`.
   ///

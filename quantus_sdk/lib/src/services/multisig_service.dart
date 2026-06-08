@@ -293,17 +293,7 @@ class MultisigService {
 
   Future<int> currentBlockNumber() => _substrateService.getCurrentBlockNumber();
 
-  /// Non-refundable burned fee for creating a proposal, scaled by [signerCount].
-  ///
-  /// Formula: `proposalFee + (proposalFee * signerCount * signerStepFactor / 1_000_000)`.
-  static BigInt proposalCreationFeeFor(int signerCount) {
-    final base = palletConstants.proposalFee;
-    final step = palletConstants.signerStepFactor;
-    final extra = base * BigInt.from(signerCount) * BigInt.from(step) ~/ BigInt.from(1000000);
-    return base + extra;
-  }
-
-  BigInt proposalCreationFee(int signerCount) => proposalCreationFeeFor(signerCount);
+  BigInt proposalCreationFee(int signerCount) => MultisigProposal.proposalCreationFeeFor(signerCount);
 
   /// Estimates all fee components for creating a transfer proposal.
   Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({

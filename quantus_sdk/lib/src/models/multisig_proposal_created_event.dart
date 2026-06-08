@@ -3,7 +3,6 @@ import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal_event.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
-import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 /// On-chain multisig proposal creation shown in the proposer's activity history.
 ///
@@ -99,7 +98,7 @@ class MultisigProposalCreatedEvent extends TransactionEvent {
     final palletFee =
         burnedPalletFeeOverride ??
         proposal?.burnedPalletFee ??
-        (signerCount > 0 ? MultisigService.proposalCreationFeeFor(signerCount) : BigInt.zero);
+        (signerCount > 0 ? MultisigProposal.proposalCreationFeeFor(signerCount) : BigInt.zero);
 
     return MultisigProposalCreatedEvent(
       id: accountEventId ?? stringFromJson(created['id']),

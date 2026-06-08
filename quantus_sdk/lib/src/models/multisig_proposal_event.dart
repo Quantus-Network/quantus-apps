@@ -2,7 +2,6 @@ import 'package:quantus_sdk/generated/planck/pallets/multisig.dart' as multisig_
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
 import 'package:quantus_sdk/src/models/transaction_event.dart';
-import 'package:quantus_sdk/src/services/multisig_service.dart';
 
 /// An indexed multisig proposal surfaced in the activity feed.
 class MultisigProposalEvent extends TransactionEvent {
@@ -100,7 +99,7 @@ class PendingMultisigProposalEvent extends TransactionEvent {
       amount: amount,
       fee: fee,
       deposit: deposit ?? _palletConstants.proposalDeposit,
-      palletFee: palletFee ?? MultisigService.proposalCreationFeeFor(msig.signers.length),
+      palletFee: palletFee ?? MultisigProposal.proposalCreationFeeFor(msig.signers.length),
       expiryBlock: expiryBlock,
     );
   }
