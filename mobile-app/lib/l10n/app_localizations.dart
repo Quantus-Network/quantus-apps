@@ -506,6 +506,12 @@ abstract class AppLocalizations {
   /// **'A multisig with this address already exists on-chain.'**
   String get multisigCreateAlreadyExists;
 
+  /// Toast when creator balance is below pallet fee + network fee + deposit
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance to cover multisig creation fees and deposit.'**
+  String get multisigCreateInsufficientBalance;
+
   /// Toast when on-chain confirmation polling times out
   ///
   /// In en, this message translates to:

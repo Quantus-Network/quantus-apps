@@ -16,10 +16,32 @@ class MultisigSubmissionService {
 
   final Ref _ref;
 
+  /// On-chain preflight: address availability, fee estimate, and creator balance.
+  ///
+  /// Throws [MultisigAlreadyExistsException] if the predicted address already
+  /// exists, or [MultisigInsufficientBalanceException] if the creator cannot
+  /// afford pallet fee + network fee + deposit.
+  Future<void> preflightMultisigCreation({
+    required List<String> signers,
+    required int threshold,
+    required Account creator,
+    BigInt? nonce,
+  }) async {
+    await _runCreationPreflight(
+      name: '',
+      signers: signers,
+      threshold: threshold,
+      creator: creator,
+      nonce: nonce,
+    );
+  }
+
   /// Preflight on-chain state, then submit and track creation in the background.
   ///
   /// Returns when preflight passes and background work is scheduled. Throws
-  /// [MultisigAlreadyExistsException] if the predicted address already exists.
+  /// [MultisigAlreadyExistsException] if the predicted address already exists,
+  /// or [MultisigInsufficientBalanceException] if the creator cannot afford
+  /// the total creation cost.
   Future<void> startMultisigCreation({
     required String name,
     required List<String> signers,
@@ -28,36 +50,16 @@ class MultisigSubmissionService {
     BigInt? nonce,
     int maxRetries = 3,
   }) async {
-    final service = _ref.read(multisigServiceProvider);
-    final effectiveNonce = nonce ?? MultisigService.defaultMultisigNonce;
-
-    final predictedAddress = await service.predictMultisigAddress(
-      signers: signers,
-      threshold: threshold,
-      nonce: effectiveNonce,
-    );
-
-    if (await service.isMultisigOnChain(predictedAddress)) {
-      throw MultisigAlreadyExistsException(predictedAddress);
-    }
-
-    final draft = MultisigAccount(
+    final preflight = await _runCreationPreflight(
       name: name,
-      accountId: predictedAddress,
       signers: signers,
       threshold: threshold,
-      nonce: effectiveNonce,
-      myMemberAccountId: creator.accountId,
-      creator: creator.accountId,
+      creator: creator,
+      nonce: nonce,
     );
 
-    final networkFee = await _ref
-        .read(substrateServiceProvider)
-        .getFeeForCall(
-          creator,
-          service.buildCreateMultisigCall(signers: signers, threshold: threshold, nonce: effectiveNonce),
-        )
-        .then((data) => data.fee);
+    final draft = preflight.draft;
+    final networkFee = preflight.networkFee;
 
     TelemetryService().sendEvent('multisig_create_started');
     addPendingMultisigCreation(_ref, PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee));
@@ -67,7 +69,7 @@ class MultisigSubmissionService {
         creator: creator,
         signers: signers,
         threshold: threshold,
-        nonce: effectiveNonce,
+        nonce: draft.nonce,
         draft: draft,
         maxRetries: maxRetries,
       ),
@@ -121,6 +123,53 @@ class MultisigSubmissionService {
         MultisigCreationToastKind.submitFailed,
       );
     }
+  }
+
+  Future<({MultisigAccount draft, BigInt networkFee})> _runCreationPreflight({
+    required String name,
+    required List<String> signers,
+    required int threshold,
+    required Account creator,
+    BigInt? nonce,
+  }) async {
+    final service = _ref.read(multisigServiceProvider);
+    final effectiveNonce = nonce ?? MultisigService.defaultMultisigNonce;
+
+    final predictedAddress = await service.predictMultisigAddress(
+      signers: signers,
+      threshold: threshold,
+      nonce: effectiveNonce,
+    );
+
+    if (await service.isMultisigOnChain(predictedAddress)) {
+      throw MultisigAlreadyExistsException(predictedAddress);
+    }
+
+    final draft = MultisigAccount(
+      name: name,
+      accountId: predictedAddress,
+      signers: signers,
+      threshold: threshold,
+      nonce: effectiveNonce,
+      myMemberAccountId: creator.accountId,
+      creator: creator.accountId,
+    );
+
+    final networkFee = await _ref
+        .read(substrateServiceProvider)
+        .getFeeForCall(
+          creator,
+          service.buildCreateMultisigCall(signers: signers, threshold: threshold, nonce: effectiveNonce),
+        )
+        .then((data) => data.fee);
+
+    final totalCost = PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee).totalCost;
+    final balance = await _ref.read(substrateServiceProvider).queryBalance(creator.accountId);
+    if (balance < totalCost) {
+      throw MultisigInsufficientBalanceException(balance: balance, required: totalCost);
+    }
+
+    return (draft: draft, networkFee: networkFee);
   }
 }
 
