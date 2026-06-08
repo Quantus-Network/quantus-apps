@@ -46,18 +46,48 @@ void main() {
   });
 
   group('MultisigCreatedEvent.fromMultisigGraphql', () {
-    test('defaults threshold to 1 when missing or invalid', () {
+    test('throws when threshold is missing or invalid', () {
       final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
 
-      final missing = MultisigCreatedEvent.fromMultisigGraphql(
-        multisig: Map<String, dynamic>.from(base)..remove('threshold'),
+      expect(
+        () => MultisigCreatedEvent.fromMultisigGraphql(
+          multisig: Map<String, dynamic>.from(base)..remove('threshold'),
+        ),
+        throwsFormatException,
       );
-      expect(missing.threshold, 1);
 
-      final zero = MultisigCreatedEvent.fromMultisigGraphql(
-        multisig: Map<String, dynamic>.from(base)..['threshold'] = 0,
+      expect(
+        () => MultisigCreatedEvent.fromMultisigGraphql(
+          multisig: Map<String, dynamic>.from(base)..['threshold'] = 0,
+        ),
+        throwsFormatException,
       );
-      expect(zero.threshold, 1);
+    });
+
+    test('throws when signers are missing or empty', () {
+      final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
+
+      expect(
+        () => MultisigCreatedEvent.fromMultisigGraphql(
+          multisig: Map<String, dynamic>.from(base)..remove('signers'),
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigCreatedEvent.fromMultisigGraphql(
+          multisig: Map<String, dynamic>.from(base)..['signers'] = [],
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('parses string threshold from indexer', () {
+      final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
+      final event = MultisigCreatedEvent.fromMultisigGraphql(
+        multisig: Map<String, dynamic>.from(base)..['threshold'] = '2',
+      );
+      expect(event.threshold, 2);
     });
   });
 }

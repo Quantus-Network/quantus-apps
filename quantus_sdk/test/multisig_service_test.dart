@@ -193,6 +193,44 @@ void main() {
       expect(account.creator, signerA);
     });
 
+    test('multisigAccountFromIndexerRecord throws on malformed indexer data', () {
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('signers'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..['signers'] = [],
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('threshold'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('multisigAccountFromIndexerRecord parses string threshold', () {
+      final account = MultisigService.multisigAccountFromIndexerRecord(
+        Map<String, dynamic>.from(indexerRecord)..['threshold'] = '2',
+        myMemberAccountId: signerB,
+        name: 'Team Multisig',
+      );
+      expect(account.threshold, 2);
+    });
+
     test('resolveMyMemberAccountId prefers first matching local account', () {
       expect(MultisigService.resolveMyMemberAccountId(indexerRecord, [signerB, signerA]), signerB);
     });

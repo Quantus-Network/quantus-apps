@@ -75,11 +75,8 @@ class MultisigCreatedEvent extends TransactionEvent {
     final address = stringFromJson(multisig['id']);
     final creator = nestedAccountId(multisig['creator']);
     final block = jsonMapOrNull(multisig['block']);
-    final signersRaw = multisig['signers'];
-    final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
-
-    final rawThreshold = multisig['threshold'] as int?;
-    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+    final signers = nonEmptyStringListFromJson(multisig['signers'], 'signers');
+    final threshold = multisigThresholdFromJson(multisig['threshold'], signerCount: signers.length);
 
     return MultisigCreatedEvent(
       id: accountEventId ?? 'ae-multisig-$address',

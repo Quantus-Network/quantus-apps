@@ -157,11 +157,8 @@ class MultisigService {
   }) {
     final address = stringFromJson(record['id']);
     final creator = nestedAccountId(record['creator']);
-    final signersRaw = record['signers'];
-    final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
-
-    final rawThreshold = record['threshold'] as int?;
-    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+    final signers = nonEmptyStringListFromJson(record['signers'], 'signers');
+    final threshold = multisigThresholdFromJson(record['threshold'], signerCount: signers.length);
 
     return MultisigAccount(
       name: name,
