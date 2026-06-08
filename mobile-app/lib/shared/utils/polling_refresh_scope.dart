@@ -4,8 +4,7 @@ import 'package:resonance_network_wallet/models/filtered_transactions_params.dar
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
-import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
-import 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 

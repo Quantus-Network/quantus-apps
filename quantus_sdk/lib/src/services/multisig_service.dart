@@ -232,8 +232,8 @@ class MultisigService {
   }
 
   /// Fetches a page of open proposals. Uses [limit] + 1 lookahead to detect
-  /// [MultisigOpenProposalsPage.hasMore].
-  Future<MultisigOpenProposalsPage> fetchOpenProposalsPage(
+  /// [MultisigProposalsPage.hasMore].
+  Future<MultisigProposalsPage> fetchOpenProposalsPage(
     MultisigAccount msig, {
     required int limit,
     required int offset,
@@ -250,7 +250,7 @@ class MultisigService {
     final hasMore = rows.length > limit;
     final pageRows = hasMore ? rows.take(limit) : rows;
     final items = pageRows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
-    return MultisigOpenProposalsPage(items: items, hasMore: hasMore);
+    return MultisigProposalsPage(items: items, hasMore: hasMore);
   }
 
   /// Proposals with executed, cancelled, or removed status.
@@ -260,8 +260,8 @@ class MultisigService {
   }
 
   /// Fetches a page of past proposals. Uses [limit] + 1 lookahead to detect
-  /// [MultisigOpenProposalsPage.hasMore].
-  Future<MultisigOpenProposalsPage> fetchPastProposalsPage(
+  /// [MultisigProposalsPage.hasMore].
+  Future<MultisigProposalsPage> fetchPastProposalsPage(
     MultisigAccount msig, {
     required int limit,
     required int offset,
@@ -278,7 +278,7 @@ class MultisigService {
     final hasMore = rows.length > limit;
     final pageRows = hasMore ? rows.take(limit) : rows;
     final items = pageRows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
-    return MultisigOpenProposalsPage(items: items, hasMore: hasMore);
+    return MultisigProposalsPage(items: items, hasMore: hasMore);
   }
 
   Future<List<Map<String, dynamic>>> _fetchProposalRows({

@@ -1,6 +1,6 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-class MultisigPastProposalsPaginationState {
+class MultisigProposalsPaginationState {
   final List<MultisigProposal> proposals;
   final int offset;
   final bool hasMore;
@@ -11,7 +11,7 @@ class MultisigPastProposalsPaginationState {
 
   bool get hasLoadedData => proposals.isNotEmpty;
 
-  const MultisigPastProposalsPaginationState({
+  const MultisigProposalsPaginationState({
     required this.proposals,
     this.offset = 0,
     required this.hasMore,
@@ -21,8 +21,8 @@ class MultisigPastProposalsPaginationState {
     this.stackTrace,
   });
 
-  factory MultisigPastProposalsPaginationState.initial() {
-    return const MultisigPastProposalsPaginationState(
+  factory MultisigProposalsPaginationState.initial() {
+    return const MultisigProposalsPaginationState(
       proposals: [],
       hasMore: true,
       isFetching: false,
@@ -30,7 +30,7 @@ class MultisigPastProposalsPaginationState {
     );
   }
 
-  MultisigPastProposalsPaginationState copyWith({
+  MultisigProposalsPaginationState copyWith({
     List<MultisigProposal>? proposals,
     int? offset,
     bool? hasMore,
@@ -40,7 +40,7 @@ class MultisigPastProposalsPaginationState {
     StackTrace? stackTrace,
     bool clearError = false,
   }) {
-    return MultisigPastProposalsPaginationState(
+    return MultisigProposalsPaginationState(
       proposals: proposals ?? this.proposals,
       offset: offset ?? this.offset,
       hasMore: hasMore ?? this.hasMore,

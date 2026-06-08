@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
-import 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-export 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
-export 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
+export 'package:resonance_network_wallet/providers/controllers/multisig_proposals_pagination_controller.dart';
 export 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 
 class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAccount>>> {

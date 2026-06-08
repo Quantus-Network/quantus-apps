@@ -210,10 +210,13 @@ class MultisigProposal {
   }
 }
 
-/// A paginated page of open multisig proposals from the indexer.
-class MultisigOpenProposalsPage {
+/// A paginated page of multisig proposals from the indexer.
+class MultisigProposalsPage {
   final List<MultisigProposal> items;
   final bool hasMore;
 
-  const MultisigOpenProposalsPage({required this.items, required this.hasMore});
+  const MultisigProposalsPage({required this.items, required this.hasMore});
 }
+
+@Deprecated('Use MultisigProposalsPage instead')
+typedef MultisigOpenProposalsPage = MultisigProposalsPage;
