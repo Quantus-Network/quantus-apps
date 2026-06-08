@@ -114,6 +114,7 @@ class _DiscoverMultisigScreenState extends ConsumerState<DiscoverMultisigScreen>
                   final isAdding = _addingIds.contains(account.accountId);
 
                   return _DiscoverMultisigRow(
+                    key: ValueKey(account.accountId),
                     account: account,
                     isAdded: isAdded,
                     isAdding: isAdding,
@@ -164,6 +165,7 @@ class _DiscoverError extends StatelessWidget {
 
 class _DiscoverMultisigRow extends ConsumerStatefulWidget {
   const _DiscoverMultisigRow({
+    super.key,
     required this.account,
     required this.isAdded,
     required this.isAdding,
