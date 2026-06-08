@@ -8,11 +8,13 @@ import 'package:resonance_network_wallet/providers/currency_display_provider.dar
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
+import 'package:resonance_network_wallet/services/multisig_activity_merge.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/proposal_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -38,16 +40,56 @@ class MultisigActivitySection extends ConsumerWidget {
     final openProposalsAsync = ref.watch(multisigOpenProposalsProvider(msig));
     final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
     final pending = pendingProposalsForMultisig(ref.watch(pendingMultisigProposalsProvider), msig.accountId);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        Text(l10n.multisigOpenProposals, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        _sectionHeader(
+          context,
+          l10n,
+          colors,
+          text,
+          title: l10n.multisigOpenProposals,
+          initialTab: MultisigActivityTab.openProposals,
+        ),
         const SizedBox(height: 16),
         _openProposals(context, l10n, colors, text, openProposalsAsync, pending),
         const SizedBox(height: 8),
         _activity(context, ref, l10n, colors, text, pastProposalsAsync),
+      ],
+    );
+  }
+
+  Widget _sectionHeader(
+    BuildContext context,
+    AppLocalizations l10n,
+    AppColorsV2 colors,
+    AppTextTheme text, {
+    required String title,
+    required MultisigActivityTab initialTab,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MultisigActivityScreen(msig: msig, initialTab: initialTab),
+            ),
+          ),
+          child: Text(
+            l10n.homeActivityViewAll,
+            style: text.smallTitle?.copyWith(
+              color: colors.textMuted,
+              decoration: TextDecoration.underline,
+              decorationColor: colors.textMuted,
+              decorationStyle: TextDecorationStyle.dotted,
+              decorationThickness: 1.0,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -114,9 +156,23 @@ class MultisigActivitySection extends ConsumerWidget {
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
 
     return txAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.only(top: 40),
-        child: Center(child: Loader()),
+      loading: () => Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionHeader(
+              context,
+              l10n,
+              colors,
+              text,
+              title: l10n.homeActivityTitle,
+              initialTab: MultisigActivityTab.activity,
+            ),
+            const SizedBox(height: 24),
+            const Center(child: Loader()),
+          ],
+        ),
       ),
       error: (e, _) => Padding(
         padding: const EdgeInsets.only(top: 40),
@@ -136,14 +192,26 @@ class MultisigActivitySection extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
+        final merged = mergeMultisigActivity(
+          txService: ref.read(transactionServiceProvider),
+          data: data,
+          pastProposals: pastProposalsAsync.value ?? const [],
+          multisigAccountId: msig.accountId,
+        );
         final recent = merged.take(_kHomeSectionItemLimit).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 32),
-            Text(l10n.homeActivityTitle, style: text.smallTitle),
+            _sectionHeader(
+              context,
+              l10n,
+              colors,
+              text,
+              title: l10n.homeActivityTitle,
+              initialTab: MultisigActivityTab.activity,
+            ),
             const SizedBox(height: 12),
             if (recent.isEmpty)
               Padding(
@@ -174,33 +242,6 @@ class MultisigActivitySection extends ConsumerWidget {
         );
       },
     );
-  }
-
-  /// Merges past proposals with transfers, newest first. Outgoing multisig
-  /// transfers are omitted because executed proposals already represent them.
-  List<TransactionEvent> _mergedActivity(
-    WidgetRef ref,
-    CombinedTransactionsList data,
-    List<MultisigProposal> pastProposals,
-  ) {
-    final txService = ref.read(transactionServiceProvider);
-    final transfers = txService.combineAndDeduplicateTransactions(
-      pendingCancellationIds: data.pendingCancellationIds,
-      pendingTransactions: data.pendingTransactions,
-      pendingMultisigCreations: data.pendingMultisigCreations,
-      pendingMultisigProposals: pendingProposalsExcludingMultisig(data.pendingMultisigProposals, msig.accountId),
-      scheduledReversibleTransfers: data.scheduledReversibleTransfers,
-      otherTransfers: data.otherTransfers,
-    );
-
-    final terminalProposals = pastProposals.map((p) => MultisigProposalEvent(proposal: p)).toList();
-    final filteredTransfers = transfers.where((t) {
-      return t is! TransferEvent || t.from != msig.accountId;
-    });
-
-    final merged = <TransactionEvent>[...terminalProposals, ...filteredTransfers]
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return merged;
   }
 
   void _onTap(BuildContext context, TransactionEvent tx) {

@@ -209,3 +209,11 @@ class MultisigProposal {
     return bigIntFromJson(value);
   }
 }
+
+/// A paginated page of open multisig proposals from the indexer.
+class MultisigOpenProposalsPage {
+  final List<MultisigProposal> items;
+  final bool hasMore;
+
+  const MultisigOpenProposalsPage({required this.items, required this.hasMore});
+}

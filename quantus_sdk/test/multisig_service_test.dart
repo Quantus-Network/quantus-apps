@@ -280,12 +280,18 @@ void main() {
 
     test('openProposalsQuery uses multisigId variable and open statuses', () {
       expect(MultisigProposalGraphql.openProposalsQuery, contains(r'$multisigId: String!'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains(r'$limit: Int!'));
+      expect(MultisigProposalGraphql.openProposalsQuery, contains(r'$offset: Int!'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains('status: {_in: [ACTIVE, APPROVED]}'));
       expect(MultisigProposalGraphql.openProposalsQuery, contains('order_by: {created_at: desc}'));
       expect(
         MultisigProposalGraphql.buildOpenProposalsVariables(multisigAddress),
-        {'multisigId': multisigAddress},
+        {'multisigId': multisigAddress, 'limit': 1000, 'offset': 0},
+      );
+      expect(
+        MultisigProposalGraphql.buildOpenProposalsPageVariables(multisigAddress, limit: 20, offset: 40),
+        {'multisigId': multisigAddress, 'limit': 20, 'offset': 40},
       );
     });
 

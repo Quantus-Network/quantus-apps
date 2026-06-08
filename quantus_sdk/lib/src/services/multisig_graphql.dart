@@ -157,13 +157,15 @@ class MultisigProposalGraphql {
   /// Open proposals: active or approved status only.
   static const String openProposalsQuery =
       r'''
-    query MultisigOpenProposals($multisigId: String!) {
+    query MultisigOpenProposals($multisigId: String!, $limit: Int!, $offset: Int!) {
       multisig_proposal(
         where: {_and: [
           {multisig_id: {_eq: $multisigId}},
           {status: {_in: [ACTIVE, APPROVED]}}
         ]},
-        order_by: {created_at: desc}
+        order_by: {created_at: desc},
+        limit: $limit,
+        offset: $offset
       ) {
 ''' +
       fields +
@@ -173,7 +175,15 @@ class MultisigProposalGraphql {
   ''';
 
   static Map<String, dynamic> buildOpenProposalsVariables(String multisigAddress) {
-    return {'multisigId': multisigAddress};
+    return buildOpenProposalsPageVariables(multisigAddress, limit: 1000, offset: 0);
+  }
+
+  static Map<String, dynamic> buildOpenProposalsPageVariables(
+    String multisigAddress, {
+    required int limit,
+    required int offset,
+  }) {
+    return {'multisigId': multisigAddress, 'limit': limit, 'offset': offset};
   }
 
   /// Past proposals: executed, cancelled, or removed status only.

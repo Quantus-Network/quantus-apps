@@ -226,12 +226,31 @@ class MultisigService {
   }
 
   /// Proposals with active or approved status.
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
-    return _fetchProposals(
-      msig,
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    final page = await fetchOpenProposalsPage(msig, limit: 1000, offset: 0);
+    return page.items;
+  }
+
+  /// Fetches a page of open proposals. Uses [limit] + 1 lookahead to detect
+  /// [MultisigOpenProposalsPage.hasMore].
+  Future<MultisigOpenProposalsPage> fetchOpenProposalsPage(
+    MultisigAccount msig, {
+    required int limit,
+    required int offset,
+  }) async {
+    final rows = await _fetchProposalRows(
       query: MultisigProposalGraphql.openProposalsQuery,
-      variables: MultisigProposalGraphql.buildOpenProposalsVariables(msig.accountId),
+      variables: MultisigProposalGraphql.buildOpenProposalsPageVariables(
+        msig.accountId,
+        limit: limit + 1,
+        offset: offset,
+      ),
     );
+
+    final hasMore = rows.length > limit;
+    final pageRows = hasMore ? rows.take(limit) : rows;
+    final items = pageRows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
+    return MultisigOpenProposalsPage(items: items, hasMore: hasMore);
   }
 
   /// Proposals with executed, cancelled, or removed status.
@@ -245,6 +264,14 @@ class MultisigService {
 
   Future<List<MultisigProposal>> _fetchProposals(
     MultisigAccount msig, {
+    required String query,
+    required Map<String, dynamic> variables,
+  }) async {
+    final rows = await _fetchProposalRows(query: query, variables: variables);
+    return rows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchProposalRows({
     required String query,
     required Map<String, dynamic> variables,
   }) async {
@@ -262,10 +289,7 @@ class MultisigService {
 
     final rows = (responseBody['data'] as Map<String, dynamic>?)?['multisig_proposal'];
     if (rows is! List) return [];
-    return rows
-        .whereType<Map<String, dynamic>>()
-        .map((row) => MultisigProposal.fromIndexerJson(row, msig: msig))
-        .toList();
+    return rows.whereType<Map<String, dynamic>>().toList();
   }
 
   Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async {
