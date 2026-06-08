@@ -864,7 +864,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailMultisigCreator => 'PEMBUAT';
 
   @override
-  String get activityDetailMultisigCreationFee => 'BIAYA PEMBUATAN';
+  String get activityDetailMultisigCreationFee => 'BIAYA PALLET';
 
   @override
   String get activityDetailMultisigDeposit => 'DEPOSIT TERSIMPAN';

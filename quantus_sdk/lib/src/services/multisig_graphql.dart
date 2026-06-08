@@ -8,6 +8,7 @@ class MultisigGraphql {
       threshold
       nonce
       signers
+      fee
       creator {
         id
       }

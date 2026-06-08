@@ -11,6 +11,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
   final VoidCallback? onFlip;
   final CrossAxisAlignment alignment;
   final bool colorizeAmount;
+  final Color? amountColor;
   final bool useQuanLogo;
 
   const AmountDisplayWithConversion({
@@ -19,6 +20,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
     this.onFlip,
     this.alignment = CrossAxisAlignment.center,
     this.colorizeAmount = false,
+    this.amountColor,
     this.useQuanLogo = false,
   });
 
@@ -27,7 +29,7 @@ class AmountDisplayWithConversion extends StatelessWidget {
     final text = context.themeText;
     final colors = context.colors;
 
-    final primaryAmountColor = colorizeAmount ? colors.success : colors.textPrimary;
+    final primaryAmountColor = amountColor ?? (colorizeAmount ? colors.success : colors.textPrimary);
     final quanLogoPrimarySize = 32.0;
 
     final secondaryAmountColor = colors.textTertiary;

@@ -39,7 +39,8 @@ void main() {
       expect(event.multisigAddress, 'qzo4qS1Lw6J66JuXcxLEWgzBLX2sBe3Ak3kmN1oA17pXLKCFH');
       expect(event.threshold, 2);
       expect(event.signers, hasLength(3));
-      expect(event.creationFee, multisig_pallet.Constants().multisigFee);
+      expect(event.palletFee, multisig_pallet.Constants().multisigFee);
+      expect(event.networkFee, BigInt.zero);
       expect(event.deposit, multisig_pallet.Constants().multisigDeposit);
       expect(event.extrinsicHash, '0xea4400ec3247fc75b7187b6f6d83a89905017d1136c894e625a3c43a688606b9');
     });
@@ -88,6 +89,17 @@ void main() {
         multisig: Map<String, dynamic>.from(base)..['threshold'] = '2',
       );
       expect(event.threshold, 2);
+    });
+
+    test('parses network fee from GraphQL fee field', () {
+      final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
+      final withFee = MultisigCreatedEvent.fromMultisigGraphql(
+        multisig: Map<String, dynamic>.from(base)..['fee'] = '8120809264',
+      );
+
+      expect(withFee.palletFee, multisig_pallet.Constants().multisigFee);
+      expect(withFee.networkFee, BigInt.parse('8120809264'));
+      expect(withFee.totalCost, withFee.palletFee + withFee.networkFee + withFee.deposit);
     });
   });
 }
