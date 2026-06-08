@@ -507,6 +507,10 @@
     "@multisigProposeFeeLabel": {
       "description": "Deprecated single fee label; prefer fee breakdown labels"
     },
+    "multisigProposeFeeFetchFailed": "Unable to estimate fee",
+    "@multisigProposeFeeFetchFailed": {
+      "description": "Shown when proposal fee estimation fails on the amount screen"
+    },
     "multisigProposeReviewButton": "Review transfer",
     "@multisigProposeReviewButton": {
       "description": "Button to open propose review screen"

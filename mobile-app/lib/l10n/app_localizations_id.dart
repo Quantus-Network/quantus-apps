@@ -364,6 +364,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeFeeLabel => 'Biaya Proposal:';
 
   @override
+  String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
+
+  @override
   String get multisigProposeReviewButton => 'Tinjau transfer';
 
   @override

@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'Proposal Fee:'**
   String get multisigProposeFeeLabel;
 
+  /// Shown when proposal fee estimation fails on the amount screen
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to estimate fee'**
+  String get multisigProposeFeeFetchFailed;
+
   /// Button to open propose review screen
   ///
   /// In en, this message translates to:

@@ -119,6 +119,7 @@
   "multisigProposeDepositRefundableNote": "dapat dikembalikan",
   "multisigProposeMemberTotalLabel": "TOTAL DARI AKUN ANDA",
   "multisigProposeFeeLabel": "Biaya Proposal:",
+  "multisigProposeFeeFetchFailed": "Tidak dapat memperkirakan biaya",
   "multisigProposeReviewButton": "Tinjau transfer",
   "multisigProposeReviewProposing": "TRANSFER YANG DIAJUKAN",
   "multisigProposeReviewFromName": "dari {name}",

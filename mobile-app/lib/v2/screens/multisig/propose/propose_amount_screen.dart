@@ -56,6 +56,8 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
   ProposeFeeBreakdown? _feeBreakdown;
   bool _isFetchingFee = false;
   bool _hasFee = false;
+  bool _feeFetchFailed = false;
+  int _feeFetchGeneration = 0;
 
   AmountInputLogic get _amountInputLogic => AmountInputLogic(
     exchangeRateService: ref.read(exchangeRateServiceProvider),
@@ -137,6 +139,11 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
     }
   }
 
+  void _retryFeeFetch() {
+    _feeDebouncer.cancel();
+    _refreshFee();
+  }
+
   Future<void> _fetchEstimatedFee() async {
     _fetchFee(_estimateFeeAmount, widget.recipientAddress.trim());
   }
@@ -151,7 +158,8 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
   }
 
   Future<void> _fetchFee(BigInt amount, String recipient) async {
-    if (_isFetchingFee) return;
+    final generation = ++_feeFetchGeneration;
+    final showLoader = !_hasFee || _feeFetchFailed;
     final service = ref.read(multisigServiceProvider);
     Account? signer;
     final accounts = ref.read(accountsProvider).value;
@@ -163,7 +171,10 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
         }
       }
     }
-    setState(() => _isFetchingFee = true);
+    setState(() {
+      _isFetchingFee = showLoader;
+      if (showLoader) _feeFetchFailed = false;
+    });
     try {
       final currentBlock = await service.currentBlockNumber();
       final expiryBlock = currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry);
@@ -175,28 +186,22 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
               amount: amount,
             )
           : _staticFeeBreakdown(service, expiryBlock);
-      if (!mounted) return;
+      if (!mounted || generation != _feeFetchGeneration) return;
       setState(() {
         _feeBreakdown = breakdown;
         _hasFee = true;
+        _feeFetchFailed = false;
         _isFetchingFee = false;
       });
-    } catch (e) {
-      debugPrint('Propose fee fetch error: $e');
-      if (!mounted) return;
-      try {
-        final currentBlock = await service.currentBlockNumber();
-        final expiryBlock = currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry);
-        setState(() {
-          _feeBreakdown = _staticFeeBreakdown(service, expiryBlock);
-          _hasFee = true;
-          _isFetchingFee = false;
-        });
-      } catch (fallbackError) {
-        debugPrint('Propose fee fallback error: $fallbackError');
-        if (!mounted) return;
-        setState(() => _isFetchingFee = false);
-      }
+    } catch (e, stack) {
+      debugPrint('Propose fee fetch error: $e\n$stack');
+      if (!mounted || generation != _feeFetchGeneration) return;
+      setState(() {
+        _feeBreakdown = null;
+        _hasFee = false;
+        _feeFetchFailed = true;
+        _isFetchingFee = false;
+      });
     }
   }
 
@@ -264,6 +269,7 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
 
     final btnDisabled =
         !_hasFee ||
+        _feeFetchFailed ||
         _recipientChecksum == null ||
         balancesLoading ||
         memberInsufficient ||
@@ -511,7 +517,34 @@ class _ProposeAmountScreenState extends ConsumerState<ProposeAmountScreen> {
                           style: text.smallParagraph?.copyWith(color: colors.textTertiary),
                         ),
                         const SizedBox(height: 4),
-                        if (_hasFee && _feeBreakdown != null)
+                        if (_isFetchingFee)
+                          const Align(alignment: Alignment.centerRight, child: Loader())
+                        else if (_feeFetchFailed)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                l10n.multisigProposeFeeFetchFailed,
+                                style: text.smallParagraph?.copyWith(color: colors.error),
+                                textAlign: TextAlign.right,
+                              ),
+                              const SizedBox(height: 4),
+                              IntrinsicWidth(
+                                child: QuantusButton.simple(
+                                  label: l10n.homeActivityRetry,
+                                  onTap: _retryFeeFetch,
+                                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                                  variant: ButtonVariant.transparent,
+                                  textStyle: text.smallParagraph?.copyWith(
+                                    color: colors.accentOrange,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: colors.accentOrange,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        else if (_hasFee && _feeBreakdown != null)
                           Text(
                             l10n.commonAmountBalance(
                               formattingService.formatBalance(_feeBreakdown!.memberCost, maxDecimals: 5),
