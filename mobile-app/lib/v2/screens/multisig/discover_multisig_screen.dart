@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/toaster_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
@@ -198,9 +199,16 @@ class _DiscoverMultisigRowState extends ConsumerState<_DiscoverMultisigRow> {
   void initState() {
     super.initState();
 
-    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.account.accountId).then((name) {
-      if (mounted) setState(() => _checksum = name);
-    });
+    ref
+        .read(humanReadableChecksumServiceProvider)
+        .getHumanReadableName(widget.account.accountId)
+        .then((name) {
+          if (mounted) setState(() => _checksum = name);
+        })
+        .catchError((Object e) {
+          quantusDebugPrint('DiscoverMultisigRow: checksum lookup error: $e');
+          if (mounted) setState(() => _checksum = 'Error getting checksum');
+        });
   }
 
   @override
