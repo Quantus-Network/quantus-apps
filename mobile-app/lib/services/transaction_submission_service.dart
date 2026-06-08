@@ -175,8 +175,6 @@ class TransactionSubmissionService {
     required BigInt amount,
     required int expiryBlock,
     required PendingMultisigProposalEvent pending,
-    int maxRetries = 3,
-    int attempt = 1,
   }) async {
     try {
       final service = _ref.read(multisigServiceProvider);
@@ -194,24 +192,12 @@ class TransactionSubmissionService {
       final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
       _ref.read(multisigProposalPollingServiceProvider).startPolling(msig, updated);
     } catch (e, stackTrace) {
-      quantusDebugPrint('[Propose] submit attempt $attempt failed: $e');
-      if (attempt < maxRetries) {
-        await Future.delayed(const Duration(seconds: 2));
-        await _submitProposalBackground(
-          msig: msig,
-          signer: signer,
-          recipient: recipient,
-          amount: amount,
-          expiryBlock: expiryBlock,
-          pending: pending,
-          maxRetries: maxRetries,
-          attempt: attempt + 1,
-        );
-      } else {
-        quantusDebugPrint('[Propose] failed after $maxRetries attempts: $e\n$stackTrace');
-        removePendingMultisigProposal(_ref, pending.id);
-        _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
-      }
+      // Retries live in SubstrateService.submitExtrinsic; avoid outer retries
+      // here because each attempt fetches a fresh nonce and can duplicate
+      // deposit-reserving proposals if a prior submit already landed.
+      quantusDebugPrint('[Propose] submit failed: $e\n$stackTrace');
+      removePendingMultisigProposal(_ref, pending.id);
+      _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.submitFailed);
     }
   }
 
