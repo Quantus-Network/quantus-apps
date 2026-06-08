@@ -163,7 +163,7 @@ class MultisigSubmissionService {
         )
         .then((data) => data.fee);
 
-    final totalCost = PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee).totalCost;
+    final totalCost = MultisigCreationDraftFields.fromDraft(draft, networkFee: networkFee).totalCost;
     final balance = await _ref.read(substrateServiceProvider).queryBalance(creator.accountId);
     if (balance < totalCost) {
       throw MultisigInsufficientBalanceException(balance: balance, required: totalCost);
