@@ -28,3 +28,14 @@ class MultisigAlreadyExistsException implements Exception {
   @override
   String toString() => 'Multisig already exists at $address';
 }
+
+/// Thrown when the creator cannot cover pallet fee, network fee, and deposit.
+class MultisigInsufficientBalanceException implements Exception {
+  MultisigInsufficientBalanceException({required this.balance, required this.required});
+
+  final BigInt balance;
+  final BigInt required;
+
+  @override
+  String toString() => 'Insufficient balance for multisig creation: have $balance, need $required';
+}

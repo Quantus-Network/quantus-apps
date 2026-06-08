@@ -82,6 +82,7 @@
   "multisigCreateErrorCouldNotCreate": "Gagal membuat multisig.",
   "multisigCreateReadyToast": "Multisig ditambahkan ke akun Anda.",
   "multisigCreateAlreadyExists": "Multisig dengan alamat ini sudah ada on-chain.",
+  "multisigCreateInsufficientBalance": "Saldo tidak cukup untuk biaya dan deposit pembuatan multisig.",
   "multisigCreateTimeoutToast": "Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.",
   "multisigCreateAuthReason": "Autentikasi untuk membuat multisig ini",
   "multisigCreateSignersLabel": "PENANDATANGAN",

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/services/history_polling_manager.dart';
 import 'package:resonance_network_wallet/services/local_notifications_service.dart';
+import 'package:resonance_network_wallet/services/multisig_creation_polling_service.dart';
 
 /// Widget that initializes the polling services for the entire app.
 /// This should be placed high in the widget tree, typically in your main app
@@ -34,6 +35,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
       await notificationService.init();
 
       ref.read(historyPollingManagerProvider);
+      ref.read(multisigCreationPollingServiceProvider);
     } catch (e, stackTrace) {
       debugPrint('Initialization error: $e\n$stackTrace');
     }
