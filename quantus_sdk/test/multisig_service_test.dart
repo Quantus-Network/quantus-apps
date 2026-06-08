@@ -195,6 +195,44 @@ void main() {
       expect(account.creator, signerA);
     });
 
+    test('multisigAccountFromIndexerRecord throws on malformed indexer data', () {
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('signers'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..['signers'] = [],
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+
+      expect(
+        () => MultisigService.multisigAccountFromIndexerRecord(
+          Map<String, dynamic>.from(indexerRecord)..remove('threshold'),
+          myMemberAccountId: signerB,
+          name: 'Bad',
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('multisigAccountFromIndexerRecord parses string threshold', () {
+      final account = MultisigService.multisigAccountFromIndexerRecord(
+        Map<String, dynamic>.from(indexerRecord)..['threshold'] = '2',
+        myMemberAccountId: signerB,
+        name: 'Team Multisig',
+      );
+      expect(account.threshold, 2);
+    });
+
     test('resolveMyMemberAccountId prefers first matching local account', () {
       expect(MultisigService.resolveMyMemberAccountId(indexerRecord, [signerB, signerA]), signerB);
     });
@@ -204,25 +242,39 @@ void main() {
     });
   });
 
-  group('MultisigGraphql.buildDiscoverQuery', () {
+  group('MultisigGraphql.discoverQuery', () {
+    const addrA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+    const addrB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
+
+    test('uses where variable', () {
+      expect(MultisigGraphql.discoverQuery, contains(r'$where: multisig_bool_exp!'));
+      expect(MultisigGraphql.discoverQuery, contains(r'multisig(where: $where)'));
+    });
+  });
+
+  group('MultisigGraphql.buildDiscoverVariables', () {
     const addrA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
     const addrB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
 
     test('throws when accountIds is empty', () {
-      expect(() => MultisigGraphql.buildDiscoverQuery([]), throwsArgumentError);
+      expect(() => MultisigGraphql.buildDiscoverVariables([]), throwsArgumentError);
     });
 
     test('uses single _contains clause for one account', () {
-      final query = MultisigGraphql.buildDiscoverQuery([addrA]);
-      expect(query, contains('{signers: {_contains: ["$addrA"]}}'));
-      expect(query, isNot(contains('_or')));
+      final variables = MultisigGraphql.buildDiscoverVariables([addrA]);
+      expect(variables['where'], {
+        'signers': {'_contains': [addrA]},
+      });
     });
 
     test('uses _or of _contains clauses for multiple accounts', () {
-      final query = MultisigGraphql.buildDiscoverQuery([addrA, addrB]);
-      expect(query, contains('_or'));
-      expect(query, contains('{signers: {_contains: ["$addrA"]}}'));
-      expect(query, contains('{signers: {_contains: ["$addrB"]}}'));
+      final variables = MultisigGraphql.buildDiscoverVariables([addrA, addrB]);
+      expect(variables['where'], {
+        '_or': [
+          {'signers': {'_contains': [addrA]}},
+          {'signers': {'_contains': [addrB]}},
+        ],
+      });
     });
   });
 

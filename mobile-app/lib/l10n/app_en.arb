@@ -1340,9 +1340,9 @@
     "@activityDetailMultisigCreator": {
       "description": "Creator account row label on multisig detail sheet"
     },
-    "activityDetailMultisigCreationFee": "CREATION FEE",
+    "activityDetailMultisigCreationFee": "PALLET FEE",
     "@activityDetailMultisigCreationFee": {
-      "description": "Multisig creation fee row label on detail sheet"
+      "description": "Multisig pallet fee row label on detail sheet"
     },
     "activityDetailMultisigDeposit": "RESERVED DEPOSIT",
     "@activityDetailMultisigDeposit": {

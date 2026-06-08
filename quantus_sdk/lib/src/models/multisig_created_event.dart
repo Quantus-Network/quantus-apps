@@ -12,8 +12,11 @@ class MultisigCreatedEvent extends TransactionEvent {
   final int threshold;
   final BigInt nonce;
   final List<String> signers;
-  final BigInt creationFee;
+  final BigInt palletFee;
+  final BigInt networkFee;
   final BigInt deposit;
+
+  BigInt get totalCost => palletFee + networkFee + deposit;
 
   MultisigCreatedEvent({
     required super.id,
@@ -22,13 +25,14 @@ class MultisigCreatedEvent extends TransactionEvent {
     required this.threshold,
     required this.nonce,
     required this.signers,
-    required this.creationFee,
+    required this.palletFee,
+    required this.networkFee,
     required this.deposit,
     required super.timestamp,
     required super.blockNumber,
     required super.blockHash,
     super.extrinsicHash,
-  }) : super(from: creatorId, to: multisigAddress, amount: creationFee);
+  }) : super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee + deposit);
 
   bool isCreator(String accountId) => creatorId == accountId;
 
@@ -39,8 +43,13 @@ class MultisigCreatedEvent extends TransactionEvent {
     DateTime? timestamp,
     String? extrinsicHash,
     String? blockHash,
+    BigInt? networkFee,
   }) {
     final creator = draft.creator ?? draft.myMemberAccountId;
+    final palletFee = _palletConstants.multisigFee;
+    final deposit = _palletConstants.multisigDeposit;
+    final resolvedNetworkFee = networkFee ?? BigInt.zero;
+
     return MultisigCreatedEvent(
       id: 'ae-multisig-${draft.accountId}',
       creatorId: creator,
@@ -48,8 +57,9 @@ class MultisigCreatedEvent extends TransactionEvent {
       threshold: draft.threshold,
       nonce: draft.nonce,
       signers: List<String>.from(draft.signers),
-      creationFee: _palletConstants.multisigFee,
-      deposit: _palletConstants.multisigDeposit,
+      palletFee: palletFee,
+      networkFee: resolvedNetworkFee,
+      deposit: deposit,
       blockHash: blockHash,
       timestamp: timestamp ?? DateTime.now(),
       blockNumber: 0,
@@ -75,11 +85,8 @@ class MultisigCreatedEvent extends TransactionEvent {
     final address = stringFromJson(multisig['id']);
     final creator = nestedAccountId(multisig['creator']);
     final block = jsonMapOrNull(multisig['block']);
-    final signersRaw = multisig['signers'];
-    final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
-
-    final rawThreshold = multisig['threshold'] as int?;
-    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+    final signers = nonEmptyStringListFromJson(multisig['signers'], 'signers');
+    final threshold = multisigThresholdFromJson(multisig['threshold'], signerCount: signers.length);
 
     return MultisigCreatedEvent(
       id: accountEventId ?? 'ae-multisig-$address',
@@ -88,8 +95,9 @@ class MultisigCreatedEvent extends TransactionEvent {
       threshold: threshold,
       nonce: bigIntFromJson(multisig['nonce']),
       signers: signers,
-      creationFee: _feeFromGraphql(multisig),
-      deposit: _depositFromGraphql(multisig),
+      palletFee: _palletConstants.multisigFee,
+      networkFee: _networkFeeFromGraphql(multisig),
+      deposit: _palletConstants.multisigDeposit,
       timestamp: accountEventTimestamp ?? dateTimeFromJson(multisig['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),
       blockHash: blockHashFromJsonMap(block),
@@ -97,21 +105,20 @@ class MultisigCreatedEvent extends TransactionEvent {
     );
   }
 
-  static BigInt _feeFromGraphql(Map<String, dynamic> multisig) {
-    final raw = multisig['fee'] ?? multisig['creationFee'];
+  static BigInt _networkFeeFromGraphql(Map<String, dynamic> multisig) {
+    final raw = multisig['fee'];
     if (raw != null) return bigIntFromJson(raw);
-    return _palletConstants.multisigFee;
-  }
 
-  static BigInt _depositFromGraphql(Map<String, dynamic> multisig) {
-    final raw = multisig['deposit'];
-    if (raw != null) return bigIntFromJson(raw);
-    return _palletConstants.multisigDeposit;
+    final extrinsic = jsonMapOrNull(multisig['extrinsic']);
+    final extrinsicFee = extrinsic?['fee'];
+    if (extrinsicFee != null) return bigIntFromJson(extrinsicFee);
+
+    return BigInt.zero;
   }
 
   @override
   String toString() {
     return 'MultisigCreated{id: $id, creator: $creatorId, address: $multisigAddress, '
-        'threshold: $threshold, fee: $creationFee, deposit: $deposit}';
+        'threshold: $threshold, palletFee: $palletFee, networkFee: $networkFee, deposit: $deposit}';
   }
 }

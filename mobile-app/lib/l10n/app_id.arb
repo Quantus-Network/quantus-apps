@@ -308,7 +308,7 @@
   "activityDetailMultisigThresholdValue": "{threshold} dari {total}",
   "activityDetailMultisigSignerCount": "PENANDATANGAN",
   "activityDetailMultisigCreator": "PEMBUAT",
-  "activityDetailMultisigCreationFee": "BIAYA PEMBUATAN",
+  "activityDetailMultisigCreationFee": "BIAYA PALLET",
   "activityDetailMultisigDeposit": "DEPOSIT TERSIMPAN",
   "activityDetailMultisigFeePaidByCreator": "Dibayar oleh pembuat",
 

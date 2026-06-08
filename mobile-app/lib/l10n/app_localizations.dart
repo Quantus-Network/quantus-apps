@@ -1796,10 +1796,10 @@ abstract class AppLocalizations {
   /// **'CREATOR'**
   String get activityDetailMultisigCreator;
 
-  /// Multisig creation fee row label on detail sheet
+  /// Multisig pallet fee row label on detail sheet
   ///
   /// In en, this message translates to:
-  /// **'CREATION FEE'**
+  /// **'PALLET FEE'**
   String get activityDetailMultisigCreationFee;
 
   /// Multisig reserved deposit row label on detail sheet

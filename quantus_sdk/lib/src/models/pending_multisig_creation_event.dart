@@ -10,8 +10,11 @@ class PendingMultisigCreationEvent extends TransactionEvent {
   final int threshold;
   final BigInt nonce;
   final List<String> signers;
-  final BigInt creationFee;
+  final BigInt palletFee;
+  final BigInt networkFee;
   final BigInt deposit;
+
+  BigInt get totalCost => palletFee + networkFee + deposit;
 
   PendingMultisigCreationEvent({
     required String tempId,
@@ -20,16 +23,27 @@ class PendingMultisigCreationEvent extends TransactionEvent {
     required this.threshold,
     required this.nonce,
     required this.signers,
-    required this.creationFee,
+    required this.palletFee,
+    required this.networkFee,
     required this.deposit,
     required super.timestamp,
     super.extrinsicHash,
-  }) : super(id: tempId, from: creatorId, to: multisigAddress, amount: creationFee, blockNumber: 0);
+  }) : super(
+         id: tempId,
+         from: creatorId,
+         to: multisigAddress,
+         amount: palletFee + networkFee + deposit,
+         blockNumber: 0,
+       );
 
   bool isCreator(String accountId) => creatorId == accountId;
 
-  factory PendingMultisigCreationEvent.fromDraft(MultisigAccount draft) {
+  factory PendingMultisigCreationEvent.fromDraft(MultisigAccount draft, {BigInt? networkFee}) {
     final creator = draft.creator ?? draft.myMemberAccountId;
+    final palletFee = _palletConstants.multisigFee;
+    final deposit = _palletConstants.multisigDeposit;
+    final resolvedNetworkFee = networkFee ?? BigInt.zero;
+
     return PendingMultisigCreationEvent(
       tempId: 'pending_multisig_${draft.accountId}',
       creatorId: creator,
@@ -37,8 +51,9 @@ class PendingMultisigCreationEvent extends TransactionEvent {
       threshold: draft.threshold,
       nonce: draft.nonce,
       signers: List<String>.from(draft.signers),
-      creationFee: _palletConstants.multisigFee,
-      deposit: _palletConstants.multisigDeposit,
+      palletFee: palletFee,
+      networkFee: resolvedNetworkFee,
+      deposit: deposit,
       timestamp: DateTime.now(),
     );
   }

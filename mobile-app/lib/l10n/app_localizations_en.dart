@@ -928,7 +928,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailMultisigCreator => 'CREATOR';
 
   @override
-  String get activityDetailMultisigCreationFee => 'CREATION FEE';
+  String get activityDetailMultisigCreationFee => 'PALLET FEE';
 
   @override
   String get activityDetailMultisigDeposit => 'RESERVED DEPOSIT';

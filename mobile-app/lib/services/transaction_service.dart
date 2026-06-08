@@ -38,12 +38,11 @@ class TransactionService {
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
-    final seenMultisigAddresses = <String>{};
     final seenProposalKeys = <String>{};
     final List<TransactionEvent> result = [];
 
     for (final creation in pendingMultisigCreations) {
-      if (seenMultisigAddresses.add(creation.multisigAddress) && seenIds.add(creation.id)) {
+      if (seenIds.add(creation.id)) {
         result.add(creation);
       }
     }
@@ -84,9 +83,6 @@ class TransactionService {
     // Add other transfers (lowest priority)
     otherTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     for (final transaction in otherTransfers) {
-      if (transaction is MultisigCreatedEvent) {
-        seenMultisigAddresses.add(transaction.multisigAddress);
-      }
       if (transaction is MultisigProposalCreatedEvent) {
         final key = transaction.activityDedupKey;
         if (seenProposalKeys.contains(key)) {

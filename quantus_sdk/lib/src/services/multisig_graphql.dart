@@ -8,6 +8,7 @@ class MultisigGraphql {
       threshold
       nonce
       signers
+      fee
       creator {
         id
       }
@@ -74,29 +75,42 @@ ${MultisigProposalGraphql.fields}      }
   /// Fields for discovering multisigs where local accounts are signers.
   static const String discoverFields = _coreFields;
 
-  /// Builds a query for multisigs where any of [accountIds] appears in
-  /// `signers` (Hasura `String[]` `_contains` per account, combined with
-  /// `_or` when there are multiple wallet accounts).
-  static String buildDiscoverQuery(List<String> accountIds) {
+  /// Query for multisigs where any local account appears in `signers`.
+  static const String discoverQuery =
+      r'''
+    query DiscoverMultisigs($where: multisig_bool_exp!) {
+      multisig(where: $where) {
+''' +
+      discoverFields +
+      r'''
+      }
+    }
+  ''';
+
+  /// Variables for [discoverQuery]: any of [accountIds] in `signers` via
+  /// Hasura `String[]` `_contains`, combined with `_or` for multiple
+  /// wallet accounts.
+  static Map<String, dynamic> buildDiscoverVariables(List<String> accountIds) {
     if (accountIds.isEmpty) {
       throw ArgumentError.value(accountIds, 'accountIds', 'Must not be empty');
     }
 
-    final whereClause = accountIds.length == 1
-        ? '{signers: {_contains: ["${_escapeGraphqlString(accountIds.first)}"]}}'
-        : '{_or: [${accountIds.map((id) => '{signers: {_contains: ["${_escapeGraphqlString(id)}"]}}').join(', ')}]}';
-
-    return '''
-    query DiscoverMultisigs {
-      multisig(where: $whereClause) {
-$discoverFields
-      }
+    final Map<String, dynamic> where;
+    if (accountIds.length == 1) {
+      where = {
+        'signers': {'_contains': [accountIds.first]},
+      };
+    } else {
+      where = {
+        '_or': accountIds
+            .map((id) => {
+                  'signers': {'_contains': [id]},
+                })
+            .toList(),
+      };
     }
-  ''';
-  }
 
-  static String _escapeGraphqlString(String value) {
-    return value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+    return {'where': where};
   }
 }
 
