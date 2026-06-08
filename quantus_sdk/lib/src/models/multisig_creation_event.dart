@@ -63,7 +63,7 @@ class MultisigCreationDraftFields {
 
   BigInt get totalCost => palletFee + networkFee + deposit;
 
-  factory MultisigCreationDraftFields.fromDraft(MultisigAccount draft, {BigInt? networkFee}) {
+  factory MultisigCreationDraftFields.fromDraft(MultisigAccount draft, {required BigInt networkFee}) {
     return MultisigCreationDraftFields(
       creatorId: draft.creator ?? draft.myMemberAccountId,
       multisigAddress: draft.accountId,
@@ -71,7 +71,7 @@ class MultisigCreationDraftFields {
       nonce: draft.nonce,
       signers: List<String>.from(draft.signers),
       palletFee: MultisigCreationEvent.palletConstants.multisigFee,
-      networkFee: networkFee ?? BigInt.zero,
+      networkFee: networkFee,
       deposit: MultisigCreationEvent.palletConstants.multisigDeposit,
     );
   }

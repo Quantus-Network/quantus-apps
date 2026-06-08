@@ -9,8 +9,8 @@ import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/shared/utils/tx_filter_family_provider.dart';
 
 /// Appends a confirmed multisig creation to cached activity history.
-Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft) async {
-  final created = await _loadCreatedEvent(ref, draft);
+Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft, {required BigInt networkFee}) async {
+  final created = await _loadCreatedEvent(ref, draft, networkFee: networkFee);
   final creatorId = draft.creator ?? draft.myMemberAccountId;
   final affectedIds = {...draft.signers, creatorId};
 
@@ -41,17 +41,22 @@ Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft) 
   }
 }
 
-Future<MultisigCreatedEvent> _loadCreatedEvent(Ref ref, MultisigAccount draft) async {
+Future<MultisigCreatedEvent> _loadCreatedEvent(
+  Ref ref,
+  MultisigAccount draft, {
+  required BigInt networkFee,
+}) async {
   try {
     final record = await ref.read(multisigServiceProvider).fetchMultisigFromIndexer(draft.accountId);
     if (record != null) {
       return MultisigCreatedEvent.fromMultisigGraphql(multisig: record);
     }
-  } catch (e) {
-    quantusDebugPrint('[MultisigCreationReconcile] Indexer fetch failed: $e');
+  } catch (e, stackTrace) {
+    quantusDebugPrint('[MultisigCreationReconcile] Indexer unavailable ($e); using draft with preflight networkFee');
+    quantusDebugPrint('Stack trace: $stackTrace');
   }
 
-  return MultisigCreatedEvent.fromDraft(draft);
+  return MultisigCreatedEvent.fromDraft(draft, networkFee: networkFee);
 }
 
 bool _showsMultisigCreationForFilter({

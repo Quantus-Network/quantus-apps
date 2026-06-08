@@ -43,6 +43,22 @@ String stringFromJson(dynamic value) {
   throw FormatException('Expected String, got ${value.runtimeType}: $value');
 }
 
+int positiveIntFromJson(dynamic value, String fieldName, {int min = 1}) {
+  if (value == null) {
+    throw FormatException('Missing $fieldName');
+  }
+  final parsed = switch (value) {
+    int v => v,
+    num v => v.toInt(),
+    String v => int.parse(v),
+    _ => throw FormatException('Invalid $fieldName: $value (${value.runtimeType})'),
+  };
+  if (parsed < min) {
+    throw FormatException('Invalid $fieldName: $parsed (must be >= $min)');
+  }
+  return parsed;
+}
+
 /// Resolves `{"id":"..."}`, a JSON string of that object, or a bare address
 /// string.
 String nestedAccountId(dynamic holder) {

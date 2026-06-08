@@ -24,10 +24,10 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
   /// available.
   factory MultisigCreatedEvent.fromDraft(
     MultisigAccount draft, {
+    required BigInt networkFee,
     DateTime? timestamp,
     String? extrinsicHash,
     String? blockHash,
-    BigInt? networkFee,
   }) {
     final fields = MultisigCreationDraftFields.fromDraft(draft, networkFee: networkFee);
 
@@ -69,8 +69,7 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
     final signersRaw = multisig['signers'];
     final signers = signersRaw is List ? signersRaw.map((e) => e.toString()).toList() : <String>[];
 
-    final rawThreshold = multisig['threshold'] as int?;
-    final threshold = rawThreshold != null && rawThreshold >= 1 ? rawThreshold : 1;
+    final threshold = positiveIntFromJson(multisig['threshold'], 'threshold');
 
     return MultisigCreatedEvent(
       id: accountEventId ?? 'ae-multisig-$address',
@@ -97,7 +96,8 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
     final extrinsicFee = extrinsic?['fee'];
     if (extrinsicFee != null) return bigIntFromJson(extrinsicFee);
 
-    return BigInt.zero;
+    final id = multisig['id'];
+    throw FormatException('Missing network fee for multisig $id');
   }
 
   @override

@@ -16,7 +16,7 @@ class PendingMultisigCreationEvent extends MultisigCreationEvent {
     super.extrinsicHash,
   }) : super(id: tempId, blockNumber: 0);
 
-  factory PendingMultisigCreationEvent.fromDraft(MultisigAccount draft, {BigInt? networkFee}) {
+  factory PendingMultisigCreationEvent.fromDraft(MultisigAccount draft, {required BigInt networkFee}) {
     final fields = MultisigCreationDraftFields.fromDraft(draft, networkFee: networkFee);
 
     return PendingMultisigCreationEvent(

@@ -57,6 +57,19 @@ class MultisigCreationPollingService {
       }
 
       quantusDebugPrint('[MultisigCreationPoller] confirmed ${draft.accountId}');
+
+      final pending = _ref
+          .read(pendingMultisigCreationsProvider)
+          .where((event) => event.multisigAddress == draft.accountId)
+          .firstOrNull;
+      if (pending == null) {
+        quantusDebugPrint(
+          '[MultisigCreationPoller] missing pending creation for ${draft.accountId}; skipping history reconcile',
+        );
+        stopPolling(key);
+        return;
+      }
+
       stopPolling(key);
       removePendingMultisigCreation(_ref, key);
 
@@ -66,7 +79,7 @@ class MultisigCreationPollingService {
         _ref.invalidate(discoveredMultisigsProvider);
       }
 
-      await reconcileConfirmedMultisigCreation(_ref, draft);
+      await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: pending.networkFee);
 
       _ref.read(multisigCreationToastProvider.notifier).state = const MultisigCreationToastEvent(
         MultisigCreationToastKind.ready,
