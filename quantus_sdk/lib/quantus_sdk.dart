@@ -25,6 +25,7 @@ export 'src/models/extrinsic_fee_data.dart';
 export 'src/models/unsigned_transaction_data.dart';
 export 'src/models/remote_config_model.dart';
 export 'src/models/miner_reward_event.dart';
+export 'src/models/multisig_creation_event.dart';
 export 'src/models/multisig_created_event.dart';
 export 'src/models/pending_multisig_creation_event.dart';
 export 'src/models/miner_stats.dart';

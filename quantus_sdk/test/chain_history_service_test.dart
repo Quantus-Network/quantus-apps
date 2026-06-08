@@ -18,6 +18,7 @@ void main() {
         'qzkYEQv8tQsmniZYdame3Cku18RL5g9bGK9Pdydq5TMPdpE3y',
         'qzntBpmqHZF1jxC8KJKpuxcYuHST892jyXBqRctpAxd1WQ9BL',
       ],
+      'fee': '8120809264',
       'creator': {'id': 'qzk1Nxai3dZD9Cn5kwGcgL6mKxsfxwqdis7kDQJ52aJS2vSn7'},
       'timestamp': '2026-06-02T05:15:08.147+00:00',
       'block': {'height': 3, 'hash': '0xdfee413c921789a93b641c2eaf25be8c3d7770841cc7e83aff369cdd882eb9f4'},
@@ -134,7 +135,7 @@ void main() {
       expect(event.threshold, 2);
       expect(event.signers, hasLength(3));
       expect(event.palletFee, multisig_pallet.Constants().multisigFee);
-      expect(event.networkFee, BigInt.zero);
+      expect(event.networkFee, BigInt.parse('8120809264'));
       expect(event.deposit, multisig_pallet.Constants().multisigDeposit);
       expect(event.extrinsicHash, '0xea4400ec3247fc75b7187b6f6d83a89905017d1136c894e625a3c43a688606b9');
     });
