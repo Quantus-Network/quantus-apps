@@ -36,7 +36,10 @@ class MultisigService {
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {
     if (myAccountIds.isEmpty) return [];
 
-    final data = await _postGraphQl({'query': MultisigGraphql.buildDiscoverQuery(myAccountIds)});
+    final data = await _postGraphQl({
+      'query': MultisigGraphql.discoverQuery,
+      'variables': MultisigGraphql.buildDiscoverVariables(myAccountIds),
+    });
     final records = parseMultisigDiscoverData(data);
     final seen = <String>{};
     final results = <MultisigAccount>[];
