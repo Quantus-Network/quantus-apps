@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
+export 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
+export 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
 export 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 
 class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAccount>>> {
@@ -88,28 +91,23 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   return service.discoverForUser(ids);
 });
 
-/// Past proposals for a multisig activity feed, filtered server-side by status.
-final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
-  ref,
-  msig,
-) async {
-  final service = ref.watch(multisigServiceProvider);
-  return service.getPastProposals(msig);
-});
-
-/// Invalidates open, past, and block providers after a proposal state change.
+/// Refreshes open, past, and block providers after a proposal state change.
 void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
-  _invalidateMultisigProposals(ref, msig);
+  _refreshMultisigProposals(ref, msig);
 }
 
 /// Widget-layer entry point for [invalidateMultisigProposals].
 void invalidateMultisigProposalsFromWidget(WidgetRef ref, MultisigAccount msig) {
-  _invalidateMultisigProposals(ref, msig);
+  _refreshMultisigProposals(ref, msig);
 }
 
-void _invalidateMultisigProposals(dynamic ref, MultisigAccount msig) {
-  ref.invalidate(multisigOpenProposalsPaginationProvider(msig));
-  ref.invalidate(multisigPastProposalsProvider(msig));
+void _refreshMultisigProposals(dynamic ref, MultisigAccount msig) {
+  if (ref.exists(multisigOpenProposalsPaginationProvider(msig))) {
+    ref.read(multisigOpenProposalsPaginationProvider(msig).notifier).silentRefresh();
+  }
+  if (ref.exists(multisigPastProposalsPaginationProvider(msig))) {
+    ref.read(multisigPastProposalsPaginationProvider(msig).notifier).silentRefresh();
+  }
   ref.invalidate(multisigCurrentBlockProvider);
 }
 

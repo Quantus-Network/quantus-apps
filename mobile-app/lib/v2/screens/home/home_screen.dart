@@ -33,6 +33,7 @@ import 'package:resonance_network_wallet/providers/active_account_transactions_p
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -118,7 +119,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ).notifier,
           )
-          .loadingRefresh();
+          .silentRefresh();
+
+      if (active is MultisigDisplayAccount) {
+        await ref.read(multisigOpenProposalsPaginationProvider(active.account).notifier).silentRefresh();
+        await ref.read(multisigPastProposalsPaginationProvider(active.account).notifier).silentRefresh();
+      }
     }
   }
 

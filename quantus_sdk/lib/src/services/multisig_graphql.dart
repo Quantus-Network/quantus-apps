@@ -195,13 +195,15 @@ class MultisigProposalGraphql {
   /// Past proposals: executed, cancelled, or removed status only.
   static const String pastProposalsQuery =
       r'''
-    query MultisigPastProposals($multisigId: String!) {
+    query MultisigPastProposals($multisigId: String!, $limit: Int!, $offset: Int!) {
       multisig_proposal(
         where: {_and: [
           {multisig_id: {_eq: $multisigId}},
           {status: {_in: [EXECUTED, CANCELLED, REMOVED]}}
         ]},
-        order_by: {created_at: desc}
+        order_by: {created_at: desc},
+        limit: $limit,
+        offset: $offset
       ) {
 ''' +
       fields +
@@ -211,7 +213,15 @@ class MultisigProposalGraphql {
   ''';
 
   static Map<String, dynamic> buildPastProposalsVariables(String multisigAddress) {
-    return {'multisigId': multisigAddress};
+    return buildPastProposalsPageVariables(multisigAddress, limit: 1000, offset: 0);
+  }
+
+  static Map<String, dynamic> buildPastProposalsPageVariables(
+    String multisigAddress, {
+    required int limit,
+    required int offset,
+  }) {
+    return {'multisigId': multisigAddress, 'limit': limit, 'offset': offset};
   }
 
   /// Fetches a single proposal by `(multisig_address, proposal_id)`.

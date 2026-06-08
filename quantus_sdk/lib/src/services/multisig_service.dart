@@ -254,21 +254,31 @@ class MultisigService {
   }
 
   /// Proposals with executed, cancelled, or removed status.
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) {
-    return _fetchProposals(
-      msig,
-      query: MultisigProposalGraphql.pastProposalsQuery,
-      variables: MultisigProposalGraphql.buildPastProposalsVariables(msig.accountId),
-    );
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    final page = await fetchPastProposalsPage(msig, limit: 1000, offset: 0);
+    return page.items;
   }
 
-  Future<List<MultisigProposal>> _fetchProposals(
+  /// Fetches a page of past proposals. Uses [limit] + 1 lookahead to detect
+  /// [MultisigOpenProposalsPage.hasMore].
+  Future<MultisigOpenProposalsPage> fetchPastProposalsPage(
     MultisigAccount msig, {
-    required String query,
-    required Map<String, dynamic> variables,
+    required int limit,
+    required int offset,
   }) async {
-    final rows = await _fetchProposalRows(query: query, variables: variables);
-    return rows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
+    final rows = await _fetchProposalRows(
+      query: MultisigProposalGraphql.pastProposalsQuery,
+      variables: MultisigProposalGraphql.buildPastProposalsPageVariables(
+        msig.accountId,
+        limit: limit + 1,
+        offset: offset,
+      ),
+    );
+
+    final hasMore = rows.length > limit;
+    final pageRows = hasMore ? rows.take(limit) : rows;
+    final items = pageRows.map((row) => MultisigProposal.fromIndexerJson(row, msig: msig)).toList();
+    return MultisigOpenProposalsPage(items: items, hasMore: hasMore);
   }
 
   Future<List<Map<String, dynamic>>> _fetchProposalRows({

@@ -26,6 +26,14 @@ List<ActivityDateGroup<OpenProposalEntry>> groupOpenProposalsByDate(
   return _groupByDate(entries, l10n, localeName, (entry) => entry.timestamp);
 }
 
+List<ActivityDateGroup<MultisigProposal>> groupPastProposalsByDate(
+  List<MultisigProposal> proposals,
+  AppLocalizations l10n,
+  String localeName,
+) {
+  return _groupByDate(proposals, l10n, localeName, (proposal) => proposal.createdAt);
+}
+
 List<ActivityDateGroup<T>> _groupByDate<T>(
   List<T> items,
   AppLocalizations l10n,

@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/services/multisig_activity_merge.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
@@ -17,12 +17,12 @@ import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/date_grouped_refreshable_list.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
-import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/open_proposals_view.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/past_proposals_view.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
-enum MultisigActivityTab { openProposals, activity }
+enum MultisigActivityTab { openProposals, pastProposals, activity }
 
 class MultisigActivityScreen extends ConsumerStatefulWidget {
   final MultisigAccount msig;
@@ -40,6 +40,7 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
 
   late MultisigActivityTab _selectedTab;
   late final ScrollController _openScrollController;
+  late final ScrollController _pastScrollController;
   late final ScrollController _activityScrollController;
 
   @override
@@ -47,14 +48,17 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
     super.initState();
     _selectedTab = widget.initialTab;
     _openScrollController = ScrollController()..addListener(_onOpenScroll);
+    _pastScrollController = ScrollController()..addListener(_onPastScroll);
     _activityScrollController = ScrollController()..addListener(_onActivityScroll);
   }
 
   @override
   void dispose() {
     _openScrollController.removeListener(_onOpenScroll);
+    _pastScrollController.removeListener(_onPastScroll);
     _activityScrollController.removeListener(_onActivityScroll);
     _openScrollController.dispose();
+    _pastScrollController.dispose();
     _activityScrollController.dispose();
     super.dispose();
   }
@@ -68,6 +72,17 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
     if (pagination.isFetching || !pagination.hasMore) return;
 
     ref.read(multisigOpenProposalsPaginationProvider(widget.msig).notifier).fetchMore();
+  }
+
+  void _onPastScroll() {
+    if (!_pastScrollController.hasClients) return;
+    final pos = _pastScrollController.position;
+    if (pos.maxScrollExtent <= 0 || pos.pixels < pos.maxScrollExtent - _loadMoreThreshold) return;
+
+    final pagination = ref.read(multisigPastProposalsPaginationProvider(widget.msig));
+    if (pagination.isFetching || !pagination.hasMore) return;
+
+    ref.read(multisigPastProposalsPaginationProvider(widget.msig).notifier).fetchMore();
   }
 
   void _onActivityScroll() {
@@ -85,8 +100,11 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
     await ref.read(multisigOpenProposalsPaginationProvider(widget.msig).notifier).silentRefresh();
   }
 
+  Future<void> _refreshPast() async {
+    await ref.read(multisigPastProposalsPaginationProvider(widget.msig).notifier).silentRefresh();
+  }
+
   Future<void> _refreshActivity() async {
-    ref.invalidate(multisigPastProposalsProvider(widget.msig));
     await readActiveAccountPaginationNotifier(ref, _filterOption)?.silentRefresh();
   }
 
@@ -101,6 +119,7 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
           SegmentedControls<MultisigActivityTab>(
             items: [
               SegmentedControlItem(label: l10n.multisigOpenProposals, value: MultisigActivityTab.openProposals),
+              SegmentedControlItem(label: l10n.multisigPastProposals, value: MultisigActivityTab.pastProposals),
               SegmentedControlItem(label: l10n.homeActivityTitle, value: MultisigActivityTab.activity),
             ],
             selectedValue: _selectedTab,
@@ -108,13 +127,23 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
           ),
           const SizedBox(height: 18),
           Expanded(
-            child: _selectedTab == MultisigActivityTab.openProposals
-                ? _OpenProposalsTab(msig: widget.msig, scrollController: _openScrollController, onRefresh: _refreshOpen)
-                : _ActivityTab(
-                    msig: widget.msig,
-                    scrollController: _activityScrollController,
-                    onRefresh: _refreshActivity,
-                  ),
+            child: switch (_selectedTab) {
+              MultisigActivityTab.openProposals => _OpenProposalsTab(
+                msig: widget.msig,
+                scrollController: _openScrollController,
+                onRefresh: _refreshOpen,
+              ),
+              MultisigActivityTab.pastProposals => _PastProposalsTab(
+                msig: widget.msig,
+                scrollController: _pastScrollController,
+                onRefresh: _refreshPast,
+              ),
+              MultisigActivityTab.activity => _ActivityTab(
+                msig: widget.msig,
+                scrollController: _activityScrollController,
+                onRefresh: _refreshActivity,
+              ),
+            },
           ),
         ],
       ),
@@ -144,6 +173,26 @@ class _OpenProposalsTab extends ConsumerWidget {
   }
 }
 
+class _PastProposalsTab extends ConsumerWidget {
+  final MultisigAccount msig;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+
+  const _PastProposalsTab({required this.msig, required this.scrollController, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pagination = ref.watch(multisigPastProposalsPaginationProvider(msig));
+
+    return PastProposalsView.paginated(
+      msig: msig,
+      pagination: pagination,
+      scrollController: scrollController,
+      onRefresh: onRefresh,
+    );
+  }
+}
+
 class _ActivityTab extends ConsumerWidget {
   final MultisigAccount msig;
   final ScrollController scrollController;
@@ -159,10 +208,9 @@ class _ActivityTab extends ConsumerWidget {
     final text = context.themeText;
     final formatTxAmount = ref.watch(txAmountDisplayProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
-    final pastProposalsAsync = ref.watch(multisigPastProposalsProvider(msig));
     final pagination = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
 
-    if (txAsync.isLoading || pastProposalsAsync.isLoading) {
+    if (txAsync.isLoading) {
       return const Center(child: Loader());
     }
     if (txAsync.hasError) {
@@ -173,31 +221,21 @@ class _ActivityTab extends ConsumerWidget {
         ),
       );
     }
-    if (pastProposalsAsync.hasError) {
-      return Center(
-        child: Text(
-          l10n.multisigLoadFailed(pastProposalsAsync.error.toString()),
-          style: text.detail?.copyWith(color: colors.textError),
-        ),
-      );
-    }
 
     final data = txAsync.requireValue;
-    final pastProposals = pastProposalsAsync.requireValue;
-    final merged = mergeMultisigActivity(
+    final transfers = multisigActivityTransfers(
       txService: ref.read(transactionServiceProvider),
       data: data,
-      pastProposals: pastProposals,
       multisigAccountId: msig.accountId,
     );
-    final grouped = groupTransactionsByDate(merged, l10n, appLocale.numberFormatLocale);
+    final grouped = groupTransactionsByDate(transfers, l10n, appLocale.numberFormatLocale);
 
     return DateGroupedRefreshableList<TransactionEvent>(
       scrollController: scrollController,
       onRefresh: onRefresh,
       groups: grouped,
       showLoadMoreFooter: pagination != null && pagination.isLoading && pagination.hasMore,
-      emptyMessage: merged.isEmpty ? l10n.activityEmpty : null,
+      emptyMessage: transfers.isEmpty ? l10n.activityEmpty : null,
       itemBuilder: (context, tx, {required isLastInGroup}) {
         final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
         return buildTxItem(
@@ -210,17 +248,9 @@ class _ActivityTab extends ConsumerWidget {
               ? '—'
               : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
           isLastItem: isLastInGroup,
-          onTap: () => _onActivityTap(context, tx),
+          onTap: () => showTransactionDetailSheet(context, tx, msig.accountId),
         );
       },
     );
-  }
-
-  void _onActivityTap(BuildContext context, TransactionEvent tx) {
-    if (tx is MultisigProposalEvent) {
-      showMultisigProposalDetailSheet(context, msig: msig, proposal: tx.proposal);
-    } else {
-      showTransactionDetailSheet(context, tx, msig.accountId);
-    }
   }
 }

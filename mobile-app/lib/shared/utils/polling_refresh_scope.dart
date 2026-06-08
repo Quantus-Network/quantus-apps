@@ -4,6 +4,8 @@ import 'package:resonance_network_wallet/models/filtered_transactions_params.dar
 import 'package:resonance_network_wallet/providers/account_id_list_cache.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/controllers/unified_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_past_proposals_pagination_controller.dart';
 import 'package:resonance_network_wallet/providers/filtered_all_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
@@ -79,10 +81,24 @@ Future<void> refreshAccountsPagination(
 
 /// Silently refreshes pagination for the active account (background poll scope).
 Future<void> silentRefreshActiveAccount(Ref ref) async {
-  final accountId = activeAccountId(ref);
-  if (accountId == null) return;
+  final active = ref.read(activeAccountProvider).value;
+  if (active == null) return;
 
-  await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
+  await refreshAccountsPagination(
+    ref,
+    accountIds: [active.account.accountId],
+    action: (notifier) => notifier.silentRefresh(),
+  );
+
+  if (active is MultisigDisplayAccount) {
+    final msig = active.account;
+    if (ref.exists(multisigOpenProposalsPaginationProvider(msig))) {
+      await ref.read(multisigOpenProposalsPaginationProvider(msig).notifier).silentRefresh();
+    }
+    if (ref.exists(multisigPastProposalsPaginationProvider(msig))) {
+      await ref.read(multisigPastProposalsPaginationProvider(msig).notifier).silentRefresh();
+    }
+  }
 }
 
 /// Refreshes the active account when the user switches accounts.

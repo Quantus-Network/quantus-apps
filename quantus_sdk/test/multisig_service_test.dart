@@ -309,10 +309,21 @@ void main() {
 
     test('pastProposalsQuery uses multisigId variable and terminal statuses', () {
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$multisigId: String!'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$limit: Int!'));
+      expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'$offset: Int!'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains(r'multisig_id: {_eq: $multisigId}'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains('status: {_in: [EXECUTED, CANCELLED, REMOVED]}'));
       expect(MultisigProposalGraphql.pastProposalsQuery, contains('order_by: {created_at: desc}'));
-      expect(MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress), {'multisigId': multisigAddress});
+      expect(MultisigProposalGraphql.buildPastProposalsVariables(multisigAddress), {
+        'multisigId': multisigAddress,
+        'limit': 1000,
+        'offset': 0,
+      });
+      expect(MultisigProposalGraphql.buildPastProposalsPageVariables(multisigAddress, limit: 20, offset: 40), {
+        'multisigId': multisigAddress,
+        'limit': 20,
+        'offset': 40,
+      });
     });
 
     test('proposalQuery uses multisigId and proposalId variables', () {

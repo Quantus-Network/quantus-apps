@@ -3,14 +3,13 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 
-/// Merges past proposals with transfers, newest first.
+/// Multisig account transfers for the activity feed, newest first.
 ///
 /// Outgoing multisig transfers are omitted because executed proposals
-/// already represent them.
-List<TransactionEvent> mergeMultisigActivity({
+/// already represent them in the Past Proposals feed.
+List<TransactionEvent> multisigActivityTransfers({
   required TransactionService txService,
   required CombinedTransactionsList data,
-  required List<MultisigProposal> pastProposals,
   required String multisigAccountId,
 }) {
   final transfers = txService.combineAndDeduplicateTransactions(
@@ -22,12 +21,9 @@ List<TransactionEvent> mergeMultisigActivity({
     otherTransfers: data.otherTransfers,
   );
 
-  final terminalProposals = pastProposals.map((p) => MultisigProposalEvent(proposal: p)).toList();
-  final filteredTransfers = transfers.where((t) {
+  final filtered = transfers.where((t) {
     return t is! TransferEvent || t.from != multisigAccountId;
   });
 
-  final merged = <TransactionEvent>[...terminalProposals, ...filteredTransfers]
-    ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-  return merged;
+  return filtered.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 }
