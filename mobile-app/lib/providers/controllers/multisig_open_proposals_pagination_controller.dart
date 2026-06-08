@@ -53,12 +53,7 @@ class MultisigOpenProposalsPaginationController extends StateNotifier<MultisigOp
     state = state.copyWith(isFetching: true);
     try {
       final page = await ref.read(multisigServiceProvider).fetchOpenProposalsPage(msig, limit: _limit, offset: 0);
-      state = state.copyWith(
-        proposals: page.items,
-        offset: page.items.length,
-        hasMore: page.hasMore,
-        clearError: true,
-      );
+      state = state.copyWith(proposals: page.items, offset: page.items.length, hasMore: page.hasMore, clearError: true);
     } catch (e, st) {
       quantusDebugPrint('Open proposals silent refresh failed: $e\n$st');
     } finally {

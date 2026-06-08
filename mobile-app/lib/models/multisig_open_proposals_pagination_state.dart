@@ -22,12 +22,7 @@ class MultisigOpenProposalsPaginationState {
   });
 
   factory MultisigOpenProposalsPaginationState.initial() {
-    return const MultisigOpenProposalsPaginationState(
-      proposals: [],
-      hasMore: true,
-      isFetching: false,
-      isLoading: true,
-    );
+    return const MultisigOpenProposalsPaginationState(proposals: [], hasMore: true, isFetching: false, isLoading: true);
   }
 
   MultisigOpenProposalsPaginationState copyWith({

@@ -112,11 +112,7 @@ class _MultisigActivityScreenState extends ConsumerState<MultisigActivityScreen>
           const SizedBox(height: 18),
           Expanded(
             child: _selectedTab == MultisigActivityTab.openProposals
-                ? _OpenProposalsTab(
-                    msig: widget.msig,
-                    scrollController: _openScrollController,
-                    onRefresh: _refreshOpen,
-                  )
+                ? _OpenProposalsTab(msig: widget.msig, scrollController: _openScrollController, onRefresh: _refreshOpen)
                 : _ActivityTab(
                     msig: widget.msig,
                     scrollController: _activityScrollController,
@@ -172,7 +168,10 @@ class _OpenProposalsTab extends ConsumerWidget {
               ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Center(
-                  child: Text(l10n.multisigNoOpenProposals, style: text.paragraph?.copyWith(color: colors.textSecondary)),
+                  child: Text(
+                    l10n.multisigNoOpenProposals,
+                    style: text.paragraph?.copyWith(color: colors.textSecondary),
+                  ),
                 ),
               ),
             ],
