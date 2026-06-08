@@ -36,19 +36,8 @@ class MultisigService {
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) async {
     if (myAccountIds.isEmpty) return [];
 
-    final requestBody = {'query': MultisigGraphql.buildDiscoverQuery(myAccountIds)};
-    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-    if (response.statusCode != 200) {
-      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
-
-    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-    if (responseBody['errors'] != null) {
-      throw Exception('GraphQL errors: ${responseBody['errors']}');
-    }
-
-    final records = parseMultisigDiscoverData(responseBody['data'] as Map<String, dynamic>?);
+    final data = await _postGraphQl({'query': MultisigGraphql.buildDiscoverQuery(myAccountIds)});
+    final records = parseMultisigDiscoverData(data);
     final seen = <String>{};
     final results = <MultisigAccount>[];
     var index = 0;
@@ -127,23 +116,10 @@ class MultisigService {
 
   /// Fetches multisig metadata from the indexer by primary key ([address]).
   Future<Map<String, dynamic>?> fetchMultisigFromIndexer(String address) async {
-    final requestBody = {
+    final data = await _postGraphQl({
       'query': MultisigGraphql.byPkQuery,
       'variables': {'id': address},
-    };
-
-    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
-
-    if (response.statusCode != 200) {
-      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
-    }
-
-    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-    if (responseBody['errors'] != null) {
-      throw Exception('GraphQL errors: ${responseBody['errors']}');
-    }
-
-    final data = responseBody['data'] as Map<String, dynamic>?;
+    });
     return parseMultisigByPkData(data);
   }
 
@@ -207,6 +183,21 @@ class MultisigService {
       if (signers.contains(id)) return id;
     }
     return null;
+  }
+
+  Future<Map<String, dynamic>?> _postGraphQl(Map<String, dynamic> requestBody) async {
+    final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+    if (response.statusCode != 200) {
+      throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+    if (responseBody['errors'] != null) {
+      throw Exception('GraphQL errors: ${responseBody['errors']}');
+    }
+
+    return responseBody['data'] as Map<String, dynamic>?;
   }
 
   /// Validates [signers] and [threshold] for multisig operations.
