@@ -39,8 +39,7 @@ class MultisigProposalPollingService {
       if (DateTime.now().difference(startTime) > _timeout) {
         quantusDebugPrint('[MultisigProposalPoller] timeout for $key');
         stopPolling(key);
-        removePendingMultisigProposal(_ref, key);
-        _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.timeout);
+        unawaited(_handleTimeout(msig, pending));
         return;
       }
       unawaited(_search(msig, pending));
@@ -56,29 +55,53 @@ class MultisigProposalPollingService {
 
   Future<void> _search(MultisigAccount msig, PendingMultisigProposalEvent pending) async {
     final key = pending.id;
-    final hash = pending.extrinsicHash;
-    if (hash == null) return;
+    if (pending.extrinsicHash == null) return;
     if (!_inFlight.add(key)) return;
 
     try {
-      final historyService = _ref.read(chainHistoryServiceProvider);
-      final indexed = await historyService.searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
-
-      if (indexed == null) {
+      final confirmed = await _confirmIfIndexed(msig, pending);
+      if (!confirmed) {
         quantusDebugPrint('[MultisigProposalPoller] not indexed yet: $key');
-        return;
       }
-
-      quantusDebugPrint('[MultisigProposalPoller] confirmed $key at block ${indexed.blockNumber}');
-      stopPolling(key);
-      removePendingMultisigProposal(_ref, key);
-      await reconcileIndexedProposalCreation(_ref, msig, indexed);
-      invalidateAccountBalances(_ref, {pending.proposerId});
     } catch (e) {
       quantusDebugPrint('[MultisigProposalPoller] search error for $key: $e');
     } finally {
       _inFlight.remove(key);
     }
+  }
+
+  Future<void> _handleTimeout(MultisigAccount msig, PendingMultisigProposalEvent pending) async {
+    final key = pending.id;
+    try {
+      quantusDebugPrint('[MultisigProposalPoller] final indexer check before timeout for $key');
+      final confirmed = await _confirmIfIndexed(msig, pending);
+      if (confirmed) return;
+    } catch (e) {
+      quantusDebugPrint('[MultisigProposalPoller] final check error for $key: $e');
+    }
+
+    if (findPendingMultisigProposal(_ref, key) == null) return;
+
+    quantusDebugPrint('[MultisigProposalPoller] giving up on $key');
+    removePendingMultisigProposal(_ref, key);
+    _ref.read(multisigProposalToastProvider.notifier).show(MultisigProposalToastKind.timeout);
+  }
+
+  Future<bool> _confirmIfIndexed(MultisigAccount msig, PendingMultisigProposalEvent pending) async {
+    final key = pending.id;
+    final hash = pending.extrinsicHash;
+    if (hash == null) return false;
+
+    final historyService = _ref.read(chainHistoryServiceProvider);
+    final indexed = await historyService.searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
+    if (indexed == null) return false;
+
+    quantusDebugPrint('[MultisigProposalPoller] confirmed $key at block ${indexed.blockNumber}');
+    stopPolling(key);
+    removePendingMultisigProposal(_ref, key);
+    await reconcileIndexedProposalCreation(_ref, msig, indexed);
+    invalidateAccountBalances(_ref, {pending.proposerId});
+    return true;
   }
 
   void dispose() {
