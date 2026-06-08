@@ -1,21 +1,21 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/features/components/skeleton.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:resonance_network_wallet/shared/utils/activity_date_groups.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/date_grouped_refreshable_list.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
-import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
-import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -113,72 +113,32 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 scheduledReversibleTransfers: data.scheduledReversibleTransfers,
                 otherTransfers: data.otherTransfers,
               );
-              if (all.isEmpty) {
-                return _buildRefreshableContent(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => ListView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                          child: Center(
-                            child: Text(
-                              l10n.activityEmpty,
-                              style: text.paragraph?.copyWith(color: colors.textSecondary),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
+              final grouped = groupTransactionsByDate(all, l10n, appLocale.numberFormatLocale);
               final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
 
-              return _buildRefreshableContent(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  itemCount: grouped.length + (showLoadMoreFooter ? 1 : 0),
-                  itemBuilder: (context, i) {
-                    if (showLoadMoreFooter && i == grouped.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: Loader()),
-                      );
-                    }
-
-                    final group = grouped[i];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (i > 0) const SizedBox(height: 32),
-                        Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
-                        ...group.transactions.mapIndexed((index, tx) {
-                          final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
-                          final isLastItem = index == group.transactions.length - 1;
-                          return buildTxItem(
-                            tx,
-                            itemData,
-                            colors,
-                            text,
-                            l10n,
-                            formattedAmount: itemData.hideAmount
-                                ? '—'
-                                : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
-                            isLastItem: isLastItem,
-                            onTap: () {
-                              showTransactionDetailSheet(context, tx, active.account.accountId);
-                            },
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
+              return DateGroupedRefreshableList<TransactionEvent>(
+                scrollController: _scrollController,
+                onRefresh: _refresh,
+                groups: grouped,
+                showLoadMoreFooter: showLoadMoreFooter,
+                emptyMessage: all.isEmpty ? l10n.activityEmpty : null,
+                itemBuilder: (context, tx, {required isLastInGroup}) {
+                  final itemData = TxItemData.from(tx, active.account.accountId, colors, l10n);
+                  return buildTxItem(
+                    tx,
+                    itemData,
+                    colors,
+                    text,
+                    l10n,
+                    formattedAmount: itemData.hideAmount
+                        ? '—'
+                        : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+                    isLastItem: isLastInGroup,
+                    onTap: () {
+                      showTransactionDetailSheet(context, tx, active.account.accountId);
+                    },
+                  );
+                },
               );
             },
           );
@@ -186,34 +146,4 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       ),
     );
   }
-
-  Widget _buildRefreshableContent({required Widget child}) {
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      color: context.colors.textPrimary,
-      backgroundColor: context.colors.surface,
-      child: child,
-    );
-  }
-
-  List<_DateGroup> _groupByDate(List<TransactionEvent> transactions, AppLocalizations l10n, String localeName) {
-    final Map<String, List<TransactionEvent>> groups = {};
-    final Map<String, String> labelMap = {};
-
-    for (final tx in transactions) {
-      final day = DateTime(tx.timestamp.year, tx.timestamp.month, tx.timestamp.day);
-      final key = '${day.year}-${day.month}-${day.day}';
-      groups.putIfAbsent(key, () => []);
-      groups[key]!.add(tx);
-      labelMap.putIfAbsent(key, () => dateGroupLabel(tx.timestamp, l10n, localeName));
-    }
-
-    return groups.entries.map((e) => _DateGroup(label: labelMap[e.key]!.toUpperCase(), transactions: e.value)).toList();
-  }
-}
-
-class _DateGroup {
-  final String label;
-  final List<TransactionEvent> transactions;
-  const _DateGroup({required this.label, required this.transactions});
 }

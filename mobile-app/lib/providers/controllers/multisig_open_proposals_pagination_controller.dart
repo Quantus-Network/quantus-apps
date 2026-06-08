@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/models/multisig_open_proposals_pagination_state.dart';
 import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 class MultisigOpenProposalsPaginationController extends StateNotifier<MultisigOpenProposalsPaginationState> {

@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
+import 'package:resonance_network_wallet/providers/controllers/multisig_open_proposals_pagination_controller.dart';
+import 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 
-final multisigServiceProvider = Provider<MultisigService>((ref) => MultisigService());
+export 'package:resonance_network_wallet/providers/multisig_service_provider.dart';
 
 class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAccount>>> {
   final SettingsService _settingsService;
@@ -86,15 +88,6 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   return service.discoverForUser(ids);
 });
 
-/// Open proposals for a multisig, filtered server-side by status.
-final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
-  ref,
-  msig,
-) async {
-  final service = ref.watch(multisigServiceProvider);
-  return service.getOpenProposals(msig);
-});
-
 /// Past proposals for a multisig activity feed, filtered server-side by status.
 final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
@@ -106,7 +99,7 @@ final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<Mul
 
 /// Invalidates open, past, and block providers after a proposal state change.
 void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
-  ref.invalidate(multisigOpenProposalsProvider(msig));
+  ref.invalidate(multisigOpenProposalsPaginationProvider(msig));
   ref.invalidate(multisigPastProposalsProvider(msig));
   ref.invalidate(multisigCurrentBlockProvider);
 }

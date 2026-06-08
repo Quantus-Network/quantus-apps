@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -14,14 +13,14 @@ import 'package:resonance_network_wallet/services/multisig_open_proposals_merge.
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/shared/utils/activity_date_groups.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/segmented_controls.dart';
 import 'package:resonance_network_wallet/v2/components/v2_app_bar.dart';
+import 'package:resonance_network_wallet/v2/screens/activity/date_grouped_refreshable_list.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/multisig/proposal_row.dart';
+import 'package:resonance_network_wallet/v2/screens/multisig/open_proposal_entry_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -155,82 +154,19 @@ class _OpenProposalsTab extends ConsumerWidget {
     }
 
     final merged = mergeOpenProposals(pending: pending, indexed: pagination.proposals);
-    if (merged.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: onRefresh,
-        color: colors.textPrimary,
-        backgroundColor: colors.surface,
-        child: LayoutBuilder(
-          builder: (context, constraints) => ListView(
-            controller: scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: Text(
-                    l10n.multisigNoOpenProposals,
-                    style: text.paragraph?.copyWith(color: colors.textSecondary),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final grouped = groupOpenProposalsByDate(merged, l10n, appLocale.numberFormatLocale);
-    final showLoadMoreFooter = pagination.isLoading && pagination.hasMore;
 
-    return RefreshIndicator(
+    return DateGroupedRefreshableList<OpenProposalEntry>(
+      scrollController: scrollController,
       onRefresh: onRefresh,
-      color: colors.textPrimary,
-      backgroundColor: colors.surface,
-      child: ListView.builder(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        itemCount: grouped.length + (showLoadMoreFooter ? 1 : 0),
-        itemBuilder: (context, i) {
-          if (showLoadMoreFooter && i == grouped.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: Loader()),
-            );
-          }
-
-          final group = grouped[i];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (i > 0) const SizedBox(height: 32),
-              Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
-              ...group.items.mapIndexed((index, entry) {
-                return Padding(
-                  padding: EdgeInsets.only(top: index == 0 ? 12 : 12),
-                  child: _buildOpenEntry(context, entry),
-                );
-              }),
-            ],
-          );
-        },
-      ),
+      groups: grouped,
+      showLoadMoreFooter: pagination.isLoading && pagination.hasMore,
+      emptyMessage: merged.isEmpty ? l10n.multisigNoOpenProposals : null,
+      itemTopSpacing: 12,
+      itemBuilder: (context, entry, {required isLastInGroup}) {
+        return OpenProposalEntryRow(msig: msig, entry: entry);
+      },
     );
-  }
-
-  Widget _buildOpenEntry(BuildContext context, OpenProposalEntry entry) {
-    return switch (entry) {
-      PendingOpenProposalEntry(:final pending) => PendingProposalRow(
-        pending: pending,
-        onTap: () => showTransactionDetailSheet(context, pending, msig.accountId),
-      ),
-      IndexedOpenProposalEntry(:final proposal) => ProposalRow(
-        proposal: proposal,
-        myAccountId: msig.myMemberAccountId,
-        onTap: () => showMultisigProposalDetailSheet(context, msig: msig, proposal: proposal),
-      ),
-    };
   }
 }
 
@@ -265,74 +201,29 @@ class _ActivityTab extends ConsumerWidget {
           pastProposals: pastProposals,
           multisigAccountId: msig.accountId,
         );
-
-        if (merged.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: onRefresh,
-            color: colors.textPrimary,
-            backgroundColor: colors.surface,
-            child: LayoutBuilder(
-              builder: (context, constraints) => ListView(
-                controller: scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Center(
-                      child: Text(l10n.activityEmpty, style: text.paragraph?.copyWith(color: colors.textSecondary)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
         final grouped = groupTransactionsByDate(merged, l10n, appLocale.numberFormatLocale);
-        final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
 
-        return RefreshIndicator(
+        return DateGroupedRefreshableList<TransactionEvent>(
+          scrollController: scrollController,
           onRefresh: onRefresh,
-          color: colors.textPrimary,
-          backgroundColor: colors.surface,
-          child: ListView.builder(
-            controller: scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: grouped.length + (showLoadMoreFooter ? 1 : 0),
-            itemBuilder: (context, i) {
-              if (showLoadMoreFooter && i == grouped.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: Loader()),
-                );
-              }
-
-              final group = grouped[i];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (i > 0) const SizedBox(height: 32),
-                  Text(group.label, style: text.receiveLabel?.copyWith(color: colors.textTertiary)),
-                  ...group.items.mapIndexed((index, tx) {
-                    final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
-                    return buildTxItem(
-                      tx,
-                      itemData,
-                      colors,
-                      text,
-                      l10n,
-                      formattedAmount: itemData.hideAmount
-                          ? '—'
-                          : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
-                      isLastItem: index == group.items.length - 1,
-                      onTap: () => _onActivityTap(context, tx),
-                    );
-                  }),
-                ],
-              );
-            },
-          ),
+          groups: grouped,
+          showLoadMoreFooter: pagination != null && pagination.isLoading && pagination.hasMore,
+          emptyMessage: merged.isEmpty ? l10n.activityEmpty : null,
+          itemBuilder: (context, tx, {required isLastInGroup}) {
+            final itemData = TxItemData.from(tx, msig.accountId, colors, l10n);
+            return buildTxItem(
+              tx,
+              itemData,
+              colors,
+              text,
+              l10n,
+              formattedAmount: itemData.hideAmount
+                  ? '—'
+                  : formatTxAmount(itemData.amount, isSend: itemData.isSend).primaryAmount,
+              isLastItem: isLastInGroup,
+              onTap: () => _onActivityTap(context, tx),
+            );
+          },
         );
       },
     );
