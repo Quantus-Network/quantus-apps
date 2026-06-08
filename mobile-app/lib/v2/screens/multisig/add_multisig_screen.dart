@@ -208,6 +208,37 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final l10n = ref.read(l10nProvider);
     setState(() => _isLoading = true);
 
+    final submissionService = ref.read(multisigSubmissionServiceProvider);
+
+    try {
+      await submissionService.preflightMultisigCreation(
+        signers: _allSigners,
+        threshold: _threshold,
+        creator: creator,
+        nonce: nonce,
+      );
+    } on MultisigAlreadyExistsException {
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
+      }
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    } on MultisigInsufficientBalanceException {
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
+      }
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    } catch (e) {
+      quantusDebugPrint('[AddMultisigScreen] preflight error: $e');
+
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateErrorCouldNotCreate);
+      }
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
     final authed = await LocalAuthService().authenticate(localizedReason: l10n.multisigCreateAuthReason);
     if (!authed) {
       if (mounted) setState(() => _isLoading = false);
@@ -215,15 +246,13 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     }
 
     try {
-      await ref
-          .read(multisigSubmissionServiceProvider)
-          .startMultisigCreation(
-            name: _accountName.text.trim(),
-            signers: _allSigners,
-            threshold: _threshold,
-            creator: creator,
-            nonce: nonce,
-          );
+      await submissionService.startMultisigCreation(
+        name: _accountName.text.trim(),
+        signers: _allSigners,
+        threshold: _threshold,
+        creator: creator,
+        nonce: nonce,
+      );
 
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
@@ -234,6 +263,10 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     } on MultisigAlreadyExistsException {
       if (mounted) {
         context.showErrorToaster(message: l10n.multisigCreateAlreadyExists);
+      }
+    } on MultisigInsufficientBalanceException {
+      if (mounted) {
+        context.showErrorToaster(message: l10n.multisigCreateInsufficientBalance);
       }
     } catch (e) {
       quantusDebugPrint('[AddMultisigScreen] createMultisig error: $e');
