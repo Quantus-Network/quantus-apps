@@ -41,11 +41,7 @@ Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft, 
   }
 }
 
-Future<MultisigCreatedEvent> _loadCreatedEvent(
-  Ref ref,
-  MultisigAccount draft, {
-  required BigInt networkFee,
-}) async {
+Future<MultisigCreatedEvent> _loadCreatedEvent(Ref ref, MultisigAccount draft, {required BigInt networkFee}) async {
   try {
     final record = await ref.read(multisigServiceProvider).fetchMultisigFromIndexer(draft.accountId);
     if (record != null) {

@@ -52,16 +52,12 @@ void main() {
       final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
 
       expect(
-        () => MultisigCreatedEvent.fromMultisigGraphql(
-          multisig: Map<String, dynamic>.from(base)..remove('threshold'),
-        ),
+        () => MultisigCreatedEvent.fromMultisigGraphql(multisig: Map<String, dynamic>.from(base)..remove('threshold')),
         throwsFormatException,
       );
 
       expect(
-        () => MultisigCreatedEvent.fromMultisigGraphql(
-          multisig: Map<String, dynamic>.from(base)..['threshold'] = 0,
-        ),
+        () => MultisigCreatedEvent.fromMultisigGraphql(multisig: Map<String, dynamic>.from(base)..['threshold'] = 0),
         throwsFormatException,
       );
     });
@@ -70,9 +66,7 @@ void main() {
       final base = Map<String, dynamic>.from(accountEventFixture['multisig'] as Map<String, dynamic>);
 
       expect(
-        () => MultisigCreatedEvent.fromMultisigGraphql(
-          multisig: Map<String, dynamic>.from(base)..remove('fee'),
-        ),
+        () => MultisigCreatedEvent.fromMultisigGraphql(multisig: Map<String, dynamic>.from(base)..remove('fee')),
         throwsFormatException,
       );
     });

@@ -30,11 +30,7 @@ abstract class MultisigCreationEvent extends TransactionEvent {
     required super.blockNumber,
     super.blockHash,
     super.extrinsicHash,
-  }) : super(
-         from: creatorId,
-         to: multisigAddress,
-         amount: palletFee + networkFee + deposit,
-       );
+  }) : super(from: creatorId, to: multisigAddress, amount: palletFee + networkFee + deposit);
 
   bool isCreator(String accountId) => creatorId == accountId;
 }

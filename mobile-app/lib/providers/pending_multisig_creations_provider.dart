@@ -79,7 +79,10 @@ class PendingMultisigCreationsNotifier extends StateNotifier<List<PendingMultisi
       ..clear()
       ..addEntries(loadedRecords.map((record) => MapEntry(record.draft.accountId, record)));
 
-    state = loadedRecords.where((record) => !record.isExpired(expiration: expireDuration)).map((r) => r.toEvent()).toList();
+    state = loadedRecords
+        .where((record) => !record.isExpired(expiration: expireDuration))
+        .map((r) => r.toEvent())
+        .toList();
   }
 
   Future<void> _saveRecords(List<PendingMultisigCreationRecord> records) async {
@@ -100,9 +103,7 @@ void addPendingMultisigCreation(
   MultisigAccount draft, {
   String? extrinsicHash,
 }) {
-  unawaited(
-    ref.read(pendingMultisigCreationsProvider.notifier).add(event, draft, extrinsicHash: extrinsicHash),
-  );
+  unawaited(ref.read(pendingMultisigCreationsProvider.notifier).add(event, draft, extrinsicHash: extrinsicHash));
 }
 
 void removePendingMultisigCreation(Ref ref, String multisigAddress) {

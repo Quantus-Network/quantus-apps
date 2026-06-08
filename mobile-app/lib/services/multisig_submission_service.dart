@@ -27,13 +27,7 @@ class MultisigSubmissionService {
     required Account creator,
     BigInt? nonce,
   }) async {
-    await _runCreationPreflight(
-      name: '',
-      signers: signers,
-      threshold: threshold,
-      creator: creator,
-      nonce: nonce,
-    );
+    await _runCreationPreflight(name: '', signers: signers, threshold: threshold, creator: creator, nonce: nonce);
   }
 
   /// Preflight on-chain state, then submit and track creation in the background.
@@ -62,10 +56,9 @@ class MultisigSubmissionService {
     final networkFee = preflight.networkFee;
 
     TelemetryService().sendEvent('multisig_create_started');
-    await _ref.read(pendingMultisigCreationsProvider.notifier).add(
-      PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee),
-      draft,
-    );
+    await _ref
+        .read(pendingMultisigCreationsProvider.notifier)
+        .add(PendingMultisigCreationEvent.fromDraft(draft, networkFee: networkFee), draft);
 
     unawaited(
       _submitAndTrackBackground(
