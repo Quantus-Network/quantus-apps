@@ -24,18 +24,17 @@ class MultisigService {
 
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
   final SubstrateService _substrateService = SubstrateService();
-  final Constants _palletConstants = Constants();
-  static final Constants _feeConstants = Constants();
+  static final Constants palletConstants = Constants();
 
   static const int _avgBlockTimeSeconds = 12;
   static const Duration defaultProposalExpiry = Duration(days: 2);
   static final BigInt defaultMultisigNonce = BigInt.zero;
 
   /// Non-refundable fee burned when creating a proposal.
-  BigInt get proposalFee => _palletConstants.proposalFee;
+  BigInt get proposalFee => palletConstants.proposalFee;
 
   /// Refundable deposit reserved while a proposal is open.
-  BigInt get proposalDeposit => _palletConstants.proposalDeposit;
+  BigInt get proposalDeposit => palletConstants.proposalDeposit;
 
   /// Suggested approval threshold at roughly 70% of [signerCount].
   static int defaultThreshold(int signerCount) {
@@ -283,8 +282,8 @@ class MultisigService {
   ///
   /// Formula: `proposalFee + (proposalFee * signerCount * signerStepFactor / 1_000_000)`.
   static BigInt proposalCreationFeeFor(int signerCount) {
-    final base = _feeConstants.proposalFee;
-    final step = _feeConstants.signerStepFactor;
+    final base = palletConstants.proposalFee;
+    final step = palletConstants.signerStepFactor;
     final extra = base * BigInt.from(signerCount) * BigInt.from(step) ~/ BigInt.from(1000000);
     return base + extra;
   }

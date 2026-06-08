@@ -243,9 +243,6 @@ void main() {
   });
 
   group('MultisigGraphql.discoverQuery', () {
-    const addrA = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
-    const addrB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty';
-
     test('uses where variable', () {
       expect(MultisigGraphql.discoverQuery, contains(r'$where: multisig_bool_exp!'));
       expect(MultisigGraphql.discoverQuery, contains(r'multisig(where: $where)'));
@@ -407,10 +404,11 @@ void main() {
   group('MultisigService.proposalCreationFee', () {
     final service = MultisigService();
     final base = service.proposalFee;
+    final signerStepFactor = BigInt.from(MultisigService.palletConstants.signerStepFactor);
 
     test('scales with signer count per pallet formula', () {
       BigInt expected(int signerCount) {
-        final extra = base * BigInt.from(signerCount) * BigInt.from(10000) ~/ BigInt.from(1000000);
+        final extra = base * BigInt.from(signerCount) * signerStepFactor ~/ BigInt.from(1000000);
         return base + extra;
       }
 
@@ -420,7 +418,7 @@ void main() {
     });
 
     test('matches pallet example: 5 signers adds 5% to base', () {
-      final extra = base * BigInt.from(5) * BigInt.from(10000) ~/ BigInt.from(1000000);
+      final extra = base * BigInt.from(5) * signerStepFactor ~/ BigInt.from(1000000);
       expect(extra, base ~/ BigInt.from(20));
       expect(service.proposalCreationFee(5), base + extra);
     });
