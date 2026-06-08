@@ -227,16 +227,28 @@ class MultisigService {
 
   /// Proposals with active or approved status.
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) {
-    return _fetchProposals(msig, MultisigProposalGraphql.buildOpenProposalsQuery(msig.accountId));
+    return _fetchProposals(
+      msig,
+      query: MultisigProposalGraphql.openProposalsQuery,
+      variables: MultisigProposalGraphql.buildOpenProposalsVariables(msig.accountId),
+    );
   }
 
   /// Proposals with executed, cancelled, or removed status.
   Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) {
-    return _fetchProposals(msig, MultisigProposalGraphql.buildPastProposalsQuery(msig.accountId));
+    return _fetchProposals(
+      msig,
+      query: MultisigProposalGraphql.pastProposalsQuery,
+      variables: MultisigProposalGraphql.buildPastProposalsVariables(msig.accountId),
+    );
   }
 
-  Future<List<MultisigProposal>> _fetchProposals(MultisigAccount msig, String query) async {
-    final requestBody = {'query': query};
+  Future<List<MultisigProposal>> _fetchProposals(
+    MultisigAccount msig, {
+    required String query,
+    required Map<String, dynamic> variables,
+  }) async {
+    final requestBody = {'query': query, 'variables': variables};
     final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
     if (response.statusCode != 200) {
@@ -257,7 +269,10 @@ class MultisigService {
   }
 
   Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async {
-    final requestBody = {'query': MultisigProposalGraphql.buildProposalQuery(msig.accountId, id)};
+    final requestBody = {
+      'query': MultisigProposalGraphql.proposalQuery,
+      'variables': MultisigProposalGraphql.buildProposalVariables(msig.accountId, id),
+    };
     final response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
 
     if (response.statusCode != 200) {

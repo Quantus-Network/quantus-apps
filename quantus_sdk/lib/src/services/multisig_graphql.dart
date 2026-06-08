@@ -155,53 +155,68 @@ class MultisigProposalGraphql {
       }''';
 
   /// Open proposals: active or approved status only.
-  static String buildOpenProposalsQuery(String multisigAddress) {
-    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
-    return '''
-    query MultisigOpenProposals {
+  static const String openProposalsQuery =
+      r'''
+    query MultisigOpenProposals($multisigId: String!) {
       multisig_proposal(
         where: {_and: [
-          {multisig_id: {_eq: "$escaped"}},
+          {multisig_id: {_eq: $multisigId}},
           {status: {_in: [ACTIVE, APPROVED]}}
         ]},
         order_by: {created_at: desc}
       ) {
-$fields
+''' +
+      fields +
+      r'''
       }
     }
   ''';
+
+  static Map<String, dynamic> buildOpenProposalsVariables(String multisigAddress) {
+    return {'multisigId': multisigAddress};
   }
 
   /// Past proposals: executed, cancelled, or removed status only.
-  static String buildPastProposalsQuery(String multisigAddress) {
-    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
-    return '''
-    query MultisigPastProposals {
+  static const String pastProposalsQuery =
+      r'''
+    query MultisigPastProposals($multisigId: String!) {
       multisig_proposal(
         where: {_and: [
-          {multisig_id: {_eq: "$escaped"}},
+          {multisig_id: {_eq: $multisigId}},
           {status: {_in: [EXECUTED, CANCELLED, REMOVED]}}
         ]},
         order_by: {created_at: desc}
       ) {
-$fields
+''' +
+      fields +
+      r'''
       }
     }
   ''';
+
+  static Map<String, dynamic> buildPastProposalsVariables(String multisigAddress) {
+    return {'multisigId': multisigAddress};
   }
 
   /// Fetches a single proposal by `(multisig_address, proposal_id)`.
-  static String buildProposalQuery(String multisigAddress, int proposalId) {
-    final escaped = MultisigGraphql._escapeGraphqlString(multisigAddress);
-    return '''
-    query MultisigProposal {
+  static const String proposalQuery =
+      r'''
+    query MultisigProposal($multisigId: String!, $proposalId: Int!) {
       multisig_proposal(
-        where: {_and: [{multisig_id: {_eq: "$escaped"}}, {proposal_id: {_eq: $proposalId}}]},
+        where: {_and: [
+          {multisig_id: {_eq: $multisigId}},
+          {proposal_id: {_eq: $proposalId}}
+        ]},
         limit: 1
       ) {
-$fields
+''' +
+      fields +
+      r'''
       }
     }
   ''';
+
+  static Map<String, dynamic> buildProposalVariables(String multisigAddress, int proposalId) {
+    return {'multisigId': multisigAddress, 'proposalId': proposalId};
   }
 }
