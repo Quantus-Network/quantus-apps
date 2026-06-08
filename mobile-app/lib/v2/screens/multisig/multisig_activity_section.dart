@@ -18,6 +18,8 @@ import 'package:resonance_network_wallet/v2/screens/multisig/proposal_row.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
+const _kHomeSectionItemLimit = 5;
+
 /// Home section for a multisig account: open proposals pinned on top, followed
 /// by a unified activity feed (past proposals + transfers) below.
 class MultisigActivitySection extends ConsumerWidget {
@@ -75,17 +77,21 @@ class MultisigActivitySection extends ConsumerWidget {
       return Text(l10n.multisigNoOpenProposals, style: text.smallParagraph?.copyWith(color: colors.textTertiary));
     }
 
+    final pendingVisible = pending.take(_kHomeSectionItemLimit).toList();
+    final openSlots = _kHomeSectionItemLimit - pendingVisible.length;
+    final openVisible = openSlots > 0 ? openProposals.take(openSlots).toList() : const <MultisigProposal>[];
+
     return Column(
       children: [
-        ...pending.mapIndexed(
+        ...pendingVisible.mapIndexed(
           (i, p) => Padding(
             padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
             child: PendingProposalRow(pending: p, onTap: () => showTransactionDetailSheet(context, p, msig.accountId)),
           ),
         ),
-        ...openProposals.mapIndexed(
+        ...openVisible.mapIndexed(
           (i, p) => Padding(
-            padding: EdgeInsets.only(top: (i == 0 && pending.isEmpty) ? 0 : 12),
+            padding: EdgeInsets.only(top: (i == 0 && pendingVisible.isEmpty) ? 0 : 12),
             child: ProposalRow(
               proposal: p,
               myAccountId: msig.myMemberAccountId,
@@ -131,7 +137,7 @@ class MultisigActivitySection extends ConsumerWidget {
       ),
       data: (data) {
         final merged = _mergedActivity(ref, data, pastProposalsAsync.value ?? const []);
-        final recent = merged.take(5).toList();
+        final recent = merged.take(_kHomeSectionItemLimit).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
