@@ -104,6 +104,7 @@ class PendingTransactionReconciliationService {
         pendingCancellationIds: pendingCancellationIds,
         pendingTransactions: [],
         pendingMultisigCreations: [],
+        pendingMultisigProposals: const [],
         scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
         otherTransfers: pagination.otherTransfers,
       );

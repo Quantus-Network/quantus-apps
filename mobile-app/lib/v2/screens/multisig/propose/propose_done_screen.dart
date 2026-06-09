@@ -17,9 +17,6 @@ class ProposeDoneScreen extends ConsumerWidget {
   final String recipientAddress;
   final String recipientChecksum;
   final BigInt amount;
-  final int proposalId;
-  final int myApprovalCount;
-  final int currentBlock;
 
   const ProposeDoneScreen({
     super.key,
@@ -27,9 +24,6 @@ class ProposeDoneScreen extends ConsumerWidget {
     required this.recipientAddress,
     required this.recipientChecksum,
     required this.amount,
-    required this.proposalId,
-    required this.myApprovalCount,
-    required this.currentBlock,
   });
 
   void _popToHome(BuildContext context) {
@@ -42,7 +36,8 @@ class ProposeDoneScreen extends ConsumerWidget {
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountText = '${fmt.formatBalance(amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
+    final amountText = l10n.commonAmountBalance(fmt.formatBalance(amount, maxDecimals: 4), AppConstants.tokenSymbol);
+    final shortAddr = AddressFormattingService.formatAddress(recipientAddress.trim());
 
     return PopScope(
       canPop: false,
@@ -61,7 +56,6 @@ class ProposeDoneScreen extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 70),
                   _successMark(colors),
                   const SizedBox(height: 32),
                   Text(
@@ -69,25 +63,46 @@ class ProposeDoneScreen extends ConsumerWidget {
                     textAlign: TextAlign.center,
                     style: text.largeTitle?.copyWith(fontWeight: FontWeight.w400),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     l10n.multisigProposeDoneSubline,
                     textAlign: TextAlign.center,
-                    style: text.smallParagraph?.copyWith(color: colors.textTertiary),
+                    style: text.smallParagraph?.copyWith(color: colors.textTertiary, letterSpacing: 0.74),
                   ),
                   const SizedBox(height: 32),
                   Text(amountText, style: text.smallTitle?.copyWith(color: colors.textPrimary)),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  Text.rich(
+                    textAlign: TextAlign.center,
+                    TextSpan(
+                      style: text.paragraph?.copyWith(color: colors.textPrimary),
+                      children: [
+                        TextSpan(
+                          text: l10n.sendTxSubmittedToLabel,
+                          style: text.paragraph?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        TextSpan(
+                          text: ':',
+                          style: text.paragraph?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    l10n.multisigProposeDoneToChecksum(recipientChecksum),
-                    style: text.detail?.copyWith(color: colors.checksum),
+                    recipientChecksum,
+                    textAlign: TextAlign.center,
+                    style: text.smallParagraph?.copyWith(color: colors.checksum, height: 1.0),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    AddressFormattingService.formatAddress(recipientAddress),
-                    style: text.detail?.copyWith(
-                      color: colors.textTertiary,
+                    shortAddr,
+                    textAlign: TextAlign.center,
+                    style: text.smallParagraph?.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w500,
                       fontFamily: AppTextTheme.fontFamilySecondary,
+                      height: 1.35,
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -104,7 +119,7 @@ class ProposeDoneScreen extends ConsumerWidget {
                         Icon(Icons.fingerprint, size: 18, color: colors.checksum),
                         const SizedBox(width: 8),
                         Text(
-                          l10n.multisigSignaturesCount(myApprovalCount, msig.threshold),
+                          l10n.multisigSignaturesCount(1, msig.threshold),
                           style: text.smallParagraph?.copyWith(color: colors.textPrimary),
                         ),
                       ],

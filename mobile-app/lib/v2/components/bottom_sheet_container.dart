@@ -89,8 +89,22 @@ class BottomSheetContainer extends StatelessWidget {
       routeSettings: routeSettings,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
-      builder: (ctx) => BackdropFilter(filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), child: builder(ctx)),
+      enableDrag: true,
+      isDismissible: true,
+      constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width),
+      builder: (ctx) {
+        final maxSheetHeight = MediaQuery.sizeOf(ctx).height * 0.85;
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxSheetHeight),
+              child: builder(ctx),
+            ),
+          ),
+        );
+      },
     );
   }
 }

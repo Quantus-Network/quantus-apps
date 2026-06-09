@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -19,60 +19,18 @@ class ProposalRow extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
-    final fmt = ref.watch(numberFormattingServiceProvider);
-    final amountText = '${fmt.formatBalance(proposal.amount, maxDecimals: 4)} ${AppConstants.tokenSymbol}';
-    final shortAddr = AddressFormattingService.formatAddress(proposal.recipient);
     final didApprove = proposal.didApprove(myAccountId);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: colors.surfaceDeep,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colors.borderButton.useOpacity(0.4)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      amountText,
-                      style: text.paragraph?.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.multisigProposalToAddress(shortAddr),
-                      style: text.detail?.copyWith(
-                        color: colors.textTertiary,
-                        fontFamily: AppTextTheme.fontFamilySecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _statusChip(l10n, colors, text),
-                  const SizedBox(height: 6),
-                  if (proposal.isOpen && didApprove) _approvedPill(l10n, colors, text),
-                ],
-              ),
-            ],
-          ),
-        ),
+    return ProposalListTile(
+      amount: proposal.amount,
+      recipientAddress: proposal.recipient,
+      onTap: onTap,
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _statusChip(l10n, colors, text),
+          if (proposal.isOpen && didApprove) ...[const SizedBox(height: 6), _approvedPill(l10n, colors, text)],
+        ],
       ),
     );
   }
@@ -89,15 +47,17 @@ class ProposalRow extends ConsumerWidget {
       );
     }
     final label = switch (proposal.status) {
-      MultisigProposalStatus.executed => l10n.multisigStatusApproved,
-      MultisigProposalStatus.expired => l10n.multisigStatusExpired,
+      MultisigProposalStatus.executed => l10n.multisigStatusExecuted,
       MultisigProposalStatus.cancelled => l10n.multisigStatusCancelled,
-      _ => proposal.status.name.toUpperCase(),
+      MultisigProposalStatus.removed => l10n.multisigStatusRemoved,
+      MultisigProposalStatus.unknown => l10n.multisigStatusUnknown,
+      _ => l10n.multisigStatusActive,
     };
     final color = switch (proposal.status) {
       MultisigProposalStatus.executed => colors.success,
-      MultisigProposalStatus.expired => colors.textTertiary,
       MultisigProposalStatus.cancelled => colors.textError,
+      MultisigProposalStatus.removed => colors.textError,
+      MultisigProposalStatus.unknown => colors.textTertiary,
       _ => colors.textPrimary,
     };
     return Container(

@@ -341,27 +341,39 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigStatusCancelled => 'DIBATALKAN';
 
   @override
-  String get multisigProposeSelectRecipientTo => 'Ajukan Ke';
+  String get multisigProposeSelectRecipientTo => 'Transfer ke';
 
   @override
   String multisigProposeSearchHint(String symbol) {
-    return 'Cari Alamat $symbol';
+    return 'Masukkan Alamat $symbol';
   }
 
   @override
-  String get multisigProposeAmountToLabel => 'AJUKAN KE';
+  String get multisigProposeAmountToLabel => 'TRANSFER KE';
 
   @override
-  String get multisigProposeBalanceLabel => 'Saldo Multisig:';
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Biaya Proposal:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'dapat dikembalikan';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL DARI AKUN ANDA';
 
   @override
   String get multisigProposeFeeLabel => 'Biaya Proposal:';
 
   @override
-  String get multisigProposeReviewButton => 'Tinjau Proposal';
+  String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
 
   @override
-  String get multisigProposeReviewProposing => 'MENGAJUKAN';
+  String get multisigProposeReviewButton => 'Tinjau transfer';
+
+  @override
+  String get multisigProposeReviewProposing => 'TRANSFER YANG DIAJUKAN';
 
   @override
   String multisigProposeReviewFromName(String name) {
@@ -375,10 +387,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeExpiresLabel => 'KEDALUWARSA';
 
   @override
+  String multisigExpiresBlockOnly(int block) {
+    return 'Blok $block';
+  }
+
+  @override
   String get multisigProposeFeeRowLabel => 'BIAYA PROPOSAL';
 
   @override
-  String get multisigProposeCreateButton => 'Buat Proposal';
+  String get multisigProposeCreateButton => 'Kirim proposal';
 
   @override
   String get multisigProposeAuthReason => 'Autentikasi untuk mengajukan transaksi';
@@ -390,10 +407,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposeSubmitFailed => 'Gagal membuat proposal';
 
   @override
-  String get multisigProposeDoneHeadline => 'Proposal dibuat';
+  String get multisigProposeTimeoutToast =>
+      'Konfirmasi proposal membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
-  String get multisigProposeDoneSubline => 'Menunggu persetujuan dari co-signer Anda.';
+  String get multisigProposeDoneHeadline => 'Proposal transfer terkirim';
+
+  @override
+  String get multisigProposeDoneSubline => 'Co-signer harus menyetujui sebelum transfer dapat dieksekusi.';
 
   @override
   String multisigProposeDoneToChecksum(String checksum) {
@@ -415,6 +436,45 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigProposalNotFound => 'Proposal tidak ditemukan.';
+
+  @override
+  String get multisigProposalSignButton => 'Tanda Tangan';
+
+  @override
+  String get multisigProposalSigningSoonNote => 'Penandatanganan akan segera tersedia.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
+
+  @override
+  String get multisigProposalProposerLabel => 'PENGAJU';
+
+  @override
+  String get multisigProposalStatusLabel => 'STATUS';
+
+  @override
+  String get multisigProposalDepositLabel => 'DEPOSIT';
+
+  @override
+  String get multisigStatusActive => 'AKTIF';
+
+  @override
+  String get multisigStatusExecuted => 'DIEKSEKUSI';
+
+  @override
+  String get multisigStatusRemoved => 'DIHAPUS';
+
+  @override
+  String get multisigStatusUnknown => 'TIDAK DIKENAL';
+
+  @override
+  String get activityTxProposal => 'Proposal';
+
+  @override
+  String get activityTxProposing => 'Mengajukan';
+
+  @override
+  String get activityTxProposalCreated => 'Proposal dibuat';
 
   @override
   String get multisigApproveButton => 'Setujui';
@@ -818,6 +878,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleMultisigCreating => 'Membuat multisig';
+
+  @override
+  String get activityDetailTitleProposalCreated => 'Proposal dibuat';
+
+  @override
+  String get activityDetailTitleProposing => 'Mengajukan';
+
+  @override
+  String get activityDetailProposalTransferAmount => 'JUMLAH TRANSFER';
 
   @override
   String get activityDetailStatusInProcess => 'Diproses';

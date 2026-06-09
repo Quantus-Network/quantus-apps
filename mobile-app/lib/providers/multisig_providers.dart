@@ -86,6 +86,7 @@ final discoveredMultisigsProvider = FutureProvider.autoDispose<List<MultisigAcco
   return service.discoverForUser(ids);
 });
 
+/// Open proposals for a multisig, filtered server-side by status.
 final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
@@ -94,6 +95,7 @@ final multisigOpenProposalsProvider = FutureProvider.autoDispose.family<List<Mul
   return service.getOpenProposals(msig);
 });
 
+/// Past proposals for a multisig activity feed, filtered server-side by status.
 final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<MultisigProposal>, MultisigAccount>((
   ref,
   msig,
@@ -102,19 +104,15 @@ final multisigPastProposalsProvider = FutureProvider.autoDispose.family<List<Mul
   return service.getPastProposals(msig);
 });
 
-class ProposalKey {
-  final MultisigAccount msig;
-  final int id;
-  const ProposalKey(this.msig, this.id);
-
-  @override
-  bool operator ==(Object other) => other is ProposalKey && other.msig.accountId == msig.accountId && other.id == id;
-
-  @override
-  int get hashCode => Object.hash(msig.accountId, id);
+/// Invalidates open, past, and block providers after a proposal state change.
+void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
+  ref.invalidate(multisigOpenProposalsProvider(msig));
+  ref.invalidate(multisigPastProposalsProvider(msig));
+  ref.invalidate(multisigCurrentBlockProvider);
 }
 
-final multisigProposalProvider = FutureProvider.autoDispose.family<MultisigProposal?, ProposalKey>((ref, key) async {
+/// Current best block number, used to derive proposal expiry.
+final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {
   final service = ref.watch(multisigServiceProvider);
-  return service.getProposal(key.msig, key.id);
+  return service.currentBlockNumber();
 });
