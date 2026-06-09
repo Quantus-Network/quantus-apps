@@ -926,6 +926,12 @@ abstract class AppLocalizations {
   /// **'You\'ve already approved this proposal.'**
   String get multisigProposalAlreadySignedNote;
 
+  /// Note shown on proposal detail when the proposal is executed
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal is already executed.'**
+  String get multisigProposalAlreadyExecutedNote;
+
   /// Proposer row label on proposal detail
   ///
   /// In en, this message translates to:

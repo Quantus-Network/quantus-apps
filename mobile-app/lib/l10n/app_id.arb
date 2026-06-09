@@ -149,6 +149,7 @@
   "activityTxApproving": "Menyetujui…",
   "multisigApprovalTimeoutToast": "Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.",
   "multisigProposalAlreadySignedNote": "Anda sudah menyetujui proposal ini.",
+  "multisigProposalAlreadyExecutedNote": "Proposal ini sudah dieksekusi.",
   "multisigProposalProposerLabel": "PENGAJU",
   "multisigProposalStatusLabel": "STATUS",
   "multisigProposalDepositLabel": "DEPOSIT",

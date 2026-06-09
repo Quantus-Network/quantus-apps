@@ -655,6 +655,10 @@
     "@multisigProposalAlreadySignedNote": {
       "description": "Note shown when the current member already approved"
     },
+    "multisigProposalAlreadyExecutedNote": "This proposal is already executed.",
+    "@multisigProposalAlreadyExecutedNote": {
+      "description": "Note shown on proposal detail when the proposal is executed"
+    },
     "multisigProposalProposerLabel": "PROPOSER",
     "@multisigProposalProposerLabel": {
       "description": "Proposer row label on proposal detail"

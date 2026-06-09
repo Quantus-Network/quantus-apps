@@ -466,6 +466,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposalAlreadySignedNote => 'Anda sudah menyetujui proposal ini.';
 
   @override
+  String get multisigProposalAlreadyExecutedNote => 'Proposal ini sudah dieksekusi.';
+
+  @override
   String get multisigProposalProposerLabel => 'PENGAJU';
 
   @override

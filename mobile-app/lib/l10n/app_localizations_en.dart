@@ -464,6 +464,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigProposalAlreadySignedNote => 'You\'ve already approved this proposal.';
 
   @override
+  String get multisigProposalAlreadyExecutedNote => 'This proposal is already executed.';
+
+  @override
   String get multisigProposalProposerLabel => 'PROPOSER';
 
   @override

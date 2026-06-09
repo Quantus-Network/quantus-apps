@@ -47,13 +47,27 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
   const _MultisigProposalDetailSheet({required this.msig, required this.proposal});
 
   MultisigProposal _resolveLiveProposal(WidgetRef ref) {
-    final open = ref.watch(multisigOpenProposalsProvider(msig)).value;
-    if (open == null) return proposal;
-    for (final p in open) {
-      if (p.id == proposal.id && p.multisigAddress == proposal.multisigAddress) {
-        return p;
+    MultisigProposal? findMatch(Iterable<MultisigProposal> proposals) {
+      for (final p in proposals) {
+        if (p.id == proposal.id && p.multisigAddress == proposal.multisigAddress) {
+          return p;
+        }
       }
+      return null;
     }
+
+    final open = ref.watch(multisigOpenProposalsProvider(msig)).value;
+    if (open != null) {
+      final match = findMatch(open);
+      if (match != null) return match;
+    }
+
+    final past = ref.watch(multisigPastProposalsProvider(msig)).value;
+    if (past != null) {
+      final match = findMatch(past);
+      if (match != null) return match;
+    }
+
     return proposal;
   }
 
@@ -271,6 +285,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required bool hasLocalSigner,
     required bool isActionable,
   }) {
+    if (liveProposal.status == MultisigProposalStatus.executed) {
+      return _noteOnlySection(colors, text, l10n.multisigProposalAlreadyExecutedNote);
+    }
+
     if (liveProposal.isReadyToExecute) {
       return _executeSection(
         context,
@@ -364,6 +382,14 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     };
 
     return _actionButtonColumn(l10n, colors, text, label: label, isDisabled: isDisabled, onTap: onTap, note: note);
+  }
+
+  Widget _noteOnlySection(AppColorsV2 colors, AppTextTheme text, String note) {
+    return Text(
+      note,
+      textAlign: TextAlign.center,
+      style: text.detail?.copyWith(color: colors.textTertiary),
+    );
   }
 
   Widget _actionButtonColumn(
