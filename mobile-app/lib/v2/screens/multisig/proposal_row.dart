@@ -26,6 +26,7 @@ class ProposalRow extends ConsumerWidget {
       pendingApprovals,
       proposal.multisigAddress,
       proposal.id,
+      myAccountId,
     );
     final isApproving = pendingApproval != null;
 

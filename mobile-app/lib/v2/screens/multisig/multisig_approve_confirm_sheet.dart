@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/l10n/app_localizations.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
@@ -10,6 +11,7 @@ import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:resonance_network_wallet/services/transaction_submission_service.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
+import 'package:resonance_network_wallet/v2/components/detail_summary_row.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
@@ -38,6 +40,43 @@ class _MultisigApproveConfirmSheet extends ConsumerStatefulWidget {
 class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveConfirmSheet> {
   bool _submitting = false;
   String? _errorMessage;
+  BigInt? _networkFee;
+  bool _loadingFee = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadNetworkFee());
+  }
+
+  Future<void> _loadNetworkFee() async {
+    try {
+      final signer = ref
+          .read(accountsProvider)
+          .value
+          ?.firstWhere(
+            (a) => a.accountId == widget.msig.myMemberAccountId,
+            orElse: () => throw Exception('Member account not found in local wallet'),
+          );
+      if (signer == null) throw Exception('No signer account available');
+
+      final fee = await ref.read(multisigServiceProvider).estimateApproveFee(
+            msig: widget.msig,
+            signer: signer,
+            proposalId: widget.proposal.id,
+          );
+
+      if (!mounted) return;
+      setState(() {
+        _networkFee = fee;
+        _loadingFee = false;
+      });
+    } catch (e, st) {
+      debugPrint('Approve fee estimate error: $e $st');
+      if (!mounted) return;
+      setState(() => _loadingFee = false);
+    }
+  }
 
   Future<void> _confirm() async {
     setState(() {
@@ -85,17 +124,28 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
     }
   }
 
+  String? _networkFeeLabel(AppLocalizations l10n, NumberFormattingService fmt) {
+    if (_loadingFee) return '…';
+    if (_networkFee == null) return null;
+    return l10n.commonAmountBalance(
+      fmt.formatBalance(_networkFee!, maxDecimals: AppConstants.decimals),
+      AppConstants.tokenSymbol,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colors;
     final text = context.themeText;
     final fmt = ref.watch(numberFormattingServiceProvider);
+    final valueStyle = text.transactionDetailRowLabel;
     final amountText = l10n.commonAmountBalance(
       fmt.formatBalance(widget.proposal.amount, maxDecimals: AppConstants.decimals),
       AppConstants.tokenSymbol,
     );
     final recipient = AddressFormattingService.formatActivityDetailAddress(widget.proposal.recipient);
+    final networkFeeLabel = _networkFeeLabel(l10n, fmt);
 
     return BottomSheetContainer(
       title: l10n.multisigApproveConfirmTitle,
@@ -115,6 +165,14 @@ class _MultisigApproveConfirmSheetState extends ConsumerState<_MultisigApproveCo
             l10n.multisigApproveConfirmTo(recipient),
             style: text.smallParagraph?.copyWith(color: colors.textTertiary),
           ),
+          if (networkFeeLabel != null) ...[
+            const SizedBox(height: 16),
+            DetailSummaryRow.review(
+              label: l10n.sendReviewNetworkFee,
+              value: networkFeeLabel,
+              valueStyle: valueStyle,
+            ),
+          ],
           if (_errorMessage != null) ...[
             const SizedBox(height: 16),
             Text(

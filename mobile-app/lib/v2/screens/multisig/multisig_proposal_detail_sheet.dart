@@ -70,7 +70,12 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final multisigService = ref.watch(multisigServiceProvider);
     final liveProposal = _resolveLiveProposal(ref);
     final pendingApprovals = ref.watch(pendingMultisigApprovalsProvider);
-    final pendingApproval = findPendingApprovalForProposal(pendingApprovals, msig.accountId, liveProposal.id);
+    final pendingApproval = findPendingApprovalForProposal(
+      pendingApprovals,
+      msig.accountId,
+      liveProposal.id,
+      msig.myMemberAccountId,
+    );
     final didApprove = liveProposal.didApprove(msig.myMemberAccountId);
     final hasLocalSigner = _hasLocalSigner(ref);
     final isActionable = currentBlock != null && liveProposal.isActionable(currentBlock);

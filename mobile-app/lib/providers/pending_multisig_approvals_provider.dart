@@ -1,28 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:resonance_network_wallet/providers/pending_extrinsic_events_notifier.dart';
 
 /// Approvals submitted on-chain but not yet visible in the indexer.
-class PendingMultisigApprovalsNotifier extends Notifier<List<PendingMultisigApprovalEvent>> {
+class PendingMultisigApprovalsNotifier extends PendingExtrinsicEventsNotifier<PendingMultisigApprovalEvent> {
   @override
-  List<PendingMultisigApprovalEvent> build() => [];
+  String idOf(PendingMultisigApprovalEvent event) => event.id;
 
-  void add(PendingMultisigApprovalEvent event) {
-    state = [...state, event];
-  }
-
-  void update(String id, {String? extrinsicHash}) {
-    state = [
-      for (final event in state)
-        if (event.id == id) event.copyWith(extrinsicHash: extrinsicHash) else event,
-    ];
-  }
-
-  void remove(String id) {
-    state = state.where((e) => e.id != id).toList();
-  }
-
-  void clear() {
-    state = [];
+  @override
+  PendingMultisigApprovalEvent withExtrinsicHash(
+    PendingMultisigApprovalEvent event,
+    String? extrinsicHash,
+  ) {
+    return event.copyWith(extrinsicHash: extrinsicHash);
   }
 }
 
@@ -35,9 +25,12 @@ PendingMultisigApprovalEvent? findPendingApprovalForProposal(
   List<PendingMultisigApprovalEvent> all,
   String multisigAddress,
   int proposalId,
+  String approverId,
 ) {
   for (final event in all) {
-    if (event.multisigAddress == multisigAddress && event.proposalId == proposalId) {
+    if (event.multisigAddress == multisigAddress &&
+        event.proposalId == proposalId &&
+        event.approverId == approverId) {
       return event;
     }
   }
@@ -45,20 +38,21 @@ PendingMultisigApprovalEvent? findPendingApprovalForProposal(
 }
 
 void addPendingMultisigApproval(Ref ref, PendingMultisigApprovalEvent event) {
-  ref.read(pendingMultisigApprovalsProvider.notifier).add(event);
+  addPendingExtrinsicEvent(ref, pendingMultisigApprovalsProvider, event);
 }
 
 void updatePendingMultisigApproval(Ref ref, String id, {String? extrinsicHash}) {
-  ref.read(pendingMultisigApprovalsProvider.notifier).update(id, extrinsicHash: extrinsicHash);
+  updatePendingExtrinsicEvent(ref, pendingMultisigApprovalsProvider, id, extrinsicHash: extrinsicHash);
 }
 
 void removePendingMultisigApproval(Ref ref, String id) {
-  ref.read(pendingMultisigApprovalsProvider.notifier).remove(id);
+  removePendingExtrinsicEvent(ref, pendingMultisigApprovalsProvider, id);
 }
 
 PendingMultisigApprovalEvent? findPendingMultisigApproval(Ref ref, String id) {
-  for (final event in ref.read(pendingMultisigApprovalsProvider)) {
-    if (event.id == id) return event;
-  }
-  return null;
+  return findPendingExtrinsicEventById(
+    ref.read(pendingMultisigApprovalsProvider),
+    id,
+    (event) => event.id,
+  );
 }
