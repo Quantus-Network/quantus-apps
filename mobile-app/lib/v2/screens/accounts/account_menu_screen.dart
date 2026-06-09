@@ -65,7 +65,9 @@ class AccountMenuScreen extends ConsumerWidget {
   }
 
   void _openAddressDetails(BuildContext context, Account account) {
-    Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(account: account)));
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
 }
 
@@ -80,7 +82,7 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AccountBadge(
+        AccountBadge.account(
           account: account,
           isActive: true,
           size: 96,

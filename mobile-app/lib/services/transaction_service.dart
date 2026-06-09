@@ -32,11 +32,27 @@ class TransactionService {
   List<TransactionEvent> combineAndDeduplicateTransactions({
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
+    required List<PendingMultisigCreationEvent> pendingMultisigCreations,
+    required List<PendingMultisigProposalEvent> pendingMultisigProposals,
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
     final seenIds = <String>{};
+    final seenProposalKeys = <String>{};
     final List<TransactionEvent> result = [];
+
+    for (final creation in pendingMultisigCreations) {
+      if (seenIds.add(creation.id)) {
+        result.add(creation);
+      }
+    }
+
+    for (final proposal in pendingMultisigProposals) {
+      final key = proposal.activityDedupKey;
+      if (seenProposalKeys.add(key) && seenIds.add(proposal.id)) {
+        result.add(proposal);
+      }
+    }
 
     // Add pending transactions that haven't not failed first (highest priority)
     for (final transaction in pendingTransactions) {
@@ -67,6 +83,13 @@ class TransactionService {
     // Add other transfers (lowest priority)
     otherTransfers.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     for (final transaction in otherTransfers) {
+      if (transaction is MultisigProposalCreatedEvent) {
+        final key = transaction.activityDedupKey;
+        if (seenProposalKeys.contains(key)) {
+          result.removeWhere((e) => e is PendingMultisigProposalEvent && e.activityDedupKey == key);
+        }
+        seenProposalKeys.add(key);
+      }
       if (seenIds.add(transaction.id)) {
         result.add(transaction);
       }

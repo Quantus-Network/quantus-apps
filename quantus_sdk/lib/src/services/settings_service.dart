@@ -233,6 +233,15 @@ class SettingsService {
     await _saveMultisigAccounts(accounts);
   }
 
+  Future<void> updateMultisigAccount(MultisigAccount account) async {
+    final accounts = await getMultisigAccounts();
+    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
+    if (index != -1) {
+      accounts[index] = account;
+      await _saveMultisigAccounts(accounts);
+    }
+  }
+
   Future<void> removeMultisigAccount(String accountId) async {
     final accounts = await getMultisigAccounts();
     final filtered = accounts.where((a) => a.accountId != accountId).toList();

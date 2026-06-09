@@ -1,7 +1,9 @@
-import 'dart:convert'; // Required for jsonEncode and jsonDecode
+import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:http/http.dart' as http;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/services/multisig_graphql.dart';
 
 class OtherTransfersResult {
   final List<TransactionEvent> transfers;
@@ -20,7 +22,13 @@ class _Page<T> {
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
+  static const _logName = 'ChainHistoryService';
+
   ChainHistoryService();
+
+  void _log(String message, {Object? error, StackTrace? stackTrace}) {
+    developer.log(message, name: _logName, error: error, stackTrace: stackTrace);
+  }
 
   String _buildScheduledReversibleTransfersQuery(TransactionFilter filter) {
     final String whereClause;
@@ -111,16 +119,20 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
     }'''
         : '';
 
+    final String multisigField = MultisigGraphql.accountEventSelection;
+    final String proposalCreatedField = MultisigGraphql.proposalCreatedAccountEventSelection;
+
+    const String multisigSendClause =
+        ', {multisig_id: {_is_null: false}}, {multisig_proposal_created_id: {_is_null: false}}';
+
     final String whereClause;
 
     switch (filter) {
       case TransactionFilter.send:
-        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
-            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}]}]}';
+            '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {from_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {from_id: {_in: \$accounts}}}}$multisigSendClause]}]}';
         break;
       case TransactionFilter.receive:
-        // Properly formatted Hasura boolean expression with colons and balanced brackets
         whereClause =
             '{_and: [{account_id: {_in: \$accounts}}, $baseCondition, $transferGuard, {_or: [{transfer: {to_id: {_in: \$accounts}}}, {executedReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {cancelledReversibleTransfer: {scheduledTransfer: {to_id: {_in: \$accounts}}}}, {miner_reward_id: {_is_null: false}}]}]}';
         break;
@@ -133,6 +145,7 @@ query ScheduledReversibleTransfersByAccounts(\$accounts: [String!]!, \$limit: In
 query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
   accountEvents: account_event(limit: \$limit, offset: \$offset, where: $whereClause, order_by: {timestamp: desc}) {
     id
+    timestamp
     transfer {
       id
       amount
@@ -195,7 +208,7 @@ query AccountEvents(\$accounts: [String!]!, \$limit: Int!, \$offset: Int!) {
         }
         scheduledAt: scheduled_at
       }
-    }$minerRewardField
+    }$minerRewardField$multisigField$proposalCreatedField
   }
 }
 ''';
@@ -370,20 +383,42 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 }
 ''';
 
+  final String _searchProposalCreatedByExtrinsicHashQuery =
+      '''
+query SearchProposalCreatedByExtrinsicHash(\$extrinsicHash: String!) {
+  accountEvents: account_event(
+    limit: 1
+    where: {multisigProposalCreated: {extrinsic: {id: {_eq: \$extrinsicHash}}}}
+    order_by: {timestamp: desc}
+  ) {
+    id
+    timestamp
+${MultisigGraphql.proposalCreatedAccountEventSelection}
+  }
+}
+''';
+
   void printTiming(String label, int milliseconds) {
     if (AppConstants.debugQueryTiming) {
-      print('[TIMING] $label: $milliseconds ms');
+      _log('[TIMING] $label: $milliseconds ms');
     }
   }
 
   int _lookaheadLimit(int limit) => limit + 1;
 
-  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T Function(dynamic event) parseEvent) {
+  _Page<T> _pageFromEvents<T>(List<dynamic>? events, int limit, T? Function(dynamic event) parseEvent) {
     if (events == null || events.isEmpty) {
       return _Page(items: <T>[], hasMore: false);
     }
 
-    return _Page(items: events.take(limit).map(parseEvent).toList(), hasMore: events.length > limit);
+    final hasMore = events.length > limit;
+    final items = <T>[];
+    for (final event in events) {
+      if (items.length >= limit) break;
+      final parsed = parseEvent(event);
+      if (parsed != null) items.add(parsed);
+    }
+    return _Page(items: items, hasMore: hasMore);
   }
 
   ReversibleTransferEvent _parseScheduledTransferEvent(dynamic event) {
@@ -395,7 +430,9 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     return ReversibleTransferEvent.fromJson(scheduledTransfer, status: ReversibleTransferStatus.SCHEDULED);
   }
 
-  TransactionEvent _parseOtherTransferEvent(dynamic event) {
+  /// Parses a transfer-style [account_event]. Returns null for unsupported payloads
+  /// (e.g. multisig creation) so history fetching can continue.
+  TransactionEvent? tryParseOtherTransferEvent(dynamic event) {
     final eventMap = event as Map<String, dynamic>;
     if (eventMap['cancelledReversibleTransfer'] != null) {
       return ReversibleTransferEvent.fromJson(
@@ -415,7 +452,37 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     if (eventMap['minerReward'] != null) {
       return MinerRewardEvent.fromJson(eventMap['minerReward']);
     }
-    throw Exception('Account event is missing a supported transaction payload: ${eventMap['id']}');
+    if (eventMap['multisig'] != null) {
+      return MultisigCreatedEvent.fromAccountEvent(eventMap);
+    }
+    if (eventMap['multisigProposalCreated'] != null) {
+      try {
+        return MultisigProposalCreatedEvent.fromAccountEvent(eventMap);
+      } catch (e, stackTrace) {
+        _log(
+          'WARNING: failed to parse multisigProposalCreated, id: ${eventMap['id']}, error: $e',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        return null;
+      }
+    }
+    final id = eventMap['id'] as String?;
+    if (id != null && _isSkippedMultisigAccountEventId(id)) {
+      // Known multisig-related rows we don't render in activity yet.
+      return null;
+    }
+    // An unexpected payload likely signals an indexer/schema regression, so
+    // flag it loudly rather than dropping it silently.
+    _log('WARNING: unsupported account event payload, id: $id');
+    return null;
+  }
+
+  /// Other multisig-related indexer rows (approvals, deposits claimed, etc.)
+  /// are not shown in activity yet.
+  static bool _isSkippedMultisigAccountEventId(String id) {
+    if (id.startsWith('ae-ms-proposal-created-')) return false;
+    return id.startsWith('ae-multisig-') || id.startsWith('ae-ms-');
   }
 
   // Make a graphQL query for specific transaction hashes, get the results back
@@ -440,7 +507,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
       if (responseBody['errors'] != null) {
-        print('GraphQL errors in response: ${responseBody['errors']}');
+        _log('GraphQL errors in response: ${responseBody['errors']}');
         throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
       }
 
@@ -452,7 +519,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       final List<dynamic>? events = data['executedReversibleTransfers'];
 
       if (events == null || events.isEmpty) {
-        print('No transaction found for txId: $txId');
+        _log('No transaction found for txId: $txId');
         return null;
       }
 
@@ -460,8 +527,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
 
       return transaction;
     } catch (e, stackTrace) {
-      print('Error fetching transactions by tx id: $e');
-      print(stackTrace);
+      _log('Error fetching transactions by tx id: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -501,8 +567,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchScheduledTransfers FAILED', sw.elapsedMilliseconds);
-      print('Error fetching scheduled transfers: $e');
-      print(stackTrace);
+      _log('Error fetching scheduled transfers: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -536,14 +601,12 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       }
 
       final List<dynamic>? events = responseBody['data']?['accountEvents'];
-      print('events: $events');
-      final page = _pageFromEvents(events, limit, _parseOtherTransferEvent);
+      final page = _pageFromEvents(events, limit, tryParseOtherTransferEvent);
       return OtherTransfersResult(transfers: page.items, hasMore: page.hasMore);
     } catch (e, stackTrace) {
       sw.stop();
       printTiming('fetchOtherTransfers FAILED', sw.elapsedMilliseconds);
-      print('Error fetching other transfers: $e');
-      print(stackTrace);
+      _log('Error fetching other transfers: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -580,8 +643,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
         hasMore: scheduledReversibleTransfers.hasMore || otherTransfers.hasMore,
       );
     } catch (e, stackTrace) {
-      print('Error fetching all transaction types: $e');
-      print(stackTrace);
+      _log('Error fetching all transaction types: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -597,7 +659,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
     required bool isReversible,
     required int blockHeightAfter,
   }) {
-    print(
+    _log(
       'Searching for pending transaction: $from → $to, amount: $amount, '
       'reversible: $isReversible, after block: $blockHeightAfter',
     );
@@ -613,12 +675,54 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
   /// unique — no risk of matching an unrelated historical transfer with the
   /// same (from, to, amount).
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) {
-    print('Searching by extrinsic hash: $extrinsicHash, reversible: $isReversible');
+    _log('Searching by extrinsic hash: $extrinsicHash, reversible: $isReversible');
     return _searchEvent(
       query: isReversible ? _searchByExtrinsicHashReversibleQuery : _searchByExtrinsicHashTransferQuery,
       variables: {'extrinsicHash': extrinsicHash},
       isReversible: isReversible,
     );
+  }
+
+  /// Searches for a confirmed multisig proposal creation by extrinsic hash.
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    _log('Searching proposal created by extrinsic hash: $extrinsicHash');
+    final Map<String, dynamic> requestBody = {
+      'query': _searchProposalCreatedByExtrinsicHashQuery,
+      'variables': {'extrinsicHash': extrinsicHash},
+    };
+
+    try {
+      final http.Response response = await _graphQlEndpointService.post(body: jsonEncode(requestBody));
+
+      if (response.statusCode != 200) {
+        throw Exception('GraphQL request failed with status: ${response.statusCode}. Body: ${response.body}');
+      }
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (responseBody['errors'] != null) {
+        _log('GraphQL errors in response: ${responseBody['errors']}');
+        throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
+      }
+
+      final List<dynamic>? events = responseBody['data']?['accountEvents'];
+      if (events == null || events.isEmpty) {
+        _log('No matching proposal creation found for hash $extrinsicHash');
+        return null;
+      }
+
+      final parsed = tryParseOtherTransferEvent(events.first);
+      if (parsed is MultisigProposalCreatedEvent) {
+        _log('Found proposal creation at block ${parsed.blockNumber}');
+        return parsed;
+      }
+
+      _log('Extrinsic hash matched account_event but payload was not MultisigProposalCreatedEvent');
+      return null;
+    } catch (e, stackTrace) {
+      _log('Error searching proposal created by hash: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Future<TransactionEvent?> _searchEvent({
@@ -638,7 +742,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
       if (responseBody['errors'] != null) {
-        print('GraphQL errors in response: ${responseBody['errors']}');
+        _log('GraphQL errors in response: ${responseBody['errors']}');
         throw Exception('GraphQL errors: ${responseBody['errors'].toString()}');
       }
 
@@ -650,7 +754,7 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
       final List<dynamic>? events = data['events'];
 
       if (events == null || events.isEmpty) {
-        print('No matching transactions found');
+        _log('No matching transactions found');
         return null;
       }
 
@@ -667,11 +771,10 @@ query SearchByExtrinsicHash($extrinsicHash: String!) {
         transaction = TransferEvent.fromJson(transferData);
       }
 
-      print('Found matching transaction at block ${transaction.blockNumber}');
+      _log('Found matching transaction at block ${transaction.blockNumber}');
       return transaction;
     } catch (e, stackTrace) {
-      print('Error searching for transaction: $e');
-      print(stackTrace);
+      _log('Error searching for transaction: $e', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

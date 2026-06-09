@@ -32,6 +32,32 @@ BigInt bigIntFromJson(dynamic value) {
   throw FormatException('Cannot parse BigInt from ${value.runtimeType}: $value');
 }
 
+int intFromJson(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.parse(value);
+  throw FormatException('Cannot parse int from ${value.runtimeType}: $value');
+}
+
+List<String> nonEmptyStringListFromJson(dynamic value, String fieldName) {
+  if (value is! List) {
+    throw FormatException('Missing or invalid list for $fieldName');
+  }
+  if (value.isEmpty) {
+    throw FormatException('Empty list for $fieldName');
+  }
+  return value.map((e) => e.toString()).toList();
+}
+
+/// Parses indexer threshold and ensures it is valid for [signerCount].
+int multisigThresholdFromJson(dynamic value, {required int signerCount}) {
+  final threshold = intFromJson(value);
+  if (threshold < 1 || threshold > signerCount) {
+    throw FormatException('Invalid threshold $threshold for $signerCount signer(s)');
+  }
+  return threshold;
+}
+
 DateTime dateTimeFromJson(dynamic value) {
   if (value is DateTime) return value;
   if (value is String) return DateTime.parse(value);
@@ -41,6 +67,22 @@ DateTime dateTimeFromJson(dynamic value) {
 String stringFromJson(dynamic value) {
   if (value is String) return value;
   throw FormatException('Expected String, got ${value.runtimeType}: $value');
+}
+
+int positiveIntFromJson(dynamic value, String fieldName, {int min = 1}) {
+  if (value == null) {
+    throw FormatException('Missing $fieldName');
+  }
+  final parsed = switch (value) {
+    int v => v,
+    num v => v.toInt(),
+    String v => int.parse(v),
+    _ => throw FormatException('Invalid $fieldName: $value (${value.runtimeType})'),
+  };
+  if (parsed < min) {
+    throw FormatException('Invalid $fieldName: $parsed (must be >= $min)');
+  }
+  return parsed;
 }
 
 /// Resolves `{"id":"..."}`, a JSON string of that object, or a bare address
@@ -79,10 +121,7 @@ int blockHeightFromJsonMap(Map<String, dynamic>? block) {
   if (block == null) return 0;
   final h = block['height'];
   if (h == null) return 0;
-  if (h is int) return h;
-  if (h is num) return h.toInt();
-  if (h is String) return int.parse(h);
-  throw FormatException('Invalid block height: $h (${h.runtimeType})');
+  return intFromJson(h);
 }
 
 String blockHashFromJsonMap(Map<String, dynamic>? block) {

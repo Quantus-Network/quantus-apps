@@ -192,6 +192,401 @@ class AppLocalizationsId extends AppLocalizations {
   String get addAccountMenuImportSubtitle => 'Gunakan recovery phrase untuk mengimpor';
 
   @override
+  String get addAccountMenuMultisigTitle => 'Buat Multisig';
+
+  @override
+  String get addAccountMenuMultisigSubtitle => 'Siapkan alamat bersama dengan beberapa penandatangan';
+
+  @override
+  String get addAccountMenuDiscoverMultisigTitle => 'Temukan Multisig';
+
+  @override
+  String get addAccountMenuDiscoverMultisigSubtitle => 'Cari multisig di mana akun Anda adalah penandatangan';
+
+  @override
+  String get multisigTag => 'MULTISIG';
+
+  @override
+  String get multisigProposeTitle => 'Ajukan';
+
+  @override
+  String get multisigAddTitle => 'Buat Multisig';
+
+  @override
+  String get multisigDiscoverTitle => 'Temukan Multisig';
+
+  @override
+  String get multisigCreateSubtitle =>
+      'Berikan nama multisig yang mudah Anda kenali. Anda bisa mengubahnya kapan saja.';
+
+  @override
+  String get multisigCreateButton => 'Buat';
+
+  @override
+  String get multisigCreateCreatingButton => 'Membuat';
+
+  @override
+  String multisigCreateDefaultName(int number) {
+    return 'Multisig $number';
+  }
+
+  @override
+  String get multisigCreateErrorCouldNotCreate => 'Gagal membuat multisig.';
+
+  @override
+  String get multisigCreateReadyToast => 'Multisig ditambahkan ke akun Anda.';
+
+  @override
+  String get multisigCreateAlreadyExists => 'Multisig dengan alamat ini sudah ada on-chain.';
+
+  @override
+  String get multisigCreateInsufficientBalance => 'Saldo tidak cukup untuk biaya dan deposit pembuatan multisig.';
+
+  @override
+  String get multisigCreateTimeoutToast =>
+      'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
+  String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
+
+  @override
+  String get multisigCreateSignersLabel => 'PENANDATANGAN';
+
+  @override
+  String get multisigCreateSignersSubtitle => 'Tambahkan setidaknya satu penandatangan selain diri Anda.';
+
+  @override
+  String get multisigCreateAddSignerHint => 'Alamat SS58 penandatangan';
+
+  @override
+  String get multisigCreateAddSignerButton => 'Tambah Penandatangan';
+
+  @override
+  String get multisigCreateDuplicateSigner => 'Penandatangan ini sudah ada dalam daftar.';
+
+  @override
+  String get multisigCreateInvalidSigner => 'Masukkan alamat SS58 yang valid.';
+
+  @override
+  String get multisigCreateThresholdLabel => 'AMBANG BATAS';
+
+  @override
+  String multisigCreateThresholdValue(int count, int total) {
+    return '$count dari $total';
+  }
+
+  @override
+  String get multisigCreatePredictedAddressLabel => 'ALAMAT MULTISIG';
+
+  @override
+  String get multisigCreatePredictedAddressPlaceholder => 'Tambahkan penandatangan untuk melihat alamat';
+
+  @override
+  String get multisigDone => 'Selesai';
+
+  @override
+  String get multisigAddDiscoveredTitle => 'Ditemukan untuk Anda';
+
+  @override
+  String get multisigAddDiscoveredSubtitle => 'Multisig di chain di mana salah satu akun Anda adalah penandatangan';
+
+  @override
+  String get multisigAddButton => 'Tambah';
+
+  @override
+  String get multisigAddedButton => 'Ditambahkan';
+
+  @override
+  String get multisigAddNoneFound => 'Tidak ada multisig ditemukan.';
+
+  @override
+  String multisigAddDiscoverFailed(String error) {
+    return 'Tidak dapat menemukan multisig: $error';
+  }
+
+  @override
+  String multisigAddFailed(String error) {
+    return 'Tidak dapat menambahkan multisig: $error';
+  }
+
+  @override
+  String get multisigOpenProposals => 'Proposal Terbuka';
+
+  @override
+  String get multisigPastProposals => 'Proposal Sebelumnya';
+
+  @override
+  String get multisigNoOpenProposals => 'Tidak ada proposal terbuka.';
+
+  @override
+  String get multisigNoPastProposals => 'Tidak ada proposal sebelumnya.';
+
+  @override
+  String multisigLoadFailed(String error) {
+    return 'Gagal memuat: $error';
+  }
+
+  @override
+  String multisigProposalToAddress(String address) {
+    return 'ke $address';
+  }
+
+  @override
+  String get multisigStatusApproved => 'DISETUJUI';
+
+  @override
+  String get multisigStatusExpired => 'KEDALUWARSA';
+
+  @override
+  String get multisigStatusCancelled => 'DIBATALKAN';
+
+  @override
+  String get multisigProposeSelectRecipientTo => 'Transfer ke';
+
+  @override
+  String multisigProposeSearchHint(String symbol) {
+    return 'Masukkan Alamat $symbol';
+  }
+
+  @override
+  String get multisigProposeAmountToLabel => 'TRANSFER KE';
+
+  @override
+  String get multisigProposeDepositLabel => 'Deposit:';
+
+  @override
+  String get multisigProposeCreationFeeLabel => 'Biaya Proposal:';
+
+  @override
+  String get multisigProposeDepositRefundableNote => 'dapat dikembalikan';
+
+  @override
+  String get multisigProposeMemberTotalLabel => 'TOTAL DARI AKUN ANDA';
+
+  @override
+  String get multisigProposeFeeLabel => 'Biaya Proposal:';
+
+  @override
+  String get multisigProposeFeeFetchFailed => 'Tidak dapat memperkirakan biaya';
+
+  @override
+  String get multisigProposeReviewButton => 'Tinjau transfer';
+
+  @override
+  String get multisigProposeReviewProposing => 'TRANSFER YANG DIAJUKAN';
+
+  @override
+  String multisigProposeReviewFromName(String name) {
+    return 'dari $name';
+  }
+
+  @override
+  String get multisigProposeThresholdLabel => 'AMBANG';
+
+  @override
+  String get multisigProposeExpiresLabel => 'KEDALUWARSA';
+
+  @override
+  String multisigExpiresBlockOnly(int block) {
+    return 'Blok $block';
+  }
+
+  @override
+  String get multisigProposeFeeRowLabel => 'BIAYA PROPOSAL';
+
+  @override
+  String get multisigProposeCreateButton => 'Kirim proposal';
+
+  @override
+  String get multisigProposeAuthReason => 'Autentikasi untuk mengajukan transaksi';
+
+  @override
+  String get multisigProposeAuthRequired => 'Autentikasi diperlukan';
+
+  @override
+  String get multisigProposeSubmitFailed => 'Gagal membuat proposal';
+
+  @override
+  String get multisigProposeTimeoutToast =>
+      'Konfirmasi proposal membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
+  String get multisigProposeDoneHeadline => 'Proposal transfer terkirim';
+
+  @override
+  String get multisigProposeDoneSubline => 'Co-signer harus menyetujui sebelum transfer dapat dieksekusi.';
+
+  @override
+  String multisigProposeDoneToChecksum(String checksum) {
+    return 'ke $checksum';
+  }
+
+  @override
+  String multisigSignaturesCount(int current, int threshold) {
+    return 'Tanda tangan: $current/$threshold';
+  }
+
+  @override
+  String get multisigProposalTitle => 'Proposal';
+
+  @override
+  String multisigProposalLoadFailed(String error) {
+    return 'Gagal: $error';
+  }
+
+  @override
+  String get multisigProposalNotFound => 'Proposal tidak ditemukan.';
+
+  @override
+  String get multisigProposalSignButton => 'Tanda Tangan';
+
+  @override
+  String get multisigProposalSigningSoonNote => 'Penandatanganan akan segera tersedia.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
+
+  @override
+  String get multisigProposalProposerLabel => 'PENGAJU';
+
+  @override
+  String get multisigProposalStatusLabel => 'STATUS';
+
+  @override
+  String get multisigProposalDepositLabel => 'DEPOSIT';
+
+  @override
+  String get multisigStatusActive => 'AKTIF';
+
+  @override
+  String get multisigStatusExecuted => 'DIEKSEKUSI';
+
+  @override
+  String get multisigStatusRemoved => 'DIHAPUS';
+
+  @override
+  String get multisigStatusUnknown => 'TIDAK DIKENAL';
+
+  @override
+  String get activityTxProposal => 'Proposal';
+
+  @override
+  String get activityTxProposing => 'Mengajukan';
+
+  @override
+  String get activityTxProposalCreated => 'Proposal dibuat';
+
+  @override
+  String get multisigApproveButton => 'Setujui';
+
+  @override
+  String get multisigAlreadyApproved => 'Sudah Disetujui';
+
+  @override
+  String get multisigCancelProposalButton => 'Batalkan Proposal';
+
+  @override
+  String get multisigProposalExpiresLabel => 'KEDALUWARSA';
+
+  @override
+  String get multisigProposalThresholdLabel => 'AMBANG';
+
+  @override
+  String get multisigProposalApprovalsLabel => 'PERSETUJUAN';
+
+  @override
+  String get multisigProposalFeeRowLabel => 'BIAYA PROPOSAL';
+
+  @override
+  String get multisigProposalSignersLabel => 'PENANDATANGAN';
+
+  @override
+  String get multisigYouLabel => 'ANDA';
+
+  @override
+  String get multisigSignerCreatorLabel => 'PEMBUAT';
+
+  @override
+  String get multisigAccountMenuDetails => 'Detail multisig';
+
+  @override
+  String get multisigAccountMenuDetailsTitle => 'Detail multisig';
+
+  @override
+  String get multisigAccountMenuDetailsThresholdHint =>
+      'Jumlah persetujuan penandatangan yang diperlukan untuk mengeksekusi proposal.';
+
+  @override
+  String multisigThresholdOf(int count, int total) {
+    return '$count dari $total';
+  }
+
+  @override
+  String multisigApprovalsOf(int count, int threshold) {
+    return '$count dari $threshold';
+  }
+
+  @override
+  String get multisigApproveConfirmTitle => 'Apakah Anda yakin?';
+
+  @override
+  String get multisigApproveConfirmBody => 'Anda akan menyetujui transfer sebesar';
+
+  @override
+  String multisigApproveConfirmTo(String address) {
+    return 'ke $address';
+  }
+
+  @override
+  String get multisigApproveConfirmYes => 'Ya, Setujui';
+
+  @override
+  String get multisigApproveConfirmNo => 'Tidak, Kembali';
+
+  @override
+  String get multisigApproveAuthReason => 'Autentikasi untuk menyetujui';
+
+  @override
+  String get multisigApproveAuthRequired => 'Autentikasi diperlukan';
+
+  @override
+  String get multisigApproveFailed => 'Gagal menyetujui';
+
+  @override
+  String get multisigCancelConfirmTitle => 'Batalkan Proposal?';
+
+  @override
+  String get multisigCancelConfirmBody =>
+      'Pembatalan mengembalikan deposit proposal Anda. Penandatangan lain tidak dapat lagi menyetujui.';
+
+  @override
+  String get multisigCancelConfirmYes => 'Ya, Batalkan Proposal';
+
+  @override
+  String get multisigCancelConfirmKeep => 'Pertahankan Proposal';
+
+  @override
+  String get multisigCancelAuthReason => 'Autentikasi untuk membatalkan';
+
+  @override
+  String get multisigCancelFailed => 'Gagal membatalkan';
+
+  @override
+  String get multisigApproveTitle => 'Setujui';
+
+  @override
+  String get multisigApproveDoneExecuted => 'Proposal dieksekusi';
+
+  @override
+  String get multisigApproveDoneRecorded => 'Persetujuan dicatat';
+
+  @override
+  String get multisigApproveDoneExecutedSubline => 'Ambang tercapai — transfer dikirim.';
+
+  @override
+  String get multisigApproveDoneRecordedSubline => 'Menunggu co-signer lainnya.';
+
+  @override
   String get createAccountAppBarTitle => 'Nama Akun';
 
   @override
@@ -426,6 +821,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxReceived => 'Diterima';
 
   @override
+  String get activityTxMultisigCreated => 'Multisig dibuat';
+
+  @override
+  String get activityTxMultisigCreating => 'Membuat multisig';
+
+  @override
+  String get activityTxMultisigLabel => 'Multisig';
+
+  @override
   String get activityTxTo => 'Ke';
 
   @override
@@ -470,6 +874,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailTitleReceived => 'Diterima';
 
   @override
+  String get activityDetailTitleMultisigCreated => 'Multisig dibuat';
+
+  @override
+  String get activityDetailTitleMultisigCreating => 'Membuat multisig';
+
+  @override
+  String get activityDetailTitleProposalCreated => 'Proposal dibuat';
+
+  @override
+  String get activityDetailTitleProposing => 'Mengajukan';
+
+  @override
+  String get activityDetailProposalTransferAmount => 'JUMLAH TRANSFER';
+
+  @override
   String get activityDetailStatusInProcess => 'Diproses';
 
   @override
@@ -498,6 +917,32 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailViewExplorer => 'Lihat di Explorer ↗';
+
+  @override
+  String get activityDetailMultisigAddress => 'ALAMAT MULTISIG';
+
+  @override
+  String get activityDetailMultisigThreshold => 'AMBANG';
+
+  @override
+  String activityDetailMultisigThresholdValue(int threshold, int total) {
+    return '$threshold dari $total';
+  }
+
+  @override
+  String get activityDetailMultisigSignerCount => 'PENANDATANGAN';
+
+  @override
+  String get activityDetailMultisigCreator => 'PEMBUAT';
+
+  @override
+  String get activityDetailMultisigCreationFee => 'BIAYA PALLET';
+
+  @override
+  String get activityDetailMultisigDeposit => 'DEPOSIT TERSIMPAN';
+
+  @override
+  String get activityDetailMultisigFeePaidByCreator => 'Dibayar oleh pembuat';
 
   @override
   String get receiveTitle => 'Terima';

@@ -7,12 +7,7 @@ class MultisigSigner {
   final bool hasApproved;
   final bool isYou;
 
-  const MultisigSigner({
-    required this.accountId,
-    this.checksum,
-    this.hasApproved = false,
-    this.isYou = false,
-  });
+  const MultisigSigner({required this.accountId, this.checksum, this.hasApproved = false, this.isYou = false});
 
   MultisigSigner copyWith({String? checksum, bool? hasApproved, bool? isYou}) {
     return MultisigSigner(

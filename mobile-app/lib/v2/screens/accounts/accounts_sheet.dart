@@ -5,7 +5,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/account_badge.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
-import 'package:resonance_network_wallet/v2/components/multisig_badge.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_tag.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_button.dart';
 import 'package:resonance_network_wallet/v2/components/quantus_icon_button.dart';
 import 'package:resonance_network_wallet/v2/theme/app_colors.dart';
@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/bottom_sheet_container.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_menu_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/multisig_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/theme/app_text_styles.dart';
 
@@ -56,6 +57,12 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
 
   void _openAccountMenu(Account account) {
     Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => AccountMenuScreen(initialAccount: account)));
+  }
+
+  void _openMultisigAccountMenu(MultisigAccount account) {
+    Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => MultisigAccountMenuScreen(initialAccount: account)));
   }
 
   @override
@@ -140,7 +147,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
                     final item = items[index];
                     final isActive = item.accountId == activeAccountId;
                     if (item is Account) return _buildRegularRow(l10n, item, isActive);
-                    if (item is MultisigAccount) return _buildMultisigRow(item, isActive);
+                    if (item is MultisigAccount) return _buildMultisigRow(l10n, item, isActive);
                     return const SizedBox.shrink();
                   },
                 ),
@@ -167,7 +174,7 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     return _AccountRowShell(
       isActive: isActive,
       onTap: () => _switchAccount(RegularAccount(account)),
-      leading: AccountBadge(account: account, isActive: isActive),
+      leading: AccountBadge.account(account: account, isActive: isActive),
       title: account.name,
       subtitle: balanceText,
       trailing: QuantusIconButton.circular(
@@ -178,22 +185,27 @@ class _AccountsScreenState extends ConsumerState<AccountsSheet> {
     );
   }
 
-  Widget _buildMultisigRow(MultisigAccount account, bool isActive) {
+  Widget _buildMultisigRow(AppLocalizations l10n, MultisigAccount account, bool isActive) {
     final balanceAsync = ref.watch(balanceProviderFamily(account.accountId));
     final formattingService = ref.watch(numberFormattingServiceProvider);
     final balanceText = balanceAsync.when(
-      loading: () => 'Loading...',
-      error: (_, _) => '— ${AppConstants.tokenSymbol}',
-      data: (balance) => '${formattingService.formatBalance(balance)} ${AppConstants.tokenSymbol}',
+      loading: () => l10n.commonLoading,
+      error: (_, _) => l10n.accountsSheetBalanceUnavailable,
+      data: (balance) => l10n.accountsSheetBalance(formattingService.formatBalance(balance), AppConstants.tokenSymbol),
     );
 
     return _AccountRowShell(
       isActive: isActive,
       onTap: () => _switchAccount(MultisigDisplayAccount(account)),
-      leading: MultisigBadge(account: account, isActive: isActive),
+      leading: AccountBadge(name: account.name, isActive: isActive),
       title: account.name,
       subtitle: balanceText,
-      tag: const MultisigTag(),
+      tag: MultisigTag(label: l10n.multisigTag),
+      trailing: QuantusIconButton.circular(
+        icon: Icons.edit_outlined,
+        onTap: () => _openMultisigAccountMenu(account),
+        size: IconButtonSize.medium,
+      ),
     );
   }
 }

@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 623793143;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1095679749;
 
 // Section: executor
 
@@ -770,6 +770,42 @@ fn wire__crate__api__ur__is_complete_ur_impl(
         },
     )
 }
+fn wire__crate__api__multisig__predict_multisig_address_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "predict_multisig_address",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_signers = <Vec<String>>::sse_decode(&mut deserializer);
+            let api_threshold = <u32>::sse_decode(&mut deserializer);
+            let api_nonce = <u64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::multisig::predict_multisig_address(
+                    api_signers,
+                    api_threshold,
+                    api_nonce,
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__crypto__public_key_bytes_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1384,16 +1420,19 @@ fn pde_ffi_dispatcher_sync_impl(
             wire__crate__api__crypto__generate_keypair_from_seed_impl(ptr, rust_vec_len, data_len)
         }
         23 => wire__crate__api__ur__is_complete_ur_impl(ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
+        24 => {
+            wire__crate__api__multisig__predict_multisig_address_impl(ptr, rust_vec_len, data_len)
+        }
+        25 => wire__crate__api__crypto__public_key_bytes_impl(ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__crypto__secret_key_bytes_impl(ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__crypto__set_default_ss58_prefix_impl(ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__crypto__sign_message_impl(ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__crypto__sign_message_with_pubkey_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__crypto__signature_bytes_impl(ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__crypto__ss58_to_account_id_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__crypto__to_account_id_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__crypto__verify_message_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__wormhole__wormhole_compute_output_amount_impl(
             ptr,
             rust_vec_len,
             data_len,

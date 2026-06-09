@@ -236,7 +236,12 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     quantusDebugPrint('Adding transaction to history: ${transaction.id}');
 
     // Check if transaction already exists to avoid duplicates
-    final existsInOtherTransfers = state.otherTransfers.any((item) => item.id == transaction.id);
+    final multisigAddress = transaction is MultisigCreatedEvent ? transaction.multisigAddress : null;
+    final existsInOtherTransfers = state.otherTransfers.any(
+      (item) =>
+          item.id == transaction.id ||
+          (multisigAddress != null && item is MultisigCreatedEvent && item.multisigAddress == multisigAddress),
+    );
     final existsInScheduledReversibleTransfers = state.scheduledReversibleTransfers.any(
       (item) => item.id == transaction.id,
     );
