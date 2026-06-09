@@ -998,6 +998,12 @@ abstract class AppLocalizations {
   /// **'Proposal approved'**
   String get activityTxProposalApproved;
 
+  /// Activity row label for a confirmed multisig proposal execution on the executor account
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get activityTxProposalExecuted;
+
   /// Approve button on proposal detail
   ///
   /// In en, this message translates to:
@@ -1831,6 +1837,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposal approved'**
   String get activityDetailTitleProposalApproved;
+
+  /// Detail sheet title for a confirmed multisig proposal execution
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get activityDetailTitleProposalExecuted;
+
+  /// Detail sheet title while a multisig proposal execution is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Executing proposal'**
+  String get activityDetailTitleExecuting;
 
   /// Detail sheet title while a multisig proposal is confirming on-chain
   ///

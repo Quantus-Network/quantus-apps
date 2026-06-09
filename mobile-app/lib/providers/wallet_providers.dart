@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/account_providers.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_transactions_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/print.dart';
@@ -78,10 +79,16 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   final balanceAsync = ref.watch(balanceProviderFamily(accountId));
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
 
   return balanceAsync.when(
     data: (blockchainBalance) {
-      final pendingOutgoing = _calculatePendingOutgoing(pendingTransactions, pendingMultisigProposals, accountId);
+      final pendingOutgoing = _calculatePendingOutgoing(
+        pendingTransactions,
+        pendingMultisigProposals,
+        pendingMultisigExecutions,
+        accountId,
+      );
       final effectiveBalance = blockchainBalance - pendingOutgoing;
       final result = effectiveBalance >= BigInt.zero ? effectiveBalance : BigInt.zero;
       return AsyncValue.data(result);
@@ -115,6 +122,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final balanceAsync = ref.watch(balanceProviderRaw);
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
   final activeAccountAsync = ref.watch(activeAccountProvider);
 
   return balanceAsync.when(
@@ -128,6 +136,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
       final pendingOutgoing = _calculatePendingOutgoing(
         pendingTransactions,
         pendingMultisigProposals,
+        pendingMultisigExecutions,
         activeAccount.account.accountId,
       );
       final effectiveBalance = blockchainBalance - pendingOutgoing;
@@ -148,6 +157,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
 BigInt _calculatePendingOutgoing(
   List<PendingTransactionEvent> pendingTransactions,
   List<PendingMultisigProposalEvent> pendingMultisigProposals,
+  List<PendingMultisigExecutionEvent> pendingMultisigExecutions,
   String accountId,
 ) {
   BigInt totalOutgoing = BigInt.zero;
@@ -167,6 +177,12 @@ BigInt _calculatePendingOutgoing(
   for (final proposal in pendingMultisigProposals) {
     if (proposal.proposerId == accountId) {
       totalOutgoing += proposal.memberCost;
+    }
+  }
+
+  for (final execution in pendingMultisigExecutions) {
+    if (execution.executorId == accountId) {
+      totalOutgoing += execution.memberCost;
     }
   }
 

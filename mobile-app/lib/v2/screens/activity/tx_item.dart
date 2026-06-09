@@ -90,6 +90,44 @@ class TxItemData {
       );
     }
 
+    if (tx is PendingMultisigExecutionEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.memberCost;
+      return TxItemData(
+        label: l10n.activityTxExecuting,
+        timeLabel: l10n.activityTxTimeNow,
+        iconBg: colors.txItemOutgoingHighlightBg,
+        iconColor: colors.checksum,
+        labelColor: colors.checksum,
+        amountColor: colors.checksum,
+        borderColor: colors.txItemOutgoingHighlightBorder,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
+    if (tx is MultisigProposalExecutedEvent) {
+      final recipient = AddressFormattingService.formatAddress(tx.recipient, prefix: 5, postFix: 3);
+      final fee = tx.networkFee;
+      return TxItemData(
+        label: l10n.activityTxProposalExecuted,
+        timeLabel: _timeAgo(tx.timestamp, l10n),
+        iconBg: Colors.transparent,
+        iconColor: colors.txItemIconDefault,
+        labelColor: colors.textPrimary,
+        amountColor: colors.textPrimary,
+        borderColor: colors.txItemBorderDefault,
+        isSend: true,
+        amount: fee,
+        hideAmount: fee == BigInt.zero,
+        counterpartyAddr: recipient,
+        customIcon: Icons.how_to_vote_outlined,
+      );
+    }
+
     if (tx is MultisigProposalEvent) {
       return TxItemData(
         label: l10n.activityTxProposal,

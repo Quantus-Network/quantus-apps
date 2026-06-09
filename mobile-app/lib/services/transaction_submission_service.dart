@@ -222,11 +222,13 @@ class TransactionSubmissionService {
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
+    BigInt? fee,
   }) async {
-    final pending = PendingMultisigExecutionEvent.create(
-      multisigAddress: msig.accountId,
-      proposalId: proposal.id,
+    final pending = PendingMultisigExecutionEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
       executorId: signer.accountId,
+      fee: fee,
     );
 
     addPendingMultisigExecution(_ref, pending);

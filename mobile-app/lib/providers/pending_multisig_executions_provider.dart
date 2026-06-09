@@ -18,6 +18,14 @@ final pendingMultisigExecutionsProvider =
       PendingMultisigExecutionsNotifier.new,
     );
 
+/// Pending executions excluded from the multisig activity feed below.
+List<PendingMultisigExecutionEvent> pendingExecutionsExcludingMultisig(
+  List<PendingMultisigExecutionEvent> all,
+  String multisigAddress,
+) {
+  return all.where((e) => e.multisigAddress != multisigAddress).toList();
+}
+
 PendingMultisigExecutionEvent? findPendingExecutionForProposal(
   List<PendingMultisigExecutionEvent> all,
   String multisigAddress,

@@ -82,6 +82,28 @@ ${MultisigProposalGraphql.fields}      }
 ${MultisigProposalGraphql.fields}      }
     }''';
 
+  /// Nested selection for `account_event.executedMultisigProposal`.
+  static const String executedMultisigProposalAccountEventSelection =
+      '''    executedMultisigProposal {
+      id
+      fee
+      result
+      approvers
+      timestamp
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+      }
+      executedBy {
+        id
+      }
+      proposal {
+${MultisigProposalGraphql.fields}      }
+    }''';
+
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {

@@ -3,24 +3,34 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/providers/multisig_execution_toast_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
+import 'package:resonance_network_wallet/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_execution_reconciliation.dart';
+import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:resonance_network_wallet/shared/utils/print.dart';
 
 typedef MultisigExecutionPollingService =
     ExtrinsicIndexerPollingService<PendingMultisigExecutionEvent, MultisigAccount>;
 
 Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMultisigExecutionEvent pending) async {
+  final hash = pending.extrinsicHash;
+  if (hash == null) return false;
+
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.executed) return false;
 
+  final historyService = ref.read(chainHistoryServiceProvider);
+  final indexed = await historyService.searchExecutedByExtrinsicHash(extrinsicHash: hash);
+  if (indexed == null) return false;
+
   removePendingMultisigExecution(ref, pending.id);
-  await reconcileIndexedExecution(ref, msig, pending);
+  await reconcileIndexedExecution(ref, msig, indexed);
   return true;
 }
 
-/// When the indexer lags but the proposal already shows as executed, clear
-/// pending state and refresh without a timeout toast.
+/// When the indexer account event lags but the proposal already shows as
+/// executed, clear pending state and refresh without a timeout toast.
 Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingMultisigExecutionEvent pending) async {
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
@@ -29,7 +39,22 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
   }
 
   removePendingMultisigExecution(ref, pending.id);
-  await reconcileIndexedExecution(ref, msig, pending);
+  invalidateMultisigProposals(ref, msig);
+
+  final hash = pending.extrinsicHash;
+  if (hash != null) {
+    try {
+      final indexed = await ref.read(chainHistoryServiceProvider).searchExecutedByExtrinsicHash(extrinsicHash: hash);
+      if (indexed != null) {
+        await reconcileIndexedExecution(ref, msig, indexed);
+        return true;
+      }
+    } catch (e) {
+      quantusDebugPrint('[MultisigExecutionPoller] soft timeout reconcile error: $e');
+    }
+  }
+
+  invalidateAccountBalances(ref, {pending.executorId, msig.accountId});
   return true;
 }
 

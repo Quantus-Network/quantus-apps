@@ -7,6 +7,7 @@ import 'package:resonance_network_wallet/models/combined_transactions_list.dart'
 import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/providers/pending_multisig_proposals_provider.dart';
 import 'package:resonance_network_wallet/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/components/loader.dart';
@@ -184,6 +185,7 @@ class MultisigActivitySection extends ConsumerWidget {
       pendingTransactions: data.pendingTransactions,
       pendingMultisigCreations: data.pendingMultisigCreations,
       pendingMultisigProposals: pendingProposalsExcludingMultisig(data.pendingMultisigProposals, msig.accountId),
+      pendingMultisigExecutions: pendingExecutionsExcludingMultisig(data.pendingMultisigExecutions, msig.accountId),
       scheduledReversibleTransfers: data.scheduledReversibleTransfers,
       otherTransfers: data.otherTransfers,
     );

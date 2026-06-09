@@ -132,6 +132,7 @@ void main() {
         pendingTransactions: [],
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
+        pendingMultisigExecutions: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [],
       );
@@ -151,6 +152,7 @@ void main() {
         pendingTransactions: [],
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
+        pendingMultisigExecutions: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [indexed],
       );
@@ -183,12 +185,96 @@ void main() {
         pendingTransactions: [],
         pendingMultisigCreations: [],
         pendingMultisigProposals: [pending],
+        pendingMultisigExecutions: [],
         scheduledReversibleTransfers: [],
         otherTransfers: [indexedWithHash],
       );
 
       expect(result, hasLength(1));
       expect(result.first, same(indexedWithHash));
+    });
+
+    PendingMultisigExecutionEvent pendingExecution({
+      String id = 'pending_execution_1',
+      String executorId = 'executor',
+      String multisigAddress = 'multisig',
+      String recipient = 'recipient',
+      BigInt? amount,
+      BigInt? fee,
+      String? extrinsicHash,
+    }) {
+      return PendingMultisigExecutionEvent(
+        tempId: id,
+        multisigAddress: multisigAddress,
+        proposalId: 5,
+        executorId: executorId,
+        recipient: recipient,
+        amount: amount ?? BigInt.from(2000),
+        fee: fee ?? BigInt.from(18),
+        extrinsicHash: extrinsicHash,
+      );
+    }
+
+    MultisigProposalExecutedEvent indexedExecution({
+      String executorId = 'executor',
+      String multisigAddress = 'multisig',
+      String recipient = 'recipient',
+      BigInt? amount,
+      String? extrinsicHash,
+    }) {
+      return MultisigProposalExecutedEvent(
+        id: 'ae-ms-exec-1',
+        executorId: executorId,
+        multisigAddress: multisigAddress,
+        recipient: recipient,
+        amount: amount ?? BigInt.from(2000),
+        proposalId: 5,
+        approvers: const ['signer1', 'signer2'],
+        result: 'Ok',
+        fee: BigInt.from(18),
+        timestamp: DateTime.utc(2026, 6, 3),
+        blockNumber: 1,
+        blockHash: '0xabc',
+        extrinsicHash: extrinsicHash,
+      );
+    }
+
+    test('includes pending execution for executor feed', () {
+      final service = container.read(transactionServiceProvider);
+      final pending = pendingExecution();
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [],
+        pendingMultisigExecutions: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, same(pending));
+    });
+
+    test('replaces pending execution with indexed event for same activity key', () {
+      final service = container.read(transactionServiceProvider);
+      const hash = '0xexec-hash';
+      final pending = pendingExecution(extrinsicHash: hash);
+      final indexed = indexedExecution(extrinsicHash: hash);
+
+      final result = service.combineAndDeduplicateTransactions(
+        pendingCancellationIds: {},
+        pendingTransactions: [],
+        pendingMultisigCreations: [],
+        pendingMultisigProposals: [],
+        pendingMultisigExecutions: [pending],
+        scheduledReversibleTransfers: [],
+        otherTransfers: [indexed],
+      );
+
+      expect(result, hasLength(1));
+      expect(result.first, isA<MultisigProposalExecutedEvent>());
     });
   });
 }

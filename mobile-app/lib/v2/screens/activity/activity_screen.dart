@@ -110,6 +110,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 pendingTransactions: data.pendingTransactions,
                 pendingMultisigCreations: data.pendingMultisigCreations,
                 pendingMultisigProposals: data.pendingMultisigProposals,
+                pendingMultisigExecutions: data.pendingMultisigExecutions,
                 scheduledReversibleTransfers: data.scheduledReversibleTransfers,
                 otherTransfers: data.otherTransfers,
               );

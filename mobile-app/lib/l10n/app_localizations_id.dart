@@ -502,6 +502,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityTxProposalApproved => 'Proposal disetujui';
 
   @override
+  String get activityTxProposalExecuted => 'Proposal dieksekusi';
+
+  @override
   String get multisigApproveButton => 'Setujui';
 
   @override
@@ -946,6 +949,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalApproved => 'Proposal disetujui';
+
+  @override
+  String get activityDetailTitleProposalExecuted => 'Proposal dieksekusi';
+
+  @override
+  String get activityDetailTitleExecuting => 'Mengeksekusi proposal';
 
   @override
   String get activityDetailTitleProposing => 'Mengajukan';
