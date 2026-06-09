@@ -335,6 +335,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigStatusApproved => 'DISETUJUI';
 
   @override
+  String get multisigStatusProposed => 'DIAJUKAN';
+
+  @override
   String get multisigStatusExpired => 'KEDALUWARSA';
 
   @override
@@ -444,7 +447,23 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigProposalSigningSoonNote => 'Penandatanganan akan segera tersedia.';
 
   @override
-  String get multisigProposalAlreadySignedNote => 'Anda sudah menandatangani proposal ini.';
+  String get multisigProposalApprovingLabel => 'Menyetujui…';
+
+  @override
+  String get multisigProposalApprovingNote => 'Persetujuan Anda sedang dikonfirmasi di chain.';
+
+  @override
+  String get multisigApproveUnavailableNote => 'Proposal ini tidak dapat disetujui lagi.';
+
+  @override
+  String get activityTxApproving => 'Menyetujui…';
+
+  @override
+  String get multisigApprovalTimeoutToast =>
+      'Konfirmasi persetujuan membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
+  String get multisigProposalAlreadySignedNote => 'Anda sudah menyetujui proposal ini.';
 
   @override
   String get multisigProposalProposerLabel => 'PENGAJU';
@@ -475,6 +494,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityTxProposalCreated => 'Proposal dibuat';
+
+  @override
+  String get activityTxProposalApproved => 'Proposal disetujui';
 
   @override
   String get multisigApproveButton => 'Setujui';
@@ -881,6 +903,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleProposalCreated => 'Proposal dibuat';
+
+  @override
+  String get activityDetailTitleProposalApproved => 'Proposal disetujui';
 
   @override
   String get activityDetailTitleProposing => 'Mengajukan';

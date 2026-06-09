@@ -61,6 +61,27 @@ $indexerFields
 ${MultisigProposalGraphql.fields}      }
     }''';
 
+  /// Nested selection for `account_event.multisigSignerApproved`.
+  static const String signerApprovedAccountEventSelection =
+      '''    multisigSignerApproved {
+      id
+      fee
+      approvals_count
+      timestamp
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+      }
+      approver {
+        id
+      }
+      proposal {
+${MultisigProposalGraphql.fields}      }
+    }''';
+
   static const String byPkQuery =
       r'''
     query MultisigByPk($id: String!) {
@@ -151,6 +172,9 @@ class MultisigProposalGraphql {
       }
       multisig {
         id
+        threshold
+        signers
+        nonce
       }
       createdAtBlock {
         height

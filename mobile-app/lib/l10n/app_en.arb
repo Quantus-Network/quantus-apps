@@ -464,7 +464,11 @@
     },
     "multisigStatusApproved": "APPROVED",
     "@multisigStatusApproved": {
-      "description": "Proposal status chip when approved or executed"
+      "description": "Proposal status chip when the current signer has approved"
+    },
+    "multisigStatusProposed": "PROPOSED",
+    "@multisigStatusProposed": {
+      "description": "Proposal status chip when the current signer has not approved yet"
     },
     "multisigStatusExpired": "EXPIRED",
     "@multisigStatusExpired": {
@@ -625,9 +629,29 @@
     },
     "multisigProposalSigningSoonNote": "Signing will be available soon.",
     "@multisigProposalSigningSoonNote": {
-      "description": "Note shown under the disabled sign button"
+      "description": "Deprecated; kept for generated l10n compatibility"
     },
-    "multisigProposalAlreadySignedNote": "You've already signed this proposal.",
+    "multisigProposalApprovingLabel": "Approving…",
+    "@multisigProposalApprovingLabel": {
+      "description": "Disabled approve button while approval is pending indexer confirmation"
+    },
+    "multisigProposalApprovingNote": "Your approval is being confirmed on-chain.",
+    "@multisigProposalApprovingNote": {
+      "description": "Note under the button while approval is pending"
+    },
+    "multisigApproveUnavailableNote": "This proposal can no longer be approved.",
+    "@multisigApproveUnavailableNote": {
+      "description": "Note when approve is unavailable (expired or closed)"
+    },
+    "activityTxApproving": "Approving…",
+    "@activityTxApproving": {
+      "description": "Trailing label on proposal row while approval is pending"
+    },
+    "multisigApprovalTimeoutToast": "Approval confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigApprovalTimeoutToast": {
+      "description": "Toast when approval indexer polling times out"
+    },
+    "multisigProposalAlreadySignedNote": "You've already approved this proposal.",
     "@multisigProposalAlreadySignedNote": {
       "description": "Note shown when the current member already approved"
     },
@@ -670,6 +694,10 @@
     "activityTxProposalCreated": "Proposal created",
     "@activityTxProposalCreated": {
       "description": "Activity row label for a confirmed multisig proposal creation on the proposer account"
+    },
+    "activityTxProposalApproved": "Proposal approved",
+    "@activityTxProposalApproved": {
+      "description": "Activity row label for a confirmed multisig proposal approval on the approver account"
     },
     "multisigApproveButton": "Approve",
     "@multisigApproveButton": {
@@ -1271,6 +1299,10 @@
     "activityDetailTitleProposalCreated": "Proposal created",
     "@activityDetailTitleProposalCreated": {
       "description": "Detail sheet title for a confirmed multisig proposal creation"
+    },
+    "activityDetailTitleProposalApproved": "Proposal approved",
+    "@activityDetailTitleProposalApproved": {
+      "description": "Detail sheet title for a confirmed multisig proposal approval"
     },
     "activityDetailTitleProposing": "Proposing",
     "@activityDetailTitleProposing": {
