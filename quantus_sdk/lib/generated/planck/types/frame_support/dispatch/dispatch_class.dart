@@ -8,10 +8,7 @@ enum DispatchClass {
   operational('Operational', 1),
   mandatory('Mandatory', 2);
 
-  const DispatchClass(
-    this.variantName,
-    this.codecIndex,
-  );
+  const DispatchClass(this.variantName, this.codecIndex);
 
   factory DispatchClass.decode(_i1.Input input) {
     return codec.decode(input);
@@ -49,13 +46,7 @@ class $DispatchClassCodec with _i1.Codec<DispatchClass> {
   }
 
   @override
-  void encodeTo(
-    DispatchClass value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(DispatchClass value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

@@ -3,8 +3,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 
 typedef WormholeProofRecorderExtension = dynamic;
 
-class WormholeProofRecorderExtensionCodec
-    with _i1.Codec<WormholeProofRecorderExtension> {
+class WormholeProofRecorderExtensionCodec with _i1.Codec<WormholeProofRecorderExtension> {
   const WormholeProofRecorderExtensionCodec();
 
   @override
@@ -13,14 +12,8 @@ class WormholeProofRecorderExtensionCodec
   }
 
   @override
-  void encodeTo(
-    WormholeProofRecorderExtension value,
-    _i1.Output output,
-  ) {
-    _i1.NullCodec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(WormholeProofRecorderExtension value, _i1.Output output) {
+    _i1.NullCodec.codec.encodeTo(value, output);
   }
 
   @override

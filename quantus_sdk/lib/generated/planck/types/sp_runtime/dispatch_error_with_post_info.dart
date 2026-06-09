@@ -7,10 +7,7 @@ import '../frame_support/dispatch/post_dispatch_info.dart' as _i2;
 import 'dispatch_error.dart' as _i3;
 
 class DispatchErrorWithPostInfo {
-  const DispatchErrorWithPostInfo({
-    required this.postInfo,
-    required this.error,
-  });
+  const DispatchErrorWithPostInfo({required this.postInfo, required this.error});
 
   factory DispatchErrorWithPostInfo.decode(_i1.Input input) {
     return codec.decode(input);
@@ -22,52 +19,30 @@ class DispatchErrorWithPostInfo {
   /// DispatchError
   final _i3.DispatchError error;
 
-  static const $DispatchErrorWithPostInfoCodec codec =
-      $DispatchErrorWithPostInfoCodec();
+  static const $DispatchErrorWithPostInfoCodec codec = $DispatchErrorWithPostInfoCodec();
 
   _i4.Uint8List encode() {
     return codec.encode(this);
   }
 
-  Map<String, Map<String, dynamic>> toJson() => {
-        'postInfo': postInfo.toJson(),
-        'error': error.toJson(),
-      };
+  Map<String, Map<String, dynamic>> toJson() => {'postInfo': postInfo.toJson(), 'error': error.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is DispatchErrorWithPostInfo &&
-          other.postInfo == postInfo &&
-          other.error == error;
+      identical(this, other) ||
+      other is DispatchErrorWithPostInfo && other.postInfo == postInfo && other.error == error;
 
   @override
-  int get hashCode => Object.hash(
-        postInfo,
-        error,
-      );
+  int get hashCode => Object.hash(postInfo, error);
 }
 
-class $DispatchErrorWithPostInfoCodec
-    with _i1.Codec<DispatchErrorWithPostInfo> {
+class $DispatchErrorWithPostInfoCodec with _i1.Codec<DispatchErrorWithPostInfo> {
   const $DispatchErrorWithPostInfoCodec();
 
   @override
-  void encodeTo(
-    DispatchErrorWithPostInfo obj,
-    _i1.Output output,
-  ) {
-    _i2.PostDispatchInfo.codec.encodeTo(
-      obj.postInfo,
-      output,
-    );
-    _i3.DispatchError.codec.encodeTo(
-      obj.error,
-      output,
-    );
+  void encodeTo(DispatchErrorWithPostInfo obj, _i1.Output output) {
+    _i2.PostDispatchInfo.codec.encodeTo(obj.postInfo, output);
+    _i3.DispatchError.codec.encodeTo(obj.error, output);
   }
 
   @override

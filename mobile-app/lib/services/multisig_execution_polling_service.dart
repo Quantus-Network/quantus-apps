@@ -6,7 +6,8 @@ import 'package:resonance_network_wallet/providers/pending_multisig_executions_p
 import 'package:resonance_network_wallet/services/extrinsic_indexer_polling_service.dart';
 import 'package:resonance_network_wallet/services/multisig_execution_reconciliation.dart';
 
-typedef MultisigExecutionPollingService = ExtrinsicIndexerPollingService<PendingMultisigExecutionEvent, MultisigAccount>;
+typedef MultisigExecutionPollingService =
+    ExtrinsicIndexerPollingService<PendingMultisigExecutionEvent, MultisigAccount>;
 
 Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMultisigExecutionEvent pending) async {
   final multisigService = ref.read(multisigServiceProvider);

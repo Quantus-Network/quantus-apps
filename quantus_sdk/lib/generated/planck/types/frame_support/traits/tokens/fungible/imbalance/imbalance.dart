@@ -22,12 +22,7 @@ class Imbalance {
   Map<String, BigInt> toJson() => {'amount': amount};
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is Imbalance && other.amount == amount;
+  bool operator ==(Object other) => identical(this, other) || other is Imbalance && other.amount == amount;
 
   @override
   int get hashCode => amount.hashCode;
@@ -37,14 +32,8 @@ class $ImbalanceCodec with _i1.Codec<Imbalance> {
   const $ImbalanceCodec();
 
   @override
-  void encodeTo(
-    Imbalance obj,
-    _i1.Output output,
-  ) {
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
+  void encodeTo(Imbalance obj, _i1.Output output) {
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
   }
 
   @override

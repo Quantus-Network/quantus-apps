@@ -19,10 +19,7 @@ enum TrieError {
   rootMismatch('RootMismatch', 12),
   decodeError('DecodeError', 13);
 
-  const TrieError(
-    this.variantName,
-    this.codecIndex,
-  );
+  const TrieError(this.variantName, this.codecIndex);
 
   factory TrieError.decode(_i1.Input input) {
     return codec.decode(input);
@@ -82,13 +79,7 @@ class $TrieErrorCodec with _i1.Codec<TrieError> {
   }
 
   @override
-  void encodeTo(
-    TrieError value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(TrieError value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

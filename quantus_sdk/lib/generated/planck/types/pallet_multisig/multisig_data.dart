@@ -4,8 +4,7 @@ import 'dart:typed_data' as _i4;
 import 'package:polkadart/scale_codec.dart' as _i1;
 import 'package:quiver/collection.dart' as _i5;
 
-import '../bounded_collections/bounded_btree_map/bounded_b_tree_map.dart'
-    as _i3;
+import '../bounded_collections/bounded_btree_map/bounded_b_tree_map.dart' as _i3;
 import '../sp_core/crypto/account_id32.dart' as _i2;
 import '../tuples.dart' as _i6;
 
@@ -44,95 +43,51 @@ class MultisigData {
   }
 
   Map<String, dynamic> toJson() => {
-        'creator': creator.toList(),
-        'signers': signers.map((value) => value.toList()).toList(),
-        'threshold': threshold,
-        'proposalNonce': proposalNonce,
-        'proposalsPerSigner': proposalsPerSigner
-            .map((value) => [
-                  value.value0.toList(),
-                  value.value1,
-                ])
-            .toList(),
-      };
+    'creator': creator.toList(),
+    'signers': signers.map((value) => value.toList()).toList(),
+    'threshold': threshold,
+    'proposalNonce': proposalNonce,
+    'proposalsPerSigner': proposalsPerSigner.map((value) => [value.value0.toList(), value.value1]).toList(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is MultisigData &&
-          _i5.listsEqual(
-            other.creator,
-            creator,
-          ) &&
-          _i5.listsEqual(
-            other.signers,
-            signers,
-          ) &&
+          _i5.listsEqual(other.creator, creator) &&
+          _i5.listsEqual(other.signers, signers) &&
           other.threshold == threshold &&
           other.proposalNonce == proposalNonce &&
           other.proposalsPerSigner == proposalsPerSigner;
 
   @override
-  int get hashCode => Object.hash(
-        creator,
-        signers,
-        threshold,
-        proposalNonce,
-        proposalsPerSigner,
-      );
+  int get hashCode => Object.hash(creator, signers, threshold, proposalNonce, proposalsPerSigner);
 }
 
 class $MultisigDataCodec with _i1.Codec<MultisigData> {
   const $MultisigDataCodec();
 
   @override
-  void encodeTo(
-    MultisigData obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.creator,
-      output,
-    );
-    const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).encodeTo(
-      obj.signers,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.threshold,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.proposalNonce,
-      output,
-    );
+  void encodeTo(MultisigData obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.creator, output);
+    const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).encodeTo(obj.signers, output);
+    _i1.U32Codec.codec.encodeTo(obj.threshold, output);
+    _i1.U32Codec.codec.encodeTo(obj.proposalNonce, output);
     const _i1.SequenceCodec<_i6.Tuple2<_i2.AccountId32, int>>(
-        _i6.Tuple2Codec<_i2.AccountId32, int>(
-      _i2.AccountId32Codec(),
-      _i1.U32Codec.codec,
-    )).encodeTo(
-      obj.proposalsPerSigner,
-      output,
-    );
+      _i6.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i1.U32Codec.codec),
+    ).encodeTo(obj.proposalsPerSigner, output);
   }
 
   @override
   MultisigData decode(_i1.Input input) {
     return MultisigData(
       creator: const _i1.U8ArrayCodec(32).decode(input),
-      signers: const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec())
-          .decode(input),
+      signers: const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).decode(input),
       threshold: _i1.U32Codec.codec.decode(input),
       proposalNonce: _i1.U32Codec.codec.decode(input),
-      proposalsPerSigner:
-          const _i1.SequenceCodec<_i6.Tuple2<_i2.AccountId32, int>>(
-              _i6.Tuple2Codec<_i2.AccountId32, int>(
-        _i2.AccountId32Codec(),
-        _i1.U32Codec.codec,
-      )).decode(input),
+      proposalsPerSigner: const _i1.SequenceCodec<_i6.Tuple2<_i2.AccountId32, int>>(
+        _i6.Tuple2Codec<_i2.AccountId32, int>(_i2.AccountId32Codec(), _i1.U32Codec.codec),
+      ).decode(input),
     );
   }
 
@@ -140,13 +95,10 @@ class $MultisigDataCodec with _i1.Codec<MultisigData> {
   int sizeHint(MultisigData obj) {
     int size = 0;
     size = size + const _i2.AccountId32Codec().sizeHint(obj.creator);
-    size = size +
-        const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec())
-            .sizeHint(obj.signers);
+    size = size + const _i1.SequenceCodec<_i2.AccountId32>(_i2.AccountId32Codec()).sizeHint(obj.signers);
     size = size + _i1.U32Codec.codec.sizeHint(obj.threshold);
     size = size + _i1.U32Codec.codec.sizeHint(obj.proposalNonce);
-    size = size +
-        const _i3.BoundedBTreeMapCodec().sizeHint(obj.proposalsPerSigner);
+    size = size + const _i3.BoundedBTreeMapCodec().sizeHint(obj.proposalsPerSigner);
     return size;
   }
 }

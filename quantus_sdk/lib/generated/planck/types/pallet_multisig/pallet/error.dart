@@ -73,8 +73,7 @@ enum Error {
   proposalNotApproved('ProposalNotApproved', 21),
 
   /// Call is not allowed for high-security multisig
-  callNotAllowedForHighSecurityMultisig(
-      'CallNotAllowedForHighSecurityMultisig', 22),
+  callNotAllowedForHighSecurityMultisig('CallNotAllowedForHighSecurityMultisig', 22),
 
   /// Proposal nonce exhausted (u32::MAX reached)
   proposalNonceExhausted('ProposalNonceExhausted', 23),
@@ -82,10 +81,7 @@ enum Error {
   /// Call weight exceeds MaxInnerCallWeight limit
   callWeightExceedsLimit('CallWeightExceedsLimit', 24);
 
-  const Error(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Error(this.variantName, this.codecIndex);
 
   factory Error.decode(_i1.Input input) {
     return codec.decode(input);
@@ -167,13 +163,7 @@ class $ErrorCodec with _i1.Codec<Error> {
   }
 
   @override
-  void encodeTo(
-    Error value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Error value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

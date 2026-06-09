@@ -7,10 +7,7 @@ enum Mode {
   disabled('Disabled', 0),
   enabled('Enabled', 1);
 
-  const Mode(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Mode(this.variantName, this.codecIndex);
 
   factory Mode.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $ModeCodec with _i1.Codec<Mode> {
   }
 
   @override
-  void encodeTo(
-    Mode value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Mode value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

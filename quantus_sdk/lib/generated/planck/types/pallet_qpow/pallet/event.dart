@@ -39,11 +39,7 @@ class $Event {
     required _i3.U512 difficulty,
     required _i3.U512 hashAchieved,
   }) {
-    return ProofSubmitted(
-      nonce: nonce,
-      difficulty: difficulty,
-      hashAchieved: hashAchieved,
-    );
+    return ProofSubmitted(nonce: nonce, difficulty: difficulty, hashAchieved: hashAchieved);
   }
 
   DifficultyAdjusted difficultyAdjusted({
@@ -76,10 +72,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case ProofSubmitted:
         (value as ProofSubmitted).encodeTo(output);
@@ -88,8 +81,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as DifficultyAdjusted).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -101,18 +93,13 @@ class $EventCodec with _i1.Codec<Event> {
       case DifficultyAdjusted:
         return (value as DifficultyAdjusted)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 class ProofSubmitted extends Event {
-  const ProofSubmitted({
-    required this.nonce,
-    required this.difficulty,
-    required this.hashAchieved,
-  });
+  const ProofSubmitted({required this.nonce, required this.difficulty, required this.hashAchieved});
 
   factory ProofSubmitted._decode(_i1.Input input) {
     return ProofSubmitted(
@@ -133,12 +120,12 @@ class ProofSubmitted extends Event {
 
   @override
   Map<String, Map<String, List<dynamic>>> toJson() => {
-        'ProofSubmitted': {
-          'nonce': nonce.toList(),
-          'difficulty': difficulty.toList(),
-          'hashAchieved': hashAchieved.toList(),
-        }
-      };
+    'ProofSubmitted': {
+      'nonce': nonce.toList(),
+      'difficulty': difficulty.toList(),
+      'hashAchieved': hashAchieved.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -149,58 +136,26 @@ class ProofSubmitted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(64).encodeTo(
-      nonce,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      difficulty,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      hashAchieved,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(64).encodeTo(nonce, output);
+    const _i1.U64ArrayCodec(8).encodeTo(difficulty, output);
+    const _i1.U64ArrayCodec(8).encodeTo(hashAchieved, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProofSubmitted &&
-          _i4.listsEqual(
-            other.nonce,
-            nonce,
-          ) &&
-          _i4.listsEqual(
-            other.difficulty,
-            difficulty,
-          ) &&
-          _i4.listsEqual(
-            other.hashAchieved,
-            hashAchieved,
-          );
+          _i4.listsEqual(other.nonce, nonce) &&
+          _i4.listsEqual(other.difficulty, difficulty) &&
+          _i4.listsEqual(other.hashAchieved, hashAchieved);
 
   @override
-  int get hashCode => Object.hash(
-        nonce,
-        difficulty,
-        hashAchieved,
-      );
+  int get hashCode => Object.hash(nonce, difficulty, hashAchieved);
 }
 
 class DifficultyAdjusted extends Event {
-  const DifficultyAdjusted({
-    required this.oldDifficulty,
-    required this.newDifficulty,
-    required this.observedBlockTime,
-  });
+  const DifficultyAdjusted({required this.oldDifficulty, required this.newDifficulty, required this.observedBlockTime});
 
   factory DifficultyAdjusted._decode(_i1.Input input) {
     return DifficultyAdjusted(
@@ -221,12 +176,12 @@ class DifficultyAdjusted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DifficultyAdjusted': {
-          'oldDifficulty': oldDifficulty.toList(),
-          'newDifficulty': newDifficulty.toList(),
-          'observedBlockTime': observedBlockTime,
-        }
-      };
+    'DifficultyAdjusted': {
+      'oldDifficulty': oldDifficulty.toList(),
+      'newDifficulty': newDifficulty.toList(),
+      'observedBlockTime': observedBlockTime,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -237,45 +192,20 @@ class DifficultyAdjusted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      oldDifficulty,
-      output,
-    );
-    const _i1.U64ArrayCodec(8).encodeTo(
-      newDifficulty,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      observedBlockTime,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U64ArrayCodec(8).encodeTo(oldDifficulty, output);
+    const _i1.U64ArrayCodec(8).encodeTo(newDifficulty, output);
+    _i1.U64Codec.codec.encodeTo(observedBlockTime, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DifficultyAdjusted &&
-          _i4.listsEqual(
-            other.oldDifficulty,
-            oldDifficulty,
-          ) &&
-          _i4.listsEqual(
-            other.newDifficulty,
-            newDifficulty,
-          ) &&
+          _i4.listsEqual(other.oldDifficulty, oldDifficulty) &&
+          _i4.listsEqual(other.newDifficulty, newDifficulty) &&
           other.observedBlockTime == observedBlockTime;
 
   @override
-  int get hashCode => Object.hash(
-        oldDifficulty,
-        newDifficulty,
-        observedBlockTime,
-      );
+  int get hashCode => Object.hash(oldDifficulty, newDifficulty, observedBlockTime);
 }

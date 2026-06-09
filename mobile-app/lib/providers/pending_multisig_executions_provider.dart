@@ -25,9 +25,7 @@ PendingMultisigExecutionEvent? findPendingExecutionForProposal(
   String executorId,
 ) {
   for (final event in all) {
-    if (event.multisigAddress == multisigAddress &&
-        event.proposalId == proposalId &&
-        event.executorId == executorId) {
+    if (event.multisigAddress == multisigAddress && event.proposalId == proposalId && event.executorId == executorId) {
       return event;
     }
   }

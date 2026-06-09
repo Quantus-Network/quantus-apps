@@ -12,14 +12,8 @@ class FixedI64Codec with _i1.Codec<FixedI64> {
   }
 
   @override
-  void encodeTo(
-    FixedI64 value,
-    _i1.Output output,
-  ) {
-    _i1.I64Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(FixedI64 value, _i1.Output output) {
+    _i1.I64Codec.codec.encodeTo(value, output);
   }
 
   @override

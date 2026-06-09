@@ -39,14 +39,8 @@ class $Event {
     return RecoveryCreated(account: account);
   }
 
-  RecoveryInitiated recoveryInitiated({
-    required _i3.AccountId32 lostAccount,
-    required _i3.AccountId32 rescuerAccount,
-  }) {
-    return RecoveryInitiated(
-      lostAccount: lostAccount,
-      rescuerAccount: rescuerAccount,
-    );
+  RecoveryInitiated recoveryInitiated({required _i3.AccountId32 lostAccount, required _i3.AccountId32 rescuerAccount}) {
+    return RecoveryInitiated(lostAccount: lostAccount, rescuerAccount: rescuerAccount);
   }
 
   RecoveryVouched recoveryVouched({
@@ -54,31 +48,15 @@ class $Event {
     required _i3.AccountId32 rescuerAccount,
     required _i3.AccountId32 sender,
   }) {
-    return RecoveryVouched(
-      lostAccount: lostAccount,
-      rescuerAccount: rescuerAccount,
-      sender: sender,
-    );
+    return RecoveryVouched(lostAccount: lostAccount, rescuerAccount: rescuerAccount, sender: sender);
   }
 
-  RecoveryClosed recoveryClosed({
-    required _i3.AccountId32 lostAccount,
-    required _i3.AccountId32 rescuerAccount,
-  }) {
-    return RecoveryClosed(
-      lostAccount: lostAccount,
-      rescuerAccount: rescuerAccount,
-    );
+  RecoveryClosed recoveryClosed({required _i3.AccountId32 lostAccount, required _i3.AccountId32 rescuerAccount}) {
+    return RecoveryClosed(lostAccount: lostAccount, rescuerAccount: rescuerAccount);
   }
 
-  AccountRecovered accountRecovered({
-    required _i3.AccountId32 lostAccount,
-    required _i3.AccountId32 rescuerAccount,
-  }) {
-    return AccountRecovered(
-      lostAccount: lostAccount,
-      rescuerAccount: rescuerAccount,
-    );
+  AccountRecovered accountRecovered({required _i3.AccountId32 lostAccount, required _i3.AccountId32 rescuerAccount}) {
+    return AccountRecovered(lostAccount: lostAccount, rescuerAccount: rescuerAccount);
   }
 
   RecoveryRemoved recoveryRemoved({required _i3.AccountId32 lostAccount}) {
@@ -91,12 +69,7 @@ class $Event {
     required BigInt oldDeposit,
     required BigInt newDeposit,
   }) {
-    return DepositPoked(
-      who: who,
-      kind: kind,
-      oldDeposit: oldDeposit,
-      newDeposit: newDeposit,
-    );
+    return DepositPoked(who: who, kind: kind, oldDeposit: oldDeposit, newDeposit: newDeposit);
   }
 }
 
@@ -127,10 +100,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case RecoveryCreated:
         (value as RecoveryCreated).encodeTo(output);
@@ -154,8 +124,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as DepositPoked).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -177,8 +146,7 @@ class $EventCodec with _i1.Codec<Event> {
       case DepositPoked:
         return (value as DepositPoked)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -196,8 +164,8 @@ class RecoveryCreated extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'RecoveryCreated': {'account': account.toList()}
-      };
+    'RecoveryCreated': {'account': account.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -206,27 +174,13 @@ class RecoveryCreated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RecoveryCreated &&
-          _i5.listsEqual(
-            other.account,
-            account,
-          );
+      identical(this, other) || other is RecoveryCreated && _i5.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
@@ -234,10 +188,7 @@ class RecoveryCreated extends Event {
 
 /// A recovery process has been initiated for lost account by rescuer account.
 class RecoveryInitiated extends Event {
-  const RecoveryInitiated({
-    required this.lostAccount,
-    required this.rescuerAccount,
-  });
+  const RecoveryInitiated({required this.lostAccount, required this.rescuerAccount});
 
   factory RecoveryInitiated._decode(_i1.Input input) {
     return RecoveryInitiated(
@@ -254,11 +205,8 @@ class RecoveryInitiated extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'RecoveryInitiated': {
-          'lostAccount': lostAccount.toList(),
-          'rescuerAccount': rescuerAccount.toList(),
-        }
-      };
+    'RecoveryInitiated': {'lostAccount': lostAccount.toList(), 'rescuerAccount': rescuerAccount.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -268,50 +216,25 @@ class RecoveryInitiated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      lostAccount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      rescuerAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(lostAccount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(rescuerAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is RecoveryInitiated &&
-          _i5.listsEqual(
-            other.lostAccount,
-            lostAccount,
-          ) &&
-          _i5.listsEqual(
-            other.rescuerAccount,
-            rescuerAccount,
-          );
+          _i5.listsEqual(other.lostAccount, lostAccount) &&
+          _i5.listsEqual(other.rescuerAccount, rescuerAccount);
 
   @override
-  int get hashCode => Object.hash(
-        lostAccount,
-        rescuerAccount,
-      );
+  int get hashCode => Object.hash(lostAccount, rescuerAccount);
 }
 
 /// A recovery process for lost account by rescuer account has been vouched for by sender.
 class RecoveryVouched extends Event {
-  const RecoveryVouched({
-    required this.lostAccount,
-    required this.rescuerAccount,
-    required this.sender,
-  });
+  const RecoveryVouched({required this.lostAccount, required this.rescuerAccount, required this.sender});
 
   factory RecoveryVouched._decode(_i1.Input input) {
     return RecoveryVouched(
@@ -332,12 +255,12 @@ class RecoveryVouched extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'RecoveryVouched': {
-          'lostAccount': lostAccount.toList(),
-          'rescuerAccount': rescuerAccount.toList(),
-          'sender': sender.toList(),
-        }
-      };
+    'RecoveryVouched': {
+      'lostAccount': lostAccount.toList(),
+      'rescuerAccount': rescuerAccount.toList(),
+      'sender': sender.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -348,58 +271,27 @@ class RecoveryVouched extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      lostAccount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      rescuerAccount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      sender,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(lostAccount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(rescuerAccount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(sender, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is RecoveryVouched &&
-          _i5.listsEqual(
-            other.lostAccount,
-            lostAccount,
-          ) &&
-          _i5.listsEqual(
-            other.rescuerAccount,
-            rescuerAccount,
-          ) &&
-          _i5.listsEqual(
-            other.sender,
-            sender,
-          );
+          _i5.listsEqual(other.lostAccount, lostAccount) &&
+          _i5.listsEqual(other.rescuerAccount, rescuerAccount) &&
+          _i5.listsEqual(other.sender, sender);
 
   @override
-  int get hashCode => Object.hash(
-        lostAccount,
-        rescuerAccount,
-        sender,
-      );
+  int get hashCode => Object.hash(lostAccount, rescuerAccount, sender);
 }
 
 /// A recovery process for lost account by rescuer account has been closed.
 class RecoveryClosed extends Event {
-  const RecoveryClosed({
-    required this.lostAccount,
-    required this.rescuerAccount,
-  });
+  const RecoveryClosed({required this.lostAccount, required this.rescuerAccount});
 
   factory RecoveryClosed._decode(_i1.Input input) {
     return RecoveryClosed(
@@ -416,11 +308,8 @@ class RecoveryClosed extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'RecoveryClosed': {
-          'lostAccount': lostAccount.toList(),
-          'rescuerAccount': rescuerAccount.toList(),
-        }
-      };
+    'RecoveryClosed': {'lostAccount': lostAccount.toList(), 'rescuerAccount': rescuerAccount.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -430,49 +319,25 @@ class RecoveryClosed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      lostAccount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      rescuerAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(lostAccount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(rescuerAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is RecoveryClosed &&
-          _i5.listsEqual(
-            other.lostAccount,
-            lostAccount,
-          ) &&
-          _i5.listsEqual(
-            other.rescuerAccount,
-            rescuerAccount,
-          );
+          _i5.listsEqual(other.lostAccount, lostAccount) &&
+          _i5.listsEqual(other.rescuerAccount, rescuerAccount);
 
   @override
-  int get hashCode => Object.hash(
-        lostAccount,
-        rescuerAccount,
-      );
+  int get hashCode => Object.hash(lostAccount, rescuerAccount);
 }
 
 /// Lost account has been successfully recovered by rescuer account.
 class AccountRecovered extends Event {
-  const AccountRecovered({
-    required this.lostAccount,
-    required this.rescuerAccount,
-  });
+  const AccountRecovered({required this.lostAccount, required this.rescuerAccount});
 
   factory AccountRecovered._decode(_i1.Input input) {
     return AccountRecovered(
@@ -489,11 +354,8 @@ class AccountRecovered extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'AccountRecovered': {
-          'lostAccount': lostAccount.toList(),
-          'rescuerAccount': rescuerAccount.toList(),
-        }
-      };
+    'AccountRecovered': {'lostAccount': lostAccount.toList(), 'rescuerAccount': rescuerAccount.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -503,41 +365,20 @@ class AccountRecovered extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      lostAccount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      rescuerAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(lostAccount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(rescuerAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is AccountRecovered &&
-          _i5.listsEqual(
-            other.lostAccount,
-            lostAccount,
-          ) &&
-          _i5.listsEqual(
-            other.rescuerAccount,
-            rescuerAccount,
-          );
+          _i5.listsEqual(other.lostAccount, lostAccount) &&
+          _i5.listsEqual(other.rescuerAccount, rescuerAccount);
 
   @override
-  int get hashCode => Object.hash(
-        lostAccount,
-        rescuerAccount,
-      );
+  int get hashCode => Object.hash(lostAccount, rescuerAccount);
 }
 
 /// A recovery process has been removed for an account.
@@ -545,8 +386,7 @@ class RecoveryRemoved extends Event {
   const RecoveryRemoved({required this.lostAccount});
 
   factory RecoveryRemoved._decode(_i1.Input input) {
-    return RecoveryRemoved(
-        lostAccount: const _i1.U8ArrayCodec(32).decode(input));
+    return RecoveryRemoved(lostAccount: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -554,8 +394,8 @@ class RecoveryRemoved extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'RecoveryRemoved': {'lostAccount': lostAccount.toList()}
-      };
+    'RecoveryRemoved': {'lostAccount': lostAccount.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -564,27 +404,13 @@ class RecoveryRemoved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      lostAccount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(lostAccount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is RecoveryRemoved &&
-          _i5.listsEqual(
-            other.lostAccount,
-            lostAccount,
-          );
+      identical(this, other) || other is RecoveryRemoved && _i5.listsEqual(other.lostAccount, lostAccount);
 
   @override
   int get hashCode => lostAccount.hashCode;
@@ -592,12 +418,7 @@ class RecoveryRemoved extends Event {
 
 /// A deposit has been updated.
 class DepositPoked extends Event {
-  const DepositPoked({
-    required this.who,
-    required this.kind,
-    required this.oldDeposit,
-    required this.newDeposit,
-  });
+  const DepositPoked({required this.who, required this.kind, required this.oldDeposit, required this.newDeposit});
 
   factory DepositPoked._decode(_i1.Input input) {
     return DepositPoked(
@@ -622,13 +443,8 @@ class DepositPoked extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DepositPoked': {
-          'who': who.toList(),
-          'kind': kind.toJson(),
-          'oldDeposit': oldDeposit,
-          'newDeposit': newDeposit,
-        }
-      };
+    'DepositPoked': {'who': who.toList(), 'kind': kind.toJson(), 'oldDeposit': oldDeposit, 'newDeposit': newDeposit},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -640,48 +456,22 @@ class DepositPoked extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    _i4.DepositKind.codec.encodeTo(
-      kind,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      oldDeposit,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      newDeposit,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    _i4.DepositKind.codec.encodeTo(kind, output);
+    _i1.U128Codec.codec.encodeTo(oldDeposit, output);
+    _i1.U128Codec.codec.encodeTo(newDeposit, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DepositPoked &&
-          _i5.listsEqual(
-            other.who,
-            who,
-          ) &&
+          _i5.listsEqual(other.who, who) &&
           other.kind == kind &&
           other.oldDeposit == oldDeposit &&
           other.newDeposit == newDeposit;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        kind,
-        oldDeposit,
-        newDeposit,
-      );
+  int get hashCode => Object.hash(who, kind, oldDeposit, newDeposit);
 }

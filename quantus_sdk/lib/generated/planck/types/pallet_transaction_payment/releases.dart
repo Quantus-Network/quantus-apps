@@ -7,10 +7,7 @@ enum Releases {
   v1Ancient('V1Ancient', 0),
   v2('V2', 1);
 
-  const Releases(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Releases(this.variantName, this.codecIndex);
 
   factory Releases.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $ReleasesCodec with _i1.Codec<Releases> {
   }
 
   @override
-  void encodeTo(
-    Releases value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Releases value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

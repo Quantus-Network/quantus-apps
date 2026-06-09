@@ -56,11 +56,7 @@ class $Event {
     required _i3.AccountId32 proposer,
     required int proposalId,
   }) {
-    return ProposalCreated(
-      multisigAddress: multisigAddress,
-      proposer: proposer,
-      proposalId: proposalId,
-    );
+    return ProposalCreated(multisigAddress: multisigAddress, proposer: proposer, proposalId: proposalId);
   }
 
   SignerApproved signerApproved({
@@ -112,11 +108,7 @@ class $Event {
     required _i3.AccountId32 proposer,
     required int proposalId,
   }) {
-    return ProposalCancelled(
-      multisigAddress: multisigAddress,
-      proposer: proposer,
-      proposalId: proposalId,
-    );
+    return ProposalCancelled(multisigAddress: multisigAddress, proposer: proposer, proposalId: proposalId);
   }
 
   ProposalRemoved proposalRemoved({
@@ -177,10 +169,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case MultisigCreated:
         (value as MultisigCreated).encodeTo(output);
@@ -207,8 +196,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as DepositsClaimed).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -232,8 +220,7 @@ class $EventCodec with _i1.Codec<Event> {
       case DepositsClaimed:
         return (value as DepositsClaimed)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -253,8 +240,7 @@ class MultisigCreated extends Event {
     return MultisigCreated(
       creator: const _i1.U8ArrayCodec(32).decode(input),
       multisigAddress: const _i1.U8ArrayCodec(32).decode(input),
-      signers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-          .decode(input),
+      signers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).decode(input),
       threshold: _i1.U32Codec.codec.decode(input),
       nonce: _i1.U64Codec.codec.decode(input),
     );
@@ -277,93 +263,51 @@ class MultisigCreated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'MultisigCreated': {
-          'creator': creator.toList(),
-          'multisigAddress': multisigAddress.toList(),
-          'signers': signers.map((value) => value.toList()).toList(),
-          'threshold': threshold,
-          'nonce': nonce,
-        }
-      };
+    'MultisigCreated': {
+      'creator': creator.toList(),
+      'multisigAddress': multisigAddress.toList(),
+      'signers': signers.map((value) => value.toList()).toList(),
+      'threshold': threshold,
+      'nonce': nonce,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(creator);
     size = size + const _i3.AccountId32Codec().sizeHint(multisigAddress);
-    size = size +
-        const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-            .sizeHint(signers);
+    size = size + const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).sizeHint(signers);
     size = size + _i1.U32Codec.codec.sizeHint(threshold);
     size = size + _i1.U64Codec.codec.sizeHint(nonce);
     return size;
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      creator,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(
-      signers,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      threshold,
-      output,
-    );
-    _i1.U64Codec.codec.encodeTo(
-      nonce,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(creator, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(signers, output);
+    _i1.U32Codec.codec.encodeTo(threshold, output);
+    _i1.U64Codec.codec.encodeTo(nonce, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is MultisigCreated &&
-          _i5.listsEqual(
-            other.creator,
-            creator,
-          ) &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i5.listsEqual(
-            other.signers,
-            signers,
-          ) &&
+          _i5.listsEqual(other.creator, creator) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.signers, signers) &&
           other.threshold == threshold &&
           other.nonce == nonce;
 
   @override
-  int get hashCode => Object.hash(
-        creator,
-        multisigAddress,
-        signers,
-        threshold,
-        nonce,
-      );
+  int get hashCode => Object.hash(creator, multisigAddress, signers, threshold, nonce);
 }
 
 /// A proposal has been created
 class ProposalCreated extends Event {
-  const ProposalCreated({
-    required this.multisigAddress,
-    required this.proposer,
-    required this.proposalId,
-  });
+  const ProposalCreated({required this.multisigAddress, required this.proposer, required this.proposalId});
 
   factory ProposalCreated._decode(_i1.Input input) {
     return ProposalCreated(
@@ -384,12 +328,12 @@ class ProposalCreated extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProposalCreated': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposer': proposer.toList(),
-          'proposalId': proposalId,
-        }
-      };
+    'ProposalCreated': {
+      'multisigAddress': multisigAddress.toList(),
+      'proposer': proposer.toList(),
+      'proposalId': proposalId,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -400,47 +344,22 @@ class ProposalCreated extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      proposer,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    const _i1.U8ArrayCodec(32).encodeTo(proposer, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProposalCreated &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i5.listsEqual(
-            other.proposer,
-            proposer,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.proposer, proposer) &&
           other.proposalId == proposalId;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposer,
-        proposalId,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposer, proposalId);
 }
 
 /// A signer has approved a proposal (does not imply threshold reached)
@@ -475,13 +394,13 @@ class SignerApproved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'SignerApproved': {
-          'multisigAddress': multisigAddress.toList(),
-          'approver': approver.toList(),
-          'proposalId': proposalId,
-          'approvalsCount': approvalsCount,
-        }
-      };
+    'SignerApproved': {
+      'multisigAddress': multisigAddress.toList(),
+      'approver': approver.toList(),
+      'proposalId': proposalId,
+      'approvalsCount': approvalsCount,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -493,62 +412,29 @@ class SignerApproved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      approver,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      approvalsCount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    const _i1.U8ArrayCodec(32).encodeTo(approver, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
+    _i1.U32Codec.codec.encodeTo(approvalsCount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is SignerApproved &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i5.listsEqual(
-            other.approver,
-            approver,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.approver, approver) &&
           other.proposalId == proposalId &&
           other.approvalsCount == approvalsCount;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        approver,
-        proposalId,
-        approvalsCount,
-      );
+  int get hashCode => Object.hash(multisigAddress, approver, proposalId, approvalsCount);
 }
 
 /// A proposal has reached threshold and is ready to execute
 class ProposalReadyToExecute extends Event {
-  const ProposalReadyToExecute({
-    required this.multisigAddress,
-    required this.proposalId,
-    required this.approvalsCount,
-  });
+  const ProposalReadyToExecute({required this.multisigAddress, required this.proposalId, required this.approvalsCount});
 
   factory ProposalReadyToExecute._decode(_i1.Input input) {
     return ProposalReadyToExecute(
@@ -569,12 +455,12 @@ class ProposalReadyToExecute extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProposalReadyToExecute': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-          'approvalsCount': approvalsCount,
-        }
-      };
+    'ProposalReadyToExecute': {
+      'multisigAddress': multisigAddress.toList(),
+      'proposalId': proposalId,
+      'approvalsCount': approvalsCount,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -585,44 +471,22 @@ class ProposalReadyToExecute extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      approvalsCount,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
+    _i1.U32Codec.codec.encodeTo(approvalsCount, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProposalReadyToExecute &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId &&
           other.approvalsCount == approvalsCount;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-        approvalsCount,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId, approvalsCount);
 }
 
 /// A proposal has been executed
@@ -643,9 +507,7 @@ class ProposalExecuted extends Event {
       proposalId: _i1.U32Codec.codec.decode(input),
       proposer: const _i1.U8ArrayCodec(32).decode(input),
       call: _i1.U8SequenceCodec.codec.decode(input),
-      approvers:
-          const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-              .decode(input),
+      approvers: const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).decode(input),
       result: const _i1.ResultCodec<dynamic, _i4.DispatchError>(
         _i1.NullCodec.codec,
         _i4.DispatchError.codec,
@@ -673,15 +535,15 @@ class ProposalExecuted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProposalExecuted': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-          'proposer': proposer.toList(),
-          'call': call,
-          'approvers': approvers.map((value) => value.toList()).toList(),
-          'result': result.toJson(),
-        }
-      };
+    'ProposalExecuted': {
+      'multisigAddress': multisigAddress.toList(),
+      'proposalId': proposalId,
+      'proposer': proposer.toList(),
+      'call': call,
+      'approvers': approvers.map((value) => value.toList()).toList(),
+      'result': result.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -689,10 +551,9 @@ class ProposalExecuted extends Event {
     size = size + _i1.U32Codec.codec.sizeHint(proposalId);
     size = size + const _i3.AccountId32Codec().sizeHint(proposer);
     size = size + _i1.U8SequenceCodec.codec.sizeHint(call);
-    size = size +
-        const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec())
-            .sizeHint(approvers);
-    size = size +
+    size = size + const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).sizeHint(approvers);
+    size =
+        size +
         const _i1.ResultCodec<dynamic, _i4.DispatchError>(
           _i1.NullCodec.codec,
           _i4.DispatchError.codec,
@@ -701,83 +562,36 @@ class ProposalExecuted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      proposer,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      call,
-      output,
-    );
-    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(
-      approvers,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
+    const _i1.U8ArrayCodec(32).encodeTo(proposer, output);
+    _i1.U8SequenceCodec.codec.encodeTo(call, output);
+    const _i1.SequenceCodec<_i3.AccountId32>(_i3.AccountId32Codec()).encodeTo(approvers, output);
     const _i1.ResultCodec<dynamic, _i4.DispatchError>(
       _i1.NullCodec.codec,
       _i4.DispatchError.codec,
-    ).encodeTo(
-      result,
-      output,
-    );
+    ).encodeTo(result, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProposalExecuted &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId &&
-          _i5.listsEqual(
-            other.proposer,
-            proposer,
-          ) &&
-          _i5.listsEqual(
-            other.call,
-            call,
-          ) &&
-          _i5.listsEqual(
-            other.approvers,
-            approvers,
-          ) &&
+          _i5.listsEqual(other.proposer, proposer) &&
+          _i5.listsEqual(other.call, call) &&
+          _i5.listsEqual(other.approvers, approvers) &&
           other.result == result;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-        proposer,
-        call,
-        approvers,
-        result,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId, proposer, call, approvers, result);
 }
 
 /// A proposal has been cancelled by the proposer
 class ProposalCancelled extends Event {
-  const ProposalCancelled({
-    required this.multisigAddress,
-    required this.proposer,
-    required this.proposalId,
-  });
+  const ProposalCancelled({required this.multisigAddress, required this.proposer, required this.proposalId});
 
   factory ProposalCancelled._decode(_i1.Input input) {
     return ProposalCancelled(
@@ -798,12 +612,12 @@ class ProposalCancelled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProposalCancelled': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposer': proposer.toList(),
-          'proposalId': proposalId,
-        }
-      };
+    'ProposalCancelled': {
+      'multisigAddress': multisigAddress.toList(),
+      'proposer': proposer.toList(),
+      'proposalId': proposalId,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -814,47 +628,22 @@ class ProposalCancelled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      proposer,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    const _i1.U8ArrayCodec(32).encodeTo(proposer, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProposalCancelled &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i5.listsEqual(
-            other.proposer,
-            proposer,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.proposer, proposer) &&
           other.proposalId == proposalId;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposer,
-        proposalId,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposer, proposalId);
 }
 
 /// Expired proposal was removed from storage
@@ -889,13 +678,13 @@ class ProposalRemoved extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'ProposalRemoved': {
-          'multisigAddress': multisigAddress.toList(),
-          'proposalId': proposalId,
-          'proposer': proposer.toList(),
-          'removedBy': removedBy.toList(),
-        }
-      };
+    'ProposalRemoved': {
+      'multisigAddress': multisigAddress.toList(),
+      'proposalId': proposalId,
+      'proposer': proposer.toList(),
+      'removedBy': removedBy.toList(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -907,56 +696,24 @@ class ProposalRemoved extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      6,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalId,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      proposer,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      removedBy,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(6, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    _i1.U32Codec.codec.encodeTo(proposalId, output);
+    const _i1.U8ArrayCodec(32).encodeTo(proposer, output);
+    const _i1.U8ArrayCodec(32).encodeTo(removedBy, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is ProposalRemoved &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
           other.proposalId == proposalId &&
-          _i5.listsEqual(
-            other.proposer,
-            proposer,
-          ) &&
-          _i5.listsEqual(
-            other.removedBy,
-            removedBy,
-          );
+          _i5.listsEqual(other.proposer, proposer) &&
+          _i5.listsEqual(other.removedBy, removedBy);
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        proposalId,
-        proposer,
-        removedBy,
-      );
+  int get hashCode => Object.hash(multisigAddress, proposalId, proposer, removedBy);
 }
 
 /// Batch deposits claimed
@@ -991,13 +748,13 @@ class DepositsClaimed extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'DepositsClaimed': {
-          'multisigAddress': multisigAddress.toList(),
-          'claimer': claimer.toList(),
-          'totalReturned': totalReturned,
-          'proposalsRemoved': proposalsRemoved,
-        }
-      };
+    'DepositsClaimed': {
+      'multisigAddress': multisigAddress.toList(),
+      'claimer': claimer.toList(),
+      'totalReturned': totalReturned,
+      'proposalsRemoved': proposalsRemoved,
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -1009,51 +766,22 @@ class DepositsClaimed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      7,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      multisigAddress,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      claimer,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      totalReturned,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      proposalsRemoved,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(7, output);
+    const _i1.U8ArrayCodec(32).encodeTo(multisigAddress, output);
+    const _i1.U8ArrayCodec(32).encodeTo(claimer, output);
+    _i1.U128Codec.codec.encodeTo(totalReturned, output);
+    _i1.U32Codec.codec.encodeTo(proposalsRemoved, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is DepositsClaimed &&
-          _i5.listsEqual(
-            other.multisigAddress,
-            multisigAddress,
-          ) &&
-          _i5.listsEqual(
-            other.claimer,
-            claimer,
-          ) &&
+          _i5.listsEqual(other.multisigAddress, multisigAddress) &&
+          _i5.listsEqual(other.claimer, claimer) &&
           other.totalReturned == totalReturned &&
           other.proposalsRemoved == proposalsRemoved;
 
   @override
-  int get hashCode => Object.hash(
-        multisigAddress,
-        claimer,
-        totalReturned,
-        proposalsRemoved,
-      );
+  int get hashCode => Object.hash(multisigAddress, claimer, totalReturned, proposalsRemoved);
 }

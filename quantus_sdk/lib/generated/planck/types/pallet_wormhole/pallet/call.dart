@@ -52,17 +52,13 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case VerifyAggregatedProof:
         (value as VerifyAggregatedProof).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -72,8 +68,7 @@ class $CallCodec with _i1.Codec<Call> {
       case VerifyAggregatedProof:
         return (value as VerifyAggregatedProof)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -87,8 +82,7 @@ class VerifyAggregatedProof extends Call {
   const VerifyAggregatedProof({required this.proofBytes});
 
   factory VerifyAggregatedProof._decode(_i1.Input input) {
-    return VerifyAggregatedProof(
-        proofBytes: _i1.U8SequenceCodec.codec.decode(input));
+    return VerifyAggregatedProof(proofBytes: _i1.U8SequenceCodec.codec.decode(input));
   }
 
   /// Vec<u8>
@@ -96,8 +90,8 @@ class VerifyAggregatedProof extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'verify_aggregated_proof': {'proofBytes': proofBytes}
-      };
+    'verify_aggregated_proof': {'proofBytes': proofBytes},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -106,27 +100,13 @@ class VerifyAggregatedProof extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    _i1.U8SequenceCodec.codec.encodeTo(
-      proofBytes,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    _i1.U8SequenceCodec.codec.encodeTo(proofBytes, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is VerifyAggregatedProof &&
-          _i3.listsEqual(
-            other.proofBytes,
-            proofBytes,
-          );
+      identical(this, other) || other is VerifyAggregatedProof && _i3.listsEqual(other.proofBytes, proofBytes);
 
   @override
   int get hashCode => proofBytes.hashCode;

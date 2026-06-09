@@ -12,14 +12,8 @@ class PerbillCodec with _i1.Codec<Perbill> {
   }
 
   @override
-  void encodeTo(
-    Perbill value,
-    _i1.Output output,
-  ) {
-    _i1.U32Codec.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(Perbill value, _i1.Output output) {
+    _i1.U32Codec.codec.encodeTo(value, output);
   }
 
   @override

@@ -6,10 +6,7 @@ import 'package:polkadart/scale_codec.dart' as _i1;
 enum HoldReason {
   scheduledTransfer('ScheduledTransfer', 0);
 
-  const HoldReason(
-    this.variantName,
-    this.codecIndex,
-  );
+  const HoldReason(this.variantName, this.codecIndex);
 
   factory HoldReason.decode(_i1.Input input) {
     return codec.decode(input);
@@ -43,13 +40,7 @@ class $HoldReasonCodec with _i1.Codec<HoldReason> {
   }
 
   @override
-  void encodeTo(
-    HoldReason value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(HoldReason value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }

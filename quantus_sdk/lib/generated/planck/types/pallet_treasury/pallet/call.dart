@@ -61,10 +61,7 @@ class $CallCodec with _i1.Codec<Call> {
   }
 
   @override
-  void encodeTo(
-    Call value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Call value, _i1.Output output) {
     switch (value.runtimeType) {
       case SetTreasuryAccount:
         (value as SetTreasuryAccount).encodeTo(output);
@@ -73,8 +70,7 @@ class $CallCodec with _i1.Codec<Call> {
         (value as SetTreasuryPortion).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -86,8 +82,7 @@ class $CallCodec with _i1.Codec<Call> {
       case SetTreasuryPortion:
         return (value as SetTreasuryPortion)._sizeHint();
       default:
-        throw Exception(
-            'Call: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Call: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
@@ -102,8 +97,7 @@ class SetTreasuryAccount extends Call {
   const SetTreasuryAccount({required this.account});
 
   factory SetTreasuryAccount._decode(_i1.Input input) {
-    return SetTreasuryAccount(
-        account: const _i1.U8ArrayCodec(32).decode(input));
+    return SetTreasuryAccount(account: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::AccountId
@@ -111,8 +105,8 @@ class SetTreasuryAccount extends Call {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'set_treasury_account': {'account': account.toList()}
-      };
+    'set_treasury_account': {'account': account.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -121,27 +115,13 @@ class SetTreasuryAccount extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetTreasuryAccount &&
-          _i5.listsEqual(
-            other.account,
-            account,
-          );
+      identical(this, other) || other is SetTreasuryAccount && _i5.listsEqual(other.account, account);
 
   @override
   int get hashCode => account.hashCode;
@@ -160,8 +140,8 @@ class SetTreasuryPortion extends Call {
 
   @override
   Map<String, Map<String, int>> toJson() => {
-        'set_treasury_portion': {'portion': portion}
-      };
+    'set_treasury_portion': {'portion': portion},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -170,23 +150,12 @@ class SetTreasuryPortion extends Call {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      portion,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    _i1.U32Codec.codec.encodeTo(portion, output);
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is SetTreasuryPortion && other.portion == portion;
+  bool operator ==(Object other) => identical(this, other) || other is SetTreasuryPortion && other.portion == portion;
 
   @override
   int get hashCode => portion.hashCode;

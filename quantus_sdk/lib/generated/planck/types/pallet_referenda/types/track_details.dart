@@ -56,23 +56,20 @@ class TrackDetails {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'maxDeciding': maxDeciding,
-        'decisionDeposit': decisionDeposit,
-        'preparePeriod': preparePeriod,
-        'decisionPeriod': decisionPeriod,
-        'confirmPeriod': confirmPeriod,
-        'minEnactmentPeriod': minEnactmentPeriod,
-        'minApproval': minApproval.toJson(),
-        'minSupport': minSupport.toJson(),
-      };
+    'name': name,
+    'maxDeciding': maxDeciding,
+    'decisionDeposit': decisionDeposit,
+    'preparePeriod': preparePeriod,
+    'decisionPeriod': decisionPeriod,
+    'confirmPeriod': confirmPeriod,
+    'minEnactmentPeriod': minEnactmentPeriod,
+    'minApproval': minApproval.toJson(),
+    'minSupport': minSupport.toJson(),
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is TrackDetails &&
           other.name == name &&
           other.maxDeciding == maxDeciding &&
@@ -86,62 +83,32 @@ class TrackDetails {
 
   @override
   int get hashCode => Object.hash(
-        name,
-        maxDeciding,
-        decisionDeposit,
-        preparePeriod,
-        decisionPeriod,
-        confirmPeriod,
-        minEnactmentPeriod,
-        minApproval,
-        minSupport,
-      );
+    name,
+    maxDeciding,
+    decisionDeposit,
+    preparePeriod,
+    decisionPeriod,
+    confirmPeriod,
+    minEnactmentPeriod,
+    minApproval,
+    minSupport,
+  );
 }
 
 class $TrackDetailsCodec with _i1.Codec<TrackDetails> {
   const $TrackDetailsCodec();
 
   @override
-  void encodeTo(
-    TrackDetails obj,
-    _i1.Output output,
-  ) {
-    _i1.StrCodec.codec.encodeTo(
-      obj.name,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.maxDeciding,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.decisionDeposit,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.preparePeriod,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.decisionPeriod,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.confirmPeriod,
-      output,
-    );
-    _i1.U32Codec.codec.encodeTo(
-      obj.minEnactmentPeriod,
-      output,
-    );
-    _i2.Curve.codec.encodeTo(
-      obj.minApproval,
-      output,
-    );
-    _i2.Curve.codec.encodeTo(
-      obj.minSupport,
-      output,
-    );
+  void encodeTo(TrackDetails obj, _i1.Output output) {
+    _i1.StrCodec.codec.encodeTo(obj.name, output);
+    _i1.U32Codec.codec.encodeTo(obj.maxDeciding, output);
+    _i1.U128Codec.codec.encodeTo(obj.decisionDeposit, output);
+    _i1.U32Codec.codec.encodeTo(obj.preparePeriod, output);
+    _i1.U32Codec.codec.encodeTo(obj.decisionPeriod, output);
+    _i1.U32Codec.codec.encodeTo(obj.confirmPeriod, output);
+    _i1.U32Codec.codec.encodeTo(obj.minEnactmentPeriod, output);
+    _i2.Curve.codec.encodeTo(obj.minApproval, output);
+    _i2.Curve.codec.encodeTo(obj.minSupport, output);
   }
 
   @override

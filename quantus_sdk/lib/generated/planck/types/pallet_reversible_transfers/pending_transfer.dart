@@ -41,73 +41,37 @@ class PendingTransfer {
   }
 
   Map<String, dynamic> toJson() => {
-        'from': from.toList(),
-        'to': to.toList(),
-        'guardian': guardian.toList(),
-        'assetId': assetId,
-        'amount': amount,
-      };
+    'from': from.toList(),
+    'to': to.toList(),
+    'guardian': guardian.toList(),
+    'assetId': assetId,
+    'amount': amount,
+  };
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is PendingTransfer &&
-          _i4.listsEqual(
-            other.from,
-            from,
-          ) &&
-          _i4.listsEqual(
-            other.to,
-            to,
-          ) &&
-          _i4.listsEqual(
-            other.guardian,
-            guardian,
-          ) &&
+          _i4.listsEqual(other.from, from) &&
+          _i4.listsEqual(other.to, to) &&
+          _i4.listsEqual(other.guardian, guardian) &&
           other.assetId == assetId &&
           other.amount == amount;
 
   @override
-  int get hashCode => Object.hash(
-        from,
-        to,
-        guardian,
-        assetId,
-        amount,
-      );
+  int get hashCode => Object.hash(from, to, guardian, assetId, amount);
 }
 
 class $PendingTransferCodec with _i1.Codec<PendingTransfer> {
   const $PendingTransferCodec();
 
   @override
-  void encodeTo(
-    PendingTransfer obj,
-    _i1.Output output,
-  ) {
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.from,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.to,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      obj.guardian,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      obj.assetId,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      obj.amount,
-      output,
-    );
+  void encodeTo(PendingTransfer obj, _i1.Output output) {
+    const _i1.U8ArrayCodec(32).encodeTo(obj.from, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.to, output);
+    const _i1.U8ArrayCodec(32).encodeTo(obj.guardian, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(obj.assetId, output);
+    _i1.U128Codec.codec.encodeTo(obj.amount, output);
   }
 
   @override
@@ -127,8 +91,7 @@ class $PendingTransferCodec with _i1.Codec<PendingTransfer> {
     size = size + const _i2.AccountId32Codec().sizeHint(obj.from);
     size = size + const _i2.AccountId32Codec().sizeHint(obj.to);
     size = size + const _i2.AccountId32Codec().sizeHint(obj.guardian);
-    size = size +
-        const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.assetId);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(obj.assetId);
     size = size + _i1.U128Codec.codec.sizeHint(obj.amount);
     return size;
   }

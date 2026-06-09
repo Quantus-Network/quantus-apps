@@ -14,14 +14,8 @@ class NoDropCodec with _i2.Codec<NoDrop> {
   }
 
   @override
-  void encodeTo(
-    NoDrop value,
-    _i2.Output output,
-  ) {
-    _i1.Imbalance.codec.encodeTo(
-      value,
-      output,
-    );
+  void encodeTo(NoDrop value, _i2.Output output) {
+    _i1.Imbalance.codec.encodeTo(value, output);
   }
 
   @override

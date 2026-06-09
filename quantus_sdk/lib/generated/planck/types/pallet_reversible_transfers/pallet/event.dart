@@ -44,11 +44,7 @@ class $Event {
     required _i3.AccountId32 guardian,
     required _i4.BlockNumberOrTimestamp delay,
   }) {
-    return HighSecuritySet(
-      who: who,
-      guardian: guardian,
-      delay: delay,
-    );
+    return HighSecuritySet(who: who, guardian: guardian, delay: delay);
   }
 
   TransactionScheduled transactionScheduled({
@@ -71,35 +67,19 @@ class $Event {
     );
   }
 
-  TransactionCancelled transactionCancelled({
-    required _i3.AccountId32 who,
-    required _i5.H256 txId,
-  }) {
-    return TransactionCancelled(
-      who: who,
-      txId: txId,
-    );
+  TransactionCancelled transactionCancelled({required _i3.AccountId32 who, required _i5.H256 txId}) {
+    return TransactionCancelled(who: who, txId: txId);
   }
 
   TransactionExecuted transactionExecuted({
     required _i5.H256 txId,
-    required _i1.Result<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>
-        result,
+    required _i1.Result<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo> result,
   }) {
-    return TransactionExecuted(
-      txId: txId,
-      result: result,
-    );
+    return TransactionExecuted(txId: txId, result: result);
   }
 
-  FundsRecovered fundsRecovered({
-    required _i3.AccountId32 account,
-    required _i3.AccountId32 guardian,
-  }) {
-    return FundsRecovered(
-      account: account,
-      guardian: guardian,
-    );
+  FundsRecovered fundsRecovered({required _i3.AccountId32 account, required _i3.AccountId32 guardian}) {
+    return FundsRecovered(account: account, guardian: guardian);
   }
 
   TransferRecoveryFailed transferRecoveryFailed({required _i5.H256 txId}) {
@@ -132,10 +112,7 @@ class $EventCodec with _i1.Codec<Event> {
   }
 
   @override
-  void encodeTo(
-    Event value,
-    _i1.Output output,
-  ) {
+  void encodeTo(Event value, _i1.Output output) {
     switch (value.runtimeType) {
       case HighSecuritySet:
         (value as HighSecuritySet).encodeTo(output);
@@ -156,8 +133,7 @@ class $EventCodec with _i1.Codec<Event> {
         (value as TransferRecoveryFailed).encodeTo(output);
         break;
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 
@@ -177,19 +153,14 @@ class $EventCodec with _i1.Codec<Event> {
       case TransferRecoveryFailed:
         return (value as TransferRecoveryFailed)._sizeHint();
       default:
-        throw Exception(
-            'Event: Unsupported "$value" of type "${value.runtimeType}"');
+        throw Exception('Event: Unsupported "$value" of type "${value.runtimeType}"');
     }
   }
 }
 
 /// A user has enabled their high-security settings.
 class HighSecuritySet extends Event {
-  const HighSecuritySet({
-    required this.who,
-    required this.guardian,
-    required this.delay,
-  });
+  const HighSecuritySet({required this.who, required this.guardian, required this.delay});
 
   factory HighSecuritySet._decode(_i1.Input input) {
     return HighSecuritySet(
@@ -211,12 +182,8 @@ class HighSecuritySet extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'HighSecuritySet': {
-          'who': who.toList(),
-          'guardian': guardian.toList(),
-          'delay': delay.toJson(),
-        }
-      };
+    'HighSecuritySet': {'who': who.toList(), 'guardian': guardian.toList(), 'delay': delay.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -227,47 +194,22 @@ class HighSecuritySet extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      0,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      guardian,
-      output,
-    );
-    _i4.BlockNumberOrTimestamp.codec.encodeTo(
-      delay,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(0, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    const _i1.U8ArrayCodec(32).encodeTo(guardian, output);
+    _i4.BlockNumberOrTimestamp.codec.encodeTo(delay, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is HighSecuritySet &&
-          _i9.listsEqual(
-            other.who,
-            who,
-          ) &&
-          _i9.listsEqual(
-            other.guardian,
-            guardian,
-          ) &&
+          _i9.listsEqual(other.who, who) &&
+          _i9.listsEqual(other.guardian, guardian) &&
           other.delay == delay;
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        guardian,
-        delay,
-      );
+  int get hashCode => Object.hash(who, guardian, delay);
 }
 
 /// A transaction has been scheduled for delayed execution.
@@ -318,24 +260,23 @@ class TransactionScheduled extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'TransactionScheduled': {
-          'from': from.toList(),
-          'to': to.toList(),
-          'guardian': guardian.toList(),
-          'assetId': assetId,
-          'amount': amount,
-          'txId': txId.toList(),
-          'executeAt': executeAt.toJson(),
-        }
-      };
+    'TransactionScheduled': {
+      'from': from.toList(),
+      'to': to.toList(),
+      'guardian': guardian.toList(),
+      'assetId': assetId,
+      'amount': amount,
+      'txId': txId.toList(),
+      'executeAt': executeAt.toJson(),
+    },
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i3.AccountId32Codec().sizeHint(from);
     size = size + const _i3.AccountId32Codec().sizeHint(to);
     size = size + const _i3.AccountId32Codec().sizeHint(guardian);
-    size =
-        size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(assetId);
+    size = size + const _i1.OptionCodec<int>(_i1.U32Codec.codec).sizeHint(assetId);
     size = size + _i1.U128Codec.codec.sizeHint(amount);
     size = size + const _i5.H256Codec().sizeHint(txId);
     size = size + _i6.DispatchTime.codec.sizeHint(executeAt);
@@ -343,85 +284,35 @@ class TransactionScheduled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      1,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      from,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      to,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      guardian,
-      output,
-    );
-    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(
-      assetId,
-      output,
-    );
-    _i1.U128Codec.codec.encodeTo(
-      amount,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
-    _i6.DispatchTime.codec.encodeTo(
-      executeAt,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(1, output);
+    const _i1.U8ArrayCodec(32).encodeTo(from, output);
+    const _i1.U8ArrayCodec(32).encodeTo(to, output);
+    const _i1.U8ArrayCodec(32).encodeTo(guardian, output);
+    const _i1.OptionCodec<int>(_i1.U32Codec.codec).encodeTo(assetId, output);
+    _i1.U128Codec.codec.encodeTo(amount, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
+    _i6.DispatchTime.codec.encodeTo(executeAt, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
+      identical(this, other) ||
       other is TransactionScheduled &&
-          _i9.listsEqual(
-            other.from,
-            from,
-          ) &&
-          _i9.listsEqual(
-            other.to,
-            to,
-          ) &&
-          _i9.listsEqual(
-            other.guardian,
-            guardian,
-          ) &&
+          _i9.listsEqual(other.from, from) &&
+          _i9.listsEqual(other.to, to) &&
+          _i9.listsEqual(other.guardian, guardian) &&
           other.assetId == assetId &&
           other.amount == amount &&
-          _i9.listsEqual(
-            other.txId,
-            txId,
-          ) &&
+          _i9.listsEqual(other.txId, txId) &&
           other.executeAt == executeAt;
 
   @override
-  int get hashCode => Object.hash(
-        from,
-        to,
-        guardian,
-        assetId,
-        amount,
-        txId,
-        executeAt,
-      );
+  int get hashCode => Object.hash(from, to, guardian, assetId, amount, txId, executeAt);
 }
 
 /// A scheduled transaction has been successfully cancelled.
 class TransactionCancelled extends Event {
-  const TransactionCancelled({
-    required this.who,
-    required this.txId,
-  });
+  const TransactionCancelled({required this.who, required this.txId});
 
   factory TransactionCancelled._decode(_i1.Input input) {
     return TransactionCancelled(
@@ -438,11 +329,8 @@ class TransactionCancelled extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'TransactionCancelled': {
-          'who': who.toList(),
-          'txId': txId.toList(),
-        }
-      };
+    'TransactionCancelled': {'who': who.toList(), 'txId': txId.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -452,55 +340,28 @@ class TransactionCancelled extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      2,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      who,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(2, output);
+    const _i1.U8ArrayCodec(32).encodeTo(who, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransactionCancelled &&
-          _i9.listsEqual(
-            other.who,
-            who,
-          ) &&
-          _i9.listsEqual(
-            other.txId,
-            txId,
-          );
+      identical(this, other) ||
+      other is TransactionCancelled && _i9.listsEqual(other.who, who) && _i9.listsEqual(other.txId, txId);
 
   @override
-  int get hashCode => Object.hash(
-        who,
-        txId,
-      );
+  int get hashCode => Object.hash(who, txId);
 }
 
 /// A scheduled transaction was executed by the scheduler.
 class TransactionExecuted extends Event {
-  const TransactionExecuted({
-    required this.txId,
-    required this.result,
-  });
+  const TransactionExecuted({required this.txId, required this.result});
 
   factory TransactionExecuted._decode(_i1.Input input) {
     return TransactionExecuted(
       txId: const _i1.U8ArrayCodec(32).decode(input),
-      result: const _i1
-          .ResultCodec<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>(
+      result: const _i1.ResultCodec<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>(
         _i7.PostDispatchInfo.codec,
         _i8.DispatchErrorWithPostInfo.codec,
       ).decode(input),
@@ -515,18 +376,15 @@ class TransactionExecuted extends Event {
 
   @override
   Map<String, Map<String, dynamic>> toJson() => {
-        'TransactionExecuted': {
-          'txId': txId.toList(),
-          'result': result.toJson(),
-        }
-      };
+    'TransactionExecuted': {'txId': txId.toList(), 'result': result.toJson()},
+  };
 
   int _sizeHint() {
     int size = 1;
     size = size + const _i5.H256Codec().sizeHint(txId);
-    size = size +
-        const _i1
-            .ResultCodec<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>(
+    size =
+        size +
+        const _i1.ResultCodec<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>(
           _i7.PostDispatchInfo.codec,
           _i8.DispatchErrorWithPostInfo.codec,
         ).sizeHint(result);
@@ -534,49 +392,26 @@ class TransactionExecuted extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      3,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(3, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
     const _i1.ResultCodec<_i7.PostDispatchInfo, _i8.DispatchErrorWithPostInfo>(
       _i7.PostDispatchInfo.codec,
       _i8.DispatchErrorWithPostInfo.codec,
-    ).encodeTo(
-      result,
-      output,
-    );
+    ).encodeTo(result, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransactionExecuted &&
-          _i9.listsEqual(
-            other.txId,
-            txId,
-          ) &&
-          other.result == result;
+      identical(this, other) ||
+      other is TransactionExecuted && _i9.listsEqual(other.txId, txId) && other.result == result;
 
   @override
-  int get hashCode => Object.hash(
-        txId,
-        result,
-      );
+  int get hashCode => Object.hash(txId, result);
 }
 
 /// All funds were recovered from a high-security account by its guardian.
 class FundsRecovered extends Event {
-  const FundsRecovered({
-    required this.account,
-    required this.guardian,
-  });
+  const FundsRecovered({required this.account, required this.guardian});
 
   factory FundsRecovered._decode(_i1.Input input) {
     return FundsRecovered(
@@ -593,11 +428,8 @@ class FundsRecovered extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'FundsRecovered': {
-          'account': account.toList(),
-          'guardian': guardian.toList(),
-        }
-      };
+    'FundsRecovered': {'account': account.toList(), 'guardian': guardian.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -607,41 +439,18 @@ class FundsRecovered extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      4,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      account,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      guardian,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(4, output);
+    const _i1.U8ArrayCodec(32).encodeTo(account, output);
+    const _i1.U8ArrayCodec(32).encodeTo(guardian, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is FundsRecovered &&
-          _i9.listsEqual(
-            other.account,
-            account,
-          ) &&
-          _i9.listsEqual(
-            other.guardian,
-            guardian,
-          );
+      identical(this, other) ||
+      other is FundsRecovered && _i9.listsEqual(other.account, account) && _i9.listsEqual(other.guardian, guardian);
 
   @override
-  int get hashCode => Object.hash(
-        account,
-        guardian,
-      );
+  int get hashCode => Object.hash(account, guardian);
 }
 
 /// Failed to release held funds during recovery. The transfer metadata is preserved
@@ -650,8 +459,7 @@ class TransferRecoveryFailed extends Event {
   const TransferRecoveryFailed({required this.txId});
 
   factory TransferRecoveryFailed._decode(_i1.Input input) {
-    return TransferRecoveryFailed(
-        txId: const _i1.U8ArrayCodec(32).decode(input));
+    return TransferRecoveryFailed(txId: const _i1.U8ArrayCodec(32).decode(input));
   }
 
   /// T::Hash
@@ -659,8 +467,8 @@ class TransferRecoveryFailed extends Event {
 
   @override
   Map<String, Map<String, List<int>>> toJson() => {
-        'TransferRecoveryFailed': {'txId': txId.toList()}
-      };
+    'TransferRecoveryFailed': {'txId': txId.toList()},
+  };
 
   int _sizeHint() {
     int size = 1;
@@ -669,27 +477,13 @@ class TransferRecoveryFailed extends Event {
   }
 
   void encodeTo(_i1.Output output) {
-    _i1.U8Codec.codec.encodeTo(
-      5,
-      output,
-    );
-    const _i1.U8ArrayCodec(32).encodeTo(
-      txId,
-      output,
-    );
+    _i1.U8Codec.codec.encodeTo(5, output);
+    const _i1.U8ArrayCodec(32).encodeTo(txId, output);
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(
-        this,
-        other,
-      ) ||
-      other is TransferRecoveryFailed &&
-          _i9.listsEqual(
-            other.txId,
-            txId,
-          );
+      identical(this, other) || other is TransferRecoveryFailed && _i9.listsEqual(other.txId, txId);
 
   @override
   int get hashCode => txId.hashCode;

@@ -7,10 +7,7 @@ enum Pays {
   yes('Yes', 0),
   no('No', 1);
 
-  const Pays(
-    this.variantName,
-    this.codecIndex,
-  );
+  const Pays(this.variantName, this.codecIndex);
 
   factory Pays.decode(_i1.Input input) {
     return codec.decode(input);
@@ -46,13 +43,7 @@ class $PaysCodec with _i1.Codec<Pays> {
   }
 
   @override
-  void encodeTo(
-    Pays value,
-    _i1.Output output,
-  ) {
-    _i1.U8Codec.codec.encodeTo(
-      value.codecIndex,
-      output,
-    );
+  void encodeTo(Pays value, _i1.Output output) {
+    _i1.U8Codec.codec.encodeTo(value.codecIndex, output);
   }
 }
