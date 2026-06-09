@@ -13,6 +13,7 @@ class ExtrinsicIndexerPollingConfig<TPending, TContext> {
     required this.removePending,
     required this.showTimeoutToast,
     required this.confirmIfIndexed,
+    this.tryResolveTimeout,
   });
 
   final String logPrefix;
@@ -22,6 +23,10 @@ class ExtrinsicIndexerPollingConfig<TPending, TContext> {
   final void Function(Ref ref, String id) removePending;
   final void Function(Ref ref) showTimeoutToast;
   final Future<bool> Function(Ref ref, TContext context, TPending pending) confirmIfIndexed;
+
+  /// When polling times out, attempt to reconcile from chain state without a
+  /// timeout toast. Return true when resolved.
+  final Future<bool> Function(Ref ref, TContext context, TPending pending)? tryResolveTimeout;
 }
 
 /// Polls the indexer on an interval until [confirmIfIndexed] succeeds or times out.
@@ -97,6 +102,21 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
       if (confirmed) return;
     } catch (e) {
       quantusDebugPrint('${_config.logPrefix} final check error for $key: $e');
+    }
+
+    if (!_config.isStillPending(_ref, key)) return;
+
+    final tryResolveTimeout = _config.tryResolveTimeout;
+    if (tryResolveTimeout != null) {
+      try {
+        final resolved = await tryResolveTimeout(_ref, context, pending);
+        if (resolved) {
+          quantusDebugPrint('${_config.logPrefix} timeout resolved on-chain for $key');
+          return;
+        }
+      } catch (e) {
+        quantusDebugPrint('${_config.logPrefix} timeout resolve error for $key: $e');
+      }
     }
 
     if (!_config.isStillPending(_ref, key)) return;
